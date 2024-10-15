@@ -1,4 +1,4 @@
-use crate::{kind::LuaSyntaxKind, text::SourceRange};
+use crate::{kind::{LuaSyntaxKind, LuaTokenKind}, text::SourceRange};
 
 pub(crate) enum MarkEvent {
     NodeStart {
@@ -6,7 +6,7 @@ pub(crate) enum MarkEvent {
         parent: usize,
     },
     EatToken {
-        kind: LuaSyntaxKind,
+        kind: LuaTokenKind,
         range: SourceRange,
     },
     Error {

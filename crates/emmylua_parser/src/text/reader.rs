@@ -45,17 +45,12 @@ impl<'a> Reader<'a> {
         self.bump();
     }
 
-    // pub fn reset(&mut self, range: SourceRange) {
-    //     self.valid_range = range;
-    //     self.text = &self.text[range.start_offset..range.length];
-    //     self.chars = self.text.chars();
-    //     self.buffer_byte_pos = 0;
-    //     self.buffer_byte_len = 0;
-    //     self.current = EOF;
-    // }
-
     pub fn is_eof(&self) -> bool {
         self.current == EOF
+    }
+
+    pub fn is_start_of_line(&self) -> bool {
+        self.buffer_byte_pos == 0
     }
 
     pub fn current_char(&self) -> char {

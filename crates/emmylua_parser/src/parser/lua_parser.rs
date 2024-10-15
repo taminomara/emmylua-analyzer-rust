@@ -1,9 +1,15 @@
 use crate::{
-    grammar::parse_chunk, kind::{LuaSyntaxKind, LuaTokenKind}, lexer::{LuaLexer, LuaTokenData}, parser_error::LuaParseError, text::SourceRange, LuaSyntaxTree
+    grammar::parse_chunk,
+    kind::LuaTokenKind,
+    lexer::{LuaLexer, LuaTokenData},
+    parser_error::LuaParseError,
+    text::SourceRange,
+    LuaSyntaxTree,
 };
 
 use super::{
-    marker::{MarkEvent, Marker, MarkerEventContainer},
+    lua_doc_parser::LuaDocParser,
+    marker::{MarkEvent, MarkerEventContainer},
     parser_config::ParserConfig,
 };
 
@@ -75,6 +81,10 @@ impl<'a> LuaParser<'a> {
         }
     }
 
+    pub fn origin_text(&self) -> &'a str {
+        self.text
+    }
+
     pub fn current_token(&self) -> LuaTokenKind {
         self.current_token
     }
@@ -93,6 +103,14 @@ impl<'a> LuaParser<'a> {
     }
 
     pub fn bump(&mut self) {
+        if !is_trivia_kind(self.current_token) && self.token_index < self.tokens.len() {
+            let token = &self.tokens[self.token_index];
+            self.events.push(MarkEvent::EatToken {
+                kind: token.kind,
+                range: token.range,
+            });
+        }
+
         let mut next_index = self.token_index + 1;
         self.skip_trivia(&mut next_index);
         if next_index < self.tokens.len() {
@@ -106,6 +124,7 @@ impl<'a> LuaParser<'a> {
             self.current_token = LuaTokenKind::None;
             return;
         }
+
         self.current_token = self.tokens[self.token_index].kind;
     }
 
@@ -135,14 +154,103 @@ impl<'a> LuaParser<'a> {
         }
     }
 
+    // Analyze consecutive whitespace/comments
+    // At this point, comments may be in the wrong parent node, adjustments will be made in the subsequent treeBuilder
     fn parse_trivia_tokens(&mut self, next_index: usize) {
+        let mut line_count = 0;
         let start = self.token_index;
+        let mut doc_tokens: Vec<LuaTokenData> = Vec::new();
+        for i in start..next_index {
+            let token = &self.tokens[i];
+            match token.kind {
+                LuaTokenKind::TkShortComment | LuaTokenKind::TkLongComment => {
+                    line_count = 0;
+                    doc_tokens.push(token.clone());
+                }
+                LuaTokenKind::TkEndOfLine => {
+                    line_count += 1;
+                    // If there are two EOFs after the comment, the previous comment is considered a group of comments
+                    if line_count > 1 && doc_tokens.len() > 0 {
+                        self.parse_comments(&doc_tokens);
+                        doc_tokens.clear();
+                    }
+                    // check if the comment is an inline comment
+                    else if doc_tokens.len() > 0 && i >= 2 {
+                        let mut temp_index = i as isize - 2;
+                        let mut inline_comment = false;
+                        while temp_index >= 0 {
+                            let kind = self.tokens[temp_index as usize].kind;
+                            match kind {
+                                LuaTokenKind::TkEndOfLine => {
+                                    break;
+                                }
+                                LuaTokenKind::TkWhitespace => {
+                                    temp_index -= 1;
+                                    continue;
+                                }
+                                _ => {
+                                    inline_comment = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if inline_comment {
+                            self.parse_comments(&doc_tokens);
+                            doc_tokens.clear();
+                        }
+                    }
+                }
+                LuaTokenKind::TkShebang | LuaTokenKind::TkWhitespace => {
+                    if doc_tokens.len() == 0 {
+                        self.events.push(MarkEvent::EatToken {
+                            kind: token.kind,
+                            range: token.range,
+                        });
+                    } else {
+                        doc_tokens.push(token.clone());
+                    }
+                }
+
+                _ => {
+                    if doc_tokens.len() > 0 {
+                        self.parse_comments(&doc_tokens);
+                        doc_tokens.clear();
+                    }
+                }
+            }
+        }
+
+        if doc_tokens.len() > 0 {
+            self.parse_comments(&doc_tokens);
+        }
     }
 
-    fn parse_comments(&mut self, comment_tokens: Vec<LuaTokenData>) {
+    fn parse_comments(&mut self, comment_tokens: &Vec<LuaTokenData>) {
+        let mut trivia_token_start = comment_tokens.len();
+        // Reverse iterate over comment_tokens, removing whitespace and end-of-line tokens
+        for i in (0..comment_tokens.len()).rev() {
+            if matches!(
+                comment_tokens[i].kind,
+                LuaTokenKind::TkWhitespace | LuaTokenKind::TkEndOfLine
+            ) {
+                trivia_token_start = i;
+            } else {
+                break;
+            }
+        }
 
+        let tokens = &comment_tokens[..trivia_token_start];
+        LuaDocParser::parse(self, tokens);
+
+        for i in trivia_token_start..comment_tokens.len() {
+            let token = &comment_tokens[i];
+            self.events.push(MarkEvent::EatToken {
+                kind: token.kind,
+                range: token.range,
+            });
+        }
     }
-
 }
 
 fn is_trivia_kind(kind: LuaTokenKind) -> bool {
