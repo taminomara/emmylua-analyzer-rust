@@ -118,4 +118,12 @@ impl CompleteMarker {
 
         m
     }
+
+    pub fn empty() -> Self {
+        CompleteMarker {
+            start: 0,
+            finish: 0,
+            kind: LuaSyntaxKind::None,
+        }
+    }
 }

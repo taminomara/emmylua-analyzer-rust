@@ -82,7 +82,6 @@ pub enum LuaTokenKind {
     TkDocLongStart,     // --[[@
     TkDocStart,         // ---@
     TkDocTrivia,        // other can not parsed
-    TkDocEnumField,     // ---|
 
     // tag
     TkTagClass,     // class
@@ -123,6 +122,7 @@ pub enum LuaTokenKind {
     TkDocIn,              // in
     TkDocInfer,           // infer
     TkDocContinue,        // ---
+    TkDocContinueOr,      // ---|
     TkDocDetail,          // a description
     TkDocQuestion,        // '?'
     TkDocVisibility,      // public private protected package
@@ -132,4 +132,5 @@ pub enum LuaTokenKind {
     TkStringTemplateType, // type template
     TkDocMatch,           // =
     TkDocBoolean,         // true false
+    TKDocPath,            // path
 }

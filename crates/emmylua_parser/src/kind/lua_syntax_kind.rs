@@ -86,7 +86,7 @@ pub enum LuaSyntaxKind {
 
     // doc other
     DocDetailField,
-    DocBody,
+    DocContinueOrField,
 
     // doc Type
     TypeArray,          // baseType []
@@ -116,7 +116,9 @@ pub enum LuaSyntaxKind {
     GenericParameter,
     GenericDeclareList,
     DiagnosticNameList,
+    TypeList,
     DocAttribute,
+    DocOpType, // +<type>, -<type>, +?
     // start with '#' or '@'
     Description,
 

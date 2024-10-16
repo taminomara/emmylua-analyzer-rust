@@ -21,7 +21,8 @@ impl Language for LuaLanguage {
     }
 }
 
-pub type LuSyntaxNode = rowan::SyntaxNode<LuaLanguage>;
-pub type LuSyntaxToken = rowan::SyntaxToken<LuaLanguage>;
-pub type LuSyntaxElement = rowan::NodeOrToken<LuSyntaxNode, LuSyntaxToken>;
-pub type LuSyntaxElementChildren = rowan::SyntaxElementChildren<LuaLanguage>;
+pub type LuaSyntaxNode = rowan::SyntaxNode<LuaLanguage>;
+pub type LuaSyntaxToken = rowan::SyntaxToken<LuaLanguage>;
+pub type LuaSyntaxElement = rowan::NodeOrToken<LuaSyntaxNode, LuaSyntaxToken>;
+pub type LuaSyntaxElementChildren = rowan::SyntaxElementChildren<LuaLanguage>;
+pub type LuaSyntaxSyntaxPtr = rowan::ast::SyntaxNodePtr<LuaLanguage>;

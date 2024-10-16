@@ -5,4 +5,4 @@ mod doc;
 
 type ParseResult = Result<CompleteMarker, LuaParseError>;
 pub use lua::parse_chunk;
-pub use doc::parse_doc;
+pub use doc::parse_comment;

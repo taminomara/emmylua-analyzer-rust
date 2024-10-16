@@ -5,13 +5,15 @@ use crate::{
 
 use super::{is_name_continue, is_name_start};
 
+#[derive(Debug, Clone)]
 pub struct LuaDocLexer<'a> {
     origin_text: &'a str,
     origin_token_kind: LuaTokenKind,
-    state: LuaDocLexerState,
+    pub state: LuaDocLexerState,
     reader: Option<Reader<'a>>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LuaDocLexerState {
     Init,
     Tag,
@@ -21,6 +23,8 @@ pub enum LuaDocLexerState {
     Trivia,
     See,
     Version,
+    Source,
+    Namespace
 }
 
 impl LuaDocLexer<'_> {
@@ -33,10 +37,21 @@ impl LuaDocLexer<'_> {
         }
     }
 
+    pub fn is_invalid(&self) -> bool {
+        match self.reader {
+            Some(ref reader) => reader.is_eof(),
+            None => true,
+        }
+    }
+
     pub fn reset(&mut self, kind: LuaTokenKind, range: SourceRange) {
         self.reader = Some(Reader::new_with_range(self.origin_text, range));
         self.origin_token_kind = kind;
         self.state = LuaDocLexerState::Init;
+    }
+
+    pub fn get_reader(&self) -> Option<&Reader> {
+        self.reader.as_ref()
     }
 
     #[allow(unused)]
@@ -57,8 +72,14 @@ impl LuaDocLexer<'_> {
             LuaDocLexerState::Trivia => self.lex_trivia(),
             LuaDocLexerState::See => self.lex_see(),
             LuaDocLexerState::Version => self.lex_version(),
+            LuaDocLexerState::Source => self.lex_source(),
+            LuaDocLexerState::Namespace => self.lex_namespace(),
             _ => LuaTokenKind::None,
         }
+    }
+
+    pub fn current_token_range(&self) -> SourceRange {
+        self.reader.as_ref().unwrap().saved_range()
     }
 
     fn lex_init(&mut self) -> LuaTokenKind {
@@ -93,7 +114,7 @@ impl LuaDocLexer<'_> {
                             }
                             '|' => {
                                 reader.bump();
-                                LuaTokenKind::TkDocEnumField
+                                LuaTokenKind::TkDocContinueOr
                             }
                             _ => LuaTokenKind::TkNormalStart,
                         }
@@ -295,6 +316,10 @@ impl LuaDocLexer<'_> {
                                 reader.bump();
                                 LuaTokenKind::TkDocStart
                             }
+                            '|' => {
+                                reader.bump();
+                                LuaTokenKind::TkDocContinueOr
+                            }
                             _ => LuaTokenKind::TkDocContinue,
                         }
                     }
@@ -362,10 +387,57 @@ impl LuaDocLexer<'_> {
                 reader.eat_while(is_doc_name_continue);
                 let text = reader.current_saved_text();
                 match text {
-                    "JIT" | "beta" | "rc" | "release" => LuaTokenKind::TkVersionNumber,
+                    "JIT" => LuaTokenKind::TkVersionNumber,
                     _ => LuaTokenKind::TkName,
                 }
             },
+            _ => {
+                reader.eat_while(|_| true);
+                LuaTokenKind::TkDocTrivia
+            }
+        }
+    }
+
+    fn lex_source(&mut self) -> LuaTokenKind {
+        let reader = self.reader.as_mut().unwrap();
+        match reader.current_char() {
+            ch if is_doc_whitespace(ch) => {
+                reader.eat_while(is_doc_whitespace);
+                LuaTokenKind::TkWhitespace
+            }
+            ch if is_name_start(ch) => {
+                reader.bump();
+                reader.eat_while(is_source_continue);
+                LuaTokenKind::TKDocPath
+            }
+            ch if ch == '"' || ch == '\'' => {
+                reader.bump();
+                reader.eat_while(|c| c != '\'' && c != '"');
+                if reader.current_char() == '\'' || reader.current_char() == '"' {
+                    reader.bump();
+                }
+
+                LuaTokenKind::TKDocPath
+            }
+            _ => {
+                reader.eat_while(|_| true);
+                LuaTokenKind::TkDocTrivia
+            }
+        }
+    }
+
+    fn lex_namespace(&mut self) -> LuaTokenKind {
+        let reader = self.reader.as_mut().unwrap();
+        match reader.current_char() {
+            ch if is_doc_whitespace(ch) => {
+                reader.eat_while(is_doc_whitespace);
+                LuaTokenKind::TkWhitespace
+            }
+            ch if is_name_start(ch) => {
+                reader.bump();
+                reader.eat_while(is_namespace_continue);
+                LuaTokenKind::TkName
+            }
             _ => {
                 reader.eat_while(|_| true);
                 LuaTokenKind::TkDocTrivia
@@ -436,4 +508,12 @@ fn is_doc_whitespace(ch: char) -> bool {
 
 fn is_doc_name_continue(ch: char) -> bool {
     is_name_continue(ch) || ch == '.' || ch == '-' || ch == '*'
+}
+
+fn is_source_continue(ch: char) -> bool {
+    is_name_continue(ch) || ch == '.' || ch == '-'|| ch == '/' || ch == ' '
+}
+
+fn is_namespace_continue(ch: char) -> bool {
+    is_name_continue(ch) || ch == '.'
 }

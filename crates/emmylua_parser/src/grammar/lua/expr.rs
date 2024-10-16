@@ -149,7 +149,7 @@ fn parse_field(p: &mut LuaParser) -> ParseResult {
         expect_token(p, LuaTokenKind::TkAssign)?;
         parse_expr(p)?;
     } else if p.current_token() == LuaTokenKind::TkName {
-        if p.next_token() == LuaTokenKind::TkAssign {
+        if p.peek_next_token() == LuaTokenKind::TkAssign {
             m.set_kind(p, LuaSyntaxKind::TableFieldAssign);
             p.bump();
             p.bump();

@@ -103,7 +103,7 @@ impl<'a> LuaParser<'a> {
     }
 
     pub fn bump(&mut self) {
-        if !is_trivia_kind(self.current_token) && self.token_index < self.tokens.len() {
+        if !is_invalid_kind(self.current_token) && self.token_index < self.tokens.len() {
             let token = &self.tokens[self.token_index];
             self.events.push(MarkEvent::EatToken {
                 kind: token.kind,
@@ -128,7 +128,7 @@ impl<'a> LuaParser<'a> {
         self.current_token = self.tokens[self.token_index].kind;
     }
 
-    pub fn next_token(&self) -> LuaTokenKind {
+    pub fn peek_next_token(&self) -> LuaTokenKind {
         let mut next_index = self.token_index + 1;
         self.skip_trivia(&mut next_index);
 
@@ -261,5 +261,12 @@ fn is_trivia_kind(kind: LuaTokenKind) -> bool {
             | LuaTokenKind::TkEndOfLine
             | LuaTokenKind::TkWhitespace
             | LuaTokenKind::TkShebang
+    )
+}
+
+fn is_invalid_kind(kind: LuaTokenKind) -> bool {
+    matches!(
+        kind,
+        LuaTokenKind::None | LuaTokenKind::TkEof
     )
 }

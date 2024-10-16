@@ -3,6 +3,7 @@ use std::str::Chars;
 use super::text_range::SourceRange;
 pub const EOF: char = '\0';
 
+#[derive(Debug, Clone)]
 pub struct Reader<'a> {
     text: &'a str,
     valid_range: SourceRange,
