@@ -1,5 +1,3 @@
-use std::io::Error;
-
 use stat::parse_stats;
 
 use crate::{

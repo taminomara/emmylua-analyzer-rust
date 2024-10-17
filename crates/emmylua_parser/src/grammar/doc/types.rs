@@ -41,7 +41,10 @@ fn parse_sub_type(p: &mut LuaDocParser, limit: i32) -> ParseResult {
         match parse_sub_type(p, 0) {
             Ok(_) => {}
             Err(err) => {
-                m.fail(p, "unary operator not followed by type", range);
+                p.push_error(LuaParseError::from_source_range(
+                    "unary operator not followed by type",
+                    range,
+                ));
                 return Err(err);
             }
         }
@@ -58,7 +61,11 @@ fn parse_sub_type(p: &mut LuaDocParser, limit: i32) -> ParseResult {
         match parse_sub_type(p, bop.get_priority().right) {
             Ok(_) => {}
             Err(err) => {
-                m.fail(p, "binary operator not followed by type", range);
+                p.push_error(LuaParseError::from_source_range(
+                    "binary operator not followed by type",
+                    range,
+                ));
+
                 return Err(err);
             }
         }
@@ -134,7 +141,8 @@ fn parse_typed_field(p: &mut LuaDocParser) -> ParseResult {
         }
         LuaTokenKind::TkLeftBracket => {
             p.bump();
-            if p.current_token() == LuaTokenKind::TkInt || p.current_token() == LuaTokenKind::TkString
+            if p.current_token() == LuaTokenKind::TkInt
+                || p.current_token() == LuaTokenKind::TkString
             {
                 p.bump();
             } else {

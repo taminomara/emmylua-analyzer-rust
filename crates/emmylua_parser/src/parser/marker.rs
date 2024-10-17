@@ -10,10 +10,6 @@ pub enum MarkEvent {
         kind: LuaTokenKind,
         range: SourceRange,
     },
-    Error {
-        message: String,
-        range: SourceRange,
-    },
     NodeEnd,
 }
 
@@ -80,16 +76,6 @@ impl Marker {
             start: self.position,
             finish,
             kind,
-        }
-    }
-
-    pub fn fail<P: MarkerEventContainer>(self, p: &mut P, message: &str, range: SourceRange) {
-        match &mut p.get_events()[self.position] {
-            MarkEvent::NodeStart { .. } => {
-                p.get_events().push(MarkEvent::Error { message: message.to_string(), range });
-                p.push_node_end();
-            }
-            _ => unreachable!(),
         }
     }
 

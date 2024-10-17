@@ -39,7 +39,12 @@ pub fn parse_stats(p: &mut LuaParser) {
 
     let m = p.mark(LuaSyntaxKind::UnknownStat);
     p.bump();
-    m.fail(p, "unexpected token", p.current_token_range());
+    p.push_error(LuaParseError::from_source_range(
+        "unexpected token",
+        p.current_token_range(),
+    ));
+
+    m.complete(p);
 }
 
 fn block_follow(p: &LuaParser) -> bool {
@@ -332,14 +337,20 @@ fn parse_assign_or_expr_stat(p: &mut LuaParser) -> ParseResult {
     }
 
     if cm.kind != LuaSyntaxKind::NameExpr && cm.kind != LuaSyntaxKind::IndexExpr {
-        return Err(LuaParseError::from_source_range("unexpected expr for varList", range));
+        return Err(LuaParseError::from_source_range(
+            "unexpected expr for varList",
+            range,
+        ));
     }
 
     while p.current_token() == LuaTokenKind::TkComma {
         p.bump();
         cm = parse_expr(p)?;
         if cm.kind != LuaSyntaxKind::NameExpr && cm.kind != LuaSyntaxKind::IndexExpr {
-            return Err(LuaParseError::from_source_range("unexpected expr for varList", range));
+            return Err(LuaParseError::from_source_range(
+                "unexpected expr for varList",
+                range,
+            ));
         }
     }
 

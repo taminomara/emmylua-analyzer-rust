@@ -20,7 +20,10 @@ fn parse_sub_expr(p: &mut LuaParser, limit: i32) -> ParseResult {
         match parse_sub_expr(p, UNARY_PRIORITY) {
             Ok(_) => {}
             Err(err) => {
-                m.fail(p, "unary operator not followed by expression", range);
+                p.push_error(LuaParseError::from_source_range(
+                    "unary operator not followed by expression",
+                    range,
+                ));
                 return Err(err);
             }
         }
@@ -37,7 +40,11 @@ fn parse_sub_expr(p: &mut LuaParser, limit: i32) -> ParseResult {
         match parse_sub_expr(p, bop.get_priority().right) {
             Ok(_) => {}
             Err(err) => {
-                m.fail(p, "binary operator not followed by expression", range);
+                p.push_error(LuaParseError::from_source_range(
+                    "binary operator not followed by expression",
+                    range,
+                ));
+
                 return Err(err);
             }
         }

@@ -251,6 +251,10 @@ impl<'a> LuaParser<'a> {
             });
         }
     }
+
+    pub fn push_error(&mut self, err: LuaParseError) {
+        self.errors.push(err);
+    }
 }
 
 fn is_trivia_kind(kind: LuaTokenKind) -> bool {
