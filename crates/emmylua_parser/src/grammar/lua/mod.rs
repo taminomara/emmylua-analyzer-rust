@@ -14,7 +14,7 @@ mod expr;
 mod stat;
 
 pub fn parse_chunk(p: &mut LuaParser) {
-    let m = p.mark(LuaSyntaxKind::Source);
+    let m = p.mark(LuaSyntaxKind::Block);
 
     while p.current_token() != LuaTokenKind::TkEof {
         parse_stats(p);

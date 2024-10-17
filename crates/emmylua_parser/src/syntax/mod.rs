@@ -1,10 +1,12 @@
 mod gen;
-mod lua_syntax_tree;
+
+mod tree;
+mod node;
 
 use rowan::Language;
 
 use crate::kind::LuaKind;
-pub use lua_syntax_tree::LuaSyntaxTree;
+pub use tree::{LuaSyntaxTree, LuaTreeBuilder};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct LuaLanguage;

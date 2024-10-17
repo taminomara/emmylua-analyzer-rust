@@ -63,7 +63,7 @@ fn parse_docs(p: &mut LuaDocParser) {
 }
 
 fn parse_description(p: &mut LuaDocParser) {
-    let m = p.mark(LuaSyntaxKind::Description);
+    let m = p.mark(LuaSyntaxKind::DocDescription);
 
     while p.current_token() == LuaTokenKind::TkDocDetail {
         p.bump();

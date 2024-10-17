@@ -1,3 +1,5 @@
+use super::PriorityTable;
+
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum UnaryOperator {
     OpNot,  // not
@@ -33,11 +35,6 @@ pub enum BinaryOperator {
     OpNop,    // (empty)
 }
 
-#[derive(Debug)]
-pub struct PriorityTable {
-    pub left: i32,
-    pub right: i32,
-}
 
 pub const PRIORITY: [PriorityTable; 21] = [
     PriorityTable {

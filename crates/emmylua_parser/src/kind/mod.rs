@@ -2,12 +2,14 @@ pub use lua_operator_kind::{BinaryOperator, UnaryOperator, UNARY_PRIORITY};
 pub use lua_syntax_kind::LuaSyntaxKind;
 pub use lua_token_kind::LuaTokenKind;
 pub use lua_language_level::LuaLanguageLevel;
+pub use lua_type_operator_kind::{LuaTypeBinaryOperator, LuaTypeTernaryOperator, LuaTypeUnaryOperator};
 
 mod lua_operator_kind;
 mod lua_syntax_kind;
 mod lua_token_kind;
 mod lua_visibility_kind;
 mod lua_language_level;
+mod lua_type_operator_kind;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u16)]
@@ -71,11 +73,20 @@ impl LuaKind {
     }
 }
 
+#[derive(Debug)]
+pub struct PriorityTable {
+    pub left: i32,
+    pub right: i32,
+}
+
 #[derive(Debug, PartialEq)]
 pub enum LuaOpKind {
     None,
     Unary(UnaryOperator),
     Binary(BinaryOperator),
+    TypeUnary(LuaTypeUnaryOperator),
+    TypeBinary(LuaTypeBinaryOperator),
+    TypeTernary(LuaTypeTernaryOperator),
 }
 
 impl From<UnaryOperator> for LuaOpKind {
@@ -90,21 +101,21 @@ impl From<BinaryOperator> for LuaOpKind {
     }
 }
 
-impl Into<UnaryOperator> for LuaOpKind {
-    fn into(self) -> UnaryOperator {
-        match self {
-            LuaOpKind::Unary(op) => op,
-            _ => UnaryOperator::OpNop,
-        }
+impl From<LuaTypeUnaryOperator> for LuaOpKind {
+    fn from(op: LuaTypeUnaryOperator) -> Self {
+        LuaOpKind::TypeUnary(op)
     }
 }
 
-impl Into<BinaryOperator> for LuaOpKind {
-    fn into(self) -> BinaryOperator {
-        match self {
-            LuaOpKind::Binary(op) => op,
-            _ => BinaryOperator::OpNop,
-        }
+impl From<LuaTypeBinaryOperator> for LuaOpKind {
+    fn from(op: LuaTypeBinaryOperator) -> Self {
+        LuaOpKind::TypeBinary(op)
+    }
+}
+
+impl From<LuaTypeTernaryOperator> for LuaOpKind {
+    fn from(op: LuaTypeTernaryOperator) -> Self {
+        LuaOpKind::TypeTernary(op)
     }
 }
 
@@ -145,4 +156,22 @@ impl LuaOpKind {
             _ => BinaryOperator::OpNop,
         }
     }
+
+    pub fn to_type_unary_operator(kind: LuaTokenKind) -> LuaTypeUnaryOperator {
+        match kind {
+            LuaTokenKind::TkDocKeyOf => LuaTypeUnaryOperator::Keyof,
+            _ => LuaTypeUnaryOperator::None,
+        }
+    }
+
+    pub fn to_type_binary_operator(kind: LuaTokenKind) -> LuaTypeBinaryOperator {
+        match kind {
+            LuaTokenKind::TkDocContinueOr | LuaTokenKind::TkDocOr => LuaTypeBinaryOperator::Union,
+            LuaTokenKind::TkDocAnd => LuaTypeBinaryOperator::Intersection,
+            LuaTokenKind::TkIn => LuaTypeBinaryOperator::In,
+            LuaTokenKind::TkDocExtends => LuaTypeBinaryOperator::Extends,
+            _ => LuaTypeBinaryOperator::None,
+        }
+    }
 }
+

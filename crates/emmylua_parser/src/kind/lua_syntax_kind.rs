@@ -1,10 +1,9 @@
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u16)]
 pub enum LuaSyntaxKind {
     None,
     // source
-    Source,
+    Chunk,
 
     // block
     Block,
@@ -54,51 +53,43 @@ pub enum LuaSyntaxKind {
     Comment,
 
     // doc tag
-    DocClass,
-    DocEnum,
-    DocInterface,
-    DocAlias,
-    DocField,
-    DocEnumField,
-    DocType,
-    DocParam,
-    DocReturn,
-    DocGeneric,
-    DocSee,
-    DocDeprecated,
-    DocCast,
-    DocOverload,
-    DocAsync,
-    DocVisibility,
-    DocMeta,
-    DocOther,
-    DocDiagnostic,
-    DocVersion,
-    DocAs,
-    DocNodiscard,
-    DocOperator,
-    DocModule,
-    DocMapping,
-    DocNamespace,
-    DocUsing,
-    DocSource,
-    DocReadonly,
-
-    // doc other
-    DocDetailField,
-    DocContinueOrField,
+    DocTagClass,
+    DocTagEnum,
+    DocTagInterface,
+    DocTagAlias,
+    DocTagField,
+    DocTagEnumField,
+    DocTagType,
+    DocTagParam,
+    DocTagReturn,
+    DocTagGeneric,
+    DocTagSee,
+    DocTagDeprecated,
+    DocTagCast,
+    DocTagOverload,
+    DocTagAsync,
+    DocTagVisibility,
+    DocTagMeta,
+    DocTagOther,
+    DocTagDiagnostic,
+    DocTagVersion,
+    DocTagAs,
+    DocTagNodiscard,
+    DocTagOperator,
+    DocTagModule,
+    DocTagMapping,
+    DocTagNamespace,
+    DocTagUsing,
+    DocTagSource,
+    DocTagReadonly,
 
     // doc Type
     TypeArray,          // baseType []
-    TypeUnion,          // aType | bType
-    TypeIntersection,   // aType & bType
-    TypeKeyOf,          // keyof type
-    TypeExtends,        // aType extends bType
-    TypeIn,             // aType in bType
-    TypeConditional,    // conditionType ? trueType : falseType
+    TypeUnary,          // keyof type
+    TypeBinary,         // aType | bType, aType & bType, aType extends bType, aType in bType
+    TypeConditional,    // <conditionType> and <trueType> or <falseType>
     TypeIndexAccess,    // type[keyType]
     TypeMapped,         // { [p in KeyType]+? : ValueType }
-    TypeMappedKeys,     // [p in KeyType]?
     TypeFun,            // fun(<paramList>): returnType
     TypeGeneric,        // name<typeList>
     TypeTuple,          // [typeList]
@@ -106,22 +97,26 @@ pub enum LuaSyntaxKind {
     TypeParen,  // (type)
     TypeLiteral, // "string" or <integer> or true or false
     TypeName,   // name
-    TypeVariadic, // ...type
     TypeExpand, // type...
     TypeStringTemplate, // prefixName.`T`
     TypeMatch,  // not support now
+    TypeNullable, // <Type>?
 
+    // doc other
+    DocTypedField,
+    DocContinueOrField,
     // doc parameter
-    TypedParameter,
-    GenericParameter,
-    GenericDeclareList,
-    DiagnosticNameList,
-    TypeList,
+    DocTypedParameter,
+    DocGenericParameter,
+    DocGenericDeclareList,
+    DocDiagnosticNameList,
+    DocTypeList,
     DocAttribute,
     DocOpType, // +<type>, -<type>, +?
+    DocMappedKeys,     // [p in KeyType]?
     // start with '#' or '@'
-    Description,
+    DocDescription,
 
     // [<|>] [<framework>] <version>, <version> can be '5.1', '5.2', '5.3', '5.4', 'JIT', <framework> can be 'openresty'
-    Version,
+    DocVersion,
 }

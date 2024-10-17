@@ -1,6 +1,7 @@
 use crate::{kind::{LuaSyntaxKind, LuaTokenKind}, text::SourceRange};
 
-pub(crate) enum MarkEvent {
+#[derive(Debug, Clone)]
+pub enum MarkEvent {
     NodeStart {
         kind: LuaSyntaxKind,
         parent: usize,

@@ -1,5 +1,9 @@
 use crate::{
-    grammar::parse_comment, kind::LuaTokenKind, lexer::{LuaDocLexer, LuaDocLexerState, LuaTokenData}, parser_error::LuaParseError, text::SourceRange
+    grammar::parse_comment,
+    kind::LuaTokenKind,
+    lexer::{LuaDocLexer, LuaDocLexerState, LuaTokenData},
+    parser_error::LuaParseError,
+    text::SourceRange,
 };
 
 use super::{LuaParser, MarkEvent, MarkerEventContainer};
@@ -151,6 +155,13 @@ impl LuaDocParser<'_, '_> {
         self.current_token_range
     }
 
+    pub fn current_token_text(&self) -> &str {
+        let source_text = self.lua_parser.origin_text();
+        let range = self.current_token_range;
+        &source_text[range.start_offset..range.end_offset()]
+    }
+
+    #[allow(unused)]
     pub fn peek_next_token(&mut self) -> LuaTokenKind {
         let current_origin_index = self.origin_token_index;
         let current_token = self.current_token;
@@ -167,6 +178,32 @@ impl LuaDocParser<'_, '_> {
     }
 
     pub fn set_state(&mut self, state: LuaDocLexerState) {
+        match state {
+            LuaDocLexerState::Description => {
+                if !matches!(
+                    self.current_token,
+                    LuaTokenKind::TkWhitespace
+                        | LuaTokenKind::TkEndOfLine
+                        | LuaTokenKind::TkEof
+                        | LuaTokenKind::TkDocContinueOr
+                ) {
+                    self.current_token = LuaTokenKind::TkDocDetail;
+                }
+            }
+            LuaDocLexerState::Trivia => {
+                if !matches!(
+                    self.current_token,
+                    LuaTokenKind::TkWhitespace
+                        | LuaTokenKind::TkEndOfLine
+                        | LuaTokenKind::TkEof
+                        | LuaTokenKind::TkDocContinueOr
+                ) {
+                    self.current_token = LuaTokenKind::TkDocTrivia;
+                }
+            }
+            _ => {}
+        }
+
         self.lexer.state = state;
     }
 

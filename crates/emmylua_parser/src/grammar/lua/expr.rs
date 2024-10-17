@@ -1,7 +1,7 @@
 use crate::{
     grammar::ParseResult,
     kind::{BinaryOperator, LuaOpKind, LuaSyntaxKind, LuaTokenKind, UnaryOperator, UNARY_PRIORITY},
-    parser::{CompleteMarker, LuaParser, MarkerEventContainer},
+    parser::{LuaParser, MarkerEventContainer},
     parser_error::LuaParseError,
 };
 
@@ -14,7 +14,7 @@ pub fn parse_expr(p: &mut LuaParser) -> ParseResult {
 fn parse_sub_expr(p: &mut LuaParser, limit: i32) -> ParseResult {
     let mut m = p.mark(LuaSyntaxKind::UnaryExpr);
     let uop = LuaOpKind::to_unary_operator(p.current_token());
-    if uop != UnaryOperator::OpNop {
+    let mut cm = if uop != UnaryOperator::OpNop {
         let range = p.current_token_range();
         p.bump();
         match parse_sub_expr(p, UNARY_PRIORITY) {
@@ -24,10 +24,11 @@ fn parse_sub_expr(p: &mut LuaParser, limit: i32) -> ParseResult {
                 return Err(err);
             }
         }
-        return Ok(m.complete(p));
-    }
+        m.complete(p)
+    } else {
+        parse_simple_expr(p)?
+    };
 
-    let mut cm = parse_simple_expr(p)?;
     let mut bop = LuaOpKind::to_binary_operator(p.current_token());
     while bop != BinaryOperator::OpNop && bop.get_priority().left > limit {
         let range = p.current_token_range();

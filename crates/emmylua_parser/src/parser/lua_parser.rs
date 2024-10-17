@@ -1,10 +1,5 @@
 use crate::{
-    grammar::parse_chunk,
-    kind::LuaTokenKind,
-    lexer::{LuaLexer, LuaTokenData},
-    parser_error::LuaParseError,
-    text::SourceRange,
-    LuaSyntaxTree,
+    grammar::parse_chunk, kind::LuaTokenKind, lexer::{LuaLexer, LuaTokenData}, parser_error::LuaParseError, text::{LineIndex, SourceRange}, LuaSyntaxNode, LuaSyntaxTree, LuaTreeBuilder
 };
 
 use super::{
@@ -66,7 +61,11 @@ impl<'a> LuaParser<'a> {
 
         parse_chunk(&mut parser);
 
-        LuaSyntaxTree {}
+        let mut builder = LuaTreeBuilder::new(parser.origin_text(), parser.events);
+        builder.build();
+        let root = builder.finish();
+        let line_index = LineIndex::parse(text);
+        LuaSyntaxTree::new(root, line_index)
     }
 
     fn init(&mut self) {
@@ -97,6 +96,7 @@ impl<'a> LuaParser<'a> {
         self.tokens[self.token_index].range
     }
 
+    #[allow(unused)]
     pub fn current_token_text(&self) -> &str {
         let range = &self.tokens[self.token_index].range;
         &self.text[range.start_offset..range.end_offset()]

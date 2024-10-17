@@ -1,7 +1,7 @@
 use rowan::TextRange;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct SourceRange {
+pub struct SourceRange {
     pub start_offset: usize,
     pub length: usize,
 }
