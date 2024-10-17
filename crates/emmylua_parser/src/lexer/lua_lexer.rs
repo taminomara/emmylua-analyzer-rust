@@ -529,3 +529,27 @@ impl LuaLexer<'_> {
         LuaTokenKind::TkFloat
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    // many bug need fixed
+    #[test]
+    fn test_tokenize() {
+        let text = r#"
+            -- This is a comment
+            local x = 42
+            print(x)
+        "#;
+        let config = LexerConfig::default();
+        let mut errors: Vec<LuaParseError> = Vec::new();
+        let mut lexer = LuaLexer::new(text, config, &mut errors);
+        let tokens = lexer.tokenize();
+
+        for token in tokens {
+            println!("{:?}", token);
+        }
+
+        assert!(errors.is_empty());
+    }
+}

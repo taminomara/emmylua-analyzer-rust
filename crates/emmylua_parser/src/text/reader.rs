@@ -20,14 +20,16 @@ impl<'a> Reader<'a> {
 
     pub fn new_with_range(text: &'a str, range: SourceRange) -> Self {
         let text = text[range.start_offset..range.length].as_ref();
-        Self {
+        let mut reader = Self {
             text,
             valid_range: range,
             chars: text.chars(),
             buffer_byte_pos: 0,
             buffer_byte_len: 0,
             current: EOF
-        }
+        };
+        reader.bump();
+        reader
     }
 
     pub fn bump(&mut self) {

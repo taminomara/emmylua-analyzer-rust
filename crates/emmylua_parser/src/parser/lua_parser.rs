@@ -40,7 +40,7 @@ impl MarkerEventContainer for LuaParser<'_> {
 
 impl<'a> LuaParser<'a> {
     #[allow(unused)]
-    fn parse(text: &'a str, config: ParserConfig) -> LuaSyntaxTree {
+    pub fn parse(text: &'a str, config: ParserConfig) -> LuaSyntaxTree {
         let mut errors: Vec<LuaParseError> = Vec::new();
         let tokens = {
             let mut lexer = LuaLexer::new(text, config.lexer_config(), &mut errors);
