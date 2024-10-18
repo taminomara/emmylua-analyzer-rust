@@ -21,7 +21,7 @@ impl<'a> Reader<'a> {
     }
 
     pub fn new_with_range(text: &'a str, range: SourceRange) -> Self {
-        let text = text[range.start_offset..range.length].as_ref();
+        let text = text[range.start_offset..range.end_offset()].as_ref();
         Self {
             text,
             valid_range: range,

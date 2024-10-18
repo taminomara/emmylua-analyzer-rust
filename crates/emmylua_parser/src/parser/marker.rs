@@ -44,7 +44,7 @@ pub(crate) trait MarkerEventContainer {
 
     fn push_node_end(&mut self) {
         self.decr_mark_level();
-        self.get_events().push(MarkEvent::none());
+        self.get_events().push(MarkEvent::NodeEnd);
     }
 }
 

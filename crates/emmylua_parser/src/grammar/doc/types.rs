@@ -33,10 +33,10 @@ pub fn parse_type(p: &mut LuaDocParser) -> ParseResult {
 // keyof <type>
 // <type> | <type> , <type> & <type>, <type> extends <type>, <type> in keyof <type>
 fn parse_sub_type(p: &mut LuaDocParser, limit: i32) -> ParseResult {
-    let m = p.mark(LuaSyntaxKind::TypeUnary);
     let uop = LuaOpKind::to_type_unary_operator(p.current_token());
     let mut cm = if uop != LuaTypeUnaryOperator::None {
         let range = p.current_token_range();
+        let m = p.mark(LuaSyntaxKind::TypeUnary);
         p.bump();
         match parse_sub_type(p, 0) {
             Ok(_) => {}

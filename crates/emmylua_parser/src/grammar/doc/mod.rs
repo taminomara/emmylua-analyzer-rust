@@ -1,5 +1,6 @@
 mod tag;
 mod types;
+mod test;
 
 use tag::{parse_long_tag, parse_tag};
 use types::parse_type;
@@ -7,7 +8,8 @@ use types::parse_type;
 use crate::{
     kind::{LuaSyntaxKind, LuaTokenKind},
     lexer::LuaDocLexerState,
-    parser::{LuaDocParser, MarkerEventContainer}, parser_error::LuaParseError,
+    parser::{LuaDocParser, MarkerEventContainer},
+    parser_error::LuaParseError,
 };
 
 pub fn parse_comment(p: &mut LuaDocParser) {
@@ -32,8 +34,8 @@ fn parse_docs(p: &mut LuaDocParser) {
                 parse_long_tag(p);
             }
             LuaTokenKind::TkNormalStart | LuaTokenKind::TkLongCommentStart => {
-                p.set_state(LuaDocLexerState::Description);
                 p.bump();
+                p.set_state(LuaDocLexerState::Description);
                 parse_description(p);
             }
             LuaTokenKind::TkDocContinueOr => {
@@ -70,7 +72,6 @@ fn parse_description(p: &mut LuaDocParser) {
     m.complete(p);
 }
 
-
 fn expect_token(p: &mut LuaDocParser, token: LuaTokenKind) -> Result<(), LuaParseError> {
     if p.current_token() == token {
         p.bump();
@@ -97,7 +98,7 @@ fn if_token_bump(p: &mut LuaDocParser, token: LuaTokenKind) -> bool {
 // ---| string.CS.AAA # HELLO
 fn parse_continue_or(p: &mut LuaDocParser) {
     let m = p.mark(LuaSyntaxKind::DocContinueOrField);
-    
+
     match parse_type(p) {
         Ok(_) => {}
         Err(err) => {

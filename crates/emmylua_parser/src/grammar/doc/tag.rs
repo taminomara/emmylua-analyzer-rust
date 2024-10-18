@@ -12,10 +12,15 @@ use super::{
 };
 
 pub fn parse_tag(p: &mut LuaDocParser) {
+    let level = p.get_mark_level();
     match parse_tag_detail(p) {
         Ok(_) => {}
         Err(error) => {
             p.push_error(error);
+            let current_level = p.get_mark_level();
+            for _ in 0..(current_level - level) {
+                p.push_node_end();
+            }
         }
     }
 }
@@ -74,6 +79,7 @@ fn parse_tag_simple(p: &mut LuaDocParser, kind: LuaSyntaxKind) -> ParseResult {
 fn parse_tag_class(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagClass);
+    p.bump();
     if p.current_token() == LuaTokenKind::TkLeftParen {
         parse_tag_attribute(p)?;
     }
@@ -138,6 +144,7 @@ fn parse_generic_param(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_enum(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagEnum);
+    p.bump();
     if p.current_token() == LuaTokenKind::TkLeftParen {
         parse_tag_attribute(p)?;
     }
@@ -157,6 +164,7 @@ fn parse_tag_enum(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_alias(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagAlias);
+    p.bump();
     expect_token(p, LuaTokenKind::TkName)?;
     if p.current_token() == LuaTokenKind::TkLt {
         parse_generic_decl_list(p)?;
@@ -174,6 +182,7 @@ fn parse_tag_alias(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_module(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagModule);
+    p.bump();
     if p.current_token() == LuaTokenKind::TkName || p.current_token() == LuaTokenKind::TkString {
         p.bump();
     }
@@ -190,6 +199,7 @@ fn parse_tag_module(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_field(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::FieldStart);
     let m = p.mark(LuaSyntaxKind::DocTagField);
+    p.bump();
     if p.current_token() == LuaTokenKind::TkLeftParen {
         parse_tag_attribute(p)?;
     }
@@ -229,6 +239,7 @@ fn parse_tag_field(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_type(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagType);
+    p.bump();
     parse_type(p)?;
     while p.current_token() == LuaTokenKind::TkComma {
         p.bump();
@@ -246,7 +257,7 @@ fn parse_tag_type(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_param(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagParam);
-
+    p.bump();
     if matches!(
         p.current_token(),
         LuaTokenKind::TkName | LuaTokenKind::TkDots
@@ -270,6 +281,7 @@ fn parse_tag_param(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_return(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagReturn);
+    p.bump();
     parse_type(p)?;
     if_token_bump(p, LuaTokenKind::TkName);
 
@@ -290,6 +302,7 @@ fn parse_tag_return(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_generic(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagGeneric);
+    p.bump();
     expect_token(p, LuaTokenKind::TkName)?;
     if p.current_token() == LuaTokenKind::TkLt {
         parse_generic_decl_list(p)?;
@@ -305,6 +318,7 @@ fn parse_tag_generic(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_see(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::See);
     let m = p.mark(LuaSyntaxKind::DocTagSee);
+    p.bump();
     expect_token(p, LuaTokenKind::TkName)?;
     while p.current_token() == LuaTokenKind::TkLen {
         p.bump();
@@ -321,6 +335,7 @@ fn parse_tag_see(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_as(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagAs);
+    p.bump();
     parse_type(p)?;
     p.set_state(LuaDocLexerState::Description);
     parse_description(p);
@@ -332,6 +347,7 @@ fn parse_tag_as(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_overload(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagOverload);
+    p.bump();
     parse_fun_type(p)?;
     p.set_state(LuaDocLexerState::Description);
     parse_description(p);
@@ -346,6 +362,7 @@ fn parse_tag_overload(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_cast(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagCast);
+    p.bump();
     expect_token(p, LuaTokenKind::TkName)?;
 
     parse_op_type(p)?;
@@ -363,6 +380,7 @@ fn parse_tag_cast(p: &mut LuaDocParser) -> ParseResult {
 fn parse_op_type(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocOpType);
+    p.bump();
     if p.current_token() == LuaTokenKind::TkPlus || p.current_token() == LuaTokenKind::TkMinus {
         p.bump();
         if p.current_token() == LuaTokenKind::TkDocQuestion {
@@ -383,6 +401,7 @@ fn parse_tag_source(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Source);
 
     let m = p.mark(LuaSyntaxKind::DocTagSource);
+    p.bump();
     expect_token(p, LuaTokenKind::TKDocPath)?;
 
     Ok(m.complete(p))
@@ -392,6 +411,7 @@ fn parse_tag_source(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_diagnostic(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagDiagnostic);
+    p.bump();
     expect_token(p, LuaTokenKind::TkName)?;
     if p.current_token() == LuaTokenKind::TkColon {
         p.bump();
@@ -414,6 +434,7 @@ fn parse_tag_diagnostic(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_version(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Version);
     let m = p.mark(LuaSyntaxKind::DocTagVersion);
+    p.bump();
     parse_version(p)?;
     while p.current_token() == LuaTokenKind::TkComma {
         p.bump();
@@ -446,6 +467,7 @@ fn parse_version(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_operator(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagOperator);
+    p.bump();
     expect_token(p, LuaTokenKind::TkName)?;
     if p.current_token() == LuaTokenKind::TkLeftParen {
         p.bump();
@@ -467,6 +489,7 @@ fn parse_tag_operator(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_mapping(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagMapping);
+    p.bump();
     expect_token(p, LuaTokenKind::TkName)?;
     p.set_state(LuaDocLexerState::Description);
     parse_description(p);
@@ -478,6 +501,7 @@ fn parse_tag_mapping(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_namespace(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Namespace);
     let m = p.mark(LuaSyntaxKind::DocTagNamespace);
+    p.bump();
     expect_token(p, LuaTokenKind::TkName)?;
     Ok(m.complete(p))
 }
@@ -486,7 +510,7 @@ fn parse_tag_namespace(p: &mut LuaDocParser) -> ParseResult {
 fn parse_tag_using(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Namespace);
     let m = p.mark(LuaSyntaxKind::DocTagUsing);
+    p.bump();
     expect_token(p, LuaTokenKind::TkName)?;
     Ok(m.complete(p))
 }
-

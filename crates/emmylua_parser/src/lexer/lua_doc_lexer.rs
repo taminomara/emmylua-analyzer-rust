@@ -519,3 +519,21 @@ fn is_source_continue(ch: char) -> bool {
 fn is_namespace_continue(ch: char) -> bool {
     is_name_continue(ch) || ch == '.'
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::kind::LuaTokenKind;
+    use crate::lexer::LuaDocLexer;
+    use crate::text::SourceRange;
+
+    #[test]
+    fn test_lex() {
+        let text = r#"-- comment"#;
+        let mut lexer = LuaDocLexer::new(text);
+        lexer.reset(LuaTokenKind::TkShortComment, SourceRange::new(0, 10));
+        let k1 = lexer.lex();
+        assert_eq!(k1, LuaTokenKind::TkNormalStart);
+        let k2 = lexer.lex();
+        assert_eq!(k2, LuaTokenKind::TkDocTrivia);
+    }
+}

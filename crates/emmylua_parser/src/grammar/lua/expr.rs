@@ -12,9 +12,9 @@ pub fn parse_expr(p: &mut LuaParser) -> ParseResult {
 }
 
 fn parse_sub_expr(p: &mut LuaParser, limit: i32) -> ParseResult {
-    let mut m = p.mark(LuaSyntaxKind::UnaryExpr);
     let uop = LuaOpKind::to_unary_operator(p.current_token());
     let mut cm = if uop != UnaryOperator::OpNop {
+        let m = p.mark(LuaSyntaxKind::UnaryExpr);
         let range = p.current_token_range();
         p.bump();
         match parse_sub_expr(p, UNARY_PRIORITY) {
@@ -35,7 +35,7 @@ fn parse_sub_expr(p: &mut LuaParser, limit: i32) -> ParseResult {
     let mut bop = LuaOpKind::to_binary_operator(p.current_token());
     while bop != BinaryOperator::OpNop && bop.get_priority().left > limit {
         let range = p.current_token_range();
-        m = cm.precede(p, LuaSyntaxKind::BinaryExpr);
+        let m = cm.precede(p, LuaSyntaxKind::BinaryExpr);
         p.bump();
         match parse_sub_expr(p, bop.get_priority().right) {
             Ok(_) => {}

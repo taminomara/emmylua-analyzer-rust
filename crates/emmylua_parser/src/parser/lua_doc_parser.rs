@@ -76,6 +76,10 @@ impl LuaDocParser<'_, '_> {
         self.current_token = token.kind;
         self.current_token_range = token.range;
 
+        if self.current_token == LuaTokenKind::TkEof {
+            return;
+        }
+
         match self.lexer.state {
             LuaDocLexerState::Normal
             | LuaDocLexerState::Description
@@ -114,16 +118,15 @@ impl LuaDocParser<'_, '_> {
         let mut kind = LuaTokenKind::TkEof;
         loop {
             if self.lexer.is_invalid() {
-                if self.origin_token_index >= self.tokens.len() {
-                    return LuaTokenData::new(LuaTokenKind::TkEof, SourceRange::EMPTY);
-                }
-
                 let next_origin_index =
                     if self.origin_token_index == 0 && self.current_token == LuaTokenKind::None {
                         0
                     } else {
                         self.origin_token_index + 1
                     };
+                if next_origin_index >= self.tokens.len() {
+                    return LuaTokenData::new(LuaTokenKind::TkEof, SourceRange::EMPTY);
+                }
 
                 let next_origin_token = self.tokens[next_origin_index];
                 self.origin_token_index = next_origin_index;

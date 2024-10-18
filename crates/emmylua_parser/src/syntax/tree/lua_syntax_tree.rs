@@ -17,7 +17,7 @@ impl LuaSyntaxTree {
         &self.line_index
     }
 
-    pub fn get_root(&self) -> &LuaSyntaxNode {
+    pub fn get_red_root(&self) -> &LuaSyntaxNode {
         &self.root
     }
 }

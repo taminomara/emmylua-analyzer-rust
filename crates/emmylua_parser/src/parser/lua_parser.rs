@@ -126,12 +126,8 @@ impl<'a> LuaParser<'a> {
 
         let mut next_index = self.token_index + 1;
         self.skip_trivia(&mut next_index);
-        if next_index < self.tokens.len() {
-            self.parse_trivia_tokens(next_index);
-            self.token_index = next_index;
-        } else {
-            self.token_index = self.tokens.len();
-        }
+        self.parse_trivia_tokens(next_index);
+        self.token_index = next_index;
 
         if self.token_index >= self.tokens.len() {
             self.current_token = LuaTokenKind::TkEof;
@@ -182,6 +178,16 @@ impl<'a> LuaParser<'a> {
                 }
                 LuaTokenKind::TkEndOfLine => {
                     line_count += 1;
+
+                    if doc_tokens.len() == 0 {
+                        self.events.push(MarkEvent::EatToken {
+                            kind: token.kind,
+                            range: token.range,
+                        });
+                    } else {
+                        doc_tokens.push(token.clone());
+                    }
+
                     // If there are two EOFs after the comment, the previous comment is considered a group of comments
                     if line_count > 1 && doc_tokens.len() > 0 {
                         self.parse_comments(&doc_tokens);
@@ -290,16 +296,25 @@ fn is_trivia_kind(kind: LuaTokenKind) -> bool {
 }
 
 fn is_invalid_kind(kind: LuaTokenKind) -> bool {
-    matches!(kind, LuaTokenKind::None | LuaTokenKind::TkEof)
+    matches!(
+        kind,
+        LuaTokenKind::None
+            | LuaTokenKind::TkEof
+            | LuaTokenKind::TkWhitespace
+            | LuaTokenKind::TkShebang
+            | LuaTokenKind::TkEndOfLine
+            | LuaTokenKind::TkShortComment
+            | LuaTokenKind::TkLongComment
+    )
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{
         grammar::parse_chunk,
-        kind::LuaTokenKind,
+        kind::{LuaSyntaxKind, LuaTokenKind},
         lexer::LuaLexer,
-        parser::{MarkerEventContainer, ParserConfig},
+        parser::{MarkEvent, MarkerEventContainer, ParserConfig},
         parser_error::LuaParseError,
         LuaParser,
     };
@@ -354,6 +369,24 @@ mod tests {
             println!("{:?}", e);
         }
         assert_eq!(parser.has_error(), false);
+
+        let mut level = 0;
+        for e in parser.get_events() {
+            match e {
+                MarkEvent::NodeStart {
+                    kind: LuaSyntaxKind::None,
+                    ..
+                } => {}
+                MarkEvent::NodeStart { kind: _, .. } => {
+                    level += 1;
+                }
+                MarkEvent::NodeEnd => {
+                    level -= 1;
+                }
+                _ => {}
+            }
+        }
+        assert_eq!(level, 0);
     }
 
     #[test]
@@ -383,6 +416,27 @@ mod tests {
         "#;
 
         let tree = LuaParser::parse(lua_code, ParserConfig::default());
-        println!("{:?}", tree.get_root());
+        println!("{:#?}", tree.get_red_root());
+    }
+
+    #[test]
+    fn test_parse_and_ast_with_error() {
+        let lua_code = r#"
+            function foo(a, b)
+                return a + b
+        "#;
+
+        let tree = LuaParser::parse(lua_code, ParserConfig::default());
+        println!("{:#?}", tree.get_red_root());
+    }
+
+    #[test]
+    fn test_parse_comment() {
+        let lua_code = r#"
+            -- comment
+        "#;
+
+        let tree = LuaParser::parse(lua_code, ParserConfig::default());
+        println!("{:#?}", tree.get_red_root());
     }
 }
