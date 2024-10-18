@@ -359,11 +359,9 @@ impl LuaLexer<'_> {
     }
 
     fn lex_new_line(&mut self) -> LuaTokenKind {
-        let mut count = 0;
         while !self.reader.is_eof() {
             let ch = self.reader.current_char();
             if ch == '\n' || ch == '\r' {
-                count += 1;
                 self.reader.bump();
                 if ch == '\r' && self.reader.current_char() == '\n' {
                     self.reader.bump();
@@ -506,7 +504,9 @@ impl LuaLexer<'_> {
                 NumberState::WithExpo => matches!(ch, '0'..='9'),
             };
 
-            if !continue_ {
+            if continue_ {
+                self.reader.bump();
+            } else {
                 break;
             }
         }
@@ -532,12 +532,13 @@ impl LuaLexer<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    // many bug need fixed
+    use super::*;   
+    use crate::kind::LuaTokenKind::*;
+    use crate::text::SourceRange;
+
     #[test]
     fn test_tokenize() {
         let text = r#"
-            -- This is a comment
             local x = 42
             print(x)
         "#;
@@ -546,10 +547,212 @@ mod tests {
         let mut lexer = LuaLexer::new(text, config, &mut errors);
         let tokens = lexer.tokenize();
 
+        let result_tokens = vec![
+            LuaTokenData {
+                kind: TkEndOfLine,
+                range: SourceRange {
+                    start_offset: 0,
+                    length: 1,
+                },
+            },
+            LuaTokenData {
+                kind: TkWhitespace,
+                range: SourceRange {
+                    start_offset: 1,
+                    length: 12,
+                },
+            },
+            LuaTokenData {
+                kind: TkLocal,
+                range: SourceRange {
+                    start_offset: 13,
+                    length: 5,
+                },
+            },
+            LuaTokenData {
+                kind: TkWhitespace,
+                range: SourceRange {
+                    start_offset: 18,
+                    length: 1,
+                },
+            },
+            LuaTokenData {
+                kind: TkName,
+                range: SourceRange {
+                    start_offset: 19,
+                    length: 1,
+                },
+            },
+            LuaTokenData {
+                kind: TkWhitespace,
+                range: SourceRange {
+                    start_offset: 20,
+                    length: 1,
+                },
+            },
+            LuaTokenData {
+                kind: TkAssign,
+                range: SourceRange {
+                    start_offset: 21,
+                    length: 1,
+                },
+            },
+            LuaTokenData {
+                kind: TkWhitespace,
+                range: SourceRange {
+                    start_offset: 22,
+                    length: 1,
+                },
+            },
+            LuaTokenData {
+                kind: TkFloat,
+                range: SourceRange {
+                    start_offset: 23,
+                    length: 2,
+                },
+            },
+            LuaTokenData {
+                kind: TkEndOfLine,
+                range: SourceRange {
+                    start_offset: 25,
+                    length: 1,
+                },
+            },
+            LuaTokenData {
+                kind: TkWhitespace,
+                range: SourceRange {
+                    start_offset: 26,
+                    length: 12,
+                },
+            },
+            LuaTokenData {
+                kind: TkName,
+                range: SourceRange {
+                    start_offset: 38,
+                    length: 5,
+                },
+            },
+            LuaTokenData {
+                kind: TkLeftParen,
+                range: SourceRange {
+                    start_offset: 43,
+                    length: 1,
+                },
+            },
+            LuaTokenData {
+                kind: TkName,
+                range: SourceRange {
+                    start_offset: 44,
+                    length: 1,
+                },
+            },
+            LuaTokenData {
+                kind: TkRightParen,
+                range: SourceRange {
+                    start_offset: 45,
+                    length: 1,
+                },
+            },
+            LuaTokenData {
+                kind: TkEndOfLine,
+                range: SourceRange {
+                    start_offset: 46,
+                    length: 1,
+                },
+            },
+            LuaTokenData {
+                kind: TkWhitespace,
+                range: SourceRange {
+                    start_offset: 47,
+                    length: 7,
+                },
+            },
+        ];
+        
+        assert_eq!(tokens, result_tokens);
+    }
+
+    #[test]
+    fn test_all_lua_token() {
+        let text = r#"#! /usr/bin/env lua
+        local a = 1
+        local b = 2.0
+        local c = 0x3F
+        local d = 0b1010
+        local e = 1.2e3
+        local f = 1.2e-3
+        local g = 0x1.2p3
+        local h = 0x1.2p-3
+        local i = "string"
+        local j = 'string'
+        local k = [[long string]]
+        local l = true
+        local m = false
+        local n = nil
+        local o = function() end
+        local p = {}
+        local q = {1, 2, 3}
+        local r = {a = 1, b = 2}
+        local s = a + b
+        local t = a - b
+        local u = a * b
+        local v = a / b
+        local w = a // b
+        local x = a % b
+        local y = a ^ b
+        local z = -a
+        local aa = not a
+        local ab = a == b
+        local ac = a ~= b
+        local ad = a < b
+        local ae = a <= b
+        local af = a > b
+        local ag = a >= b
+        local ah = a and b
+        local ai = a or b
+        local aj = a .. b
+        local ak = #a
+        local al = a[b]
+        local am = a.b
+        local an = a:b()
+        local ao = a()
+        local ap = a[1]
+        local aq = a[1][2]
+        local ar = a[1].b
+        local as = a[1]:b()
+        local at = a.b[1]
+        local au = a.b:c()
+        local av = a.b[1].c
+        local aw = a.b[1]:c()
+        a = 123
+        do local a = 1 end
+        while a do local a = 1 end
+        repeat local a = 1 until a
+        if a then local a = 1 end
+        if a then local a = 1 elseif b then local a = 1 else local a = 1 end
+        for a = 1, 10 do local a = 1 end
+        for a, b in pairs({1, 2, 3}) do local a = 1 end
+        for a, b in ipairs({1, 2, 3}) do local a = 1 end
+        for a, b in next, {1, 2, 3} do local a = 1 end
+        for a, b in pairs({1, 2, 3}) do break end
+        for a, b in pairs({1, 2, 3}) do goto label end
+        for a, b in pairs({1, 2, 3}) do return end
+        ::label:: do end
+        goto label
+        return
+        break
+        function a() end
+        function a.b() end
+        function a:b() end
+        function a.b.c() end
+
+        "#;
+        let config = LexerConfig::default();
+        let mut errors: Vec<LuaParseError> = Vec::new();
+        let mut lexer = LuaLexer::new(text, config, &mut errors);
+        let tokens = lexer.tokenize();
         for token in tokens {
             println!("{:?}", token);
         }
-
-        assert!(errors.is_empty());
     }
 }

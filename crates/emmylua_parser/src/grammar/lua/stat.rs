@@ -186,9 +186,7 @@ fn parse_function(p: &mut LuaParser) -> ParseResult {
     let m = p.mark(LuaSyntaxKind::FuncStat);
     p.bump();
     parse_func_name(p)?;
-    parse_block(p)?;
-    expect_token(p, LuaTokenKind::TkEnd)?;
-
+    parse_closure_expr(p)?;
     if_token_bump(p, LuaTokenKind::TkSemicolon);
     Ok(m.complete(p))
 }

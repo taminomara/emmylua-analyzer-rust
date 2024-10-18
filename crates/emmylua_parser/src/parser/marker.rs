@@ -1,4 +1,7 @@
-use crate::{kind::{LuaSyntaxKind, LuaTokenKind}, text::SourceRange};
+use crate::{
+    kind::{LuaSyntaxKind, LuaTokenKind},
+    text::SourceRange,
+};
 
 #[derive(Debug, Clone)]
 pub enum MarkEvent {
@@ -35,9 +38,8 @@ pub(crate) trait MarkerEventContainer {
         let position = self.get_events().len();
         self.get_events()
             .push(MarkEvent::NodeStart { kind, parent: 0 });
-        let level = self.get_mark_level();
         self.incr_mark_level();
-        Marker::new(position, level)
+        Marker::new(position)
     }
 
     fn push_node_end(&mut self) {
@@ -48,12 +50,11 @@ pub(crate) trait MarkerEventContainer {
 
 pub(crate) struct Marker {
     pub position: usize,
-    pub level: usize,
 }
 
 impl Marker {
-    pub fn new(position: usize, level: usize) -> Self {
-        Marker { position, level }
+    pub fn new(position: usize) -> Self {
+        Marker { position }
     }
 
     pub fn set_kind<P: MarkerEventContainer>(&mut self, p: &mut P, kind: LuaSyntaxKind) {
@@ -79,6 +80,7 @@ impl Marker {
         }
     }
 
+    #[allow(unused)]
     pub fn undo<P: MarkerEventContainer>(self, p: &mut P) {
         match &mut p.get_events()[self.position] {
             MarkEvent::NodeStart { kind, .. } => {
@@ -90,7 +92,9 @@ impl Marker {
 }
 
 pub(crate) struct CompleteMarker {
+    #[allow(unused)]
     pub start: usize,
+    #[allow(unused)]
     pub finish: usize,
     pub kind: LuaSyntaxKind,
 }

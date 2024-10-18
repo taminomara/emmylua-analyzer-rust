@@ -10,8 +10,6 @@ use crate::{
     parser::{LuaDocParser, MarkerEventContainer}, parser_error::LuaParseError,
 };
 
-use super::ParseResult;
-
 pub fn parse_comment(p: &mut LuaDocParser) {
     let m = p.mark(LuaSyntaxKind::Comment);
 

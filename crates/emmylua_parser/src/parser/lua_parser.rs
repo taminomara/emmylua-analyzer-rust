@@ -1,5 +1,10 @@
 use crate::{
-    grammar::parse_chunk, kind::LuaTokenKind, lexer::{LuaLexer, LuaTokenData}, parser_error::LuaParseError, text::{LineIndex, SourceRange}, LuaSyntaxNode, LuaSyntaxTree, LuaTreeBuilder
+    grammar::parse_chunk,
+    kind::LuaTokenKind,
+    lexer::{LuaLexer, LuaTokenData},
+    parser_error::LuaParseError,
+    text::{LineIndex, SourceRange},
+    LuaSyntaxTree, LuaTreeBuilder,
 };
 
 use super::{
@@ -70,7 +75,7 @@ impl<'a> LuaParser<'a> {
 
     fn init(&mut self) {
         if self.tokens.is_empty() {
-            self.current_token = LuaTokenKind::None;
+            self.current_token = LuaTokenKind::TkEof;
         } else {
             self.current_token = self.tokens[0].kind;
         }
@@ -93,6 +98,10 @@ impl<'a> LuaParser<'a> {
     }
 
     pub fn current_token_range(&self) -> SourceRange {
+        if self.token_index >= self.tokens.len() {
+            return SourceRange::EMPTY;
+        }
+
         self.tokens[self.token_index].range
     }
 
@@ -121,7 +130,7 @@ impl<'a> LuaParser<'a> {
         }
 
         if self.token_index >= self.tokens.len() {
-            self.current_token = LuaTokenKind::None;
+            self.current_token = LuaTokenKind::TkEof;
             return;
         }
 
@@ -269,8 +278,68 @@ fn is_trivia_kind(kind: LuaTokenKind) -> bool {
 }
 
 fn is_invalid_kind(kind: LuaTokenKind) -> bool {
-    matches!(
-        kind,
-        LuaTokenKind::None | LuaTokenKind::TkEof
-    )
+    matches!(kind, LuaTokenKind::None | LuaTokenKind::TkEof)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        grammar::parse_chunk,
+        kind::LuaTokenKind,
+        lexer::LuaLexer,
+        parser::{MarkerEventContainer, ParserConfig},
+        parser_error::LuaParseError,
+        LuaParser,
+    };
+
+    fn new_parser<'a>(
+        text: &'a str,
+        config: ParserConfig,
+        errors: &'a mut Vec<LuaParseError>,
+        show_tokens: bool,
+    ) -> LuaParser<'a> {
+        let tokens = {
+            let mut lexer = LuaLexer::new(text, config.lexer_config(), errors);
+            lexer.tokenize()
+        };
+
+        if show_tokens {
+            println!("tokens: ");
+            for t in &tokens {
+                println!("{:?}", t);
+            }
+        }
+
+        let mut parser = LuaParser {
+            text,
+            events: Vec::new(),
+            tokens,
+            token_index: 0,
+            current_token: LuaTokenKind::None,
+            parse_config: config,
+            mark_level: 0,
+            errors,
+        };
+        parser.init();
+
+        parser
+    }
+
+    #[test]
+    fn test_parse() {
+        let lua_code = r#"
+            function foo(a, b)
+                return a + b
+            end
+        "#;
+
+        let config = ParserConfig::default();
+        let mut errors: Vec<LuaParseError> = Vec::new();
+        let mut parser = new_parser(lua_code, config, &mut errors, true);
+        parse_chunk(&mut parser);
+
+        for e in parser.get_events() {
+            println!("{:?}", e);
+        }
+    }
 }

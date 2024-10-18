@@ -1,3 +1,4 @@
+#[allow(unused)]
 #[derive(Debug, PartialEq)]
 pub enum VisibilityKind {
     None,
@@ -9,6 +10,7 @@ pub enum VisibilityKind {
 }
 
 impl VisibilityKind {
+    #[allow(unused)]
     pub fn to_visibility_kind(visibility: &str) -> VisibilityKind {
         match visibility {
             "public" => VisibilityKind::Public,

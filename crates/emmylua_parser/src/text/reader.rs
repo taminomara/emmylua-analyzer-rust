@@ -8,9 +8,11 @@ pub struct Reader<'a> {
     text: &'a str,
     valid_range: SourceRange,
     chars: Chars<'a>,
-    buffer_byte_pos: usize,
-    buffer_byte_len: usize,
-    current: char
+    save_buffer_byte_pos: usize,
+    save_buffer_byte_len: usize,
+    current_char_len: usize,
+    current: char,
+    start: bool,
 }
 
 impl<'a> Reader<'a> {
@@ -20,40 +22,43 @@ impl<'a> Reader<'a> {
 
     pub fn new_with_range(text: &'a str, range: SourceRange) -> Self {
         let text = text[range.start_offset..range.length].as_ref();
-        let mut reader = Self {
+        Self {
             text,
             valid_range: range,
             chars: text.chars(),
-            buffer_byte_pos: 0,
-            buffer_byte_len: 0,
-            current: EOF
-        };
-        reader.bump();
-        reader
+            save_buffer_byte_pos: 0,
+            save_buffer_byte_len: 0,
+            current_char_len: 0,
+            current: EOF,
+            start: false,
+        }
     }
 
     pub fn bump(&mut self) {
         if let Some(c) = self.chars.next() {
             self.current = c;
-            self.buffer_byte_len += self.current.len_utf8();
-        }
-        else {
+            self.save_buffer_byte_len += self.current_char_len;
+            self.current_char_len = c.len_utf8();
+        } else {
             self.current = EOF;
         }
     }
 
     pub fn reset_buff(&mut self) {
-        self.buffer_byte_pos += self.buffer_byte_len;
-        self.buffer_byte_len = 0;
-        self.bump();
+        self.save_buffer_byte_pos += self.save_buffer_byte_len;
+        self.save_buffer_byte_len = 0;
+        if !self.start {
+            self.start = true;
+            self.bump();
+        }
     }
 
     pub fn is_eof(&self) -> bool {
-        self.current == EOF
+        self.current == EOF && self.start
     }
 
     pub fn is_start_of_line(&self) -> bool {
-        self.buffer_byte_pos == 0
+        self.save_buffer_byte_pos == 0
     }
 
     pub fn current_char(&self) -> char {
@@ -65,11 +70,14 @@ impl<'a> Reader<'a> {
     }
 
     pub fn saved_range(&self) -> SourceRange {
-        SourceRange::new(self.valid_range.start_offset + self.buffer_byte_pos, self.buffer_byte_len)
+        SourceRange::new(
+            self.valid_range.start_offset + self.save_buffer_byte_pos,
+            self.save_buffer_byte_len,
+        )
     }
 
     pub fn current_saved_text(&self) -> &str {
-        &self.text[self.buffer_byte_pos..(self.buffer_byte_pos + self.buffer_byte_len)]
+        &self.text[self.save_buffer_byte_pos..(self.save_buffer_byte_pos + self.save_buffer_byte_len)]
     }
 
     pub fn eat_when(&mut self, ch: char) -> usize {
@@ -91,5 +99,104 @@ impl<'a> Reader<'a> {
             self.bump();
         }
         count
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_reader() {
+        let text = "Hello, world!";
+        let mut reader = Reader::new(text);
+        reader.reset_buff();
+        assert_eq!(reader.current_char(), 'H');
+    }
+
+    #[test]
+    fn test_bump() {
+        let text = "Hello, world!";
+        let mut reader = Reader::new(text);
+        reader.reset_buff();
+        reader.bump();
+        assert_eq!(reader.current_char(), 'e');
+    }
+
+    #[test]
+    fn test_reset_buff() {
+        let text = "Hello, world!";
+        let mut reader = Reader::new(text);
+        reader.reset_buff();
+        reader.bump();
+        reader.reset_buff();
+        assert_eq!(reader.current_char(), 'e');
+        assert_eq!(reader.is_start_of_line(), false);
+        assert_eq!(reader.is_eof(), false);
+    }
+
+    #[test]
+    fn test_is_eof() {
+        let text = "H";
+        let mut reader = Reader::new(text);
+        reader.reset_buff();
+        assert_eq!(reader.is_eof(), false);
+        reader.bump();
+        assert_eq!(reader.is_eof(), true);
+    }
+
+    #[test]
+    fn test_next_char() {
+        let text = "Hello, world!";
+        let mut reader = Reader::new(text);
+        reader.reset_buff();
+        assert_eq!(reader.next_char(), 'e');
+    }
+
+    #[test]
+    fn test_saved_range() {
+        let text = "Hello, world!";
+        let mut reader = Reader::new(text);
+        reader.reset_buff();
+        reader.bump();
+        let range = reader.saved_range();
+        assert_eq!(range.start_offset, 0);
+        assert_eq!(range.length, 1);
+
+        reader.reset_buff();
+        reader.bump();
+        let range2 = reader.saved_range();
+        assert_eq!(range2.start_offset, 1);
+        assert_eq!(range2.length, 1);
+    }
+
+    #[test]
+    fn test_current_saved_text() {
+        let text = "Hello, world!";
+        let mut reader = Reader::new(text);
+        reader.reset_buff();
+        reader.bump();
+        assert_eq!(reader.current_saved_text(), "H");
+    }
+
+    #[test]
+    fn test_eat_when() {
+        let text = "aaaHello, world!";
+        let mut reader = Reader::new(text);
+        reader.reset_buff();
+        let count = reader.eat_when('a');
+        assert_eq!(count, 3);
+        assert_eq!(reader.current_char(), 'H');
+        assert_eq!(reader.current_saved_text(), "aaa");
+    }
+
+    #[test]
+    fn test_eat_while() {
+        let text = "12345Hello, world!";
+        let mut reader = Reader::new(text);
+        reader.reset_buff();
+        let count = reader.eat_while(|c| c.is_digit(10));
+        assert_eq!(count, 5);
+        assert_eq!(reader.current_char(), 'H');
     }
 }
