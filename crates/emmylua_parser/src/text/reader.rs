@@ -41,6 +41,10 @@ impl<'a> Reader<'a> {
             self.current_char_len = c.len_utf8();
         } else {
             self.current = EOF;
+            if self.current_char_len > 0 {
+                self.save_buffer_byte_len += self.current_char_len;
+                self.current_char_len = 0;
+            }
         }
     }
 

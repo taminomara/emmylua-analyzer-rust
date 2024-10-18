@@ -84,7 +84,7 @@ impl LuaDocParser<'_, '_> {
             LuaDocLexerState::Normal
             | LuaDocLexerState::Description
             | LuaDocLexerState::Version => {
-                while !matches!(
+                while matches!(
                     self.current_token,
                     LuaTokenKind::TkDocContinue
                         | LuaTokenKind::TkEndOfLine
@@ -94,7 +94,7 @@ impl LuaDocParser<'_, '_> {
                 }
             }
             LuaDocLexerState::FieldStart | LuaDocLexerState::See => {
-                while !matches!(self.current_token, LuaTokenKind::TkWhitespace) {
+                while matches!(self.current_token, LuaTokenKind::TkWhitespace) {
                     self.eat_current_and_lex_next();
                 }
             }
@@ -181,30 +181,32 @@ impl LuaDocParser<'_, '_> {
     }
 
     pub fn set_state(&mut self, state: LuaDocLexerState) {
-        match state {
-            LuaDocLexerState::Description => {
-                if !matches!(
-                    self.current_token,
-                    LuaTokenKind::TkWhitespace
-                        | LuaTokenKind::TkEndOfLine
-                        | LuaTokenKind::TkEof
-                        | LuaTokenKind::TkDocContinueOr
-                ) {
-                    self.current_token = LuaTokenKind::TkDocDetail;
+        if self.current_token == LuaTokenKind::TkName {
+            match state {
+                LuaDocLexerState::Description => {
+                    if !matches!(
+                        self.current_token,
+                        LuaTokenKind::TkWhitespace
+                            | LuaTokenKind::TkEndOfLine
+                            | LuaTokenKind::TkEof
+                            | LuaTokenKind::TkDocContinueOr
+                    ) {
+                        self.current_token = LuaTokenKind::TkDocDetail;
+                    }
                 }
-            }
-            LuaDocLexerState::Trivia => {
-                if !matches!(
-                    self.current_token,
-                    LuaTokenKind::TkWhitespace
-                        | LuaTokenKind::TkEndOfLine
-                        | LuaTokenKind::TkEof
-                        | LuaTokenKind::TkDocContinueOr
-                ) {
-                    self.current_token = LuaTokenKind::TkDocTrivia;
+                LuaDocLexerState::Trivia => {
+                    if !matches!(
+                        self.current_token,
+                        LuaTokenKind::TkWhitespace
+                            | LuaTokenKind::TkEndOfLine
+                            | LuaTokenKind::TkEof
+                            | LuaTokenKind::TkDocContinueOr
+                    ) {
+                        self.current_token = LuaTokenKind::TkDocTrivia;
+                    }
                 }
+                _ => {}
             }
-            _ => {}
         }
 
         self.lexer.state = state;

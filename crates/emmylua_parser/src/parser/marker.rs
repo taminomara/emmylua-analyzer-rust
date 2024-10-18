@@ -71,8 +71,19 @@ impl Marker {
         };
 
         let finish = p.get_events().len();
+        // empty node should be removed
+        if finish == self.position + 1 {
+            match &mut p.get_events()[self.position] {
+                MarkEvent::NodeStart { kind, .. } => *kind = LuaSyntaxKind::None,
+                _ => unreachable!(),
+            }
+            return CompleteMarker {
+                start: 0,
+                finish: 0,
+                kind: LuaSyntaxKind::None,
+            };
+        }
         p.push_node_end();
-
         CompleteMarker {
             start: self.position,
             finish,

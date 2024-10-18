@@ -315,7 +315,7 @@ fn parse_suffixed_type(p: &mut LuaDocParser, cm: CompleteMarker) -> ParseResult 
                 only_continue_array = true;
             }
             LuaTokenKind::TkLt => {
-                if !only_continue_array {
+                if only_continue_array {
                     return Ok(cm);
                 }
                 if cm.kind != LuaSyntaxKind::TypeName {
@@ -329,7 +329,7 @@ fn parse_suffixed_type(p: &mut LuaDocParser, cm: CompleteMarker) -> ParseResult 
                 cm = m.complete(p);
             }
             LuaTokenKind::TkDots => {
-                if !only_continue_array {
+                if only_continue_array {
                     return Ok(cm);
                 }
                 if cm.kind != LuaSyntaxKind::TypeName {
@@ -342,7 +342,7 @@ fn parse_suffixed_type(p: &mut LuaDocParser, cm: CompleteMarker) -> ParseResult 
                 return Ok(cm);
             }
             LuaTokenKind::TkStringTemplateType => {
-                if !only_continue_array {
+                if only_continue_array {
                     return Ok(cm);
                 }
                 if cm.kind != LuaSyntaxKind::TypeName {

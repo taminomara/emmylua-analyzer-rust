@@ -534,6 +534,9 @@ mod tests {
         let k1 = lexer.lex();
         assert_eq!(k1, LuaTokenKind::TkNormalStart);
         let k2 = lexer.lex();
+        let range = lexer.current_token_range();
+        let text = lexer.origin_text[range.start_offset..range.end_offset()].to_string();
+        assert_eq!(text, " comment");
         assert_eq!(k2, LuaTokenKind::TkDocTrivia);
     }
 }
