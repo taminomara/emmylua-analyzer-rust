@@ -99,7 +99,11 @@ impl<'a> LuaParser<'a> {
 
     pub fn current_token_range(&self) -> SourceRange {
         if self.token_index >= self.tokens.len() {
-            return SourceRange::EMPTY;
+            if self.tokens.is_empty() {
+                return SourceRange::EMPTY;
+            } else {
+                return self.tokens[self.tokens.len() - 1].range;
+            }
         }
 
         self.tokens[self.token_index].range
@@ -264,6 +268,14 @@ impl<'a> LuaParser<'a> {
     pub fn push_error(&mut self, err: LuaParseError) {
         self.errors.push(err);
     }
+
+    pub fn has_error(&self) -> bool {
+        !self.errors.is_empty()
+    }
+
+    pub fn get_errors(&self) -> &Vec<LuaParseError> {
+        &self.errors
+    }
 }
 
 fn is_trivia_kind(kind: LuaTokenKind) -> bool {
@@ -335,11 +347,42 @@ mod tests {
 
         let config = ParserConfig::default();
         let mut errors: Vec<LuaParseError> = Vec::new();
-        let mut parser = new_parser(lua_code, config, &mut errors, true);
+        let mut parser = new_parser(lua_code, config, &mut errors, false);
         parse_chunk(&mut parser);
 
         for e in parser.get_events() {
             println!("{:?}", e);
         }
+        assert_eq!(parser.has_error(), false);
+    }
+
+    #[test]
+    fn test_parse_error() {
+        let lua_code = r#"
+            function foo(a, b)
+                return a + b
+        "#;
+
+        let config = ParserConfig::default();
+        let mut errors: Vec<LuaParseError> = Vec::new();
+        let mut parser = new_parser(lua_code, config, &mut errors, false);
+        parse_chunk(&mut parser);
+
+        for e in parser.get_errors() {
+            println!("{:?}", e);
+        }
+        assert_eq!(parser.has_error(), true);
+    }
+
+    #[test]
+    fn test_parse_and_ast() {
+        let lua_code = r#"
+            function foo(a, b)
+                return a + b
+            end
+        "#;
+
+        let tree = LuaParser::parse(lua_code, ParserConfig::default());
+        println!("{:?}", tree.get_root());
     }
 }

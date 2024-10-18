@@ -73,6 +73,7 @@ fn parse_description(p: &mut LuaDocParser) {
 
 fn expect_token(p: &mut LuaDocParser, token: LuaTokenKind) -> Result<(), LuaParseError> {
     if p.current_token() == token {
+        p.bump();
         Ok(())
     } else {
         Err(LuaParseError::from_source_range(

@@ -2,6 +2,7 @@ use rowan::TextRange;
 
 use crate::text::SourceRange;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct LuaParseError {
     pub message: String,
     pub range: TextRange,

@@ -31,6 +31,7 @@ fn parse_block(p: &mut LuaParser) -> ParseResult {
 
 fn expect_token(p: &mut LuaParser, token: LuaTokenKind) -> Result<(), LuaParseError> {
     if p.current_token() == token {
+        p.bump();
         Ok(())
     } else {
         Err(LuaParseError::from_source_range(
