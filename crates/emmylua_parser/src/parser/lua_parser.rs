@@ -3,7 +3,7 @@ use crate::{
     kind::LuaTokenKind,
     lexer::{LuaLexer, LuaTokenData},
     parser_error::LuaParseError,
-    text::{LineIndex, SourceRange},
+    text::SourceRange,
     LuaSyntaxTree, LuaTreeBuilder,
 };
 
@@ -68,8 +68,7 @@ impl<'a> LuaParser<'a> {
         let mut builder = LuaTreeBuilder::new(parser.origin_text(), parser.events);
         builder.build();
         let root = builder.finish();
-        let line_index = LineIndex::parse(text);
-        LuaSyntaxTree::new(root, line_index)
+        LuaSyntaxTree::new(root, text.to_string())
     }
 
     pub fn init(&mut self) {
