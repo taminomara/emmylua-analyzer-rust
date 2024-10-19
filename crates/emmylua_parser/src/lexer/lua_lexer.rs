@@ -359,16 +359,22 @@ impl LuaLexer<'_> {
     }
 
     fn lex_new_line(&mut self) -> LuaTokenKind {
-        while !self.reader.is_eof() {
-            let ch = self.reader.current_char();
-            if ch == '\n' || ch == '\r' {
+        match self.reader.current_char() {
+            // support \n
+            '\n' => {
                 self.reader.bump();
-                if ch == '\r' && self.reader.current_char() == '\n' {
+                if self.reader.current_char() == '\r' {
                     self.reader.bump();
                 }
-            } else {
-                break;
             }
+            // support \r or  \r\n
+            '\r' => {
+                self.reader.bump();
+                if self.reader.current_char() == '\n' {
+                    self.reader.bump();
+                }
+            }
+            _ => {}
         }
 
         LuaTokenKind::TkEndOfLine

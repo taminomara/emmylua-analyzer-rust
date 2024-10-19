@@ -81,9 +81,7 @@ impl LuaDocParser<'_, '_> {
         }
 
         match self.lexer.state {
-            LuaDocLexerState::Normal
-            | LuaDocLexerState::Description
-            | LuaDocLexerState::Version => {
+            LuaDocLexerState::Normal | LuaDocLexerState::Version => {
                 while matches!(
                     self.current_token,
                     LuaTokenKind::TkDocContinue
@@ -164,49 +162,35 @@ impl LuaDocParser<'_, '_> {
         &source_text[range.start_offset..range.end_offset()]
     }
 
-    #[allow(unused)]
-    pub fn peek_next_token(&mut self) -> LuaTokenKind {
-        let current_origin_index = self.origin_token_index;
-        let current_token = self.current_token;
-        let current_token_range = self.current_token_range;
-        let prev_lexer = self.lexer.clone();
-        self.bump();
-        let next_token = self.current_token;
-        self.origin_token_index = current_origin_index;
-        self.current_token = current_token;
-        self.current_token_range = current_token_range;
-        self.lexer = prev_lexer;
-
-        next_token
-    }
-
     pub fn set_state(&mut self, state: LuaDocLexerState) {
-        if self.current_token == LuaTokenKind::TkName {
-            match state {
-                LuaDocLexerState::Description => {
-                    if !matches!(
-                        self.current_token,
-                        LuaTokenKind::TkWhitespace
-                            | LuaTokenKind::TkEndOfLine
-                            | LuaTokenKind::TkEof
-                            | LuaTokenKind::TkDocContinueOr
-                    ) {
-                        self.current_token = LuaTokenKind::TkDocDetail;
-                    }
+        match state {
+            LuaDocLexerState::Description => {
+                if !matches!(
+                    self.current_token,
+                    LuaTokenKind::TkWhitespace
+                        | LuaTokenKind::TkEndOfLine
+                        | LuaTokenKind::TkEof
+                        | LuaTokenKind::TkDocContinueOr
+                        | LuaTokenKind::TkNormalStart
+                        | LuaTokenKind::TkLongCommentStart
+                        | LuaTokenKind::TkDocStart
+                        | LuaTokenKind::TkDocLongStart
+                ) {
+                    self.current_token = LuaTokenKind::TkDocDetail;
                 }
-                LuaDocLexerState::Trivia => {
-                    if !matches!(
-                        self.current_token,
-                        LuaTokenKind::TkWhitespace
-                            | LuaTokenKind::TkEndOfLine
-                            | LuaTokenKind::TkEof
-                            | LuaTokenKind::TkDocContinueOr
-                    ) {
-                        self.current_token = LuaTokenKind::TkDocTrivia;
-                    }
-                }
-                _ => {}
             }
+            LuaDocLexerState::Trivia => {
+                if !matches!(
+                    self.current_token,
+                    LuaTokenKind::TkWhitespace
+                        | LuaTokenKind::TkEndOfLine
+                        | LuaTokenKind::TkEof
+                        | LuaTokenKind::TkDocContinueOr
+                ) {
+                    self.current_token = LuaTokenKind::TkDocTrivia;
+                }
+            }
+            _ => {}
         }
 
         self.lexer.state = state;

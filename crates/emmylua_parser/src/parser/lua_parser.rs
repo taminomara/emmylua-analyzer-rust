@@ -62,7 +62,6 @@ impl<'a> LuaParser<'a> {
             mark_level: 0,
             errors: &mut errors,
         };
-        parser.init();
 
         parse_chunk(&mut parser);
 
@@ -73,7 +72,7 @@ impl<'a> LuaParser<'a> {
         LuaSyntaxTree::new(root, line_index)
     }
 
-    fn init(&mut self) {
+    pub fn init(&mut self) {
         if self.tokens.is_empty() {
             self.current_token = LuaTokenKind::TkEof;
         } else {
@@ -194,7 +193,7 @@ impl<'a> LuaParser<'a> {
                         doc_tokens.clear();
                     }
                     // check if the comment is an inline comment
-                    else if doc_tokens.len() > 0 && i >= 2 {
+                    else if doc_tokens.len() == 1 && i >= 2 {
                         let mut temp_index = i as isize - 2;
                         let mut inline_comment = false;
                         while temp_index >= 0 {
@@ -230,7 +229,6 @@ impl<'a> LuaParser<'a> {
                         doc_tokens.push(token.clone());
                     }
                 }
-
                 _ => {
                     if doc_tokens.len() > 0 {
                         self.parse_comments(&doc_tokens);
@@ -434,6 +432,8 @@ mod tests {
     fn test_parse_comment() {
         let lua_code = r#"
             -- comment
+            local t
+            -- inline comment
         "#;
 
         let tree = LuaParser::parse(lua_code, ParserConfig::default());

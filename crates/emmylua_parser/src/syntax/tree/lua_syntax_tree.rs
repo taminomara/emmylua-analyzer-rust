@@ -7,10 +7,13 @@ pub struct LuaSyntaxTree {
 
 impl LuaSyntaxTree {
     pub fn new(root: LuaSyntaxNode, line_index: LineIndex) -> Self {
-        LuaSyntaxTree {
+        let mut tree = LuaSyntaxTree {
             root,
             line_index,
-        }
+        };
+
+        // todo bind_doc
+        tree
     }
 
     pub fn get_line_index(&self) -> &LineIndex {

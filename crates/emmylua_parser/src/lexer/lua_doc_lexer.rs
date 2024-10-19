@@ -24,7 +24,7 @@ pub enum LuaDocLexerState {
     See,
     Version,
     Source,
-    Namespace
+    Namespace,
 }
 
 impl LuaDocLexer<'_> {
@@ -47,7 +47,6 @@ impl LuaDocLexer<'_> {
     pub fn reset(&mut self, kind: LuaTokenKind, range: SourceRange) {
         self.reader = Some(Reader::new_with_range(self.origin_text, range));
         self.origin_token_kind = kind;
-        self.state = LuaDocLexerState::Init;
     }
 
     pub fn get_reader(&self) -> Option<&Reader> {
@@ -125,7 +124,6 @@ impl LuaDocLexer<'_> {
                     }
                 }
             }
-
             _ => {
                 reader.eat_while(|_| true);
                 LuaTokenKind::TkDocTrivia
@@ -307,27 +305,7 @@ impl LuaDocLexer<'_> {
                     reader.eat_while(|_| true);
                     return LuaTokenKind::TkDocDetail;
                 }
-                let count = reader.eat_when('-');
-                match count {
-                    3 => {
-                        reader.eat_while(is_doc_whitespace);
-                        match reader.current_char() {
-                            '@' => {
-                                reader.bump();
-                                LuaTokenKind::TkDocStart
-                            }
-                            '|' => {
-                                reader.bump();
-                                LuaTokenKind::TkDocContinueOr
-                            }
-                            _ => LuaTokenKind::TkDocContinue,
-                        }
-                    }
-                    _ => {
-                        reader.eat_while(|_| true);
-                        LuaTokenKind::TkDocTrivia
-                    }
-                }
+                self.lex_init()
             }
             _ => {
                 reader.eat_while(|_| true);
@@ -381,7 +359,7 @@ impl LuaDocLexer<'_> {
             ch if ch.is_ascii_digit() => {
                 reader.eat_while(|ch| ch.is_ascii_digit() || ch == '.');
                 LuaTokenKind::TkVersionNumber
-            },
+            }
             ch if is_name_start(ch) => {
                 reader.bump();
                 reader.eat_while(is_doc_name_continue);
@@ -390,7 +368,7 @@ impl LuaDocLexer<'_> {
                     "JIT" => LuaTokenKind::TkVersionNumber,
                     _ => LuaTokenKind::TkName,
                 }
-            },
+            }
             _ => {
                 reader.eat_while(|_| true);
                 LuaTokenKind::TkDocTrivia
@@ -513,7 +491,7 @@ fn is_doc_name_continue(ch: char) -> bool {
 }
 
 fn is_source_continue(ch: char) -> bool {
-    is_name_continue(ch) || ch == '.' || ch == '-'|| ch == '/' || ch == ' '
+    is_name_continue(ch) || ch == '.' || ch == '-' || ch == '/' || ch == ' '
 }
 
 fn is_namespace_continue(ch: char) -> bool {

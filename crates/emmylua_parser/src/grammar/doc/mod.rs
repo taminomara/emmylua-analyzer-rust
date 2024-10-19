@@ -1,6 +1,6 @@
 mod tag;
-mod types;
 mod test;
+mod types;
 
 use tag::{parse_long_tag, parse_tag};
 use types::parse_type;
@@ -65,8 +65,19 @@ fn parse_docs(p: &mut LuaDocParser) {
 fn parse_description(p: &mut LuaDocParser) {
     let m = p.mark(LuaSyntaxKind::DocDescription);
 
-    while p.current_token() == LuaTokenKind::TkDocDetail {
-        p.bump();
+    loop {
+        match p.current_token() {
+            LuaTokenKind::TkDocDetail
+            | LuaTokenKind::TkEndOfLine
+            | LuaTokenKind::TkWhitespace
+            | LuaTokenKind::TkDocContinue 
+            | LuaTokenKind::TkNormalStart => {
+                p.bump();
+            }
+            _ => {
+                break;
+            }
+        }
     }
 
     m.complete(p);

@@ -11,13 +11,24 @@ mod tests {
         };
     }
 
+    #[allow(unused)]
+    fn print_ast(lua_code: &str) {
+        let tree = LuaParser::parse(lua_code, ParserConfig::default());
+        println!("{:#?}", tree.get_red_root());
+    }
+
     #[test]
     fn test_normal_doc() {
         let code = r#"
         -- comment
+
+        -- hihihi
+        --     hello
+        --yyyy
         "#;
+        print_ast(code);
         let ast = r#"
-Syntax(Chunk)@0..28
+Syntax(Chunk)@0..83
   Token(TkEndOfLine)@0..1 "\n"
   Token(TkWhitespace)@1..9 "        "
   Syntax(Comment)@9..19
@@ -25,8 +36,23 @@ Syntax(Chunk)@0..28
     Syntax(DocDescription)@11..19
       Token(TkDocDetail)@11..19 " comment"
   Token(TkEndOfLine)@19..20 "\n"
-  Token(TkWhitespace)@20..28 "        "
-  Syntax(Block)@28..28
+  Token(TkEndOfLine)@20..21 "\n"
+  Token(TkWhitespace)@21..29 "        "
+  Syntax(Comment)@29..74
+    Token(TkNormalStart)@29..31 "--"
+    Syntax(DocDescription)@31..74
+      Token(TkDocDetail)@31..38 " hihihi"
+      Token(TkEndOfLine)@38..39 "\n"
+      Token(TkWhitespace)@39..47 "        "
+      Token(TkNormalStart)@47..49 "--"
+      Token(TkWhitespace)@49..54 "     "
+      Token(TkDocDetail)@54..59 "hello"
+      Token(TkEndOfLine)@59..60 "\n"
+      Token(TkWhitespace)@60..68 "        "
+      Token(TkNormalStart)@68..70 "--"
+      Token(TkDocDetail)@70..74 "yyyy"
+  Token(TkEndOfLine)@74..75 "\n"
+  Token(TkWhitespace)@75..83 "        "
         "#;
         assert_ast_eq!(code, ast);
     }

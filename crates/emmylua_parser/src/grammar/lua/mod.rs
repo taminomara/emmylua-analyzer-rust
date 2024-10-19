@@ -10,10 +10,12 @@ use super::ParseResult;
 
 mod expr;
 mod stat;
+mod test;
 
 pub fn parse_chunk(p: &mut LuaParser) {
     let m = p.mark(LuaSyntaxKind::Block);
 
+    p.init();
     while p.current_token() != LuaTokenKind::TkEof {
         parse_stats(p);
     }
