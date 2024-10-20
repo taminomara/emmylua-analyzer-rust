@@ -21,7 +21,7 @@ pub struct LuaParser<'a> {
     token_index: usize,
     current_token: LuaTokenKind,
     mark_level: usize,
-    pub parse_config: ParserConfig,
+    pub parse_config: ParserConfig<'a>,
     pub(crate) errors: &'a mut Vec<LuaParseError>,
 }
 
@@ -65,7 +65,11 @@ impl<'a> LuaParser<'a> {
 
         parse_chunk(&mut parser);
 
-        let mut builder = LuaTreeBuilder::new(parser.origin_text(), parser.events);
+        let mut builder = LuaTreeBuilder::new(
+            parser.origin_text(),
+            parser.events,
+            parser.parse_config.node_cache(),
+        );
         builder.build();
         let root = builder.finish();
         LuaSyntaxTree::new(root, text.to_string())
@@ -318,7 +322,7 @@ mod tests {
 
     fn new_parser<'a>(
         text: &'a str,
-        config: ParserConfig,
+        config: ParserConfig<'a>,
         errors: &'a mut Vec<LuaParseError>,
         show_tokens: bool,
     ) -> LuaParser<'a> {

@@ -1,22 +1,38 @@
-use rowan::Language;
+use rowan::NodeCache;
 
 use crate::{
-    kind::{LuaSyntaxKind, LuaTokenKind}, parser::MarkEvent, text::SourceRange, LuaKind, LuaLanguage, LuaSyntaxNode
+    kind::{LuaSyntaxKind, LuaTokenKind},
+    parser::MarkEvent,
+    text::SourceRange,
+    LuaSyntaxNode,
 };
+
+use super::lua_green_builder::LuaGreenNodeBuilder;
 
 #[derive(Debug)]
 pub struct LuaTreeBuilder<'a> {
     text: &'a str,
     events: Vec<MarkEvent>,
-    green_builder: rowan::GreenNodeBuilder<'static>,
+    green_builder: LuaGreenNodeBuilder<'a>,
 }
 
 impl<'a> LuaTreeBuilder<'a> {
-    pub fn new(text: &'a str, events: Vec<MarkEvent>) -> Self {
-        LuaTreeBuilder {
-            text,
-            events,
-            green_builder: rowan::GreenNodeBuilder::new(),
+    pub fn new(
+        text: &'a str,
+        events: Vec<MarkEvent>,
+        node_cache: Option<&'a mut NodeCache>,
+    ) -> Self {
+        match node_cache {
+            Some(cache) => LuaTreeBuilder {
+                text,
+                events,
+                green_builder: LuaGreenNodeBuilder::with_cache(cache),
+            },
+            None => LuaTreeBuilder {
+                text,
+                events,
+                green_builder: LuaGreenNodeBuilder::new(),
+            },
         }
     }
 
@@ -62,14 +78,11 @@ impl<'a> LuaTreeBuilder<'a> {
     }
 
     fn token(&mut self, kind: LuaTokenKind, range: SourceRange) {
-        let lua_kind = LuaKind::from(kind);
-        let token_text = &self.text[range.start_offset..range.end_offset()];
-        self.green_builder.token(LuaLanguage::kind_to_raw(lua_kind), token_text);
+        self.green_builder.token(kind, range);
     }
 
     fn start_node(&mut self, kind: LuaSyntaxKind) {
-        let lua_kind = LuaKind::from(kind);
-        self.green_builder.start_node(LuaLanguage::kind_to_raw(lua_kind));
+        self.green_builder.start_node(kind);
     }
 
     fn finish_node(&mut self) {
@@ -77,7 +90,7 @@ impl<'a> LuaTreeBuilder<'a> {
     }
 
     pub fn finish(self) -> LuaSyntaxNode {
-        let root = self.green_builder.finish();
+        let root = self.green_builder.finish(&self.text);
         LuaSyntaxNode::new_root(root)
     }
 }

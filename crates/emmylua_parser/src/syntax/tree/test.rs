@@ -17,5 +17,12 @@ mod tests {
         assert_eq!(offset_2, 17.into());
         let offset_3 = tree.get_offset(3, 0).unwrap();
         assert_eq!(offset_3, 21.into());
+
+        let line_col_1 = tree.get_line_col(offset_1).unwrap();
+        assert_eq!(line_col_1, (1, 3));
+        let line_col_2 = tree.get_line_col(offset_2).unwrap();
+        assert_eq!(line_col_2, (2, 4));
+        let line_col_3 = tree.get_line_col(offset_3).unwrap();
+        assert_eq!(line_col_3, (3, 0));
     }
 }
