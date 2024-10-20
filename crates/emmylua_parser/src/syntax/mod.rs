@@ -1,7 +1,6 @@
-mod gen;
-
 mod tree;
 mod node;
+mod traits;
 
 use rowan::Language;
 
@@ -27,6 +26,7 @@ pub type LuaSyntaxNode = rowan::SyntaxNode<LuaLanguage>;
 pub type LuaSyntaxToken = rowan::SyntaxToken<LuaLanguage>;
 pub type LuaSyntaxElement = rowan::NodeOrToken<LuaSyntaxNode, LuaSyntaxToken>;
 pub type LuaSyntaxElementChildren = rowan::SyntaxElementChildren<LuaLanguage>;
+pub type LuaSyntaxNodeChildren = rowan::SyntaxNodeChildren<LuaLanguage>;
 pub type LuaSyntaxNodePtr = rowan::ast::SyntaxNodePtr<LuaLanguage>;
 
 impl From<LuaSyntaxKind> for rowan::SyntaxKind {
@@ -54,3 +54,4 @@ impl From<rowan::SyntaxKind> for LuaTokenKind {
         LuaKind::from_raw(kind.0).into()
     }
 }
+

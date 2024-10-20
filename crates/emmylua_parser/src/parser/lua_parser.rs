@@ -64,15 +64,17 @@ impl<'a> LuaParser<'a> {
         };
 
         parse_chunk(&mut parser);
-
-        let mut builder = LuaTreeBuilder::new(
-            parser.origin_text(),
-            parser.events,
-            parser.parse_config.node_cache(),
-        );
-        builder.build();
-        let root = builder.finish();
-        LuaSyntaxTree::new(root, text.to_string())
+        let errors = parser.get_errors();
+        let root = {
+            let mut builder = LuaTreeBuilder::new(
+                parser.origin_text(),
+                parser.events,
+                parser.parse_config.node_cache(),
+            );
+            builder.build();
+            builder.finish()
+        };
+        LuaSyntaxTree::new(root, text.to_string(), errors)
     }
 
     pub fn init(&mut self) {
@@ -280,8 +282,8 @@ impl<'a> LuaParser<'a> {
         !self.errors.is_empty()
     }
 
-    pub fn get_errors(&self) -> &Vec<LuaParseError> {
-        &self.errors
+    pub fn get_errors(&self) -> Vec<LuaParseError> {
+        self.errors.clone()
     }
 }
 
