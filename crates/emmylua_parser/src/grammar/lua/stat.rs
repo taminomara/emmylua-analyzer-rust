@@ -124,6 +124,7 @@ fn parse_while(p: &mut LuaParser) -> ParseResult {
     expect_token(p, LuaTokenKind::TkDo)?;
     parse_block(p)?;
 
+    expect_token(p, LuaTokenKind::TkEnd)?;
     if_token_bump(p, LuaTokenKind::TkSemicolon);
     Ok(m.complete(p))
 }
