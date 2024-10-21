@@ -26,22 +26,24 @@ mod tests {
         --     hello
         --yyyy
         "#;
-        let ast = r#"
+        let result = r#"
 Syntax(Chunk)@0..83
   Syntax(Block)@0..83
     Token(TkEndOfLine)@0..1 "\n"
     Token(TkWhitespace)@1..9 "        "
     Syntax(Comment)@9..19
       Token(TkNormalStart)@9..11 "--"
-      Syntax(DocDescription)@11..19
-        Token(TkDocDetail)@11..19 " comment"
+      Token(TkWhitespace)@11..12 " "
+      Syntax(DocDescription)@12..19
+        Token(TkDocDetail)@12..19 "comment"
     Token(TkEndOfLine)@19..20 "\n"
     Token(TkEndOfLine)@20..21 "\n"
     Token(TkWhitespace)@21..29 "        "
     Syntax(Comment)@29..74
       Token(TkNormalStart)@29..31 "--"
-      Syntax(DocDescription)@31..74
-        Token(TkDocDetail)@31..38 " hihihi"
+      Token(TkWhitespace)@31..32 " "
+      Syntax(DocDescription)@32..74
+        Token(TkDocDetail)@32..38 "hihihi"
         Token(TkEndOfLine)@38..39 "\n"
         Token(TkWhitespace)@39..47 "        "
         Token(TkNormalStart)@47..49 "--"
@@ -54,7 +56,78 @@ Syntax(Chunk)@0..83
     Token(TkEndOfLine)@74..75 "\n"
     Token(TkWhitespace)@75..83 "        "
         "#;
-        assert_ast_eq!(code, ast);
+        assert_ast_eq!(code, result);
+    }
+
+    #[test]
+    fn test_tag_with_description() {
+        let code = r#"
+        ---   hiihihi
+        ---@param a number hihihi hello
+        ---    enenenen
+        ---@return string a yyyyy
+        function f(a)
+        end
+        "#;
+        let result = r#"
+Syntax(Chunk)@0..163
+  Syntax(Block)@0..163
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..120
+      Token(TkNormalStart)@9..15 "---   "
+      Syntax(DocDescription)@15..22
+        Token(TkDocDetail)@15..22 "hiihihi"
+      Token(TkEndOfLine)@22..23 "\n"
+      Token(TkWhitespace)@23..31 "        "
+      Token(TkDocStart)@31..35 "---@"
+      Syntax(DocTagParam)@35..86
+        Token(TkTagParam)@35..40 "param"
+        Token(TkWhitespace)@40..41 " "
+        Token(TkName)@41..42 "a"
+        Token(TkWhitespace)@42..43 " "
+        Syntax(TypeName)@43..49
+          Token(TkName)@43..49 "number"
+        Token(TkWhitespace)@49..50 " "
+        Syntax(DocDescription)@50..86
+          Token(TkDocDetail)@50..62 "hihihi hello"
+          Token(TkEndOfLine)@62..63 "\n"
+          Token(TkWhitespace)@63..71 "        "
+          Token(TkNormalStart)@71..78 "---    "
+          Token(TkDocDetail)@78..86 "enenenen"
+      Token(TkEndOfLine)@86..87 "\n"
+      Token(TkWhitespace)@87..95 "        "
+      Token(TkDocStart)@95..99 "---@"
+      Syntax(DocTagReturn)@99..120
+        Token(TkTagReturn)@99..105 "return"
+        Token(TkWhitespace)@105..106 " "
+        Syntax(TypeName)@106..112
+          Token(TkName)@106..112 "string"
+        Token(TkWhitespace)@112..113 " "
+        Token(TkName)@113..114 "a"
+        Token(TkWhitespace)@114..115 " "
+        Syntax(DocDescription)@115..120
+          Token(TkDocDetail)@115..120 "yyyyy"
+    Token(TkEndOfLine)@120..121 "\n"
+    Token(TkWhitespace)@121..129 "        "
+    Syntax(FuncStat)@129..154
+      Token(TkFunction)@129..137 "function"
+      Token(TkWhitespace)@137..138 " "
+      Syntax(NameExpr)@138..139
+        Token(TkName)@138..139 "f"
+      Syntax(ClosureExpr)@139..154
+        Syntax(ParamList)@139..142
+          Token(TkLeftParen)@139..140 "("
+          Syntax(ParamName)@140..141
+            Token(TkName)@140..141 "a"
+          Token(TkRightParen)@141..142 ")"
+        Token(TkEndOfLine)@142..143 "\n"
+        Token(TkWhitespace)@143..151 "        "
+        Token(TkEnd)@151..154 "end"
+    Token(TkEndOfLine)@154..155 "\n"
+    Token(TkWhitespace)@155..163 "        "
+        "#;
+        assert_ast_eq!(code, result);
     }
 
     #[test]

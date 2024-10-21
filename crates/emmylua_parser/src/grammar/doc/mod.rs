@@ -34,8 +34,9 @@ fn parse_docs(p: &mut LuaDocParser) {
                 parse_long_tag(p);
             }
             LuaTokenKind::TkNormalStart | LuaTokenKind::TkLongCommentStart => {
-                p.bump();
                 p.set_state(LuaDocLexerState::Description);
+                p.bump();
+
                 parse_description(p);
             }
             LuaTokenKind::TkDocContinueOr => {
@@ -70,7 +71,7 @@ fn parse_description(p: &mut LuaDocParser) {
             LuaTokenKind::TkDocDetail
             | LuaTokenKind::TkEndOfLine
             | LuaTokenKind::TkWhitespace
-            | LuaTokenKind::TkDocContinue 
+            | LuaTokenKind::TkDocContinue
             | LuaTokenKind::TkNormalStart => {
                 p.bump();
             }

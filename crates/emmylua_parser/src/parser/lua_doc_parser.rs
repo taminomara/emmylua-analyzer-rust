@@ -176,7 +176,7 @@ impl LuaDocParser<'_, '_> {
                         | LuaTokenKind::TkDocStart
                         | LuaTokenKind::TkDocLongStart
                 ) {
-                    self.current_token = LuaTokenKind::TkDocDetail;
+                    self.re_calc_detail();
                 }
             }
             LuaDocLexerState::Trivia => {
@@ -194,6 +194,25 @@ impl LuaDocParser<'_, '_> {
         }
 
         self.lexer.state = state;
+    }
+
+    fn re_calc_detail(&mut self) {
+        self.current_token = LuaTokenKind::TkDocDetail;
+        if self.lexer.is_invalid() {
+            return;
+        }
+        self.current_token = LuaTokenKind::None;
+        let readed_range = self.current_token_range;
+        let origin_token_range = self.tokens[self.origin_token_index].range;
+        let origin_token_kind = self.tokens[self.origin_token_index].kind;
+        let new_range = SourceRange {
+            start_offset: readed_range.start_offset,
+            length: origin_token_range.end_offset() - readed_range.start_offset,
+        };
+
+        self.lexer.reset(origin_token_kind, new_range);
+        self.lexer.state = LuaDocLexerState::Description;
+        self.bump();
     }
 
     pub fn bump_to_end(&mut self) {
