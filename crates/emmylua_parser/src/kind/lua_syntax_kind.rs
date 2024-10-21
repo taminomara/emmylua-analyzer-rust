@@ -112,12 +112,13 @@ pub enum LuaSyntaxKind {
     DocDiagnosticNameList,
     DocTypeList,
     DocAttribute,
-    DocOpType, // +<type>, -<type>, +?
-    DocMappedKeys,     // [p in KeyType]?
-    DocEnumFieldList, // ---| <EnumField>
+    DocOpType,             // +<type>, -<type>, +?
+    DocMappedKeys,         // [p in KeyType]?
+    DocEnumFieldList,      // ---| <EnumField>
     DocEnumField, // <string> # description or <integer> # description or <name> # description
     DocAliasOrTypeList, // | <DocAliasOrType>
     DocAliasOrType, // <type> # description
+    DocDiagnosticCodeList, // unused-local, undefined-global ...
     // start with '#' or '@'
     DocDescription,
 

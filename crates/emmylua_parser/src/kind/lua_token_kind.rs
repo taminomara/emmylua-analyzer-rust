@@ -82,6 +82,7 @@ pub enum LuaTokenKind {
     TkDocLongStart,     // --[[@
     TkDocStart,         // ---@
     TkDocTrivia,        // other can not parsed
+    TkLongCommentEnd,   // ]] or ]===]
 
     // tag
     TkTagClass,     // class

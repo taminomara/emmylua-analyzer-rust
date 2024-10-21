@@ -67,9 +67,9 @@ fn parse_tag_detail(p: &mut LuaDocParser) -> ParseResult {
 }
 
 fn parse_tag_simple(p: &mut LuaDocParser, kind: LuaSyntaxKind) -> ParseResult {
-    p.set_state(LuaDocLexerState::Description);
     let m = p.mark(kind);
-
+    p.bump();
+    p.set_state(LuaDocLexerState::Description);
     parse_description(p);
 
     Ok(m.complete(p))
@@ -87,7 +87,7 @@ fn parse_tag_class(p: &mut LuaDocParser) -> ParseResult {
     expect_token(p, LuaTokenKind::TkName)?;
     // TODO suffixed
     if p.current_token() == LuaTokenKind::TkLt {
-        parse_generic_decl_list(p)?;
+        parse_generic_decl_list(p, true)?;
     }
 
     if p.current_token() == LuaTokenKind::TkColon {
@@ -115,15 +115,19 @@ fn parse_tag_attribute(p: &mut LuaDocParser) -> ParseResult {
 }
 
 // <T, R, C: AAA>
-fn parse_generic_decl_list(p: &mut LuaDocParser) -> ParseResult {
+fn parse_generic_decl_list(p: &mut LuaDocParser, allow_angle_brackets: bool) -> ParseResult {
     let m = p.mark(LuaSyntaxKind::DocGenericDeclareList);
-    expect_token(p, LuaTokenKind::TkLt)?;
+    if allow_angle_brackets {
+        expect_token(p, LuaTokenKind::TkLt)?;
+    }
     parse_generic_param(p)?;
     while p.current_token() == LuaTokenKind::TkComma {
         p.bump();
         parse_generic_param(p)?;
     }
-    expect_token(p, LuaTokenKind::TkGt)?;
+    if allow_angle_brackets {
+        expect_token(p, LuaTokenKind::TkGt)?;
+    }
     Ok(m.complete(p))
 }
 
@@ -199,7 +203,7 @@ fn parse_tag_alias(p: &mut LuaDocParser) -> ParseResult {
     p.bump();
     expect_token(p, LuaTokenKind::TkName)?;
     if p.current_token() == LuaTokenKind::TkLt {
-        parse_generic_decl_list(p)?;
+        parse_generic_decl_list(p, true)?;
     }
 
     if p.current_token() == LuaTokenKind::TkDocContinueOr {
@@ -361,10 +365,8 @@ fn parse_tag_generic(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagGeneric);
     p.bump();
-    expect_token(p, LuaTokenKind::TkName)?;
-    if p.current_token() == LuaTokenKind::TkLt {
-        parse_generic_decl_list(p)?;
-    }
+
+    parse_generic_decl_list(p, false)?;
 
     p.set_state(LuaDocLexerState::Description);
     parse_description(p);
@@ -395,6 +397,8 @@ fn parse_tag_as(p: &mut LuaDocParser) -> ParseResult {
     let m = p.mark(LuaSyntaxKind::DocTagAs);
     p.bump();
     parse_type(p)?;
+
+    if_token_bump(p, LuaTokenKind::TkLongCommentEnd);
     p.set_state(LuaDocLexerState::Description);
     parse_description(p);
     Ok(m.complete(p))
@@ -438,7 +442,6 @@ fn parse_tag_cast(p: &mut LuaDocParser) -> ParseResult {
 fn parse_op_type(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocOpType);
-    p.bump();
     if p.current_token() == LuaTokenKind::TkPlus || p.current_token() == LuaTokenKind::TkMinus {
         p.bump();
         if p.current_token() == LuaTokenKind::TkDocQuestion {
@@ -473,14 +476,19 @@ fn parse_tag_diagnostic(p: &mut LuaDocParser) -> ParseResult {
     expect_token(p, LuaTokenKind::TkName)?;
     if p.current_token() == LuaTokenKind::TkColon {
         p.bump();
-
-        expect_token(p, LuaTokenKind::TkName)?;
-        while p.current_token() == LuaTokenKind::TkComma {
-            p.bump();
-            expect_token(p, LuaTokenKind::TkName)?;
-        }
+        parse_diagnostic_code_list(p)?;
     }
 
+    Ok(m.complete(p))
+}
+
+fn parse_diagnostic_code_list(p: &mut LuaDocParser) -> ParseResult {
+    let m = p.mark(LuaSyntaxKind::DocDiagnosticCodeList);
+    expect_token(p, LuaTokenKind::TkName)?;
+    while p.current_token() == LuaTokenKind::TkComma {
+        p.bump();
+        expect_token(p, LuaTokenKind::TkName)?;
+    }
     Ok(m.complete(p))
 }
 
@@ -498,7 +506,8 @@ fn parse_tag_version(p: &mut LuaDocParser) -> ParseResult {
         p.bump();
         parse_version(p)?;
     }
-
+    p.set_state(LuaDocLexerState::Description);
+    parse_description(p);
     Ok(m.complete(p))
 }
 
@@ -557,7 +566,7 @@ fn parse_tag_mapping(p: &mut LuaDocParser) -> ParseResult {
 // ---@namespace path
 // ---@namespace System.Net
 fn parse_tag_namespace(p: &mut LuaDocParser) -> ParseResult {
-    p.set_state(LuaDocLexerState::Namespace);
+    p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagNamespace);
     p.bump();
     expect_token(p, LuaTokenKind::TkName)?;
@@ -566,7 +575,7 @@ fn parse_tag_namespace(p: &mut LuaDocParser) -> ParseResult {
 
 // ---@using path
 fn parse_tag_using(p: &mut LuaDocParser) -> ParseResult {
-    p.set_state(LuaDocLexerState::Namespace);
+    p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagUsing);
     p.bump();
     expect_token(p, LuaTokenKind::TkName)?;

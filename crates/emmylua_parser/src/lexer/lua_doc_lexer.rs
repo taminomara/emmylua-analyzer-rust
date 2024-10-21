@@ -23,8 +23,7 @@ pub enum LuaDocLexerState {
     Trivia,
     See,
     Version,
-    Source,
-    Namespace,
+    Source
 }
 
 impl LuaDocLexer<'_> {
@@ -72,7 +71,6 @@ impl LuaDocLexer<'_> {
             LuaDocLexerState::See => self.lex_see(),
             LuaDocLexerState::Version => self.lex_version(),
             LuaDocLexerState::Source => self.lex_source(),
-            LuaDocLexerState::Namespace => self.lex_namespace(),
             _ => LuaTokenKind::None,
         }
     }
@@ -194,6 +192,21 @@ impl LuaDocLexer<'_> {
             }
             ']' => {
                 reader.bump();
+                if self.origin_token_kind == LuaTokenKind::TkLongComment {
+                    match reader.current_char() {
+                        '=' => {
+                            reader.eat_when('=');
+                            reader.bump();
+                            return LuaTokenKind::TkLongCommentEnd;
+                        }
+                        ']' => {
+                            reader.bump();
+                            return LuaTokenKind::TkLongCommentEnd;
+                        }
+                        _ => (),
+                    }
+                }
+
                 LuaTokenKind::TkRightBracket
             }
             '{' => {
@@ -364,6 +377,10 @@ impl LuaDocLexer<'_> {
                     LuaTokenKind::TkLt
                 }
             }
+            ch if is_doc_whitespace(ch) => {
+                reader.eat_while(is_doc_whitespace);
+                LuaTokenKind::TkWhitespace
+            }
             ch if ch.is_ascii_digit() => {
                 reader.eat_while(|ch| ch.is_ascii_digit() || ch == '.');
                 LuaTokenKind::TkVersionNumber
@@ -377,10 +394,7 @@ impl LuaDocLexer<'_> {
                     _ => LuaTokenKind::TkName,
                 }
             }
-            _ => {
-                reader.eat_while(|_| true);
-                LuaTokenKind::TkDocTrivia
-            }
+            _ => self.lex_normal(),
         }
     }
 
@@ -405,29 +419,7 @@ impl LuaDocLexer<'_> {
 
                 LuaTokenKind::TKDocPath
             }
-            _ => {
-                reader.eat_while(|_| true);
-                LuaTokenKind::TkDocTrivia
-            }
-        }
-    }
-
-    fn lex_namespace(&mut self) -> LuaTokenKind {
-        let reader = self.reader.as_mut().unwrap();
-        match reader.current_char() {
-            ch if is_doc_whitespace(ch) => {
-                reader.eat_while(is_doc_whitespace);
-                LuaTokenKind::TkWhitespace
-            }
-            ch if is_name_start(ch) => {
-                reader.bump();
-                reader.eat_while(is_namespace_continue);
-                LuaTokenKind::TkName
-            }
-            _ => {
-                reader.eat_while(|_| true);
-                LuaTokenKind::TkDocTrivia
-            }
+            _ => self.lex_normal(),
         }
     }
 }

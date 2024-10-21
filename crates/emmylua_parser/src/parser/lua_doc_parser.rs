@@ -175,6 +175,7 @@ impl LuaDocParser<'_, '_> {
                         | LuaTokenKind::TkLongCommentStart
                         | LuaTokenKind::TkDocStart
                         | LuaTokenKind::TkDocLongStart
+                        | LuaTokenKind::TkLongCommentEnd
                 ) {
                     self.re_calc_detail();
                 }

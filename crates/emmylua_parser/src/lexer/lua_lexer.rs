@@ -386,12 +386,7 @@ impl LuaLexer<'_> {
     }
 
     fn skip_sep(&mut self) -> usize {
-        let mut count = 0;
-        while self.reader.current_char() == '=' {
-            count += 1;
-            self.reader.bump();
-        }
-        count
+        self.reader.eat_when('=')
     }
 
     fn lex_long_string(&mut self, sep: usize) -> LuaTokenKind {
@@ -400,18 +395,14 @@ impl LuaLexer<'_> {
             match self.reader.current_char() {
                 ']' => {
                     self.reader.bump();
-                    let mut count = 0;
-                    while self.reader.current_char() == '=' {
-                        count += 1;
-                        self.reader.bump();
-                    }
+                    let count = self.reader.eat_when('=');
                     if count == sep {
                         end = true;
+                        if self.reader.current_char() == ']' {
+                            self.reader.bump();
+                        }
                         break;
                     }
-                }
-                '\n' | '\r' => {
-                    self.lex_new_line();
                 }
                 _ => {
                     self.reader.bump();
@@ -533,7 +524,7 @@ impl LuaLexer<'_> {
         }
 
         match state {
-            NumberState::Int | NumberState::Hex  => LuaTokenKind::TkInt,
+            NumberState::Int | NumberState::Hex => LuaTokenKind::TkInt,
             _ => LuaTokenKind::TkFloat,
         }
     }
@@ -541,7 +532,7 @@ impl LuaLexer<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;   
+    use super::*;
     use crate::kind::LuaTokenKind::*;
     use crate::text::SourceRange;
 
@@ -677,7 +668,7 @@ mod tests {
                 },
             },
         ];
-        
+
         assert_eq!(tokens, result_tokens);
     }
 
