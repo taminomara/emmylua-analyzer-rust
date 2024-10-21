@@ -154,8 +154,40 @@ fn parse_tag_enum(p: &mut LuaDocParser) -> ParseResult {
         p.bump();
         parse_type(p)?;
     }
+
+    if p.current_token() == LuaTokenKind::TkDocContinueOr {
+        parse_enum_field_list(p)?;
+    }
+
     p.set_state(LuaDocLexerState::Description);
     parse_description(p);
+
+    Ok(m.complete(p))
+}
+
+fn parse_enum_field_list(p: &mut LuaDocParser) -> ParseResult {
+    let m = p.mark(LuaSyntaxKind::DocEnumFieldList);
+
+    while p.current_token() == LuaTokenKind::TkDocContinueOr {
+        p.bump();
+        parse_enum_field(p)?;
+    }
+    Ok(m.complete(p))
+}
+
+fn parse_enum_field(p: &mut LuaDocParser) -> ParseResult {
+    let m = p.mark(LuaSyntaxKind::DocEnumField);
+    if matches!(
+        p.current_token(),
+        LuaTokenKind::TkName | LuaTokenKind::TkString | LuaTokenKind::TkInt
+    ) {
+        p.bump();
+    }
+
+    if p.current_token() == LuaTokenKind::TkDocDetail {
+        p.bump();
+    }
+
     Ok(m.complete(p))
 }
 
@@ -170,10 +202,36 @@ fn parse_tag_alias(p: &mut LuaDocParser) -> ParseResult {
         parse_generic_decl_list(p)?;
     }
 
-    parse_type(p)?;
+    if p.current_token() == LuaTokenKind::TkDocContinueOr {
+        parse_alias_or_type_list(p)?;
+    } else {
+        parse_type(p)?;
+    }
 
     p.set_state(LuaDocLexerState::Description);
     parse_description(p);
+    Ok(m.complete(p))
+}
+
+fn parse_alias_or_type_list(p: &mut LuaDocParser) -> ParseResult {
+    let m = p.mark(LuaSyntaxKind::DocAliasOrTypeList);
+
+    while p.current_token() == LuaTokenKind::TkDocContinueOr {
+        p.bump();
+        parse_alias_or_type(p)?;
+    }
+
+    Ok(m.complete(p))
+}
+
+fn parse_alias_or_type(p: &mut LuaDocParser) -> ParseResult {
+    let m = p.mark(LuaSyntaxKind::DocAliasOrType);
+
+    parse_type(p)?;
+    if p.current_token() == LuaTokenKind::TkDocDetail {
+        p.bump();
+    }
+
     Ok(m.complete(p))
 }
 

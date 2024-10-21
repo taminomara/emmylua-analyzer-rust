@@ -216,6 +216,10 @@ impl LuaDocLexer<'_> {
                 reader.bump();
                 LuaTokenKind::TkDocOr
             }
+            '&' => {
+                reader.bump();
+                LuaTokenKind::TkDocAnd
+            }
             '?' => {
                 reader.bump();
                 LuaTokenKind::TkDocQuestion
@@ -234,6 +238,10 @@ impl LuaDocLexer<'_> {
                             '@' => {
                                 reader.bump();
                                 LuaTokenKind::TkDocStart
+                            }
+                            '|' => {
+                                reader.bump();
+                                LuaTokenKind::TkDocContinueOr
                             }
                             _ => LuaTokenKind::TkDocContinue,
                         }

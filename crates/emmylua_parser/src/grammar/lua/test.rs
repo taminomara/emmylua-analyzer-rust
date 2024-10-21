@@ -389,4 +389,50 @@ Syntax(Chunk)@0..770
 "#;
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_expr() {
+        let code = r#"
+        local a = 1 + 2 + 3 + 4
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..41
+  Syntax(Block)@0..41
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(LocalStat)@9..32
+      Token(TkLocal)@9..14 "local"
+      Token(TkWhitespace)@14..15 " "
+      Syntax(LocalName)@15..16
+        Token(TkName)@15..16 "a"
+      Token(TkWhitespace)@16..17 " "
+      Token(TkAssign)@17..18 "="
+      Token(TkWhitespace)@18..19 " "
+      Syntax(BinaryExpr)@19..32
+        Syntax(BinaryExpr)@19..28
+          Syntax(BinaryExpr)@19..24
+            Syntax(LiteralExpr)@19..20
+              Token(TkInt)@19..20 "1"
+            Token(TkWhitespace)@20..21 " "
+            Token(TkPlus)@21..22 "+"
+            Token(TkWhitespace)@22..23 " "
+            Syntax(LiteralExpr)@23..24
+              Token(TkInt)@23..24 "2"
+          Token(TkWhitespace)@24..25 " "
+          Token(TkPlus)@25..26 "+"
+          Token(TkWhitespace)@26..27 " "
+          Syntax(LiteralExpr)@27..28
+            Token(TkInt)@27..28 "3"
+        Token(TkWhitespace)@28..29 " "
+        Token(TkPlus)@29..30 "+"
+        Token(TkWhitespace)@30..31 " "
+        Syntax(LiteralExpr)@31..32
+          Token(TkInt)@31..32 "4"
+    Token(TkEndOfLine)@32..33 "\n"
+    Token(TkWhitespace)@33..41 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
 }

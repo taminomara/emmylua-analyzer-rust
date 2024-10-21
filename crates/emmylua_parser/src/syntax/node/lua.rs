@@ -1,4 +1,4 @@
-use crate::{kind::LuaSyntaxKind, syntax::traits::{LuaNode, LuaNodeChilren}, LuaSyntaxNode};
+use crate::{kind::LuaSyntaxKind, syntax::traits::{LuaNode, LuaNodeChildren}, LuaSyntaxNode};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaChunk {
@@ -65,7 +65,7 @@ impl LuaNode for LuaBlock {
 }
 
 impl LuaBlock {
-    pub fn stats(&self) -> LuaNodeChilren<LuaStat> {
+    pub fn stats(&self) -> LuaNodeChildren<LuaStat> {
         // self.children()
         todo!()
     }

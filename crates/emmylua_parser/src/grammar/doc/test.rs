@@ -155,6 +155,275 @@ Syntax(Chunk)@0..143
     }
 
     #[test]
+    fn test_enum_doc() {
+        let code = r#"
+        ---@enum AAA
+
+        ---@enum BBB: integer
+
+        ---@enum CCC: integer
+        local d = {
+          a = 123,
+          b = 456,
+        }
+
+        ---@enum DDD
+        ---| AAA
+        ---| BBB @ hihihi
+        ---| CCC
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..242
+  Syntax(Block)@0..242
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..21
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagEnum)@13..21
+        Token(TkTagEnum)@13..17 "enum"
+        Token(TkWhitespace)@17..18 " "
+        Token(TkName)@18..21 "AAA"
+    Token(TkEndOfLine)@21..22 "\n"
+    Token(TkEndOfLine)@22..23 "\n"
+    Token(TkWhitespace)@23..31 "        "
+    Syntax(Comment)@31..52
+      Token(TkDocStart)@31..35 "---@"
+      Syntax(DocTagEnum)@35..52
+        Token(TkTagEnum)@35..39 "enum"
+        Token(TkWhitespace)@39..40 " "
+        Token(TkName)@40..43 "BBB"
+        Token(TkColon)@43..44 ":"
+        Token(TkWhitespace)@44..45 " "
+        Syntax(TypeName)@45..52
+          Token(TkName)@45..52 "integer"
+    Token(TkEndOfLine)@52..53 "\n"
+    Token(TkEndOfLine)@53..54 "\n"
+    Token(TkWhitespace)@54..62 "        "
+    Syntax(Comment)@62..83
+      Token(TkDocStart)@62..66 "---@"
+      Syntax(DocTagEnum)@66..83
+        Token(TkTagEnum)@66..70 "enum"
+        Token(TkWhitespace)@70..71 " "
+        Token(TkName)@71..74 "CCC"
+        Token(TkColon)@74..75 ":"
+        Token(TkWhitespace)@75..76 " "
+        Syntax(TypeName)@76..83
+          Token(TkName)@76..83 "integer"
+    Token(TkEndOfLine)@83..84 "\n"
+    Token(TkWhitespace)@84..92 "        "
+    Syntax(LocalStat)@92..151
+      Token(TkLocal)@92..97 "local"
+      Token(TkWhitespace)@97..98 " "
+      Syntax(LocalName)@98..99
+        Token(TkName)@98..99 "d"
+      Token(TkWhitespace)@99..100 " "
+      Token(TkAssign)@100..101 "="
+      Token(TkWhitespace)@101..102 " "
+      Syntax(TableExpr)@102..151
+        Token(TkLeftBrace)@102..103 "{"
+        Token(TkEndOfLine)@103..104 "\n"
+        Token(TkWhitespace)@104..114 "          "
+        Syntax(TableFieldAssign)@114..121
+          Token(TkName)@114..115 "a"
+          Token(TkWhitespace)@115..116 " "
+          Token(TkAssign)@116..117 "="
+          Token(TkWhitespace)@117..118 " "
+          Syntax(LiteralExpr)@118..121
+            Token(TkInt)@118..121 "123"
+        Token(TkComma)@121..122 ","
+        Token(TkEndOfLine)@122..123 "\n"
+        Token(TkWhitespace)@123..133 "          "
+        Syntax(TableFieldAssign)@133..140
+          Token(TkName)@133..134 "b"
+          Token(TkWhitespace)@134..135 " "
+          Token(TkAssign)@135..136 "="
+          Token(TkWhitespace)@136..137 " "
+          Syntax(LiteralExpr)@137..140
+            Token(TkInt)@137..140 "456"
+        Token(TkComma)@140..141 ","
+        Token(TkEndOfLine)@141..142 "\n"
+        Token(TkWhitespace)@142..150 "        "
+        Token(TkRightBrace)@150..151 "}"
+    Token(TkEndOfLine)@151..152 "\n"
+    Token(TkEndOfLine)@152..153 "\n"
+    Token(TkWhitespace)@153..161 "        "
+    Syntax(Comment)@161..233
+      Token(TkDocStart)@161..165 "---@"
+      Syntax(DocTagEnum)@165..233
+        Token(TkTagEnum)@165..169 "enum"
+        Token(TkWhitespace)@169..170 " "
+        Token(TkName)@170..173 "DDD"
+        Token(TkEndOfLine)@173..174 "\n"
+        Token(TkWhitespace)@174..182 "        "
+        Syntax(DocEnumFieldList)@182..233
+          Token(TkDocContinueOr)@182..186 "---|"
+          Token(TkWhitespace)@186..187 " "
+          Syntax(DocEnumField)@187..190
+            Token(TkName)@187..190 "AAA"
+          Token(TkEndOfLine)@190..191 "\n"
+          Token(TkWhitespace)@191..199 "        "
+          Token(TkDocContinueOr)@199..203 "---|"
+          Token(TkWhitespace)@203..204 " "
+          Syntax(DocEnumField)@204..216
+            Token(TkName)@204..207 "BBB"
+            Token(TkWhitespace)@207..208 " "
+            Token(TkDocDetail)@208..216 "@ hihihi"
+          Token(TkEndOfLine)@216..217 "\n"
+          Token(TkWhitespace)@217..225 "        "
+          Token(TkDocContinueOr)@225..229 "---|"
+          Token(TkWhitespace)@229..230 " "
+          Syntax(DocEnumField)@230..233
+            Token(TkName)@230..233 "CCC"
+    Token(TkEndOfLine)@233..234 "\n"
+    Token(TkWhitespace)@234..242 "        "
+        "#;
+        assert_ast_eq!(code, result);
+    }
+
+    #[test]
+    fn test_alias_doc() {
+        let code = r#"
+        ---@alias A B
+        
+        ---@alias C<T> B<T>
+
+        ---@alias A
+        ---| "aaa" @ 1231
+        ---| "bbb" @ 456
+        ---| "ccc" @ 789
+
+        ---@alias D
+        ---| 1
+        ---| 2 
+        ---| 3
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..232
+  Syntax(Block)@0..232
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..22
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagAlias)@13..22
+        Token(TkTagAlias)@13..18 "alias"
+        Token(TkWhitespace)@18..19 " "
+        Token(TkName)@19..20 "A"
+        Token(TkWhitespace)@20..21 " "
+        Syntax(TypeName)@21..22
+          Token(TkName)@21..22 "B"
+    Token(TkEndOfLine)@22..23 "\n"
+    Token(TkWhitespace)@23..31 "        "
+    Token(TkEndOfLine)@31..32 "\n"
+    Token(TkWhitespace)@32..40 "        "
+    Syntax(Comment)@40..59
+      Token(TkDocStart)@40..44 "---@"
+      Syntax(DocTagAlias)@44..59
+        Token(TkTagAlias)@44..49 "alias"
+        Token(TkWhitespace)@49..50 " "
+        Token(TkName)@50..51 "C"
+        Syntax(DocGenericDeclareList)@51..54
+          Token(TkLt)@51..52 "<"
+          Syntax(DocGenericParameter)@52..53
+            Token(TkName)@52..53 "T"
+          Token(TkGt)@53..54 ">"
+        Token(TkWhitespace)@54..55 " "
+        Syntax(TypeGeneric)@55..59
+          Syntax(TypeName)@55..56
+            Token(TkName)@55..56 "B"
+          Token(TkLt)@56..57 "<"
+          Syntax(DocTypeList)@57..58
+            Syntax(TypeName)@57..58
+              Token(TkName)@57..58 "T"
+          Token(TkGt)@58..59 ">"
+    Token(TkEndOfLine)@59..60 "\n"
+    Token(TkEndOfLine)@60..61 "\n"
+    Token(TkWhitespace)@61..69 "        "
+    Syntax(Comment)@69..156
+      Token(TkDocStart)@69..73 "---@"
+      Syntax(DocTagAlias)@73..156
+        Token(TkTagAlias)@73..78 "alias"
+        Token(TkWhitespace)@78..79 " "
+        Token(TkName)@79..80 "A"
+        Token(TkEndOfLine)@80..81 "\n"
+        Token(TkWhitespace)@81..89 "        "
+        Syntax(DocAliasOrTypeList)@89..156
+          Token(TkDocContinueOr)@89..93 "---|"
+          Token(TkWhitespace)@93..94 " "
+          Syntax(DocAliasOrType)@94..106
+            Syntax(TypeLiteral)@94..99
+              Token(TkString)@94..99 "\"aaa\""
+            Token(TkWhitespace)@99..100 " "
+            Token(TkDocDetail)@100..106 "@ 1231"
+          Token(TkEndOfLine)@106..107 "\n"
+          Token(TkWhitespace)@107..115 "        "
+          Token(TkDocContinueOr)@115..119 "---|"
+          Token(TkWhitespace)@119..120 " "
+          Syntax(DocAliasOrType)@120..131
+            Syntax(TypeLiteral)@120..125
+              Token(TkString)@120..125 "\"bbb\""
+            Token(TkWhitespace)@125..126 " "
+            Token(TkDocDetail)@126..131 "@ 456"
+          Token(TkEndOfLine)@131..132 "\n"
+          Token(TkWhitespace)@132..140 "        "
+          Token(TkDocContinueOr)@140..144 "---|"
+          Token(TkWhitespace)@144..145 " "
+          Syntax(DocAliasOrType)@145..156
+            Syntax(TypeLiteral)@145..150
+              Token(TkString)@145..150 "\"ccc\""
+            Token(TkWhitespace)@150..151 " "
+            Token(TkDocDetail)@151..156 "@ 789"
+    Token(TkEndOfLine)@156..157 "\n"
+    Token(TkEndOfLine)@157..158 "\n"
+    Token(TkWhitespace)@158..166 "        "
+    Syntax(Comment)@166..223
+      Token(TkDocStart)@166..170 "---@"
+      Syntax(DocTagAlias)@170..223
+        Token(TkTagAlias)@170..175 "alias"
+        Token(TkWhitespace)@175..176 " "
+        Token(TkName)@176..177 "D"
+        Token(TkEndOfLine)@177..178 "\n"
+        Token(TkWhitespace)@178..186 "        "
+        Syntax(DocAliasOrTypeList)@186..223
+          Token(TkDocContinueOr)@186..190 "---|"
+          Token(TkWhitespace)@190..191 " "
+          Syntax(DocAliasOrType)@191..192
+            Syntax(TypeLiteral)@191..192
+              Token(TkInt)@191..192 "1"
+          Token(TkEndOfLine)@192..193 "\n"
+          Token(TkWhitespace)@193..201 "        "
+          Token(TkDocContinueOr)@201..205 "---|"
+          Token(TkWhitespace)@205..206 " "
+          Syntax(DocAliasOrType)@206..207
+            Syntax(TypeLiteral)@206..207
+              Token(TkInt)@206..207 "2"
+          Token(TkWhitespace)@207..208 " "
+          Token(TkEndOfLine)@208..209 "\n"
+          Token(TkWhitespace)@209..217 "        "
+          Token(TkDocContinueOr)@217..221 "---|"
+          Token(TkWhitespace)@221..222 " "
+          Syntax(DocAliasOrType)@222..223
+            Syntax(TypeLiteral)@222..223
+              Token(TkInt)@222..223 "3"
+    Token(TkEndOfLine)@223..224 "\n"
+    Token(TkWhitespace)@224..232 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
+
+    #[test]
+    fn test_doc_type() {
+        let code = r#"
+        ---@type A | B | C & D
+        "#;
+        print_ast(code);
+        // let result = r#"
+        // "#;
+    }
+
+    #[test]
     fn test_basic_doc() {
         let code = r#"
         ---@class A

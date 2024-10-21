@@ -166,7 +166,7 @@ impl LuaOpKind {
 
     pub fn to_type_binary_operator(kind: LuaTokenKind) -> LuaTypeBinaryOperator {
         match kind {
-            LuaTokenKind::TkDocContinueOr | LuaTokenKind::TkDocOr => LuaTypeBinaryOperator::Union,
+            LuaTokenKind::TkDocOr => LuaTypeBinaryOperator::Union,
             LuaTokenKind::TkDocAnd => LuaTypeBinaryOperator::Intersection,
             LuaTokenKind::TkIn => LuaTypeBinaryOperator::In,
             LuaTokenKind::TkDocExtends => LuaTypeBinaryOperator::Extends,

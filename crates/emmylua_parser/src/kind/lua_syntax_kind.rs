@@ -114,6 +114,10 @@ pub enum LuaSyntaxKind {
     DocAttribute,
     DocOpType, // +<type>, -<type>, +?
     DocMappedKeys,     // [p in KeyType]?
+    DocEnumFieldList, // ---| <EnumField>
+    DocEnumField, // <string> # description or <integer> # description or <name> # description
+    DocAliasOrTypeList, // | <DocAliasOrType>
+    DocAliasOrType, // <type> # description
     // start with '#' or '@'
     DocDescription,
 

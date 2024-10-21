@@ -360,14 +360,14 @@ impl LuaLexer<'_> {
 
     fn lex_new_line(&mut self) -> LuaTokenKind {
         match self.reader.current_char() {
-            // support \n
+            // support \n or \n\r
             '\n' => {
                 self.reader.bump();
                 if self.reader.current_char() == '\r' {
                     self.reader.bump();
                 }
             }
-            // support \r or  \r\n
+            // support \r or \r\n
             '\r' => {
                 self.reader.bump();
                 if self.reader.current_char() == '\n' {
@@ -532,7 +532,10 @@ impl LuaLexer<'_> {
             }
         }
 
-        LuaTokenKind::TkFloat
+        match state {
+            NumberState::Int | NumberState::Hex  => LuaTokenKind::TkInt,
+            _ => LuaTokenKind::TkFloat,
+        }
     }
 }
 

@@ -37,8 +37,8 @@ pub trait LuaNode {
             .collect()
     }
 
-    fn children<N: LuaNode>(&self) -> LuaNodeChilren<N> {
-        LuaNodeChilren::new(self.syntax())
+    fn children<N: LuaNode>(&self) -> LuaNodeChildren<N> {
+        LuaNodeChildren::new(self.syntax())
     }
 
     fn dump(&self) {
@@ -64,21 +64,21 @@ pub trait LuaToken {
 
 /// An iterator over `SyntaxNode` children of a particular AST type.
 #[derive(Debug, Clone)]
-pub struct LuaNodeChilren<N> {
+pub struct LuaNodeChildren<N> {
     inner: LuaSyntaxNodeChildren,
     ph: PhantomData<N>,
 }
 
-impl<N> LuaNodeChilren<N> {
-    pub fn new(parent: &LuaSyntaxNode) -> LuaNodeChilren<N> {
-        LuaNodeChilren {
+impl<N> LuaNodeChildren<N> {
+    pub fn new(parent: &LuaSyntaxNode) -> LuaNodeChildren<N> {
+        LuaNodeChildren {
             inner: parent.children(),
             ph: PhantomData,
         }
     }
 }
 
-impl<N: LuaNode> Iterator for LuaNodeChilren<N> {
+impl<N: LuaNode> Iterator for LuaNodeChildren<N> {
     type Item = N;
 
     fn next(&mut self) -> Option<N> {
