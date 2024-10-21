@@ -1,10 +1,10 @@
 mod lua;
-mod docs;
+mod doc;
 mod tokens;
 
 #[allow(unused)]
 pub use lua::*;
 #[allow(unused)]
-pub use docs::*;
+pub use doc::*;
 #[allow(unused)]
 pub use tokens::*;

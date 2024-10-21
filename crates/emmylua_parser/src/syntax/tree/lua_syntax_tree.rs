@@ -102,4 +102,8 @@ impl LuaSyntaxTree {
     pub fn get_comment_owner(&self, ptr: LuaSyntaxNodePtr) -> Option<LuaSyntaxNodePtr> {
         self.comment_owner.get(&ptr).copied()
     }
+
+    pub fn get_errors(&self) -> &[LuaParseError] {
+        &self.errors
+    }
 }

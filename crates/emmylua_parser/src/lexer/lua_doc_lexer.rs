@@ -494,10 +494,6 @@ fn is_source_continue(ch: char) -> bool {
     is_name_continue(ch) || ch == '.' || ch == '-' || ch == '/' || ch == ' '
 }
 
-fn is_namespace_continue(ch: char) -> bool {
-    is_name_continue(ch) || ch == '.'
-}
-
 #[cfg(test)]
 mod tests {
     use crate::kind::LuaTokenKind;
