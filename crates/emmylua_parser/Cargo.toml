@@ -2,6 +2,13 @@
 name = "emmylua_parser"
 version = "0.1.0"
 edition = "2021"
+authors = ["CppCXY"]
+description = "A parser for EmmyLua and luals"
+license = "MIT"
+repository = "https://github.com/CppCXY/emmylua-analyzer-rust"
+readme = "README.md"
+keywords = ["emmylua", "luals", "parser", "lua"]
+categories = ["development-tools", "programming-language", "parsing"]
 
 [dependencies]
 rowan.workspace = true

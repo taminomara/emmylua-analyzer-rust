@@ -1,4 +1,4 @@
-use crate::{kind::LuaTokenKind, syntax::traits::LuaAstToken, LuaSyntaxToken};
+use crate::{kind::{BinaryOperator, LuaTokenKind, UnaryOperator}, syntax::traits::LuaAstToken, LuaOpKind, LuaSyntaxToken};
 
 use super::{float_token_value, int_token_value, string_token_value};
 
@@ -164,3 +164,76 @@ impl LuaNumberToken {
         }
     }
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaBinaryOpToken {
+    token: LuaSyntaxToken,
+}
+
+impl LuaAstToken for LuaBinaryOpToken {
+    fn syntax(&self) -> &LuaSyntaxToken {
+        &self.token
+    }
+
+    fn can_cast(kind: LuaTokenKind) -> bool
+    where
+        Self: Sized,
+    {
+        LuaOpKind::to_binary_operator(kind) != BinaryOperator::OpNop
+    }
+
+    fn cast(syntax: LuaSyntaxToken) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(LuaBinaryOpToken { token: syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaBinaryOpToken {
+    #[allow(dead_code)]
+    pub fn get_op(&self) -> BinaryOperator {
+        LuaOpKind::to_binary_operator(self.token.kind().into())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaUnaryOpToken {
+    token: LuaSyntaxToken,
+}
+
+impl LuaAstToken for LuaUnaryOpToken {
+    fn syntax(&self) -> &LuaSyntaxToken {
+        &self.token
+    }
+
+    fn can_cast(kind: LuaTokenKind) -> bool
+    where
+        Self: Sized,
+    {
+        LuaOpKind::to_unary_operator(kind) != UnaryOperator::OpNop
+    }
+
+    fn cast(syntax: LuaSyntaxToken) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(LuaUnaryOpToken { token: syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaUnaryOpToken {
+    #[allow(dead_code)]
+    pub fn get_op(&self) -> UnaryOperator {
+        LuaOpKind::to_unary_operator(self.token.kind().into())
+    }
+}
+

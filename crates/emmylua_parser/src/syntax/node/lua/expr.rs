@@ -1,4 +1,4 @@
-use crate::{kind::{BinaryOperator, LuaSyntaxKind}, syntax::traits::LuaAstNode, LuaSyntaxNode};
+use crate::{kind::{BinaryOperator, LuaSyntaxKind}, syntax::{node::{LuaBinaryOpToken, LuaNameToken, LuaUnaryOpToken}, traits::LuaAstNode}, LuaSyntaxNode};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LuaExpr {
@@ -142,6 +142,13 @@ impl LuaAstNode for LuaNameExpr {
     }
 }
 
+impl LuaNameExpr {
+    #[allow(unused)]
+    pub fn get_name(&self) -> Option<LuaNameToken> {
+        self.token()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaIndexExpr {
     syntax: LuaSyntaxNode,
@@ -168,6 +175,18 @@ impl LuaAstNode for LuaIndexExpr {
         } else {
             None
         }
+    }
+}
+
+impl LuaIndexExpr {
+    #[allow(unused)]
+    pub fn get_var_expr(&self) -> Option<LuaVarExpr> {
+        self.child()
+    }
+
+    #[allow(unused)]
+    pub fn get_expr(&self) -> Option<LuaExpr> {
+        self.children().nth(1)
     }
 }
 
@@ -299,10 +318,8 @@ impl LuaBinaryExpr {
     }
 
     #[allow(unused)]
-    pub fn get_op(&self) -> Option<BinaryOperator> {
-        // self.tokens().find(|it| it.);
-
-        None
+    pub fn get_op_token(&self) -> Option<LuaBinaryOpToken> {
+        self.token()
     }
 }
 
@@ -339,6 +356,11 @@ impl LuaUnaryExpr {
     #[allow(unused)]
     pub fn get_expr(&self) -> Option<LuaExpr> {
         self.child()
+    }
+
+    #[allow(unused)]
+    pub fn get_op_token(&self) -> Option<LuaUnaryOpToken> {
+        self.token()
     }
 }
 

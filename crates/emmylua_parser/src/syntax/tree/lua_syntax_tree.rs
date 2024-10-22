@@ -1,6 +1,6 @@
 use rowan::TextSize;
 
-use crate::{parser_error::LuaParseError, text::LineIndex, LuaSyntaxNode};
+use crate::{parser_error::LuaParseError, syntax::{node::LuaChunk, traits::LuaAstNode}, text::LineIndex, LuaSyntaxNode};
 
 pub struct LuaSyntaxTree {
     root: LuaSyntaxNode,
@@ -20,8 +20,14 @@ impl LuaSyntaxTree {
         }
     }
 
+    // get root node
     pub fn get_red_root(&self) -> &LuaSyntaxNode {
         &self.root
+    }
+
+    // get chunk node, only can cast to LuaChunk
+    pub fn get_chunk_node(&self) -> LuaChunk {
+        LuaChunk::cast(self.root.clone()).unwrap()
     }
 
     // get line base 0
