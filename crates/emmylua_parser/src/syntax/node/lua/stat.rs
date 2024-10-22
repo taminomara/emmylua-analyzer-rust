@@ -1,12 +1,16 @@
-use crate::{kind::LuaSyntaxKind, syntax::{comment_trait::LuaCommentOwner, traits::{LuaAstChildren, LuaAstNode}}, LuaSyntaxNode};
+use crate::{
+    kind::LuaSyntaxKind,
+    syntax::{
+        comment_trait::LuaCommentOwner,
+        traits::{LuaAstChildren, LuaAstNode},
+    },
+    LuaSyntaxNode,
+};
 
-use super::{LuaBlock, LuaLocalName};
-
+use super::{expr::LuaExpr, LuaBlock, LuaLocalName};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum LuaStat {
-
-}
+pub enum LuaStat {}
 
 impl LuaAstNode for LuaStat {
     fn syntax(&self) -> &LuaSyntaxNode {
@@ -31,6 +35,7 @@ impl LuaAstNode for LuaStat {
 impl LuaCommentOwner for LuaStat {}
 
 impl LuaStat {
+    #[allow(unused)]
     pub fn get_parent_block(&self) -> Option<LuaBlock> {
         LuaBlock::cast(self.syntax().parent()?)
     }
@@ -68,7 +73,13 @@ impl LuaAstNode for LocalStat {
 impl LuaCommentOwner for LocalStat {}
 
 impl LocalStat {
+    #[allow(unused)]
     pub fn get_local_name_list(&self) -> LuaAstChildren<LuaLocalName> {
+        self.children()
+    }
+
+    #[allow(unused)]
+    pub fn get_value_exprs(&self) -> LuaAstChildren<LuaExpr> {
         self.children()
     }
 }

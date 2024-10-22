@@ -1,9 +1,13 @@
-mod stat;
 mod expr;
+mod stat;
 
 use stat::LuaStat;
 
-use crate::{kind::LuaSyntaxKind, syntax::traits::{LuaAstNode, LuaAstChildren}, LuaSyntaxNode};
+use crate::{
+    kind::LuaSyntaxKind,
+    syntax::traits::{LuaAstChildren, LuaAstNode},
+    LuaSyntaxNode,
+};
 
 use super::LuaNameToken;
 
@@ -37,6 +41,7 @@ impl LuaAstNode for LuaChunk {
 }
 
 impl LuaChunk {
+    #[allow(unused)]
     pub fn get_block(&self) -> Option<LuaBlock> {
         self.child()
     }
@@ -72,6 +77,7 @@ impl LuaAstNode for LuaBlock {
 }
 
 impl LuaBlock {
+    #[allow(unused)]
     pub fn get_stats(&self) -> LuaAstChildren<LuaStat> {
         self.children()
     }
@@ -107,6 +113,7 @@ impl LuaAstNode for LuaLocalName {
 }
 
 impl LuaLocalName {
+    #[allow(unused)]
     pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
