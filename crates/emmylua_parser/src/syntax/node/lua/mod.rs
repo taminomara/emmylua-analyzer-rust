@@ -3,7 +3,7 @@ mod expr;
 
 use stat::LuaStat;
 
-use crate::{kind::LuaSyntaxKind, syntax::traits::{LuaNode, LuaNodeChildren}, LuaSyntaxNode};
+use crate::{kind::LuaSyntaxKind, syntax::traits::{LuaAstNode, LuaAstChildren}, LuaSyntaxNode};
 
 use super::LuaNameToken;
 
@@ -12,7 +12,7 @@ pub struct LuaChunk {
     syntax: LuaSyntaxNode,
 }
 
-impl LuaNode for LuaChunk {
+impl LuaAstNode for LuaChunk {
     fn syntax(&self) -> &LuaSyntaxNode {
         &self.syntax
     }
@@ -47,7 +47,7 @@ pub struct LuaBlock {
     syntax: LuaSyntaxNode,
 }
 
-impl LuaNode for LuaBlock {
+impl LuaAstNode for LuaBlock {
     fn syntax(&self) -> &LuaSyntaxNode {
         &self.syntax
     }
@@ -72,7 +72,7 @@ impl LuaNode for LuaBlock {
 }
 
 impl LuaBlock {
-    pub fn get_stats(&self) -> LuaNodeChildren<LuaStat> {
+    pub fn get_stats(&self) -> LuaAstChildren<LuaStat> {
         self.children()
     }
 }
@@ -82,7 +82,7 @@ pub struct LuaLocalName {
     syntax: LuaSyntaxNode,
 }
 
-impl LuaNode for LuaLocalName {
+impl LuaAstNode for LuaLocalName {
     fn syntax(&self) -> &LuaSyntaxNode {
         &self.syntax
     }
@@ -98,7 +98,7 @@ impl LuaNode for LuaLocalName {
     where
         Self: Sized,
     {
-        if syntax.kind() == LuaSyntaxKind::LocalName.into() {
+        if Self::can_cast(syntax.kind().into()) {
             Some(Self { syntax })
         } else {
             None
@@ -108,6 +108,6 @@ impl LuaNode for LuaLocalName {
 
 impl LuaLocalName {
     pub fn get_name_token(&self) -> Option<LuaNameToken> {
-        self.child()
+        self.token()
     }
 }

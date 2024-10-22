@@ -1,6 +1,7 @@
 mod tree;
 mod node;
 mod traits;
+mod comment_trait;
 
 use rowan::Language;
 

@@ -1,4 +1,4 @@
-use crate::{kind::LuaSyntaxKind, syntax::traits::{LuaCommentOwner, LuaNode, LuaNodeChildren}, LuaSyntaxNode};
+use crate::{kind::LuaSyntaxKind, syntax::{comment_trait::LuaCommentOwner, traits::{LuaAstChildren, LuaAstNode}}, LuaSyntaxNode};
 
 use super::{LuaBlock, LuaLocalName};
 
@@ -8,7 +8,7 @@ pub enum LuaStat {
 
 }
 
-impl LuaNode for LuaStat {
+impl LuaAstNode for LuaStat {
     fn syntax(&self) -> &LuaSyntaxNode {
         unimplemented!()
     }
@@ -41,7 +41,7 @@ pub struct LocalStat {
     syntax: LuaSyntaxNode,
 }
 
-impl LuaNode for LocalStat {
+impl LuaAstNode for LocalStat {
     fn syntax(&self) -> &LuaSyntaxNode {
         &self.syntax
     }
@@ -68,7 +68,7 @@ impl LuaNode for LocalStat {
 impl LuaCommentOwner for LocalStat {}
 
 impl LocalStat {
-    pub fn get_local_name_list(&self) -> LuaNodeChildren<LuaLocalName> {
+    pub fn get_local_name_list(&self) -> LuaAstChildren<LuaLocalName> {
         self.children()
     }
 }

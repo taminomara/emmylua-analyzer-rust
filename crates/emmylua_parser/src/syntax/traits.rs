@@ -3,11 +3,11 @@ use std::marker::PhantomData;
 use crate::kind::{LuaSyntaxKind, LuaTokenKind};
 
 use super::{
-    node::LuaComment, LuaSyntaxNode, LuaSyntaxNodeChildren, LuaSyntaxNodePtr, LuaSyntaxToken,
-    LuaSyntaxTree,
+    node::LuaGeneralToken, LuaSyntaxElementChildren, LuaSyntaxNode, LuaSyntaxNodeChildren,
+    LuaSyntaxToken,
 };
 
-pub trait LuaNode {
+pub trait LuaAstNode {
     fn syntax(&self) -> &LuaSyntaxNode;
 
     fn can_cast(kind: LuaSyntaxKind) -> bool
@@ -18,35 +18,71 @@ pub trait LuaNode {
     where
         Self: Sized;
 
-    fn child<N: LuaNode>(&self) -> Option<N> {
+    #[allow(dead_code)]
+    fn child<N: LuaAstNode>(&self) -> Option<N> {
         self.syntax().children().find_map(N::cast)
     }
 
-    fn token(&self, kind: LuaTokenKind) -> Option<LuaSyntaxToken> {
+    #[allow(dead_code)]
+    fn token<N: LuaAstToken>(&self) -> Option<N> {
         self.syntax()
             .children_with_tokens()
-            .filter_map(|it| it.into_token())
-            .find(|it| it.kind() == kind.into())
+            .find_map(|it| it.into_token())
+            .and_then(N::cast)
     }
 
-    fn tokens(&self, kind: LuaTokenKind) -> Vec<LuaSyntaxToken> {
-        self.syntax()
+    #[allow(dead_code)]
+    fn token_by_kind(&self, kind: LuaTokenKind) -> Option<LuaGeneralToken> {
+        let token = self
+            .syntax()
             .children_with_tokens()
             .filter_map(|it| it.into_token())
-            .filter(|it| it.kind() == kind.into())
-            .collect()
+            .find(|it| it.kind() == kind.into())?;
+
+        LuaGeneralToken::cast(token)
     }
 
-    fn children<N: LuaNode>(&self) -> LuaNodeChildren<N> {
-        LuaNodeChildren::new(self.syntax())
+    #[allow(dead_code)]
+    fn tokens<N: LuaAstToken>(&self) -> LuaAstTokenChildren<N> {
+        LuaAstTokenChildren::new(self.syntax())
     }
 
+    #[allow(dead_code)]
+    fn children<N: LuaAstNode>(&self) -> LuaAstChildren<N> {
+        LuaAstChildren::new(self.syntax())
+    }
+
+    #[allow(dead_code)]
     fn dump(&self) {
         println!("{:#?}", self.syntax());
     }
 }
 
-pub trait LuaToken {
+/// An iterator over `SyntaxNode` children of a particular AST type.
+#[derive(Debug, Clone)]
+pub struct LuaAstChildren<N> {
+    inner: LuaSyntaxNodeChildren,
+    ph: PhantomData<N>,
+}
+
+impl<N> LuaAstChildren<N> {
+    pub fn new(parent: &LuaSyntaxNode) -> LuaAstChildren<N> {
+        LuaAstChildren {
+            inner: parent.children(),
+            ph: PhantomData,
+        }
+    }
+}
+
+impl<N: LuaAstNode> Iterator for LuaAstChildren<N> {
+    type Item = N;
+
+    fn next(&mut self) -> Option<N> {
+        self.inner.find_map(N::cast)
+    }
+}
+
+pub trait LuaAstToken {
     fn syntax(&self) -> &LuaSyntaxToken;
 
     fn can_cast(kind: LuaTokenKind) -> bool
@@ -56,48 +92,27 @@ pub trait LuaToken {
     fn cast(syntax: LuaSyntaxToken) -> Option<Self>
     where
         Self: Sized;
-
-    fn get_text(&self) -> &str {
-        self.syntax().text()
-    }
 }
 
-/// An iterator over `SyntaxNode` children of a particular AST type.
 #[derive(Debug, Clone)]
-pub struct LuaNodeChildren<N> {
-    inner: LuaSyntaxNodeChildren,
+pub struct LuaAstTokenChildren<N> {
+    inner: LuaSyntaxElementChildren,
     ph: PhantomData<N>,
 }
 
-impl<N> LuaNodeChildren<N> {
-    pub fn new(parent: &LuaSyntaxNode) -> LuaNodeChildren<N> {
-        LuaNodeChildren {
-            inner: parent.children(),
+impl<N> LuaAstTokenChildren<N> {
+    pub fn new(parent: &LuaSyntaxNode) -> LuaAstTokenChildren<N> {
+        LuaAstTokenChildren {
+            inner: parent.children_with_tokens(),
             ph: PhantomData,
         }
     }
 }
 
-impl<N: LuaNode> Iterator for LuaNodeChildren<N> {
+impl<N: LuaAstToken> Iterator for LuaAstTokenChildren<N> {
     type Item = N;
 
     fn next(&mut self) -> Option<N> {
-        self.inner.find_map(N::cast)
-    }
-}
-
-pub trait LuaCommentOwner: LuaNode {
-    fn get_comments(&self, t: &LuaSyntaxTree) -> Option<Vec<LuaComment>> {
-        let ptr = LuaSyntaxNodePtr::new(self.syntax());
-        let root = t.get_red_root();
-        match t.get_comments(ptr) {
-            Some(comments) => Some(
-                comments
-                    .iter()
-                    .map(|it| LuaComment::cast(it.to_node(&root)).unwrap())
-                    .collect(),
-            ),
-            None => None,
-        }
+        self.inner.find_map(|it| it.into_token()).and_then(N::cast)
     }
 }

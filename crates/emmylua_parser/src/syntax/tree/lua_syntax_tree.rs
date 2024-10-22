@@ -1,30 +1,21 @@
-use std::collections::HashMap;
-
 use rowan::TextSize;
 
 use crate::{parser_error::LuaParseError, text::LineIndex, LuaSyntaxNode, LuaSyntaxNodePtr};
-
-use super::bind_doc::bind_doc;
 
 pub struct LuaSyntaxTree {
     root: LuaSyntaxNode,
     source_text: String,
     line_index: LineIndex,
     errors: Vec<LuaParseError>,
-    comments: HashMap<LuaSyntaxNodePtr, Vec<LuaSyntaxNodePtr>>,
-    comment_owner: HashMap<LuaSyntaxNodePtr, LuaSyntaxNodePtr>,
 }
 
 impl LuaSyntaxTree {
     pub fn new(root: LuaSyntaxNode, text: String, errors: Vec<LuaParseError>) -> Self {
         let line_index = LineIndex::parse(&text);
-        let (comments, comment_owner) = bind_doc(&root);
         LuaSyntaxTree {
             root,
             source_text: text,
             line_index,
-            comments,
-            comment_owner,
             errors,
         }
     }
@@ -93,14 +84,6 @@ impl LuaSyntaxTree {
             }
             Some(start_offset + TextSize::from(offset as u32))
         }
-    }
-
-    pub fn get_comments(&self, ptr: LuaSyntaxNodePtr) -> Option<&Vec<LuaSyntaxNodePtr>> {
-        self.comments.get(&ptr)
-    }
-
-    pub fn get_comment_owner(&self, ptr: LuaSyntaxNodePtr) -> Option<LuaSyntaxNodePtr> {
-        self.comment_owner.get(&ptr).copied()
     }
 
     pub fn get_errors(&self) -> &[LuaParseError] {
