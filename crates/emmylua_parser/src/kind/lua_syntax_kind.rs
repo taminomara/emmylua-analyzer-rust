@@ -25,7 +25,7 @@ pub enum LuaSyntaxKind {
     BreakStat,
     ReturnStat,
     GotoStat,
-    ExprStat,
+    CallExprStat,
     AssignStat,
     UnknownStat,
 

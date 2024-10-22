@@ -1,6 +1,6 @@
 use rowan::TextSize;
 
-use crate::{parser_error::LuaParseError, text::LineIndex, LuaSyntaxNode, LuaSyntaxNodePtr};
+use crate::{parser_error::LuaParseError, text::LineIndex, LuaSyntaxNode};
 
 pub struct LuaSyntaxTree {
     root: LuaSyntaxNode,

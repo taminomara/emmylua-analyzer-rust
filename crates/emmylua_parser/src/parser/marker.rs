@@ -14,6 +14,7 @@ pub enum MarkEvent {
         range: SourceRange,
     },
     NodeEnd,
+    Trivia
 }
 
 impl MarkEvent {
@@ -117,7 +118,7 @@ impl CompleteMarker {
             MarkEvent::NodeStart { parent, .. } => *parent = m.position,
             _ => unreachable!(),
         }
-
+        p.get_events().push(MarkEvent::Trivia);
         m
     }
 

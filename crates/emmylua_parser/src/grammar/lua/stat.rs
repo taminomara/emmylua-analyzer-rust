@@ -330,7 +330,7 @@ fn parse_assign_or_expr_stat(p: &mut LuaParser) -> ParseResult {
     let range = p.current_token_range();
     let mut cm = parse_expr(p)?;
     if cm.kind == LuaSyntaxKind::CallExpr {
-        m.set_kind(p, LuaSyntaxKind::ExprStat);
+        m.set_kind(p, LuaSyntaxKind::CallExprStat);
         if_token_bump(p, LuaTokenKind::TkSemicolon);
         return Ok(m.complete(p));
     }
@@ -341,7 +341,7 @@ fn parse_assign_or_expr_stat(p: &mut LuaParser) -> ParseResult {
             range,
         ));
     }
-
+    
     while p.current_token() == LuaTokenKind::TkComma {
         p.bump();
         cm = parse_expr(p)?;

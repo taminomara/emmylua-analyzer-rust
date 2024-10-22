@@ -51,7 +51,7 @@ pub trait LuaAstNode {
     fn children<N: LuaAstNode>(&self) -> LuaAstChildren<N> {
         LuaAstChildren::new(self.syntax())
     }
-
+    
     #[allow(dead_code)]
     fn dump(&self) {
         println!("{:#?}", self.syntax());
@@ -83,6 +83,7 @@ impl<N: LuaAstNode> Iterator for LuaAstChildren<N> {
 }
 
 pub trait LuaAstToken {
+    #[allow(dead_code)]
     fn syntax(&self) -> &LuaSyntaxToken;
 
     fn can_cast(kind: LuaTokenKind) -> bool
