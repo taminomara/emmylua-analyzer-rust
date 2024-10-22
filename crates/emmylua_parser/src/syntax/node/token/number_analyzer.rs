@@ -77,6 +77,7 @@ pub fn int_token_value(token: &LuaSyntaxToken) -> Result<i64, LuaParseError> {
     let text = text.trim_end_matches(|c| c == 'u' || c == 'l' || c == 'U' || c == 'L');
 
     let value = if hex {
+        let text = &text[2..];
         i64::from_str_radix(text, 16)
     } else {
         text.parse::<i64>()

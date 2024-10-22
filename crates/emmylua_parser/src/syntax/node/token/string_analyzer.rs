@@ -42,7 +42,7 @@ fn long_string_value(token: &LuaSyntaxToken) -> Result<String, LuaParseError> {
         if c == '=' {
             equal_num += 1;
         } else if c == '[' {
-            i = idx;
+            i = idx + 1;
             break;
         } else {
             return Err(LuaParseError::new("Invalid long string start", range));
@@ -51,10 +51,13 @@ fn long_string_value(token: &LuaSyntaxToken) -> Result<String, LuaParseError> {
 
     // check string len is enough
     if text.len() < i + equal_num + 2 {
-        return Err(LuaParseError::new(&format!(
-            "Invalid long string end, expected '{}]'",
-            "=".repeat(equal_num)
-        ), range));
+        return Err(LuaParseError::new(
+            &format!(
+                "Invalid long string end, expected '{}]'",
+                "=".repeat(equal_num)
+            ),
+            range,
+        ));
     }
 
     let content = &text[i..(text.len() - equal_num - 2)];
@@ -69,13 +72,13 @@ fn normal_string_value(token: &LuaSyntaxToken) -> Result<String, LuaParseError> 
     }
 
     let mut result = String::with_capacity(text.len() - 2);
-    let delimiter = text.chars().next().unwrap();
-    let mut chars = text.chars().enumerate().skip(1);
+    let mut chars = text.chars().peekable();
+    let delimiter = chars.next().unwrap();
 
-    while let Some((_, c)) = chars.next() {
+    while let Some(c) = chars.next() {
         match c {
             '\\' => {
-                if let Some((_, next_char)) = chars.next() {
+                if let Some(next_char) = chars.next() {
                     match next_char {
                         'a' => result.push('\u{0007}'), // Bell
                         'b' => result.push('\u{0008}'), // Backspace
@@ -86,7 +89,7 @@ fn normal_string_value(token: &LuaSyntaxToken) -> Result<String, LuaParseError> 
                         'v' => result.push('\u{000B}'), // Vertical tab
                         'x' => {
                             // Hexadecimal escape sequence
-                            let hex = chars.by_ref().take(2).map(|(_, c)| c).collect::<String>();
+                            let hex = chars.by_ref().take(2).collect::<String>();
                             if hex.len() == 2 && hex.chars().all(|c| c.is_ascii_hexdigit()) {
                                 if let Ok(value) = u8::from_str_radix(&hex, 16) {
                                     result.push(value as char);
@@ -100,18 +103,20 @@ fn normal_string_value(token: &LuaSyntaxToken) -> Result<String, LuaParseError> 
                         }
                         'u' => {
                             // Unicode escape sequence
-                            if let Some((_, '{')) = chars.next() {
+                            if let Some('{') = chars.next() {
                                 let unicode_hex = chars
                                     .by_ref()
-                                    .take_while(|&(_, c)| c != '}')
-                                    .map(|(_, c)| c)
+                                    .take_while(|c| *c != '}')
                                     .collect::<String>();
                                 if let Ok(code_point) = u32::from_str_radix(&unicode_hex, 16) {
                                     if let Some(unicode_char) = std::char::from_u32(code_point) {
                                         result.push(unicode_char);
                                     } else {
                                         return Err(LuaParseError::new(
-                                            &format!("Invalid unicode escape sequence '\\u{{{}}}'", unicode_hex),
+                                            &format!(
+                                                "Invalid unicode escape sequence '\\u{{{}}}'",
+                                                unicode_hex
+                                            ),
                                             token.text_range(),
                                         ));
                                     }
@@ -123,12 +128,13 @@ fn normal_string_value(token: &LuaSyntaxToken) -> Result<String, LuaParseError> 
                             let mut dec = String::new();
                             dec.push(next_char);
                             for _ in 0..2 {
-                                if let Some((_, digit)) = chars.next() {
+                                if let Some(digit) = chars.peek() {
                                     if digit.is_digit(10) {
-                                        dec.push(digit);
+                                        dec.push(*digit);
                                     } else {
                                         break;
                                     }
+                                    chars.next();
                                 }
                             }
                             if let Ok(value) = u8::from_str_radix(&dec, 10) {
@@ -138,11 +144,15 @@ fn normal_string_value(token: &LuaSyntaxToken) -> Result<String, LuaParseError> 
                         '\\' | '\'' | '\"' => result.push(next_char),
                         'z' => {
                             // Skip whitespace
-                            while let Some((_, c)) = chars.next() {
+                            while let Some(c) = chars.peek() {
                                 if !c.is_whitespace() {
                                     break;
                                 }
+                                chars.next();
                             }
+                        }
+                        '\r' | '\n' => {
+                            result.push(next_char);
                         }
                         _ => {
                             return Err(LuaParseError::new(
@@ -164,4 +174,3 @@ fn normal_string_value(token: &LuaSyntaxToken) -> Result<String, LuaParseError> 
 
     Ok(result)
 }
-

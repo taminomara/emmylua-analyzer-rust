@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{kind::LuaTokenKind, syntax::traits::LuaAstToken, LuaSyntaxToken};
 
 use super::{float_token_value, int_token_value, string_token_value};

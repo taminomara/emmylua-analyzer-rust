@@ -1,6 +1,7 @@
 mod tokens;
 mod number_analyzer;
 mod string_analyzer;
+mod test;
 
 #[allow(unused)]
 pub use tokens::*; 
