@@ -1,8 +1,7 @@
 use crate::{
     kind::LuaSyntaxKind,
     syntax::{
-        node::{LuaBinaryOpToken, LuaNameToken, LuaUnaryOpToken},
-        traits::{LuaAstChildren, LuaAstNode},
+        comment_trait::LuaCommentOwner, node::{LuaBinaryOpToken, LuaNameToken, LuaUnaryOpToken}, traits::{LuaAstChildren, LuaAstNode}
     },
     LuaIndexToken, LuaLiteralToken, LuaSyntaxNode,
 };
@@ -189,6 +188,8 @@ impl LuaAstNode for LuaNameExpr {
     }
 }
 
+impl LuaCommentOwner for LuaNameExpr {}
+
 impl LuaNameExpr {
     pub fn get_name(&self) -> Option<LuaNameToken> {
         self.token()
@@ -315,6 +316,8 @@ impl LuaAstNode for LuaTableExpr {
         }
     }
 }
+
+impl LuaCommentOwner for LuaTableExpr {}
 
 impl LuaTableExpr {
     pub fn is_empty(&self) -> bool {

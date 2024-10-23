@@ -3,7 +3,7 @@ mod stat;
 
 use crate::{
     kind::{LuaSyntaxKind, LuaTokenKind},
-    syntax::traits::{LuaAstChildren, LuaAstNode},
+    syntax::traits::{LuaAstChildren, LuaAstNode, LuaAstToken},
     LuaSyntaxNode,
 };
 
@@ -227,7 +227,8 @@ impl LuaAstNode for LuaTableField {
     where
         Self: Sized,
     {
-        kind == LuaSyntaxKind::TableFieldAssign.into() || kind == LuaSyntaxKind::TableFieldValue.into()
+        kind == LuaSyntaxKind::TableFieldAssign.into()
+            || kind == LuaSyntaxKind::TableFieldValue.into()
     }
 
     fn cast(syntax: LuaSyntaxNode) -> Option<Self>
@@ -250,10 +251,28 @@ impl LuaTableField {
     pub fn is_value_field(&self) -> bool {
         self.syntax().kind() == LuaSyntaxKind::TableFieldValue.into()
     }
-    
-    // TODO
-    pub fn get_key(&self) -> Option<LuaExpr> {
-        self.child()
+
+    pub fn get_key(&self) -> Option<LuaTableFieldKey> {
+        if !self.is_assign_field() {
+            return None;
+        }
+
+        for child in self.syntax().children_with_tokens() {
+            match child {
+                rowan::NodeOrToken::Node(node) => {
+                    if let Some(expr) = LuaExpr::cast(node.clone()) {
+                        return Some(LuaTableFieldKey::Expr(expr));
+                    }
+                }
+                rowan::NodeOrToken::Token(token) => {
+                    if let Some(name) = LuaNameToken::cast(token.clone()) {
+                        return Some(LuaTableFieldKey::Name(name));
+                    }
+                }
+            }
+        }
+
+        None
     }
 
     pub fn get_value_expr(&self) -> Option<LuaExpr> {
@@ -263,6 +282,12 @@ impl LuaTableField {
             self.child()
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum LuaTableFieldKey {
+    Name(LuaNameToken),
+    Expr(LuaExpr),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -338,4 +363,3 @@ impl LuaParamList {
         self.children()
     }
 }
-

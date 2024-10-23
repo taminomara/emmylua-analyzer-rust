@@ -1,4 +1,4 @@
-use crate::{kind::{LuaSyntaxKind, LuaTokenKind}, syntax::traits::{LuaAstChildren, LuaAstNode}, LuaKind, LuaSyntaxNode};
+use crate::{kind::{LuaSyntaxKind, LuaTokenKind}, syntax::traits::LuaAstNode, LuaKind, LuaSyntaxNode};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaComment {

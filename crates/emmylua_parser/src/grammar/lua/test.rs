@@ -832,4 +832,89 @@ Syntax(Chunk)@0..228
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_if_stat() {
+        let code = r#"
+        if a > 0 then
+            return a
+        elseif a < 0 then
+            return -a
+        else
+            return 0
+        end
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..146
+  Syntax(Block)@0..146
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(IfStat)@9..137
+      Token(TkIf)@9..11 "if"
+      Token(TkWhitespace)@11..12 " "
+      Syntax(BinaryExpr)@12..17
+        Syntax(NameExpr)@12..13
+          Token(TkName)@12..13 "a"
+        Token(TkWhitespace)@13..14 " "
+        Token(TkGt)@14..15 ">"
+        Token(TkWhitespace)@15..16 " "
+        Syntax(LiteralExpr)@16..17
+          Token(TkInt)@16..17 "0"
+      Token(TkWhitespace)@17..18 " "
+      Token(TkThen)@18..22 "then"
+      Token(TkEndOfLine)@22..23 "\n"
+      Token(TkWhitespace)@23..35 "            "
+      Syntax(Block)@35..52
+        Syntax(ReturnStat)@35..43
+          Token(TkReturn)@35..41 "return"
+          Token(TkWhitespace)@41..42 " "
+          Syntax(NameExpr)@42..43
+            Token(TkName)@42..43 "a"
+        Token(TkEndOfLine)@43..44 "\n"
+        Token(TkWhitespace)@44..52 "        "
+      Syntax(ElseIfClauseStat)@52..100
+        Token(TkElseIf)@52..58 "elseif"
+        Token(TkWhitespace)@58..59 " "
+        Syntax(BinaryExpr)@59..64
+          Syntax(NameExpr)@59..60
+            Token(TkName)@59..60 "a"
+          Token(TkWhitespace)@60..61 " "
+          Token(TkLt)@61..62 "<"
+          Token(TkWhitespace)@62..63 " "
+          Syntax(LiteralExpr)@63..64
+            Token(TkInt)@63..64 "0"
+        Token(TkWhitespace)@64..65 " "
+        Token(TkThen)@65..69 "then"
+        Token(TkEndOfLine)@69..70 "\n"
+        Token(TkWhitespace)@70..82 "            "
+        Syntax(Block)@82..100
+          Syntax(ReturnStat)@82..91
+            Token(TkReturn)@82..88 "return"
+            Token(TkWhitespace)@88..89 " "
+            Syntax(UnaryExpr)@89..91
+              Token(TkMinus)@89..90 "-"
+              Syntax(NameExpr)@90..91
+                Token(TkName)@90..91 "a"
+          Token(TkEndOfLine)@91..92 "\n"
+          Token(TkWhitespace)@92..100 "        "
+      Syntax(ElseClauseStat)@100..134
+        Token(TkElse)@100..104 "else"
+        Token(TkEndOfLine)@104..105 "\n"
+        Token(TkWhitespace)@105..117 "            "
+        Syntax(Block)@117..134
+          Syntax(ReturnStat)@117..125
+            Token(TkReturn)@117..123 "return"
+            Token(TkWhitespace)@123..124 " "
+            Syntax(LiteralExpr)@124..125
+              Token(TkInt)@124..125 "0"
+          Token(TkEndOfLine)@125..126 "\n"
+          Token(TkWhitespace)@126..134 "        "
+      Token(TkEnd)@134..137 "end"
+    Token(TkEndOfLine)@137..138 "\n"
+    Token(TkWhitespace)@138..146 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
 }

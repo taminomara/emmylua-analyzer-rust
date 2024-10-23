@@ -377,16 +377,151 @@ impl LuaIfStat {
     pub fn get_block(&self) -> Option<LuaBlock> {
         self.child()
     }
+    
+    pub fn get_else_if_clause_list(&self) -> LuaAstChildren<LuaElseIfClauseStat> {
+        self.children()
+    }
+    
+    pub fn get_else_clause(&self) -> Option<LuaElseClauseStat> {
+        self.child()
+    }
 
-    //
-    // pub fn get_else_if_clause_list(&self) -> LuaAstChildren<LuaElseIfClauseStat> {
-    //     self.children()
-    // }
+    pub fn get_all_clause(&self) -> LuaAstChildren<LuaIfClauseStat> {
+        self.children()
+    }
+}
 
-    //
-    // pub fn get_else_clause(&self) -> Option<LuaElseClauseStat> {
-    //     self.child()
-    // }
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaElseIfClauseStat {
+    syntax: LuaSyntaxNode,
+}
+
+impl LuaAstNode for LuaElseIfClauseStat {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        &self.syntax
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaSyntaxKind::ElseIfClauseStat
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if syntax.kind() == LuaSyntaxKind::ElseIfClauseStat.into() {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaCommentOwner for LuaElseIfClauseStat {}
+
+impl LuaElseIfClauseStat {
+    pub fn get_condition_expr(&self) -> Option<LuaExpr> {
+        self.child()
+    }
+
+    pub fn get_block(&self) -> Option<LuaBlock> {
+        self.child()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaElseClauseStat {
+    syntax: LuaSyntaxNode,
+}
+
+impl LuaAstNode for LuaElseClauseStat {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        &self.syntax
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaSyntaxKind::ElseClauseStat
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if syntax.kind() == LuaSyntaxKind::ElseClauseStat.into() {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaCommentOwner for LuaElseClauseStat {}
+
+impl LuaElseClauseStat {
+    pub fn get_block(&self) -> Option<LuaBlock> {
+        self.child()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum LuaIfClauseStat {
+    ElseIf(LuaElseIfClauseStat),
+    Else(LuaElseClauseStat),
+}
+
+impl LuaAstNode for LuaIfClauseStat {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        match self {
+            LuaIfClauseStat::ElseIf(node) => node.syntax(),
+            LuaIfClauseStat::Else(node) => node.syntax(),
+        }
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized {
+        LuaElseIfClauseStat::can_cast(kind) || LuaElseClauseStat::can_cast(kind)
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized {
+        if LuaElseIfClauseStat::can_cast(syntax.kind().into()) {
+            Some(LuaIfClauseStat::ElseIf(LuaElseIfClauseStat::cast(syntax)?))
+        } else if LuaElseClauseStat::can_cast(syntax.kind().into()) {
+            Some(LuaIfClauseStat::Else(LuaElseClauseStat::cast(syntax)?))
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaCommentOwner for LuaIfClauseStat {}
+
+impl LuaIfClauseStat {
+    pub fn get_parent_if_stat(&self) -> Option<LuaIfStat> {
+        LuaIfStat::cast(self.syntax().parent()?)
+    }
+
+    pub fn get_block(&self) -> Option<LuaBlock> {
+        match self {
+            LuaIfClauseStat::ElseIf(node) => node.get_block(),
+            LuaIfClauseStat::Else(node) => node.get_block(),
+        }
+    }
+
+    pub fn get_condition_expr(&self) -> Option<LuaExpr> {
+        match self {
+            LuaIfClauseStat::ElseIf(node) => node.get_condition_expr(),
+            LuaIfClauseStat::Else(_) => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
