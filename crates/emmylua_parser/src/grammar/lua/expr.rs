@@ -123,7 +123,7 @@ fn parse_param_name(p: &mut LuaParser) -> ParseResult {
 }
 
 fn parse_table_expr(p: &mut LuaParser) -> ParseResult {
-    let m = p.mark(LuaSyntaxKind::TableExpr);
+    let mut m = p.mark(LuaSyntaxKind::TableEmptyExpr);
     p.bump();
 
     if p.current_token() == LuaTokenKind::TkRightBrace {
@@ -131,7 +131,17 @@ fn parse_table_expr(p: &mut LuaParser) -> ParseResult {
         return Ok(m.complete(p));
     }
 
-    parse_field(p)?;
+    let mut cm = parse_field(p)?;
+    match cm.kind {
+        LuaSyntaxKind::TableFieldAssign => {
+            m.set_kind(p, LuaSyntaxKind::TableObjectExpr);
+        }
+        LuaSyntaxKind::TableFieldValue => {
+            m.set_kind(p, LuaSyntaxKind::TableArrayExpr);
+        }
+        _ => {}
+    }
+
     while p.current_token() == LuaTokenKind::TkComma
         || p.current_token() == LuaTokenKind::TkSemicolon
     {
@@ -139,7 +149,10 @@ fn parse_table_expr(p: &mut LuaParser) -> ParseResult {
         if p.current_token() == LuaTokenKind::TkRightBrace {
             break;
         }
-        parse_field(p)?;
+        cm = parse_field(p)?;
+        if cm.kind == LuaSyntaxKind::TableFieldAssign {
+            m.set_kind(p, LuaSyntaxKind::TableObjectExpr);
+        }
     }
 
     expect_token(p, LuaTokenKind::TkRightBrace)?;
@@ -257,7 +270,9 @@ fn parse_args(p: &mut LuaParser) -> ParseResult {
             parse_table_expr(p)?;
         }
         LuaTokenKind::TkString | LuaTokenKind::TkLongString => {
+            let m1 = p.mark(LuaSyntaxKind::LiteralExpr);
             p.bump();
+            m1.complete(p);
         }
         _ => {
             return Err(LuaParseError::from_source_range(

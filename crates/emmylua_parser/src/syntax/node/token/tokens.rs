@@ -1,4 +1,8 @@
-use crate::{kind::{BinaryOperator, LuaTokenKind, UnaryOperator}, syntax::traits::LuaAstToken, LuaOpKind, LuaSyntaxToken};
+use crate::{
+    kind::{BinaryOperator, LuaTokenKind, UnaryOperator},
+    syntax::traits::LuaAstToken,
+    LuaOpKind, LuaSyntaxToken,
+};
 
 use super::{float_token_value, int_token_value, string_token_value};
 
@@ -57,7 +61,6 @@ impl LuaAstToken for LuaNameToken {
 }
 
 impl LuaNameToken {
-    #[allow(dead_code)]
     pub fn name(&self) -> &str {
         self.token.text()
     }
@@ -93,7 +96,6 @@ impl LuaAstToken for LuaStringToken {
 }
 
 impl LuaStringToken {
-    #[allow(dead_code)]
     pub fn get_value(&self) -> String {
         match string_token_value(&self.token) {
             Ok(str) => str,
@@ -132,17 +134,14 @@ impl LuaAstToken for LuaNumberToken {
 }
 
 impl LuaNumberToken {
-    #[allow(dead_code)]
     pub fn is_float(&self) -> bool {
         self.token.kind() == LuaTokenKind::TkFloat.into()
     }
 
-    #[allow(dead_code)]
     pub fn is_int(&self) -> bool {
         self.token.kind() == LuaTokenKind::TkInt.into()
     }
 
-    #[allow(dead_code)]
     pub fn get_float_value(&self) -> f64 {
         if !self.is_float() {
             return 0.0;
@@ -153,7 +152,6 @@ impl LuaNumberToken {
         }
     }
 
-    #[allow(dead_code)]
     pub fn get_int_value(&self) -> i64 {
         if !self.is_int() {
             return 0;
@@ -195,7 +193,6 @@ impl LuaAstToken for LuaBinaryOpToken {
 }
 
 impl LuaBinaryOpToken {
-    #[allow(dead_code)]
     pub fn get_op(&self) -> BinaryOperator {
         LuaOpKind::to_binary_operator(self.token.kind().into())
     }
@@ -231,9 +228,261 @@ impl LuaAstToken for LuaUnaryOpToken {
 }
 
 impl LuaUnaryOpToken {
-    #[allow(dead_code)]
     pub fn get_op(&self) -> UnaryOperator {
         LuaOpKind::to_unary_operator(self.token.kind().into())
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaKeywordToken {
+    token: LuaSyntaxToken,
+}
+
+impl LuaAstToken for LuaKeywordToken {
+    fn syntax(&self) -> &LuaSyntaxToken {
+        &self.token
+    }
+
+    fn can_cast(kind: LuaTokenKind) -> bool
+    where
+        Self: Sized,
+    {
+        match kind {
+            LuaTokenKind::TkAnd
+            | LuaTokenKind::TkBreak
+            | LuaTokenKind::TkDo
+            | LuaTokenKind::TkElse
+            | LuaTokenKind::TkElseIf
+            | LuaTokenKind::TkEnd
+            | LuaTokenKind::TkFalse
+            | LuaTokenKind::TkFor
+            | LuaTokenKind::TkFunction
+            | LuaTokenKind::TkGoto
+            | LuaTokenKind::TkIf
+            | LuaTokenKind::TkIn
+            | LuaTokenKind::TkLocal
+            | LuaTokenKind::TkNil
+            | LuaTokenKind::TkNot
+            | LuaTokenKind::TkOr
+            | LuaTokenKind::TkRepeat
+            | LuaTokenKind::TkReturn
+            | LuaTokenKind::TkThen
+            | LuaTokenKind::TkTrue
+            | LuaTokenKind::TkUntil
+            | LuaTokenKind::TkWhile => true,
+            _ => false,
+        }
+    }
+
+    fn cast(syntax: LuaSyntaxToken) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(LuaKeywordToken { token: syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaKeywordToken {
+    pub fn get_keyword(&self) -> LuaTokenKind {
+        self.token.kind().into()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaBoolToken {
+    token: LuaSyntaxToken,
+}
+
+impl LuaAstToken for LuaBoolToken {
+    fn syntax(&self) -> &LuaSyntaxToken {
+        &self.token
+    }
+
+    fn can_cast(kind: LuaTokenKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaTokenKind::TkTrue.into() || kind == LuaTokenKind::TkFalse.into()
+    }
+
+    fn cast(syntax: LuaSyntaxToken) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(LuaBoolToken { token: syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaBoolToken {
+    pub fn is_true(&self) -> bool {
+        self.token.kind() == LuaTokenKind::TkTrue.into()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaNilToken {
+    token: LuaSyntaxToken,
+}
+
+impl LuaAstToken for LuaNilToken {
+    fn syntax(&self) -> &LuaSyntaxToken {
+        &self.token
+    }
+
+    fn can_cast(kind: LuaTokenKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaTokenKind::TkNil.into()
+    }
+
+    fn cast(syntax: LuaSyntaxToken) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(LuaNilToken { token: syntax })
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum LuaLiteralToken {
+    String(LuaStringToken),
+    Number(LuaNumberToken),
+    Bool(LuaBoolToken),
+    Nil(LuaNilToken),
+}
+
+impl LuaAstToken for LuaLiteralToken {
+    fn syntax(&self) -> &LuaSyntaxToken {
+        match self {
+            LuaLiteralToken::String(token) => token.syntax(),
+            LuaLiteralToken::Number(token) => token.syntax(),
+            LuaLiteralToken::Bool(token) => token.syntax(),
+            LuaLiteralToken::Nil(token) => token.syntax(),
+        }
+    }
+
+    fn can_cast(kind: LuaTokenKind) -> bool
+    where
+        Self: Sized,
+    {
+        match kind {
+            LuaTokenKind::TkString
+            | LuaTokenKind::TkLongString
+            | LuaTokenKind::TkFloat
+            | LuaTokenKind::TkInt
+            | LuaTokenKind::TkTrue
+            | LuaTokenKind::TkFalse
+            | LuaTokenKind::TkNil => true,
+            _ => false,
+        }
+    }
+
+    fn cast(syntax: LuaSyntaxToken) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        match syntax.kind().into() {
+            LuaTokenKind::TkString | LuaTokenKind::TkLongString => {
+                LuaStringToken::cast(syntax).map(LuaLiteralToken::String)
+            }
+            LuaTokenKind::TkFloat | LuaTokenKind::TkInt => {
+                LuaNumberToken::cast(syntax).map(LuaLiteralToken::Number)
+            }
+            LuaTokenKind::TkTrue | LuaTokenKind::TkFalse => {
+                LuaBoolToken::cast(syntax).map(LuaLiteralToken::Bool)
+            }
+            LuaTokenKind::TkNil => LuaNilToken::cast(syntax).map(LuaLiteralToken::Nil),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaSpaceToken {
+    token: LuaSyntaxToken,
+}
+
+impl LuaAstToken for LuaSpaceToken {
+    fn syntax(&self) -> &LuaSyntaxToken {
+        &self.token
+    }
+
+    fn can_cast(kind: LuaTokenKind) -> bool
+    where
+        Self: Sized,
+    {
+        match kind {
+            LuaTokenKind::TkWhitespace | LuaTokenKind::TkEndOfLine => true,
+            _ => false,
+        }
+    }
+
+    fn cast(syntax: LuaSyntaxToken) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(LuaSpaceToken { token: syntax })
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaIndexToken {
+    token: LuaSyntaxToken,
+}
+
+impl LuaAstToken for LuaIndexToken {
+    fn syntax(&self) -> &LuaSyntaxToken {
+        &self.token
+    }
+
+    fn can_cast(kind: LuaTokenKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaTokenKind::TkDot.into()
+            || kind == LuaTokenKind::TkColon.into()
+            || kind == LuaTokenKind::TkLeftBracket.into()
+    }
+
+    fn cast(syntax: LuaSyntaxToken) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(LuaIndexToken { token: syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaIndexToken {
+    pub fn is_dot(&self) -> bool {
+        self.token.kind() == LuaTokenKind::TkDot.into()
+    }
+
+    pub fn is_colon(&self) -> bool {
+        self.token.kind() == LuaTokenKind::TkColon.into()
+    }
+
+    pub fn is_left_bracket(&self) -> bool {
+        self.token.kind() == LuaTokenKind::TkLeftBracket.into()
+    }
+}

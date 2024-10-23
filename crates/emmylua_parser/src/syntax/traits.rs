@@ -2,9 +2,8 @@ use std::marker::PhantomData;
 
 use crate::kind::{LuaSyntaxKind, LuaTokenKind};
 
-use super::{
-    node::LuaGeneralToken, LuaSyntaxElementChildren, LuaSyntaxNode, LuaSyntaxNodeChildren,
-    LuaSyntaxToken,
+pub use super::{
+    node::*, LuaSyntaxElementChildren, LuaSyntaxNode, LuaSyntaxNodeChildren, LuaSyntaxToken,
 };
 
 pub trait LuaAstNode {
@@ -51,7 +50,7 @@ pub trait LuaAstNode {
     fn children<N: LuaAstNode>(&self) -> LuaAstChildren<N> {
         LuaAstChildren::new(self.syntax())
     }
-    
+
     #[allow(dead_code)]
     fn dump(&self) {
         println!("{:#?}", self.syntax());
@@ -93,6 +92,10 @@ pub trait LuaAstToken {
     fn cast(syntax: LuaSyntaxToken) -> Option<Self>
     where
         Self: Sized;
+
+    fn get_token_kind(&self) -> LuaTokenKind {
+        self.syntax().kind().into()
+    }
 }
 
 #[derive(Debug, Clone)]

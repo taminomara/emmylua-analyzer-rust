@@ -84,40 +84,30 @@ impl LuaAstNode for LuaStat {
     where
         Self: Sized,
     {
-        if LuaLocalStat::can_cast(syntax.kind().into()) {
-            LuaLocalStat::cast(syntax).map(LuaStat::LocalStat)
-        } else if LuaAssignStat::can_cast(syntax.kind().into()) {
-            LuaAssignStat::cast(syntax).map(LuaStat::AssignStat)
-        } else if LuaCallExprStat::can_cast(syntax.kind().into()) {
-            LuaCallExprStat::cast(syntax).map(LuaStat::CallExprStat)
-        } else if LuaFuncStat::can_cast(syntax.kind().into()) {
-            LuaFuncStat::cast(syntax).map(LuaStat::FuncStat)
-        } else if LuaLocalFuncStat::can_cast(syntax.kind().into()) {
-            LuaLocalFuncStat::cast(syntax).map(LuaStat::LocalFuncStat)
-        } else if LuaIfStat::can_cast(syntax.kind().into()) {
-            LuaIfStat::cast(syntax).map(LuaStat::IfStat)
-        } else if LuaWhileStat::can_cast(syntax.kind().into()) {
-            LuaWhileStat::cast(syntax).map(LuaStat::WhileStat)
-        } else if LuaDoStat::can_cast(syntax.kind().into()) {
-            LuaDoStat::cast(syntax).map(LuaStat::DoStat)
-        } else if LuaForStat::can_cast(syntax.kind().into()) {
-            LuaForStat::cast(syntax).map(LuaStat::ForStat)
-        } else if LuaForRangeStat::can_cast(syntax.kind().into()) {
-            LuaForRangeStat::cast(syntax).map(LuaStat::ForRangeStat)
-        } else if LuaRepeatStat::can_cast(syntax.kind().into()) {
-            LuaRepeatStat::cast(syntax).map(LuaStat::RepeatStat)
-        } else if LuaBreakStat::can_cast(syntax.kind().into()) {
-            LuaBreakStat::cast(syntax).map(LuaStat::BreakStat)
-        } else if LuaReturnStat::can_cast(syntax.kind().into()) {
-            LuaReturnStat::cast(syntax).map(LuaStat::ReturnStat)
-        } else if LuaGotoStat::can_cast(syntax.kind().into()) {
-            LuaGotoStat::cast(syntax).map(LuaStat::GotoStat)
-        } else if LuaLabelStat::can_cast(syntax.kind().into()) {
-            LuaLabelStat::cast(syntax).map(LuaStat::LabelStat)
-        } else if LuaEmptyStat::can_cast(syntax.kind().into()) {
-            LuaEmptyStat::cast(syntax).map(LuaStat::EmptyStat)
-        } else {
-            None
+        match syntax.kind().into() {
+            LuaSyntaxKind::LocalStat => Some(LuaStat::LocalStat(LuaLocalStat::cast(syntax)?)),
+            LuaSyntaxKind::AssignStat => Some(LuaStat::AssignStat(LuaAssignStat::cast(syntax)?)),
+            LuaSyntaxKind::CallExprStat => {
+                Some(LuaStat::CallExprStat(LuaCallExprStat::cast(syntax)?))
+            }
+            LuaSyntaxKind::FuncStat => Some(LuaStat::FuncStat(LuaFuncStat::cast(syntax)?)),
+            LuaSyntaxKind::LocalFuncStat => {
+                Some(LuaStat::LocalFuncStat(LuaLocalFuncStat::cast(syntax)?))
+            }
+            LuaSyntaxKind::IfStat => Some(LuaStat::IfStat(LuaIfStat::cast(syntax)?)),
+            LuaSyntaxKind::WhileStat => Some(LuaStat::WhileStat(LuaWhileStat::cast(syntax)?)),
+            LuaSyntaxKind::DoStat => Some(LuaStat::DoStat(LuaDoStat::cast(syntax)?)),
+            LuaSyntaxKind::ForStat => Some(LuaStat::ForStat(LuaForStat::cast(syntax)?)),
+            LuaSyntaxKind::ForRangeStat => {
+                Some(LuaStat::ForRangeStat(LuaForRangeStat::cast(syntax)?))
+            }
+            LuaSyntaxKind::RepeatStat => Some(LuaStat::RepeatStat(LuaRepeatStat::cast(syntax)?)),
+            LuaSyntaxKind::BreakStat => Some(LuaStat::BreakStat(LuaBreakStat::cast(syntax)?)),
+            LuaSyntaxKind::ReturnStat => Some(LuaStat::ReturnStat(LuaReturnStat::cast(syntax)?)),
+            LuaSyntaxKind::GotoStat => Some(LuaStat::GotoStat(LuaGotoStat::cast(syntax)?)),
+            LuaSyntaxKind::LabelStat => Some(LuaStat::LabelStat(LuaLabelStat::cast(syntax)?)),
+            LuaSyntaxKind::EmptyStat => Some(LuaStat::EmptyStat(LuaEmptyStat::cast(syntax)?)),
+            _ => None,
         }
     }
 }
@@ -125,7 +115,6 @@ impl LuaAstNode for LuaStat {
 impl LuaCommentOwner for LuaStat {}
 
 impl LuaStat {
-    #[allow(unused)]
     pub fn get_parent_block(&self) -> Option<LuaBlock> {
         LuaBlock::cast(self.syntax().parent()?)
     }
@@ -163,12 +152,10 @@ impl LuaAstNode for LuaLocalStat {
 impl LuaCommentOwner for LuaLocalStat {}
 
 impl LuaLocalStat {
-    #[allow(unused)]
     pub fn get_local_name_list(&self) -> LuaAstChildren<LuaLocalName> {
         self.children()
     }
 
-    #[allow(unused)]
     pub fn get_value_exprs(&self) -> LuaAstChildren<LuaExpr> {
         self.children()
     }
@@ -206,7 +193,6 @@ impl LuaAstNode for LuaAssignStat {
 impl LuaCommentOwner for LuaAssignStat {}
 
 impl LuaAssignStat {
-    #[allow(unused)]
     pub fn get_expr_list(&self) -> (Vec<LuaVarExpr>, Vec<LuaExpr>) {
         let mut vars = Vec::new();
         let mut exprs = Vec::new();
@@ -218,8 +204,8 @@ impl LuaAssignStat {
 
             if let Some(node) = child.into_node() {
                 if meet_assign {
-                    if let Some(var) = LuaVarExpr::cast(node) {
-                        vars.push(var);
+                    if let Some(var) = LuaExpr::cast(node) {
+                        exprs.push(var);
                     }
                 } else {
                     if let Some(var) = LuaVarExpr::cast(node) {
@@ -265,7 +251,6 @@ impl LuaAstNode for LuaCallExprStat {
 impl LuaCommentOwner for LuaCallExprStat {}
 
 impl LuaCallExprStat {
-    #[allow(unused)]
     pub fn get_call_expr(&self) -> Option<LuaCallExpr> {
         self.child()
     }
@@ -303,12 +288,10 @@ impl LuaAstNode for LuaFuncStat {
 impl LuaCommentOwner for LuaFuncStat {}
 
 impl LuaFuncStat {
-    #[allow(unused)]
     pub fn get_func_name(&self) -> Option<LuaVarExpr> {
         self.child()
     }
 
-    #[allow(unused)]
     pub fn get_closure(&self) -> Option<LuaClosureExpr> {
         self.child()
     }
@@ -346,12 +329,10 @@ impl LuaAstNode for LuaLocalFuncStat {
 impl LuaCommentOwner for LuaLocalFuncStat {}
 
 impl LuaLocalFuncStat {
-    #[allow(unused)]
     pub fn get_local_name(&self) -> Option<LuaLocalName> {
         self.child()
     }
 
-    #[allow(unused)]
     pub fn get_closure(&self) -> Option<LuaClosureExpr> {
         self.child()
     }
@@ -389,22 +370,20 @@ impl LuaAstNode for LuaIfStat {
 impl LuaCommentOwner for LuaIfStat {}
 
 impl LuaIfStat {
-    #[allow(unused)]
     pub fn get_condition_expr(&self) -> Option<LuaExpr> {
         self.child()
     }
 
-    #[allow(unused)]
     pub fn get_block(&self) -> Option<LuaBlock> {
         self.child()
     }
 
-    // #[allow(unused)]
+    //
     // pub fn get_else_if_clause_list(&self) -> LuaAstChildren<LuaElseIfClauseStat> {
     //     self.children()
     // }
 
-    // #[allow(unused)]
+    //
     // pub fn get_else_clause(&self) -> Option<LuaElseClauseStat> {
     //     self.child()
     // }
@@ -442,12 +421,10 @@ impl LuaAstNode for LuaWhileStat {
 impl LuaCommentOwner for LuaWhileStat {}
 
 impl LuaWhileStat {
-    #[allow(unused)]
     pub fn get_condition_expr(&self) -> Option<LuaExpr> {
         self.child()
     }
 
-    #[allow(unused)]
     pub fn get_block(&self) -> Option<LuaBlock> {
         self.child()
     }
@@ -485,7 +462,6 @@ impl LuaAstNode for LuaDoStat {
 impl LuaCommentOwner for LuaDoStat {}
 
 impl LuaDoStat {
-    #[allow(unused)]
     pub fn get_block(&self) -> Option<LuaBlock> {
         self.child()
     }
@@ -523,17 +499,14 @@ impl LuaAstNode for LuaForStat {
 impl LuaCommentOwner for LuaForStat {}
 
 impl LuaForStat {
-    #[allow(unused)]
     pub fn get_var_name(&self) -> Option<LuaNameToken> {
         self.token()
     }
 
-    #[allow(unused)]
     pub fn get_iter_expr(&self) -> LuaAstChildren<LuaExpr> {
         self.children()
     }
 
-    #[allow(unused)]
     pub fn get_block(&self) -> Option<LuaBlock> {
         self.child()
     }
@@ -571,17 +544,14 @@ impl LuaAstNode for LuaForRangeStat {
 impl LuaCommentOwner for LuaForRangeStat {}
 
 impl LuaForRangeStat {
-    #[allow(unused)]
     pub fn get_var_name_list(&self) -> LuaAstTokenChildren<LuaNameToken> {
         self.tokens()
     }
 
-    #[allow(unused)]
     pub fn get_expr_list(&self) -> LuaAstChildren<LuaExpr> {
         self.children()
     }
 
-    #[allow(unused)]
     pub fn get_block(&self) -> Option<LuaBlock> {
         self.child()
     }
@@ -619,12 +589,10 @@ impl LuaAstNode for LuaRepeatStat {
 impl LuaCommentOwner for LuaRepeatStat {}
 
 impl LuaRepeatStat {
-    #[allow(unused)]
     pub fn get_block(&self) -> Option<LuaBlock> {
         self.child()
     }
 
-    #[allow(unused)]
     pub fn get_condition_expr(&self) -> Option<LuaExpr> {
         self.child()
     }
@@ -693,7 +661,6 @@ impl LuaAstNode for LuaReturnStat {
 impl LuaCommentOwner for LuaReturnStat {}
 
 impl LuaReturnStat {
-    #[allow(unused)]
     pub fn get_expr_list(&self) -> LuaAstChildren<LuaExpr> {
         self.children()
     }
@@ -731,7 +698,6 @@ impl LuaAstNode for LuaGotoStat {
 impl LuaCommentOwner for LuaGotoStat {}
 
 impl LuaGotoStat {
-    #[allow(unused)]
     pub fn get_label_name(&self) -> Option<LuaNameToken> {
         self.token()
     }
@@ -769,7 +735,6 @@ impl LuaAstNode for LuaLabelStat {
 impl LuaCommentOwner for LuaLabelStat {}
 
 impl LuaLabelStat {
-    #[allow(unused)]
     pub fn get_label_name(&self) -> Option<LuaNameToken> {
         self.token()
     }

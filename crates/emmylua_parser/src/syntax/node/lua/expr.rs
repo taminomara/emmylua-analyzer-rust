@@ -1,4 +1,13 @@
-use crate::{kind::{BinaryOperator, LuaSyntaxKind}, syntax::{node::{LuaBinaryOpToken, LuaNameToken, LuaUnaryOpToken}, traits::LuaAstNode}, LuaSyntaxNode};
+use crate::{
+    kind::LuaSyntaxKind,
+    syntax::{
+        node::{LuaBinaryOpToken, LuaNameToken, LuaUnaryOpToken},
+        traits::{LuaAstChildren, LuaAstNode},
+    },
+    LuaIndexToken, LuaLiteralToken, LuaSyntaxNode,
+};
+
+use super::LuaCallArgList;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LuaExpr {
@@ -34,7 +43,9 @@ impl LuaAstNode for LuaExpr {
     {
         match kind {
             LuaSyntaxKind::CallExpr => true,
-            LuaSyntaxKind::TableExpr => true,
+            LuaSyntaxKind::TableArrayExpr
+            | LuaSyntaxKind::TableObjectExpr
+            | LuaSyntaxKind::TableEmptyExpr => true,
             LuaSyntaxKind::LiteralExpr => true,
             LuaSyntaxKind::BinaryExpr => true,
             LuaSyntaxKind::UnaryExpr => true,
@@ -50,26 +61,19 @@ impl LuaAstNode for LuaExpr {
     where
         Self: Sized,
     {
-        if LuaCallExpr::can_cast(syntax.kind().into()) {
-            LuaCallExpr::cast(syntax).map(LuaExpr::CallExpr)
-        } else if LuaTableExpr::can_cast(syntax.kind().into()) {
-            LuaTableExpr::cast(syntax).map(LuaExpr::TableExpr)
-        } else if LuaLiteralExpr::can_cast(syntax.kind().into()) {
-            LuaLiteralExpr::cast(syntax).map(LuaExpr::LiteralExpr)
-        } else if LuaBinaryExpr::can_cast(syntax.kind().into()) {
-            LuaBinaryExpr::cast(syntax).map(LuaExpr::BinaryExpr)
-        } else if LuaUnaryExpr::can_cast(syntax.kind().into()) {
-            LuaUnaryExpr::cast(syntax).map(LuaExpr::UnaryExpr)
-        } else if LuaClosureExpr::can_cast(syntax.kind().into()) {
-            LuaClosureExpr::cast(syntax).map(LuaExpr::ClosureExpr)
-        } else if LuaParenExpr::can_cast(syntax.kind().into()) {
-            LuaParenExpr::cast(syntax).map(LuaExpr::ParenExpr)
-        } else if LuaNameExpr::can_cast(syntax.kind().into()) {
-            LuaNameExpr::cast(syntax).map(LuaExpr::NameExpr)
-        } else if LuaIndexExpr::can_cast(syntax.kind().into()) {
-            LuaIndexExpr::cast(syntax).map(LuaExpr::IndexExpr)
-        } else {
-            None
+        match syntax.kind().into() {
+            LuaSyntaxKind::CallExpr => LuaCallExpr::cast(syntax).map(LuaExpr::CallExpr),
+            LuaSyntaxKind::TableArrayExpr
+            | LuaSyntaxKind::TableObjectExpr
+            | LuaSyntaxKind::TableEmptyExpr => LuaTableExpr::cast(syntax).map(LuaExpr::TableExpr),
+            LuaSyntaxKind::LiteralExpr => LuaLiteralExpr::cast(syntax).map(LuaExpr::LiteralExpr),
+            LuaSyntaxKind::BinaryExpr => LuaBinaryExpr::cast(syntax).map(LuaExpr::BinaryExpr),
+            LuaSyntaxKind::UnaryExpr => LuaUnaryExpr::cast(syntax).map(LuaExpr::UnaryExpr),
+            LuaSyntaxKind::ClosureExpr => LuaClosureExpr::cast(syntax).map(LuaExpr::ClosureExpr),
+            LuaSyntaxKind::ParenExpr => LuaParenExpr::cast(syntax).map(LuaExpr::ParenExpr),
+            LuaSyntaxKind::NameExpr => LuaNameExpr::cast(syntax).map(LuaExpr::NameExpr),
+            LuaSyntaxKind::IndexExpr => LuaIndexExpr::cast(syntax).map(LuaExpr::IndexExpr),
+            _ => None,
         }
     }
 }
@@ -103,12 +107,55 @@ impl LuaAstNode for LuaVarExpr {
     where
         Self: Sized,
     {
-        if LuaNameExpr::can_cast(syntax.kind().into()) {
-            LuaNameExpr::cast(syntax).map(LuaVarExpr::NameExpr)
-        } else if LuaIndexExpr::can_cast(syntax.kind().into()) {
-            LuaIndexExpr::cast(syntax).map(LuaVarExpr::IndexExpr)
-        } else {
-            None
+        match syntax.kind().into() {
+            LuaSyntaxKind::NameExpr => LuaNameExpr::cast(syntax).map(LuaVarExpr::NameExpr),
+            LuaSyntaxKind::IndexExpr => LuaIndexExpr::cast(syntax).map(LuaVarExpr::IndexExpr),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum LuaSingleArgExpr {
+    TableExpr(LuaTableExpr),
+    LiteralExpr(LuaLiteralExpr),
+}
+
+impl LuaAstNode for LuaSingleArgExpr {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        match self {
+            LuaSingleArgExpr::TableExpr(node) => node.syntax(),
+            LuaSingleArgExpr::LiteralExpr(node) => node.syntax(),
+        }
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        match kind {
+            LuaSyntaxKind::TableArrayExpr
+            | LuaSyntaxKind::TableObjectExpr
+            | LuaSyntaxKind::TableEmptyExpr => true,
+            LuaSyntaxKind::LiteralExpr => true,
+            _ => false,
+        }
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        match syntax.kind().into() {
+            LuaSyntaxKind::TableArrayExpr
+            | LuaSyntaxKind::TableObjectExpr
+            | LuaSyntaxKind::TableEmptyExpr => {
+                LuaTableExpr::cast(syntax).map(LuaSingleArgExpr::TableExpr)
+            }
+            LuaSyntaxKind::LiteralExpr => {
+                LuaLiteralExpr::cast(syntax).map(LuaSingleArgExpr::LiteralExpr)
+            }
+            _ => None,
         }
     }
 }
@@ -143,7 +190,6 @@ impl LuaAstNode for LuaNameExpr {
 }
 
 impl LuaNameExpr {
-    #[allow(unused)]
     pub fn get_name(&self) -> Option<LuaNameToken> {
         self.token()
     }
@@ -179,14 +225,16 @@ impl LuaAstNode for LuaIndexExpr {
 }
 
 impl LuaIndexExpr {
-    #[allow(unused)]
-    pub fn get_var_expr(&self) -> Option<LuaVarExpr> {
+    pub fn get_prefix_expr(&self) -> Option<LuaVarExpr> {
         self.child()
     }
 
-    #[allow(unused)]
-    pub fn get_expr(&self) -> Option<LuaExpr> {
+    pub fn get_indexed_expr(&self) -> Option<LuaExpr> {
         self.children().nth(1)
+    }
+
+    pub fn get_index_token(&self) -> Option<LuaIndexToken> {
+        self.token()
     }
 }
 
@@ -219,6 +267,26 @@ impl LuaAstNode for LuaCallExpr {
     }
 }
 
+impl LuaCallExpr {
+    pub fn get_prefix_expr(&self) -> Option<LuaExpr> {
+        self.child()
+    }
+
+    pub fn get_args_list(&self) -> Option<LuaCallArgList> {
+        self.child()
+    }
+}
+
+/// In Lua, tables are a fundamental data structure that can be used to represent arrays, objects, 
+/// and more. To facilitate parsing and handling of different table structures, we categorize tables 
+/// into three types: `TableArrayExpr`, `TableObjectExpr`, and `TableEmptyExpr`.
+///
+/// - `TableArrayExpr`: Represents a table used as an array, where elements are indexed by integers.
+/// - `TableObjectExpr`: Represents a table used as an object, where elements are indexed by strings or other keys.
+/// - `TableEmptyExpr`: Represents an empty table with no elements.
+///
+/// This categorization helps in accurately parsing and processing Lua code by distinguishing between 
+/// different uses of tables, thereby enabling more precise syntax analysis and manipulation.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaTableExpr {
     syntax: LuaSyntaxNode,
@@ -233,7 +301,7 @@ impl LuaAstNode for LuaTableExpr {
     where
         Self: Sized,
     {
-        kind == LuaSyntaxKind::TableExpr
+        kind == LuaSyntaxKind::TableArrayExpr || kind == LuaSyntaxKind::TableObjectExpr || kind == LuaSyntaxKind::TableEmptyExpr
     }
 
     fn cast(syntax: LuaSyntaxNode) -> Option<Self>
@@ -245,6 +313,24 @@ impl LuaAstNode for LuaTableExpr {
         } else {
             None
         }
+    }
+}
+
+impl LuaTableExpr {
+    pub fn is_empty(&self) -> bool {
+        self.syntax().kind() == LuaSyntaxKind::TableEmptyExpr.into()
+    }
+
+    pub fn is_array(&self) -> bool {
+        self.syntax().kind() == LuaSyntaxKind::TableArrayExpr.into()
+    }
+
+    pub fn is_object(&self) -> bool {
+        self.syntax().kind() == LuaSyntaxKind::TableObjectExpr.into()
+    }
+
+    pub fn get_fields(&self) -> LuaAstChildren<LuaExpr> {
+        self.children()
     }
 }
 
@@ -274,6 +360,12 @@ impl LuaAstNode for LuaLiteralExpr {
         } else {
             None
         }
+    }
+}
+
+impl LuaLiteralExpr {
+    pub fn get_literal(&self) -> Option<LuaLiteralToken> {
+        self.token()
     }
 }
 
@@ -307,7 +399,6 @@ impl LuaAstNode for LuaBinaryExpr {
 }
 
 impl LuaBinaryExpr {
-    #[allow(unused)]
     pub fn get_exprs(&self) -> Option<(LuaExpr, LuaExpr)> {
         let exprs = self.children::<LuaExpr>().collect::<Vec<_>>();
         if exprs.len() == 2 {
@@ -317,7 +408,6 @@ impl LuaBinaryExpr {
         }
     }
 
-    #[allow(unused)]
     pub fn get_op_token(&self) -> Option<LuaBinaryOpToken> {
         self.token()
     }
@@ -353,12 +443,10 @@ impl LuaAstNode for LuaUnaryExpr {
 }
 
 impl LuaUnaryExpr {
-    #[allow(unused)]
     pub fn get_expr(&self) -> Option<LuaExpr> {
         self.child()
     }
 
-    #[allow(unused)]
     pub fn get_op_token(&self) -> Option<LuaUnaryOpToken> {
         self.token()
     }
@@ -423,7 +511,6 @@ impl LuaAstNode for LuaParenExpr {
 }
 
 impl LuaParenExpr {
-    #[allow(unused)]
     pub fn get_expr(&self) -> Option<LuaExpr> {
         self.child()
     }

@@ -35,7 +35,9 @@ pub enum LuaSyntaxKind {
     ClosureExpr,
     UnaryExpr,
     BinaryExpr,
-    TableExpr,
+    TableArrayExpr,  // { a, b, c}
+    TableObjectExpr, // { a = 1, b = 2, c = 3}
+    TableEmptyExpr,  // {}
     CallExpr,
     IndexExpr,
     NameExpr,

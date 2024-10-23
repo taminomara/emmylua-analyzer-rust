@@ -446,8 +446,390 @@ Syntax(Chunk)@0..41
         f, g = 5, 6, 7
         "#;
 
-        print_ast(code);
         let result = r#"
+Syntax(Chunk)@0..83
+  Syntax(Block)@0..83
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(AssignStat)@9..14
+      Syntax(NameExpr)@9..10
+        Token(TkName)@9..10 "a"
+      Token(TkWhitespace)@10..11 " "
+      Token(TkAssign)@11..12 "="
+      Token(TkWhitespace)@12..13 " "
+      Syntax(LiteralExpr)@13..14
+        Token(TkInt)@13..14 "1"
+    Token(TkEndOfLine)@14..15 "\n"
+    Token(TkWhitespace)@15..23 "        "
+    Syntax(AssignStat)@23..34
+      Syntax(NameExpr)@23..24
+        Token(TkName)@23..24 "b"
+      Token(TkComma)@24..25 ","
+      Token(TkWhitespace)@25..26 " "
+      Syntax(NameExpr)@26..27
+        Token(TkName)@26..27 "c"
+      Token(TkWhitespace)@27..28 " "
+      Token(TkAssign)@28..29 "="
+      Token(TkWhitespace)@29..30 " "
+      Syntax(LiteralExpr)@30..31
+        Token(TkInt)@30..31 "2"
+      Token(TkComma)@31..32 ","
+      Token(TkWhitespace)@32..33 " "
+      Syntax(LiteralExpr)@33..34
+        Token(TkInt)@33..34 "3"
+    Token(TkEndOfLine)@34..35 "\n"
+    Token(TkWhitespace)@35..43 "        "
+    Syntax(AssignStat)@43..51
+      Syntax(NameExpr)@43..44
+        Token(TkName)@43..44 "d"
+      Token(TkComma)@44..45 ","
+      Token(TkWhitespace)@45..46 " "
+      Syntax(NameExpr)@46..47
+        Token(TkName)@46..47 "e"
+      Token(TkWhitespace)@47..48 " "
+      Token(TkAssign)@48..49 "="
+      Token(TkWhitespace)@49..50 " "
+      Syntax(LiteralExpr)@50..51
+        Token(TkInt)@50..51 "4"
+    Token(TkEndOfLine)@51..52 "\n"
+    Token(TkWhitespace)@52..60 "        "
+    Syntax(AssignStat)@60..74
+      Syntax(NameExpr)@60..61
+        Token(TkName)@60..61 "f"
+      Token(TkComma)@61..62 ","
+      Token(TkWhitespace)@62..63 " "
+      Syntax(NameExpr)@63..64
+        Token(TkName)@63..64 "g"
+      Token(TkWhitespace)@64..65 " "
+      Token(TkAssign)@65..66 "="
+      Token(TkWhitespace)@66..67 " "
+      Syntax(LiteralExpr)@67..68
+        Token(TkInt)@67..68 "5"
+      Token(TkComma)@68..69 ","
+      Token(TkWhitespace)@69..70 " "
+      Syntax(LiteralExpr)@70..71
+        Token(TkInt)@70..71 "6"
+      Token(TkComma)@71..72 ","
+      Token(TkWhitespace)@72..73 " "
+      Syntax(LiteralExpr)@73..74
+        Token(TkInt)@73..74 "7"
+    Token(TkEndOfLine)@74..75 "\n"
+    Token(TkWhitespace)@75..83 "        "
         "#;
+
+        assert_ast_eq!(code, result);
+    }
+
+    #[test]
+    fn test_index_expr() {
+        let code = r#"
+        local t = a.b[c]["1123"]
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..42
+  Syntax(Block)@0..42
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(LocalStat)@9..33
+      Token(TkLocal)@9..14 "local"
+      Token(TkWhitespace)@14..15 " "
+      Syntax(LocalName)@15..16
+        Token(TkName)@15..16 "t"
+      Token(TkWhitespace)@16..17 " "
+      Token(TkAssign)@17..18 "="
+      Token(TkWhitespace)@18..19 " "
+      Syntax(IndexExpr)@19..33
+        Syntax(IndexExpr)@19..25
+          Syntax(IndexExpr)@19..22
+            Syntax(NameExpr)@19..20
+              Token(TkName)@19..20 "a"
+            Token(TkDot)@20..21 "."
+            Token(TkName)@21..22 "b"
+          Token(TkLeftBracket)@22..23 "["
+          Syntax(NameExpr)@23..24
+            Token(TkName)@23..24 "c"
+          Token(TkRightBracket)@24..25 "]"
+        Token(TkLeftBracket)@25..26 "["
+        Syntax(LiteralExpr)@26..32
+          Token(TkString)@26..32 "\"1123\""
+        Token(TkRightBracket)@32..33 "]"
+    Token(TkEndOfLine)@33..34 "\n"
+    Token(TkWhitespace)@34..42 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
+
+    #[test]
+    fn test_call_expr() {
+        let code = r#"
+        local a = foo(1, 2, 3)
+        local c = aaa.bbbb:cccc()
+        require "aaaa.bbbb"
+        call {
+            a = 1,
+            b = 2,
+            c = 3
+        }
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..183
+  Syntax(Block)@0..183
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(LocalStat)@9..31
+      Token(TkLocal)@9..14 "local"
+      Token(TkWhitespace)@14..15 " "
+      Syntax(LocalName)@15..16
+        Token(TkName)@15..16 "a"
+      Token(TkWhitespace)@16..17 " "
+      Token(TkAssign)@17..18 "="
+      Token(TkWhitespace)@18..19 " "
+      Syntax(CallExpr)@19..31
+        Syntax(NameExpr)@19..22
+          Token(TkName)@19..22 "foo"
+        Syntax(CallArgList)@22..31
+          Token(TkLeftParen)@22..23 "("
+          Syntax(LiteralExpr)@23..24
+            Token(TkInt)@23..24 "1"
+          Token(TkComma)@24..25 ","
+          Token(TkWhitespace)@25..26 " "
+          Syntax(LiteralExpr)@26..27
+            Token(TkInt)@26..27 "2"
+          Token(TkComma)@27..28 ","
+          Token(TkWhitespace)@28..29 " "
+          Syntax(LiteralExpr)@29..30
+            Token(TkInt)@29..30 "3"
+          Token(TkRightParen)@30..31 ")"
+    Token(TkEndOfLine)@31..32 "\n"
+    Token(TkWhitespace)@32..40 "        "
+    Syntax(LocalStat)@40..65
+      Token(TkLocal)@40..45 "local"
+      Token(TkWhitespace)@45..46 " "
+      Syntax(LocalName)@46..47
+        Token(TkName)@46..47 "c"
+      Token(TkWhitespace)@47..48 " "
+      Token(TkAssign)@48..49 "="
+      Token(TkWhitespace)@49..50 " "
+      Syntax(CallExpr)@50..65
+        Syntax(IndexExpr)@50..63
+          Syntax(IndexExpr)@50..58
+            Syntax(NameExpr)@50..53
+              Token(TkName)@50..53 "aaa"
+            Token(TkDot)@53..54 "."
+            Token(TkName)@54..58 "bbbb"
+          Token(TkColon)@58..59 ":"
+          Token(TkName)@59..63 "cccc"
+        Syntax(CallArgList)@63..65
+          Token(TkLeftParen)@63..64 "("
+          Token(TkRightParen)@64..65 ")"
+    Token(TkEndOfLine)@65..66 "\n"
+    Token(TkWhitespace)@66..74 "        "
+    Syntax(CallExprStat)@74..93
+      Syntax(CallExpr)@74..93
+        Syntax(NameExpr)@74..81
+          Token(TkName)@74..81 "require"
+        Token(TkWhitespace)@81..82 " "
+        Syntax(CallArgList)@82..93
+          Syntax(LiteralExpr)@82..93
+            Token(TkString)@82..93 "\"aaaa.bbbb\""
+    Token(TkEndOfLine)@93..94 "\n"
+    Token(TkWhitespace)@94..102 "        "
+    Syntax(CallExprStat)@102..174
+      Syntax(CallExpr)@102..174
+        Syntax(NameExpr)@102..106
+          Token(TkName)@102..106 "call"
+        Token(TkWhitespace)@106..107 " "
+        Syntax(CallArgList)@107..174
+          Syntax(TableExpr)@107..174
+            Token(TkLeftBrace)@107..108 "{"
+            Token(TkEndOfLine)@108..109 "\n"
+            Token(TkWhitespace)@109..121 "            "
+            Syntax(TableFieldAssign)@121..126
+              Token(TkName)@121..122 "a"
+              Token(TkWhitespace)@122..123 " "
+              Token(TkAssign)@123..124 "="
+              Token(TkWhitespace)@124..125 " "
+              Syntax(LiteralExpr)@125..126
+                Token(TkInt)@125..126 "1"
+            Token(TkComma)@126..127 ","
+            Token(TkEndOfLine)@127..128 "\n"
+            Token(TkWhitespace)@128..140 "            "
+            Syntax(TableFieldAssign)@140..145
+              Token(TkName)@140..141 "b"
+              Token(TkWhitespace)@141..142 " "
+              Token(TkAssign)@142..143 "="
+              Token(TkWhitespace)@143..144 " "
+              Syntax(LiteralExpr)@144..145
+                Token(TkInt)@144..145 "2"
+            Token(TkComma)@145..146 ","
+            Token(TkEndOfLine)@146..147 "\n"
+            Token(TkWhitespace)@147..159 "            "
+            Syntax(TableFieldAssign)@159..164
+              Token(TkName)@159..160 "c"
+              Token(TkWhitespace)@160..161 " "
+              Token(TkAssign)@161..162 "="
+              Token(TkWhitespace)@162..163 " "
+              Syntax(LiteralExpr)@163..164
+                Token(TkInt)@163..164 "3"
+            Token(TkEndOfLine)@164..165 "\n"
+            Token(TkWhitespace)@165..173 "        "
+            Token(TkRightBrace)@173..174 "}"
+    Token(TkEndOfLine)@174..175 "\n"
+    Token(TkWhitespace)@175..183 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
+
+    #[test]
+    fn test_table_expr() {
+        let code = r#"
+        local t = {
+            a = 1,
+            ["aa"] = 2,
+            [1] = 3
+        }
+        local d = {
+            1,
+            2,
+            3
+        }
+        local c = {}
+        local d = { a = 1, 1 }
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..228
+  Syntax(Block)@0..228
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(LocalStat)@9..93
+      Token(TkLocal)@9..14 "local"
+      Token(TkWhitespace)@14..15 " "
+      Syntax(LocalName)@15..16
+        Token(TkName)@15..16 "t"
+      Token(TkWhitespace)@16..17 " "
+      Token(TkAssign)@17..18 "="
+      Token(TkWhitespace)@18..19 " "
+      Syntax(TableExpr)@19..93
+        Token(TkLeftBrace)@19..20 "{"
+        Token(TkEndOfLine)@20..21 "\n"
+        Token(TkWhitespace)@21..33 "            "
+        Syntax(TableFieldAssign)@33..38
+          Token(TkName)@33..34 "a"
+          Token(TkWhitespace)@34..35 " "
+          Token(TkAssign)@35..36 "="
+          Token(TkWhitespace)@36..37 " "
+          Syntax(LiteralExpr)@37..38
+            Token(TkInt)@37..38 "1"
+        Token(TkComma)@38..39 ","
+        Token(TkEndOfLine)@39..40 "\n"
+        Token(TkWhitespace)@40..52 "            "
+        Syntax(TableFieldAssign)@52..62
+          Token(TkLeftBracket)@52..53 "["
+          Syntax(LiteralExpr)@53..57
+            Token(TkString)@53..57 "\"aa\""
+          Token(TkRightBracket)@57..58 "]"
+          Token(TkWhitespace)@58..59 " "
+          Token(TkAssign)@59..60 "="
+          Token(TkWhitespace)@60..61 " "
+          Syntax(LiteralExpr)@61..62
+            Token(TkInt)@61..62 "2"
+        Token(TkComma)@62..63 ","
+        Token(TkEndOfLine)@63..64 "\n"
+        Token(TkWhitespace)@64..76 "            "
+        Syntax(TableFieldAssign)@76..83
+          Token(TkLeftBracket)@76..77 "["
+          Syntax(LiteralExpr)@77..78
+            Token(TkInt)@77..78 "1"
+          Token(TkRightBracket)@78..79 "]"
+          Token(TkWhitespace)@79..80 " "
+          Token(TkAssign)@80..81 "="
+          Token(TkWhitespace)@81..82 " "
+          Syntax(LiteralExpr)@82..83
+            Token(TkInt)@82..83 "3"
+        Token(TkEndOfLine)@83..84 "\n"
+        Token(TkWhitespace)@84..92 "        "
+        Token(TkRightBrace)@92..93 "}"
+    Token(TkEndOfLine)@93..94 "\n"
+    Token(TkWhitespace)@94..102 "        "
+    Syntax(LocalStat)@102..167
+      Token(TkLocal)@102..107 "local"
+      Token(TkWhitespace)@107..108 " "
+      Syntax(LocalName)@108..109
+        Token(TkName)@108..109 "d"
+      Token(TkWhitespace)@109..110 " "
+      Token(TkAssign)@110..111 "="
+      Token(TkWhitespace)@111..112 " "
+      Syntax(TableExpr)@112..167
+        Token(TkLeftBrace)@112..113 "{"
+        Token(TkEndOfLine)@113..114 "\n"
+        Token(TkWhitespace)@114..126 "            "
+        Syntax(TableFieldValue)@126..127
+          Syntax(LiteralExpr)@126..127
+            Token(TkInt)@126..127 "1"
+        Token(TkComma)@127..128 ","
+        Token(TkEndOfLine)@128..129 "\n"
+        Token(TkWhitespace)@129..141 "            "
+        Syntax(TableFieldValue)@141..142
+          Syntax(LiteralExpr)@141..142
+            Token(TkInt)@141..142 "2"
+        Token(TkComma)@142..143 ","
+        Token(TkEndOfLine)@143..144 "\n"
+        Token(TkWhitespace)@144..156 "            "
+        Syntax(TableFieldValue)@156..157
+          Syntax(LiteralExpr)@156..157
+            Token(TkInt)@156..157 "3"
+        Token(TkEndOfLine)@157..158 "\n"
+        Token(TkWhitespace)@158..166 "        "
+        Token(TkRightBrace)@166..167 "}"
+    Token(TkEndOfLine)@167..168 "\n"
+    Token(TkWhitespace)@168..176 "        "
+    Syntax(LocalStat)@176..188
+      Token(TkLocal)@176..181 "local"
+      Token(TkWhitespace)@181..182 " "
+      Syntax(LocalName)@182..183
+        Token(TkName)@182..183 "c"
+      Token(TkWhitespace)@183..184 " "
+      Token(TkAssign)@184..185 "="
+      Token(TkWhitespace)@185..186 " "
+      Syntax(TableExpr)@186..188
+        Token(TkLeftBrace)@186..187 "{"
+        Token(TkRightBrace)@187..188 "}"
+    Token(TkEndOfLine)@188..189 "\n"
+    Token(TkWhitespace)@189..197 "        "
+    Syntax(LocalStat)@197..219
+      Token(TkLocal)@197..202 "local"
+      Token(TkWhitespace)@202..203 " "
+      Syntax(LocalName)@203..204
+        Token(TkName)@203..204 "d"
+      Token(TkWhitespace)@204..205 " "
+      Token(TkAssign)@205..206 "="
+      Token(TkWhitespace)@206..207 " "
+      Syntax(TableExpr)@207..219
+        Token(TkLeftBrace)@207..208 "{"
+        Token(TkWhitespace)@208..209 " "
+        Syntax(TableFieldAssign)@209..214
+          Token(TkName)@209..210 "a"
+          Token(TkWhitespace)@210..211 " "
+          Token(TkAssign)@211..212 "="
+          Token(TkWhitespace)@212..213 " "
+          Syntax(LiteralExpr)@213..214
+            Token(TkInt)@213..214 "1"
+        Token(TkComma)@214..215 ","
+        Token(TkWhitespace)@215..216 " "
+        Syntax(TableFieldValue)@216..217
+          Syntax(LiteralExpr)@216..217
+            Token(TkInt)@216..217 "1"
+        Token(TkWhitespace)@217..218 " "
+        Token(TkRightBrace)@218..219 "}"
+    Token(TkEndOfLine)@219..220 "\n"
+    Token(TkWhitespace)@220..228 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
     }
 }
