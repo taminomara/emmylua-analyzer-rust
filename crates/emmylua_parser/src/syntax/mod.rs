@@ -8,6 +8,8 @@ use rowan::Language;
 use crate::kind::{LuaKind, LuaSyntaxKind, LuaTokenKind};
 pub use tree::{LuaSyntaxTree, LuaTreeBuilder};
 pub use node::*;
+pub use traits::*;
+pub use comment_trait::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct LuaLanguage;
