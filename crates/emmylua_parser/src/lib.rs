@@ -6,7 +6,6 @@ mod parser_error;
 mod text;
 mod grammar;
 
-pub use kind::LuaKind;
-pub use kind::LuaOpKind;
-pub use parser::LuaParser;
+pub use kind::*;
+pub use parser::{LuaParser, ParserConfig};
 pub use syntax::*;
