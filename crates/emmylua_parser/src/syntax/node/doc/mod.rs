@@ -1,4 +1,4 @@
-use crate::{kind::{LuaSyntaxKind, LuaTokenKind}, syntax::traits::LuaAstNode, LuaKind, LuaSyntaxNode};
+use crate::{kind::{LuaSyntaxKind, LuaTokenKind}, syntax::traits::{LuaAstChildren, LuaAstNode}, LuaKind, LuaSyntaxNode};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaComment {
@@ -30,7 +30,6 @@ impl LuaAstNode for LuaComment {
 }
 
 impl LuaComment {
-    #[allow(dead_code)]
     pub fn get_owner(&self) -> Option<LuaSyntaxNode> {
         if let Some(inline_node) = find_inline_node(&self.syntax) {
             Some(inline_node)
@@ -41,6 +40,15 @@ impl LuaComment {
             None
         }
     }
+
+    pub fn get_description_text(&self) -> Option<String> {
+        // let descriptions = self.children::<Lua>()
+        todo!()
+    }
+
+    // pub fn get_doc_tags(&self) -> LuaAstChildren<LuaTag> {
+    //     todo!()
+    // }
 }
 
 fn find_inline_node(comment: &LuaSyntaxNode) -> Option<LuaSyntaxNode> {

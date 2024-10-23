@@ -314,14 +314,14 @@ fn is_invalid_kind(kind: LuaTokenKind) -> bool {
 #[cfg(test)]
 mod tests {
     use crate::{
-        grammar::parse_chunk,
-        kind::{LuaSyntaxKind, LuaTokenKind},
+        kind::LuaTokenKind,
         lexer::LuaLexer,
-        parser::{MarkEvent, MarkerEventContainer, ParserConfig},
+        parser::ParserConfig,
         parser_error::LuaParseError,
         LuaParser,
     };
 
+    #[allow(unused)]
     fn new_parser<'a>(
         text: &'a str,
         config: ParserConfig<'a>,

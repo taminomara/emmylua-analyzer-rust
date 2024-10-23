@@ -7,7 +7,7 @@ use crate::{
     LuaIndexToken, LuaLiteralToken, LuaSyntaxNode,
 };
 
-use super::LuaCallArgList;
+use super::{LuaBlock, LuaCallArgList, LuaParamList};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LuaExpr {
@@ -478,6 +478,16 @@ impl LuaAstNode for LuaClosureExpr {
         } else {
             None
         }
+    }
+}
+
+impl LuaClosureExpr {
+    pub fn get_block(&self) -> Option<LuaBlock> {
+        self.child()
+    }
+
+    pub fn get_params_list(&self) -> Option<LuaParamList> {
+        self.child()
     }
 }
 

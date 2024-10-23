@@ -17,12 +17,10 @@ pub trait LuaAstNode {
     where
         Self: Sized;
 
-    #[allow(dead_code)]
     fn child<N: LuaAstNode>(&self) -> Option<N> {
         self.syntax().children().find_map(N::cast)
     }
 
-    #[allow(dead_code)]
     fn token<N: LuaAstToken>(&self) -> Option<N> {
         self.syntax()
             .children_with_tokens()
@@ -30,7 +28,6 @@ pub trait LuaAstNode {
             .and_then(N::cast)
     }
 
-    #[allow(dead_code)]
     fn token_by_kind(&self, kind: LuaTokenKind) -> Option<LuaGeneralToken> {
         let token = self
             .syntax()
@@ -41,17 +38,22 @@ pub trait LuaAstNode {
         LuaGeneralToken::cast(token)
     }
 
-    #[allow(dead_code)]
     fn tokens<N: LuaAstToken>(&self) -> LuaAstTokenChildren<N> {
         LuaAstTokenChildren::new(self.syntax())
     }
 
-    #[allow(dead_code)]
     fn children<N: LuaAstNode>(&self) -> LuaAstChildren<N> {
         LuaAstChildren::new(self.syntax())
     }
 
-    #[allow(dead_code)]
+    fn descendants<N: LuaAstNode>(&self) -> impl Iterator<Item = N> {
+        self.syntax().descendants().filter_map(N::cast)
+    }
+
+    fn ancestors<N: LuaAstNode>(&self) -> impl Iterator<Item = N> {
+        self.syntax().ancestors().filter_map(N::cast)
+    }
+
     fn dump(&self) {
         println!("{:#?}", self.syntax());
     }
@@ -82,7 +84,6 @@ impl<N: LuaAstNode> Iterator for LuaAstChildren<N> {
 }
 
 pub trait LuaAstToken {
-    #[allow(dead_code)]
     fn syntax(&self) -> &LuaSyntaxToken;
 
     fn can_cast(kind: LuaTokenKind) -> bool

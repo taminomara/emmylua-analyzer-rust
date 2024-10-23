@@ -115,6 +115,10 @@ impl LuaLocalName {
     pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
+
+    pub fn get_attrib(&self) -> Option<LuaLocalAttribute> {
+        self.child()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -260,3 +264,78 @@ impl LuaTableField {
         }
     }
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaParamName {
+    syntax: LuaSyntaxNode,
+}
+
+impl LuaAstNode for LuaParamName {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        &self.syntax
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaSyntaxKind::ParamName
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaParamName {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
+        self.token()
+    }
+
+    pub fn is_dots(&self) -> bool {
+        self.token_by_kind(LuaTokenKind::TkDots).is_some()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaParamList {
+    syntax: LuaSyntaxNode,
+}
+
+impl LuaAstNode for LuaParamList {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        &self.syntax
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaSyntaxKind::ParamList
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaParamList {
+    pub fn get_params(&self) -> LuaAstChildren<LuaParamName> {
+        self.children()
+    }
+}
+
