@@ -8,7 +8,7 @@ license = "MIT"
 repository = "https://github.com/CppCXY/emmylua-analyzer-rust"
 readme = "README.md"
 keywords = ["emmylua", "luals", "parser", "lua"]
-categories = ["development-tools", "programming-language", "parsing"]
+categories = ["development-tools", "parsing"]
 
 [dependencies]
 rowan.workspace = true
