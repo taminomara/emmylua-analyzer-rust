@@ -245,7 +245,7 @@ Syntax(Chunk)@0..143
         ---| BBB @ hihihi
         ---| CCC
         "#;
-
+        print_ast(code);
         let result = r#"
 Syntax(Chunk)@0..242
   Syntax(Block)@0..242
@@ -293,7 +293,7 @@ Syntax(Chunk)@0..242
       Token(TkWhitespace)@99..100 " "
       Token(TkAssign)@100..101 "="
       Token(TkWhitespace)@101..102 " "
-      Syntax(TableExpr)@102..151
+      Syntax(TableObjectExpr)@102..151
         Token(TkLeftBrace)@102..103 "{"
         Token(TkEndOfLine)@103..104 "\n"
         Token(TkWhitespace)@104..114 "          "
@@ -585,7 +585,7 @@ Syntax(Chunk)@0..217
       Token(TkWhitespace)@203..204 " "
       Token(TkAssign)@204..205 "="
       Token(TkWhitespace)@205..206 " "
-      Syntax(TableExpr)@206..208
+      Syntax(TableEmptyExpr)@206..208
         Token(TkLeftBrace)@206..207 "{"
         Token(TkRightBrace)@207..208 "}"
     Token(TkEndOfLine)@208..209 "\n"

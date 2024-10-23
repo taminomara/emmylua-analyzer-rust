@@ -101,7 +101,7 @@ Syntax(Chunk)@0..770
       Token(TkWhitespace)@109..110 " "
       Token(TkAssign)@110..111 "="
       Token(TkWhitespace)@111..112 " "
-      Syntax(TableExpr)@112..138
+      Syntax(TableObjectExpr)@112..138
         Token(TkLeftBrace)@112..113 "{"
         Token(TkWhitespace)@113..114 " "
         Syntax(TableFieldAssign)@114..127
@@ -302,7 +302,7 @@ Syntax(Chunk)@0..770
       Token(TkWhitespace)@550..551 " "
       Token(TkAssign)@551..552 "="
       Token(TkWhitespace)@552..553 " "
-      Syntax(TableExpr)@553..672
+      Syntax(TableObjectExpr)@553..672
         Token(TkLeftBrace)@553..554 "{"
         Token(TkEndOfLine)@554..555 "\n"
         Token(TkWhitespace)@555..571 "                "
@@ -643,7 +643,7 @@ Syntax(Chunk)@0..183
           Token(TkName)@102..106 "call"
         Token(TkWhitespace)@106..107 " "
         Syntax(CallArgList)@107..174
-          Syntax(TableExpr)@107..174
+          Syntax(TableObjectExpr)@107..174
             Token(TkLeftBrace)@107..108 "{"
             Token(TkEndOfLine)@108..109 "\n"
             Token(TkWhitespace)@109..121 "            "
@@ -700,7 +700,7 @@ Syntax(Chunk)@0..183
         local c = {}
         local d = { a = 1, 1 }
         "#;
-
+        print_ast(code);
         let result = r#"
 Syntax(Chunk)@0..228
   Syntax(Block)@0..228
@@ -714,7 +714,7 @@ Syntax(Chunk)@0..228
       Token(TkWhitespace)@16..17 " "
       Token(TkAssign)@17..18 "="
       Token(TkWhitespace)@18..19 " "
-      Syntax(TableExpr)@19..93
+      Syntax(TableObjectExpr)@19..93
         Token(TkLeftBrace)@19..20 "{"
         Token(TkEndOfLine)@20..21 "\n"
         Token(TkWhitespace)@21..33 "            "
@@ -764,7 +764,7 @@ Syntax(Chunk)@0..228
       Token(TkWhitespace)@109..110 " "
       Token(TkAssign)@110..111 "="
       Token(TkWhitespace)@111..112 " "
-      Syntax(TableExpr)@112..167
+      Syntax(TableArrayExpr)@112..167
         Token(TkLeftBrace)@112..113 "{"
         Token(TkEndOfLine)@113..114 "\n"
         Token(TkWhitespace)@114..126 "            "
@@ -796,7 +796,7 @@ Syntax(Chunk)@0..228
       Token(TkWhitespace)@183..184 " "
       Token(TkAssign)@184..185 "="
       Token(TkWhitespace)@185..186 " "
-      Syntax(TableExpr)@186..188
+      Syntax(TableEmptyExpr)@186..188
         Token(TkLeftBrace)@186..187 "{"
         Token(TkRightBrace)@187..188 "}"
     Token(TkEndOfLine)@188..189 "\n"
@@ -809,7 +809,7 @@ Syntax(Chunk)@0..228
       Token(TkWhitespace)@204..205 " "
       Token(TkAssign)@205..206 "="
       Token(TkWhitespace)@206..207 " "
-      Syntax(TableExpr)@207..219
+      Syntax(TableObjectExpr)@207..219
         Token(TkLeftBrace)@207..208 "{"
         Token(TkWhitespace)@208..209 " "
         Syntax(TableFieldAssign)@209..214

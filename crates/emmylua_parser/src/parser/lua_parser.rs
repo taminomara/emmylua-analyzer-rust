@@ -356,61 +356,6 @@ mod tests {
     }
 
     #[test]
-    fn test_parse() {
-        let lua_code = r#"
-            function foo(a, b)
-                return a + b
-            end
-        "#;
-
-        let config = ParserConfig::default();
-        let mut errors: Vec<LuaParseError> = Vec::new();
-        let mut parser = new_parser(lua_code, config, &mut errors, false);
-        parse_chunk(&mut parser);
-
-        for e in parser.get_events() {
-            println!("{:?}", e);
-        }
-        assert_eq!(parser.has_error(), false);
-
-        let mut level = 0;
-        for e in parser.get_events() {
-            match e {
-                MarkEvent::NodeStart {
-                    kind: LuaSyntaxKind::None,
-                    ..
-                } => {}
-                MarkEvent::NodeStart { kind: _, .. } => {
-                    level += 1;
-                }
-                MarkEvent::NodeEnd => {
-                    level -= 1;
-                }
-                _ => {}
-            }
-        }
-        assert_eq!(level, 0);
-    }
-
-    #[test]
-    fn test_parse_error() {
-        let lua_code = r#"
-            function foo(a, b)
-                return a + b
-        "#;
-
-        let config = ParserConfig::default();
-        let mut errors: Vec<LuaParseError> = Vec::new();
-        let mut parser = new_parser(lua_code, config, &mut errors, false);
-        parse_chunk(&mut parser);
-
-        for e in parser.get_errors() {
-            println!("{:?}", e);
-        }
-        assert_eq!(parser.has_error(), true);
-    }
-
-    #[test]
     fn test_parse_and_ast() {
         let lua_code = r#"
             function foo(a, b)

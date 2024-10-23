@@ -2,6 +2,7 @@ mod token_data;
 mod lua_lexer;
 mod lexer_config;
 mod lua_doc_lexer;
+mod test;
 
 pub use token_data::LuaTokenData;
 pub use lexer_config::LexerConfig;
