@@ -1,4 +1,17 @@
-use crate::{kind::{LuaSyntaxKind, LuaTokenKind}, syntax::traits::LuaAstNode, LuaKind, LuaSyntaxNode};
+mod tag;
+mod types;
+mod description;
+
+use description::LuaDocDescriptionOwner;
+pub use tag::*;
+pub use types::*;
+
+use super::LuaNameToken;
+use crate::{
+    kind::{LuaSyntaxKind, LuaTokenKind},
+    syntax::traits::LuaAstNode,
+    LuaAstChildren, LuaKind, LuaSyntaxNode,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaComment {
@@ -29,21 +42,17 @@ impl LuaAstNode for LuaComment {
     }
 }
 
+impl LuaDocDescriptionOwner for LuaComment {}
+
 impl LuaComment {
     pub fn get_owner(&self) -> Option<LuaSyntaxNode> {
         if let Some(inline_node) = find_inline_node(&self.syntax) {
             Some(inline_node)
         } else if let Some(attached_node) = find_attached_node(&self.syntax) {
             Some(attached_node)
-        }
-        else {
+        } else {
             None
         }
-    }
-
-    pub fn get_description_text(&self) -> Option<String> {
-        // let descriptions = self.children::<Lua>()
-        todo!()
     }
 
     // pub fn get_doc_tags(&self) -> LuaAstChildren<LuaTag> {
@@ -88,7 +97,7 @@ fn find_inline_node(comment: &LuaSyntaxNode) -> Option<LuaSyntaxNode> {
 
 fn find_attached_node(comment: &LuaSyntaxNode) -> Option<LuaSyntaxNode> {
     let mut meet_end_of_line = false;
-    
+
     let mut next_sibling = comment.next_sibling_or_token();
     loop {
         if next_sibling.is_none() {
@@ -111,22 +120,129 @@ fn find_attached_node(comment: &LuaSyntaxNode) -> Option<LuaSyntaxNode> {
                 LuaKind::Syntax(LuaSyntaxKind::Block) => {
                     let first_child = comment.first_child()?;
                     if first_child.kind() == LuaKind::Syntax(LuaSyntaxKind::Comment) {
-                        return None
+                        return None;
                     }
                     return Some(first_child);
                 }
-                _ => {
-                    match sibling {
-                        rowan::NodeOrToken::Node(node) => {
-                            return Some(node);
-                        }
-                        rowan::NodeOrToken::Token(token) => {
-                            return Some(token.parent()?);
-                        }
+                _ => match sibling {
+                    rowan::NodeOrToken::Node(node) => {
+                        return Some(node);
                     }
-                }
+                    rowan::NodeOrToken::Token(token) => {
+                        return Some(token.parent()?);
+                    }
+                },
             }
             next_sibling = sibling.next_sibling_or_token();
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaDocGenericDeclList {
+    syntax: LuaSyntaxNode,
+}
+
+impl LuaAstNode for LuaDocGenericDeclList {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        &self.syntax
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaSyntaxKind::DocGenericDeclareList
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaDocGenericDeclList {
+    pub fn get_generic_decl(&self) -> LuaAstChildren<LuaDocGenericDecl> {
+        self.children()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaDocGenericDecl {
+    syntax: LuaSyntaxNode,
+}
+
+impl LuaAstNode for LuaDocGenericDecl {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        &self.syntax
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaSyntaxKind::DocGenericParameter
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaDocGenericDecl {
+    pub fn get_name(&self) -> Option<LuaNameToken> {
+        self.token()
+    }
+
+    pub fn get_type(&self) -> Option<LuaDocType> {
+        self.child()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaDocTypeList {
+    syntax: LuaSyntaxNode,
+}
+
+impl LuaAstNode for LuaDocTypeList {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        &self.syntax
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaSyntaxKind::DocTypeList
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaDocTypeList {
+    pub fn get_types(&self) -> LuaAstChildren<LuaDocType> {
+        self.children()
     }
 }

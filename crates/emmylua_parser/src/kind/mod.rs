@@ -3,6 +3,7 @@ pub use lua_syntax_kind::LuaSyntaxKind;
 pub use lua_token_kind::LuaTokenKind;
 pub use lua_language_level::LuaLanguageLevel;
 pub use lua_type_operator_kind::{LuaTypeBinaryOperator, LuaTypeTernaryOperator, LuaTypeUnaryOperator};
+pub use lua_visibility_kind::VisibilityKind;
 
 mod lua_operator_kind;
 mod lua_syntax_kind;

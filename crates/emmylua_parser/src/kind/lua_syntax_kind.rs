@@ -60,7 +60,6 @@ pub enum LuaSyntaxKind {
     DocTagInterface,
     DocTagAlias,
     DocTagField,
-    DocTagEnumField,
     DocTagType,
     DocTagParam,
     DocTagReturn,

@@ -1,7 +1,7 @@
 use crate::{
     kind::{BinaryOperator, LuaTokenKind, UnaryOperator},
     syntax::traits::LuaAstToken,
-    LuaOpKind, LuaSyntaxToken,
+    LuaOpKind, LuaSyntaxToken, VisibilityKind,
 };
 
 use super::{float_token_value, int_token_value, string_token_value};
@@ -484,5 +484,75 @@ impl LuaIndexToken {
 
     pub fn is_left_bracket(&self) -> bool {
         self.token.kind() == LuaTokenKind::TkLeftBracket.into()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaDocDetailToken {
+    token: LuaSyntaxToken,
+}
+
+impl LuaAstToken for LuaDocDetailToken {
+    fn syntax(&self) -> &LuaSyntaxToken {
+        &self.token
+    }
+
+    fn can_cast(kind: LuaTokenKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaTokenKind::TkDocDetail
+    }
+
+    fn cast(syntax: LuaSyntaxToken) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(LuaDocDetailToken { token: syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaDocDetailToken {
+    pub fn get_detail(&self) -> &str {
+        self.token.text()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaDocVisibilityToken {
+    token: LuaSyntaxToken,
+}
+
+impl LuaAstToken for LuaDocVisibilityToken {
+    fn syntax(&self) -> &LuaSyntaxToken {
+        &self.token
+    }
+
+    fn can_cast(kind: LuaTokenKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaTokenKind::TkDocVisibility
+    }
+
+    fn cast(syntax: LuaSyntaxToken) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(LuaDocVisibilityToken { token: syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaDocVisibilityToken {
+    pub fn get_visibility(&self) -> VisibilityKind {
+        VisibilityKind::to_visibility_kind(self.token.text())
     }
 }
