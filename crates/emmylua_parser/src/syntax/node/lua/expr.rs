@@ -6,7 +6,7 @@ use crate::{
     LuaIndexToken, LuaLiteralToken, LuaSyntaxNode,
 };
 
-use super::{LuaBlock, LuaCallArgList, LuaParamList};
+use super::{LuaBlock, LuaCallArgList, LuaParamList, LuaTableField};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LuaExpr {
@@ -332,7 +332,7 @@ impl LuaTableExpr {
         self.syntax().kind() == LuaSyntaxKind::TableObjectExpr.into()
     }
 
-    pub fn get_fields(&self) -> LuaAstChildren<LuaExpr> {
+    pub fn get_fields(&self) -> LuaAstChildren<LuaTableField> {
         self.children()
     }
 }
