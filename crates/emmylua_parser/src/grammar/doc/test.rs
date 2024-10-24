@@ -245,7 +245,7 @@ Syntax(Chunk)@0..143
         ---| BBB @ hihihi
         ---| CCC
         "#;
-        print_ast(code);
+
         let result = r#"
 Syntax(Chunk)@0..242
   Syntax(Block)@0..242
@@ -891,8 +891,9 @@ Syntax(Chunk)@0..125
           Token(TkRightParen)@46..47 ")"
           Token(TkColon)@47..48 ":"
           Token(TkWhitespace)@48..49 " "
-          Syntax(TypeName)@49..55
-            Token(TkName)@49..55 "number"
+          Syntax(DocTypeList)@49..55
+            Syntax(TypeName)@49..55
+              Token(TkName)@49..55 "number"
       Token(TkEndOfLine)@55..56 "\n"
       Token(TkWhitespace)@56..64 "        "
       Token(TkDocStart)@64..68 "---@"
@@ -921,8 +922,9 @@ Syntax(Chunk)@0..125
           Token(TkRightParen)@107..108 ")"
           Token(TkColon)@108..109 ":"
           Token(TkWhitespace)@109..110 " "
-          Syntax(TypeName)@110..116
-            Token(TkName)@110..116 "string"
+          Syntax(DocTypeList)@110..116
+            Syntax(TypeName)@110..116
+              Token(TkName)@110..116 "string"
     Token(TkEndOfLine)@116..117 "\n"
     Token(TkWhitespace)@117..125 "        "
         "#;
@@ -1364,7 +1366,7 @@ Syntax(Chunk)@0..33
         ---@version 5.1, 5.2
         ---@version 5.1, > 5.2
         "#;
-
+        print_ast(code);
         let result = r#"
 Syntax(Chunk)@0..143
   Syntax(Block)@0..143
@@ -1376,7 +1378,7 @@ Syntax(Chunk)@0..143
         Token(TkTagVersion)@13..20 "version"
         Token(TkWhitespace)@20..21 " "
         Syntax(DocVersion)@21..24
-          Token(TkVersionNumber)@21..24 "5.1"
+          Token(TkDocVersionNumber)@21..24 "5.1"
       Token(TkEndOfLine)@24..25 "\n"
       Token(TkWhitespace)@25..33 "        "
       Token(TkDocStart)@33..37 "---@"
@@ -1386,7 +1388,7 @@ Syntax(Chunk)@0..143
         Syntax(DocVersion)@45..50
           Token(TkGt)@45..46 ">"
           Token(TkWhitespace)@46..47 " "
-          Token(TkVersionNumber)@47..50 "5.1"
+          Token(TkDocVersionNumber)@47..50 "5.1"
       Token(TkEndOfLine)@50..51 "\n"
       Token(TkWhitespace)@51..59 "        "
       Token(TkDocStart)@59..63 "---@"
@@ -1394,7 +1396,7 @@ Syntax(Chunk)@0..143
         Token(TkTagVersion)@63..70 "version"
         Token(TkWhitespace)@70..71 " "
         Syntax(DocVersion)@71..74
-          Token(TkVersionNumber)@71..74 "JIT"
+          Token(TkDocVersionNumber)@71..74 "JIT"
       Token(TkEndOfLine)@74..75 "\n"
       Token(TkWhitespace)@75..83 "        "
       Token(TkDocStart)@83..87 "---@"
@@ -1402,11 +1404,11 @@ Syntax(Chunk)@0..143
         Token(TkTagVersion)@87..94 "version"
         Token(TkWhitespace)@94..95 " "
         Syntax(DocVersion)@95..98
-          Token(TkVersionNumber)@95..98 "5.1"
+          Token(TkDocVersionNumber)@95..98 "5.1"
         Token(TkComma)@98..99 ","
         Token(TkWhitespace)@99..100 " "
         Syntax(DocVersion)@100..103
-          Token(TkVersionNumber)@100..103 "5.2"
+          Token(TkDocVersionNumber)@100..103 "5.2"
       Token(TkEndOfLine)@103..104 "\n"
       Token(TkWhitespace)@104..112 "        "
       Token(TkDocStart)@112..116 "---@"
@@ -1414,13 +1416,13 @@ Syntax(Chunk)@0..143
         Token(TkTagVersion)@116..123 "version"
         Token(TkWhitespace)@123..124 " "
         Syntax(DocVersion)@124..127
-          Token(TkVersionNumber)@124..127 "5.1"
+          Token(TkDocVersionNumber)@124..127 "5.1"
         Token(TkComma)@127..128 ","
         Token(TkWhitespace)@128..129 " "
         Syntax(DocVersion)@129..134
           Token(TkGt)@129..130 ">"
           Token(TkWhitespace)@130..131 " "
-          Token(TkVersionNumber)@131..134 "5.2"
+          Token(TkDocVersionNumber)@131..134 "5.2"
     Token(TkEndOfLine)@134..135 "\n"
     Token(TkWhitespace)@135..143 "        "
         "#;
