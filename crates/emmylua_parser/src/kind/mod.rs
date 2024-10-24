@@ -4,6 +4,7 @@ pub use lua_token_kind::LuaTokenKind;
 pub use lua_language_level::LuaLanguageLevel;
 pub use lua_type_operator_kind::{LuaTypeBinaryOperator, LuaTypeTernaryOperator, LuaTypeUnaryOperator};
 pub use lua_visibility_kind::VisibilityKind;
+pub use lua_version::LuaVersionNumber;
 
 mod lua_operator_kind;
 mod lua_syntax_kind;
@@ -11,6 +12,7 @@ mod lua_token_kind;
 mod lua_visibility_kind;
 mod lua_language_level;
 mod lua_type_operator_kind;
+mod lua_version;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u16)]

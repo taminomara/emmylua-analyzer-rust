@@ -133,7 +133,7 @@ fn parse_object_or_mapped_type(p: &mut LuaDocParser) -> ParseResult {
 // [<string>] : <type>
 // <name>? : <type>
 fn parse_typed_field(p: &mut LuaDocParser) -> ParseResult {
-    let m = p.mark(LuaSyntaxKind::DocTypedField);
+    let m = p.mark(LuaSyntaxKind::DocObjectField);
     match p.current_token() {
         LuaTokenKind::TkName => {
             p.bump();
@@ -232,7 +232,7 @@ pub fn parse_fun_type(p: &mut LuaDocParser) -> ParseResult {
 
     if p.current_token() == LuaTokenKind::TkColon {
         p.bump();
-        parse_type(p)?;
+        parse_type_list(p)?;
     }
 
     Ok(m.complete(p))
@@ -336,7 +336,7 @@ fn parse_suffixed_type(p: &mut LuaDocParser, cm: CompleteMarker) -> ParseResult 
                     return Ok(cm);
                 }
 
-                let m = cm.precede(p, LuaSyntaxKind::TypeExpand);
+                let m = cm.precede(p, LuaSyntaxKind::TypeVariadic);
                 p.bump();
                 cm = m.complete(p);
                 return Ok(cm);

@@ -89,22 +89,23 @@ pub enum LuaSyntaxKind {
     TypeUnary,          // keyof type
     TypeBinary,         // aType | bType, aType & bType, aType extends bType, aType in bType
     TypeConditional,    // <conditionType> and <trueType> or <falseType>
-    TypeIndexAccess,    // type[keyType]
-    TypeMapped,         // { [p in KeyType]+? : ValueType }
     TypeFun,            // fun(<paramList>): returnType
     TypeGeneric,        // name<typeList>
     TypeTuple,          // [typeList]
     TypeObject, // { a: aType, b: bType } or { [1]: aType, [2]: bType } or { a: aType, b: bType, [number]: string }
-    TypeParen,  // (type)
     TypeLiteral, // "string" or <integer> or true or false
     TypeName,   // name
-    TypeExpand, // type...
-    TypeStringTemplate, // prefixName.`T`
-    TypeMatch,  // not support now
+    TypeVariadic, // type...
     TypeNullable, // <Type>?
+    TypeStringTemplate, // prefixName.`T`
+
+    // follow donot support now
+    TypeMatch,  
+    TypeIndexAccess, // type[keyType]
+    TypeMapped, // { [p in KeyType]+? : ValueType }
 
     // doc other
-    DocTypedField,
+    DocObjectField,
     DocContinueOrField,
     // doc parameter
     DocTypedParameter,

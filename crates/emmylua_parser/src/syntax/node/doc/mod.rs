@@ -2,11 +2,11 @@ mod tag;
 mod types;
 mod description;
 
-use description::LuaDocDescriptionOwner;
+pub use description::*;
 pub use tag::*;
 pub use types::*;
 
-use super::LuaNameToken;
+use super::{LuaBinaryOpToken, LuaNameToken};
 use crate::{
     kind::{LuaSyntaxKind, LuaTokenKind},
     syntax::traits::LuaAstNode,
@@ -55,9 +55,9 @@ impl LuaComment {
         }
     }
 
-    // pub fn get_doc_tags(&self) -> LuaAstChildren<LuaTag> {
-    //     todo!()
-    // }
+    pub fn get_doc_tags(&self) -> LuaAstChildren<LuaDocTag> {
+        self.children()
+    }
 }
 
 fn find_inline_node(comment: &LuaSyntaxNode) -> Option<LuaSyntaxNode> {
@@ -244,5 +244,92 @@ impl LuaAstNode for LuaDocTypeList {
 impl LuaDocTypeList {
     pub fn get_types(&self) -> LuaAstChildren<LuaDocType> {
         self.children()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaDocOpType {
+    syntax: LuaSyntaxNode,
+}
+
+impl LuaAstNode for LuaDocOpType {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        &self.syntax
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaSyntaxKind::DocOpType
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaDocOpType {
+    pub fn get_op(&self) -> Option<LuaBinaryOpToken> {
+        self.token()
+    }
+
+    pub fn get_type(&self) -> Option<LuaDocType> {
+        self.child()
+    }
+
+    pub fn is_nullable(&self) -> bool {
+        self.token_by_kind(LuaTokenKind::TkDocQuestion).is_some()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaDocObjectField {
+    syntax: LuaSyntaxNode,
+}
+
+impl LuaAstNode for LuaDocObjectField {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        &self.syntax
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaSyntaxKind::DocObjectField
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+}
+
+// todo 
+impl LuaDocObjectField {
+    pub fn get_name(&self) -> Option<LuaNameToken> {
+        self.token()
+    }
+
+    pub fn get_type(&self) -> Option<LuaDocType> {
+        self.child()
+    }
+
+    pub fn is_nullable(&self) -> bool {
+        self.token_by_kind(LuaTokenKind::TkDocQuestion).is_some()
     }
 }

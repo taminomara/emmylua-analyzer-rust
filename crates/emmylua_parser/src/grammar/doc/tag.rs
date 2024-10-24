@@ -526,7 +526,7 @@ fn parse_version(p: &mut LuaDocParser) -> ParseResult {
         p.bump();
     }
 
-    expect_token(p, LuaTokenKind::TkVersionNumber)?;
+    expect_token(p, LuaTokenKind::TkDocVersionNumber)?;
     Ok(m.complete(p))
 }
 

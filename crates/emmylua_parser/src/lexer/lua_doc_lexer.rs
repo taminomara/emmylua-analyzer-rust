@@ -383,14 +383,14 @@ impl LuaDocLexer<'_> {
             }
             ch if ch.is_ascii_digit() => {
                 reader.eat_while(|ch| ch.is_ascii_digit() || ch == '.');
-                LuaTokenKind::TkVersionNumber
+                LuaTokenKind::TkDocVersionNumber
             }
             ch if is_name_start(ch) => {
                 reader.bump();
                 reader.eat_while(is_doc_name_continue);
                 let text = reader.current_saved_text();
                 match text {
-                    "JIT" => LuaTokenKind::TkVersionNumber,
+                    "JIT" => LuaTokenKind::TkDocVersionNumber,
                     _ => LuaTokenKind::TkName,
                 }
             }

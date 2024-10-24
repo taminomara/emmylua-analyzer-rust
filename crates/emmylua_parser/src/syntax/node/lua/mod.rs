@@ -201,14 +201,14 @@ impl LuaLocalAttribute {
     pub fn is_close(&self) -> bool {
         match self.get_name_token() {
             None => false,
-            Some(name_token) => name_token.name() == "close",
+            Some(name_token) => name_token.get_name_text() == "close",
         }
     }
 
     pub fn is_const(&self) -> bool {
         match self.get_name_token() {
             None => false,
-            Some(name_token) => name_token.name() == "const",
+            Some(name_token) => name_token.get_name_text() == "const",
         }
     }
 }

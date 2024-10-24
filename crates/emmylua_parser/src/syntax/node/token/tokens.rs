@@ -1,7 +1,5 @@
 use crate::{
-    kind::{BinaryOperator, LuaTokenKind, UnaryOperator},
-    syntax::traits::LuaAstToken,
-    LuaOpKind, LuaSyntaxToken, VisibilityKind,
+    kind::{BinaryOperator, LuaTokenKind, UnaryOperator}, syntax::traits::LuaAstToken, text, LuaOpKind, LuaSyntaxToken, LuaTypeBinaryOperator, LuaTypeUnaryOperator, LuaVersionNumber, VisibilityKind
 };
 
 use super::{float_token_value, int_token_value, string_token_value};
@@ -61,7 +59,7 @@ impl LuaAstToken for LuaNameToken {
 }
 
 impl LuaNameToken {
-    pub fn name(&self) -> &str {
+    pub fn get_name_text(&self) -> &str {
         self.token.text()
     }
 }
@@ -554,5 +552,114 @@ impl LuaAstToken for LuaDocVisibilityToken {
 impl LuaDocVisibilityToken {
     pub fn get_visibility(&self) -> VisibilityKind {
         VisibilityKind::to_visibility_kind(self.token.text())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaDocVersionNumberToken {
+    token: LuaSyntaxToken,
+}
+
+impl LuaAstToken for LuaDocVersionNumberToken {
+    fn syntax(&self) -> &LuaSyntaxToken {
+        &self.token
+    }
+
+    fn can_cast(kind: LuaTokenKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaTokenKind::TkDocVersionNumber
+    }
+
+    fn cast(syntax: LuaSyntaxToken) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(LuaDocVersionNumberToken { token: syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaDocVersionNumberToken {
+    pub fn get_version_number(&self) -> Option<LuaVersionNumber> {
+        let text = self.token.text();
+        LuaVersionNumber::from_str(text)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaDocTypeBinaryToken {
+    token: LuaSyntaxToken,
+}
+
+impl LuaAstToken for LuaDocTypeBinaryToken {
+    fn syntax(&self) -> &LuaSyntaxToken {
+        &self.token
+    }
+
+    fn can_cast(kind: LuaTokenKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaTokenKind::TkDocOr
+            || kind == LuaTokenKind::TkDocAnd
+            || kind == LuaTokenKind::TkDocExtends
+            || kind == LuaTokenKind::TkDocIn
+    }
+
+    fn cast(syntax: LuaSyntaxToken) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(LuaDocTypeBinaryToken { token: syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaDocTypeBinaryToken {
+    pub fn get_op(&self) -> LuaTypeBinaryOperator {
+        LuaOpKind::to_type_binary_operator(self.token.kind().into())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaDocTypeUnaryToken {
+    token: LuaSyntaxToken,
+}
+
+impl LuaAstToken for LuaDocTypeUnaryToken {
+    fn syntax(&self) -> &LuaSyntaxToken {
+        &self.token
+    }
+
+    fn can_cast(kind: LuaTokenKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaTokenKind::TkDocKeyOf
+    }
+
+    fn cast(syntax: LuaSyntaxToken) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(LuaDocTypeUnaryToken { token: syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaDocTypeUnaryToken {
+    pub fn get_op(&self) -> LuaTypeUnaryOperator {
+        LuaOpKind::to_type_unary_operator(self.token.kind().into())
     }
 }

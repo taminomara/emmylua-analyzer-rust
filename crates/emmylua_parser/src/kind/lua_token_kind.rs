@@ -129,7 +129,7 @@ pub enum LuaTokenKind {
     TkDocVisibility,      // public private protected package
     TkDocReadonly,        // readonly
     TkAt,                 // '@', invalid lua token, but for postfix completion
-    TkVersionNumber,      // version number
+    TkDocVersionNumber,      // version number
     TkStringTemplateType, // type template
     TkDocMatch,           // =
     TkDocBoolean,         // true false
