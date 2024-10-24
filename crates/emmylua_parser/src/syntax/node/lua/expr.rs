@@ -238,6 +238,10 @@ impl LuaIndexExpr {
         self.children().nth(1)
     }
 
+    pub fn get_indexed_name_token(&self) -> Option<LuaNameToken> {
+        self.token()
+    }
+
     pub fn get_index_token(&self) -> Option<LuaIndexToken> {
         self.token()
     }

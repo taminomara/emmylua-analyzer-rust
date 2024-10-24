@@ -1,9 +1,9 @@
-use crate::{LuaAstNode, LuaDocDetailToken, LuaSyntaxKind, LuaSyntaxNode};
+use crate::{LuaAstNode, LuaDocDetailToken, LuaSyntaxKind, LuaSyntaxNode, LuaTokenKind};
 
 #[allow(unused)]
 pub trait LuaDocDescriptionOwner: LuaAstNode {
     fn get_description(&self) -> Option<LuaDocDescription> {
-        self.child()   
+        self.child()
     }
 }
 
@@ -47,8 +47,43 @@ impl LuaAstNode for LuaDocDescription {
     }
 }
 
+impl LuaDocDetailOwner for LuaDocDescription {}
+
 impl LuaDocDescription {
-    pub fn get_detail_text(&self) -> Option<String> {
-        todo!()
+    pub fn get_description_text(&self) -> String {
+        let mut text = String::new();
+        for token in self
+            .syntax()
+            .children_with_tokens()
+            .filter_map(|it| it.into_token())
+        {
+            match token.kind().into() {
+                LuaTokenKind::TkDocDetail => {
+                    text.push_str(token.text());
+                }
+                LuaTokenKind::TkEndOfLine => {
+                    text.push('\n');
+                }
+                LuaTokenKind::TkNormalStart | LuaTokenKind::TkDocContinue => {
+                    let mut white_space_count = 0;
+                    let mut start_text_chars = token.text().chars();
+                    while let Some(c) = start_text_chars.next() {
+                        if c == ' ' {
+                            white_space_count += 1;
+                        } else if c == '\t' {
+                            white_space_count += 4;
+                        }
+                    }
+
+                    if white_space_count > 0 {
+                        let white_space = " ".repeat(white_space_count);
+                        text.push_str(&white_space);
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        text
     }
 }
