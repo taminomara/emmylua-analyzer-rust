@@ -917,4 +917,49 @@ Syntax(Chunk)@0..146
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_local_stat() {
+        let code = r#"
+        local a<const>, b<close> = 123, {}
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..52
+  Syntax(Block)@0..52
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(LocalStat)@9..43
+      Token(TkLocal)@9..14 "local"
+      Token(TkWhitespace)@14..15 " "
+      Syntax(LocalName)@15..23
+        Token(TkName)@15..16 "a"
+        Syntax(Attribute)@16..23
+          Token(TkLt)@16..17 "<"
+          Token(TkName)@17..22 "const"
+          Token(TkGt)@22..23 ">"
+      Token(TkComma)@23..24 ","
+      Token(TkWhitespace)@24..25 " "
+      Syntax(LocalName)@25..33
+        Token(TkName)@25..26 "b"
+        Syntax(Attribute)@26..33
+          Token(TkLt)@26..27 "<"
+          Token(TkName)@27..32 "close"
+          Token(TkGt)@32..33 ">"
+      Token(TkWhitespace)@33..34 " "
+      Token(TkAssign)@34..35 "="
+      Token(TkWhitespace)@35..36 " "
+      Syntax(LiteralExpr)@36..39
+        Token(TkInt)@36..39 "123"
+      Token(TkComma)@39..40 ","
+      Token(TkWhitespace)@40..41 " "
+      Syntax(TableEmptyExpr)@41..43
+        Token(TkLeftBrace)@41..42 "{"
+        Token(TkRightBrace)@42..43 "}"
+    Token(TkEndOfLine)@43..44 "\n"
+    Token(TkWhitespace)@44..52 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
 }

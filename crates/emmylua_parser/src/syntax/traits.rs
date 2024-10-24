@@ -24,8 +24,7 @@ pub trait LuaAstNode {
     fn token<N: LuaAstToken>(&self) -> Option<N> {
         self.syntax()
             .children_with_tokens()
-            .find_map(|it| it.into_token())
-            .and_then(N::cast)
+            .find_map(|it| it.into_token().and_then(N::cast))
     }
 
     fn token_by_kind(&self, kind: LuaTokenKind) -> Option<LuaGeneralToken> {
