@@ -203,7 +203,7 @@ impl LuaAstNode for LuaDocGenericDecl {
 }
 
 impl LuaDocGenericDecl {
-    pub fn get_name(&self) -> Option<LuaNameToken> {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
 
@@ -321,7 +321,7 @@ impl LuaAstNode for LuaDocObjectField {
 
 // todo 
 impl LuaDocObjectField {
-    pub fn get_name(&self) -> Option<LuaNameToken> {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
 

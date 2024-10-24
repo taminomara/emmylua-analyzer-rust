@@ -191,8 +191,12 @@ impl LuaAstNode for LuaNameExpr {
 impl LuaCommentOwner for LuaNameExpr {}
 
 impl LuaNameExpr {
-    pub fn get_name(&self) -> Option<LuaNameToken> {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
+    }
+
+    pub fn get_name_text(&self) -> Option<String> {
+        self.get_name_token().map(|it| it.get_name_text().to_string())
     }
 }
 

@@ -1559,4 +1559,37 @@ Syntax(Chunk)@0..218
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_operator() {
+        let code = r#"
+        ---@operator add(number): number
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..50
+  Syntax(Block)@0..50
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..41
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagOperator)@13..41
+        Token(TkTagOperator)@13..21 "operator"
+        Token(TkWhitespace)@21..22 " "
+        Token(TkName)@22..25 "add"
+        Token(TkLeftParen)@25..26 "("
+        Syntax(DocTypeList)@26..32
+          Syntax(TypeName)@26..32
+            Token(TkName)@26..32 "number"
+        Token(TkRightParen)@32..33 ")"
+        Token(TkColon)@33..34 ":"
+        Token(TkWhitespace)@34..35 " "
+        Syntax(TypeName)@35..41
+          Token(TkName)@35..41 "number"
+    Token(TkEndOfLine)@41..42 "\n"
+    Token(TkWhitespace)@42..50 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
 }

@@ -213,7 +213,7 @@ impl LuaAstNode for LuaDocTagClass {
 impl LuaDocDescriptionOwner for LuaDocTagClass {}
 
 impl LuaDocTagClass {
-    pub fn get_name(&self) -> Option<LuaNameToken> {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
 
@@ -258,7 +258,7 @@ impl LuaAstNode for LuaDocTagEnum {
 impl LuaDocDescriptionOwner for LuaDocTagEnum {}
 
 impl LuaDocTagEnum {
-    pub fn get_name(&self) -> Option<LuaNameToken> {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
 
@@ -303,7 +303,7 @@ impl LuaAstNode for LuaDocEnumField {
 impl LuaDocDetailOwner for LuaDocEnumField {}
 
 impl LuaDocEnumField {
-    pub fn get_name(&self) -> Option<LuaNameToken> {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
 
@@ -344,7 +344,7 @@ impl LuaAstNode for LuaDocTagAlias {
 impl LuaDocDescriptionOwner for LuaDocTagAlias {}
 
 impl LuaDocTagAlias {
-    pub fn get_name(&self) -> Option<LuaNameToken> {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
 
@@ -502,7 +502,7 @@ impl LuaAstNode for LuaDocTagParam {
 impl LuaDocDescriptionOwner for LuaDocTagParam {}
 
 impl LuaDocTagParam {
-    pub fn get_name(&self) -> Option<LuaNameToken> {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
 
@@ -630,7 +630,7 @@ impl LuaAstNode for LuaDocTagField {
 impl LuaDocDescriptionOwner for LuaDocTagField {}
 
 impl LuaDocTagField {
-    pub fn get_name(&self) -> Option<LuaDocFieldKey> {
+    pub fn get_field_key(&self) -> Option<LuaDocFieldKey> {
         let mut meet_left_bracket = false;
         for child in self.syntax.children_with_tokens() {
             if meet_left_bracket {
@@ -723,11 +723,11 @@ impl LuaAstNode for LuaDocTagModule {
 impl LuaDocDescriptionOwner for LuaDocTagModule {}
 
 impl LuaDocTagModule {
-    pub fn get_string(&self) -> Option<LuaStringToken> {
+    pub fn get_string_token(&self) -> Option<LuaStringToken> {
         self.token()
     }
 
-    pub fn get_name(&self) -> Option<LuaNameToken> {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
 }
@@ -1025,11 +1025,11 @@ impl LuaAstNode for LuaDocTagSource {
 impl LuaDocDescriptionOwner for LuaDocTagSource {}
 
 impl LuaDocTagSource {
-    pub fn get_string(&self) -> Option<LuaStringToken> {
+    pub fn get_string_token(&self) -> Option<LuaStringToken> {
         self.token()
     }
 
-    pub fn get_name(&self) -> Option<LuaNameToken> {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
 }
@@ -1097,7 +1097,7 @@ impl LuaAstNode for LuaDocTagNamespace {
 impl LuaDocDescriptionOwner for LuaDocTagNamespace {}
 
 impl LuaDocTagNamespace {
-    pub fn get_name(&self) -> Option<LuaNameToken> {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
 }
@@ -1134,7 +1134,7 @@ impl LuaAstNode for LuaDocTagUsing {
 impl LuaDocDescriptionOwner for LuaDocTagUsing {}
 
 impl LuaDocTagUsing {
-    pub fn get_name(&self) -> Option<LuaNameToken> {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
 }
@@ -1262,34 +1262,16 @@ impl LuaAstNode for LuaDocTagOperator {
 impl LuaDocDescriptionOwner for LuaDocTagOperator {}
 
 impl LuaDocTagOperator {
-    pub fn get_name(&self) -> Option<LuaNameToken> {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
 
-    pub fn get_params_and_return(&self) -> (Vec<LuaDocType>, Option<LuaDocType>) {
-        let mut params = Vec::new();
-        let mut return_type = None;
-        let mut meet_colon = false;
-        for child in self.syntax.children_with_tokens() {
-            match child {
-                rowan::NodeOrToken::Node(node) => {
-                    if LuaDocType::can_cast(node.kind().into()) {
-                        if meet_colon {
-                            return_type = Some(LuaDocType::cast(node).unwrap());
-                        } else {
-                            params.push(LuaDocType::cast(node).unwrap());
-                        }
-                    }
-                }
-                rowan::NodeOrToken::Token(token) => {
-                    if token.kind() == LuaTokenKind::TkColon.into() {
-                        meet_colon = true;
-                    }
-                }
-            }
-        }
+    pub fn get_param_list(&self) -> Option<LuaDocTypeList> {
+        self.child()
+    }
 
-        (params, return_type)
+    pub fn get_return_type(&self) -> Option<LuaDocType> {
+        self.child()
     }
 }
 

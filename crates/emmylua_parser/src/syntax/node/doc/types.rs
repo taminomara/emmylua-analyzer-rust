@@ -253,7 +253,7 @@ impl LuaDocTypeParam {
         self.token_by_kind(LuaTokenKind::TkDots).is_some()
     }
 
-    pub fn get_name(&self) -> Option<LuaNameToken> {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
 
