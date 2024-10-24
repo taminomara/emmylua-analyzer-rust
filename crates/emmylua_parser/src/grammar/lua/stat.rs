@@ -12,7 +12,6 @@ use super::{
 };
 
 pub fn parse_stats(p: &mut LuaParser) {
-    let consume_count = p.current_token_index();
     while !block_follow(p) {
         let level = p.get_mark_level();
         match parse_stat(p) {
@@ -28,23 +27,6 @@ pub fn parse_stats(p: &mut LuaParser) {
             }
         }
     }
-
-    if p.current_token() == LuaTokenKind::TkEof {
-        return;
-    }
-
-    if p.current_token_index() != consume_count {
-        return;
-    }
-
-    let m = p.mark(LuaSyntaxKind::UnknownStat);
-    p.bump();
-    p.push_error(LuaParseError::from_source_range(
-        "unexpected token",
-        p.current_token_range(),
-    ));
-
-    m.complete(p);
 }
 
 fn block_follow(p: &LuaParser) -> bool {

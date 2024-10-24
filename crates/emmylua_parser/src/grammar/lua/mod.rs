@@ -17,7 +17,19 @@ pub fn parse_chunk(p: &mut LuaParser) {
 
     p.init();
     while p.current_token() != LuaTokenKind::TkEof {
+        let consume_count = p.current_token_index();
         parse_stats(p);
+
+        if p.current_token_index() == consume_count {
+            let m = p.mark(LuaSyntaxKind::UnknownStat);
+            p.bump();
+            p.push_error(LuaParseError::from_source_range(
+                "unexpected token",
+                p.current_token_range(),
+            ));
+
+            m.complete(p);
+        }
     }
 
     m.complete(p);

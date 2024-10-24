@@ -193,7 +193,7 @@ impl LuaAstNode for LuaAssignStat {
 impl LuaCommentOwner for LuaAssignStat {}
 
 impl LuaAssignStat {
-    pub fn get_expr_list(&self) -> (Vec<LuaVarExpr>, Vec<LuaExpr>) {
+    pub fn get_var_and_expr_list(&self) -> (Vec<LuaVarExpr>, Vec<LuaExpr>) {
         let mut vars = Vec::new();
         let mut exprs = Vec::new();
         let mut meet_assign = false;
@@ -833,7 +833,7 @@ impl LuaAstNode for LuaGotoStat {
 impl LuaCommentOwner for LuaGotoStat {}
 
 impl LuaGotoStat {
-    pub fn get_label_name(&self) -> Option<LuaNameToken> {
+    pub fn get_label_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
 }
@@ -870,7 +870,7 @@ impl LuaAstNode for LuaLabelStat {
 impl LuaCommentOwner for LuaLabelStat {}
 
 impl LuaLabelStat {
-    pub fn get_label_name(&self) -> Option<LuaNameToken> {
+    pub fn get_label_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
 }

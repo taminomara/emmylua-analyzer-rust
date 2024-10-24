@@ -117,6 +117,6 @@ impl<N: LuaAstToken> Iterator for LuaAstTokenChildren<N> {
     type Item = N;
 
     fn next(&mut self) -> Option<N> {
-        self.inner.find_map(|it| it.into_token()).and_then(N::cast)
+        self.inner.find_map(|it| it.into_token().and_then(N::cast))
     }
 }
