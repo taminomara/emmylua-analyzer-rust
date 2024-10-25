@@ -1,7 +1,5 @@
 use crate::{
-    kind::LuaSyntaxKind, syntax::traits::LuaAstNode, LuaAstChildren, LuaAstToken,
-    LuaAstTokenChildren, LuaBinaryOpToken, LuaDocVersionNumberToken, LuaDocVisibilityToken,
-    LuaNameToken, LuaNumberToken, LuaStringToken, LuaSyntaxNode, LuaTokenKind,
+    kind::LuaSyntaxKind, syntax::traits::LuaAstNode, LuaAstChildren, LuaAstToken, LuaAstTokenChildren, LuaBinaryOpToken, LuaDocVersionNumberToken, LuaDocVisibilityToken, LuaNameToken, LuaNumberToken, LuaPathToken, LuaStringToken, LuaSyntaxNode, LuaTokenKind
 };
 
 use super::{
@@ -1025,11 +1023,7 @@ impl LuaAstNode for LuaDocTagSource {
 impl LuaDocDescriptionOwner for LuaDocTagSource {}
 
 impl LuaDocTagSource {
-    pub fn get_string_token(&self) -> Option<LuaStringToken> {
-        self.token()
-    }
-
-    pub fn get_name_token(&self) -> Option<LuaNameToken> {
+    pub fn get_path_token(&self) -> Option<LuaPathToken> {
         self.token()
     }
 }

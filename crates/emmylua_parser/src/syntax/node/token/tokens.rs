@@ -663,3 +663,39 @@ impl LuaDocTypeUnaryToken {
         LuaOpKind::to_type_unary_operator(self.token.kind().into())
     }
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaPathToken {
+    token: LuaSyntaxToken,
+}
+
+impl LuaAstToken for LuaPathToken {
+    fn syntax(&self) -> &LuaSyntaxToken {
+        &self.token
+    }
+
+    fn can_cast(_: LuaTokenKind) -> bool
+    where
+        Self: Sized,
+    {
+        true
+    }
+
+    fn cast(syntax: LuaSyntaxToken) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        Some(LuaPathToken { token: syntax })
+    }
+}
+
+impl LuaPathToken {
+    pub fn get_path(&self) -> &str {
+        let text = self.token.text();
+        if text.starts_with('\"') || text.starts_with('\'') {
+            &text[1..text.len() - 1]
+        } else {
+            text
+        }
+    }
+}

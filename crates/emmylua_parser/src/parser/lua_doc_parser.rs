@@ -91,7 +91,7 @@ impl LuaDocParser<'_, '_> {
                     self.eat_current_and_lex_next();
                 }
             }
-            LuaDocLexerState::FieldStart | LuaDocLexerState::See => {
+            LuaDocLexerState::FieldStart | LuaDocLexerState::See | LuaDocLexerState::Source => {
                 while matches!(self.current_token, LuaTokenKind::TkWhitespace) {
                     self.eat_current_and_lex_next();
                 }

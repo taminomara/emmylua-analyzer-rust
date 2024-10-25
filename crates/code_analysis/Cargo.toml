@@ -1,8 +1,14 @@
 [package]
-name = "emmylua_code_analysis"
+name = "code_analysis"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+url = "2.5.2"
+emmylua_parser = { path = "../emmylua_parser" }
+globset = "0.4.15"
+walkdir = "2.5.0"
+
 serde.workspace = true
 serde_json.workspace = true
+lsp-types.workspace = true

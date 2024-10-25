@@ -1211,17 +1211,17 @@ Syntax(Chunk)@0..127
     Token(TkWhitespace)@1..9 "        "
     Syntax(Comment)@9..118
       Token(TkDocStart)@9..13 "---@"
-      Syntax(DocTagSource)@13..19
+      Syntax(DocTagSource)@13..60
         Token(TkTagSource)@13..19 "source"
-      Token(TkWhitespace)@19..20 " "
-      Token(TkDocTrivia)@20..60 "\"https://groups.googl ..."
+        Token(TkWhitespace)@19..20 " "
+        Token(TKDocPath)@20..60 "\"https://groups.googl ..."
       Token(TkEndOfLine)@60..61 "\n"
       Token(TkWhitespace)@61..69 "        "
       Token(TkDocStart)@69..73 "---@"
-      Syntax(DocTagSource)@73..79
+      Syntax(DocTagSource)@73..118
         Token(TkTagSource)@73..79 "source"
-      Token(TkWhitespace)@79..80 " "
-      Token(TkDocTrivia)@80..118 "https://groups.google ..."
+        Token(TkWhitespace)@79..80 " "
+        Token(TKDocPath)@80..118 "https://groups.google ..."
     Token(TkEndOfLine)@118..119 "\n"
     Token(TkWhitespace)@119..127 "        "
         "#;

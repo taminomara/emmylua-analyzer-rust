@@ -491,7 +491,7 @@ fn is_doc_name_continue(ch: char) -> bool {
 }
 
 fn is_source_continue(ch: char) -> bool {
-    is_name_continue(ch) || ch == '.' || ch == '-' || ch == '/' || ch == ' '
+    is_name_continue(ch) || ch == '.' || ch == '-' || ch == '/' || ch == ' ' || ch == ':' || ch == '#' || ch == '\\'
 }
 
 #[cfg(test)]
