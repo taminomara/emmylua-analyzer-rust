@@ -1,5 +1,6 @@
 use rowan::TextSize;
 
+#[derive(Debug, Clone)]
 pub struct LineIndex {
     line_offsets: Vec<TextSize>,
     line_only_ascii_vec: Vec<bool>,

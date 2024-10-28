@@ -1,6 +1,9 @@
 mod compilation;
 mod diagnostic;
 mod vfs;
+mod config;
+mod db_index;
+mod semantic;
 
 #[allow(unused)]
 pub use compilation::*;
@@ -8,6 +11,7 @@ pub use compilation::*;
 pub use diagnostic::*;
 #[allow(unused)]
 pub use vfs::*;
+pub use config::Setting;
 
 pub struct EmmyLuaAnalysis {}
 

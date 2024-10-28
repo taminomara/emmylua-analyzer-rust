@@ -2,6 +2,7 @@ use rowan::TextSize;
 
 use crate::{parser_error::LuaParseError, syntax::{node::LuaChunk, traits::LuaAstNode}, text::LineIndex, LuaSyntaxNode};
 
+#[derive(Debug, Clone)]
 pub struct LuaSyntaxTree {
     root: LuaSyntaxNode,
     source_text: String,

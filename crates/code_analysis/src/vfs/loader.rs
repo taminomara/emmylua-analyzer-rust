@@ -9,6 +9,7 @@ pub struct LuaFileInfo {
     pub content: String,
 }
 
+#[allow(unused)]
 pub fn load_workspace_files(
     root: &Path,
     match_pattern: Vec<String>,

@@ -1,10 +1,14 @@
 mod loader;
+mod in_filed;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
 use url::Url;
 use lsp_types::Uri;
+
+pub use loader::load_workspace_files;
+pub use in_filed::InFiled;
 
 #[derive(Eq, PartialEq, Hash, Debug, Clone, Copy)]
 pub struct FileId {

@@ -1,31 +1,30 @@
-use lua_diagnostic_code::DiagnosticCode;
-use lua_diagnostic_severity::DiagnosticSeverity;
-
 mod lua_diagnostic;
 mod lua_diagnostic_code;
-mod lua_diagnostic_severity;
+
+use lsp_types::DiagnosticSeverity;
+pub use lua_diagnostic_code::DiagnosticCode;
 
 fn get_default_severity(code: DiagnosticCode) -> DiagnosticSeverity {
     match code {
-        DiagnosticCode::SyntaxError => DiagnosticSeverity::Error,
-        DiagnosticCode::TypeNotFound => DiagnosticSeverity::Warning,
-        DiagnosticCode::MissingReturn => DiagnosticSeverity::Warning,
-        DiagnosticCode::TypeNotMatch => DiagnosticSeverity::Warning,
-        DiagnosticCode::MissingParameter => DiagnosticSeverity::Warning,
-        DiagnosticCode::InjectFieldFail => DiagnosticSeverity::Error,
-        DiagnosticCode::UnreachableCode => DiagnosticSeverity::Hint,
-        DiagnosticCode::Unused => DiagnosticSeverity::Hint,
-        DiagnosticCode::UndefinedGlobal => DiagnosticSeverity::Error,
-        DiagnosticCode::NeedImport => DiagnosticSeverity::Warning,
-        DiagnosticCode::Deprecated => DiagnosticSeverity::Hint,
-        DiagnosticCode::AccessPrivateMember => DiagnosticSeverity::Warning,
-        DiagnosticCode::AccessPackageMember => DiagnosticSeverity::Warning,
-        DiagnosticCode::AccessProtectedMember => DiagnosticSeverity::Warning,
-        DiagnosticCode::NoDiscard => DiagnosticSeverity::Warning,
-        DiagnosticCode::DisableGlobalDefine => DiagnosticSeverity::Error,
-        DiagnosticCode::UndefinedField => DiagnosticSeverity::Warning,
-        DiagnosticCode::LocalConstReassign => DiagnosticSeverity::Error,
-        _ => DiagnosticSeverity::Warning,
+        DiagnosticCode::SyntaxError => DiagnosticSeverity::ERROR,
+        DiagnosticCode::TypeNotFound => DiagnosticSeverity::WARNING,
+        DiagnosticCode::MissingReturn => DiagnosticSeverity::WARNING,
+        DiagnosticCode::TypeNotMatch => DiagnosticSeverity::WARNING,
+        DiagnosticCode::MissingParameter => DiagnosticSeverity::WARNING,
+        DiagnosticCode::InjectFieldFail => DiagnosticSeverity::ERROR,
+        DiagnosticCode::UnreachableCode => DiagnosticSeverity::HINT,
+        DiagnosticCode::Unused => DiagnosticSeverity::HINT,
+        DiagnosticCode::UndefinedGlobal => DiagnosticSeverity::ERROR,
+        DiagnosticCode::NeedImport => DiagnosticSeverity::WARNING,
+        DiagnosticCode::Deprecated => DiagnosticSeverity::HINT,
+        DiagnosticCode::AccessPrivateMember => DiagnosticSeverity::WARNING,
+        DiagnosticCode::AccessPackageMember => DiagnosticSeverity::WARNING,
+        DiagnosticCode::AccessProtectedMember => DiagnosticSeverity::WARNING,
+        DiagnosticCode::NoDiscard => DiagnosticSeverity::WARNING,
+        DiagnosticCode::DisableGlobalDefine => DiagnosticSeverity::ERROR,
+        DiagnosticCode::UndefinedField => DiagnosticSeverity::WARNING,
+        DiagnosticCode::LocalConstReassign => DiagnosticSeverity::ERROR,
+        _ => DiagnosticSeverity::WARNING,
     }
 }
 

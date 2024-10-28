@@ -1,0 +1,462 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Setting",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "code_lens": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/CodeLens"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "completion": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Completion"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "diagnostics": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Diagnostics"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "hint": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Hint"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "resource": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Resource"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "runtime": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Runtime"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "semantic_tokens": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/SemanticTokens"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "signature": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Signature"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "strict": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Strict"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "workspace": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Workspace"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "CodeLens": {
+      "type": "object",
+      "properties": {
+        "enable": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "Completion": {
+      "type": "object",
+      "properties": {
+        "auto_require": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "auto_require_function": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "auto_require_naming_convention": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FilenameConvention"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "call_snippet": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "postfix": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "DiagnosticCode": {
+      "type": "string",
+      "enum": [
+        "none",
+        "syntax-error",
+        "type-not-found",
+        "missing-return",
+        "type-not-match",
+        "missing-parameter",
+        "inject-field-fail",
+        "unreachable-code",
+        "unused",
+        "undefined-global",
+        "need-import",
+        "deprecated",
+        "access-private-member",
+        "access-protected-member",
+        "access-package-member",
+        "no-discard",
+        "disable-global-define",
+        "undefined-field",
+        "local-const-reassign",
+        "duplicate-type"
+      ]
+    },
+    "DiagnosticSeveritySetting": {
+      "type": "string",
+      "enum": [
+        "Error",
+        "Warning",
+        "Information",
+        "Hint"
+      ]
+    },
+    "Diagnostics": {
+      "type": "object",
+      "properties": {
+        "disable": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/DiagnosticCode"
+          }
+        },
+        "enable": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "enables": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/DiagnosticCode"
+          }
+        },
+        "globals": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "globals_regex": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "severity": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "$ref": "#/definitions/DiagnosticSeveritySetting"
+          }
+        }
+      }
+    },
+    "FilenameConvention": {
+      "type": "string",
+      "enum": [
+        "keep",
+        "snake-case",
+        "pascal-case",
+        "camel-case"
+      ]
+    },
+    "Hint": {
+      "type": "object",
+      "properties": {
+        "index_hint": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "local_hint": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "override_hint": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "param_hint": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "LuaVersion": {
+      "type": "string",
+      "enum": [
+        "Lua5.1",
+        "LuaJIT",
+        "Lua5.2",
+        "Lua5.3",
+        "Lua5.4",
+        "LuaLatest"
+      ]
+    },
+    "Resource": {
+      "type": "object",
+      "properties": {
+        "paths": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Runtime": {
+      "type": "object",
+      "properties": {
+        "extensions": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "framework_versions": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "require_like_function": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "require_pattern": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "version": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/LuaVersion"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "SemanticTokens": {
+      "type": "object",
+      "properties": {
+        "enable": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "Signature": {
+      "type": "object",
+      "properties": {
+        "detail_signature_helper": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "Strict": {
+      "type": "object",
+      "properties": {
+        "require_path": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "type_call": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "Workspace": {
+      "type": "object",
+      "properties": {
+        "encoding": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ignore_dir": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "ignore_globs": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "library": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "preload_file_size": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        },
+        "workspace_roots": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
