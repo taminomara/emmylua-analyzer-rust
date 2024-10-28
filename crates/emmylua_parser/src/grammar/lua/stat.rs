@@ -175,23 +175,32 @@ fn parse_function(p: &mut LuaParser) -> ParseResult {
 }
 
 fn parse_func_name(p: &mut LuaParser) -> ParseResult {
-    let mut m = p.mark(LuaSyntaxKind::NameExpr);
+    let m = p.mark(LuaSyntaxKind::NameExpr);
     expect_token(p, LuaTokenKind::TkName)?;
 
-    if p.current_token() == LuaTokenKind::TkDot || p.current_token() == LuaTokenKind::TkColon {
-        m.set_kind(p, LuaSyntaxKind::IndexExpr);
-        while p.current_token() == LuaTokenKind::TkDot {
-            p.bump();
-            expect_token(p, LuaTokenKind::TkName)?;
-        }
+    let cm =
+        if p.current_token() == LuaTokenKind::TkDot || p.current_token() == LuaTokenKind::TkColon {
+            let mut cm = m.complete(p);
+            while p.current_token() == LuaTokenKind::TkDot {
+                let m = cm.precede(p, LuaSyntaxKind::IndexExpr);
+                p.bump();
+                expect_token(p, LuaTokenKind::TkName)?;
+                cm = m.complete(p);
+            }
 
-        if p.current_token() == LuaTokenKind::TkColon {
-            p.bump();
-            expect_token(p, LuaTokenKind::TkName)?;
-        }
-    }
+            if p.current_token() == LuaTokenKind::TkColon {
+                let m = cm.precede(p, LuaSyntaxKind::IndexExpr);
+                p.bump();
+                expect_token(p, LuaTokenKind::TkName)?;
+                cm = m.complete(p);
+            }
 
-    Ok(m.complete(p))
+            cm
+        } else {
+            m.complete(p)
+        };
+
+    Ok(cm)
 }
 
 fn parse_local(p: &mut LuaParser) -> ParseResult {
@@ -323,7 +332,7 @@ fn parse_assign_or_expr_stat(p: &mut LuaParser) -> ParseResult {
             range,
         ));
     }
-    
+
     while p.current_token() == LuaTokenKind::TkComma {
         p.bump();
         cm = parse_expr(p)?;

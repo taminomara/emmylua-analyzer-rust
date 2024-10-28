@@ -962,4 +962,136 @@ Syntax(Chunk)@0..52
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_func_stat() {
+        let code = r#"
+        function foo(a, b)
+            return a + b
+        end
+        function t.foo(a, b)
+            return a + b
+        end
+        function t:foo(a, b)
+            return a + b
+        end
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..205
+  Syntax(Block)@0..205
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(FuncStat)@9..64
+      Token(TkFunction)@9..17 "function"
+      Token(TkWhitespace)@17..18 " "
+      Syntax(NameExpr)@18..21
+        Token(TkName)@18..21 "foo"
+      Syntax(ClosureExpr)@21..64
+        Syntax(ParamList)@21..27
+          Token(TkLeftParen)@21..22 "("
+          Syntax(ParamName)@22..23
+            Token(TkName)@22..23 "a"
+          Token(TkComma)@23..24 ","
+          Token(TkWhitespace)@24..25 " "
+          Syntax(ParamName)@25..26
+            Token(TkName)@25..26 "b"
+          Token(TkRightParen)@26..27 ")"
+        Token(TkEndOfLine)@27..28 "\n"
+        Token(TkWhitespace)@28..40 "            "
+        Syntax(Block)@40..61
+          Syntax(ReturnStat)@40..52
+            Token(TkReturn)@40..46 "return"
+            Token(TkWhitespace)@46..47 " "
+            Syntax(BinaryExpr)@47..52
+              Syntax(NameExpr)@47..48
+                Token(TkName)@47..48 "a"
+              Token(TkWhitespace)@48..49 " "
+              Token(TkPlus)@49..50 "+"
+              Token(TkWhitespace)@50..51 " "
+              Syntax(NameExpr)@51..52
+                Token(TkName)@51..52 "b"
+          Token(TkEndOfLine)@52..53 "\n"
+          Token(TkWhitespace)@53..61 "        "
+        Token(TkEnd)@61..64 "end"
+    Token(TkEndOfLine)@64..65 "\n"
+    Token(TkWhitespace)@65..73 "        "
+    Syntax(FuncStat)@73..130
+      Token(TkFunction)@73..81 "function"
+      Token(TkWhitespace)@81..82 " "
+      Syntax(IndexExpr)@82..87
+        Syntax(NameExpr)@82..83
+          Token(TkName)@82..83 "t"
+        Token(TkDot)@83..84 "."
+        Token(TkName)@84..87 "foo"
+      Syntax(ClosureExpr)@87..130
+        Syntax(ParamList)@87..93
+          Token(TkLeftParen)@87..88 "("
+          Syntax(ParamName)@88..89
+            Token(TkName)@88..89 "a"
+          Token(TkComma)@89..90 ","
+          Token(TkWhitespace)@90..91 " "
+          Syntax(ParamName)@91..92
+            Token(TkName)@91..92 "b"
+          Token(TkRightParen)@92..93 ")"
+        Token(TkEndOfLine)@93..94 "\n"
+        Token(TkWhitespace)@94..106 "            "
+        Syntax(Block)@106..127
+          Syntax(ReturnStat)@106..118
+            Token(TkReturn)@106..112 "return"
+            Token(TkWhitespace)@112..113 " "
+            Syntax(BinaryExpr)@113..118
+              Syntax(NameExpr)@113..114
+                Token(TkName)@113..114 "a"
+              Token(TkWhitespace)@114..115 " "
+              Token(TkPlus)@115..116 "+"
+              Token(TkWhitespace)@116..117 " "
+              Syntax(NameExpr)@117..118
+                Token(TkName)@117..118 "b"
+          Token(TkEndOfLine)@118..119 "\n"
+          Token(TkWhitespace)@119..127 "        "
+        Token(TkEnd)@127..130 "end"
+    Token(TkEndOfLine)@130..131 "\n"
+    Token(TkWhitespace)@131..139 "        "
+    Syntax(FuncStat)@139..196
+      Token(TkFunction)@139..147 "function"
+      Token(TkWhitespace)@147..148 " "
+      Syntax(IndexExpr)@148..153
+        Syntax(NameExpr)@148..149
+          Token(TkName)@148..149 "t"
+        Token(TkColon)@149..150 ":"
+        Token(TkName)@150..153 "foo"
+      Syntax(ClosureExpr)@153..196
+        Syntax(ParamList)@153..159
+          Token(TkLeftParen)@153..154 "("
+          Syntax(ParamName)@154..155
+            Token(TkName)@154..155 "a"
+          Token(TkComma)@155..156 ","
+          Token(TkWhitespace)@156..157 " "
+          Syntax(ParamName)@157..158
+            Token(TkName)@157..158 "b"
+          Token(TkRightParen)@158..159 ")"
+        Token(TkEndOfLine)@159..160 "\n"
+        Token(TkWhitespace)@160..172 "            "
+        Syntax(Block)@172..193
+          Syntax(ReturnStat)@172..184
+            Token(TkReturn)@172..178 "return"
+            Token(TkWhitespace)@178..179 " "
+            Syntax(BinaryExpr)@179..184
+              Syntax(NameExpr)@179..180
+                Token(TkName)@179..180 "a"
+              Token(TkWhitespace)@180..181 " "
+              Token(TkPlus)@181..182 "+"
+              Token(TkWhitespace)@182..183 " "
+              Syntax(NameExpr)@183..184
+                Token(TkName)@183..184 "b"
+          Token(TkEndOfLine)@184..185 "\n"
+          Token(TkWhitespace)@185..193 "        "
+        Token(TkEnd)@193..196 "end"
+    Token(TkEndOfLine)@196..197 "\n"
+    Token(TkWhitespace)@197..205 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
 }

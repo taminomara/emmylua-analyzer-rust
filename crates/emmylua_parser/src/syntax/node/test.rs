@@ -2,7 +2,7 @@
 mod tests {
     use crate::{
         parser::ParserConfig, syntax::traits::LuaAstNode, LuaAst, LuaDocDescription, LuaLocalStat,
-        LuaParser,
+        LuaParser, LuaVarExpr,
     };
 
     #[allow(unused)]
@@ -184,6 +184,42 @@ mod tests {
                 }
                 LuaAst::LuaTableExpr(lua_table_expr) => {
                     assert!(lua_table_expr.is_array());
+                }
+                _ => {}
+            }
+        }
+    }
+
+    #[test]
+    fn test_func_stat() {
+        let code = r#"
+        function f()
+        end
+
+        local t = {}
+        function t:aaa()
+        end
+        "#;
+        
+        let tree = LuaParser::parse(code, ParserConfig::default());
+        let chunk = tree.get_chunk_node();
+        for node in chunk.descendants::<LuaAst>() {
+            match node {
+                LuaAst::LuaFuncStat(func_stat) => {
+                    match func_stat.get_func_name().unwrap() {
+                        LuaVarExpr::NameExpr(name) => {
+                            assert_eq!(name.get_name_token().unwrap().get_name_text(), "f");
+                        }
+                        LuaVarExpr::IndexExpr(field_exp) => {
+                            assert_eq!(field_exp.get_indexed_name_token().unwrap().get_name_text(), "aaa");
+                            match field_exp.get_prefix_expr().unwrap() {
+                                LuaVarExpr::NameExpr(name) => {
+                                    assert_eq!(name.get_name_token().unwrap().get_name_text(), "t");
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
                 }
                 _ => {}
             }
