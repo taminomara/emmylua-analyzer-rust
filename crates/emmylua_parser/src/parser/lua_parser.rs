@@ -389,4 +389,12 @@ mod tests {
         let tree = LuaParser::parse(lua_code, ParserConfig::default());
         println!("{:#?}", tree.get_red_root());
     }
+
+    #[test]
+    fn test_parse_empty_file() {
+        let lua_code = r#""#;
+
+        let tree = LuaParser::parse(lua_code, ParserConfig::default());
+        println!("{:#?}", tree.get_red_root());
+    }
 }

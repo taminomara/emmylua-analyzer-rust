@@ -74,7 +74,9 @@ impl LuaDocParser<'_, '_> {
     fn calc_next_current_token(&mut self) {
         let token = self.lex_token();
         self.current_token = token.kind;
-        self.current_token_range = token.range;
+        if !token.range.is_empty() {
+            self.current_token_range = token.range;
+        }
 
         if self.current_token == LuaTokenKind::TkEof {
             return;
@@ -108,7 +110,10 @@ impl LuaDocParser<'_, '_> {
 
         let token = self.lex_token();
         self.current_token = token.kind;
-        self.current_token_range = token.range;
+
+        if !token.range.is_empty() {
+            self.current_token_range = token.range;
+        }
     }
 
     fn lex_token(&mut self) -> LuaTokenData {

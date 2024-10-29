@@ -1,7 +1,10 @@
 use std::marker::PhantomData;
 
+use rowan::{TextRange, TextSize, WalkEvent};
+
 use crate::kind::{LuaSyntaxKind, LuaTokenKind};
 
+use super::LuaSyntaxId;
 pub use super::{
     node::*, LuaSyntaxElementChildren, LuaSyntaxNode, LuaSyntaxNodeChildren, LuaSyntaxToken,
 };
@@ -49,8 +52,28 @@ pub trait LuaAstNode {
         self.syntax().descendants().filter_map(N::cast)
     }
 
+    fn walk_descendants<N: LuaAstNode>(&self) -> impl Iterator<Item = WalkEvent<N>> {
+        self.syntax().preorder().filter_map(|event| match event {
+            WalkEvent::Enter(node) => N::cast(node).map(WalkEvent::Enter),
+            WalkEvent::Leave(node) => N::cast(node).map(WalkEvent::Leave),
+        })
+    }
+    
     fn ancestors<N: LuaAstNode>(&self) -> impl Iterator<Item = N> {
         self.syntax().ancestors().filter_map(N::cast)
+    }
+
+    fn get_position(&self) -> TextSize {
+        let range = self.syntax().text_range();
+        range.start()
+    }
+
+    fn get_range(&self) -> TextRange {
+        self.syntax().text_range()
+    }
+
+    fn get_syntax_id(&self) -> LuaSyntaxId {
+        LuaSyntaxId::from_node(self.syntax())
     }
 
     fn dump(&self) {

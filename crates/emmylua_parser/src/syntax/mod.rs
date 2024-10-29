@@ -3,7 +3,7 @@ mod node;
 mod traits;
 mod comment_trait;
 
-use rowan::Language;
+use rowan::{Language, TextRange};
 
 use crate::kind::{LuaKind, LuaSyntaxKind, LuaTokenKind};
 pub use tree::{LuaSyntaxTree, LuaTreeBuilder};
@@ -59,3 +59,33 @@ impl From<rowan::SyntaxKind> for LuaTokenKind {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct LuaSyntaxId {
+    ptr: LuaSyntaxNodePtr,
+}
+
+impl LuaSyntaxId {
+    pub fn from_ptr(ptr: LuaSyntaxNodePtr) -> Self {
+        LuaSyntaxId {
+            ptr
+        }
+    }
+
+    pub fn from_node(node: &LuaSyntaxNode) -> Self {
+        LuaSyntaxId {
+            ptr: LuaSyntaxNodePtr::new(node)
+        }
+    }
+
+    pub fn get_kind(&self) -> LuaSyntaxKind {
+        self.ptr.kind().into()
+    }
+
+    pub fn get_range(&self) -> TextRange {
+        self.ptr.text_range()
+    }
+
+    pub fn to_node(&self, tree: &LuaSyntaxTree) -> LuaSyntaxNode {
+        self.ptr.to_node(tree.get_red_root())
+    }
+}

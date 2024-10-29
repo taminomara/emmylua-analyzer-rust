@@ -1,3 +1,5 @@
+use std::f32::consts::E;
+
 use crate::{
     grammar::ParseResult,
     kind::{LuaSyntaxKind, LuaTokenKind},
@@ -325,6 +327,12 @@ fn parse_tag_param(p: &mut LuaDocParser) -> ParseResult {
         LuaTokenKind::TkName | LuaTokenKind::TkDots
     ) {
         p.bump();
+    }
+    else{
+        return Err(LuaParseError::from_source_range(
+            &format!("expect param name or '...', but get {:?}", p.current_token()),
+            p.current_token_range(),
+        ))
     }
 
     if_token_bump(p, LuaTokenKind::TkDocQuestion);

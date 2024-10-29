@@ -72,7 +72,11 @@ pub fn file_path_to_uri(path: &PathBuf) -> Uri {
     Uri::from_str(url.as_str()).unwrap()
 }
 
-pub fn uri_to_file_path(uri: &Uri) -> PathBuf {
+pub fn uri_to_file_path(uri: &Uri) -> Option<PathBuf> {
+    if uri.scheme().unwrap().as_str() != "file" {
+        return None;
+    }
+
     let url = Url::from_str(uri.as_str()).unwrap();
-    url.to_file_path().unwrap()
+    Some(url.to_file_path().unwrap())
 }

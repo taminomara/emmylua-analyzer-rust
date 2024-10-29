@@ -18,19 +18,19 @@ impl LuaDecl {
         }
     }
 
-    pub fn file_id(&self) -> FileId {
+    pub fn get_file_id(&self) -> FileId {
         self.id.file_id
     }
 
-    pub fn id(&self) -> LuaDeclId {
+    pub fn get_id(&self) -> LuaDeclId {
         self.id
     }
 
-    pub fn name(&self) -> &str {
+    pub fn get_name(&self) -> &str {
         &self.name
     }
 
-    pub fn position(&self) -> TextSize {
+    pub fn get_position(&self) -> TextSize {
         self.position
     }
 }

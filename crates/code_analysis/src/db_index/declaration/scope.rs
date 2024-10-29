@@ -1,4 +1,4 @@
-use rowan::{TextRange, TextSize};
+use rowan::TextRange;
 
 use crate::FileId;
 
@@ -8,13 +8,15 @@ use super::decl::LuaDeclId;
 pub struct LuaScope {
     parent: Option<LuaScopeId>,
     children: Vec<ScopeOrDeclId>,
+    range: TextRange,
 }
 
 impl LuaScope {
-    pub fn new(parent: Option<LuaScopeId>) -> Self {
+    pub fn new(range: TextRange) -> Self {
         Self {
-            parent,
+            parent: None,
             children: Vec::new(),
+            range,
         }
     }
 
@@ -26,8 +28,20 @@ impl LuaScope {
         self.children.push(ScopeOrDeclId::Scope(child));
     }
 
-    pub fn parent(&self) -> Option<LuaScopeId> {
+    pub fn get_parent(&self) -> Option<LuaScopeId> {
         self.parent
+    }
+
+    pub(crate) fn set_parent(&mut self, parent: Option<LuaScopeId>) {
+        self.parent = parent;
+    }
+
+    pub fn get_children(&self) -> &[ScopeOrDeclId] {
+        &self.children
+    }
+
+    pub fn get_range(&self) -> TextRange {
+        self.range
     }
 }
 

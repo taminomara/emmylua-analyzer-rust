@@ -3,6 +3,7 @@ mod decl;
 
 pub use decl::{LuaDecl, LuaDeclId};
 use emmylua_parser::LuaSyntaxNodePtr;
+use rowan::{TextRange, TextSize};
 pub use scope::{LuaScope, LuaScopeId};
 
 use crate::FileId;
@@ -28,30 +29,30 @@ impl LuaDeclarationTree {
         self.file_id
     }
 
-    pub fn find_decl(&self, name: &str, ptr: &LuaSyntaxNodePtr) -> Option<&LuaDecl> {
+    pub fn find_decl(&self, name: &str, position: TextSize) -> Option<&LuaDecl> {
         None
     }
 
-    pub fn create_decl(&mut self, name: String, ptr: LuaSyntaxNodePtr) -> LuaDeclId {
+    pub fn create_decl(&mut self, name: String, position: TextSize) -> LuaDeclId {
         let id = self.decls.len() as u32;
         let decl_id = LuaDeclId {
             file_id: self.file_id,
             id,
         };
 
-        let decl = LuaDecl::new(name, decl_id, ptr.text_range().start());
+        let decl = LuaDecl::new(name, decl_id, position);
         self.decls.push(decl);
         decl_id
     }
 
-    pub fn create_scope(&mut self, parent: Option<LuaScopeId>) -> LuaScopeId {
+    pub fn create_scope(&mut self, range: TextRange) -> LuaScopeId {
         let id = self.scopes.len() as u32;
         let scope_id = LuaScopeId {
             file_id: self.file_id,
             id,
         };
 
-        let scope = LuaScope::new(parent);
+        let scope = LuaScope::new(range);
         self.scopes.push(scope);
         scope_id
     }
@@ -65,6 +66,9 @@ impl LuaDeclarationTree {
     pub fn add_child_scope(&mut self, parent_id: LuaScopeId, child_id: LuaScopeId) {
         if let Some(parent) = self.scopes.get_mut(parent_id.id as usize) {
             parent.add_child(child_id);
+        }
+        if let Some(child) = self.scopes.get_mut(child_id.id as usize) {
+            child.set_parent(Some(parent_id));
         }
     }
 }

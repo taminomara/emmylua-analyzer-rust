@@ -1592,4 +1592,26 @@ Syntax(Chunk)@0..50
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_error_doc() {
+        let code = r#"
+        ---@param
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..27
+  Syntax(Block)@0..27
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..18
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagParam)@13..18
+        Token(TkTagParam)@13..18 "param"
+    Token(TkEndOfLine)@18..19 "\n"
+    Token(TkWhitespace)@19..27 "        "
+        "#;
+        
+        assert_ast_eq!(code, result);
+    }
 }

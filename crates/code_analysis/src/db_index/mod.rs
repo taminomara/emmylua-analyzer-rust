@@ -4,12 +4,10 @@ mod symbol;
 mod traits;
 mod r#type;
 
-use std::{collections::HashMap, fs::File};
-
-use emmylua_parser::LuaSyntaxTree;
+use std::collections::HashMap;
 
 use crate::FileId;
-pub use declaration::{LuaDecl, LuaDeclId, LuaDeclarationTree, LuaScope, LuaScopeId};
+pub use declaration::*;
 
 #[derive(Debug)]
 pub struct DbIndex {
@@ -31,5 +29,10 @@ impl DbIndex {
 
     pub fn add_decl_tree(&mut self, tree: LuaDeclarationTree) {
         self.decl_trees.insert(tree.file_id(), tree);
+    }
+
+    #[allow(unused)]
+    pub fn get_decl_tree(&self, file_id: &FileId) -> Option<&LuaDeclarationTree> {
+        self.decl_trees.get(file_id)
     }
 }

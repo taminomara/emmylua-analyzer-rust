@@ -56,7 +56,7 @@ impl LuaGreenNodeBuilder<'_> {
 
     #[inline]
     pub fn finish_node(&mut self) {
-        if self.parents.is_empty() {
+        if self.parents.is_empty() || self.children.is_empty() {
             return;
         }
 
@@ -148,8 +148,13 @@ impl LuaGreenNodeBuilder<'_> {
 
     #[inline]
     pub fn finish(mut self, text: &str) -> GreenNode {
-        let root_pos = self.children.pop().unwrap();
-        self.build_rowan_green(root_pos, text);
+        if let Some(root_pos) = self.children.pop() {
+            self.build_rowan_green(root_pos, text);
+        }
+        else {
+            self.builder.start_node(LuaSyntaxKind::Chunk.into());
+            self.builder.finish_node();
+        }
 
         self.builder.finish()
     }

@@ -43,6 +43,10 @@ impl SourceRange {
             length: end - start,
         }
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.length == 0
+    }
 }
 
 impl std::fmt::Display for SourceRange {
