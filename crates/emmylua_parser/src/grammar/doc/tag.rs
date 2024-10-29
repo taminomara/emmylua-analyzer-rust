@@ -1,5 +1,3 @@
-use std::f32::consts::E;
-
 use crate::{
     grammar::ParseResult,
     kind::{LuaSyntaxKind, LuaTokenKind},
