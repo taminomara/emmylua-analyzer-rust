@@ -1,5 +1,6 @@
 use super::FileId;
 
+#[derive(Debug, Clone, Hash)]
 pub struct InFiled<N> {
     pub file_id: FileId,
     pub value: N,

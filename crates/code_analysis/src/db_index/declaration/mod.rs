@@ -1,9 +1,12 @@
-mod scope;
 mod decl;
+mod scope;
 
-pub use decl::{LuaDecl, LuaDeclId};
-use emmylua_parser::LuaSyntaxNodePtr;
+use std::collections::HashMap;
+
+pub use decl::{LocalAttribute, LuaDecl, LuaDeclId};
+use emmylua_parser::LuaSyntaxId;
 use rowan::{TextRange, TextSize};
+use scope::ScopeOrDeclId;
 pub use scope::{LuaScope, LuaScopeId};
 
 use crate::FileId;
@@ -30,19 +33,75 @@ impl LuaDeclarationTree {
     }
 
     pub fn find_decl(&self, name: &str, position: TextSize) -> Option<&LuaDecl> {
+        let mut scope = self.find_scope(position)?;
+
+        loop {
+            for decl_id in scope.get_children().iter().filter_map(|child| match child {
+                ScopeOrDeclId::Decl(decl_id) => Some(decl_id),
+                ScopeOrDeclId::Scope(_) => None,
+            }) {
+                if let Some(decl) = self.get_decl(*decl_id) {
+                    if decl.get_position() <= position && decl.get_name() == name {
+                        return Some(decl);
+                    }
+                }
+            }
+
+            scope = match scope.get_parent() {
+                Some(parent_id) => self.scopes.get(parent_id.id as usize).unwrap(),
+                None => break,
+            };
+        }
+
         None
     }
 
-    pub fn create_decl(&mut self, name: String, position: TextSize) -> LuaDeclId {
+    fn find_scope(&self, position: TextSize) -> Option<&LuaScope> {
+        if self.scopes.is_empty() {
+            return None;
+        }
+        let mut scope = self.scopes.get(0).unwrap();
+        loop {
+            let child_scope = scope
+                .get_children()
+                .iter()
+                .filter_map(|child| match child {
+                    ScopeOrDeclId::Scope(child_id) => {
+                        let child_scope = self.scopes.get(child_id.id as usize).unwrap();
+                        Some(child_scope)
+                    }
+                    ScopeOrDeclId::Decl(_) => None,
+                })
+                .find(|child_scope| child_scope.get_range().contains(position));
+            if child_scope.is_none() {
+                break;
+            }
+            scope = child_scope.unwrap();
+        }
+
+        Some(scope)
+    }
+
+    pub fn add_decl(&mut self, decl: LuaDecl) -> LuaDeclId {
+        let mut decl = decl;
         let id = self.decls.len() as u32;
         let decl_id = LuaDeclId {
             file_id: self.file_id,
             id,
         };
 
-        let decl = LuaDecl::new(name, decl_id, position);
+        decl.set_id(decl_id);
+
         self.decls.push(decl);
         decl_id
+    }
+
+    pub fn get_decl_mut(&mut self, decl_id: LuaDeclId) -> Option<&mut LuaDecl> {
+        self.decls.get_mut(decl_id.id as usize)
+    }
+
+    pub fn get_decl(&self, decl_id: LuaDeclId) -> Option<&LuaDecl> {
+        self.decls.get(decl_id.id as usize)
     }
 
     pub fn create_scope(&mut self, range: TextRange) -> LuaScopeId {
@@ -58,7 +117,7 @@ impl LuaDeclarationTree {
     }
 
     pub fn add_decl_to_scope(&mut self, scope_id: LuaScopeId, decl_id: LuaDeclId) {
-        if let Some(scope) = self.scopes.get_mut(scope_id.id as usize) { 
+        if let Some(scope) = self.scopes.get_mut(scope_id.id as usize) {
             scope.add_decl(decl_id);
         }
     }

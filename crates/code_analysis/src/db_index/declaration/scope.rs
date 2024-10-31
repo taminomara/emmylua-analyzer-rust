@@ -52,7 +52,7 @@ pub struct LuaScopeId {
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone, Copy)]
-enum ScopeOrDeclId {
+pub enum ScopeOrDeclId {
     Scope(LuaScopeId),
     Decl(LuaDeclId),
 }

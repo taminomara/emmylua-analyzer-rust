@@ -1,4 +1,5 @@
 mod docs;
+mod exprs;
 mod stats;
 
 use crate::db_index::DbIndex;
@@ -28,6 +29,24 @@ fn walk_node_enter(analyzer: &mut DeclAnalyzer, node: LuaAst) {
     match node {
         LuaAst::LuaLocalStat(stat) => {
             stats::analyze_local_stat(analyzer, stat);
+        }
+        LuaAst::LuaAssignStat(stat) => {
+            stats::analyze_assign_stat(analyzer, stat);
+        }
+        LuaAst::LuaForStat(stat) => {
+            stats::analyze_for_stat(analyzer, stat);
+        }
+        LuaAst::LuaForRangeStat(stat) => {
+            stats::analyze_for_range_stat(analyzer, stat);
+        }
+        LuaAst::LuaFuncStat(stat) => {
+            stats::analyze_func_stat(analyzer, stat);
+        }
+        LuaAst::LuaNameExpr(expr) => {
+            exprs::analyze_name_expr(analyzer, expr);
+        }
+        LuaAst::LuaClosureExpr(expr) => {
+            exprs::analyze_closure_expr(analyzer, expr);
         }
         _ => {}
     }
@@ -84,15 +103,7 @@ impl<'a> DeclAnalyzer<'a> {
         self.decl
     }
 
-    pub(crate) fn get_db(&mut self) -> &mut DbIndex {
-        self.db
-    }
-
-    pub(crate) fn get_tree(&self) -> &LuaSyntaxTree {
-        self.tree
-    }
-
-    pub(crate) fn create_scope(&mut self, range: TextRange) {
+    pub fn create_scope(&mut self, range: TextRange) {
         let scope_id = self.decl.create_scope(range);
         if let Some(parent_scope_id) = self.scopes.last() {
             self.decl.add_child_scope(*parent_scope_id, scope_id);
@@ -101,21 +112,34 @@ impl<'a> DeclAnalyzer<'a> {
         self.scopes.push(scope_id);
     }
 
-    pub(crate) fn pop_scope(&mut self) {
+    pub fn pop_scope(&mut self) {
         self.scopes.pop();
     }
 
-    pub(crate) fn add_decl_to_current_scope(&mut self, decl_id: LuaDeclId) {
+    fn add_decl_to_current_scope(&mut self, decl_id: LuaDeclId) {
         if let Some(scope_id) = self.scopes.last() {
             self.decl.add_decl_to_scope(*scope_id, decl_id);
         }
     }
 
-    pub(crate) fn create_decl(&mut self, name: String, position: TextSize) -> LuaDeclId {
-        self.decl.create_decl(name, position)
+    pub fn add_decl(&mut self, decl: LuaDecl) -> LuaDeclId {
+        let id = self.decl.add_decl(decl);
+        self.add_decl_to_current_scope(id);
+
+        if let LuaDecl::Global { name, id, .. } = self.decl.get_decl(id).unwrap() {
+            self.db
+                .get_reference_index()
+                .add_global_decl(name.clone(), id.unwrap());
+        }
+
+        id
     }
 
-    pub(crate) fn find_decl(&self, name: &str, position: TextSize) -> Option<&LuaDecl> {
+    pub fn find_decl(&self, name: &str, position: TextSize) -> Option<&LuaDecl> {
         self.decl.find_decl(name, position)
+    }
+
+    pub fn get_file_id(&self) -> FileId {
+        self.decl.file_id()
     }
 }

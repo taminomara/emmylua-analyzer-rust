@@ -119,6 +119,35 @@ pub trait LuaAstToken {
     fn get_token_kind(&self) -> LuaTokenKind {
         self.syntax().kind().into()
     }
+
+    fn get_position(&self) -> TextSize {
+        let range = self.syntax().text_range();
+        range.start()
+    }
+
+    fn get_range(&self) -> TextRange {
+        self.syntax().text_range()
+    }
+
+    // fn get_syntax_id(&self) -> LuaSyntaxId {
+    //     LuaSyntaxId::from_token(self.syntax())
+    // }
+
+    fn get_text(&self) -> &str {
+        self.syntax().text()
+    }
+
+    fn get_parent<N: LuaAstNode>(&self) -> Option<N> {
+        self.syntax().parent().and_then(N::cast)
+    }
+
+    fn ancestors<N: LuaAstNode>(&self) -> impl Iterator<Item = N> {
+        self.syntax().parent_ancestors().filter_map(N::cast)
+    }
+
+    fn dump(&self) {
+        println!("{:#?}", self.syntax());
+    }
 }
 
 #[derive(Debug, Clone)]

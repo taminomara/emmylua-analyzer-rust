@@ -1,37 +1,63 @@
-use rowan::TextSize;
+use rowan::{TextRange, TextSize};
 
 use crate::FileId;
 
 #[derive(Eq, PartialEq, Hash, Debug, Clone)]
-pub struct LuaDecl {
-    name: String,
-    id: LuaDeclId,
-    position: TextSize
+pub enum LuaDecl {
+    Local {
+        name: String,
+        id: Option<LuaDeclId>,
+        range: TextRange,
+        attrib: Option<LocalAttribute>,
+    },
+    Global {
+        name: String,
+        id: Option<LuaDeclId>,
+        range: TextRange,
+    },
 }
 
 impl LuaDecl {
-    pub fn new(name: String, id: LuaDeclId, position: TextSize) -> Self {
-        Self {
-            name,
-            id,
-            position
+    pub fn get_file_id(&self) -> Option<FileId> {
+        match self {
+            LuaDecl::Local { id, .. } => id.map(|id| id.file_id),
+            LuaDecl::Global { id, .. } => id.map(|id| id.file_id),
         }
     }
 
-    pub fn get_file_id(&self) -> FileId {
-        self.id.file_id
-    }
-
-    pub fn get_id(&self) -> LuaDeclId {
-        self.id
+    pub fn get_id(&self) -> Option<LuaDeclId> {
+        match self {
+            LuaDecl::Local { id, .. } => *id,
+            LuaDecl::Global { id, .. } => *id,
+        }
     }
 
     pub fn get_name(&self) -> &str {
-        &self.name
+        match self {
+            LuaDecl::Local { name, .. } => name,
+            LuaDecl::Global { name, .. } => name,
+        }
     }
 
     pub fn get_position(&self) -> TextSize {
-        self.position
+        match self {
+            LuaDecl::Local { range, .. } => range.start(),
+            LuaDecl::Global { range, .. } => range.start(),
+        }
+    }
+
+    pub fn get_range(&self) -> TextRange {
+        match self {
+            LuaDecl::Local { range, .. } => *range,
+            LuaDecl::Global { range, .. } => *range,
+        }
+    }
+
+    pub fn set_id(&mut self, id: LuaDeclId) {
+        match self {
+            LuaDecl::Local { id: id_ref, .. } => *id_ref = Some(id),
+            LuaDecl::Global { id: id_ref, .. } => *id_ref = Some(id),
+        }
     }
 }
 
@@ -39,4 +65,11 @@ impl LuaDecl {
 pub struct LuaDeclId {
     pub file_id: FileId,
     pub id: u32,
+}
+
+#[derive(Eq, PartialEq, Hash, Debug, Clone)]
+pub enum LocalAttribute {
+    Const,
+    Close,
+    IterConst
 }
