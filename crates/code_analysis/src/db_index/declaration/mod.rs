@@ -107,6 +107,8 @@ impl LuaDeclarationTree {
         }
     }
 
+
+    /// Walks up the scope tree and calls `f` for each declaration.
     fn walk_up<F>(&self, scope: &LuaScope, start_pos: TextSize, level: usize, f: &mut F)
     where
         F: FnMut(LuaDeclId) -> bool,

@@ -9,6 +9,7 @@ use std::collections::HashMap;
 
 use crate::FileId;
 pub use declaration::*;
+use module::LuaModuleIndex;
 use reference::LuaReferenceIndex;
 use r#type::LuaTypeIndex;
 pub use r#type::{LuaTypeDecl, LuaTypeDeclId, LuaDeclTypeKind, LuaTypeAttribute};
@@ -18,6 +19,7 @@ pub struct DbIndex {
     decl_trees: HashMap<FileId, LuaDeclarationTree>,
     references: LuaReferenceIndex,
     types: LuaTypeIndex,
+    modules: LuaModuleIndex,
 }
 
 impl DbIndex {
@@ -26,6 +28,7 @@ impl DbIndex {
             decl_trees: HashMap::new(),
             references: LuaReferenceIndex::new(),
             types: LuaTypeIndex::new(),
+            modules: LuaModuleIndex::new(),
         }
     }
 

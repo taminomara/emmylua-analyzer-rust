@@ -16,7 +16,8 @@ flags! {
         Key,
         Local,
         Global,
-        Partial
+        Partial,
+        Exact
     }
 }
 

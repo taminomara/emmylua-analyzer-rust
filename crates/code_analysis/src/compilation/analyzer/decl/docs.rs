@@ -44,6 +44,9 @@ fn get_attrib_value(
             "global" => {
                 attr |= LuaTypeAttribute::Global;
             }
+            "exact" => {
+                attr |= LuaTypeAttribute::Exact;
+            }
             _ => {}
         }
     }

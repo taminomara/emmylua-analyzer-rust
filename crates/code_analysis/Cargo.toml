@@ -15,3 +15,4 @@ serde_json.workspace = true
 lsp-types.workspace = true
 schemars.workspace = true
 rowan.workspace = true
+regex.workspace = true
