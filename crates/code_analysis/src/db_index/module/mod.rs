@@ -58,14 +58,22 @@ impl LuaModuleIndex {
         }
     }
 
-    pub fn add_module(&mut self, file_id: FileId, path: String) -> Option<()> {
+    pub fn add_module_by_path(&mut self, file_id: FileId, path: &str) -> Option<()> {
         if self.file_module_map.contains_key(&file_id) {
             self.remove(file_id);
         }
 
         let module_path = self.extract_module_path(&path)?;
-        let module_path = module_path.replace('\\', "/");
-        let module_parts: Vec<&str> = module_path.split('/').collect();
+        let module_path = module_path.replace(['\\', '/'], ".");
+        self.add_module_by_module_path(file_id, module_path)
+    }
+
+    pub fn add_module_by_module_path(&mut self, file_id: FileId, module_path: String) -> Option<()> {
+        if self.file_module_map.contains_key(&file_id) {
+            self.remove(file_id);
+        }
+
+        let module_parts: Vec<&str> = module_path.split('.').collect();
         if module_parts.is_empty() {
             return None;
         }
@@ -119,6 +127,12 @@ impl LuaModuleIndex {
 
     pub fn get_module(&self, file_id: FileId) -> Option<&ModuleInfo> {
         self.file_module_map.get(&file_id)
+    }
+
+    pub fn set_module_visibility(&mut self, file_id: FileId, visible: bool) {
+        if let Some(module_info) = self.file_module_map.get_mut(&file_id) {
+            module_info.visible = visible;
+        }
     }
 
     pub fn find_module(&self, module_path: &str) -> Option<&ModuleInfo> {
@@ -181,7 +195,7 @@ impl LuaIndex for LuaModuleIndex {
                 if !node.children.is_empty() {
                     break;
                 }
-                 
+
                 if let Some(parent_id) = node.parent {
                     let parent_node = self.module_nodes.get_mut(&parent_id).unwrap();
                     parent_node.children.retain(|_, id| *id != node_id);

@@ -1,5 +1,6 @@
 use emmylua_parser::{
-    LuaAstToken, LuaAstTokenChildren, LuaDocTagAlias, LuaDocTagClass, LuaDocTagEnum, LuaDocTagNamespace, LuaDocTagUsing, LuaNameToken
+    LuaAstToken, LuaAstTokenChildren, LuaDocTagAlias, LuaDocTagClass, LuaDocTagEnum,
+    LuaDocTagModule, LuaDocTagNamespace, LuaDocTagUsing, LuaNameToken,
 };
 use flagset::FlagSet;
 
@@ -97,16 +98,43 @@ pub fn analyze_doc_tag_namespace(analyzer: &mut DeclAnalyzer, namespace: LuaDocT
     };
 
     let file_id = analyzer.get_file_id();
-    analyzer.db.get_type_index().add_file_namespace(file_id, name);
+    analyzer
+        .db
+        .get_type_index()
+        .add_file_namespace(file_id, name);
 }
 
 pub fn analyze_doc_tag_using(analyzer: &mut DeclAnalyzer, using: LuaDocTagUsing) {
     let name = if let Some(name_token) = using.get_name_token() {
-          name_token.get_name_text().to_string()
+        name_token.get_name_text().to_string()
     } else {
         return;
     };
 
     let file_id = analyzer.get_file_id();
-    analyzer.db.get_type_index().add_file_using_namespace(file_id, name)
+    analyzer
+        .db
+        .get_type_index()
+        .add_file_using_namespace(file_id, name)
+}
+
+pub fn analyze_doc_tag_module(analyzer: &mut DeclAnalyzer, module: LuaDocTagModule) {
+    let file_id = analyzer.get_file_id();
+    if let Some(name_token) = module.get_name_token() {
+        if name_token.get_name_text() == "no-require" {
+            analyzer.db.get_module_index().set_module_visibility(file_id, false);
+        }
+        return;
+    }
+
+    let force_module_path = if let Some(string_token) = module.get_string_token() {
+        string_token.get_value()
+    } else {
+        return;
+    };
+
+    analyzer
+        .db
+        .get_module_index()
+        .add_module_by_module_path(file_id, force_module_path);
 }

@@ -54,4 +54,8 @@ impl DbIndex {
     pub fn get_type_index(&mut self) -> &mut LuaTypeIndex {
         &mut self.types
     }
+
+    pub fn get_module_index(&mut self) -> &mut LuaModuleIndex {
+        &mut self.modules
+    }
 }
