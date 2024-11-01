@@ -18,13 +18,14 @@ pub enum LuaDecl {
 }
 
 impl LuaDecl {
+    #[allow(unused)]
     pub fn get_file_id(&self) -> Option<FileId> {
         match self {
             LuaDecl::Local { id, .. } => id.map(|id| id.file_id),
             LuaDecl::Global { id, .. } => id.map(|id| id.file_id),
         }
     }
-
+    #[allow(unused)]
     pub fn get_id(&self) -> Option<LuaDeclId> {
         match self {
             LuaDecl::Local { id, .. } => *id,
@@ -45,7 +46,7 @@ impl LuaDecl {
             LuaDecl::Global { range, .. } => range.start(),
         }
     }
-
+    #[allow(unused)]
     pub fn get_range(&self) -> TextRange {
         match self {
             LuaDecl::Local { range, .. } => *range,
@@ -71,5 +72,5 @@ pub struct LuaDeclId {
 pub enum LocalAttribute {
     Const,
     Close,
-    IterConst
+    IterConst,
 }

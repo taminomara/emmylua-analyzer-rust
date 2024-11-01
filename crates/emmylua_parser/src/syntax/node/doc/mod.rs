@@ -8,9 +8,7 @@ pub use types::*;
 
 use super::{LuaBinaryOpToken, LuaNameToken};
 use crate::{
-    kind::{LuaSyntaxKind, LuaTokenKind},
-    syntax::traits::LuaAstNode,
-    LuaAstChildren, LuaKind, LuaSyntaxNode,
+    kind::{LuaSyntaxKind, LuaTokenKind}, syntax::traits::LuaAstNode, LuaAstChildren, LuaAstTokenChildren, LuaKind, LuaSyntaxNode
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -331,5 +329,40 @@ impl LuaDocObjectField {
 
     pub fn is_nullable(&self) -> bool {
         self.token_by_kind(LuaTokenKind::TkDocQuestion).is_some()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaDocAttribute {
+    syntax: LuaSyntaxNode,
+}
+
+impl LuaAstNode for LuaDocAttribute {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        &self.syntax
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaSyntaxKind::DocAttribute
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaDocAttribute {
+    pub fn get_attrib_tokens(&self) -> LuaAstTokenChildren<LuaNameToken> {
+        self.tokens()
     }
 }

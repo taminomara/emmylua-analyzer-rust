@@ -1,10 +1,12 @@
 use crate::{
-    kind::LuaSyntaxKind, syntax::traits::LuaAstNode, LuaAstChildren, LuaAstToken, LuaAstTokenChildren, LuaBinaryOpToken, LuaDocVersionNumberToken, LuaDocVisibilityToken, LuaNameToken, LuaNumberToken, LuaPathToken, LuaStringToken, LuaSyntaxNode, LuaTokenKind
+    kind::LuaSyntaxKind, syntax::traits::LuaAstNode, LuaAstChildren, LuaAstToken,
+    LuaAstTokenChildren, LuaBinaryOpToken, LuaDocVersionNumberToken, LuaDocVisibilityToken,
+    LuaNameToken, LuaNumberToken, LuaPathToken, LuaStringToken, LuaSyntaxNode, LuaTokenKind,
 };
 
 use super::{
     description::{LuaDocDescriptionOwner, LuaDocDetailOwner},
-    LuaDocGenericDeclList, LuaDocOpType, LuaDocType, LuaDocTypeList,
+    LuaDocAttribute, LuaDocGenericDeclList, LuaDocOpType, LuaDocType, LuaDocTypeList,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -222,6 +224,10 @@ impl LuaDocTagClass {
     pub fn get_supers(&self) -> Option<LuaDocTypeList> {
         self.child()
     }
+
+    pub fn get_attrib(&self) -> Option<LuaDocAttribute> {
+        self.child()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -265,6 +271,10 @@ impl LuaDocTagEnum {
     }
 
     pub fn get_fields(&self) -> Option<LuaDocEnumField> {
+        self.child()
+    }
+
+    pub fn get_attrib(&self) -> Option<LuaDocAttribute> {
         self.child()
     }
 }

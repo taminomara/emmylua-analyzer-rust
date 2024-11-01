@@ -1,22 +1,32 @@
-use rowan::TextRange;
+use rowan::{TextRange, TextSize};
 
 use crate::FileId;
 
 use super::decl::LuaDeclId;
+
+#[derive(Debug, Eq, PartialEq, Hash, Clone, Copy)]
+pub enum LuaScopeKind {
+    Normal,
+    Repeat,
+    LocalStat,
+    ForRange
+}
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
 pub struct LuaScope {
     parent: Option<LuaScopeId>,
     children: Vec<ScopeOrDeclId>,
     range: TextRange,
+    kind: LuaScopeKind,
 }
 
 impl LuaScope {
-    pub fn new(range: TextRange) -> Self {
+    pub fn new(range: TextRange, kind: LuaScopeKind) -> Self {
         Self {
             parent: None,
             children: Vec::new(),
             range,
+            kind,
         }
     }
 
@@ -42,6 +52,18 @@ impl LuaScope {
 
     pub fn get_range(&self) -> TextRange {
         self.range
+    }
+
+    pub fn get_parent_scope(&self) -> Option<LuaScopeId> {
+        self.parent
+    }
+
+    pub fn get_kind(&self) -> LuaScopeKind {
+        self.kind
+    }
+
+    pub fn get_position(&self) -> TextSize {
+        self.range.start()
     }
 }
 

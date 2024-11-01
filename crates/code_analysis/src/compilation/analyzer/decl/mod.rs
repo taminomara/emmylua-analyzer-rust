@@ -2,7 +2,7 @@ mod docs;
 mod exprs;
 mod stats;
 
-use crate::db_index::DbIndex;
+use crate::db_index::{DbIndex, LuaScopeKind};
 
 use super::AnalyzeContext;
 use emmylua_parser::{LuaAst, LuaAstNode, LuaSyntaxKind, LuaSyntaxTree};
@@ -23,30 +23,58 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
 }
 
 fn walk_node_enter(analyzer: &mut DeclAnalyzer, node: LuaAst) {
-    if is_scope_owner(&node) {
-        analyzer.create_scope(node.get_range());
-    }
     match node {
+        LuaAst::LuaChunk(chunk) => {
+            analyzer.create_scope(chunk.get_range(), LuaScopeKind::Normal);
+        },
+        LuaAst::LuaBlock(block) => {
+            analyzer.create_scope(block.get_range(), LuaScopeKind::Normal);
+        }
         LuaAst::LuaLocalStat(stat) => {
+            analyzer.create_scope(stat.get_range(), LuaScopeKind::LocalStat);
             stats::analyze_local_stat(analyzer, stat);
         }
         LuaAst::LuaAssignStat(stat) => {
             stats::analyze_assign_stat(analyzer, stat);
         }
         LuaAst::LuaForStat(stat) => {
+            analyzer.create_scope(stat.get_range(), LuaScopeKind::Normal);
             stats::analyze_for_stat(analyzer, stat);
         }
         LuaAst::LuaForRangeStat(stat) => {
+            analyzer.create_scope(stat.get_range(), LuaScopeKind::ForRange);
             stats::analyze_for_range_stat(analyzer, stat);
         }
         LuaAst::LuaFuncStat(stat) => {
             stats::analyze_func_stat(analyzer, stat);
         }
+        LuaAst::LuaLocalFuncStat(stat) => {
+            stats::analyze_local_func_stat(analyzer, stat);
+        }
+        LuaAst::LuaRepeatStat(stat) => {
+            analyzer.create_scope(stat.get_range(), LuaScopeKind::Repeat);
+        }
         LuaAst::LuaNameExpr(expr) => {
             exprs::analyze_name_expr(analyzer, expr);
         }
         LuaAst::LuaClosureExpr(expr) => {
+            analyzer.create_scope(expr.get_range(), LuaScopeKind::Normal);
             exprs::analyze_closure_expr(analyzer, expr);
+        }
+        LuaAst::LuaDocTagClass(doc_tag) => {
+            docs::analyze_doc_tag_class(analyzer, doc_tag);
+        }
+        LuaAst::LuaDocTagEnum(doc_tag) => {
+            docs::analyze_doc_tag_enum(analyzer, doc_tag);
+        }
+        LuaAst::LuaDocTagAlias(doc_tag) => {
+            docs::analyze_doc_tag_alias(analyzer, doc_tag);
+        }
+        LuaAst::LuaDocTagNamespace(doc_tag) => {
+            docs::analyze_doc_tag_namespace(analyzer, doc_tag);
+        }
+        LuaAst::LuaDocTagUsing(doc_tag) => {
+            docs::analyze_doc_tag_using(analyzer, doc_tag);
         }
         _ => {}
     }
@@ -65,7 +93,8 @@ fn is_scope_owner(node: &LuaAst) -> bool {
         | LuaSyntaxKind::ClosureExpr
         | LuaSyntaxKind::RepeatStat
         | LuaSyntaxKind::ForRangeStat
-        | LuaSyntaxKind::ForStat => true,
+        | LuaSyntaxKind::ForStat
+        | LuaSyntaxKind::LocalStat => true,
         _ => false,
     }
 }
@@ -103,8 +132,8 @@ impl<'a> DeclAnalyzer<'a> {
         self.decl
     }
 
-    pub fn create_scope(&mut self, range: TextRange) {
-        let scope_id = self.decl.create_scope(range);
+    pub fn create_scope(&mut self, range: TextRange, kind: LuaScopeKind) {
+        let scope_id = self.decl.create_scope(range, kind);
         if let Some(parent_scope_id) = self.scopes.last() {
             self.decl.add_child_scope(*parent_scope_id, scope_id);
         }

@@ -10,11 +10,14 @@ use std::collections::HashMap;
 use crate::FileId;
 pub use declaration::*;
 use reference::LuaReferenceIndex;
+use r#type::LuaTypeIndex;
+pub use r#type::{LuaTypeDecl, LuaTypeDeclId, LuaDeclTypeKind, LuaTypeAttribute};
 
 #[derive(Debug)]
 pub struct DbIndex {
     decl_trees: HashMap<FileId, LuaDeclarationTree>,
     references: LuaReferenceIndex,
+    types: LuaTypeIndex,
 }
 
 impl DbIndex {
@@ -22,6 +25,7 @@ impl DbIndex {
         Self {
             decl_trees: HashMap::new(),
             references: LuaReferenceIndex::new(),
+            types: LuaTypeIndex::new(),
         }
     }
 
@@ -42,5 +46,9 @@ impl DbIndex {
 
     pub fn get_reference_index(&mut self) -> &mut LuaReferenceIndex {
         &mut self.references
+    }
+
+    pub fn get_type_index(&mut self) -> &mut LuaTypeIndex {
+        &mut self.types
     }
 }

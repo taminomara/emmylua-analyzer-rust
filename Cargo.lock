@@ -86,6 +86,7 @@ name = "code_analysis"
 version = "0.1.0"
 dependencies = [
  "emmylua_parser",
+ "flagset",
  "globset",
  "lsp-types",
  "rowan",
@@ -142,6 +143,12 @@ version = "0.3.4"
 dependencies = [
  "rowan",
 ]
+
+[[package]]
+name = "flagset"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3ea1ec5f8307826a5b71094dd91fc04d4ae75d5709b20ad351c7fb4815c86ec"
 
 [[package]]
 name = "fluent-uri"
