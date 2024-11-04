@@ -16,3 +16,4 @@ lsp-types.workspace = true
 schemars.workspace = true
 rowan.workspace = true
 regex.workspace = true
+internment.workspace = true

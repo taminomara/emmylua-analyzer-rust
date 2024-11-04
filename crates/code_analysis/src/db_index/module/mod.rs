@@ -1,5 +1,6 @@
 mod module_info;
 mod module_node;
+mod test;
 
 use module_info::ModuleInfo;
 use module_node::{ModuleNode, ModuleNodeId};
@@ -68,7 +69,11 @@ impl LuaModuleIndex {
         self.add_module_by_module_path(file_id, module_path)
     }
 
-    pub fn add_module_by_module_path(&mut self, file_id: FileId, module_path: String) -> Option<()> {
+    pub fn add_module_by_module_path(
+        &mut self,
+        file_id: FileId,
+        module_path: String,
+    ) -> Option<()> {
         if self.file_module_map.contains_key(&file_id) {
             self.remove(file_id);
         }
@@ -154,6 +159,26 @@ impl LuaModuleIndex {
         self.file_module_map.get(file_id)
     }
 
+    /// Find a module node by module path.
+    /// The module path is a string separated by dots.
+    /// For example, "a.b.c" represents the module "c" in the module "b" in the module "a".
+    pub fn find_module_node(&self, module_path: &str) -> Option<&ModuleNode> {
+        let module_path = module_path.replace(['\\', '/'], ".");
+        let module_parts: Vec<&str> = module_path.split('.').collect();
+        if module_parts.is_empty() {
+            return None;
+        }
+
+        let mut parent_node_id = self.module_root_id;
+        for part in &module_parts {
+            let parent_node = self.module_nodes.get(&parent_node_id)?;
+            let child_id = parent_node.children.get(*part)?;
+            parent_node_id = *child_id;
+        }
+
+        self.module_nodes.get(&parent_node_id)
+    }
+
     fn extract_module_path(&self, path: &str) -> Option<String> {
         let path = Path::new(path);
         for root in &self.workspace_root {
@@ -178,29 +203,53 @@ impl LuaModuleIndex {
 
         None
     }
+
+    pub fn add_workspace_root(&mut self, root: PathBuf) {
+        self.workspace_root.push(root);
+    }
+
+    #[allow(unused)]
+    pub fn remove_workspace_root(&mut self, root: &Path) {
+        self.workspace_root.retain(|r| r != root);
+    }
 }
 
 impl LuaIndex for LuaModuleIndex {
     fn remove(&mut self, file_id: FileId) {
-        if let Some(module_info) = self.file_module_map.remove(&file_id) {
-            let module_id = module_info.module_id;
-            let mut node_id = module_id;
-            loop {
-                let node = self.module_nodes.get_mut(&node_id).unwrap();
+        let (mut parent_id, mut child_id) =
+            if let Some(module_info) = self.file_module_map.remove(&file_id) {
+                let module_id = module_info.module_id;
+                let node = self.module_nodes.get_mut(&module_id).unwrap();
                 node.file_ids.retain(|id| *id != file_id);
-                if !node.file_ids.is_empty() {
-                    break;
+                if node.file_ids.is_empty() && node.children.is_empty() {
+                    (node.parent, Some(module_id))
+                } else {
+                    (None, None)
                 }
+            } else {
+                (None, None)
+            };
 
-                if !node.children.is_empty() {
-                    break;
-                }
+        if parent_id.is_none() || child_id.is_none() {
+            return;
+        }
 
-                if let Some(parent_id) = node.parent {
-                    let parent_node = self.module_nodes.get_mut(&parent_id).unwrap();
-                    parent_node.children.retain(|_, id| *id != node_id);
-                    node_id = parent_id;
-                }
+        while let Some(id) = parent_id {
+            let child_module_id = child_id.unwrap();
+            let node = self.module_nodes.get_mut(&id).unwrap();
+            node.children
+                .retain(|_, node_child_idid| *node_child_idid != child_module_id);
+
+            if id == self.module_root_id {
+                return;
+            }
+
+            if node.file_ids.is_empty() && node.children.is_empty() {
+                child_id = Some(id);
+                parent_id = node.parent;
+                self.module_nodes.remove(&id);
+            } else {
+                break;
             }
         }
     }

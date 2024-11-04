@@ -1,5 +1,6 @@
 mod loader;
 mod in_filed;
+mod test;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -67,9 +68,13 @@ impl Vfs {
     }
 }
 
-pub fn file_path_to_uri(path: &PathBuf) -> Uri {
-    let url = Url::from_file_path(path).unwrap();
-    Uri::from_str(url.as_str()).unwrap()
+pub fn file_path_to_uri(path: &PathBuf) -> Option<Uri> {
+    match Url::from_file_path(path) {
+        Ok(url) => Some(Uri::from_str(url.as_str()).unwrap()),
+        Err(err) => {
+            None
+        },
+    }
 }
 
 pub fn uri_to_file_path(uri: &Uri) -> Option<PathBuf> {
