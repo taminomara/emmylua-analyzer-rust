@@ -71,7 +71,7 @@ impl Vfs {
 pub fn file_path_to_uri(path: &PathBuf) -> Option<Uri> {
     match Url::from_file_path(path) {
         Ok(url) => Some(Uri::from_str(url.as_str()).unwrap()),
-        Err(err) => {
+        Err(_) => {
             None
         },
     }

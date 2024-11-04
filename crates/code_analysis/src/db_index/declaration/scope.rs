@@ -54,10 +54,6 @@ impl LuaScope {
         self.range
     }
 
-    pub fn get_parent_scope(&self) -> Option<LuaScopeId> {
-        self.parent
-    }
-
     pub fn get_kind(&self) -> LuaScopeKind {
         self.kind
     }

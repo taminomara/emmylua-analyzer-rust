@@ -12,4 +12,4 @@ notify = { version = "6.1.1", features = ["serde"] }
 lsp-types = { version = "0.97.0", features = ["proposed"]}
 schemars = "0.8.21"
 regex = "1"
-internment = "0.8"
+internment = { version = "0.8", features = ["arc"] }

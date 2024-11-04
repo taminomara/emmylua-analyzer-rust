@@ -4,7 +4,7 @@ use emmylua_parser::{
 };
 use flagset::FlagSet;
 
-use crate::db_index::{LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl};
+use crate::db_index::{LuaDeclTypeKind, LuaTypeAttribute};
 
 use super::DeclAnalyzer;
 
@@ -25,8 +25,7 @@ pub fn analyze_doc_tag_class(analyzer: &mut DeclAnalyzer, class: LuaDocTagClass)
     };
 
     let file_id = analyzer.get_file_id();
-    let type_decl = LuaTypeDecl::new(file_id, range, name, LuaDeclTypeKind::Class, attrib);
-    analyzer.db.get_type_index().add_type_decl(type_decl);
+    analyzer.db.get_type_index().add_type_decl(file_id, range, name, LuaDeclTypeKind::Class, attrib);
 }
 
 fn get_attrib_value(
@@ -71,8 +70,7 @@ pub fn analyze_doc_tag_enum(analyzer: &mut DeclAnalyzer, enum_: LuaDocTagEnum) {
     };
 
     let file_id = analyzer.get_file_id();
-    let type_decl = LuaTypeDecl::new(file_id, range, name, LuaDeclTypeKind::Enum, attrib);
-    analyzer.db.get_type_index().add_type_decl(type_decl);
+    analyzer.db.get_type_index().add_type_decl(file_id, range, name, LuaDeclTypeKind::Enum, attrib);
 }
 
 pub fn analyze_doc_tag_alias(analyzer: &mut DeclAnalyzer, alias: LuaDocTagAlias) {
@@ -86,8 +84,7 @@ pub fn analyze_doc_tag_alias(analyzer: &mut DeclAnalyzer, alias: LuaDocTagAlias)
     };
 
     let file_id = analyzer.get_file_id();
-    let type_decl = LuaTypeDecl::new(file_id, range, name, LuaDeclTypeKind::Alias, None);
-    analyzer.db.get_type_index().add_type_decl(type_decl);
+    analyzer.db.get_type_index().add_type_decl(file_id, range, name, LuaDeclTypeKind::Alias, None);
 }
 
 pub fn analyze_doc_tag_namespace(analyzer: &mut DeclAnalyzer, namespace: LuaDocTagNamespace) {
