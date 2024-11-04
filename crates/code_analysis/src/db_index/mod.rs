@@ -4,11 +4,13 @@ mod symbol;
 mod traits;
 mod r#type;
 mod reference;
+mod meta;
 
 use std::collections::HashMap;
 
 use crate::FileId;
 pub use declaration::*;
+use meta::MetaFile;
 use module::LuaModuleIndex;
 use reference::LuaReferenceIndex;
 use r#type::LuaTypeIndex;
@@ -20,6 +22,7 @@ pub struct DbIndex {
     references: LuaReferenceIndex,
     types: LuaTypeIndex,
     modules: LuaModuleIndex,
+    meta_files: MetaFile,
 }
 
 impl DbIndex {
@@ -29,6 +32,7 @@ impl DbIndex {
             references: LuaReferenceIndex::new(),
             types: LuaTypeIndex::new(),
             modules: LuaModuleIndex::new(),
+            meta_files: MetaFile::new(),
         }
     }
 
@@ -57,5 +61,9 @@ impl DbIndex {
 
     pub fn get_module_index(&mut self) -> &mut LuaModuleIndex {
         &mut self.modules
+    }
+
+    pub fn get_meta_file(&mut self) -> &mut MetaFile {
+        &mut self.meta_files
     }
 }

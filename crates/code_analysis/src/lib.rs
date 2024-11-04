@@ -13,10 +13,16 @@ pub use diagnostic::*;
 pub use vfs::*;
 pub use config::Setting;
 
-pub struct EmmyLuaAnalysis {}
+pub struct EmmyLuaAnalysis {
+    compilation: LuaCompilation,
+    vfs: Vfs
+}
 
 impl EmmyLuaAnalysis {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            compilation: LuaCompilation::new(),
+            vfs: Vfs::new()
+        }
     }
 }

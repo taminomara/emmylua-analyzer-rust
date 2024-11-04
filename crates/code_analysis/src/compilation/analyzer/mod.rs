@@ -1,4 +1,5 @@
 mod decl;
+mod symbol;
 
 use emmylua_parser::LuaSyntaxTree;
 use crate::{db_index::DbIndex, InFiled};
@@ -6,6 +7,7 @@ use crate::{db_index::DbIndex, InFiled};
 pub fn analyze(db: &mut DbIndex, context: AnalyzeContext) {
     let mut context = context;
     decl::analyze(db, &mut context);
+    symbol::analyze(db, &mut context);
 }
 
 pub struct AnalyzeContext<'a> {

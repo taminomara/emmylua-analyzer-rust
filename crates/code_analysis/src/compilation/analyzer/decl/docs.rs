@@ -1,6 +1,5 @@
 use emmylua_parser::{
-    LuaAstToken, LuaAstTokenChildren, LuaDocTagAlias, LuaDocTagClass, LuaDocTagEnum,
-    LuaDocTagModule, LuaDocTagNamespace, LuaDocTagUsing, LuaNameToken,
+    LuaAstToken, LuaAstTokenChildren, LuaDocTagAlias, LuaDocTagClass, LuaDocTagEnum, LuaDocTagMeta, LuaDocTagModule, LuaDocTagNamespace, LuaDocTagUsing, LuaNameToken
 };
 use flagset::FlagSet;
 
@@ -134,4 +133,12 @@ pub fn analyze_doc_tag_module(analyzer: &mut DeclAnalyzer, module: LuaDocTagModu
         .db
         .get_module_index()
         .add_module_by_module_path(file_id, force_module_path);
+}
+
+pub fn analyze_doc_tag_meta(analyzer: &mut DeclAnalyzer, _: LuaDocTagMeta) {
+    let file_id = analyzer.get_file_id();
+    analyzer
+        .db
+        .get_meta_file()
+        .add_meta_file(file_id);
 }
