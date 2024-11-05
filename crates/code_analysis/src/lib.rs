@@ -13,6 +13,7 @@ pub use diagnostic::*;
 pub use vfs::*;
 pub use config::Setting;
 
+#[derive(Debug)]
 pub struct EmmyLuaAnalysis {
     compilation: LuaCompilation,
     vfs: Vfs

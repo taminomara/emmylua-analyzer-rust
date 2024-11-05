@@ -8,10 +8,9 @@ use flagset::FlagSet;
 use rowan::TextRange;
 use type_decl::LuaDeclLocation;
 pub use type_decl::{LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId};
-
 use crate::FileId;
-
 use super::traits::LuaIndex;
+pub use types::*;
 
 #[derive(Debug)]
 pub struct LuaTypeIndex {

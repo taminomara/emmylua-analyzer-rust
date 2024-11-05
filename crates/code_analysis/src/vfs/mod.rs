@@ -24,6 +24,7 @@ impl FileId {
     }
 }
 
+#[derive(Debug)]
 pub struct Vfs {
     file_id_map: HashMap<Uri, u32>,
     file_data: Vec<Option<String>>,

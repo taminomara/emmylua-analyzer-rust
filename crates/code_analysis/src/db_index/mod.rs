@@ -13,8 +13,7 @@ pub use declaration::*;
 use meta::MetaFile;
 use module::LuaModuleIndex;
 use reference::LuaReferenceIndex;
-use r#type::LuaTypeIndex;
-pub use r#type::{LuaTypeDecl, LuaTypeDeclId, LuaDeclTypeKind, LuaTypeAttribute};
+pub use r#type::*;
 
 #[derive(Debug)]
 pub struct DbIndex {

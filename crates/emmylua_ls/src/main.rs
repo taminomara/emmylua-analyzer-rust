@@ -5,7 +5,6 @@ use handlers::{on_notification_handler, on_req_handler, server_capabilities};
 use lsp_server::{Connection, Message};
 use lsp_types::InitializeParams;
 use std::error::Error;
-use tokio::select;
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     let args: Vec<String> = std::env::args().collect();
