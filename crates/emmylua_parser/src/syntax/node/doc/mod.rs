@@ -1,12 +1,13 @@
 mod tag;
 mod types;
 mod description;
+mod test;
 
 pub use description::*;
 pub use tag::*;
 pub use types::*;
 
-use super::{LuaBinaryOpToken, LuaNameToken};
+use super::{LuaAst, LuaBinaryOpToken, LuaNameToken};
 use crate::{
     kind::{LuaSyntaxKind, LuaTokenKind}, syntax::traits::LuaAstNode, LuaAstChildren, LuaAstTokenChildren, LuaKind, LuaSyntaxNode
 };
@@ -43,11 +44,11 @@ impl LuaAstNode for LuaComment {
 impl LuaDocDescriptionOwner for LuaComment {}
 
 impl LuaComment {
-    pub fn get_owner(&self) -> Option<LuaSyntaxNode> {
+    pub fn get_owner(&self) -> Option<LuaAst> {
         if let Some(inline_node) = find_inline_node(&self.syntax) {
-            Some(inline_node)
+            LuaAst::cast(inline_node)
         } else if let Some(attached_node) = find_attached_node(&self.syntax) {
-            Some(attached_node)
+            LuaAst::cast(attached_node)
         } else {
             None
         }
@@ -59,7 +60,7 @@ impl LuaComment {
 }
 
 fn find_inline_node(comment: &LuaSyntaxNode) -> Option<LuaSyntaxNode> {
-    let mut prev_sibling = comment.next_sibling_or_token();
+    let mut prev_sibling = comment.prev_sibling_or_token();
     loop {
         if prev_sibling.is_none() {
             return None;

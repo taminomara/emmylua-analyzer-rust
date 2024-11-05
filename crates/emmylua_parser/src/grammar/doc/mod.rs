@@ -33,8 +33,14 @@ fn parse_docs(p: &mut LuaDocParser) {
                 p.bump();
                 parse_long_tag(p);
             }
-            LuaTokenKind::TkNormalStart | LuaTokenKind::TkLongCommentStart => {
+            LuaTokenKind::TkNormalStart => {
                 p.set_state(LuaDocLexerState::Description);
+                p.bump();
+
+                parse_description(p);
+            }
+            LuaTokenKind::TkLongCommentStart => {
+                p.set_state(LuaDocLexerState::LongDescription);
                 p.bump();
 
                 parse_description(p);

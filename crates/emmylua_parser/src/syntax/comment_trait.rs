@@ -38,9 +38,7 @@ fn find_attached_comment(node: &LuaSyntaxNode) -> Option<LuaSyntaxNode> {
                     }
                     meet_end_of_line = true;
                 }
-                LuaKind::Syntax(LuaSyntaxKind::Comment) => {
-                    return sibling.clone().into_node()
-                }
+                LuaKind::Syntax(LuaSyntaxKind::Comment) => return sibling.clone().into_node(),
                 _ => {
                     return None;
                 }
@@ -64,9 +62,7 @@ fn find_inline_comment(node: &LuaSyntaxNode) -> Option<LuaSyntaxNode> {
                 LuaKind::Token(
                     LuaTokenKind::TkWhitespace | LuaTokenKind::TkComma | LuaTokenKind::TkSemicolon,
                 ) => {}
-                LuaKind::Syntax(LuaSyntaxKind::Comment) => {
-                    return sibling.clone().into_node()
-                }
+                LuaKind::Syntax(LuaSyntaxKind::Comment) => return sibling.clone().into_node(),
                 _ => {
                     return None;
                 }

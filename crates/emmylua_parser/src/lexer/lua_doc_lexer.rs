@@ -20,10 +20,11 @@ pub enum LuaDocLexerState {
     Normal,
     FieldStart,
     Description,
+    LongDescription,
     Trivia,
     See,
     Version,
-    Source
+    Source,
 }
 
 impl LuaDocLexer<'_> {
@@ -67,6 +68,7 @@ impl LuaDocLexer<'_> {
             LuaDocLexerState::Normal => self.lex_normal(),
             LuaDocLexerState::FieldStart => self.lex_field_start(),
             LuaDocLexerState::Description => self.lex_description(),
+            LuaDocLexerState::LongDescription => self.lex_long_description(),
             LuaDocLexerState::Trivia => self.lex_trivia(),
             LuaDocLexerState::See => self.lex_see(),
             LuaDocLexerState::Version => self.lex_version(),
@@ -335,6 +337,32 @@ impl LuaDocLexer<'_> {
         }
     }
 
+    fn lex_long_description(&mut self) -> LuaTokenKind {
+        let reader = self.reader.as_mut().unwrap();
+        let text = reader.get_source_text();
+        let mut chars = text.chars().rev().peekable();
+        let mut trivia_count = 0;
+        while let Some(&ch) = chars.peek() {
+            if ch != ']' && ch != '=' {
+                break;
+            }
+            chars.next();
+            trivia_count += 1;
+        }
+        let end_pos = text.len() - trivia_count;
+
+        if reader.get_current_end_pos() < end_pos {
+            while reader.get_current_end_pos() < end_pos {
+                reader.bump();
+            }
+            LuaTokenKind::TkDocDetail
+        }
+        else {
+            reader.eat_while(|_| true);
+            LuaTokenKind::TkDocTrivia
+        }
+    }
+
     fn lex_trivia(&mut self) -> LuaTokenKind {
         let reader = self.reader.as_mut().unwrap();
         reader.eat_while(|_| true);
@@ -491,7 +519,14 @@ fn is_doc_name_continue(ch: char) -> bool {
 }
 
 fn is_source_continue(ch: char) -> bool {
-    is_name_continue(ch) || ch == '.' || ch == '-' || ch == '/' || ch == ' ' || ch == ':' || ch == '#' || ch == '\\'
+    is_name_continue(ch)
+        || ch == '.'
+        || ch == '-'
+        || ch == '/'
+        || ch == ' '
+        || ch == ':'
+        || ch == '#'
+        || ch == '\\'
 }
 
 #[cfg(test)]

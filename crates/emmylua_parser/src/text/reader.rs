@@ -104,6 +104,14 @@ impl<'a> Reader<'a> {
         }
         count
     }
+
+    pub fn get_source_text(&self) -> &str {
+        self.text
+    }
+
+    pub fn get_current_end_pos(&self) -> usize {
+        self.save_buffer_byte_pos + self.save_buffer_byte_len
+    }
 }
 
 #[cfg(test)]

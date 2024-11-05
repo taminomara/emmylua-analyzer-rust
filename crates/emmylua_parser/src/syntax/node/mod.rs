@@ -47,6 +47,14 @@ pub enum LuaAst {
     LuaLiteralExpr(LuaLiteralExpr),
     LuaClosureExpr(LuaClosureExpr),
 
+    // other lua struct
+    LuaTableField(LuaTableField),
+    LuaParamList(LuaParamList),
+    LuaParamName(LuaParamName),
+    LuaCallArgList(LuaCallArgList),
+    LuaLocalName(LuaLocalName),
+    LuaLocalAttribute(LuaLocalAttribute),
+
     // comment
     LuaComment(LuaComment),
     // doc tag
@@ -124,6 +132,12 @@ impl LuaAstNode for LuaAst {
             LuaAst::LuaLiteralExpr(node) => node.syntax(),
             LuaAst::LuaClosureExpr(node) => node.syntax(),
             LuaAst::LuaComment(node) => node.syntax(),
+            LuaAst::LuaTableField(node) => node.syntax(),
+            LuaAst::LuaParamList(node) => node.syntax(),
+            LuaAst::LuaParamName(node) => node.syntax(),
+            LuaAst::LuaCallArgList(node) => node.syntax(),
+            LuaAst::LuaLocalName(node) => node.syntax(),
+            LuaAst::LuaLocalAttribute(node) => node.syntax(),
             LuaAst::LuaDocTagClass(node) => node.syntax(),
             LuaAst::LuaDocTagEnum(node) => node.syntax(),
             LuaAst::LuaDocTagAlias(node) => node.syntax(),
@@ -289,6 +303,14 @@ impl LuaAstNode for LuaAst {
             LuaSyntaxKind::LiteralExpr => LuaLiteralExpr::cast(syntax).map(LuaAst::LuaLiteralExpr),
             LuaSyntaxKind::ClosureExpr => LuaClosureExpr::cast(syntax).map(LuaAst::LuaClosureExpr),
             LuaSyntaxKind::Comment => LuaComment::cast(syntax).map(LuaAst::LuaComment),
+            LuaSyntaxKind::TableFieldAssign | LuaSyntaxKind::TableFieldValue => {
+                LuaTableField::cast(syntax).map(LuaAst::LuaTableField)
+            }
+            LuaSyntaxKind::ParamList => LuaParamList::cast(syntax).map(LuaAst::LuaParamList),
+            LuaSyntaxKind::ParamName => LuaParamName::cast(syntax).map(LuaAst::LuaParamName),
+            LuaSyntaxKind::CallArgList => LuaCallArgList::cast(syntax).map(LuaAst::LuaCallArgList),
+            LuaSyntaxKind::LocalName => LuaLocalName::cast(syntax).map(LuaAst::LuaLocalName),
+            LuaSyntaxKind::Attribute => LuaLocalAttribute::cast(syntax).map(LuaAst::LuaLocalAttribute),
             LuaSyntaxKind::DocTagClass => LuaDocTagClass::cast(syntax).map(LuaAst::LuaDocTagClass),
             LuaSyntaxKind::DocTagEnum => LuaDocTagEnum::cast(syntax).map(LuaAst::LuaDocTagEnum),
             LuaSyntaxKind::DocTagAlias => LuaDocTagAlias::cast(syntax).map(LuaAst::LuaDocTagAlias),

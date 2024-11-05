@@ -198,7 +198,8 @@ impl<'a> LuaParser<'a> {
                         doc_tokens.clear();
                     }
                     // check if the comment is an inline comment
-                    else if doc_tokens.len() == 1 && i >= 2 {
+                    // first is comment, second is endofline
+                    else if doc_tokens.len() == 2 && i >= 2 {
                         let mut temp_index = i as isize - 2;
                         let mut inline_comment = false;
                         while temp_index >= 0 {

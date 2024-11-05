@@ -1482,7 +1482,6 @@ Syntax(Chunk)@0..69
         ---@internal
         "#;
 
-
         let result = r#"
 Syntax(Chunk)@0..218
   Syntax(Block)@0..218
@@ -1611,7 +1610,83 @@ Syntax(Chunk)@0..27
     Token(TkEndOfLine)@18..19 "\n"
     Token(TkWhitespace)@19..27 "        "
         "#;
-        
+
+        assert_ast_eq!(code, result);
+    }
+
+    #[test]
+    fn test_long_comment() {
+        let code = r#"
+        --[[long comment]]
+        local t = 123
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..58
+  Syntax(Block)@0..58
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..27
+      Token(TkLongCommentStart)@9..13 "--[["
+      Syntax(DocDescription)@13..25
+        Token(TkDocDetail)@13..25 "long comment"
+      Token(TkDocTrivia)@25..27 "]]"
+    Token(TkEndOfLine)@27..28 "\n"
+    Token(TkWhitespace)@28..36 "        "
+    Syntax(LocalStat)@36..49
+      Token(TkLocal)@36..41 "local"
+      Token(TkWhitespace)@41..42 " "
+      Syntax(LocalName)@42..43
+        Token(TkName)@42..43 "t"
+      Token(TkWhitespace)@43..44 " "
+      Token(TkAssign)@44..45 "="
+      Token(TkWhitespace)@45..46 " "
+      Syntax(LiteralExpr)@46..49
+        Token(TkInt)@46..49 "123"
+    Token(TkEndOfLine)@49..50 "\n"
+    Token(TkWhitespace)@50..58 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
+
+    #[test]
+    fn test_continuous_comment() {
+        let code = r#"
+        local t = 123 --comment 1
+        --comment 2
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..63
+  Syntax(Block)@0..63
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(LocalStat)@9..22
+      Token(TkLocal)@9..14 "local"
+      Token(TkWhitespace)@14..15 " "
+      Syntax(LocalName)@15..16
+        Token(TkName)@15..16 "t"
+      Token(TkWhitespace)@16..17 " "
+      Token(TkAssign)@17..18 "="
+      Token(TkWhitespace)@18..19 " "
+      Syntax(LiteralExpr)@19..22
+        Token(TkInt)@19..22 "123"
+    Token(TkWhitespace)@22..23 " "
+    Syntax(Comment)@23..34
+      Token(TkNormalStart)@23..25 "--"
+      Syntax(DocDescription)@25..34
+        Token(TkDocDetail)@25..34 "comment 1"
+    Token(TkEndOfLine)@34..35 "\n"
+    Token(TkWhitespace)@35..43 "        "
+    Syntax(Comment)@43..54
+      Token(TkNormalStart)@43..45 "--"
+      Syntax(DocDescription)@45..54
+        Token(TkDocDetail)@45..54 "comment 2"
+    Token(TkEndOfLine)@54..55 "\n"
+    Token(TkWhitespace)@55..63 "        "
+        "#;
+
         assert_ast_eq!(code, result);
     }
 }
