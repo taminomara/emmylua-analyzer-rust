@@ -3,6 +3,7 @@ use super::type_decl::LuaTypeDeclId;
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum LuaType {
     Unknown,
+    Any,
     Nil,
     Table,
     Userdata,
@@ -12,6 +13,7 @@ pub enum LuaType {
     Integer,
     Number,
     Io,
+    SelfInfer,
     BooleanConst(bool),
     StringConst(Box<String>),
     IntegerConst(i64),
@@ -26,6 +28,9 @@ pub enum LuaType {
     Intersection(Box<LuaIntersectionType>),
     Extends(Box<LuaExtendedType>),
     Generic(Box<LuaGenericType>),
+    TableGeneric(Box<Vec<LuaType>>),
+    TplRef(usize),
+    StrTplRef(Box<LuaStringTplType>),
 }
 
 impl LuaType {
@@ -101,13 +106,22 @@ impl From<LuaTupleType> for LuaType {
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct LuaFunctionType {
+    is_async: bool,
     params: Vec<(String, Option<LuaType>)>,
     ret: Vec<LuaType>,
 }
 
 impl LuaFunctionType {
-    pub fn new(params: Vec<(String, Option<LuaType>)>, ret: Vec<LuaType>) -> Self {
-        Self { params, ret }
+    pub fn new(is_async: bool, params: Vec<(String, Option<LuaType>)>, ret: Vec<LuaType>) -> Self {
+        Self {
+            is_async,
+            params,
+            ret,
+        }
+    }
+
+    pub fn is_async(&self) -> bool {
+        self.is_async
     }
 
     pub fn get_params(&self) -> &[(String, Option<LuaType>)] {
@@ -252,5 +266,25 @@ impl LuaGenericType {
 impl From<LuaGenericType> for LuaType {
     fn from(t: LuaGenericType) -> Self {
         LuaType::Generic(Box::new(t))
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct LuaStringTplType {
+    prefix: String,
+    usize: usize,
+}
+
+impl LuaStringTplType {
+    pub fn new(prefix: String, usize: usize) -> Self {
+        Self { prefix, usize }
+    }
+
+    pub fn get_prefix(&self) -> &str {
+        &self.prefix
+    }
+
+    pub fn get_usize(&self) -> usize {
+        self.usize
     }
 }

@@ -26,7 +26,7 @@ fn walk_node_enter(analyzer: &mut DeclAnalyzer, node: LuaAst) {
     match node {
         LuaAst::LuaChunk(chunk) => {
             analyzer.create_scope(chunk.get_range(), LuaScopeKind::Normal);
-        },
+        }
         LuaAst::LuaBlock(block) => {
             analyzer.create_scope(block.get_range(), LuaScopeKind::Normal);
         }

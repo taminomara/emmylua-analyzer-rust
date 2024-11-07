@@ -8,7 +8,7 @@ use flagset::FlagSet;
 use rowan::TextRange;
 use type_decl::LuaDeclLocation;
 pub use type_decl::{LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId};
-use crate::FileId;
+use crate::{FileId, InFiled};
 use super::traits::LuaIndex;
 pub use types::*;
 
@@ -18,6 +18,9 @@ pub struct LuaTypeIndex {
     file_using_namespace: HashMap<FileId, Vec<String>>,
     file_types: HashMap<FileId, Vec<LuaTypeDeclId>>,
     full_name_type_map: HashMap<LuaTypeDeclId, LuaTypeDecl>,
+    generic_params: HashMap<LuaTypeDeclId, Vec<(String, Option<LuaType>)>>,
+    supers: HashMap<LuaTypeDeclId, Vec<InFiled<LuaType>>>,
+    
 }
 
 impl LuaTypeIndex {
@@ -27,6 +30,8 @@ impl LuaTypeIndex {
             file_using_namespace: HashMap::new(),
             file_types: HashMap::new(),
             full_name_type_map: HashMap::new(),
+            generic_params: HashMap::new(),
+            supers: HashMap::new(),
         }
     }
 
@@ -122,21 +127,60 @@ impl LuaTypeIndex {
         let id = LuaTypeDeclId::new(name);
         self.full_name_type_map.get(&id)
     }
+
+    pub fn add_generic_params(
+        &mut self,
+        decl_id: LuaTypeDeclId,
+        params: Vec<(String, Option<LuaType>)>,
+    ) {
+        self.generic_params.insert(decl_id, params);
+    }
+
+    pub fn get_generic_params(&self, decl_id: &LuaTypeDeclId) -> Option<&Vec<(String, Option<LuaType>)>> {
+        self.generic_params.get(decl_id)
+    }
+
+    pub fn add_super_type(&mut self, decl_id: LuaTypeDeclId, file_id: FileId, super_type: LuaType) {
+        self.supers
+            .entry(decl_id)
+            .or_insert_with(Vec::new)
+            .push(InFiled::new(file_id, super_type));
+    }
+
+    pub fn get_super_types(&self, decl_id: &LuaTypeDeclId) -> Option<Vec<LuaType>> {
+        if let Some(supers) = self.supers.get(decl_id) {
+            Some(supers.iter().map(|s| s.value.clone()).collect())
+        } else {
+            None
+        }
+    }
 }
 
 impl LuaIndex for LuaTypeIndex {
     fn remove(&mut self, file_id: FileId) {
         self.file_namespace.remove(&file_id);
         self.file_using_namespace.remove(&file_id);
-        let name_list = self.file_types.remove(&file_id);
-        if let Some(id_list) = name_list {
-            for id in id_list {
+        if let Some(type_id_list) = self.file_types.remove(&file_id) {
+            for id in type_id_list {
+                let mut remove_type = false;
                 if let Some(decl) = self.full_name_type_map.get_mut(&id) {
                     decl.get_mut_locations()
                         .retain(|loc| loc.file_id != file_id);
                     if decl.get_mut_locations().is_empty() {
                         self.full_name_type_map.remove(&id);
+                        remove_type = true;
                     }
+                }
+
+                if let Some(supers) = self.supers.get_mut(&id) {
+                    supers.retain(|s| s.file_id != file_id);
+                    if supers.is_empty() {
+                        self.supers.remove(&id);
+                    }
+                }
+
+                if remove_type {
+                    self.generic_params.remove(&id);
                 }
             }
         }

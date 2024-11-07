@@ -1,26 +1,27 @@
 use emmylua_parser::{
-    LuaDocBinaryType, LuaDocGenericType, LuaDocType, LuaDocUnaryType, LuaLiteralToken,
-    LuaTypeBinaryOperator, LuaTypeUnaryOperator,
+    LuaAstNode, LuaDocBinaryType, LuaDocFuncType, LuaDocGenericType, LuaDocObjectFieldKey, LuaDocObjectType, LuaDocType, LuaDocUnaryType, LuaLiteralToken, LuaTypeBinaryOperator, LuaTypeUnaryOperator
 };
+use rowan::TextSize;
 
-use crate::{
+use crate::
     db_index::{
-        DbIndex, LuaExtendedType, LuaGenericType, LuaIntersectionType, LuaTupleType, LuaType,
-        LuaUnionType,
-    },
-    FileId,
-};
+        LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey,
+        LuaIntersectionType, LuaObjectType, LuaTupleType, LuaType, LuaUnionType,
+    }
+;
 
-pub fn infer_type(db: &mut DbIndex, file_id: FileId, node: LuaDocType) -> LuaType {
+use super::DocAnalyzer;
+
+pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
     match node {
         LuaDocType::Name(name_type) => {
             if let Some(name) = name_type.get_name_text() {
-                return infer_buildin_or_ref_type(db, file_id, &name);
+                return infer_buildin_or_ref_type(analyzer, &name, name_type.get_position());
             }
         }
         LuaDocType::Nullable(nullable_type) => {
             if let Some(inner_type) = nullable_type.get_type() {
-                let t = infer_type(db, file_id, inner_type);
+                let t = infer_type(analyzer, inner_type);
                 if t.is_unknown() {
                     return LuaType::Unknown;
                 }
@@ -34,7 +35,7 @@ pub fn infer_type(db: &mut DbIndex, file_id: FileId, node: LuaDocType) -> LuaTyp
         }
         LuaDocType::Array(array_type) => {
             if let Some(inner_type) = array_type.get_type() {
-                let t = infer_type(db, file_id, inner_type);
+                let t = infer_type(analyzer, inner_type);
                 if t.is_unknown() {
                     return LuaType::Unknown;
                 }
@@ -64,7 +65,7 @@ pub fn infer_type(db: &mut DbIndex, file_id: FileId, node: LuaDocType) -> LuaTyp
         LuaDocType::Tuple(tuple_type) => {
             let mut types = Vec::new();
             for type_node in tuple_type.get_types() {
-                let t = infer_type(db, file_id, type_node);
+                let t = infer_type(analyzer, type_node);
                 if t.is_unknown() {
                     return LuaType::Unknown;
                 }
@@ -73,21 +74,32 @@ pub fn infer_type(db: &mut DbIndex, file_id: FileId, node: LuaDocType) -> LuaTyp
             return LuaType::Tuple(Box::new(LuaTupleType::new(types)));
         }
         LuaDocType::Generic(generic_type) => {
-            return infer_generic_type(db, file_id, generic_type);
+            return infer_generic_type(analyzer, generic_type);
         }
         LuaDocType::Binary(binary_type) => {
-            return infer_binary_type(db, file_id, binary_type);
+            return infer_binary_type(analyzer, binary_type);
         }
         LuaDocType::Unary(unary_type) => {
-            return infer_unary_type(db, file_id, unary_type);
+            return infer_unary_type(analyzer, unary_type);
         }
-        _ => {}
+        LuaDocType::Func(func) => {
+            return infer_func_type(analyzer, func);
+        }
+        LuaDocType::Object(object_type) => {
+            return infer_object_type(analyzer, object_type);
+        }
+        LuaDocType::Conditional(lua_doc_conditional_type) => todo!(),
+        LuaDocType::Variadic(lua_doc_variadic_type) => todo!(),
+        LuaDocType::StrTpl(lua_doc_str_tpl_type) => todo!(),
     }
     LuaType::Unknown
 }
 
-fn infer_buildin_or_ref_type(db: &mut DbIndex, file_id: FileId, name: &str) -> LuaType {
+fn infer_buildin_or_ref_type(analyzer: &mut DocAnalyzer, name: &str, position: TextSize) -> LuaType {
     match name {
+        "Unknown" => LuaType::Unknown,
+        "nil" | "void" => LuaType::Nil,
+        "any" => LuaType::Any,
         "table" => LuaType::Table,
         "userdata" => LuaType::Userdata,
         "thread" => LuaType::Thread,
@@ -96,8 +108,17 @@ fn infer_buildin_or_ref_type(db: &mut DbIndex, file_id: FileId, name: &str) -> L
         "integer" | "int" => LuaType::Integer,
         "number" => LuaType::Number,
         "io" => LuaType::Io,
+        "self" => LuaType::SelfInfer,
         _ => {
-            if let Some(name_type_decl) = db.get_type_index().find_type_decl(file_id, name) {
+            if let Some(size) = analyzer.generic_index.find_generic(position, name){
+                return LuaType::TplRef(size);
+            }
+
+            if let Some(name_type_decl) = analyzer
+                .db
+                .get_type_index()
+                .find_type_decl(analyzer.file_id, name)
+            {
                 return LuaType::Ref(name_type_decl.get_id());
             }
             LuaType::Unknown
@@ -105,24 +126,34 @@ fn infer_buildin_or_ref_type(db: &mut DbIndex, file_id: FileId, name: &str) -> L
     }
 }
 
-fn infer_generic_type(
-    db: &mut DbIndex,
-    file_id: FileId,
-    generic_type: LuaDocGenericType,
-) -> LuaType {
+fn infer_generic_type(analyzer: &mut DocAnalyzer, generic_type: LuaDocGenericType) -> LuaType {
     if let Some(name_type) = generic_type.get_name_type() {
         if let Some(name) = name_type.get_name_text() {
-            let id =
-                if let Some(name_type_decl) = db.get_type_index().find_type_decl(file_id, &name) {
-                    name_type_decl.get_id()
-                } else {
-                    return LuaType::Unknown;
-                };
+            if name == "table" {
+                let mut types = Vec::new();
+                if let Some(generic_decl_list) = generic_type.get_generic_types() {
+                    for param in generic_decl_list.get_types() {
+                        let param_type = infer_type(analyzer, param);
+                        types.push(param_type);
+                    }
+                }
+                return LuaType::TableGeneric(Box::new(types));
+            }
+
+            let id = if let Some(name_type_decl) = analyzer
+                .db
+                .get_type_index()
+                .find_type_decl(analyzer.file_id, &name)
+            {
+                name_type_decl.get_id()
+            } else {
+                return LuaType::Unknown;
+            };
 
             let mut generic_params = Vec::new();
             if let Some(generic_decl_list) = generic_type.get_generic_types() {
                 for param in generic_decl_list.get_types() {
-                    let param_type = infer_type(db, file_id, param);
+                    let param_type = infer_type(analyzer, param);
                     if param_type.is_unknown() {
                         return LuaType::Unknown;
                     }
@@ -137,12 +168,15 @@ fn infer_generic_type(
     LuaType::Unknown
 }
 
-fn infer_binary_type(db: &mut DbIndex, file_id: FileId, binary_type: LuaDocBinaryType) -> LuaType {
+fn infer_binary_type(analyzer: &mut DocAnalyzer, binary_type: LuaDocBinaryType) -> LuaType {
     if let Some((left, right)) = binary_type.get_types() {
-        let left_type = infer_type(db, file_id, left);
-        let right_type = infer_type(db, file_id, right);
-        if left_type.is_unknown() || right_type.is_unknown() {
-            return LuaType::Unknown;
+        let left_type = infer_type(analyzer, left);
+        let right_type = infer_type(analyzer, right);
+        if left_type.is_unknown() {
+            return right_type;
+        }
+        if right_type.is_unknown() {
+            return left_type;
         }
 
         if let Some(op) = binary_type.get_op_token() {
@@ -211,9 +245,9 @@ fn infer_binary_type(db: &mut DbIndex, file_id: FileId, binary_type: LuaDocBinar
     LuaType::Unknown
 }
 
-fn infer_unary_type(db: &mut DbIndex, file_id: FileId, unary_type: LuaDocUnaryType) -> LuaType {
+fn infer_unary_type(analyzer: &mut DocAnalyzer, unary_type: LuaDocUnaryType) -> LuaType {
     if let Some(base_type) = unary_type.get_type() {
-        let base = infer_type(db, file_id, base_type);
+        let base = infer_type(analyzer, base_type);
         if base.is_unknown() {
             return LuaType::Unknown;
         }
@@ -227,6 +261,72 @@ fn infer_unary_type(db: &mut DbIndex, file_id: FileId, unary_type: LuaDocUnaryTy
             }
         }
     }
-    
+
     LuaType::Unknown
+}
+
+fn infer_func_type(analyzer: &mut DocAnalyzer, func: LuaDocFuncType) -> LuaType {
+    let mut params_result = Vec::new();
+    for param in func.get_params() {
+        let name = if let Some(param) = param.get_name_token() {
+            param.get_name_text().to_string()
+        } else {
+            continue;
+        };
+
+        let type_ref = if let Some(type_ref) = param.get_type() {
+            Some(infer_type(analyzer, type_ref))
+        } else {
+            None
+        };
+
+        params_result.push((name, type_ref));
+    }
+
+    let mut return_types = Vec::new();
+    if let Some(return_type_list) = func.get_return_type_list() {
+        for type_node in return_type_list.get_types() {
+            let t = infer_type(analyzer, type_node);
+            return_types.push(t);
+        }
+    }
+
+    let is_async = func.is_async();
+    LuaType::Function(Box::new(LuaFunctionType::new(
+        is_async,
+        params_result,
+        return_types,
+    )))
+}
+
+fn infer_object_type(analyzer: &mut DocAnalyzer, object_type: LuaDocObjectType) -> LuaType {
+    let mut fields = Vec::new();
+    for field in object_type.get_fields() {
+        let key = if let Some(field_key) = field.get_field_key() {
+            match field_key {
+                LuaDocObjectFieldKey::Name(name) => {
+                    LuaIndexAccessKey::String(name.get_name_text().to_string())
+                }
+                LuaDocObjectFieldKey::Integer(int) => {
+                    LuaIndexAccessKey::Integer(int.get_int_value())
+                }
+                LuaDocObjectFieldKey::String(str) => {
+                    LuaIndexAccessKey::String(str.get_value().to_string())
+                }
+                LuaDocObjectFieldKey::Type(t) => LuaIndexAccessKey::Type(infer_type(analyzer, t)),
+            }
+        } else {
+            continue;
+        };
+
+        let type_ref = if let Some(type_ref) = field.get_type() {
+            infer_type(analyzer, type_ref)
+        } else {
+            LuaType::Unknown
+        };
+
+        fields.push((key, type_ref));
+    }
+
+    LuaType::Object(Box::new(LuaObjectType::new(fields)))
 }

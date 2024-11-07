@@ -34,6 +34,14 @@ impl GlobalReference {
             .or_insert_with(Vec::new)
             .push(InFiled::new(file_id, range));
     }
+
+    pub fn get_global_decl(&self, name: &str) -> Option<&Vec<LuaDeclId>> {
+        self.global_decl.get(name)
+    }
+
+    pub fn get_global_reference(&self, name: &str) -> Option<&Vec<InFiled<TextRange>>> {
+        self.global_reference.get(name)
+    }
 }
 
 impl LuaIndex for GlobalReference {

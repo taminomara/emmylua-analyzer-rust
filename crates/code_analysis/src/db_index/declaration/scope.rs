@@ -9,7 +9,8 @@ pub enum LuaScopeKind {
     Normal,
     Repeat,
     LocalStat,
-    ForRange
+    ForRange,
+    FuncStat
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]

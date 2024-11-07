@@ -1,15 +1,17 @@
-mod tree;
+mod comment_trait;
 mod node;
 mod traits;
-mod comment_trait;
+mod tree;
+
+use std::iter::successors;
 
 use rowan::{Language, TextRange};
 
 use crate::kind::{LuaKind, LuaSyntaxKind, LuaTokenKind};
-pub use tree::{LuaSyntaxTree, LuaTreeBuilder};
+pub use comment_trait::*;
 pub use node::*;
 pub use traits::*;
-pub use comment_trait::*;
+pub use tree::{LuaSyntaxTree, LuaTreeBuilder};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct LuaLanguage;
@@ -61,31 +63,52 @@ impl From<rowan::SyntaxKind> for LuaTokenKind {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct LuaSyntaxId {
-    ptr: LuaSyntaxNodePtr,
+    kind: LuaKind,
+    range: TextRange,
 }
 
 impl LuaSyntaxId {
+    pub fn new(kind: LuaSyntaxKind, range: TextRange) -> Self {
+        LuaSyntaxId {
+            kind: kind.into(),
+            range,
+        }
+    }
+    
     pub fn from_ptr(ptr: LuaSyntaxNodePtr) -> Self {
         LuaSyntaxId {
-            ptr
+            kind: ptr.kind().into(),
+            range: ptr.text_range(),
         }
     }
 
     pub fn from_node(node: &LuaSyntaxNode) -> Self {
         LuaSyntaxId {
-            ptr: LuaSyntaxNodePtr::new(node)
+            kind: node.kind().into(),
+            range: node.text_range(),
         }
     }
 
     pub fn get_kind(&self) -> LuaSyntaxKind {
-        self.ptr.kind().into()
+        self.kind.into()
     }
 
     pub fn get_range(&self) -> TextRange {
-        self.ptr.text_range()
+        self.range
     }
 
-    pub fn to_node(&self, tree: &LuaSyntaxTree) -> LuaSyntaxNode {
-        self.ptr.to_node(tree.get_red_root())
+    pub fn to_node(&self, tree: &LuaSyntaxTree) -> Option<LuaSyntaxNode> {
+        let root = tree.get_red_root();
+        if root.parent().is_some() {
+            return None;
+        }
+        self.to_node_from_root(&root)
+    }
+
+    pub fn to_node_from_root(&self, root: &LuaSyntaxNode) -> Option<LuaSyntaxNode> {
+        successors(Some(root.clone()), |node| {
+            node.child_or_token_at_range(self.range)?.into_node()
+        })
+        .find(|it| it.text_range() == self.range && it.kind() == self.kind)
     }
 }

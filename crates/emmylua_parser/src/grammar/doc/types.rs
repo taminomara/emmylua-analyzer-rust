@@ -131,6 +131,7 @@ fn parse_object_or_mapped_type(p: &mut LuaDocParser) -> ParseResult {
 // <name> : <type>
 // [<number>] : <type>
 // [<string>] : <type>
+// [<type>] : <type>
 // <name>? : <type>
 fn parse_typed_field(p: &mut LuaDocParser) -> ParseResult {
     let m = p.mark(LuaSyntaxKind::DocObjectField);

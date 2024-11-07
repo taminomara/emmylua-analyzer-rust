@@ -7,9 +7,9 @@ pub use description::*;
 pub use tag::*;
 pub use types::*;
 
-use super::{LuaAst, LuaBinaryOpToken, LuaNameToken};
+use super::{LuaAst, LuaBinaryOpToken, LuaNameToken, LuaNumberToken, LuaStringToken};
 use crate::{
-    kind::{LuaSyntaxKind, LuaTokenKind}, syntax::traits::LuaAstNode, LuaAstChildren, LuaAstTokenChildren, LuaKind, LuaSyntaxNode
+    kind::{LuaSyntaxKind, LuaTokenKind}, syntax::traits::LuaAstNode, LuaAstChildren, LuaAstToken, LuaAstTokenChildren, LuaKind, LuaSyntaxNode
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -318,19 +318,47 @@ impl LuaAstNode for LuaDocObjectField {
     }
 }
 
-// todo 
 impl LuaDocObjectField {
-    pub fn get_name_token(&self) -> Option<LuaNameToken> {
-        self.token()
+    pub fn get_field_key(&self) -> Option<LuaDocObjectFieldKey> {
+        for child in self.syntax.children_with_tokens() {
+            match child.kind() {
+                LuaKind::Token(LuaTokenKind::TkName) => {
+                    return LuaNameToken::cast(child.into_token().unwrap()).map(LuaDocObjectFieldKey::Name);
+                }
+                LuaKind::Token(LuaTokenKind::TkString) => {
+                    return LuaStringToken::cast(child.into_token().unwrap()).map(LuaDocObjectFieldKey::String);
+                }
+                LuaKind::Token(LuaTokenKind::TkInt) => {
+                    return LuaNumberToken::cast(child.into_token().unwrap()).map(LuaDocObjectFieldKey::Integer);
+                }
+                kind if LuaDocType::can_cast(kind.into()) => {
+                    return LuaDocType::cast(child.into_node().unwrap()).map(LuaDocObjectFieldKey::Type);
+                }
+                LuaKind::Token(LuaTokenKind::TkColon) => {
+                    return None;
+                }
+                _ => {}
+            }
+        }
+
+        None
     }
 
     pub fn get_type(&self) -> Option<LuaDocType> {
-        self.child()
+        self.children().last()
     }
 
     pub fn is_nullable(&self) -> bool {
         self.token_by_kind(LuaTokenKind::TkDocQuestion).is_some()
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum LuaDocObjectFieldKey {
+    Name(LuaNameToken),
+    String(LuaStringToken),
+    Integer(LuaNumberToken),
+    Type(LuaDocType),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

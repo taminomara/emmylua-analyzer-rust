@@ -9,6 +9,10 @@ pub fn analyze_name_expr(analyzer: &mut DeclAnalyzer, expr: LuaNameExpr) {
         || "".to_string(),
         |name_token| name_token.get_name_text().to_string(),
     );
+    // donot analyze self here
+    if name == "self" {
+        return;
+    }
 
     let position = expr.get_position();
     let range = expr.get_range();
