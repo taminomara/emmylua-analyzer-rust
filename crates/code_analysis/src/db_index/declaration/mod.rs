@@ -42,6 +42,11 @@ impl LuaDeclIndex {
     pub fn get_decl_type(&self, decl_id: &LuaDeclId) -> Option<&LuaType> {
         self.decl_types.get(decl_id)
     }
+
+    pub fn get_decl(&mut self, decl_id: &LuaDeclId) -> Option<&LuaDecl> {
+        let tree = self.decl_trees.get(&decl_id.file_id)?;
+        tree.get_decl(*decl_id)
+    }
 }
 
 impl LuaIndex for LuaDeclIndex {

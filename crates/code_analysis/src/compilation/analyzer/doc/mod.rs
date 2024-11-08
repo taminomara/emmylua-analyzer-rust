@@ -2,6 +2,7 @@ mod file_generic_index;
 mod infer_type;
 mod tags;
 mod type_def_tags;
+mod type_ref_tags;
 
 use super::AnalyzeContext;
 use crate::{
@@ -12,7 +13,8 @@ use emmylua_parser::{LuaAstNode, LuaComment, LuaSyntaxNode};
 use file_generic_index::FileGenericIndex;
 
 pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
-    for in_filed_tree in context.tree_list.iter() {
+    let tree_list = context.tree_list.clone();
+    for in_filed_tree in tree_list.iter() {
         let tree = in_filed_tree.value;
         let root = tree.get_chunk_node();
         let mut generic_index = FileGenericIndex::new();
@@ -23,6 +25,7 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
                 &mut generic_index,
                 comment,
                 root.syntax().clone(),
+                context,
             );
             analyze_comment(&mut analyzer);
         }
@@ -37,24 +40,25 @@ fn analyze_comment(analyzer: &mut DocAnalyzer) {
 }
 
 #[derive(Debug)]
-pub struct DocAnalyzer<'a> {
+pub struct DocAnalyzer<'a, 'b> {
     file_id: FileId,
     db: &'a mut DbIndex,
     generic_index: &'a mut FileGenericIndex,
     current_type_id: Option<LuaTypeDeclId>,
     comment: LuaComment,
     root: LuaSyntaxNode,
-    bind_type: Option<LuaTypeDeclId>,
+    context:&'a mut  AnalyzeContext<'b>,
 }
 
-impl DocAnalyzer<'_> {
-    pub fn new<'a>(
+impl<'a, 'b> DocAnalyzer<'a, 'b> {
+    pub fn new(
         db: &'a mut DbIndex,
         file_id: FileId,
         generic_index: &'a mut FileGenericIndex,
         comment: LuaComment,
         root: LuaSyntaxNode,
-    ) -> DocAnalyzer<'a> {
+        context: &'a mut AnalyzeContext<'b>,
+    ) -> DocAnalyzer<'a, 'b> {
         DocAnalyzer {
             file_id,
             db,
@@ -62,7 +66,7 @@ impl DocAnalyzer<'_> {
             current_type_id: None,
             comment,
             root,
-            bind_type: None,
+            context,
         }
     }
 }

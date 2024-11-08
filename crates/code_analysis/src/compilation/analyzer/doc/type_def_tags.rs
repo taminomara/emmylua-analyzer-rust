@@ -4,7 +4,7 @@ use emmylua_parser::{
     LuaAssignStat, LuaAst, LuaAstNode, LuaAstToken, LuaCommentOwner, LuaDocDescriptionOwner,
     LuaDocDetailOwner, LuaDocGenericDeclList, LuaDocTagAlias, LuaDocTagClass, LuaDocTagEnum,
     LuaDocTagGeneric, LuaFuncStat, LuaLocalName, LuaLocalStat, LuaNameExpr, LuaSyntaxId,
-    LuaSyntaxKind, LuaTokenKind,
+    LuaSyntaxKind, LuaTokenKind, LuaVarExpr,
 };
 use rowan::TextRange;
 
@@ -406,6 +406,48 @@ pub fn analyze_func_generic(analyzer: &mut DocAnalyzer, tag: LuaDocTagGeneric) -
     Some(())
 }
 
-fn bind_def_type(analyzer: &mut DocAnalyzer, type_def: LuaType) {
-    
+fn bind_def_type(analyzer: &mut DocAnalyzer, type_def: LuaType) -> Option<()> {
+    let owner = analyzer.comment.get_owner()?;
+    match owner {
+            LuaAst::LuaLocalStat(local_stat) => {
+                let local_name = local_stat.child::<LuaLocalName>()?;
+                let position= local_name.get_position();
+                let name = local_name.get_name_token()?.get_name_text().to_string();
+                let file_id = analyzer.file_id;
+                let decl = analyzer
+                    .db
+                    .get_decl_index()
+                    .get_decl_tree(&file_id)?
+                    .find_decl(&name, position)?;
+                let id = decl.get_id();
+                analyzer
+                    .db
+                    .get_decl_index()
+                    .add_decl_type(id, type_def);
+            }
+            LuaAst::LuaAssignStat(assign_stat) => {
+                if let LuaVarExpr::NameExpr(name_expr) = assign_stat.child::<LuaVarExpr>()? {
+                    let name = name_expr.get_name_token()?.get_name_text().to_string();
+                    let position = name_expr.get_position();
+                    let file_id = analyzer.file_id;
+                    let decl = analyzer
+                        .db
+                        .get_decl_index()
+                        .get_decl_tree(&file_id)?
+                        .find_decl(&name, position)?;
+                    let id = decl.get_id();
+                    analyzer
+                        .db
+                        .get_decl_index()
+                        .add_decl_type(id, type_def);
+                } else if let LuaVarExpr::IndexExpr(index_expr) = assign_stat.child::<LuaVarExpr>()? {
+                    analyzer.context.unresolve_index_expr_type.insert(index_expr, type_def);
+                }
+            }
+            LuaAst::LuaTableField(field) => {
+                analyzer.context.unresolve_table_field_type.insert(field, type_def);
+            }
+            _ => {}
+        }
+    Some(())
 }

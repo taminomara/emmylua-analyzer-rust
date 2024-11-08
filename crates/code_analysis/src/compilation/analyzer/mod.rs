@@ -4,7 +4,7 @@ mod doc;
 
 use std::collections::HashMap;
 
-use emmylua_parser::{LuaComment, LuaSyntaxTree};
+use emmylua_parser::{LuaComment, LuaIndexExpr, LuaSyntaxTree, LuaTableField};
 use crate::{db_index::{DbIndex, LuaType}, InFiled};
 
 pub fn analyze(db: &mut DbIndex, context: AnalyzeContext) {
@@ -14,16 +14,19 @@ pub fn analyze(db: &mut DbIndex, context: AnalyzeContext) {
     symbol::analyze(db, &mut context);
 }
 
+#[derive(Debug)]
 pub struct AnalyzeContext<'a> {
     tree_list: Vec<InFiled<&'a LuaSyntaxTree>>,
-    bind_type_def: HashMap<LuaComment, LuaType>
+    unresolve_index_expr_type: HashMap<LuaIndexExpr, LuaType>,
+    unresolve_table_field_type: HashMap<LuaTableField, LuaType>,
 }
 
 impl<'a> AnalyzeContext<'a> {
     pub fn new() -> Self {
         Self {
             tree_list: Vec::new(),
-            bind_type_def: HashMap::new()
+            unresolve_index_expr_type: HashMap::new(),
+            unresolve_table_field_type: HashMap::new(),
         }
     }
 

@@ -27,5 +27,5 @@ impl LuaDescriptionId {
 pub enum LuaDescriptionOwnerId {
     TypeDecl(LuaTypeDeclId),
     Member(LuaMemberId),
-    Variable(LuaDeclId)
+    LuaDecl(LuaDeclId)
 }
