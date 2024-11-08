@@ -9,7 +9,6 @@ mod member;
 mod operators;
 mod description;
 
-use std::collections::HashMap;
 
 use crate::FileId;
 pub use declaration::*;
@@ -18,12 +17,12 @@ pub use member::{LuaMemberIndex, LuaMember, LuaMemberOwner, LuaMemberId};
 use meta::MetaFile;
 use module::LuaModuleIndex;
 use reference::LuaReferenceIndex;
-use traits::LuaIndex;
 pub use r#type::*;
+use traits::LuaIndex;
 
 #[derive(Debug)]
 pub struct DbIndex {
-    decl_trees: HashMap<FileId, LuaDeclarationTree>,
+    decl_index: LuaDeclIndex,
     references_index: LuaReferenceIndex,
     types_index: LuaTypeIndex,
     modules_index: LuaModuleIndex,
@@ -35,7 +34,7 @@ pub struct DbIndex {
 impl DbIndex {
     pub fn new() -> Self {
         Self {
-            decl_trees: HashMap::new(),
+            decl_index: LuaDeclIndex::new(),
             references_index: LuaReferenceIndex::new(),
             types_index: LuaTypeIndex::new(),
             modules_index: LuaModuleIndex::new(),
@@ -47,17 +46,12 @@ impl DbIndex {
 
     pub fn remove_index(&mut self, file_ids: Vec<FileId>) {
         for file_id in file_ids {
-            self.decl_trees.remove(&file_id);
+            self.remove(file_id);
         }
     }
 
-    pub fn add_decl_tree(&mut self, tree: LuaDeclarationTree) {
-        self.decl_trees.insert(tree.file_id(), tree);
-    }
-
-    #[allow(unused)]
-    pub fn get_decl_tree(&self, file_id: &FileId) -> Option<&LuaDeclarationTree> {
-        self.decl_trees.get(file_id)
+    pub fn get_decl_index(&mut self) -> &mut LuaDeclIndex {
+        &mut self.decl_index
     }
 
     pub fn get_reference_index(&mut self) -> &mut LuaReferenceIndex {
@@ -87,7 +81,7 @@ impl DbIndex {
 
 impl LuaIndex for DbIndex {
     fn remove(&mut self, file_id: FileId) {
-        self.decl_trees.remove(&file_id);
+        self.decl_index.remove(file_id);
         self.references_index.remove(file_id);
         self.types_index.remove(file_id);
         self.modules_index.remove(file_id);

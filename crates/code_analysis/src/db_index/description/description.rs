@@ -1,4 +1,4 @@
-use crate::db_index::{member::LuaMemberId, LuaTypeDeclId};
+use crate::db_index::{member::LuaMemberId, LuaDeclId, LuaTypeDeclId};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct LuaDescription {
@@ -27,4 +27,5 @@ impl LuaDescriptionId {
 pub enum LuaDescriptionOwnerId {
     TypeDecl(LuaTypeDeclId),
     Member(LuaMemberId),
+    Variable(LuaDeclId)
 }

@@ -1,11 +1,14 @@
 mod loader;
 mod in_filed;
 mod test;
+mod document;
 
 
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
+use document::LuaDocument;
+use emmylua_parser::LineIndex;
 use url::Url;
 use lsp_types::Uri;
 
@@ -28,14 +31,18 @@ impl FileId {
 #[derive(Debug)]
 pub struct Vfs {
     file_id_map: HashMap<Uri, u32>,
+    file_uri_map: HashMap<u32, Uri>,
     file_data: Vec<Option<String>>,
+    line_index_map: HashMap<FileId, LineIndex>,
 }
 
 impl Vfs {
     pub fn new() -> Self {
         Vfs {
-            file_id_map: HashMap::default(),
-            file_data: Vec::default(),
+            file_id_map: HashMap::new(),
+            file_uri_map: HashMap::new(),
+            file_data: Vec::new(),
+            line_index_map: HashMap::new()
         }
     }
 
@@ -45,6 +52,7 @@ impl Vfs {
         } else {
             let id = self.file_data.len() as u32;
             self.file_id_map.insert(uri.clone(), id);
+            self.file_uri_map.insert(id, uri.clone());
             self.file_data.push(None);
             FileId { id }
         }
@@ -56,6 +64,12 @@ impl Vfs {
 
     pub fn set_file_content(&mut self, uri: &Uri, data: Option<String>) -> bool {
         let fid = self.file_id(uri);
+        if let Some(data) = &data {
+            let line_index = LineIndex::parse(&data);
+            self.line_index_map.insert(fid, line_index);
+        } else {
+            self.line_index_map.remove(&fid);
+        }
         self.file_data[fid.id as usize] = data;
         true
     }
@@ -67,6 +81,13 @@ impl Vfs {
         } else{
             None
         }
+    }
+
+    pub fn get_document(&self, id: &FileId) -> Option<LuaDocument> {
+        let uri = self.file_uri_map.get(&id.id)?;
+        let text = self.get_file_content(id)?;
+        let line_index = self.line_index_map.get(id)?;
+        Some(LuaDocument::new(*id, uri, text, line_index))
     }
 }
 

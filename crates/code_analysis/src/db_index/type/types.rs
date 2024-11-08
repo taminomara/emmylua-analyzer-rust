@@ -18,6 +18,7 @@ pub enum LuaType {
     StringConst(Box<String>),
     IntegerConst(i64),
     Ref(LuaTypeDeclId),
+    Def(LuaTypeDeclId),
     Array(Box<LuaType>),
     KeyOf(Box<LuaType>),
     Nullable(Box<LuaType>),
@@ -43,7 +44,7 @@ impl LuaType {
     }
 
     pub fn is_table(&self) -> bool {
-        matches!(self, LuaType::Table)
+        matches!(self, LuaType::Table | LuaType::TableGeneric(_))
     }
 
     pub fn is_userdata(&self) -> bool {
@@ -55,23 +56,19 @@ impl LuaType {
     }
 
     pub fn is_boolean(&self) -> bool {
-        matches!(self, LuaType::BooleanConst(_))
+        matches!(self, LuaType::BooleanConst(_) | LuaType::Boolean)
     }
 
     pub fn is_string(&self) -> bool {
-        matches!(self, LuaType::StringConst(_))
-    }
-
-    pub fn is_integer_const(&self) -> bool {
-        matches!(self, LuaType::IntegerConst(_))
+        matches!(self, LuaType::StringConst(_) | LuaType::String)
     }
 
     pub fn is_integer(&self) -> bool {
-        matches!(self, LuaType::Integer)
+        matches!(self, LuaType::IntegerConst(_) | LuaType::Integer)
     }
 
     pub fn is_number(&self) -> bool {
-        matches!(self, LuaType::Number)
+        matches!(self, LuaType::Number | LuaType::Integer | LuaType::IntegerConst(_))
     }
 
     pub fn is_io(&self) -> bool {
@@ -80,6 +77,74 @@ impl LuaType {
 
     pub fn is_ref(&self) -> bool {
         matches!(self, LuaType::Ref(_))
+    }
+
+    pub fn is_def(&self) -> bool {
+        matches!(self, LuaType::Def(_))
+    }
+
+    pub fn is_array(&self) -> bool {
+        matches!(self, LuaType::Array(_))
+    }
+
+    pub fn is_key_of(&self) -> bool {
+        matches!(self, LuaType::KeyOf(_))
+    }
+
+    pub fn is_nullable(&self) -> bool {
+        matches!(self, LuaType::Nullable(_))
+    }
+
+    pub fn is_tuple(&self) -> bool {
+        matches!(self, LuaType::Tuple(_))
+    }
+
+    pub fn is_function(&self) -> bool {
+        matches!(self, LuaType::Function(_))
+    }
+
+    pub fn is_object(&self) -> bool {
+        matches!(self, LuaType::Object(_))
+    }
+
+    pub fn is_union(&self) -> bool {
+        matches!(self, LuaType::Union(_))
+    }
+
+    pub fn is_intersection(&self) -> bool {
+        matches!(self, LuaType::Intersection(_))
+    }
+
+    pub fn is_extends(&self) -> bool {
+        matches!(self, LuaType::Extends(_))
+    }
+
+    pub fn is_generic(&self) -> bool {
+        matches!(self, LuaType::Generic(_) | LuaType::TableGeneric(_))
+    }
+
+    pub fn is_table_generic(&self) -> bool {
+        matches!(self, LuaType::TableGeneric(_))
+    }
+
+    pub fn is_tpl_ref(&self) -> bool {
+        matches!(self, LuaType::TplRef(_))
+    }
+
+    pub fn is_str_tpl_ref(&self) -> bool {
+        matches!(self, LuaType::StrTplRef(_))
+    }
+
+    pub fn is_self_infer(&self) -> bool {
+        matches!(self, LuaType::SelfInfer)
+    }
+
+    pub fn is_any(&self) -> bool {
+        matches!(self, LuaType::Any)
+    }
+
+    pub fn is_const(&self) -> bool {
+        matches!(self, LuaType::BooleanConst(_) | LuaType::StringConst(_) | LuaType::IntegerConst(_))
     }
 }
 

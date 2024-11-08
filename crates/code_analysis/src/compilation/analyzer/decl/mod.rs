@@ -18,7 +18,7 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
         let mut analyzer = DeclAnalyzer::new(db, in_filed_tree.file_id, in_filed_tree.value);
         analyzer.analyze();
         let decl_tree = analyzer.get_decl_tree();
-        db.add_decl_tree(decl_tree);
+        db.get_decl_index().add_decl_tree(decl_tree);
     }
 }
 

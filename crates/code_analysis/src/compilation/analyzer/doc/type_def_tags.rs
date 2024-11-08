@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use emmylua_parser::{
     LuaAssignStat, LuaAst, LuaAstNode, LuaAstToken, LuaCommentOwner, LuaDocDescriptionOwner,
-    LuaDocDetailOwner, LuaDocGenericDeclList, LuaDocTagAlias, LuaDocTagClass,
-    LuaDocTagEnum, LuaDocTagGeneric, LuaFuncStat, LuaLocalName, LuaLocalStat, LuaNameExpr,
-    LuaSyntaxId, LuaSyntaxKind, LuaTokenKind,
+    LuaDocDetailOwner, LuaDocGenericDeclList, LuaDocTagAlias, LuaDocTagClass, LuaDocTagEnum,
+    LuaDocTagGeneric, LuaFuncStat, LuaLocalName, LuaLocalStat, LuaNameExpr, LuaSyntaxId,
+    LuaSyntaxKind, LuaTokenKind,
 };
 use rowan::TextRange;
 
@@ -59,19 +59,21 @@ pub fn analyze_class(analyzer: &mut DocAnalyzer, tag: LuaDocTagClass) -> Option<
         }
     }
 
-    let description_text = tag.get_description()?.get_description_text();
-    if description_text.is_empty() {
-        return None;
+    if let Some(description) = tag.get_description() {
+        let description_text = description.get_description_text();
+        if !description_text.is_empty() {
+            let description = LuaDescription::new(
+                LuaDescriptionOwnerId::TypeDecl(class_decl_id.clone()),
+                description_text,
+            );
+            analyzer
+                .db
+                .get_description_index()
+                .add_description(file_id, description);
+        }
     }
-    let description = LuaDescription::new(
-        LuaDescriptionOwnerId::TypeDecl(class_decl_id.clone()),
-        description_text,
-    );
-    analyzer
-        .db
-        .get_description_index()
-        .add_description(file_id, description);
 
+    bind_def_type(analyzer, LuaType::Def(class_decl_id.clone()));
     Some(())
 }
 
@@ -102,18 +104,21 @@ pub fn analyze_enum(analyzer: &mut DocAnalyzer, tag: LuaDocTagEnum) -> Option<()
             .add_super_type(enum_decl_id.clone(), file_id, super_type);
     }
 
-    let description_text = tag.get_description()?.get_description_text();
-    if description_text.is_empty() {
-        return None;
+    if let Some(description) = tag.get_description() {
+        let description_text = description.get_description_text();
+        if !description_text.is_empty() {
+            let description = LuaDescription::new(
+                LuaDescriptionOwnerId::TypeDecl(enum_decl_id.clone()),
+                description_text,
+            );
+            analyzer
+                .db
+                .get_description_index()
+                .add_description(file_id, description);
+        }
     }
-    let description = LuaDescription::new(
-        LuaDescriptionOwnerId::TypeDecl(enum_decl_id.clone()),
-        description_text,
-    );
-    analyzer
-        .db
-        .get_description_index()
-        .add_description(file_id, description);
+
+    bind_def_type(analyzer, LuaType::Def(enum_decl_id.clone()));
 
     Some(())
 }
@@ -273,11 +278,12 @@ fn get_local_stat_reference_ranges(
     let first_local_name = first_local.get_name_token()?.get_name_text().to_string();
     let decl = analyzer
         .db
+        .get_decl_index()
         .get_decl_tree(&file_id)?
         .find_decl(&first_local_name, first_local.get_position())?;
     let mut ranges = Vec::new();
 
-    let id = decl.get_id()?;
+    let id = decl.get_id();
     let refs = analyzer
         .db
         .get_reference_index()
@@ -398,4 +404,8 @@ pub fn analyze_func_generic(analyzer: &mut DocAnalyzer, tag: LuaDocTagGeneric) -
     }
 
     Some(())
+}
+
+fn bind_def_type(analyzer: &mut DocAnalyzer, type_def: LuaType) {
+    
 }

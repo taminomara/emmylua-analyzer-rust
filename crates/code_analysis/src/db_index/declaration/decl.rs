@@ -25,11 +25,11 @@ impl LuaDecl {
             LuaDecl::Global { id, .. } => id.map(|id| id.file_id),
         }
     }
-    #[allow(unused)]
-    pub fn get_id(&self) -> Option<LuaDeclId> {
+
+    pub fn get_id(&self) -> LuaDeclId {
         match self {
-            LuaDecl::Local { id, .. } => *id,
-            LuaDecl::Global { id, .. } => *id,
+            LuaDecl::Local { id, .. } => (*id).unwrap(),
+            LuaDecl::Global { id, .. } => (*id).unwrap(),
         }
     }
 

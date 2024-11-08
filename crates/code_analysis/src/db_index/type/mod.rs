@@ -20,7 +20,6 @@ pub struct LuaTypeIndex {
     full_name_type_map: HashMap<LuaTypeDeclId, LuaTypeDecl>,
     generic_params: HashMap<LuaTypeDeclId, Vec<(String, Option<LuaType>)>>,
     supers: HashMap<LuaTypeDeclId, Vec<InFiled<LuaType>>>,
-    
 }
 
 impl LuaTypeIndex {

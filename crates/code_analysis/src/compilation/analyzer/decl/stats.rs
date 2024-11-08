@@ -142,5 +142,4 @@ pub fn analyze_local_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalFuncSt
 
         analyzer.add_decl(decl);
     }
-    
 }

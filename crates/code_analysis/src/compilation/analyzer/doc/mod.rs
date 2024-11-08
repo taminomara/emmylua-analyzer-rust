@@ -44,6 +44,7 @@ pub struct DocAnalyzer<'a> {
     current_type_id: Option<LuaTypeDeclId>,
     comment: LuaComment,
     root: LuaSyntaxNode,
+    bind_type: Option<LuaTypeDeclId>,
 }
 
 impl DocAnalyzer<'_> {
@@ -61,6 +62,7 @@ impl DocAnalyzer<'_> {
             current_type_id: None,
             comment,
             root,
+            bind_type: None,
         }
     }
 }
