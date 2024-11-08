@@ -9,3 +9,4 @@ mod grammar;
 pub use kind::*;
 pub use parser::{LuaParser, ParserConfig};
 pub use syntax::*;
+pub use text::LineIndex;

@@ -74,7 +74,7 @@ impl<'a> LuaParser<'a> {
             builder.build();
             builder.finish()
         };
-        LuaSyntaxTree::new(root, text.to_string(), errors)
+        LuaSyntaxTree::new(root, errors)
     }
 
     pub fn init(&mut self) {

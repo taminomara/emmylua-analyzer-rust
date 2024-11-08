@@ -47,6 +47,7 @@ impl LineIndex {
         }
     }
 
+    // get line base 0
     pub fn get_line(&self, offset: TextSize) -> Option<usize> {
         let offset_value = usize::from(offset);
         match self
@@ -81,5 +82,52 @@ impl LineIndex {
 
     pub fn line_count(&self) -> usize {
         self.line_offsets.len()
+    }
+
+    // get col base 0
+    pub fn get_col(&self, offset: TextSize, source_text: &str) -> Option<usize> {
+        let (line, start_offset) = self.get_line_with_start_offset(offset)?;
+        if self.is_line_only_ascii(line.try_into().unwrap()) {
+            Some(usize::from(offset - start_offset))
+        } else {
+            let text = &source_text[usize::from(start_offset)..usize::from(offset)];
+            Some(text.chars().count())
+        }
+    }
+
+    // get line and col base 0
+    pub fn get_line_col(&self, offset: TextSize, source_text: &str) -> Option<(usize, usize)> {
+        let (line, start_offset) = self.get_line_with_start_offset(offset)?;
+        if self.is_line_only_ascii(line.try_into().unwrap()) {
+            Some((line, usize::from(offset - start_offset)))
+        } else {
+            let text = &source_text[usize::from(start_offset)..usize::from(offset)];
+            Some((line, text.chars().count()))
+        }
+    }
+
+    // get offset by line and col
+    pub fn get_offset(&self, line: usize, col: usize, source_text: &str) -> Option<TextSize> {
+        let start_offset = self.get_line_offset(line)?;
+        if col == 0 {
+            return Some(start_offset);
+        }
+
+        if self.is_line_only_ascii(line.try_into().unwrap()) {
+            let col = col.min(source_text.len());
+            Some(start_offset + TextSize::from(col as u32))
+        } else {
+            let mut offset = 0;
+            let mut col = col;
+            for c in source_text[usize::from(start_offset)..].chars() {
+                if col == 0 {
+                    break;
+                }
+
+                offset += c.len_utf8();
+                col -= 1;
+            }
+            Some(start_offset + TextSize::from(offset as u32))
+        }
     }
 }
