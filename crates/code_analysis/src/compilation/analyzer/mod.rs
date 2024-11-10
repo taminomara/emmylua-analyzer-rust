@@ -1,11 +1,15 @@
 mod decl;
-mod symbol;
 mod doc;
+mod lua;
+mod symbol;
 
 use std::collections::HashMap;
 
-use emmylua_parser::{LuaComment, LuaIndexExpr, LuaSyntaxTree, LuaTableField};
-use crate::{db_index::{DbIndex, LuaType}, InFiled};
+use crate::{
+    db_index::{DbIndex, LuaType},
+    InFiled,
+};
+use emmylua_parser::{LuaIndexExpr, LuaSyntaxTree, LuaTableField};
 
 pub fn analyze(db: &mut DbIndex, context: AnalyzeContext) {
     let mut context = context;
@@ -34,3 +38,5 @@ impl<'a> AnalyzeContext<'a> {
         self.tree_list.push(tree);
     }
 }
+
+

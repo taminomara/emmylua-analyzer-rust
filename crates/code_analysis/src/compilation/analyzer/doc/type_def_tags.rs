@@ -9,7 +9,7 @@ use emmylua_parser::{
 use rowan::TextRange;
 
 use crate::db_index::{
-    LuaDeclTypeKind, LuaDescription, LuaDescriptionOwnerId, LuaMember, LuaMemberOwner, LuaType,
+    LuaDeclTypeKind, LuaDescription, LuaDescriptionOwnerId, LuaMember, LuaMemberOwner, LuaSignatureId, LuaType
 };
 
 use super::{infer_type::infer_type, DocAnalyzer};
@@ -373,6 +373,7 @@ pub fn analyze_func_generic(analyzer: &mut DocAnalyzer, tag: LuaDocTagGeneric) -
         }
 
         let mut params_result = HashMap::new();
+        let mut param_info = Vec::new();
         if let Some(params_list) = tag.get_generic_decl_list() {
             let mut count = 0;
             for param in params_list.get_generic_decl() {
@@ -382,13 +383,14 @@ pub fn analyze_func_generic(analyzer: &mut DocAnalyzer, tag: LuaDocTagGeneric) -
                     continue;
                 };
 
-                // let type_ref = if let Some(type_ref) = param.get_type() {
-                //     Some(infer_type(analyzer, type_ref))
-                // } else {
-                //     None
-                // };
+                let type_ref = if let Some(type_ref) = param.get_type() {
+                    Some(infer_type(analyzer, type_ref))
+                } else {
+                    None
+                };
 
-                params_result.insert(name, count);
+                params_result.insert(name.clone(), count);
+                param_info.push((name, type_ref));
                 count += 1;
             }
         }
@@ -401,6 +403,10 @@ pub fn analyze_func_generic(analyzer: &mut DocAnalyzer, tag: LuaDocTagGeneric) -
         analyzer
             .generic_index
             .add_generic_scope(ranges, params_result);
+
+        let signature_id = LuaSignatureId::new(analyzer.file_id, range.start());
+        let signature = analyzer.db.get_signature_index().get_or_create(signature_id);
+        signature.generic_params = param_info;
     }
 
     Some(())

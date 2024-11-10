@@ -1,4 +1,7 @@
-use emmylua_parser::{LuaAst, LuaAstToken, LuaDocTagType, LuaLocalName, LuaVarExpr};
+use emmylua_parser::{
+    LuaAst, LuaAstToken, LuaDocDescriptionOwner, LuaDocTagParam, LuaDocTagType, LuaLocalName,
+    LuaVarExpr,
+};
 
 use super::{infer_type::infer_type, DocAnalyzer};
 
@@ -36,7 +39,10 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                             .add_decl_type(decl_id, type_ref.clone());
                     }
                     LuaVarExpr::IndexExpr(index_expr) => {
-                        analyzer.context.unresolve_index_expr_type.insert(index_expr.clone(), type_ref.clone());
+                        analyzer
+                            .context
+                            .unresolve_index_expr_type
+                            .insert(index_expr.clone(), type_ref.clone());
                     }
                 }
             }
@@ -73,6 +79,31 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
         }
         _ => {}
     }
+
+    Some(())
+}
+
+pub fn analyze_param(analyzer: &mut DocAnalyzer, tag: LuaDocTagParam) -> Option<()> {
+    let name = if let Some(name) = tag.get_name_token() {
+        name.get_name_text().to_string()
+    } else if tag.is_vararg() {
+        "...".to_string()
+    } else {
+        return None;
+    };
+
+    let type_ref = if let Some(lua_doc_type) = tag.get_type() {
+        infer_type(analyzer, lua_doc_type)
+    } else {
+        return None;
+    };
+
+    let nullable = tag.is_nullable();
+    let description = if let Some(des) = tag.get_description() {
+        des.get_description_text().to_string()
+    } else {
+        "".to_string()
+    };
 
     Some(())
 }

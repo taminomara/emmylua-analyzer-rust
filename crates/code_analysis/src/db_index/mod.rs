@@ -8,6 +8,7 @@ mod meta;
 mod member;
 mod operators;
 mod description;
+mod signature;
 
 
 use crate::FileId;
@@ -17,6 +18,7 @@ pub use member::{LuaMemberIndex, LuaMember, LuaMemberOwner, LuaMemberId};
 use meta::MetaFile;
 use module::LuaModuleIndex;
 use reference::LuaReferenceIndex;
+pub use signature::*;
 pub use r#type::*;
 use traits::LuaIndex;
 
@@ -29,6 +31,7 @@ pub struct DbIndex {
     meta_files_index: MetaFile,
     members_index: LuaMemberIndex,
     descriptions_index: LuaDescriptionIndex,
+    signature_index: LuaSignatureIndex,
 }
 
 impl DbIndex {
@@ -41,6 +44,7 @@ impl DbIndex {
             meta_files_index: MetaFile::new(),
             members_index: LuaMemberIndex::new(),
             descriptions_index: LuaDescriptionIndex::new(),
+            signature_index: LuaSignatureIndex::new(),
         }
     }
 
@@ -77,6 +81,10 @@ impl DbIndex {
     pub fn get_description_index(&mut self) -> &mut LuaDescriptionIndex {
         &mut self.descriptions_index
     }
+
+    pub fn get_signature_index(&mut self) -> &mut LuaSignatureIndex {
+        &mut self.signature_index
+    }
 }
 
 impl LuaIndex for DbIndex {
@@ -88,5 +96,6 @@ impl LuaIndex for DbIndex {
         self.meta_files_index.remove(file_id);
         self.members_index.remove(file_id);
         self.descriptions_index.remove(file_id);
+        self.signature_index.remove(file_id);
     }
 }

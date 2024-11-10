@@ -1,14 +1,14 @@
 use emmylua_parser::{
-    LuaAstNode, LuaDocBinaryType, LuaDocFuncType, LuaDocGenericType, LuaDocObjectFieldKey, LuaDocObjectType, LuaDocType, LuaDocUnaryType, LuaLiteralToken, LuaTypeBinaryOperator, LuaTypeUnaryOperator
+    LuaAstNode, LuaDocBinaryType, LuaDocFuncType, LuaDocGenericType, LuaDocObjectFieldKey,
+    LuaDocObjectType, LuaDocType, LuaDocUnaryType, LuaLiteralToken, LuaTypeBinaryOperator,
+    LuaTypeUnaryOperator,
 };
 use rowan::TextSize;
 
-use crate::
-    db_index::{
-        LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey,
-        LuaIntersectionType, LuaObjectType, LuaTupleType, LuaType, LuaUnionType,
-    }
-;
+use crate::db_index::{
+    LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey, LuaIntersectionType,
+    LuaObjectType, LuaTupleType, LuaType, LuaUnionType,
+};
 
 use super::DocAnalyzer;
 
@@ -88,15 +88,18 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
         LuaDocType::Object(object_type) => {
             return infer_object_type(analyzer, object_type);
         }
-        _ => {}
-        // LuaDocType::Conditional(lua_doc_conditional_type) => todo!(),
-        // LuaDocType::Variadic(lua_doc_variadic_type) => todo!(),
-        // LuaDocType::StrTpl(lua_doc_str_tpl_type) => todo!(),
+        _ => {} // LuaDocType::Conditional(lua_doc_conditional_type) => todo!(),
+                // LuaDocType::Variadic(lua_doc_variadic_type) => todo!(),
+                // LuaDocType::StrTpl(lua_doc_str_tpl_type) => todo!(),
     }
     LuaType::Unknown
 }
 
-fn infer_buildin_or_ref_type(analyzer: &mut DocAnalyzer, name: &str, position: TextSize) -> LuaType {
+fn infer_buildin_or_ref_type(
+    analyzer: &mut DocAnalyzer,
+    name: &str,
+    position: TextSize,
+) -> LuaType {
     match name {
         "Unknown" => LuaType::Unknown,
         "nil" | "void" => LuaType::Nil,
@@ -111,7 +114,7 @@ fn infer_buildin_or_ref_type(analyzer: &mut DocAnalyzer, name: &str, position: T
         "io" => LuaType::Io,
         "self" => LuaType::SelfInfer,
         _ => {
-            if let Some(size) = analyzer.generic_index.find_generic(position, name){
+            if let Some(size) = analyzer.generic_index.find_generic(position, name) {
                 return LuaType::TplRef(size);
             }
 
