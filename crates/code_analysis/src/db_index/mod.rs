@@ -1,25 +1,24 @@
 mod declaration;
+mod member;
+mod meta;
 mod module;
+mod operators;
+mod property;
+mod reference;
+mod signature;
 mod symbol;
 mod traits;
 mod r#type;
-mod reference;
-mod meta;
-mod member;
-mod operators;
-mod description;
-mod signature;
-
 
 use crate::FileId;
 pub use declaration::*;
-pub use description::{LuaDescriptionIndex, LuaDescription, LuaDescriptionId, LuaDescriptionOwnerId};
-pub use member::{LuaMemberIndex, LuaMember, LuaMemberOwner, LuaMemberId};
+pub use member::{LuaMember, LuaMemberId, LuaMemberIndex, LuaMemberOwner};
 use meta::MetaFile;
 use module::LuaModuleIndex;
+pub use property::{LuaPropertyId, LuaPropertyIndex, LuaPropertyOwnerId};
+pub use r#type::*;
 use reference::LuaReferenceIndex;
 pub use signature::*;
-pub use r#type::*;
 use traits::LuaIndex;
 
 #[derive(Debug)]
@@ -30,7 +29,7 @@ pub struct DbIndex {
     modules_index: LuaModuleIndex,
     meta_files_index: MetaFile,
     members_index: LuaMemberIndex,
-    descriptions_index: LuaDescriptionIndex,
+    property_index: LuaPropertyIndex,
     signature_index: LuaSignatureIndex,
 }
 
@@ -43,7 +42,7 @@ impl DbIndex {
             modules_index: LuaModuleIndex::new(),
             meta_files_index: MetaFile::new(),
             members_index: LuaMemberIndex::new(),
-            descriptions_index: LuaDescriptionIndex::new(),
+            property_index: LuaPropertyIndex::new(),
             signature_index: LuaSignatureIndex::new(),
         }
     }
@@ -78,8 +77,8 @@ impl DbIndex {
         &mut self.members_index
     }
 
-    pub fn get_description_index(&mut self) -> &mut LuaDescriptionIndex {
-        &mut self.descriptions_index
+    pub fn get_property_index(&mut self) -> &mut LuaPropertyIndex {
+        &mut self.property_index
     }
 
     pub fn get_signature_index(&mut self) -> &mut LuaSignatureIndex {
@@ -95,7 +94,7 @@ impl LuaIndex for DbIndex {
         self.modules_index.remove(file_id);
         self.meta_files_index.remove(file_id);
         self.members_index.remove(file_id);
-        self.descriptions_index.remove(file_id);
+        self.property_index.remove(file_id);
         self.signature_index.remove(file_id);
     }
 }

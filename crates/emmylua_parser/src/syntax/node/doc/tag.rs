@@ -1,5 +1,8 @@
 use crate::{
-    kind::LuaSyntaxKind, syntax::traits::LuaAstNode, LuaAstChildren, LuaAstToken, LuaAstTokenChildren, LuaBinaryOpToken, LuaDocDetailToken, LuaDocVersionNumberToken, LuaDocVisibilityToken, LuaNameToken, LuaNumberToken, LuaPathToken, LuaStringToken, LuaSyntaxNode, LuaTokenKind
+    kind::LuaSyntaxKind, syntax::traits::LuaAstNode, LuaAstChildren, LuaAstToken,
+    LuaAstTokenChildren, LuaBinaryOpToken, LuaDocVersionNumberToken,
+    LuaDocVisibilityToken, LuaKind, LuaNameToken, LuaNumberToken, LuaPathToken, LuaStringToken,
+    LuaSyntaxNode, LuaTokenKind,
 };
 
 use super::{
@@ -34,6 +37,7 @@ pub enum LuaDocTag {
     Generic(LuaDocTagGeneric),
     Async(LuaDocTagAsync),
     As(LuaDocTagAs),
+    Visibility(LuaDocTagVisibility),
 }
 
 impl LuaAstNode for LuaDocTag {
@@ -64,6 +68,7 @@ impl LuaAstNode for LuaDocTag {
             LuaDocTag::Generic(it) => it.syntax(),
             LuaDocTag::Async(it) => it.syntax(),
             LuaDocTag::As(it) => it.syntax(),
+            LuaDocTag::Visibility(it) => it.syntax(),
         }
     }
 
@@ -96,6 +101,7 @@ impl LuaAstNode for LuaDocTag {
             || kind == LuaSyntaxKind::DocTagGeneric
             || kind == LuaSyntaxKind::DocTagAsync
             || kind == LuaSyntaxKind::DocTagAs
+            || kind == LuaSyntaxKind::DocTagVisibility
     }
 
     fn cast(syntax: LuaSyntaxNode) -> Option<Self>
@@ -174,6 +180,9 @@ impl LuaAstNode for LuaDocTag {
                 Some(LuaDocTag::Async(LuaDocTagAsync::cast(syntax).unwrap()))
             }
             LuaSyntaxKind::DocTagAs => Some(LuaDocTag::As(LuaDocTagAs::cast(syntax).unwrap())),
+            LuaSyntaxKind::DocTagVisibility => Some(LuaDocTag::Visibility(
+                LuaDocTagVisibility::cast(syntax).unwrap(),
+            )),
             _ => None,
         }
     }
@@ -563,6 +572,37 @@ impl LuaDocTagReturn {
 
     pub fn get_types(&self) -> LuaAstChildren<LuaDocType> {
         self.children()
+    }
+
+    pub fn get_type_and_name_list(&self) -> Vec<(LuaDocType, Option<LuaNameToken>)> {
+        let mut result = Vec::new();
+        let mut current_type = None;
+        let mut current_name = None;
+        for child in self.syntax.children_with_tokens() {
+            match child.kind() {
+                LuaKind::Token(LuaTokenKind::TkComma) => {
+                    if let Some(type_) = current_type {
+                        result.push((type_, current_name));
+                    }
+                    current_type = None;
+                    current_name = None;
+                }
+                LuaKind::Token(LuaTokenKind::TkName) => {
+                    current_name = Some(LuaNameToken::cast(child.into_token().unwrap()).unwrap());
+                }
+                k if LuaDocType::can_cast(k.into()) => {
+                    current_type = Some(LuaDocType::cast(child.into_node().unwrap()).unwrap());
+                }
+
+                _ => {}
+            }
+        }
+
+        if let Some(type_) = current_type {
+            result.push((type_, current_name));
+        }
+
+        result
     }
 }
 
@@ -1369,5 +1409,37 @@ impl LuaAstNode for LuaDocTagAs {
 impl LuaDocTagAs {
     pub fn get_type(&self) -> Option<LuaDocType> {
         self.child()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaDocTagVisibility {
+    syntax: LuaSyntaxNode,
+}
+
+impl LuaAstNode for LuaDocTagVisibility {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        &self.syntax
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool {
+        kind == LuaSyntaxKind::DocTagVisibility
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaDocTagVisibility {
+    pub fn get_visibility_token(&self) -> Option<LuaDocVisibilityToken> {
+        self.token()
     }
 }

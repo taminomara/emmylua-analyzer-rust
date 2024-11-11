@@ -1,5 +1,4 @@
-#[allow(unused)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum VisibilityKind {
     None,
     Public,

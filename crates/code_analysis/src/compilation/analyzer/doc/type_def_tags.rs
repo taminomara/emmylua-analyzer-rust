@@ -9,7 +9,7 @@ use emmylua_parser::{
 use rowan::TextRange;
 
 use crate::db_index::{
-    LuaDeclTypeKind, LuaDescription, LuaDescriptionOwnerId, LuaMember, LuaMemberOwner, LuaSignatureId, LuaType
+    LuaDeclTypeKind, LuaMember, LuaMemberOwner, LuaPropertyOwnerId, LuaSignatureId, LuaType,
 };
 
 use super::{infer_type::infer_type, DocAnalyzer};
@@ -62,14 +62,11 @@ pub fn analyze_class(analyzer: &mut DocAnalyzer, tag: LuaDocTagClass) -> Option<
     if let Some(description) = tag.get_description() {
         let description_text = description.get_description_text();
         if !description_text.is_empty() {
-            let description = LuaDescription::new(
-                LuaDescriptionOwnerId::TypeDecl(class_decl_id.clone()),
+            analyzer.db.get_property_index().add_description(
+                file_id,
+                LuaPropertyOwnerId::TypeDecl(class_decl_id.clone()),
                 description_text,
             );
-            analyzer
-                .db
-                .get_description_index()
-                .add_description(file_id, description);
         }
     }
 
@@ -107,14 +104,11 @@ pub fn analyze_enum(analyzer: &mut DocAnalyzer, tag: LuaDocTagEnum) -> Option<()
     if let Some(description) = tag.get_description() {
         let description_text = description.get_description_text();
         if !description_text.is_empty() {
-            let description = LuaDescription::new(
-                LuaDescriptionOwnerId::TypeDecl(enum_decl_id.clone()),
+            analyzer.db.get_property_index().add_description(
+                file_id,
+                LuaPropertyOwnerId::TypeDecl(enum_decl_id.clone()),
                 description_text,
             );
-            analyzer
-                .db
-                .get_description_index()
-                .add_description(file_id, description);
         }
     }
 
@@ -192,12 +186,11 @@ pub fn analyze_alias(analyzer: &mut DocAnalyzer, tag: LuaDocTagAlias) -> Option<
                     continue;
                 }
 
-                let description =
-                    LuaDescription::new(LuaDescriptionOwnerId::Member(member_id), description_text);
-                analyzer
-                    .db
-                    .get_description_index()
-                    .add_description(file_id, description);
+                analyzer.db.get_property_index().add_description(
+                    file_id,
+                    LuaPropertyOwnerId::Member(member_id),
+                    description_text,
+                );
             }
         }
     }
@@ -206,14 +199,11 @@ pub fn analyze_alias(analyzer: &mut DocAnalyzer, tag: LuaDocTagAlias) -> Option<
     if description_text.is_empty() {
         return None;
     }
-    let description = LuaDescription::new(
-        LuaDescriptionOwnerId::TypeDecl(alias_decl_id.clone()),
+    analyzer.db.get_property_index().add_description(
+        file_id,
+        LuaPropertyOwnerId::TypeDecl(alias_decl_id.clone()),
         description_text,
     );
-    analyzer
-        .db
-        .get_description_index()
-        .add_description(file_id, description);
 
     Some(())
 }
@@ -405,7 +395,10 @@ pub fn analyze_func_generic(analyzer: &mut DocAnalyzer, tag: LuaDocTagGeneric) -
             .add_generic_scope(ranges, params_result);
 
         let signature_id = LuaSignatureId::new(analyzer.file_id, range.start());
-        let signature = analyzer.db.get_signature_index().get_or_create(signature_id);
+        let signature = analyzer
+            .db
+            .get_signature_index()
+            .get_or_create(signature_id);
         signature.generic_params = param_info;
     }
 
@@ -415,10 +408,23 @@ pub fn analyze_func_generic(analyzer: &mut DocAnalyzer, tag: LuaDocTagGeneric) -
 fn bind_def_type(analyzer: &mut DocAnalyzer, type_def: LuaType) -> Option<()> {
     let owner = analyzer.comment.get_owner()?;
     match owner {
-            LuaAst::LuaLocalStat(local_stat) => {
-                let local_name = local_stat.child::<LuaLocalName>()?;
-                let position= local_name.get_position();
-                let name = local_name.get_name_token()?.get_name_text().to_string();
+        LuaAst::LuaLocalStat(local_stat) => {
+            let local_name = local_stat.child::<LuaLocalName>()?;
+            let position = local_name.get_position();
+            let name = local_name.get_name_token()?.get_name_text().to_string();
+            let file_id = analyzer.file_id;
+            let decl = analyzer
+                .db
+                .get_decl_index()
+                .get_decl_tree(&file_id)?
+                .find_decl(&name, position)?;
+            let id = decl.get_id();
+            analyzer.db.get_decl_index().add_decl_type(id, type_def);
+        }
+        LuaAst::LuaAssignStat(assign_stat) => {
+            if let LuaVarExpr::NameExpr(name_expr) = assign_stat.child::<LuaVarExpr>()? {
+                let name = name_expr.get_name_token()?.get_name_text().to_string();
+                let position = name_expr.get_position();
                 let file_id = analyzer.file_id;
                 let decl = analyzer
                     .db
@@ -426,34 +432,21 @@ fn bind_def_type(analyzer: &mut DocAnalyzer, type_def: LuaType) -> Option<()> {
                     .get_decl_tree(&file_id)?
                     .find_decl(&name, position)?;
                 let id = decl.get_id();
+                analyzer.db.get_decl_index().add_decl_type(id, type_def);
+            } else if let LuaVarExpr::IndexExpr(index_expr) = assign_stat.child::<LuaVarExpr>()? {
                 analyzer
-                    .db
-                    .get_decl_index()
-                    .add_decl_type(id, type_def);
+                    .context
+                    .unresolve_index_expr_type
+                    .insert(index_expr, type_def);
             }
-            LuaAst::LuaAssignStat(assign_stat) => {
-                if let LuaVarExpr::NameExpr(name_expr) = assign_stat.child::<LuaVarExpr>()? {
-                    let name = name_expr.get_name_token()?.get_name_text().to_string();
-                    let position = name_expr.get_position();
-                    let file_id = analyzer.file_id;
-                    let decl = analyzer
-                        .db
-                        .get_decl_index()
-                        .get_decl_tree(&file_id)?
-                        .find_decl(&name, position)?;
-                    let id = decl.get_id();
-                    analyzer
-                        .db
-                        .get_decl_index()
-                        .add_decl_type(id, type_def);
-                } else if let LuaVarExpr::IndexExpr(index_expr) = assign_stat.child::<LuaVarExpr>()? {
-                    analyzer.context.unresolve_index_expr_type.insert(index_expr, type_def);
-                }
-            }
-            LuaAst::LuaTableField(field) => {
-                analyzer.context.unresolve_table_field_type.insert(field, type_def);
-            }
-            _ => {}
         }
+        LuaAst::LuaTableField(field) => {
+            analyzer
+                .context
+                .unresolve_table_field_type
+                .insert(field, type_def);
+        }
+        _ => {}
+    }
     Some(())
 }

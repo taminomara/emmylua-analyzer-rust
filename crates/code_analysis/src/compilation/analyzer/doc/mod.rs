@@ -4,6 +4,7 @@ mod operator_def_tags;
 mod tags;
 mod type_def_tags;
 mod type_ref_tags;
+mod property_tags;
 
 use super::AnalyzeContext;
 use crate::{

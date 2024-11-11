@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use rowan::TextSize;
 
 use crate::{db_index::LuaType, FileId};
@@ -7,8 +9,9 @@ pub struct LuaSignature {
     pub generic_params: Vec<(String, Option<LuaType>)>,
     pub visibility: Option<String>,
     pub overloads: Vec<LuaType>,
-    pub params: Vec<LuaDocParamInfo>,
-    pub return_info: LuaDocReturnInfo,
+    pub param_docs: HashMap<String, LuaDocParamInfo>,
+    pub params: Vec<String>,
+    pub return_docs: Vec<LuaDocReturnInfo>,
 }
 
 impl LuaSignature {
@@ -17,10 +20,9 @@ impl LuaSignature {
             generic_params: Vec::new(),
             visibility: None,
             overloads: Vec::new(),
+            param_docs: HashMap::new(),
             params: Vec::new(),
-            return_info: LuaDocReturnInfo {
-                type_ref_and_name_list: Vec::new(),
-            },
+            return_docs: Vec::new(),
         }
     }
 }
@@ -35,7 +37,9 @@ pub struct LuaDocParamInfo {
 
 #[derive(Debug)]
 pub struct LuaDocReturnInfo {
-    pub type_ref_and_name_list: Vec<(Option<String>, LuaType)>,
+    pub name: Option<String>,
+    pub type_ref: LuaType,
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]

@@ -1,7 +1,8 @@
 use emmylua_parser::{
-    LuaAst, LuaAstToken, LuaDocDescriptionOwner, LuaDocTagParam, LuaDocTagType, LuaLocalName,
-    LuaVarExpr,
+    LuaAst, LuaAstNode, LuaAstToken, LuaDocDescriptionOwner, LuaDocTagAs, LuaDocTagOverload, LuaDocTagParam, LuaDocTagReturn, LuaDocTagType, LuaLocalName, LuaVarExpr
 };
+
+use crate::db_index::{LuaDocParamInfo, LuaDocReturnInfo, LuaSignatureId};
 
 use super::{infer_type::infer_type, DocAnalyzer};
 
@@ -84,26 +85,89 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
 }
 
 pub fn analyze_param(analyzer: &mut DocAnalyzer, tag: LuaDocTagParam) -> Option<()> {
-    let name = if let Some(name) = tag.get_name_token() {
-        name.get_name_text().to_string()
-    } else if tag.is_vararg() {
-        "...".to_string()
-    } else {
-        return None;
-    };
+    if let Some(owner) = analyzer.comment.get_owner() {
+        let name = if let Some(name) = tag.get_name_token() {
+            name.get_name_text().to_string()
+        } else if tag.is_vararg() {
+            "...".to_string()
+        } else {
+            return None;
+        };
 
-    let type_ref = if let Some(lua_doc_type) = tag.get_type() {
-        infer_type(analyzer, lua_doc_type)
-    } else {
-        return None;
-    };
+        let type_ref = if let Some(lua_doc_type) = tag.get_type() {
+            infer_type(analyzer, lua_doc_type)
+        } else {
+            return None;
+        };
 
-    let nullable = tag.is_nullable();
-    let description = if let Some(des) = tag.get_description() {
-        des.get_description_text().to_string()
-    } else {
-        "".to_string()
-    };
+        let nullable = tag.is_nullable();
+        let description = if let Some(des) = tag.get_description() {
+            Some(des.get_description_text().to_string())
+        } else {
+            None
+        };
 
+        let id = LuaSignatureId::new(analyzer.file_id, owner.get_position());
+        let signature = analyzer.db.get_signature_index().get_or_create(id);
+        let param_info = LuaDocParamInfo {
+            name: name.clone(),
+            type_ref,
+            nullable,
+            description,
+        };
+        signature.param_docs.insert(name, param_info);
+    }
     Some(())
 }
+
+pub fn analyze_return(analyzer: &mut DocAnalyzer, tag: LuaDocTagReturn) -> Option<()> {
+    let description = if let Some(des) = tag.get_description() {
+        Some(des.get_description_text().to_string())
+    } else {
+        None
+    };
+    if let Some(owner) = analyzer.comment.get_owner() {
+        let returns = tag.get_type_and_name_list();
+        for (doc_type, name_token) in returns {
+            let name = if let Some(name) = name_token {
+                Some(name.get_name_text().to_string())
+            } else {
+                None
+            };
+
+            let type_ref = infer_type(analyzer, doc_type);
+            let return_info = LuaDocReturnInfo {
+                name,
+                type_ref,
+                description: description.clone(),
+            };
+            let id = LuaSignatureId::new(analyzer.file_id, owner.get_position());
+            let signature = analyzer.db.get_signature_index().get_or_create(id);
+            signature.return_docs.push(return_info);
+        }
+    }
+    Some(())
+}
+
+pub fn analyze_overload(analyzer: &mut DocAnalyzer, tag: LuaDocTagOverload) -> Option<()> {
+    if let Some(_) = &analyzer.current_type_id {
+        // TODO: call operator
+
+    } else if let Some(owner) = analyzer.comment.get_owner() {
+        let type_ref = infer_type(analyzer, tag.get_type()?);
+        let id = LuaSignatureId::new(analyzer.file_id, owner.get_position());
+        let signature = analyzer.db.get_signature_index().get_or_create(id);
+        signature.overloads.push(type_ref);
+    }
+    Some(())
+}
+
+// pub fn analyze_as(analyzer: &mut DocAnalyzer, tag: LuaDocTagAs) -> Option<()> {
+//     // if let Some(owner) = analyzer.comment.get_owner() {
+//     //     let type_ref = infer_type(analyzer, tag.get_type_list().get(0)?);
+//     //     let id = LuaSignatureId::new(analyzer.file_id, owner.get_position());
+//     //     let signature = analyzer.db.get_signature_index().get_or_create(id);
+//     //     signature.as_type = Some(type_ref);
+//     // }
+//     // Some(())
+// }
