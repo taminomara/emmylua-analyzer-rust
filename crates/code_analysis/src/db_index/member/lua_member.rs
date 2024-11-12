@@ -1,5 +1,5 @@
 use emmylua_parser::LuaKind;
-use rowan::TextRange;
+use rowan::{TextRange, TextSize};
 
 use crate::{
     db_index::{LuaType, LuaTypeDeclId},
@@ -9,7 +9,7 @@ use crate::{
 #[derive(Debug)]
 pub struct LuaMember {
     owner: LuaMemberOwner,
-    name: String,
+    key: LuaMemberKey,
     file_id: FileId,
     range: TextRange,
     kind: LuaKind,
@@ -19,7 +19,7 @@ pub struct LuaMember {
 impl LuaMember {
     pub fn new(
         owner: LuaMemberOwner,
-        name: String,
+        key: LuaMemberKey,
         file_id: FileId,
         kind: LuaKind,
         range: TextRange,
@@ -27,7 +27,7 @@ impl LuaMember {
     ) -> Self {
         Self {
             owner,
-            name,
+            key,
             file_id,
             range,
             kind,
@@ -42,8 +42,8 @@ impl LuaMember {
         self.owner.clone()
     }
 
-    pub fn get_name(&self) -> &str {
-        &self.name
+    pub fn get_key(&self) -> &LuaMemberKey {
+        &self.key
     }
 
     pub fn get_file_id(&self) -> FileId {
@@ -57,20 +57,31 @@ impl LuaMember {
     pub fn get_decl_type(&self) -> &LuaType {
         &self.decl_type
     }
+
+    pub fn get_id(&self) -> LuaMemberId {
+        LuaMemberId::new(self.range.start(), self.file_id)
+    }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub struct LuaMemberId {
-    id: usize,
+    file_id: FileId,
+    position: TextSize,
 }
 
 impl LuaMemberId {
-    pub fn new(id: usize) -> Self {
-        Self { id }
+    pub fn new(position: TextSize, file_id: FileId) -> Self {
+        Self { position, file_id }
     }
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub enum LuaMemberOwner {
     Type(LuaTypeDeclId),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum LuaMemberKey {
+    Integer(i64),
+    Name(String),
 }

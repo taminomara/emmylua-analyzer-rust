@@ -121,7 +121,7 @@ fn infer_buildin_or_ref_type(
 
             if let Some(name_type_decl) = analyzer
                 .db
-                .get_type_index()
+                .get_type_index_mut()
                 .find_type_decl(analyzer.file_id, name)
             {
                 return LuaType::Ref(name_type_decl.get_id());
@@ -129,7 +129,7 @@ fn infer_buildin_or_ref_type(
 
             analyzer
                 .db
-                .get_diagnostic_index()
+                .get_diagnostic_index_mut()
                 .add_diagnostic(analyzer.file_id, AnalyzeError::new(
                     DiagnosticCode::TypeNotFound,
                     format!("Type {} not found", name),
@@ -157,7 +157,7 @@ fn infer_generic_type(analyzer: &mut DocAnalyzer, generic_type: LuaDocGenericTyp
 
             let id = if let Some(name_type_decl) = analyzer
                 .db
-                .get_type_index()
+                .get_type_index_mut()
                 .find_type_decl(analyzer.file_id, &name)
             {
                 name_type_decl.get_id()

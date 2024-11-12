@@ -25,7 +25,7 @@ pub fn analyze_doc_tag_class(analyzer: &mut DeclAnalyzer, class: LuaDocTagClass)
     };
 
     let file_id = analyzer.get_file_id();
-    let r = analyzer.db.get_type_index().add_type_decl(
+    let r = analyzer.db.get_type_index_mut().add_type_decl(
         file_id,
         range,
         name,
@@ -34,7 +34,7 @@ pub fn analyze_doc_tag_class(analyzer: &mut DeclAnalyzer, class: LuaDocTagClass)
     );
 
     if let Err(e) = r {
-        analyzer.db.get_diagnostic_index().add_diagnostic(
+        analyzer.db.get_diagnostic_index_mut().add_diagnostic(
             file_id,
             AnalyzeError::new(
                 DiagnosticCode::DuplicateType,
@@ -89,11 +89,11 @@ pub fn analyze_doc_tag_enum(analyzer: &mut DeclAnalyzer, enum_: LuaDocTagEnum) {
     let file_id = analyzer.get_file_id();
     let r = analyzer
         .db
-        .get_type_index()
+        .get_type_index_mut()
         .add_type_decl(file_id, range, name, LuaDeclTypeKind::Enum, attrib);
 
     if let Err(e) = r {
-        analyzer.db.get_diagnostic_index().add_diagnostic(
+        analyzer.db.get_diagnostic_index_mut().add_diagnostic(
             file_id,
             AnalyzeError::new(
                 DiagnosticCode::DuplicateType,
@@ -117,11 +117,11 @@ pub fn analyze_doc_tag_alias(analyzer: &mut DeclAnalyzer, alias: LuaDocTagAlias)
     let file_id = analyzer.get_file_id();
     let r = analyzer
         .db
-        .get_type_index()
+        .get_type_index_mut()
         .add_type_decl(file_id, range, name, LuaDeclTypeKind::Alias, None);
 
     if let Err(e) = r {
-        analyzer.db.get_diagnostic_index().add_diagnostic(
+        analyzer.db.get_diagnostic_index_mut().add_diagnostic(
             file_id,
             AnalyzeError::new(
                 DiagnosticCode::DuplicateType,
@@ -142,7 +142,7 @@ pub fn analyze_doc_tag_namespace(analyzer: &mut DeclAnalyzer, namespace: LuaDocT
     let file_id = analyzer.get_file_id();
     analyzer
         .db
-        .get_type_index()
+        .get_type_index_mut()
         .add_file_namespace(file_id, name);
 }
 
@@ -156,24 +156,24 @@ pub fn analyze_doc_tag_using(analyzer: &mut DeclAnalyzer, using: LuaDocTagUsing)
     let file_id = analyzer.get_file_id();
     analyzer
         .db
-        .get_type_index()
+        .get_type_index_mut()
         .add_file_using_namespace(file_id, name)
 }
 
 pub fn analyze_doc_tag_meta(analyzer: &mut DeclAnalyzer, tag: LuaDocTagMeta) {
     let file_id = analyzer.get_file_id();
-    analyzer.db.get_meta_file().add_meta_file(file_id);
+    analyzer.db.get_meta_file_mut().add_meta_file(file_id);
 
     if let Some(name_token) = tag.get_name_token() {
         if name_token.get_name_text() == "no-require" {
             analyzer
                 .db
-                .get_module_index()
+                .get_module_index_mut()
                 .set_module_visibility(file_id, false);
         } else {
             analyzer
                 .db
-                .get_module_index()
+                .get_module_index_mut()
                 .add_module_by_module_path(file_id, name_token.get_name_text().to_string());
         }
     }

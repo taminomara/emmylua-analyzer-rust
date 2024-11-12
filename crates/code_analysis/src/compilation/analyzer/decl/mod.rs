@@ -18,7 +18,7 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
         let mut analyzer = DeclAnalyzer::new(db, in_filed_tree.file_id, in_filed_tree.value);
         analyzer.analyze();
         let decl_tree = analyzer.get_decl_tree();
-        db.get_decl_index().add_decl_tree(decl_tree);
+        db.get_decl_index_mut().add_decl_tree(decl_tree);
     }
 }
 
@@ -160,7 +160,7 @@ impl<'a> DeclAnalyzer<'a> {
 
         if let LuaDecl::Global { name, id, .. } = self.decl.get_decl(id).unwrap() {
             self.db
-                .get_reference_index()
+                .get_reference_index_mut()
                 .add_global_decl(name.clone(), id.unwrap());
         }
 

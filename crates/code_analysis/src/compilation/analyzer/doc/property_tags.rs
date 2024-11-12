@@ -16,7 +16,7 @@ pub fn analyze_visibility(
 
     analyzer
         .db
-        .get_property_index()
+        .get_property_index_mut()
         .add_visibility(analyzer.file_id, owner_id, visibility_kind);
 
     Some(())
@@ -28,7 +28,7 @@ pub fn analyze_source(analyzer: &mut DocAnalyzer, source: LuaDocTagSource) -> Op
 
     analyzer
         .db
-        .get_property_index()
+        .get_property_index_mut()
         .add_source(analyzer.file_id, owner_id, source);
 
     Some(())
@@ -39,7 +39,7 @@ pub fn analyze_nodiscard(analyzer: &mut DocAnalyzer) -> Option<()> {
 
     analyzer
         .db
-        .get_property_index()
+        .get_property_index_mut()
         .add_nodiscard(analyzer.file_id, owner_id);
 
     Some(())
@@ -55,7 +55,7 @@ pub fn analyze_deprecated(analyzer: &mut DocAnalyzer, tag: LuaDocTagDeprecated) 
 
     analyzer
         .db
-        .get_property_index()
+        .get_property_index_mut()
         .add_deprecated(analyzer.file_id, owner_id, message);
 
     Some(())
@@ -89,7 +89,7 @@ pub fn analyze_version(analyzer: &mut DocAnalyzer, version: LuaDocTagVersion) ->
 
     analyzer
         .db
-        .get_property_index()
+        .get_property_index_mut()
         .add_version(analyzer.file_id, owner_id, version_set);
 
     Some(())

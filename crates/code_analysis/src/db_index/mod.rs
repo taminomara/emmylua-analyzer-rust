@@ -16,13 +16,15 @@ pub use declaration::*;
 #[allow(unused_imports)]
 pub use diagnostic::{DiagnosticIndex, AnalyzeError, DiagnosticAction};
 #[allow(unused_imports)]
-pub use member::{LuaMember, LuaMemberId, LuaMemberIndex, LuaMemberOwner};
+pub use member::{LuaMember, LuaMemberId, LuaMemberIndex, LuaMemberOwner, LuaMemberKey};
 use meta::MetaFile;
 use module::LuaModuleIndex;
 #[allow(unused_imports)]
 pub use property::{
     LuaPropertyId, LuaPropertyIndex, LuaPropertyOwnerId, LuaVersionCond, LuaVersionCondOp,
 };
+#[allow(unused_imports)]
+pub use operators::{LuaOperatorIndex, LuaOperatorMetaMethod, LuaOperatorId, LuaOperator};
 pub use r#type::*;
 use reference::LuaReferenceIndex;
 pub use signature::*;
@@ -39,6 +41,7 @@ pub struct DbIndex {
     property_index: LuaPropertyIndex,
     signature_index: LuaSignatureIndex,
     diagnostic_index: DiagnosticIndex,
+    operator_index: LuaOperatorIndex,
 }
 
 impl DbIndex {
@@ -53,6 +56,7 @@ impl DbIndex {
             property_index: LuaPropertyIndex::new(),
             signature_index: LuaSignatureIndex::new(),
             diagnostic_index: DiagnosticIndex::new(),
+            operator_index: LuaOperatorIndex::new(),
         }
     }
 
@@ -62,40 +66,84 @@ impl DbIndex {
         }
     }
 
-    pub fn get_decl_index(&mut self) -> &mut LuaDeclIndex {
+    pub fn get_decl_index_mut(&mut self) -> &mut LuaDeclIndex {
         &mut self.decl_index
     }
 
-    pub fn get_reference_index(&mut self) -> &mut LuaReferenceIndex {
+    pub fn get_reference_index_mut(&mut self) -> &mut LuaReferenceIndex {
         &mut self.references_index
     }
 
-    pub fn get_type_index(&mut self) -> &mut LuaTypeIndex {
+    pub fn get_type_index_mut(&mut self) -> &mut LuaTypeIndex {
         &mut self.types_index
     }
 
-    pub fn get_module_index(&mut self) -> &mut LuaModuleIndex {
+    pub fn get_module_index_mut(&mut self) -> &mut LuaModuleIndex {
         &mut self.modules_index
     }
 
-    pub fn get_meta_file(&mut self) -> &mut MetaFile {
+    pub fn get_meta_file_mut(&mut self) -> &mut MetaFile {
         &mut self.meta_files_index
     }
 
-    pub fn get_member_index(&mut self) -> &mut LuaMemberIndex {
+    pub fn get_member_index_mut(&mut self) -> &mut LuaMemberIndex {
         &mut self.members_index
     }
 
-    pub fn get_property_index(&mut self) -> &mut LuaPropertyIndex {
+    pub fn get_property_index_mut(&mut self) -> &mut LuaPropertyIndex {
         &mut self.property_index
     }
 
-    pub fn get_signature_index(&mut self) -> &mut LuaSignatureIndex {
+    pub fn get_signature_index_mut(&mut self) -> &mut LuaSignatureIndex {
         &mut self.signature_index
     }
 
-    pub fn get_diagnostic_index(&mut self) -> &mut DiagnosticIndex {
+    pub fn get_diagnostic_index_mut(&mut self) -> &mut DiagnosticIndex {
         &mut self.diagnostic_index
+    }
+
+    pub fn get_operator_index_mut(&mut self) -> &mut LuaOperatorIndex {
+        &mut self.operator_index
+    }
+
+    pub fn get_decl_index(&self) -> &LuaDeclIndex {
+        &self.decl_index
+    }
+
+    pub fn get_reference_index(&self) -> &LuaReferenceIndex {
+        &self.references_index
+    }
+
+    pub fn get_type_index(&self) -> &LuaTypeIndex {
+        &self.types_index
+    }
+
+    pub fn get_module_index(&self) -> &LuaModuleIndex {
+        &self.modules_index
+    }
+
+    pub fn get_meta_file(&self) -> &MetaFile {
+        &self.meta_files_index
+    }
+
+    pub fn get_member_index(&self) -> &LuaMemberIndex {
+        &self.members_index
+    }
+
+    pub fn get_property_index(&self) -> &LuaPropertyIndex {
+        &self.property_index
+    }
+
+    pub fn get_signature_index(&self) -> &LuaSignatureIndex {
+        &self.signature_index
+    }
+
+    pub fn get_diagnostic_index(&self) -> &DiagnosticIndex {
+        &self.diagnostic_index
+    }
+
+    pub fn get_operator_index(&self) -> &LuaOperatorIndex {
+        &self.operator_index
     }
 }
 
@@ -110,5 +158,6 @@ impl LuaIndex for DbIndex {
         self.property_index.remove(file_id);
         self.signature_index.remove(file_id);
         self.diagnostic_index.remove(file_id);
+        self.operator_index.remove(file_id);
     }
 }

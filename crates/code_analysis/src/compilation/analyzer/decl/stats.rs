@@ -115,7 +115,7 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) {
         } else {
             None
         };
-        let reference_index = analyzer.db.get_reference_index();
+        let reference_index = analyzer.db.get_reference_index_mut();
 
         if let Some(id) = local_decl_id {
             reference_index.add_local_reference(file_id, id, range);

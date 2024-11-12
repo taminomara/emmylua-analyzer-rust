@@ -37,13 +37,13 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                         let file_id = analyzer.file_id;
                         let decl = analyzer
                             .db
-                            .get_decl_index()
+                            .get_decl_index_mut()
                             .get_decl_tree(&file_id)?
                             .find_local_decl(&name, position)?;
                         let decl_id = decl.get_id();
                         analyzer
                             .db
-                            .get_decl_index()
+                            .get_decl_index_mut()
                             .add_decl_type(decl_id, type_ref.clone());
                     }
                     LuaVarExpr::IndexExpr(index_expr) => {
@@ -67,13 +67,13 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                 let file_id = analyzer.file_id;
                 let decl = analyzer
                     .db
-                    .get_decl_index()
+                    .get_decl_index_mut()
                     .get_decl_tree(&file_id)?
                     .find_local_decl(&name, position)?;
                 let decl_id = decl.get_id();
                 analyzer
                     .db
-                    .get_decl_index()
+                    .get_decl_index_mut()
                     .add_decl_type(decl_id, type_ref.clone());
             }
         }
@@ -120,7 +120,7 @@ pub fn analyze_param(analyzer: &mut DocAnalyzer, tag: LuaDocTagParam) -> Option<
     // bind type ref to signature and param
     if let Some(closure) = find_owner_closure(analyzer) {
         let id = LuaSignatureId::new(analyzer.file_id, &closure);
-        let signature = analyzer.db.get_signature_index().get_or_create(id);
+        let signature = analyzer.db.get_signature_index_mut().get_or_create(id);
         let param_info = LuaDocParamInfo {
             name: name.clone(),
             type_ref: type_ref.clone(),
@@ -140,13 +140,13 @@ pub fn analyze_param(analyzer: &mut DocAnalyzer, tag: LuaDocTagParam) -> Option<
             if param_name == name {
                 let decl = analyzer
                     .db
-                    .get_decl_index()
+                    .get_decl_index_mut()
                     .get_decl_tree(&analyzer.file_id)?
                     .find_local_decl(&name, param.get_position())?;
                 let decl_id = decl.get_id();
                 analyzer
                     .db
-                    .get_decl_index()
+                    .get_decl_index_mut()
                     .add_decl_type(decl_id, type_ref);
                 break;
             }
@@ -157,13 +157,13 @@ pub fn analyze_param(analyzer: &mut DocAnalyzer, tag: LuaDocTagParam) -> Option<
             if it_name == name {
                 let decl = analyzer
                     .db
-                    .get_decl_index()
+                    .get_decl_index_mut()
                     .get_decl_tree(&analyzer.file_id)?
                     .find_local_decl(&name, it_name_token.get_position())?;
                 let decl_id = decl.get_id();
                 analyzer
                     .db
-                    .get_decl_index()
+                    .get_decl_index_mut()
                     .add_decl_type(decl_id, type_ref);
                 break;
             }
@@ -195,7 +195,7 @@ pub fn analyze_return(analyzer: &mut DocAnalyzer, tag: LuaDocTagReturn) -> Optio
                 description: description.clone(),
             };
             let id = LuaSignatureId::new(analyzer.file_id, &closure);
-            let signature = analyzer.db.get_signature_index().get_or_create(id);
+            let signature = analyzer.db.get_signature_index_mut().get_or_create(id);
             signature.return_docs.push(return_info);
         }
     }
@@ -208,7 +208,7 @@ pub fn analyze_overload(analyzer: &mut DocAnalyzer, tag: LuaDocTagOverload) -> O
     } else if let Some(closure) = find_owner_closure(analyzer) {
         let type_ref = infer_type(analyzer, tag.get_type()?);
         let id = LuaSignatureId::new(analyzer.file_id, &closure);
-        let signature = analyzer.db.get_signature_index().get_or_create(id);
+        let signature = analyzer.db.get_signature_index_mut().get_or_create(id);
         signature.overloads.push(type_ref);
     }
     Some(())
@@ -222,7 +222,7 @@ pub fn analyze_module(analyzer: &mut DocAnalyzer, tag: LuaDocTagModule) -> Optio
             LuaPropertyOwnerId::LuaDecl(decl_id) => {
                 analyzer
                     .db
-                    .get_decl_index()
+                    .get_decl_index_mut()
                     .add_decl_type(decl_id, decl_type);
             }
             _ => {}
