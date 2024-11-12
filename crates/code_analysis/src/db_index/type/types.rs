@@ -19,6 +19,7 @@ pub enum LuaType {
     IntegerConst(i64),
     Ref(LuaTypeDeclId),
     Def(LuaTypeDeclId),
+    Module(Box<String>),
     Array(Box<LuaType>),
     KeyOf(Box<LuaType>),
     Nullable(Box<LuaType>),

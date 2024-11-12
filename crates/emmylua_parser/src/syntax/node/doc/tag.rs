@@ -1,8 +1,8 @@
 use crate::{
     kind::LuaSyntaxKind, syntax::traits::LuaAstNode, LuaAstChildren, LuaAstToken,
-    LuaAstTokenChildren, LuaBinaryOpToken, LuaDocVersionNumberToken,
-    LuaDocVisibilityToken, LuaKind, LuaNameToken, LuaNumberToken, LuaPathToken, LuaStringToken,
-    LuaSyntaxNode, LuaTokenKind,
+    LuaAstTokenChildren, LuaBinaryOpToken, LuaDocVersionNumberToken, LuaDocVisibilityToken,
+    LuaKind, LuaNameToken, LuaNumberToken, LuaPathToken, LuaStringToken, LuaSyntaxNode,
+    LuaTokenKind,
 };
 
 use super::{
@@ -772,10 +772,6 @@ impl LuaDocTagModule {
     pub fn get_string_token(&self) -> Option<LuaStringToken> {
         self.token()
     }
-
-    pub fn get_name_token(&self) -> Option<LuaNameToken> {
-        self.token()
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -1207,6 +1203,12 @@ impl LuaAstNode for LuaDocTagMeta {
         } else {
             None
         }
+    }
+}
+
+impl LuaDocTagMeta {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
+        self.token()
     }
 }
 

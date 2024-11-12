@@ -1,11 +1,17 @@
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaDocDescriptionOwner, LuaDocTagAs, LuaDocTagOverload,
+    LuaAst, LuaAstNode, LuaAstToken, LuaDocDescriptionOwner, LuaDocTagModule, LuaDocTagOverload,
     LuaDocTagParam, LuaDocTagReturn, LuaDocTagType, LuaLocalName, LuaVarExpr,
 };
 
-use crate::db_index::{LuaDocParamInfo, LuaDocReturnInfo, LuaSignatureId, LuaType};
+use crate::db_index::{
+    LuaDocParamInfo, LuaDocReturnInfo, LuaPropertyOwnerId, LuaSignatureId, LuaType,
+};
 
-use super::{infer_type::infer_type, tags::find_owner_closure, DocAnalyzer};
+use super::{
+    infer_type::infer_type,
+    tags::{find_owner_closure, get_owner_id},
+    DocAnalyzer,
+};
 
 pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()> {
     let mut type_list = Vec::new();
@@ -204,6 +210,23 @@ pub fn analyze_overload(analyzer: &mut DocAnalyzer, tag: LuaDocTagOverload) -> O
         let id = LuaSignatureId::new(analyzer.file_id, &closure);
         let signature = analyzer.db.get_signature_index().get_or_create(id);
         signature.overloads.push(type_ref);
+    }
+    Some(())
+}
+
+pub fn analyze_module(analyzer: &mut DocAnalyzer, tag: LuaDocTagModule) -> Option<()> {
+    let module_path = tag.get_string_token()?.get_value().to_string();
+    let decl_type = LuaType::Module(Box::new(module_path));
+    if let Some(owner) = get_owner_id(analyzer) {
+        match owner {
+            LuaPropertyOwnerId::LuaDecl(decl_id) => {
+                analyzer
+                    .db
+                    .get_decl_index()
+                    .add_decl_type(decl_id, decl_type);
+            }
+            _ => {}
+        }
     }
     Some(())
 }

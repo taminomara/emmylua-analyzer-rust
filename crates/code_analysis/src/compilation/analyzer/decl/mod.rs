@@ -76,9 +76,6 @@ fn walk_node_enter(analyzer: &mut DeclAnalyzer, node: LuaAst) {
         LuaAst::LuaDocTagUsing(doc_tag) => {
             docs::analyze_doc_tag_using(analyzer, doc_tag);
         }
-        LuaAst::LuaDocTagModule(doc_tag) => {
-            docs::analyze_doc_tag_module(analyzer, doc_tag);
-        }
         LuaAst::LuaDocTagMeta(doc_tag) => {
             docs::analyze_doc_tag_meta(analyzer, doc_tag);
         }

@@ -1169,29 +1169,21 @@ Syntax(Chunk)@0..169
     fn test_module_doc() {
         let code = r#"
         ---@module "socket.core"
-        ---@module no-require
         "#;
 
         let result = r#"
-Syntax(Chunk)@0..72
-  Syntax(Block)@0..72
+Syntax(Chunk)@0..42
+  Syntax(Block)@0..42
     Token(TkEndOfLine)@0..1 "\n"
     Token(TkWhitespace)@1..9 "        "
-    Syntax(Comment)@9..63
+    Syntax(Comment)@9..33
       Token(TkDocStart)@9..13 "---@"
       Syntax(DocTagModule)@13..33
         Token(TkTagModule)@13..19 "module"
         Token(TkWhitespace)@19..20 " "
         Token(TkString)@20..33 "\"socket.core\""
-      Token(TkEndOfLine)@33..34 "\n"
-      Token(TkWhitespace)@34..42 "        "
-      Token(TkDocStart)@42..46 "---@"
-      Syntax(DocTagModule)@46..63
-        Token(TkTagModule)@46..52 "module"
-        Token(TkWhitespace)@52..53 " "
-        Token(TkName)@53..63 "no-require"
-    Token(TkEndOfLine)@63..64 "\n"
-    Token(TkWhitespace)@64..72 "        "
+    Token(TkEndOfLine)@33..34 "\n"
+    Token(TkWhitespace)@34..42 "        "
         "#;
 
         assert_ast_eq!(code, result);
@@ -1685,6 +1677,30 @@ Syntax(Chunk)@0..63
         Token(TkDocDetail)@45..54 "comment 2"
     Token(TkEndOfLine)@54..55 "\n"
     Token(TkWhitespace)@55..63 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
+
+    #[test]
+    fn test_meta() {
+        let code = r#"
+        ---@meta socket.io
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..36
+  Syntax(Block)@0..36
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..27
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagMeta)@13..27
+        Token(TkTagMeta)@13..17 "meta"
+        Token(TkWhitespace)@17..18 " "
+        Token(TkName)@18..27 "socket.io"
+    Token(TkEndOfLine)@27..28 "\n"
+    Token(TkWhitespace)@28..36 "        "
         "#;
 
         assert_ast_eq!(code, result);

@@ -53,6 +53,7 @@ fn parse_tag_detail(p: &mut LuaDocParser) -> ParseResult {
         LuaTokenKind::TkTagMapping => parse_tag_mapping(p),
         LuaTokenKind::TkTagNamespace => parse_tag_namespace(p),
         LuaTokenKind::TkTagUsing => parse_tag_using(p),
+        LuaTokenKind::TkTagMeta => parse_tag_meta(p),
 
         // simple tag
         LuaTokenKind::TkTagVisibility => parse_tag_simple(p, LuaSyntaxKind::DocTagVisibility),
@@ -60,7 +61,6 @@ fn parse_tag_detail(p: &mut LuaDocParser) -> ParseResult {
         LuaTokenKind::TkTagDeprecated => parse_tag_simple(p, LuaSyntaxKind::DocTagDeprecated),
         LuaTokenKind::TkTagAsync => parse_tag_simple(p, LuaSyntaxKind::DocTagAsync),
         LuaTokenKind::TkTagNodiscard => parse_tag_simple(p, LuaSyntaxKind::DocTagNodiscard),
-        LuaTokenKind::TkTagMeta => parse_tag_simple(p, LuaSyntaxKind::DocTagMeta),
         LuaTokenKind::TkTagOther => parse_tag_simple(p, LuaSyntaxKind::DocTagOther),
         _ => Ok(CompleteMarker::empty()),
     }
@@ -239,15 +239,13 @@ fn parse_alias_or_type(p: &mut LuaDocParser) -> ParseResult {
     Ok(m.complete(p))
 }
 
-// ---@module "aaa.bbb.ccc" force require path to be "aaa.bbb.ccc"
-// ---@module no-require
+// ---@module "aaa.bbb.ccc" force variable be "aaa.bbb.ccc"
 fn parse_tag_module(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagModule);
     p.bump();
-    if p.current_token() == LuaTokenKind::TkName || p.current_token() == LuaTokenKind::TkString {
-        p.bump();
-    }
+
+    expect_token(p, LuaTokenKind::TkString)?;
 
     p.set_state(LuaDocLexerState::Description);
     parse_description(p);
@@ -585,5 +583,13 @@ fn parse_tag_using(p: &mut LuaDocParser) -> ParseResult {
     let m = p.mark(LuaSyntaxKind::DocTagUsing);
     p.bump();
     expect_token(p, LuaTokenKind::TkName)?;
+    Ok(m.complete(p))
+}
+
+fn parse_tag_meta(p: &mut LuaDocParser) -> ParseResult {
+    p.set_state(LuaDocLexerState::Normal);
+    let m = p.mark(LuaSyntaxKind::DocTagMeta);
+    p.bump();
+    if_token_bump(p, LuaTokenKind::TkName);
     Ok(m.complete(p))
 }
