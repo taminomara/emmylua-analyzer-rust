@@ -100,7 +100,7 @@ mod test {
     }
 
     #[test]
-    fn test_global_scope() {
+    fn test_global_decl() {
         let file_id = FileId::new();
         let mut tree = create_decl_tree(file_id);
         let scope_id1 =
