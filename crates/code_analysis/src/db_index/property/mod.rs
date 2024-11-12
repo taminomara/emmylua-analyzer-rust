@@ -1,10 +1,12 @@
 mod property;
+mod version;
 
 use std::collections::{HashMap, HashSet};
 
-use emmylua_parser::VisibilityKind;
+use emmylua_parser::{LuaVersionNumber, VisibilityKind};
 use property::LuaProperty;
 pub use property::{LuaPropertyId, LuaPropertyOwnerId};
+pub use version::{LuaVersionCond, LuaVersionCondOp};
 
 use crate::FileId;
 
@@ -110,6 +112,23 @@ impl LuaPropertyIndex {
             let property = self.get_or_create_property(owner_id);
             property.deprecated = true;
             property.deprecated_message = message.map(Box::new);
+            property.id.clone()
+        };
+        self.in_filed_descriptions
+            .entry(file_id)
+            .or_insert_with(HashSet::new)
+            .insert(id);
+    }
+
+    pub fn add_version(
+        &mut self,
+        file_id: FileId,
+        owner_id: LuaPropertyOwnerId,
+        version_conds: Vec<LuaVersionCond>,
+    ) {
+        let id = {
+            let property = self.get_or_create_property(owner_id);
+            property.version_conds = Some(Box::new(version_conds));
             property.id.clone()
         };
         self.in_filed_descriptions

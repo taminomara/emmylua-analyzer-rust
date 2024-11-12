@@ -3,6 +3,7 @@ mod lua_diagnostic_code;
 
 use lsp_types::DiagnosticSeverity;
 pub use lua_diagnostic_code::DiagnosticCode;
+pub use lua_diagnostic::LuaDiagnostic;
 
 fn get_default_severity(code: DiagnosticCode) -> DiagnosticSeverity {
     match code {

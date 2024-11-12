@@ -3,12 +3,12 @@ use emmylua_parser::{
     LuaDocObjectType, LuaDocType, LuaDocUnaryType, LuaLiteralToken, LuaTypeBinaryOperator,
     LuaTypeUnaryOperator,
 };
-use rowan::TextSize;
+use rowan::TextRange;
 
-use crate::db_index::{
-    LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey, LuaIntersectionType,
-    LuaObjectType, LuaTupleType, LuaType, LuaUnionType,
-};
+use crate::{db_index::{
+    AnalyzeError, LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey,
+    LuaIntersectionType, LuaObjectType, LuaTupleType, LuaType, LuaUnionType,
+}, DiagnosticCode};
 
 use super::DocAnalyzer;
 
@@ -16,7 +16,7 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
     match node {
         LuaDocType::Name(name_type) => {
             if let Some(name) = name_type.get_name_text() {
-                return infer_buildin_or_ref_type(analyzer, &name, name_type.get_position());
+                return infer_buildin_or_ref_type(analyzer, &name, name_type.get_range());
             }
         }
         LuaDocType::Nullable(nullable_type) => {
@@ -98,8 +98,9 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
 fn infer_buildin_or_ref_type(
     analyzer: &mut DocAnalyzer,
     name: &str,
-    position: TextSize,
+    range: TextRange,
 ) -> LuaType {
+    let position = range.start();
     match name {
         "Unknown" => LuaType::Unknown,
         "nil" | "void" => LuaType::Nil,
@@ -125,6 +126,16 @@ fn infer_buildin_or_ref_type(
             {
                 return LuaType::Ref(name_type_decl.get_id());
             }
+
+            analyzer
+                .db
+                .get_diagnostic_index()
+                .add_diagnostic(analyzer.file_id, AnalyzeError::new(
+                    DiagnosticCode::TypeNotFound,
+                    format!("Type {} not found", name),
+                    range
+                ));
+
             LuaType::Unknown
         }
     }

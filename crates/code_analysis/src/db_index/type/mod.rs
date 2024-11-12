@@ -4,12 +4,12 @@ mod types;
 
 use std::collections::HashMap;
 
+use super::traits::LuaIndex;
+use crate::{FileId, InFiled};
 use flagset::FlagSet;
 use rowan::TextRange;
 use type_decl::LuaDeclLocation;
 pub use type_decl::{LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId};
-use crate::{FileId, InFiled};
-use super::traits::LuaIndex;
 pub use types::*;
 
 #[derive(Debug)]
@@ -60,7 +60,7 @@ impl LuaTypeIndex {
         name: String,
         kind: LuaDeclTypeKind,
         attrib: Option<FlagSet<LuaTypeAttribute>>,
-    ) {
+    ) -> Result<(), String> {
         let basic_name = name;
         let ns = self.get_file_namespace(&file_id);
         let full_name = ns
@@ -86,14 +86,16 @@ impl LuaTypeIndex {
                 _ => false,
             };
 
-            if can_add {
-                if let Some(decl_attrib) = &mut decls.attrib {
-                    *decl_attrib |= attrib.unwrap();
-                }
-
-                let location = LuaDeclLocation { file_id, range };
-                decls.defined_locations.push(location);
+            if !can_add {
+                return Err(format!("Type {} already defined", full_name));
             }
+
+            if let Some(decl_attrib) = &mut decls.attrib {
+                *decl_attrib |= attrib.unwrap();
+            }
+
+            let location = LuaDeclLocation { file_id, range };
+            decls.defined_locations.push(location);
         } else {
             let just_name = if let Some(i) = basic_name.rfind('.') {
                 basic_name[i + 1..].to_string()
@@ -104,6 +106,8 @@ impl LuaTypeIndex {
             let decl = LuaTypeDecl::new(file_id, range, just_name, kind, attrib, id.clone());
             self.full_name_type_map.insert(id, decl);
         }
+
+        Ok(())
     }
 
     #[allow(unused)]
@@ -135,7 +139,10 @@ impl LuaTypeIndex {
         self.generic_params.insert(decl_id, params);
     }
 
-    pub fn get_generic_params(&self, decl_id: &LuaTypeDeclId) -> Option<&Vec<(String, Option<LuaType>)>> {
+    pub fn get_generic_params(
+        &self,
+        decl_id: &LuaTypeDeclId,
+    ) -> Option<&Vec<(String, Option<LuaType>)>> {
         self.generic_params.get(decl_id)
     }
 

@@ -2,6 +2,8 @@ use emmylua_parser::VisibilityKind;
 
 use crate::db_index::{member::LuaMemberId, LuaDeclId, LuaSignatureId, LuaTypeDeclId};
 
+use super::version::LuaVersionCond;
+
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct LuaProperty {
     pub id: LuaPropertyId,
@@ -12,6 +14,7 @@ pub struct LuaProperty {
     pub nodiscard: bool,
     pub deprecated: bool,
     pub deprecated_message: Option<Box<String>>,
+    pub version_conds: Option<Box<Vec<LuaVersionCond>>>,
 }
 
 impl LuaProperty {
@@ -25,6 +28,7 @@ impl LuaProperty {
             nodiscard: false,
             deprecated: false,
             deprecated_message: None,
+            version_conds: None,
         }
     }
 }

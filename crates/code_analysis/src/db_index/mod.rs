@@ -9,13 +9,20 @@ mod signature;
 mod symbol;
 mod traits;
 mod r#type;
+mod diagnostic;
 
 use crate::FileId;
 pub use declaration::*;
+#[allow(unused_imports)]
+pub use diagnostic::{DiagnosticIndex, AnalyzeError, DiagnosticAction};
+#[allow(unused_imports)]
 pub use member::{LuaMember, LuaMemberId, LuaMemberIndex, LuaMemberOwner};
 use meta::MetaFile;
 use module::LuaModuleIndex;
-pub use property::{LuaPropertyId, LuaPropertyIndex, LuaPropertyOwnerId};
+#[allow(unused_imports)]
+pub use property::{
+    LuaPropertyId, LuaPropertyIndex, LuaPropertyOwnerId, LuaVersionCond, LuaVersionCondOp,
+};
 pub use r#type::*;
 use reference::LuaReferenceIndex;
 pub use signature::*;
@@ -31,6 +38,7 @@ pub struct DbIndex {
     members_index: LuaMemberIndex,
     property_index: LuaPropertyIndex,
     signature_index: LuaSignatureIndex,
+    diagnostic_index: DiagnosticIndex,
 }
 
 impl DbIndex {
@@ -44,6 +52,7 @@ impl DbIndex {
             members_index: LuaMemberIndex::new(),
             property_index: LuaPropertyIndex::new(),
             signature_index: LuaSignatureIndex::new(),
+            diagnostic_index: DiagnosticIndex::new(),
         }
     }
 
@@ -84,6 +93,10 @@ impl DbIndex {
     pub fn get_signature_index(&mut self) -> &mut LuaSignatureIndex {
         &mut self.signature_index
     }
+
+    pub fn get_diagnostic_index(&mut self) -> &mut DiagnosticIndex {
+        &mut self.diagnostic_index
+    }
 }
 
 impl LuaIndex for DbIndex {
@@ -96,5 +109,6 @@ impl LuaIndex for DbIndex {
         self.members_index.remove(file_id);
         self.property_index.remove(file_id);
         self.signature_index.remove(file_id);
+        self.diagnostic_index.remove(file_id);
     }
 }

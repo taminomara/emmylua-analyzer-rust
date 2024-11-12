@@ -1,10 +1,10 @@
 use emmylua_parser::{
     LuaAstToken, LuaAstTokenChildren, LuaDocTagAlias, LuaDocTagClass, LuaDocTagEnum, LuaDocTagMeta,
-    LuaDocTagModule, LuaDocTagNamespace, LuaDocTagUsing, LuaNameToken,
+    LuaDocTagNamespace, LuaDocTagUsing, LuaNameToken,
 };
 use flagset::FlagSet;
 
-use crate::db_index::{LuaDeclTypeKind, LuaTypeAttribute};
+use crate::{db_index::{AnalyzeError, LuaDeclTypeKind, LuaTypeAttribute}, DiagnosticCode};
 
 use super::DeclAnalyzer;
 
@@ -25,13 +25,24 @@ pub fn analyze_doc_tag_class(analyzer: &mut DeclAnalyzer, class: LuaDocTagClass)
     };
 
     let file_id = analyzer.get_file_id();
-    analyzer.db.get_type_index().add_type_decl(
+    let r = analyzer.db.get_type_index().add_type_decl(
         file_id,
         range,
         name,
         LuaDeclTypeKind::Class,
         attrib,
     );
+
+    if let Err(e) = r {
+        analyzer.db.get_diagnostic_index().add_diagnostic(
+            file_id,
+            AnalyzeError::new(
+                DiagnosticCode::DuplicateType,
+                e,
+                range,
+            ),
+        );
+    }
 }
 
 fn get_attrib_value(
@@ -76,10 +87,21 @@ pub fn analyze_doc_tag_enum(analyzer: &mut DeclAnalyzer, enum_: LuaDocTagEnum) {
     };
 
     let file_id = analyzer.get_file_id();
-    analyzer
+    let r = analyzer
         .db
         .get_type_index()
         .add_type_decl(file_id, range, name, LuaDeclTypeKind::Enum, attrib);
+
+    if let Err(e) = r {
+        analyzer.db.get_diagnostic_index().add_diagnostic(
+            file_id,
+            AnalyzeError::new(
+                DiagnosticCode::DuplicateType,
+                e,
+                range,
+            ),
+        );
+    }
 }
 
 pub fn analyze_doc_tag_alias(analyzer: &mut DeclAnalyzer, alias: LuaDocTagAlias) {
@@ -93,10 +115,21 @@ pub fn analyze_doc_tag_alias(analyzer: &mut DeclAnalyzer, alias: LuaDocTagAlias)
     };
 
     let file_id = analyzer.get_file_id();
-    analyzer
+    let r = analyzer
         .db
         .get_type_index()
         .add_type_decl(file_id, range, name, LuaDeclTypeKind::Alias, None);
+
+    if let Err(e) = r {
+        analyzer.db.get_diagnostic_index().add_diagnostic(
+            file_id,
+            AnalyzeError::new(
+                DiagnosticCode::DuplicateType,
+                e,
+                range,
+            ),
+        );
+    }
 }
 
 pub fn analyze_doc_tag_namespace(analyzer: &mut DeclAnalyzer, namespace: LuaDocTagNamespace) {

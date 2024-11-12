@@ -3,10 +3,7 @@ use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaClosureExpr, LuaDocTag,
 use crate::db_index::{LuaPropertyOwnerId, LuaSignatureId};
 
 use super::{
-    property_tags::{analyze_deprecated, analyze_nodiscard, analyze_source, analyze_visibility},
-    type_def_tags::{analyze_alias, analyze_class, analyze_enum, analyze_func_generic},
-    type_ref_tags::{analyze_module, analyze_overload, analyze_param, analyze_return, analyze_type},
-    DocAnalyzer,
+    field_or_operator_def_tags::analyze_field, property_tags::{analyze_deprecated, analyze_nodiscard, analyze_source, analyze_version, analyze_visibility}, type_def_tags::{analyze_alias, analyze_class, analyze_enum, analyze_func_generic}, type_ref_tags::{analyze_module, analyze_overload, analyze_param, analyze_return, analyze_type}, DocAnalyzer
 };
 
 pub fn analyze_tag(analyzer: &mut DocAnalyzer, tag: LuaDocTag) -> Option<()> {
@@ -54,6 +51,14 @@ pub fn analyze_tag(analyzer: &mut DocAnalyzer, tag: LuaDocTag) -> Option<()> {
         }
         LuaDocTag::Deprecated(deprecated) => {
             analyze_deprecated(analyzer, deprecated)?;
+        }
+        LuaDocTag::Version(version) => {
+            analyze_version(analyzer, version)?;
+        }
+
+        // field or operator
+        LuaDocTag::Field(filed) => {
+            analyze_field(analyzer, filed)?;
         }
 
         _ => {}

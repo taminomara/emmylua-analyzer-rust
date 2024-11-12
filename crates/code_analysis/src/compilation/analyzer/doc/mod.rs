@@ -1,6 +1,6 @@
 mod file_generic_index;
 mod infer_type;
-mod operator_def_tags;
+mod field_or_operator_def_tags;
 mod tags;
 mod type_def_tags;
 mod type_ref_tags;

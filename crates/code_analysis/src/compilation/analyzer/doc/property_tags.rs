@@ -1,7 +1,9 @@
 use emmylua_parser::{
-    LuaDocDescriptionOwner, LuaDocTagDeprecated, LuaDocTagSource, LuaDocTagVersion, LuaDocTagVisibility
+    BinaryOperator, LuaDocDescriptionOwner, LuaDocTagDeprecated, LuaDocTagSource, LuaDocTagVersion,
+    LuaDocTagVisibility,
 };
 
+use crate::db_index::{LuaVersionCond, LuaVersionCondOp};
 
 use super::{tags::get_owner_id, DocAnalyzer};
 
@@ -60,13 +62,35 @@ pub fn analyze_deprecated(analyzer: &mut DocAnalyzer, tag: LuaDocTagDeprecated) 
 }
 
 pub fn analyze_version(analyzer: &mut DocAnalyzer, version: LuaDocTagVersion) -> Option<()> {
-    // let version = version.get_version_token()?.get_version().to_string();
-    // let owner_id = get_owner_id(analyzer)?;
+    let owner_id = get_owner_id(analyzer)?;
 
-    // analyzer
-    //     .db
-    //     .get_property_index()
-    //     .add_version(analyzer.file_id, owner_id, version);
+    let mut version_set = Vec::new();
+    for version in version.get_version_list() {
+        let version_number = if let Some(version_number) = version.get_version() {
+            version_number.get_version_number()
+        } else {
+            continue;
+        };
+
+        let version_op = if let Some(version_op) = version.get_op() {
+            match version_op.get_op() {
+                BinaryOperator::OpGt => LuaVersionCondOp::Gt,
+                BinaryOperator::OpLt => LuaVersionCondOp::Lt,
+                _ => LuaVersionCondOp::Eq,
+            }
+        } else {
+            LuaVersionCondOp::Eq
+        };
+
+        if let Some(version_number) = version_number {
+            version_set.push(LuaVersionCond::new(version_number, version_op));
+        }
+    }
+
+    analyzer
+        .db
+        .get_property_index()
+        .add_version(analyzer.file_id, owner_id, version_set);
 
     Some(())
 }

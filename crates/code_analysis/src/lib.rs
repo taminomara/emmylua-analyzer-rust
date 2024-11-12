@@ -16,14 +16,14 @@ pub use config::Setting;
 #[derive(Debug)]
 pub struct EmmyLuaAnalysis {
     compilation: LuaCompilation,
-    vfs: Vfs
+    vfs: Vfs,
 }
 
 impl EmmyLuaAnalysis {
     pub fn new() -> Self {
         Self {
             compilation: LuaCompilation::new(),
-            vfs: Vfs::new()
+            vfs: Vfs::new(),
         }
     }
 }
