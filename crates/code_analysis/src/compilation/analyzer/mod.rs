@@ -6,31 +6,30 @@ mod symbol;
 use std::collections::HashMap;
 
 use crate::{
-    db_index::{DbIndex, LuaType},
+    db_index::{DbIndex, LuaMemberId, LuaType},
     InFiled,
 };
-use emmylua_parser::{LuaIndexExpr, LuaSyntaxTree, LuaTableField};
+use emmylua_parser::LuaSyntaxTree;
 
 pub fn analyze(db: &mut DbIndex, context: AnalyzeContext) {
     let mut context = context;
     decl::analyze(db, &mut context);
     doc::analyze(db, &mut context);
+    lua::analyze(db, &mut context);
     symbol::analyze(db, &mut context);
 }
 
 #[derive(Debug)]
 pub struct AnalyzeContext<'a> {
     tree_list: Vec<InFiled<&'a LuaSyntaxTree>>,
-    unresolve_index_expr_type: HashMap<LuaIndexExpr, LuaType>,
-    unresolve_table_field_type: HashMap<LuaTableField, LuaType>,
+    unresolve_member_type: HashMap<LuaMemberId, LuaType>,
 }
 
 impl<'a> AnalyzeContext<'a> {
     pub fn new() -> Self {
         Self {
             tree_list: Vec::new(),
-            unresolve_index_expr_type: HashMap::new(),
-            unresolve_table_field_type: HashMap::new(),
+            unresolve_member_type: HashMap::new(),
         }
     }
 

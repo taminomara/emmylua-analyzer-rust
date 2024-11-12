@@ -9,7 +9,7 @@ use emmylua_parser::{
 use rowan::TextRange;
 
 use crate::db_index::{
-    LuaDeclTypeKind, LuaMember, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId, LuaSignatureId, LuaType
+    LuaDeclTypeKind, LuaMember, LuaMemberId, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId, LuaSignatureId, LuaType
 };
 
 use super::{infer_type::infer_type, tags::find_owner_closure, DocAnalyzer};
@@ -175,8 +175,7 @@ pub fn analyze_alias(analyzer: &mut DocAnalyzer, tag: LuaDocTagAlias) -> Option<
                 LuaMemberOwner::Type(alias_decl_id.clone()),
                 LuaMemberKey::Integer(i as i64),
                 file_id,
-                field.syntax().kind(),
-                field.get_range(),
+                field.get_syntax_id(),
                 Some(alias_member_type),
             );
             let member_id = analyzer.db.get_member_index_mut().add_member(member);
@@ -435,17 +434,19 @@ fn bind_def_type(analyzer: &mut DocAnalyzer, type_def: LuaType) -> Option<()> {
                 let id = decl.get_id();
                 analyzer.db.get_decl_index_mut().add_decl_type(id, type_def);
             } else if let LuaVarExpr::IndexExpr(index_expr) = assign_stat.child::<LuaVarExpr>()? {
+                let member_id = LuaMemberId::new(index_expr.get_syntax_id(), analyzer.file_id);
                 analyzer
                     .context
-                    .unresolve_index_expr_type
-                    .insert(index_expr, type_def);
+                    .unresolve_member_type
+                    .insert(member_id, type_def);
             }
         }
         LuaAst::LuaTableField(field) => {
+            let member_id = LuaMemberId::new(field.get_syntax_id(), analyzer.file_id);
             analyzer
                 .context
-                .unresolve_table_field_type
-                .insert(field, type_def);
+                .unresolve_member_type
+                .insert(member_id, type_def);
         }
         _ => {}
     }

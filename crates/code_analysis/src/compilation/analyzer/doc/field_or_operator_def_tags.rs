@@ -44,8 +44,7 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
                 owner,
                 key,
                 analyzer.file_id,
-                tag.syntax().kind(),
-                name_token.get_range(),
+                tag.get_syntax_id(),
                 Some(type_ref),
             );
 
@@ -57,8 +56,7 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
                 owner,
                 key,
                 analyzer.file_id,
-                tag.syntax().kind(),
-                string_token.get_range(),
+                tag.get_syntax_id(),
                 Some(type_ref),
             );
 
@@ -70,8 +68,7 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
                 owner,
                 key,
                 analyzer.file_id,
-                tag.syntax().kind(),
-                int_token.get_range(),
+                tag.get_syntax_id(),
                 Some(type_ref),
             );
 

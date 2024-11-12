@@ -1,4 +1,4 @@
-use emmylua_parser::LuaKind;
+use emmylua_parser::{LuaKind, LuaSyntaxId};
 use rowan::{TextRange, TextSize};
 
 use crate::{
@@ -11,8 +11,7 @@ pub struct LuaMember {
     owner: LuaMemberOwner,
     key: LuaMemberKey,
     file_id: FileId,
-    range: TextRange,
-    kind: LuaKind,
+    syntax_id: LuaSyntaxId,
     decl_type: LuaType,
 }
 
@@ -21,16 +20,14 @@ impl LuaMember {
         owner: LuaMemberOwner,
         key: LuaMemberKey,
         file_id: FileId,
-        kind: LuaKind,
-        range: TextRange,
+        id: LuaSyntaxId,
         decl_type: Option<LuaType>,
     ) -> Self {
         Self {
             owner,
             key,
             file_id,
-            range,
-            kind,
+            syntax_id: id,
             decl_type: if let Some(decl_type) = decl_type {
                 decl_type
             } else {
@@ -51,7 +48,7 @@ impl LuaMember {
     }
 
     pub fn get_range(&self) -> TextRange {
-        self.range
+        self.syntax_id.get_range()
     }
 
     pub fn get_decl_type(&self) -> &LuaType {
@@ -59,19 +56,19 @@ impl LuaMember {
     }
 
     pub fn get_id(&self) -> LuaMemberId {
-        LuaMemberId::new(self.range.start(), self.file_id)
+        LuaMemberId::new(self.syntax_id, self.file_id)
     }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub struct LuaMemberId {
     file_id: FileId,
-    position: TextSize,
+    id: LuaSyntaxId,
 }
 
 impl LuaMemberId {
-    pub fn new(position: TextSize, file_id: FileId) -> Self {
-        Self { position, file_id }
+    pub fn new(id: LuaSyntaxId, file_id: FileId) -> Self {
+        Self { id, file_id }
     }
 }
 

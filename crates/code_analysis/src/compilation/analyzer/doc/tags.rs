@@ -116,7 +116,7 @@ pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaPropertyOwnerId> {
                 }
                 LuaVarExpr::IndexExpr(index_expr) => {
                     let member_id = LuaMemberId::new(
-                        index_expr.get_index_token()?.get_position(),
+                        index_expr.get_syntax_id(),
                         analyzer.file_id,
                     );
 
@@ -138,7 +138,7 @@ pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaPropertyOwnerId> {
         }
         LuaAst::LuaTableField(field) => {
             let member_id = LuaMemberId::new(
-                field.get_position(),
+                field.get_syntax_id(),
                 analyzer.file_id,
             );
 

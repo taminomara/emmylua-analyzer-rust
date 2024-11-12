@@ -4,7 +4,7 @@ use emmylua_parser::{
 };
 
 use crate::db_index::{
-    LuaDocParamInfo, LuaDocReturnInfo, LuaPropertyOwnerId, LuaSignatureId, LuaType,
+    LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaPropertyOwnerId, LuaSignatureId, LuaType
 };
 
 use super::{
@@ -47,10 +47,12 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                             .add_decl_type(decl_id, type_ref.clone());
                     }
                     LuaVarExpr::IndexExpr(index_expr) => {
+                        let member_id =
+                            LuaMemberId::new(index_expr.get_syntax_id(), analyzer.file_id);
                         analyzer
                             .context
-                            .unresolve_index_expr_type
-                            .insert(index_expr.clone(), type_ref.clone());
+                            .unresolve_member_type
+                            .insert(member_id, type_ref.clone());
                     }
                 }
             }
@@ -79,10 +81,14 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
         }
         LuaAst::LuaTableField(table_field) => {
             if let Some(first_type) = type_list.get(0) {
+                let member_id = LuaMemberId::new(
+                    table_field.get_syntax_id(),
+                    analyzer.file_id,
+                );
                 analyzer
                     .context
-                    .unresolve_table_field_type
-                    .insert(table_field.clone(), first_type.clone());
+                    .unresolve_member_type
+                    .insert(member_id, first_type.clone());
             }
         }
         _ => {}
