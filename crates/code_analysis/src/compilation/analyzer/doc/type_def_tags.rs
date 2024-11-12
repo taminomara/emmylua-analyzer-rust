@@ -12,7 +12,7 @@ use crate::db_index::{
     LuaDeclTypeKind, LuaMember, LuaMemberOwner, LuaPropertyOwnerId, LuaSignatureId, LuaType,
 };
 
-use super::{infer_type::infer_type, DocAnalyzer};
+use super::{infer_type::infer_type, tags::find_owner_closure, DocAnalyzer};
 
 pub fn analyze_class(analyzer: &mut DocAnalyzer, tag: LuaDocTagClass) -> Option<()> {
     let file_id = analyzer.file_id;
@@ -270,7 +270,7 @@ fn get_local_stat_reference_ranges(
         .db
         .get_decl_index()
         .get_decl_tree(&file_id)?
-        .find_decl(&first_local_name, first_local.get_position())?;
+        .find_local_decl(&first_local_name, first_local.get_position())?;
     let mut ranges = Vec::new();
 
     let id = decl.get_id();
@@ -394,7 +394,8 @@ pub fn analyze_func_generic(analyzer: &mut DocAnalyzer, tag: LuaDocTagGeneric) -
             .generic_index
             .add_generic_scope(ranges, params_result);
 
-        let signature_id = LuaSignatureId::new(analyzer.file_id, range.start());
+        let closure = find_owner_closure(analyzer)?;
+        let signature_id = LuaSignatureId::new(analyzer.file_id, &closure);
         let signature = analyzer
             .db
             .get_signature_index()
@@ -417,7 +418,7 @@ fn bind_def_type(analyzer: &mut DocAnalyzer, type_def: LuaType) -> Option<()> {
                 .db
                 .get_decl_index()
                 .get_decl_tree(&file_id)?
-                .find_decl(&name, position)?;
+                .find_local_decl(&name, position)?;
             let id = decl.get_id();
             analyzer.db.get_decl_index().add_decl_type(id, type_def);
         }
@@ -430,7 +431,7 @@ fn bind_def_type(analyzer: &mut DocAnalyzer, type_def: LuaType) -> Option<()> {
                     .db
                     .get_decl_index()
                     .get_decl_tree(&file_id)?
-                    .find_decl(&name, position)?;
+                    .find_local_decl(&name, position)?;
                 let id = decl.get_id();
                 analyzer.db.get_decl_index().add_decl_type(id, type_def);
             } else if let LuaVarExpr::IndexExpr(index_expr) = assign_stat.child::<LuaVarExpr>()? {

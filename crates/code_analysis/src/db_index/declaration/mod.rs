@@ -1,6 +1,7 @@
 mod decl;
 mod decl_tree;
 mod scope;
+mod test;
 
 use std::collections::HashMap;
 

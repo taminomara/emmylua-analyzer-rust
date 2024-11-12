@@ -23,7 +23,7 @@ impl LuaSignatureIndex {
     }
 
     pub fn get_or_create(&mut self, signature_id: LuaSignatureId) -> &mut LuaSignature {
-        self.in_file_signatures.entry(signature_id.file_id).or_default().insert(signature_id);
+        self.in_file_signatures.entry(signature_id.get_file_id()).or_default().insert(signature_id);
         self.signatures.entry(signature_id).or_insert_with(LuaSignature::new)
     }
 

@@ -1,4 +1,3 @@
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u16)]
 pub enum LuaTokenKind {
@@ -129,7 +128,7 @@ pub enum LuaTokenKind {
     TkDocVisibility,      // public private protected package
     TkDocReadonly,        // readonly
     TkAt,                 // '@', invalid lua token, but for postfix completion
-    TkDocVersionNumber,      // version number
+    TkDocVersionNumber,   // version number
     TkStringTemplateType, // type template
     TkDocMatch,           // =
     TkDocBoolean,         // true false

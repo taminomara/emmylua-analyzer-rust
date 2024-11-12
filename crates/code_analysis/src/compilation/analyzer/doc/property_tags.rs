@@ -1,14 +1,12 @@
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaDocDescriptionOwner, LuaDocTagDeprecated, LuaDocTagSource,
-    LuaDocTagVisibility, VisibilityKind,
+    LuaAst, LuaAstNode, LuaAstToken, LuaDocDescriptionOwner, LuaDocTagDeprecated, LuaDocTagSource, LuaDocTagVisibility, LuaLocalName, LuaVarExpr, VisibilityKind
 };
 
-use crate::{
-    compilation::analyzer,
-    db_index::{LuaPropertyOwnerId, LuaSignatureId},
-};
+use crate::
+    db_index::{LuaPropertyOwnerId, LuaSignatureId}
+;
 
-use super::DocAnalyzer;
+use super::{tags::find_owner_closure, DocAnalyzer};
 
 pub fn analyze_visibility(
     analyzer: &mut DocAnalyzer,
@@ -64,14 +62,41 @@ pub fn analyze_deprecated(analyzer: &mut DocAnalyzer, tag: LuaDocTagDeprecated) 
     Some(())
 }
 
-fn get_owner_id(analyzer: &DocAnalyzer) -> Option<LuaPropertyOwnerId> {
+fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaPropertyOwnerId> {
     let owner = analyzer.comment.get_owner()?;
     match owner {
         LuaAst::LuaLocalFuncStat(_) | LuaAst::LuaFuncStat(_) => {
+            let closure = find_owner_closure(analyzer)?;
             Some(LuaPropertyOwnerId::Signature(LuaSignatureId::new(
                 analyzer.file_id,
-                owner.get_position(),
+                &closure,
             )))
+        },
+        LuaAst::LuaAssignStat(assign) => {
+            let first_var = assign.child::<LuaVarExpr>()?;
+            match first_var {
+                LuaVarExpr::NameExpr(name_expr) => {
+                    let name = name_expr.get_name_text()?;
+                    let decl = analyzer
+                        .db
+                        .get_decl_index()
+                        .get_decl_tree(&analyzer.file_id)?
+                        .find_local_decl(&name, name_expr.get_position())?;
+                    return Some(LuaPropertyOwnerId::LuaDecl(decl.get_id()));
+                }
+                _ => None,
+            }
+        },
+        LuaAst::LuaLocalStat(local_stat) => {
+            let local_name = local_stat.child::<LuaLocalName>()?;
+            let name_token = local_name.get_name_token()?;
+            let name = name_token.get_name_text();
+            let decl = analyzer
+                .db
+                .get_decl_index()
+                .get_decl_tree(&analyzer.file_id)?
+                .find_local_decl(&name, name_token.get_position())?;
+            return Some(LuaPropertyOwnerId::LuaDecl(decl.get_id()));
         }
         _ => None,
     }

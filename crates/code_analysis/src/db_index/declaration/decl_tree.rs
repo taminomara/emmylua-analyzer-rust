@@ -24,7 +24,7 @@ impl LuaDeclarationTree {
         self.file_id
     }
 
-    pub fn find_decl(&self, name: &str, position: TextSize) -> Option<&LuaDecl> {
+    pub fn find_local_decl(&self, name: &str, position: TextSize) -> Option<&LuaDecl> {
         let scope = self.find_scope(position)?;
         let mut result: Option<&LuaDecl> = None;
         self.walk_up(scope, position, 0, &mut |decl_id| {
@@ -138,7 +138,9 @@ impl LuaDeclarationTree {
                     self.base_walk_up(scope, start_pos, level, f);
                 }
             }
-            _ => {}
+            _ => {
+                self.base_walk_up(scope, start_pos, level, f);
+            }
         }
     }
 

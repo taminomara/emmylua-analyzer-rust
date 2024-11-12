@@ -100,9 +100,9 @@ pub enum LuaSyntaxKind {
     TypeStringTemplate, // prefixName.`T`
 
     // follow donot support now
-    TypeMatch,  
+    TypeMatch,
     TypeIndexAccess, // type[keyType]
-    TypeMapped, // { [p in KeyType]+? : ValueType }
+    TypeMapped,      // { [p in KeyType]+? : ValueType }
 
     // doc other
     DocObjectField,

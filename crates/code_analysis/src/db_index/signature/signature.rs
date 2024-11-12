@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use emmylua_parser::{LuaAstNode, LuaClosureExpr};
 use rowan::TextSize;
 
 use crate::{db_index::LuaType, FileId};
@@ -44,12 +45,20 @@ pub struct LuaDocReturnInfo {
 
 #[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
 pub struct LuaSignatureId {
-    pub file_id: FileId,
-    pub position: TextSize,
+    file_id: FileId,
+    position: TextSize,
 }
 
 impl LuaSignatureId {
-    pub fn new(file_id: FileId, position: TextSize) -> Self {
-        Self { file_id, position }
+    pub fn new(file_id: FileId, closure: &LuaClosureExpr) -> Self {
+        Self { file_id, position: closure.get_position() }
+    }
+
+    pub fn get_file_id(&self) -> FileId {
+        self.file_id
+    }
+
+    pub fn get_position(&self) -> TextSize {
+        self.position
     }
 }

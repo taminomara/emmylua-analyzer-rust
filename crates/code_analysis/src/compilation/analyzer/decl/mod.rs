@@ -171,7 +171,7 @@ impl<'a> DeclAnalyzer<'a> {
     }
 
     pub fn find_decl(&self, name: &str, position: TextSize) -> Option<&LuaDecl> {
-        self.decl.find_decl(name, position)
+        self.decl.find_local_decl(name, position)
     }
 
     pub fn get_file_id(&self) -> FileId {
