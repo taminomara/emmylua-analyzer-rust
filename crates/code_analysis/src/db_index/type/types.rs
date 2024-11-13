@@ -33,6 +33,7 @@ pub enum LuaType {
     TableGeneric(Box<Vec<LuaType>>),
     TplRef(usize),
     StrTplRef(Box<LuaStringTplType>),
+    MuliReturn(Box<LuaMultiReturn>),
 }
 
 impl LuaType {
@@ -146,6 +147,14 @@ impl LuaType {
 
     pub fn is_const(&self) -> bool {
         matches!(self, LuaType::BooleanConst(_) | LuaType::StringConst(_) | LuaType::IntegerConst(_))
+    }
+
+    pub fn is_module(&self) -> bool {
+        matches!(self, LuaType::Module(_))
+    }
+
+    pub fn is_multi_return(&self) -> bool {
+        matches!(self, LuaType::MuliReturn(_))
     }
 }
 
@@ -352,5 +361,21 @@ impl LuaStringTplType {
 
     pub fn get_usize(&self) -> usize {
         self.usize
+    }
+}
+
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub enum LuaMultiReturn {
+    Multi(Vec<LuaType>),
+    Base(LuaType),
+}
+
+impl LuaMultiReturn {
+    pub fn get_type(&self, idx: usize) -> Option<&LuaType> {
+        match self {
+            LuaMultiReturn::Multi(types) => types.get(idx),
+            LuaMultiReturn::Base(t) => Some(t),
+        }
     }
 }

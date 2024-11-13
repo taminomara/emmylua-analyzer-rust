@@ -1,4 +1,5 @@
 mod stats;
+mod infer_expr;
 
 use emmylua_parser::{LuaAst, LuaAstNode, LuaSyntaxTree};
 use stats::analyze_local_stat;
