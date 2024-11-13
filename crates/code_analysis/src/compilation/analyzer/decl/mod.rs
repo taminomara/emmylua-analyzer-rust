@@ -155,13 +155,15 @@ impl<'a> DeclAnalyzer<'a> {
     }
 
     pub fn add_decl(&mut self, decl: LuaDecl) -> LuaDeclId {
+        let is_global = decl.is_global();
+        let name = decl.get_name().to_string();
         let id = self.decl.add_decl(decl);
         self.add_decl_to_current_scope(id);
 
-        if let LuaDecl::Global { name, id, .. } = self.decl.get_decl(id).unwrap() {
+        if is_global {
             self.db
                 .get_reference_index_mut()
-                .add_global_decl(name.clone(), id.unwrap());
+                .add_global_decl(name, id);
         }
 
         id

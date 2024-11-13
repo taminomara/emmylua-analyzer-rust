@@ -20,9 +20,10 @@ mod test {
 
         let decl = LuaDecl::Local {
             name: "aaa".to_string(),
-            id: None,
+            file_id,
             range: TextRange::new(5.into(), 8.into()),
             attrib: None,
+            decl_type: None,
         };
         let decl_id = tree.add_decl(decl);
 
@@ -40,7 +41,6 @@ mod test {
 
         let decl3 = tree.find_local_decl("bbb", 9.into());
         assert!(decl3.is_none());
-
     }
 
     #[test]
@@ -55,9 +55,10 @@ mod test {
 
         let decl = LuaDecl::Local {
             name: "aaa".to_string(),
-            id: None,
+            file_id,
             range: TextRange::new(5.into(), 8.into()),
             attrib: None,
+            decl_type: None,
         };
         let decl_id = tree.add_decl(decl);
 
@@ -65,9 +66,10 @@ mod test {
 
         let decl2 = LuaDecl::Local {
             name: "bbb".to_string(),
-            id: None,
+            file_id,
             range: TextRange::new(105.into(), 108.into()),
             attrib: None,
+            decl_type: None,
         };
 
         let decl_id2 = tree.add_decl(decl2);
@@ -111,8 +113,9 @@ mod test {
 
         let decl = LuaDecl::Global {
             name: "aaa".to_string(),
-            id: None,
+            file_id,
             range: TextRange::new(5.into(), 8.into()),
+            decl_type: None,
         };
         let decl_id = tree.add_decl(decl);
 
@@ -146,9 +149,10 @@ mod test {
 
         let decl = LuaDecl::Local {
             name: "aaa".to_string(),
-            id: None,
+            file_id,
             range: TextRange::new(5.into(), 8.into()),
             attrib: None,
+            decl_type: None,
         };
         let decl_id = tree.add_decl(decl);
 
@@ -156,9 +160,10 @@ mod test {
 
         let decl2 = LuaDecl::Local {
             name: "aaa".to_string(),
-            id: None,
+            file_id,
             range: TextRange::new(105.into(), 108.into()),
             attrib: None,
+            decl_type: None,
         };
 
         let decl_id2 = tree.add_decl(decl2);
@@ -196,9 +201,10 @@ mod test {
 
         let decl = LuaDecl::Local {
             name: "aaa".to_string(),
-            id: None,
+            file_id,
             range: TextRange::new(5.into(), 8.into()),
             attrib: None,
+            decl_type: None,
         };
         let decl_id = tree.add_decl(decl);
 
@@ -206,9 +212,10 @@ mod test {
 
         let decl2 = LuaDecl::Local {
             name: "aaa".to_string(),
-            id: None,
+            file_id,
             range: TextRange::new(130.into(), 133.into()),
             attrib: None,
+            decl_type: None,
         };
 
         let decl_id2 = tree.add_decl(decl2);
@@ -216,9 +223,10 @@ mod test {
 
         let decl3 = LuaDecl::Local {
             name: "bbb".to_string(),
-            id: None,
+            file_id,
             range: TextRange::new(75.into(), 75.into()),
             attrib: None,
+            decl_type: None,
         };
 
         let decl_id3 = tree.add_decl(decl3);

@@ -4,7 +4,7 @@ use emmylua_parser::{
 };
 
 use crate::db_index::{
-    LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaPropertyOwnerId, LuaSignatureId, LuaType
+    LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaPropertyOwnerId, LuaSignatureId, LuaType
 };
 
 use super::{
@@ -32,19 +32,15 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                 match var_expr {
                     LuaVarExpr::NameExpr(name_expr) => {
                         let name_token = name_expr.get_name_token()?;
-                        let name = name_token.get_name_text().to_string();
                         let position = name_token.get_position();
                         let file_id = analyzer.file_id;
+                        let decl_id = LuaDeclId::new(file_id, position);
                         let decl = analyzer
                             .db
                             .get_decl_index_mut()
-                            .get_decl_tree(&file_id)?
-                            .find_local_decl(&name, position)?;
-                        let decl_id = decl.get_id();
-                        analyzer
-                            .db
-                            .get_decl_index_mut()
-                            .add_decl_type(decl_id, type_ref.clone());
+                            .get_decl_mut(&decl_id)?;
+
+                        decl.set_decl_type(type_ref.clone());
                     }
                     LuaVarExpr::IndexExpr(index_expr) => {
                         let member_id =
@@ -64,19 +60,15 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                 let local_name = local_list.get(i)?;
                 let type_ref = type_list.get(i)?;
                 let name_token = local_name.get_name_token()?;
-                let name = name_token.get_name_text().to_string();
                 let position = name_token.get_position();
                 let file_id = analyzer.file_id;
+                let decl_id = LuaDeclId::new(file_id, position);
                 let decl = analyzer
                     .db
                     .get_decl_index_mut()
-                    .get_decl_tree(&file_id)?
-                    .find_local_decl(&name, position)?;
-                let decl_id = decl.get_id();
-                analyzer
-                    .db
-                    .get_decl_index_mut()
-                    .add_decl_type(decl_id, type_ref.clone());
+                    .get_decl_mut(&decl_id)?;
+
+                decl.set_decl_type(type_ref.clone());
             }
         }
         LuaAst::LuaTableField(table_field) => {
@@ -144,16 +136,13 @@ pub fn analyze_param(analyzer: &mut DocAnalyzer, tag: LuaDocTagParam) -> Option<
             };
 
             if param_name == name {
+                let decl_id = LuaDeclId::new(analyzer.file_id, param.get_position());
                 let decl = analyzer
                     .db
                     .get_decl_index_mut()
-                    .get_decl_tree(&analyzer.file_id)?
-                    .find_local_decl(&name, param.get_position())?;
-                let decl_id = decl.get_id();
-                analyzer
-                    .db
-                    .get_decl_index_mut()
-                    .add_decl_type(decl_id, type_ref);
+                    .get_decl_mut(&decl_id)?;
+
+                decl.set_decl_type(type_ref);
                 break;
             }
         }
@@ -161,16 +150,13 @@ pub fn analyze_param(analyzer: &mut DocAnalyzer, tag: LuaDocTagParam) -> Option<
         for it_name_token in for_range.get_var_name_list() {
             let it_name = it_name_token.get_name_text();
             if it_name == name {
+                let decl_id = LuaDeclId::new(analyzer.file_id, it_name_token.get_position());
                 let decl = analyzer
                     .db
                     .get_decl_index_mut()
-                    .get_decl_tree(&analyzer.file_id)?
-                    .find_local_decl(&name, it_name_token.get_position())?;
-                let decl_id = decl.get_id();
-                analyzer
-                    .db
-                    .get_decl_index_mut()
-                    .add_decl_type(decl_id, type_ref);
+                    .get_decl_mut(&decl_id)?;
+                
+                decl.set_decl_type(type_ref);
                 break;
             }
         }
@@ -226,10 +212,8 @@ pub fn analyze_module(analyzer: &mut DocAnalyzer, tag: LuaDocTagModule) -> Optio
     if let Some(owner) = get_owner_id(analyzer) {
         match owner {
             LuaPropertyOwnerId::LuaDecl(decl_id) => {
-                analyzer
-                    .db
-                    .get_decl_index_mut()
-                    .add_decl_type(decl_id, decl_type);
+                let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
+                decl.set_decl_type(decl_type);
             }
             _ => {}
         }

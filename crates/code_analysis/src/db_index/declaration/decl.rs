@@ -1,35 +1,36 @@
 use rowan::{TextRange, TextSize};
 
-use crate::FileId;
+use crate::{db_index::LuaType, FileId};
 
 #[derive(Eq, PartialEq, Hash, Debug, Clone)]
 pub enum LuaDecl {
     Local {
         name: String,
-        id: Option<LuaDeclId>,
+        file_id: FileId,
         range: TextRange,
         attrib: Option<LocalAttribute>,
+        decl_type: Option<LuaType>,
     },
     Global {
         name: String,
-        id: Option<LuaDeclId>,
+        file_id: FileId,
         range: TextRange,
+        decl_type: Option<LuaType>,
     },
 }
 
 impl LuaDecl {
-    #[allow(unused)]
-    pub fn get_file_id(&self) -> Option<FileId> {
+    pub fn get_file_id(&self) -> FileId {
         match self {
-            LuaDecl::Local { id, .. } => id.map(|id| id.file_id),
-            LuaDecl::Global { id, .. } => id.map(|id| id.file_id),
+            LuaDecl::Local { file_id, .. } => *file_id,
+            LuaDecl::Global { file_id, .. } => *file_id,
         }
     }
 
     pub fn get_id(&self) -> LuaDeclId {
         match self {
-            LuaDecl::Local { id, .. } => (*id).unwrap(),
-            LuaDecl::Global { id, .. } => (*id).unwrap(),
+            LuaDecl::Local { file_id, .. } => LuaDeclId::new(*file_id, self.get_position()),
+            LuaDecl::Global { file_id, .. } => LuaDeclId::new(*file_id, self.get_position()),
         }
     }
 
@@ -54,18 +55,39 @@ impl LuaDecl {
         }
     }
 
-    pub fn set_id(&mut self, id: LuaDeclId) {
+    pub fn get_type(&self) -> Option<&LuaType> {
         match self {
-            LuaDecl::Local { id: id_ref, .. } => *id_ref = Some(id),
-            LuaDecl::Global { id: id_ref, .. } => *id_ref = Some(id),
+            LuaDecl::Local { decl_type, .. } => decl_type.as_ref(),
+            LuaDecl::Global { decl_type, .. } => decl_type.as_ref(),
         }
+    }
+
+    pub (crate) fn set_decl_type(&mut self, decl_type: LuaType) {
+        match self {
+            LuaDecl::Local { decl_type: dt, .. } => *dt = Some(decl_type),
+            LuaDecl::Global { decl_type: dt, .. } => *dt = Some(decl_type),
+        }
+    }
+
+    pub fn is_local(&self) -> bool {
+        matches!(self, LuaDecl::Local { .. })
+    }
+
+    pub fn is_global(&self) -> bool {
+        matches!(self, LuaDecl::Global { .. })
     }
 }
 
 #[derive(Eq, PartialEq, Hash, Debug, Clone, Copy)]
 pub struct LuaDeclId {
     pub file_id: FileId,
-    pub id: u32,
+    pub position: TextSize,
+}
+
+impl LuaDeclId {
+    pub fn new(file_id: FileId, position: TextSize) -> Self {
+        Self { file_id, position }
+    }
 }
 
 #[derive(Eq, PartialEq, Hash, Debug, Clone)]

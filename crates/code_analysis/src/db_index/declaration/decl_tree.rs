@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::{decl, scope};
 use crate::FileId;
 use decl::{LuaDecl, LuaDeclId};
@@ -7,7 +9,7 @@ use scope::{LuaScope, LuaScopeId, LuaScopeKind, ScopeOrDeclId};
 #[derive(Debug)]
 pub struct LuaDeclarationTree {
     file_id: FileId,
-    decls: Vec<LuaDecl>,
+    decls: HashMap<LuaDeclId, LuaDecl>,
     scopes: Vec<LuaScope>,
 }
 
@@ -15,7 +17,7 @@ impl LuaDeclarationTree {
     pub fn new(file_id: FileId) -> Self {
         Self {
             file_id,
-            decls: Vec::new(),
+            decls: HashMap::new(),
             scopes: Vec::new(),
         }
     }
@@ -70,8 +72,7 @@ impl LuaDeclarationTree {
     {
         let cur_index = scope.get_children().iter().rposition(|child| match child {
             ScopeOrDeclId::Decl(decl_id) => {
-                let decl = self.decls.get(decl_id.id as usize).unwrap();
-                decl.get_position() <= start_pos
+                decl_id.position <= start_pos
             }
             ScopeOrDeclId::Scope(scope_id) => {
                 let child_scope = self.scopes.get(scope_id.id as usize).unwrap();
@@ -165,26 +166,18 @@ impl LuaDeclarationTree {
     }
 
     pub fn add_decl(&mut self, decl: LuaDecl) -> LuaDeclId {
-        let mut decl = decl;
-        let id = self.decls.len() as u32;
-        let decl_id = LuaDeclId {
-            file_id: self.file_id,
-            id,
-        };
-
-        decl.set_id(decl_id);
-
-        self.decls.push(decl);
+        let decl_id = decl.get_id();
+        self.decls.insert(decl_id, decl);
         decl_id
     }
 
     #[allow(unused)]
     pub fn get_decl_mut(&mut self, decl_id: LuaDeclId) -> Option<&mut LuaDecl> {
-        self.decls.get_mut(decl_id.id as usize)
+        self.decls.get_mut(&decl_id)
     }
 
     pub fn get_decl(&self, decl_id: LuaDeclId) -> Option<&LuaDecl> {
-        self.decls.get(decl_id.id as usize)
+        self.decls.get(&decl_id)
     }
 
     pub fn create_scope(&mut self, range: TextRange, kind: LuaScopeKind) -> LuaScopeId {
@@ -212,9 +205,5 @@ impl LuaDeclarationTree {
         if let Some(child) = self.scopes.get_mut(child_id.id as usize) {
             child.set_parent(Some(parent_id));
         }
-    }
-
-    pub fn get_decls(&self) -> &[LuaDecl] {
-        &self.decls
     }
 }

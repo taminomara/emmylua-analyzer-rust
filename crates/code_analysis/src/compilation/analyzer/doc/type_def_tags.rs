@@ -9,7 +9,7 @@ use emmylua_parser::{
 use rowan::TextRange;
 
 use crate::db_index::{
-    LuaDeclTypeKind, LuaMember, LuaMemberId, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId, LuaSignatureId, LuaType
+    LuaDeclId, LuaDeclTypeKind, LuaMember, LuaMemberId, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId, LuaSignatureId, LuaType
 };
 
 use super::{infer_type::infer_type, tags::find_owner_closure, DocAnalyzer};
@@ -411,28 +411,27 @@ fn bind_def_type(analyzer: &mut DocAnalyzer, type_def: LuaType) -> Option<()> {
         LuaAst::LuaLocalStat(local_stat) => {
             let local_name = local_stat.child::<LuaLocalName>()?;
             let position = local_name.get_position();
-            let name = local_name.get_name_token()?.get_name_text().to_string();
             let file_id = analyzer.file_id;
+            let decl_id = LuaDeclId::new(file_id, position);
+
             let decl = analyzer
                 .db
                 .get_decl_index_mut()
-                .get_decl_tree(&file_id)?
-                .find_local_decl(&name, position)?;
-            let id = decl.get_id();
-            analyzer.db.get_decl_index_mut().add_decl_type(id, type_def);
+                .get_decl_mut(&decl_id)?;
+
+            decl.set_decl_type(type_def);
         }
         LuaAst::LuaAssignStat(assign_stat) => {
             if let LuaVarExpr::NameExpr(name_expr) = assign_stat.child::<LuaVarExpr>()? {
-                let name = name_expr.get_name_token()?.get_name_text().to_string();
                 let position = name_expr.get_position();
                 let file_id = analyzer.file_id;
+                let decl_id = LuaDeclId::new(file_id, position);
                 let decl = analyzer
                     .db
                     .get_decl_index_mut()
-                    .get_decl_tree(&file_id)?
-                    .find_local_decl(&name, position)?;
-                let id = decl.get_id();
-                analyzer.db.get_decl_index_mut().add_decl_type(id, type_def);
+                    .get_decl_mut(&decl_id)?;
+                 
+                decl.set_decl_type(type_def);
             } else if let LuaVarExpr::IndexExpr(index_expr) = assign_stat.child::<LuaVarExpr>()? {
                 let member_id = LuaMemberId::new(index_expr.get_syntax_id(), analyzer.file_id);
                 analyzer

@@ -18,14 +18,13 @@ pub fn analyze_name_expr(analyzer: &mut DeclAnalyzer, expr: LuaNameExpr) {
     let range = expr.get_range();
     let file_id = analyzer.get_file_id();
     let local_decl_id = if let Some(decl) = analyzer.find_decl(&name, position) {
-        match decl {
-            LuaDecl::Local { id, .. } => id.clone(),
-            _ => {
-                if decl.get_position() == position {
-                    return;
-                }
-                None
+        if decl.is_local() {
+            Some(decl.get_id())
+        } else {
+            if decl.get_position() == position {
+                return;
             }
+            None
         }
     } else {
         None
@@ -60,9 +59,10 @@ pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) {
         let range = param.get_range();
         let decl = LuaDecl::Local {
             name,
-            id: None,
+            file_id: analyzer.get_file_id(),
             range,
             attrib: None,
+            decl_type: None,
         };
 
         analyzer.add_decl(decl);
