@@ -1,9 +1,19 @@
-use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaClosureExpr, LuaDocTag, LuaLocalName, LuaVarExpr};
+use emmylua_parser::{
+    LuaAst, LuaAstNode, LuaAstToken, LuaClosureExpr, LuaDocTag, LuaLocalName, LuaVarExpr,
+};
 
 use crate::db_index::{LuaMemberId, LuaPropertyOwnerId, LuaSignatureId};
 
 use super::{
-    field_or_operator_def_tags::{analyze_field, analyze_operator}, property_tags::{analyze_deprecated, analyze_nodiscard, analyze_source, analyze_version, analyze_visibility}, type_def_tags::{analyze_alias, analyze_class, analyze_enum, analyze_func_generic}, type_ref_tags::{analyze_module, analyze_overload, analyze_param, analyze_return, analyze_type}, DocAnalyzer
+    field_or_operator_def_tags::{analyze_field, analyze_operator},
+    property_tags::{
+        analyze_deprecated, analyze_nodiscard, analyze_source, analyze_version, analyze_visibility,
+    },
+    type_def_tags::{analyze_alias, analyze_class, analyze_enum, analyze_func_generic},
+    type_ref_tags::{
+        analyze_module, analyze_overload, analyze_param, analyze_return, analyze_type,
+    },
+    DocAnalyzer,
 };
 
 pub fn analyze_tag(analyzer: &mut DocAnalyzer, tag: LuaDocTag) -> Option<()> {
@@ -101,7 +111,7 @@ pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaPropertyOwnerId> {
                 analyzer.file_id,
                 &closure,
             )))
-        },
+        }
         LuaAst::LuaAssignStat(assign) => {
             let first_var = assign.child::<LuaVarExpr>()?;
             match first_var {
@@ -115,16 +125,13 @@ pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaPropertyOwnerId> {
                     return Some(LuaPropertyOwnerId::LuaDecl(decl.get_id()));
                 }
                 LuaVarExpr::IndexExpr(index_expr) => {
-                    let member_id = LuaMemberId::new(
-                        index_expr.get_syntax_id(),
-                        analyzer.file_id,
-                    );
+                    let member_id = LuaMemberId::new(index_expr.get_syntax_id(), analyzer.file_id);
 
                     return Some(LuaPropertyOwnerId::Member(member_id));
                 }
                 _ => None,
             }
-        },
+        }
         LuaAst::LuaLocalStat(local_stat) => {
             let local_name = local_stat.child::<LuaLocalName>()?;
             let name_token = local_name.get_name_token()?;
@@ -137,10 +144,7 @@ pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaPropertyOwnerId> {
             return Some(LuaPropertyOwnerId::LuaDecl(decl.get_id()));
         }
         LuaAst::LuaTableField(field) => {
-            let member_id = LuaMemberId::new(
-                field.get_syntax_id(),
-                analyzer.file_id,
-            );
+            let member_id = LuaMemberId::new(field.get_syntax_id(), analyzer.file_id);
 
             return Some(LuaPropertyOwnerId::Member(member_id));
         }

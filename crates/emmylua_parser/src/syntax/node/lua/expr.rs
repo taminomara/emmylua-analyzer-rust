@@ -1,12 +1,14 @@
 use crate::{
     kind::LuaSyntaxKind,
     syntax::{
-        comment_trait::LuaCommentOwner, node::{LuaBinaryOpToken, LuaNameToken, LuaUnaryOpToken}, traits::{LuaAstChildren, LuaAstNode}
+        comment_trait::LuaCommentOwner,
+        node::{LuaBinaryOpToken, LuaNameToken, LuaUnaryOpToken},
+        traits::{LuaAstChildren, LuaAstNode},
     },
-    LuaIndexToken, LuaLiteralToken, LuaSyntaxNode,
+    LuaAstToken, LuaIndexToken, LuaLiteralToken, LuaSyntaxNode, LuaTokenKind,
 };
 
-use super::{LuaBlock, LuaCallArgList, LuaParamList, LuaTableField};
+use super::{LuaBlock, LuaCallArgList, LuaIndexKey, LuaParamList, LuaTableField};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LuaExpr {
@@ -196,7 +198,8 @@ impl LuaNameExpr {
     }
 
     pub fn get_name_text(&self) -> Option<String> {
-        self.get_name_token().map(|it| it.get_name_text().to_string())
+        self.get_name_token()
+            .map(|it| it.get_name_text().to_string())
     }
 }
 
@@ -234,16 +237,49 @@ impl LuaIndexExpr {
         self.child()
     }
 
-    pub fn get_indexed_expr(&self) -> Option<LuaExpr> {
-        self.children().nth(1)
-    }
-
-    pub fn get_indexed_name_token(&self) -> Option<LuaNameToken> {
-        self.token()
-    }
-
     pub fn get_index_token(&self) -> Option<LuaIndexToken> {
         self.token()
+    }
+
+    pub fn get_index_key(&self) -> Option<LuaIndexKey> {
+        let mut meet_left_bracket = false;
+        for child in self.syntax.children_with_tokens() {
+            if meet_left_bracket {
+                match child {
+                    rowan::NodeOrToken::Node(node) => {
+                        if LuaLiteralExpr::can_cast(node.kind().into()) {
+                            let literal_expr = LuaLiteralExpr::cast(node.clone()).unwrap();
+                            if let Some(literal_token) = literal_expr.get_literal() {
+                                match literal_token {
+                                    LuaLiteralToken::String(token) => {
+                                        return Some(LuaIndexKey::String(token.clone()));
+                                    }
+                                    LuaLiteralToken::Number(token) => {
+                                        return Some(LuaIndexKey::Integer(token.clone()));
+                                    }
+                                    _ => {}
+                                }
+                            }
+                        }
+
+                        return Some(LuaIndexKey::Expr(LuaExpr::cast(node).unwrap()));
+                    }
+                    _ => return None,
+                }
+            } else {
+                if let Some(token) = child.as_token() {
+                    if token.kind() == LuaTokenKind::TkLeftBracket.into() {
+                        meet_left_bracket = true;
+                    } else if token.kind() == LuaTokenKind::TkName.into() {
+                        return Some(LuaIndexKey::Name(
+                            LuaNameToken::cast(token.clone()).unwrap(),
+                        ));
+                    }
+                }
+            }
+        }
+
+        None
     }
 }
 
@@ -286,15 +322,15 @@ impl LuaCallExpr {
     }
 }
 
-/// In Lua, tables are a fundamental data structure that can be used to represent arrays, objects, 
-/// and more. To facilitate parsing and handling of different table structures, we categorize tables 
+/// In Lua, tables are a fundamental data structure that can be used to represent arrays, objects,
+/// and more. To facilitate parsing and handling of different table structures, we categorize tables
 /// into three types: `TableArrayExpr`, `TableObjectExpr`, and `TableEmptyExpr`.
 ///
 /// - `TableArrayExpr`: Represents a table used as an array, where elements are indexed by integers.
 /// - `TableObjectExpr`: Represents a table used as an object, where elements are indexed by strings or other keys.
 /// - `TableEmptyExpr`: Represents an empty table with no elements.
 ///
-/// This categorization helps in accurately parsing and processing Lua code by distinguishing between 
+/// This categorization helps in accurately parsing and processing Lua code by distinguishing between
 /// different uses of tables, thereby enabling more precise syntax analysis and manipulation.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaTableExpr {
@@ -310,7 +346,9 @@ impl LuaAstNode for LuaTableExpr {
     where
         Self: Sized,
     {
-        kind == LuaSyntaxKind::TableArrayExpr || kind == LuaSyntaxKind::TableObjectExpr || kind == LuaSyntaxKind::TableEmptyExpr
+        kind == LuaSyntaxKind::TableArrayExpr
+            || kind == LuaSyntaxKind::TableObjectExpr
+            || kind == LuaSyntaxKind::TableEmptyExpr
     }
 
     fn cast(syntax: LuaSyntaxNode) -> Option<Self>

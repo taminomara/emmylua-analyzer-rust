@@ -57,9 +57,15 @@ fn walk_node_enter(analyzer: &mut DeclAnalyzer, node: LuaAst) {
         LuaAst::LuaNameExpr(expr) => {
             exprs::analyze_name_expr(analyzer, expr);
         }
+        LuaAst::LuaIndexExpr(expr) => {
+            exprs::analyze_index_expr(analyzer, expr);
+        }
         LuaAst::LuaClosureExpr(expr) => {
             analyzer.create_scope(expr.get_range(), LuaScopeKind::Normal);
             exprs::analyze_closure_expr(analyzer, expr);
+        }
+        LuaAst::LuaTableExpr(expr) => {
+            exprs::analyze_table_expr(analyzer, expr);
         }
         LuaAst::LuaDocTagClass(doc_tag) => {
             docs::analyze_doc_tag_class(analyzer, doc_tag);
@@ -156,14 +162,20 @@ impl<'a> DeclAnalyzer<'a> {
 
     pub fn add_decl(&mut self, decl: LuaDecl) -> LuaDeclId {
         let is_global = decl.is_global();
+        let range = decl.get_range();
+        let file_id = decl.get_file_id();
         let name = decl.get_name().to_string();
         let id = self.decl.add_decl(decl);
         self.add_decl_to_current_scope(id);
 
         if is_global {
             self.db
+                .get_decl_index_mut()
+                .add_global_decl(name.clone(), id);
+
+            self.db
                 .get_reference_index_mut()
-                .add_global_decl(name, id);
+                .add_global_reference(name, file_id, range);
         }
 
         id

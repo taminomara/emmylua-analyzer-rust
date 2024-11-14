@@ -1,18 +1,19 @@
 use emmylua_parser::{LuaKind, LuaSyntaxId};
+use internment::ArcIntern;
 use rowan::{TextRange, TextSize};
 
 use crate::{
     db_index::{LuaType, LuaTypeDeclId},
-    FileId,
+    FileId, InFiled,
 };
 
 #[derive(Debug)]
 pub struct LuaMember {
-    owner: LuaMemberOwner,
+    pub(super) owner: LuaMemberOwner,
     key: LuaMemberKey,
     file_id: FileId,
     syntax_id: LuaSyntaxId,
-    decl_type: LuaType,
+    pub(crate) decl_type: LuaType,
 }
 
 impl LuaMember {
@@ -35,6 +36,7 @@ impl LuaMember {
             },
         }
     }
+
     pub fn get_owner(&self) -> LuaMemberOwner {
         self.owner.clone()
     }
@@ -74,11 +76,26 @@ impl LuaMemberId {
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub enum LuaMemberOwner {
+    None,
     Type(LuaTypeDeclId),
+    Table(InFiled<TextRange>)
+}
+
+impl LuaMemberOwner {
+    pub fn get_type_id(&self) -> Option<&LuaTypeDeclId> {
+        match self {
+            LuaMemberOwner::Type(id) => Some(id),
+            _ => None,
+        }
+    }
+
+    pub fn is_none(&self) -> bool {
+        matches!(self, LuaMemberOwner::None)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LuaMemberKey {
     Integer(i64),
-    Name(String),
+    Name(ArcIntern<String>),
 }

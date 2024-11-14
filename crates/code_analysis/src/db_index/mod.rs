@@ -26,7 +26,7 @@ pub use property::{
 #[allow(unused_imports)]
 pub use operators::{LuaOperatorIndex, LuaOperatorMetaMethod, LuaOperatorId, LuaOperator};
 pub use r#type::*;
-use reference::LuaReferenceIndex;
+pub use reference::{LuaReferenceIndex, LuaReferenceKey};
 pub use signature::*;
 use traits::LuaIndex;
 

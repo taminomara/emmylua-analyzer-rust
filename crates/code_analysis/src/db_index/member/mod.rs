@@ -3,7 +3,7 @@ mod lua_member;
 use std::collections::HashMap;
 
 use crate::FileId;
-pub use lua_member::{LuaMember, LuaMemberId, LuaMemberOwner, LuaMemberKey};
+pub use lua_member::{LuaMember, LuaMemberId, LuaMemberKey, LuaMemberOwner};
 
 use super::traits::LuaIndex;
 
@@ -27,10 +27,12 @@ impl LuaMemberIndex {
         let id = member.get_id();
         let owner = member.get_owner();
         let key = member.get_key().clone();
-        self.owner_members
-            .entry(owner)
-            .or_insert_with(HashMap::new)
-            .insert(key, id);
+        if !owner.is_none() {
+            self.owner_members
+                .entry(owner)
+                .or_insert_with(HashMap::new)
+                .insert(key, id);
+        }
         let file_id = member.get_file_id();
         self.in_field_members
             .entry(file_id)
@@ -38,6 +40,19 @@ impl LuaMemberIndex {
             .push(id);
         self.members.insert(id, member);
         id
+    }
+
+    pub fn add_member_owner(&mut self, owner: LuaMemberOwner, id: LuaMemberId) -> Option<()> {
+        let member = self.members.get_mut(&id)?;
+        let key = member.get_key().clone();
+        member.owner = owner.clone();
+
+        self.owner_members
+            .entry(owner)
+            .or_insert_with(HashMap::new)
+            .insert(key, id);
+
+        Some(())
     }
 
     pub fn get_member(&self, id: &LuaMemberId) -> Option<&LuaMember> {
@@ -48,7 +63,10 @@ impl LuaMemberIndex {
         self.members.get_mut(id)
     }
 
-    pub fn get_member_map(&self, owner: LuaMemberOwner) -> Option<&HashMap<LuaMemberKey, LuaMemberId>> {
+    pub fn get_member_map(
+        &self,
+        owner: LuaMemberOwner,
+    ) -> Option<&HashMap<LuaMemberKey, LuaMemberId>> {
         self.owner_members.get(&owner)
     }
 }

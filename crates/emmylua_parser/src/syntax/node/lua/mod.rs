@@ -10,7 +10,7 @@ use crate::{
 pub use expr::*;
 pub use stat::*;
 
-use super::LuaNameToken;
+use super::{LuaLiteralToken, LuaNameToken, LuaNumberToken, LuaStringToken};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaChunk {
@@ -252,21 +252,43 @@ impl LuaTableField {
         self.syntax().kind() == LuaSyntaxKind::TableFieldValue.into()
     }
 
-    pub fn get_key(&self) -> Option<LuaTableFieldKey> {
+    pub fn get_field_key(&self) -> Option<LuaIndexKey> {
         if !self.is_assign_field() {
             return None;
         }
 
-        for child in self.syntax().children_with_tokens() {
-            match child {
-                rowan::NodeOrToken::Node(node) => {
-                    if let Some(expr) = LuaExpr::cast(node.clone()) {
-                        return Some(LuaTableFieldKey::Expr(expr));
+        let mut meet_left_bracket = false;
+        for child in self.syntax.children_with_tokens() {
+            if meet_left_bracket {
+                match child {
+                    rowan::NodeOrToken::Node(node) => {
+                        if LuaLiteralExpr::can_cast(node.kind().into()) {
+                            let literal_expr = LuaLiteralExpr::cast(node.clone()).unwrap();
+                            if let Some(literal_token) = literal_expr.get_literal() {
+                                match literal_token {
+                                    LuaLiteralToken::String(token) => {
+                                        return Some(LuaIndexKey::String(token.clone()));
+                                    }
+                                    LuaLiteralToken::Number(token) => {
+                                        return Some(LuaIndexKey::Integer(token.clone()));
+                                    }
+                                    _ => {}
+                                }
+                            }
+                        }
+
+                        return Some(LuaIndexKey::Expr(LuaExpr::cast(node).unwrap()));
                     }
+                    _ => return None,
                 }
-                rowan::NodeOrToken::Token(token) => {
-                    if let Some(name) = LuaNameToken::cast(token.clone()) {
-                        return Some(LuaTableFieldKey::Name(name));
+            } else {
+                if let Some(token) = child.as_token() {
+                    if token.kind() == LuaTokenKind::TkLeftBracket.into() {
+                        meet_left_bracket = true;
+                    } else if token.kind() == LuaTokenKind::TkName.into() {
+                        return Some(LuaIndexKey::Name(
+                            LuaNameToken::cast(token.clone()).unwrap(),
+                        ));
                     }
                 }
             }
@@ -285,8 +307,10 @@ impl LuaTableField {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum LuaTableFieldKey {
+pub enum LuaIndexKey {
     Name(LuaNameToken),
+    String(LuaStringToken),
+    Integer(LuaNumberToken),
     Expr(LuaExpr),
 }
 

@@ -1,9 +1,9 @@
 use emmylua_parser::{
-    LuaAssignStat, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaFuncStat,
+    LuaAssignStat, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaFuncStat, LuaIndexKey,
     LuaLocalFuncStat, LuaLocalStat, LuaVarExpr,
 };
 
-use crate::db_index::{LocalAttribute, LuaDecl};
+use crate::db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner};
 
 use super::DeclAnalyzer;
 
@@ -38,29 +38,57 @@ pub fn analyze_local_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalStat) {
     }
 }
 
-pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) {
+pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> Option<()> {
     let (vars, _) = stat.get_var_and_expr_list();
     for var in vars {
-        let name = if let LuaVarExpr::NameExpr(name) = &var {
-            name.get_name_token().map_or_else(
-                || "".to_string(),
-                |name_token| name_token.get_name_text().to_string(),
-            )
-        } else {
-            continue;
-        };
-        let position = var.get_position();
-        if analyzer.find_decl(&name, position).is_none() {
-            let decl = LuaDecl::Global {
-                name,
-                file_id: analyzer.get_file_id(),
-                range: var.get_range(),
-                decl_type: None,
-            };
+        match &var {
+            LuaVarExpr::NameExpr(name) => {
+                let name_token = name.get_name_token()?;
+                let position = name_token.get_position();
+                let name = name_token.get_name_text().to_string();
+                if analyzer.find_decl(&name, position).is_none() {
+                    let decl = LuaDecl::Global {
+                        name,
+                        file_id: analyzer.get_file_id(),
+                        range: name_token.get_range(),
+                        decl_type: None,
+                    };
 
-            analyzer.add_decl(decl);
+                    analyzer.add_decl(decl);
+                }
+            }
+            LuaVarExpr::IndexExpr(index_expr) => {
+                let index_key = index_expr.get_index_key()?;
+                let key = match index_key {
+                    LuaIndexKey::Name(name) => {
+                        LuaMemberKey::Name(name.get_name_text().to_string().into())
+                    }
+                    LuaIndexKey::Integer(int) => {
+                        if int.is_int() {
+                            LuaMemberKey::Integer(int.get_int_value())
+                        } else {
+                            return None;
+                        }
+                    }
+                    LuaIndexKey::String(string) => LuaMemberKey::Name(string.get_value().into()),
+                    LuaIndexKey::Expr(_) => return None,
+                };
+
+                let file_id = analyzer.get_file_id();
+                let member = LuaMember::new(
+                    LuaMemberOwner::None,
+                    key,
+                    file_id,
+                    index_expr.get_syntax_id(),
+                    None,
+                );
+
+                analyzer.db.get_member_index_mut().add_member(member);
+            }
         }
     }
+
+    Some(())
 }
 
 pub fn analyze_for_stat(analyzer: &mut DeclAnalyzer, stat: LuaForStat) {
@@ -106,30 +134,55 @@ pub fn analyze_for_range_stat(analyzer: &mut DeclAnalyzer, stat: LuaForRangeStat
     }
 }
 
-pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) {
-    if let Some(LuaVarExpr::NameExpr(func_name)) = stat.get_func_name() {
-        let name = func_name.get_name_text().unwrap_or_default();
-        let range = func_name.get_range();
-        let position = func_name.get_position();
-        let file_id = analyzer.get_file_id();
-        let local_decl_id = if let Some(decl) = analyzer.find_decl(&name, position) {
-            if decl.is_local() {
-                Some(decl.get_id())
+pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Option<()> {
+    let func_name = stat.get_func_name()?;
+
+    match func_name {
+        LuaVarExpr::NameExpr(func_name) => {
+            let name = func_name.get_name_text().unwrap_or_default();
+            let range = func_name.get_range();
+            let position = func_name.get_position();
+            let file_id = analyzer.get_file_id();
+            let local_decl_id = if let Some(decl) = analyzer.find_decl(&name, position) {
+                if decl.is_local() {
+                    Some(decl.get_id())
+                } else {
+                    None
+                }
             } else {
                 None
+            };
+            let reference_index = analyzer.db.get_reference_index_mut();
+
+            if let Some(id) = local_decl_id {
+                reference_index.add_local_reference(file_id, id, range);
+            } else {
+                reference_index.add_global_reference(name, file_id, range);
             }
+        }
+        LuaVarExpr::IndexExpr(index_name) => {
+            let index_key = index_name.get_index_key()?;
+            let key = match index_key {
+                LuaIndexKey::Name(name) => {
+                    LuaMemberKey::Name(name.get_name_text().to_string().into())
+                }
+                _ => return None,
+            };
 
-        } else {
-            None
-        };
-        let reference_index = analyzer.db.get_reference_index_mut();
+            let file_id = analyzer.get_file_id();
+            let member = LuaMember::new(
+                LuaMemberOwner::None,
+                key,
+                file_id,
+                index_name.get_syntax_id(),
+                None,
+            );
 
-        if let Some(id) = local_decl_id {
-            reference_index.add_local_reference(file_id, id, range);
-        } else {
-            reference_index.add_global_reference(name, range, file_id);
+            analyzer.db.get_member_index_mut().add_member(member);
         }
     }
+
+    Some(())
 }
 
 pub fn analyze_local_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalFuncStat) {

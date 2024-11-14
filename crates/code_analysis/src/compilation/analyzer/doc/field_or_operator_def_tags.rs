@@ -39,7 +39,7 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
     let key = tag.get_field_key()?;
     let member_id = match key {
         LuaDocFieldKey::Name(name_token) => {
-            let key = LuaMemberKey::Name(name_token.get_name_text().to_string());
+            let key = LuaMemberKey::Name(name_token.get_name_text().to_string().into());
             let member = LuaMember::new(
                 owner,
                 key,
@@ -51,7 +51,7 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
             analyzer.db.get_member_index_mut().add_member(member)
         }
         LuaDocFieldKey::String(string_token) => {
-            let key = LuaMemberKey::Name(string_token.get_value());
+            let key = LuaMemberKey::Name(string_token.get_value().into());
             let member = LuaMember::new(
                 owner,
                 key,

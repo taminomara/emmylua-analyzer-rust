@@ -180,7 +180,6 @@ mod tests {
                 }
                 LuaAst::LuaIndexExpr(lua_index_expr) => {
                     assert!(lua_index_expr.get_prefix_expr().is_some());
-                    assert!(lua_index_expr.get_indexed_expr().is_some());
                 }
                 LuaAst::LuaTableExpr(lua_table_expr) => {
                     assert!(lua_table_expr.is_array());
@@ -211,7 +210,6 @@ mod tests {
                             assert_eq!(name.get_name_token().unwrap().get_name_text(), "f");
                         }
                         LuaVarExpr::IndexExpr(field_exp) => {
-                            assert_eq!(field_exp.get_indexed_name_token().unwrap().get_name_text(), "aaa");
                             match field_exp.get_prefix_expr().unwrap() {
                                 LuaVarExpr::NameExpr(name) => {
                                     assert_eq!(name.get_name_token().unwrap().get_name_text(), "t");

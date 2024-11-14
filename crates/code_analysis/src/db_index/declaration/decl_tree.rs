@@ -30,7 +30,7 @@ impl LuaDeclarationTree {
         let scope = self.find_scope(position)?;
         let mut result: Option<&LuaDecl> = None;
         self.walk_up(scope, position, 0, &mut |decl_id| {
-            let decl = self.get_decl(decl_id).unwrap();
+            let decl = self.get_decl(&decl_id).unwrap();
             if decl.get_name() == name {
                 result = Some(decl);
                 return true;
@@ -176,7 +176,7 @@ impl LuaDeclarationTree {
         self.decls.get_mut(&decl_id)
     }
 
-    pub fn get_decl(&self, decl_id: LuaDeclId) -> Option<&LuaDecl> {
+    pub fn get_decl(&self, decl_id: &LuaDeclId) -> Option<&LuaDecl> {
         self.decls.get(&decl_id)
     }
 
