@@ -19,7 +19,7 @@ mod test {
         let ns = index.get_file_namespace(&file_id).unwrap();
         assert_eq!(ns, "test");
 
-        index.add_type_decl(
+        let _ = index.add_type_decl(
             file_id,
             TextRange::new(0.into(), 4.into()),
             "new_type".to_string(),
@@ -55,7 +55,7 @@ mod test {
         let ns = index.get_file_using_namespace(&file_id).unwrap();
         assert_eq!(ns, &["test".to_string()]);
 
-        index.add_type_decl(
+        let _ = index.add_type_decl(
             file_id,
             TextRange::new(0.into(), 4.into()),
             "test.new_type".to_string(),
@@ -85,7 +85,7 @@ mod test {
         let mut index = create_type_index();
         let file_id = FileId { id: 1 };
 
-        index.add_type_decl(
+        let _ = index.add_type_decl(
             file_id,
             TextRange::new(0.into(), 4.into()),
             "new_type".to_string(),
@@ -99,7 +99,7 @@ mod test {
         let decl2 = index.find_type_decl(file_id, "new_type");
         assert!(decl2.is_none());
 
-        index.add_type_decl(
+        let _ = index.add_type_decl(
             file_id,
             TextRange::new(0.into(), 4.into()),
             "new_type".to_string(),
@@ -108,7 +108,7 @@ mod test {
         );
 
         let file_id2 = FileId { id: 2 };
-        index.add_type_decl(
+        let _ = index.add_type_decl(
             file_id2,
             TextRange::new(0.into(), 4.into()),
             "new_type".to_string(),
@@ -131,7 +131,7 @@ mod test {
         let mut index = create_type_index();
         let file_id = FileId { id: 1 };
 
-        index.add_type_decl(
+        let _ = index.add_type_decl(
             file_id,
             TextRange::new(0.into(), 4.into()),
             "test.new_type".to_string(),
@@ -148,6 +148,5 @@ mod test {
         );
         assert_eq!(decl.get_namespace(), "test".into());
         assert_eq!(decl.get_full_name(), "test.new_type");
-    
     }
 }
