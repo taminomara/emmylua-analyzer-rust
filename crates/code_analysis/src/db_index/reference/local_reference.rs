@@ -23,4 +23,8 @@ impl LocalReference {
     pub fn get_local_references(&self, decl_id: &LuaDeclId) -> Option<&Vec<TextRange>> {
         self.local_references.get(decl_id)
     }
+
+    pub fn get_local_references_map(&self) -> &HashMap<LuaDeclId, Vec<TextRange>> {
+        &self.local_references
+    }
 }

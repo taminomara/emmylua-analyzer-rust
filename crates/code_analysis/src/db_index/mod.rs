@@ -10,11 +10,13 @@ mod symbol;
 mod traits;
 mod r#type;
 mod diagnostic;
+mod flow;
 
 use crate::FileId;
 pub use declaration::*;
 #[allow(unused_imports)]
 pub use diagnostic::{DiagnosticIndex, AnalyzeError, DiagnosticAction};
+use flow::LuaFlowIndex;
 #[allow(unused_imports)]
 pub use member::{LuaMember, LuaMemberId, LuaMemberIndex, LuaMemberOwner, LuaMemberKey};
 use meta::MetaFile;
@@ -42,6 +44,7 @@ pub struct DbIndex {
     signature_index: LuaSignatureIndex,
     diagnostic_index: DiagnosticIndex,
     operator_index: LuaOperatorIndex,
+    flow_index: LuaFlowIndex,
 }
 
 impl DbIndex {
@@ -57,6 +60,7 @@ impl DbIndex {
             signature_index: LuaSignatureIndex::new(),
             diagnostic_index: DiagnosticIndex::new(),
             operator_index: LuaOperatorIndex::new(),
+            flow_index: LuaFlowIndex::new(),
         }
     }
 
@@ -106,6 +110,10 @@ impl DbIndex {
         &mut self.operator_index
     }
 
+    pub fn get_flow_index_mut(&mut self) -> &mut LuaFlowIndex {
+        &mut self.flow_index
+    }
+
     pub fn get_decl_index(&self) -> &LuaDeclIndex {
         &self.decl_index
     }
@@ -145,6 +153,10 @@ impl DbIndex {
     pub fn get_operator_index(&self) -> &LuaOperatorIndex {
         &self.operator_index
     }
+
+    pub fn get_flow_index(&self) -> &LuaFlowIndex {
+        &self.flow_index
+    }
 }
 
 impl LuaIndex for DbIndex {
@@ -159,5 +171,6 @@ impl LuaIndex for DbIndex {
         self.signature_index.remove(file_id);
         self.diagnostic_index.remove(file_id);
         self.operator_index.remove(file_id);
+        self.flow_index.remove(file_id);
     }
 }

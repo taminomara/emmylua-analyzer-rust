@@ -22,23 +22,28 @@ pub fn analyze_name_expr(analyzer: &mut DeclAnalyzer, expr: LuaNameExpr) {
     let position = expr.get_position();
     let range = expr.get_range();
     let file_id = analyzer.get_file_id();
-    let local_decl_id = if let Some(decl) = analyzer.find_decl(&name, position) {
+    let (decl_id, is_local) = if let Some(decl) = analyzer.find_decl(&name, position) {
         if decl.is_local() {
-            Some(decl.get_id())
+            // reference local variable
+            (Some(decl.get_id()), true)
         } else {
             if decl.get_position() == position {
                 return;
             }
-            None
+            // reference in filed global variable
+            (Some(decl.get_id()), false)
         }
     } else {
-        None
+        (None, false)
     };
+
     let reference_index = analyzer.db.get_reference_index_mut();
 
-    if let Some(id) = local_decl_id {
-        reference_index.add_local_reference(file_id, id, range);
-    } else {
+    if let Some(id) = decl_id {
+        reference_index.add_local_reference(id, file_id, range);
+    }
+
+    if !is_local {
         reference_index.add_global_reference(name, file_id, range);
     }
 }
@@ -89,6 +94,7 @@ pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) {
         let decl = LuaDecl::Local {
             name,
             file_id: analyzer.get_file_id(),
+            kind: param.syntax().kind().into(),
             range,
             attrib: None,
             decl_type: None,
@@ -113,19 +119,27 @@ pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, expr: LuaTableExpr) -> Op
                         LuaReferenceKey::Name(name.get_name_text().to_string().into())
                     }
                     LuaIndexKey::Integer(int) => LuaReferenceKey::Integer(int.get_int_value()),
-                    LuaIndexKey::String(string) => {
-                        LuaReferenceKey::Name(string.get_value().into())
-                    }
+                    LuaIndexKey::String(string) => LuaReferenceKey::Name(string.get_value().into()),
                     LuaIndexKey::Expr(_) => return None,
                 };
 
-                analyzer.db.get_reference_index_mut().add_index_reference(key.clone(), file_id, expr.get_syntax_id());
-                let member_key = match  key {
+                analyzer.db.get_reference_index_mut().add_index_reference(
+                    key.clone(),
+                    file_id,
+                    expr.get_syntax_id(),
+                );
+                let member_key = match key {
                     LuaReferenceKey::Name(name) => LuaMemberKey::Name(name),
                     LuaReferenceKey::Integer(int) => LuaMemberKey::Integer(int),
                 };
 
-                let member = LuaMember::new(owner_id.clone(), member_key, file_id, expr.get_syntax_id(), None);
+                let member = LuaMember::new(
+                    owner_id.clone(),
+                    member_key,
+                    file_id,
+                    expr.get_syntax_id(),
+                    None,
+                );
                 analyzer.db.get_member_index_mut().add_member(member);
             }
         }

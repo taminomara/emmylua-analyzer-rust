@@ -1,3 +1,4 @@
+use emmylua_parser::{LuaKind, LuaSyntaxId, LuaSyntaxKind};
 use rowan::{TextRange, TextSize};
 
 use crate::{db_index::LuaType, FileId};
@@ -8,6 +9,7 @@ pub enum LuaDecl {
         name: String,
         file_id: FileId,
         range: TextRange,
+        kind: LuaKind,
         attrib: Option<LocalAttribute>,
         decl_type: Option<LuaType>,
     },
@@ -66,6 +68,13 @@ impl LuaDecl {
         match self {
             LuaDecl::Local { decl_type: dt, .. } => *dt = Some(decl_type),
             LuaDecl::Global { decl_type: dt, .. } => *dt = Some(decl_type),
+        }
+    }
+
+    pub fn get_syntax_id(&self) -> LuaSyntaxId {
+        match self {
+            LuaDecl::Local { kind, range, .. } => LuaSyntaxId::new(*kind, *range),
+            LuaDecl::Global { range, .. } => LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), *range),
         }
     }
 

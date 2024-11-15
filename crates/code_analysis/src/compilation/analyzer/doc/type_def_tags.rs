@@ -280,7 +280,7 @@ fn get_local_stat_reference_ranges(
         .get_reference_index_mut()
         .get_local_references(&file_id, &id)?;
     for reference_range in refs {
-        let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::NameExpr, reference_range.clone());
+        let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), reference_range.clone());
         let name_node = syntax_id.to_node_from_root(&analyzer.root)?;
         if let Some(parent1) = name_node.parent() {
             if parent1.kind() == LuaSyntaxKind::IndexExpr.into() {
@@ -324,7 +324,7 @@ fn get_global_reference_ranges(
         .get_reference_index_mut()
         .get_global_file_references(&name, file_id)?;
     for reference_range in refs {
-        let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::NameExpr, reference_range.clone());
+        let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), reference_range.clone());
         let name_node = syntax_id.to_node_from_root(&analyzer.root)?;
         if let Some(parent1) = name_node.parent() {
             if parent1.kind() == LuaSyntaxKind::IndexExpr.into() {

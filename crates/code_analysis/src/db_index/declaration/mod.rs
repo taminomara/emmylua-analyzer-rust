@@ -12,7 +12,7 @@ pub use scope::{LuaScopeId, LuaScopeKind};
 
 use crate::FileId;
 
-use super::{reference::LuaReferenceKey, traits::LuaIndex};
+use super::{reference::LuaReferenceKey, traits::LuaIndex, LuaType};
 
 #[derive(Debug)]
 pub struct LuaDeclIndex {
@@ -44,7 +44,7 @@ impl LuaDeclIndex {
         self.decl_trees.get(file_id)
     }
 
-    pub fn get_decl(&mut self, decl_id: &LuaDeclId) -> Option<&LuaDecl> {
+    pub fn get_decl(&self, decl_id: &LuaDeclId) -> Option<&LuaDecl> {
         let tree = self.decl_trees.get(&decl_id.file_id)?;
         tree.get_decl(decl_id)
     }
@@ -52,6 +52,33 @@ impl LuaDeclIndex {
     pub fn get_decl_mut(&mut self, decl_id: &LuaDeclId) -> Option<&mut LuaDecl> {
         let tree = self.decl_trees.get_mut(&decl_id.file_id)?;
         tree.get_decl_mut(*decl_id)
+    }
+
+    pub fn get_global_decl_type(&self, key: &LuaReferenceKey) -> Option<LuaType> {
+        let decls = self.global_decl.get(key)?;
+        if decls.len() == 1 {
+            let decl = self.get_decl(&decls[0])?;
+            return Some(decl.get_type()?.clone());
+        }
+
+        let mut valid_type = LuaType::Unknown;
+        for decl_id in decls {
+            let decl = self.get_decl(decl_id)?;
+            let ty = decl.get_type();
+            if let Some(ty) = ty {
+                if ty.is_def() || ty.is_ref() {
+                    return Some(ty.clone());
+                }
+
+                if valid_type == LuaType::Unknown {
+                    valid_type = ty.clone();
+                } else if ty.is_table() {
+                    valid_type = ty.clone();
+                }
+            }
+        }
+
+        Some(valid_type)
     }
 }
 

@@ -25,7 +25,7 @@ impl LuaReferenceIndex {
         }
     }
 
-    pub fn add_local_reference(&mut self, file_id: FileId, decl_id: LuaDeclId, range: TextRange) {
+    pub fn add_local_reference(&mut self, decl_id: LuaDeclId, file_id: FileId, range: TextRange) {
         self.local_references
             .entry(file_id)
             .or_insert_with(LocalReference::new)
@@ -37,10 +37,15 @@ impl LuaReferenceIndex {
         self.index_reference
             .entry(LuaReferenceKey::Name(key.clone()))
             .or_insert_with(HashMap::new)
-            .insert(file_id, LuaSyntaxId::new(LuaSyntaxKind::NameExpr, range));
+            .insert(file_id, LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), range));
     }
 
-    pub fn add_index_reference(&mut self, key: LuaReferenceKey, file_id: FileId, syntax_id: LuaSyntaxId) {
+    pub fn add_index_reference(
+        &mut self,
+        key: LuaReferenceKey,
+        file_id: FileId,
+        syntax_id: LuaSyntaxId,
+    ) {
         self.index_reference
             .entry(key)
             .or_insert_with(HashMap::new)
@@ -55,6 +60,10 @@ impl LuaReferenceIndex {
         self.local_references
             .get(file_id)?
             .get_local_references(decl_id)
+    }
+
+    pub fn get_local_references_map(&self, file_id: &FileId) -> Option<&HashMap<LuaDeclId, Vec<TextRange>>> {
+        self.local_references.get(file_id).map(|local_reference| local_reference.get_local_references_map())
     }
 
     pub fn get_global_file_references(

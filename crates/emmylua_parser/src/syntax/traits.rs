@@ -129,9 +129,9 @@ pub trait LuaAstToken {
         self.syntax().text_range()
     }
 
-    // fn get_syntax_id(&self) -> LuaSyntaxId {
-    //     LuaSyntaxId::from_token(self.syntax())
-    // }
+    fn get_syntax_id(&self) -> LuaSyntaxId {
+        LuaSyntaxId::from_token(self.syntax())
+    }
 
     fn get_text(&self) -> &str {
         self.syntax().text()

@@ -14,8 +14,7 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     for in_filed_tree in &tree_list {
         let tree = in_filed_tree.value;
         let root = tree.get_chunk_node();
-        let mut analyzer =
-            LuaAnalyzer::new(db, in_filed_tree.file_id, &tree, LuaAnalyzeStage::First);
+        let mut analyzer = LuaAnalyzer::new(db, in_filed_tree.file_id, &tree);
         for node in root.descendants::<LuaAst>() {
             analyze_node(&mut analyzer, node);
         }
@@ -47,7 +46,7 @@ struct LuaAnalyzer<'a> {
     file_id: FileId,
     db: &'a mut DbIndex,
     tree: &'a LuaSyntaxTree,
-    stage: LuaAnalyzeStage,
+    // stage: LuaAnalyzeStage,
 }
 
 impl LuaAnalyzer<'_> {
@@ -55,19 +54,19 @@ impl LuaAnalyzer<'_> {
         db: &'a mut DbIndex,
         file_id: FileId,
         tree: &'a LuaSyntaxTree,
-        stage: LuaAnalyzeStage,
+        // stage: LuaAnalyzeStage,
     ) -> LuaAnalyzer<'a> {
         LuaAnalyzer {
             file_id,
             db,
             tree,
-            stage,
+            // stage,
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-pub enum LuaAnalyzeStage {
-    First,
-    Second,
-}
+// #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
+// pub enum LuaAnalyzeStage {
+//     First,
+//     Second,
+// }

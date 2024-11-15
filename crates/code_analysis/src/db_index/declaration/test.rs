@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod test {
+    use emmylua_parser::LuaSyntaxKind;
     use rowan::TextRange;
 
     use crate::{
@@ -21,6 +22,7 @@ mod test {
         let decl = LuaDecl::Local {
             name: "aaa".to_string(),
             file_id,
+            kind: LuaSyntaxKind::LocalName.into(),
             range: TextRange::new(5.into(), 8.into()),
             attrib: None,
             decl_type: None,
@@ -56,6 +58,7 @@ mod test {
         let decl = LuaDecl::Local {
             name: "aaa".to_string(),
             file_id,
+            kind: LuaSyntaxKind::LocalName.into(),
             range: TextRange::new(5.into(), 8.into()),
             attrib: None,
             decl_type: None,
@@ -67,6 +70,7 @@ mod test {
         let decl2 = LuaDecl::Local {
             name: "bbb".to_string(),
             file_id,
+            kind: LuaSyntaxKind::LocalName.into(),
             range: TextRange::new(105.into(), 108.into()),
             attrib: None,
             decl_type: None,
@@ -150,6 +154,7 @@ mod test {
         let decl = LuaDecl::Local {
             name: "aaa".to_string(),
             file_id,
+            kind: LuaSyntaxKind::LocalName.into(),
             range: TextRange::new(5.into(), 8.into()),
             attrib: None,
             decl_type: None,
@@ -161,6 +166,7 @@ mod test {
         let decl2 = LuaDecl::Local {
             name: "aaa".to_string(),
             file_id,
+            kind: LuaSyntaxKind::LocalName.into(),
             range: TextRange::new(105.into(), 108.into()),
             attrib: None,
             decl_type: None,
@@ -202,6 +208,7 @@ mod test {
         let decl = LuaDecl::Local {
             name: "aaa".to_string(),
             file_id,
+            kind: LuaSyntaxKind::LocalName.into(),
             range: TextRange::new(5.into(), 8.into()),
             attrib: None,
             decl_type: None,
@@ -213,6 +220,7 @@ mod test {
         let decl2 = LuaDecl::Local {
             name: "aaa".to_string(),
             file_id,
+            kind: LuaSyntaxKind::LocalName.into(),
             range: TextRange::new(130.into(), 133.into()),
             attrib: None,
             decl_type: None,
@@ -224,6 +232,7 @@ mod test {
         let decl3 = LuaDecl::Local {
             name: "bbb".to_string(),
             file_id,
+            kind: LuaSyntaxKind::LocalName.into(),
             range: TextRange::new(75.into(), 75.into()),
             attrib: None,
             decl_type: None,

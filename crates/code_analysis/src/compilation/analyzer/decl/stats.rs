@@ -1,6 +1,5 @@
 use emmylua_parser::{
-    LuaAssignStat, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaFuncStat, LuaIndexKey,
-    LuaLocalFuncStat, LuaLocalStat, LuaVarExpr,
+    LuaAssignStat, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaFuncStat, LuaIndexKey, LuaLocalFuncStat, LuaLocalStat, LuaSyntaxKind, LuaVarExpr
 };
 
 use crate::db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner};
@@ -31,6 +30,7 @@ pub fn analyze_local_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalStat) {
             name,
             file_id: analyzer.get_file_id(),
             range: local_name.get_range(),
+            kind: local_name.syntax().kind().into(),
             attrib,
             decl_type: None,
         };
@@ -107,6 +107,7 @@ pub fn analyze_for_stat(analyzer: &mut DeclAnalyzer, stat: LuaForStat) {
         let decl = LuaDecl::Local {
             name,
             file_id: analyzer.get_file_id(),
+            kind: it_var.unwrap().syntax().kind(),
             range,
             attrib: Some(LocalAttribute::IterConst),
             decl_type: None,
@@ -125,6 +126,7 @@ pub fn analyze_for_range_stat(analyzer: &mut DeclAnalyzer, stat: LuaForRangeStat
         let decl = LuaDecl::Local {
             name,
             file_id: analyzer.get_file_id(),
+            kind: var.syntax().kind().into(),
             range,
             attrib: Some(LocalAttribute::IterConst),
             decl_type: None,
@@ -138,28 +140,7 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
     let func_name = stat.get_func_name()?;
 
     match func_name {
-        LuaVarExpr::NameExpr(func_name) => {
-            let name = func_name.get_name_text().unwrap_or_default();
-            let range = func_name.get_range();
-            let position = func_name.get_position();
-            let file_id = analyzer.get_file_id();
-            let local_decl_id = if let Some(decl) = analyzer.find_decl(&name, position) {
-                if decl.is_local() {
-                    Some(decl.get_id())
-                } else {
-                    None
-                }
-            } else {
-                None
-            };
-            let reference_index = analyzer.db.get_reference_index_mut();
-
-            if let Some(id) = local_decl_id {
-                reference_index.add_local_reference(file_id, id, range);
-            } else {
-                reference_index.add_global_reference(name, file_id, range);
-            }
-        }
+        LuaVarExpr::NameExpr(_) => {}
         LuaVarExpr::IndexExpr(index_name) => {
             let index_key = index_name.get_index_key()?;
             let key = match index_key {
@@ -196,6 +177,7 @@ pub fn analyze_local_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalFuncSt
         let decl = LuaDecl::Local {
             name,
             file_id: analyzer.get_file_id(),
+            kind: local_name.syntax().kind().into(),
             range,
             attrib: None,
             decl_type: None,

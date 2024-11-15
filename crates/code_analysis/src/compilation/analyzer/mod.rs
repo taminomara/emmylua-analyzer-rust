@@ -1,4 +1,5 @@
 mod decl;
+mod flow;
 mod doc;
 mod lua;
 mod symbol;
@@ -9,6 +10,7 @@ use emmylua_parser::LuaSyntaxTree;
 pub fn analyze(db: &mut DbIndex, context: AnalyzeContext) {
     let mut context = context;
     decl::analyze(db, &mut context);
+    flow::analyze(db, &mut context);
     doc::analyze(db, &mut context);
     lua::analyze(db, &mut context);
     symbol::analyze(db, &mut context);
