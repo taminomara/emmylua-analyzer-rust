@@ -10,7 +10,7 @@ pub struct LuaOperator {
     owner: LuaTypeDeclId,
     op: LuaOperatorMetaMethod,
     operands: Vec<LuaType>,
-    result: LuaType,
+    return_or_func: LuaType,
     file_id: FileId,
     range: TextRange,
 }
@@ -28,7 +28,23 @@ impl LuaOperator {
             owner,
             op,
             operands,
-            result,
+            return_or_func: result,
+            file_id,
+            range
+        }
+    }
+
+    pub fn new_call(
+        owner: LuaTypeDeclId,
+        func: LuaType,
+        file_id: FileId,
+        range: TextRange,
+    ) -> Self {
+        Self {
+            owner,
+            op: LuaOperatorMetaMethod::Call,
+            operands: vec![],
+            return_or_func: func,
             file_id,
             range
         }
@@ -47,7 +63,15 @@ impl LuaOperator {
     }
 
     pub fn get_result(&self) -> &LuaType {
-        &self.result
+        &self.return_or_func
+    }
+
+    pub fn get_call_operator_type(&self) -> Option<&LuaType> {
+        if self.op == LuaOperatorMetaMethod::Call {
+            Some(&self.return_or_func)
+        } else {
+            None
+        }
     }
 
     pub fn get_file_id(&self) -> FileId {

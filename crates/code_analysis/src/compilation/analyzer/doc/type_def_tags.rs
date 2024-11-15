@@ -439,10 +439,11 @@ fn bind_def_type(analyzer: &mut DocAnalyzer, type_def: LuaType) -> Option<()> {
         }
         LuaAst::LuaTableField(field) => {
             let member_id = LuaMemberId::new(field.get_syntax_id(), analyzer.file_id);
-            analyzer
-                .context
-                .unresolve_member_type
-                .insert(member_id, type_def);
+            let member = analyzer
+                .db
+                .get_member_index_mut()
+                .get_mut_member(&member_id)?;
+            member.decl_type = type_def;
         }
         _ => {}
     }

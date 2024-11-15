@@ -8,7 +8,6 @@ use std::collections::HashMap;
 pub use decl::{LocalAttribute, LuaDecl, LuaDeclId};
 pub use decl_tree::LuaDeclarationTree;
 use internment::ArcIntern;
-use rowan::TextRange;
 pub use scope::{LuaScopeId, LuaScopeKind};
 
 use crate::FileId;
@@ -43,10 +42,6 @@ impl LuaDeclIndex {
 
     pub fn get_decl_tree(&self, file_id: &FileId) -> Option<&LuaDeclarationTree> {
         self.decl_trees.get(file_id)
-    }
-
-    pub fn get_decl_tree_mut(&mut self, file_id: &FileId) -> Option<&mut LuaDeclarationTree> {
-        self.decl_trees.get_mut(file_id)
     }
 
     pub fn get_decl(&mut self, decl_id: &LuaDeclId) -> Option<&LuaDecl> {

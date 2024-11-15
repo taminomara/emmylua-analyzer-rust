@@ -145,7 +145,6 @@ pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaPropertyOwnerId> {
         }
         LuaAst::LuaTableField(field) => {
             let member_id = LuaMemberId::new(field.get_syntax_id(), analyzer.file_id);
-
             return Some(LuaPropertyOwnerId::Member(member_id));
         }
         _ => None,

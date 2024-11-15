@@ -1,3 +1,7 @@
+use rowan::TextRange;
+
+use crate::InFiled;
+
 use super::type_decl::LuaTypeDeclId;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -17,6 +21,7 @@ pub enum LuaType {
     BooleanConst(bool),
     StringConst(Box<String>),
     IntegerConst(i64),
+    TableConst(InFiled<TextRange>),
     Ref(LuaTypeDeclId),
     Def(LuaTypeDeclId),
     Module(Box<String>),
@@ -36,6 +41,7 @@ pub enum LuaType {
     MuliReturn(Box<LuaMultiReturn>),
 }
 
+#[allow(unused)]
 impl LuaType {
     pub fn is_unknown(&self) -> bool {
         matches!(self, LuaType::Unknown)
@@ -46,7 +52,7 @@ impl LuaType {
     }
 
     pub fn is_table(&self) -> bool {
-        matches!(self, LuaType::Table | LuaType::TableGeneric(_))
+        matches!(self, LuaType::Table | LuaType::TableGeneric(_) | LuaType::TableConst(_))
     }
 
     pub fn is_userdata(&self) -> bool {
@@ -146,7 +152,7 @@ impl LuaType {
     }
 
     pub fn is_const(&self) -> bool {
-        matches!(self, LuaType::BooleanConst(_) | LuaType::StringConst(_) | LuaType::IntegerConst(_))
+        matches!(self, LuaType::BooleanConst(_) | LuaType::StringConst(_) | LuaType::IntegerConst(_) | LuaType::TableConst(_))
     }
 
     pub fn is_module(&self) -> bool {
