@@ -63,6 +63,10 @@ pub trait LuaAstNode {
         self.syntax().ancestors().filter_map(N::cast)
     }
 
+    fn get_parent<N: LuaAstNode>(&self) -> Option<N> {
+        self.syntax().parent().and_then(N::cast)
+    }
+
     fn get_position(&self) -> TextSize {
         let range = self.syntax().text_range();
         range.start()

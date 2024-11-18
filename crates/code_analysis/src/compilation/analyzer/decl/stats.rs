@@ -1,5 +1,6 @@
 use emmylua_parser::{
-    LuaAssignStat, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaFuncStat, LuaIndexKey, LuaLocalFuncStat, LuaLocalStat, LuaSyntaxKind, LuaVarExpr
+    LuaAssignStat, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaFuncStat, LuaIndexKey,
+    LuaLocalFuncStat, LuaLocalStat, LuaVarExpr,
 };
 
 use crate::db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner};

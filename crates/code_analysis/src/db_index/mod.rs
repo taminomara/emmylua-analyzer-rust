@@ -16,7 +16,7 @@ use crate::FileId;
 pub use declaration::*;
 #[allow(unused_imports)]
 pub use diagnostic::{DiagnosticIndex, AnalyzeError, DiagnosticAction};
-use flow::LuaFlowIndex;
+pub use flow::{LuaFlowIndex, LuaFlowChain};
 #[allow(unused_imports)]
 pub use member::{LuaMember, LuaMemberId, LuaMemberIndex, LuaMemberOwner, LuaMemberKey};
 use meta::MetaFile;

@@ -1,6 +1,7 @@
 mod test;
 mod type_decl;
 mod types;
+mod type_assert;
 
 use std::collections::HashMap;
 
@@ -11,6 +12,7 @@ use rowan::TextRange;
 use type_decl::LuaDeclLocation;
 pub use type_decl::{LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId};
 pub use types::*;
+pub use type_assert::TypeAssertion;
 
 #[derive(Debug)]
 pub struct LuaTypeIndex {
