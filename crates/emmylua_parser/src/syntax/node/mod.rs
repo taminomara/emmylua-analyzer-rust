@@ -54,6 +54,8 @@ pub enum LuaAst {
     LuaCallArgList(LuaCallArgList),
     LuaLocalName(LuaLocalName),
     LuaLocalAttribute(LuaLocalAttribute),
+    LuaElseIfClauseStat(LuaElseIfClauseStat),
+    LuaElseClauseStat(LuaElseClauseStat),
 
     // comment
     LuaComment(LuaComment),
@@ -138,6 +140,8 @@ impl LuaAstNode for LuaAst {
             LuaAst::LuaCallArgList(node) => node.syntax(),
             LuaAst::LuaLocalName(node) => node.syntax(),
             LuaAst::LuaLocalAttribute(node) => node.syntax(),
+            LuaAst::LuaElseIfClauseStat(node) => node.syntax(),
+            LuaAst::LuaElseClauseStat(node) => node.syntax(),
             LuaAst::LuaDocTagClass(node) => node.syntax(),
             LuaAst::LuaDocTagEnum(node) => node.syntax(),
             LuaAst::LuaDocTagAlias(node) => node.syntax(),
@@ -218,6 +222,8 @@ impl LuaAstNode for LuaAst {
             LuaSyntaxKind::TableFieldAssign | LuaSyntaxKind::TableFieldValue => true,
             LuaSyntaxKind::ParamName => true,
             LuaSyntaxKind::Attribute => true,
+            LuaSyntaxKind::ElseIfClauseStat => true,
+            LuaSyntaxKind::ElseClauseStat => true,
             LuaSyntaxKind::Comment => true,
             LuaSyntaxKind::DocTagClass => true,
             LuaSyntaxKind::DocTagEnum => true,
@@ -311,6 +317,12 @@ impl LuaAstNode for LuaAst {
             LuaSyntaxKind::CallArgList => LuaCallArgList::cast(syntax).map(LuaAst::LuaCallArgList),
             LuaSyntaxKind::LocalName => LuaLocalName::cast(syntax).map(LuaAst::LuaLocalName),
             LuaSyntaxKind::Attribute => LuaLocalAttribute::cast(syntax).map(LuaAst::LuaLocalAttribute),
+            LuaSyntaxKind::ElseIfClauseStat => {
+                LuaElseIfClauseStat::cast(syntax).map(LuaAst::LuaElseIfClauseStat)
+            }
+            LuaSyntaxKind::ElseClauseStat => {
+                LuaElseClauseStat::cast(syntax).map(LuaAst::LuaElseClauseStat)
+            }
             LuaSyntaxKind::DocTagClass => LuaDocTagClass::cast(syntax).map(LuaAst::LuaDocTagClass),
             LuaSyntaxKind::DocTagEnum => LuaDocTagEnum::cast(syntax).map(LuaAst::LuaDocTagEnum),
             LuaSyntaxKind::DocTagAlias => LuaDocTagAlias::cast(syntax).map(LuaAst::LuaDocTagAlias),

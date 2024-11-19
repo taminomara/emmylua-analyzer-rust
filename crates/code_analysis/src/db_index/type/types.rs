@@ -1,6 +1,6 @@
 use rowan::TextRange;
 
-use crate::InFiled;
+use crate::{db_index::LuaReferenceKey, InFiled};
 
 use super::type_decl::LuaTypeDeclId;
 
@@ -11,6 +11,7 @@ pub enum LuaType {
     Nil,
     Table,
     Userdata,
+    Function,
     Thread,
     Boolean,
     String,
@@ -29,7 +30,7 @@ pub enum LuaType {
     KeyOf(Box<LuaType>),
     Nullable(Box<LuaType>),
     Tuple(Box<LuaTupleType>),
-    Function(Box<LuaFunctionType>),
+    DocFunction(Box<LuaFunctionType>),
     Object(Box<LuaObjectType>),
     Union(Box<LuaUnionType>),
     Intersection(Box<LuaIntersectionType>),
@@ -39,6 +40,7 @@ pub enum LuaType {
     TplRef(usize),
     StrTplRef(Box<LuaStringTplType>),
     MuliReturn(Box<LuaMultiReturn>),
+    ExistField(Box<LuaExistField>)
 }
 
 #[allow(unused)]
@@ -108,7 +110,7 @@ impl LuaType {
     }
 
     pub fn is_function(&self) -> bool {
-        matches!(self, LuaType::Function(_))
+        matches!(self, LuaType::DocFunction(_) | LuaType::Function)
     }
 
     pub fn is_object(&self) -> bool {
@@ -161,6 +163,10 @@ impl LuaType {
 
     pub fn is_multi_return(&self) -> bool {
         matches!(self, LuaType::MuliReturn(_))
+    }
+
+    pub fn is_exist_field(&self) -> bool {
+        matches!(self, LuaType::ExistField(_))
     }
 }
 
@@ -216,7 +222,7 @@ impl LuaFunctionType {
 
 impl From<LuaFunctionType> for LuaType {
     fn from(t: LuaFunctionType) -> Self {
-        LuaType::Function(Box::new(t))
+        LuaType::DocFunction(Box::new(t))
     }
 }
 
@@ -383,5 +389,25 @@ impl LuaMultiReturn {
             LuaMultiReturn::Multi(types) => types.get(idx),
             LuaMultiReturn::Base(t) => Some(t),
         }
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct LuaExistField {
+    field: LuaReferenceKey,
+    origin: LuaType,
+}
+
+impl LuaExistField {
+    pub fn new(field: LuaReferenceKey, origin: LuaType) -> Self {
+        Self { field, origin }
+    }
+
+    pub fn get_field(&self) -> &LuaReferenceKey {
+        &self.field
+    }
+
+    pub fn get_origin(&self) -> &LuaType {
+        &self.origin
     }
 }

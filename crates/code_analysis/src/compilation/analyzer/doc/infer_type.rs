@@ -307,7 +307,7 @@ fn infer_func_type(analyzer: &mut DocAnalyzer, func: LuaDocFuncType) -> LuaType 
     }
 
     let is_async = func.is_async();
-    LuaType::Function(Box::new(LuaFunctionType::new(
+    LuaType::DocFunction(Box::new(LuaFunctionType::new(
         is_async,
         params_result,
         return_types,
