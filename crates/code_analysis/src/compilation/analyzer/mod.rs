@@ -2,7 +2,6 @@ mod decl;
 mod flow;
 mod doc;
 mod lua;
-mod symbol;
 
 use crate::{db_index::DbIndex, InFiled};
 use emmylua_parser::LuaSyntaxTree;
@@ -13,7 +12,6 @@ pub fn analyze(db: &mut DbIndex, context: AnalyzeContext) {
     flow::analyze(db, &mut context);
     doc::analyze(db, &mut context);
     lua::analyze(db, &mut context);
-    symbol::analyze(db, &mut context);
 }
 
 #[derive(Debug)]

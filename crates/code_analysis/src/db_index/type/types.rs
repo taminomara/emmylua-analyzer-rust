@@ -93,6 +93,10 @@ impl LuaType {
         matches!(self, LuaType::Def(_))
     }
 
+    pub fn is_custom_type(&self) -> bool {
+        matches!(self, LuaType::Ref(_) | LuaType::Def(_))
+    }
+
     pub fn is_array(&self) -> bool {
         matches!(self, LuaType::Array(_))
     }

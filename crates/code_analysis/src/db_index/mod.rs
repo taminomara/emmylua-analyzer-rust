@@ -47,6 +47,7 @@ pub struct DbIndex {
     flow_index: LuaFlowIndex,
 }
 
+#[allow(unused)]
 impl DbIndex {
     pub fn new() -> Self {
         Self {

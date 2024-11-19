@@ -20,6 +20,20 @@ impl LuaFlowIndex {
             chains_map: HashMap::new(),
         }
     }
+
+    pub fn add_flow_chain(&mut self, file_id: FileId, chain: LuaFlowChain) {
+        let id = chain.get_decl_id();
+        self.chains_map
+            .entry(file_id)
+            .or_insert_with(HashMap::new)
+            .insert(id, chain);
+    }
+
+    pub fn get_flow_chain(&self, file_id: FileId, decl_id: LuaDeclId) -> Option<&LuaFlowChain> {
+        self.chains_map
+            .get(&file_id)
+            .and_then(|map| map.get(&decl_id))
+    }
 }
 
 impl LuaIndex for LuaFlowIndex {

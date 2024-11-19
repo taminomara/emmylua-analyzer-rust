@@ -11,17 +11,23 @@ use super::FlowAnalyzer;
 
 pub fn analyze(analyzer: &mut FlowAnalyzer) -> Option<()> {
     let references_index = analyzer.db.get_reference_index();
-    let decl_index = analyzer.db.get_decl_index();
-    let refs_map = references_index.get_local_references_map(&analyzer.file_id)?;
+    let refs_map = references_index
+        .get_local_references_map(&analyzer.file_id)?
+        .clone();
     let tree = analyzer.tree;
+    let file_id = analyzer.file_id;
+
     for (decl_id, ranges) in refs_map {
-        let decl = decl_index.get_decl(decl_id)?;
-        let mut flow_chains = LuaFlowChain::new(decl.get_id());
+        let mut flow_chains = LuaFlowChain::new(decl_id);
         for range in ranges {
             let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), range.clone());
             let node = LuaNameExpr::cast(syntax_id.to_node(tree)?)?;
             infer_name_expr(analyzer, &mut flow_chains, node);
         }
+        analyzer
+            .db
+            .get_flow_index_mut()
+            .add_flow_chain(file_id, flow_chains);
     }
 
     Some(())

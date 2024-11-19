@@ -66,7 +66,7 @@ impl LuaCompilation {
     }
 
     pub fn get_semantic_model(&self, file_id: FileId) -> SemanticModel {
-        SemanticModel::new(file_id)
+        SemanticModel::new(file_id, &self.db)
     }
 
     fn update_index(&mut self, file_ids: Vec<FileId>) {

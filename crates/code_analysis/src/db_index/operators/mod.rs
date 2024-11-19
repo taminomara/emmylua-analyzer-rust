@@ -48,6 +48,10 @@ impl LuaOperatorIndex {
     ) -> Option<&HashMap<LuaOperatorMetaMethod, Vec<LuaOperatorId>>> {
         self.type_operators_map.get(type_id)
     }
+
+    pub fn get_operator(&self, id: &LuaOperatorId) -> Option<&LuaOperator> {
+        self.operators.get(id)
+    }
 }
 
 impl LuaIndex for LuaOperatorIndex {
