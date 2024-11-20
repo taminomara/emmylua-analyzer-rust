@@ -4,8 +4,11 @@ use crate::db_index::{DbIndex, LuaReferenceKey};
 
 use super::{InferResult, LuaInferConfig};
 
-
-pub fn infer_name_expr(db: &DbIndex, config: &LuaInferConfig, name_expr: LuaNameExpr) -> InferResult {
+pub fn infer_name_expr(
+    db: &DbIndex,
+    config: &LuaInferConfig,
+    name_expr: LuaNameExpr,
+) -> InferResult {
     let name_token = name_expr.get_name_token()?;
     let name = name_token.get_name_text().to_string();
     if name == "self" {
@@ -20,7 +23,9 @@ pub fn infer_name_expr(db: &DbIndex, config: &LuaInferConfig, name_expr: LuaName
     if let Some(decl_id) = decl_id {
         let decl = db.get_decl_index().get_decl(&decl_id)?;
         let mut decl_type = if decl.is_global() {
-            db.get_decl_index().get_global_decl_type(&LuaReferenceKey::Name(name.into()))?.clone()
+            db.get_decl_index()
+                .get_global_decl_type(&LuaReferenceKey::Name(name.into()))?
+                .clone()
         } else {
             decl.get_type()?.clone()
         };
@@ -33,7 +38,10 @@ pub fn infer_name_expr(db: &DbIndex, config: &LuaInferConfig, name_expr: LuaName
 
         Some(decl_type)
     } else {
-        let decl_type = db.get_decl_index().get_global_decl_type(&LuaReferenceKey::Name(name.into()))?.clone();
+        let decl_type = db
+            .get_decl_index()
+            .get_global_decl_type(&LuaReferenceKey::Name(name.into()))?
+            .clone();
         Some(decl_type)
     }
 }

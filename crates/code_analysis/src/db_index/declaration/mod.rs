@@ -80,6 +80,11 @@ impl LuaDeclIndex {
 
         Some(valid_type)
     }
+
+    pub fn get_global_decl_id(&self, key: &LuaReferenceKey) -> Option<LuaDeclId> {
+        let decls = self.global_decl.get(key)?;
+        decls.first().cloned()
+    }
 }
 
 impl LuaIndex for LuaDeclIndex {

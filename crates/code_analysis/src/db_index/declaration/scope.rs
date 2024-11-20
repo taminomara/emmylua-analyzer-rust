@@ -1,3 +1,4 @@
+use emmylua_parser::LuaSyntaxId;
 use rowan::{TextRange, TextSize};
 
 use crate::FileId;
@@ -10,6 +11,7 @@ pub enum LuaScopeKind {
     Repeat,
     LocalStat,
     ForRange,
+    FuncStat
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]

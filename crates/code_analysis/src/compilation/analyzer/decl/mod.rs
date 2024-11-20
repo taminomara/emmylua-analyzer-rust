@@ -46,6 +46,7 @@ fn walk_node_enter(analyzer: &mut DeclAnalyzer, node: LuaAst) {
             stats::analyze_for_range_stat(analyzer, stat);
         }
         LuaAst::LuaFuncStat(stat) => {
+            analyzer.create_scope(stat.get_range(), LuaScopeKind::FuncStat);
             stats::analyze_func_stat(analyzer, stat);
         }
         LuaAst::LuaLocalFuncStat(stat) => {
