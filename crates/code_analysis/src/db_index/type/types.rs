@@ -2,7 +2,7 @@ use rowan::TextRange;
 
 use crate::{db_index::LuaReferenceKey, InFiled};
 
-use super::type_decl::LuaTypeDeclId;
+use super::{total_f64::TotalF64, type_decl::LuaTypeDeclId};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum LuaType {
@@ -22,6 +22,7 @@ pub enum LuaType {
     BooleanConst(bool),
     StringConst(Box<String>),
     IntegerConst(i64),
+    FloatConst(TotalF64),
     TableConst(InFiled<TextRange>),
     Ref(LuaTypeDeclId),
     Def(LuaTypeDeclId),
@@ -40,7 +41,7 @@ pub enum LuaType {
     TplRef(usize),
     StrTplRef(Box<LuaStringTplType>),
     MuliReturn(Box<LuaMultiReturn>),
-    ExistField(Box<LuaExistField>)
+    ExistField(Box<LuaExistField>),
 }
 
 #[allow(unused)]
@@ -54,7 +55,10 @@ impl LuaType {
     }
 
     pub fn is_table(&self) -> bool {
-        matches!(self, LuaType::Table | LuaType::TableGeneric(_) | LuaType::TableConst(_))
+        matches!(
+            self,
+            LuaType::Table | LuaType::TableGeneric(_) | LuaType::TableConst(_)
+        )
     }
 
     pub fn is_userdata(&self) -> bool {
@@ -78,7 +82,10 @@ impl LuaType {
     }
 
     pub fn is_number(&self) -> bool {
-        matches!(self, LuaType::Number | LuaType::Integer | LuaType::IntegerConst(_))
+        matches!(
+            self,
+            LuaType::Number | LuaType::Integer | LuaType::IntegerConst(_) | LuaType::FloatConst(_)
+        )
     }
 
     pub fn is_io(&self) -> bool {
@@ -158,7 +165,14 @@ impl LuaType {
     }
 
     pub fn is_const(&self) -> bool {
-        matches!(self, LuaType::BooleanConst(_) | LuaType::StringConst(_) | LuaType::IntegerConst(_) | LuaType::TableConst(_))
+        matches!(
+            self,
+            LuaType::BooleanConst(_)
+                | LuaType::StringConst(_)
+                | LuaType::IntegerConst(_)
+                | LuaType::FloatConst(_)
+                | LuaType::TableConst(_)
+        )
     }
 
     pub fn is_module(&self) -> bool {
@@ -379,7 +393,6 @@ impl LuaStringTplType {
         self.usize
     }
 }
-
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum LuaMultiReturn {

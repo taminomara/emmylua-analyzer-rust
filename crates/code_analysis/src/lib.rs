@@ -11,7 +11,7 @@ pub use compilation::*;
 pub use diagnostic::*;
 #[allow(unused)]
 pub use vfs::*;
-pub use config::Setting;
+pub use config::Emmyrc;
 
 #[derive(Debug)]
 pub struct EmmyLuaAnalysis {

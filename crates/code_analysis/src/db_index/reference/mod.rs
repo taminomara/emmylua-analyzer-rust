@@ -52,6 +52,10 @@ impl LuaReferenceIndex {
             .insert(file_id, syntax_id);
     }
 
+    pub fn get_local_reference(&self, file_id: &FileId) -> Option<&LocalReference> {
+        self.local_references.get(file_id)
+    }
+
     pub fn get_local_references(
         &self,
         file_id: &FileId,

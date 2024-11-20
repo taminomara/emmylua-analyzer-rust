@@ -2,6 +2,7 @@ mod test;
 mod type_decl;
 mod types;
 mod type_assert;
+mod total_f64;
 
 use std::collections::HashMap;
 

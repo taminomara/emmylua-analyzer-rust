@@ -1,15 +1,16 @@
 mod analyzer;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use emmylua_parser::LuaSyntaxTree;
 
-use crate::{db_index::DbIndex, semantic::SemanticModel, FileId, InFiled};
+use crate::{db_index::DbIndex, semantic::{LuaInferConfig, SemanticModel}, Emmyrc, FileId, InFiled};
 
 #[derive(Debug)]
 pub struct LuaCompilation {
     db: DbIndex,
     syntax_trees: HashMap<FileId, LuaSyntaxTree>,
+    config: Emmyrc
 }
 
 impl LuaCompilation {
@@ -17,6 +18,7 @@ impl LuaCompilation {
         Self {
             db: DbIndex::new(),
             syntax_trees: HashMap::new(),
+            config: Emmyrc::default()
         }
     }
 
@@ -66,7 +68,17 @@ impl LuaCompilation {
     }
 
     pub fn get_semantic_model(&self, file_id: FileId) -> SemanticModel {
-        SemanticModel::new(file_id, &self.db)
+        let mut require_map: HashSet<String> = HashSet::new();
+        if let Some(runtime) = &self.config.runtime {
+            if let Some(require_like_func) = &runtime.require_like_function {
+                for func in require_like_func {
+                    require_map.insert(func.clone());
+                }
+            }
+        }
+
+        let config = LuaInferConfig::new( file_id, require_map);
+        SemanticModel::new(file_id, &self.db, config)
     }
 
     fn update_index(&mut self, file_ids: Vec<FileId>) {

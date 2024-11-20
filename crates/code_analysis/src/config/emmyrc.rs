@@ -5,8 +5,8 @@ use std::collections::HashMap;
 
 use crate::DiagnosticCode;
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema)]
-pub struct Setting {
+#[derive(Serialize, Deserialize, Debug, JsonSchema, Default)]
+pub struct Emmyrc {
     #[serde(rename = "$schema")]
     pub schema: Option<String>,
 

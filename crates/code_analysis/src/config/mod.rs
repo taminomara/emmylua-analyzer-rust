@@ -1,3 +1,3 @@
 mod emmyrc;
 
-pub use emmyrc::Setting;
+pub use emmyrc::Emmyrc;

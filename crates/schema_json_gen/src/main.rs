@@ -1,8 +1,8 @@
-use code_analysis::Setting;
+use code_analysis::Emmyrc;
 use std::fs;
 
 fn main() {
-    let schema = schemars::schema_for!(Setting);
+    let schema = schemars::schema_for!(Emmyrc);
     let schema_json = serde_json::to_string_pretty(&schema).unwrap();
     let root_crates = std::env::current_dir().unwrap();
     let output_path = root_crates.join("resources/schema.json");
