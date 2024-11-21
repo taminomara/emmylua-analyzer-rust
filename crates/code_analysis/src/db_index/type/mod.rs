@@ -2,8 +2,9 @@ mod test;
 mod type_assert;
 mod type_decl;
 mod types;
-use std::collections::HashMap;
+mod instantiate_generic;
 
+use std::collections::HashMap;
 use super::traits::LuaIndex;
 use crate::{FileId, InFiled};
 use flagset::FlagSet;
@@ -12,6 +13,7 @@ pub use type_assert::TypeAssertion;
 use type_decl::LuaDeclLocation;
 pub use type_decl::{LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId};
 pub use types::*;
+
 
 #[derive(Debug)]
 pub struct LuaTypeIndex {

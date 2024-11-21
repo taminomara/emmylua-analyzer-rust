@@ -2,7 +2,7 @@ mod local_reference;
 
 use std::collections::HashMap;
 
-use emmylua_parser::{LuaSyntaxId, LuaSyntaxKind};
+use emmylua_parser::{LuaIndexKey, LuaSyntaxId, LuaSyntaxKind};
 use internment::ArcIntern;
 use local_reference::LocalReference;
 use rowan::TextRange;
@@ -123,6 +123,7 @@ impl LuaIndex for LuaReferenceIndex {
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum LuaReferenceKey {
+    None,
     Name(ArcIntern<String>),
     Integer(i64),
 }
@@ -136,5 +137,25 @@ impl From<String> for LuaReferenceKey {
 impl From<i64> for LuaReferenceKey {
     fn from(integer: i64) -> Self {
         LuaReferenceKey::Integer(integer)
+    }
+}
+
+impl From<LuaIndexKey> for LuaReferenceKey {
+    fn from(key: LuaIndexKey) -> Self {
+        match key {
+            LuaIndexKey::Name(name) => LuaReferenceKey::Name(name.get_name_text().to_string().into()),
+            LuaIndexKey::Integer(integer) => LuaReferenceKey::Integer(integer.get_int_value()),
+            _ => LuaReferenceKey::None,
+        }
+    }
+}
+
+impl From<&LuaIndexKey> for LuaReferenceKey {
+    fn from(key: &LuaIndexKey) -> Self {
+        match key {
+            LuaIndexKey::Name(name) => LuaReferenceKey::Name(name.get_name_text().to_string().into()),
+            LuaIndexKey::Integer(integer) => LuaReferenceKey::Integer(integer.get_int_value()),
+            _ => LuaReferenceKey::None,
+        }
     }
 }

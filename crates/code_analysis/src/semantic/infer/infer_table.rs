@@ -1,4 +1,4 @@
-use emmylua_parser::{LuaAstNode, LuaExpr, LuaTableExpr};
+use emmylua_parser::{LuaAstNode, LuaTableExpr};
 
 use crate::db_index::{DbIndex, LuaType};
 

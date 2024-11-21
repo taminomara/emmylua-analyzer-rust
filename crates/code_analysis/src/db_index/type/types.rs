@@ -5,7 +5,7 @@ use rowan::TextRange;
 
 use crate::{db_index::LuaReferenceKey, InFiled};
 
-use super::type_decl::LuaTypeDeclId;
+use super::{instantiate_generic::instantiate, type_decl::LuaTypeDeclId};
 
 #[derive(Debug, Clone)]
 pub enum LuaType {
@@ -299,6 +299,10 @@ impl LuaType {
     pub fn is_exist_field(&self) -> bool {
         matches!(self, LuaType::ExistField(_))
     }
+
+    pub fn instantiate_generic(&self, params: &Vec<LuaType>) -> LuaType {
+        instantiate(self, params)
+    }
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -378,7 +382,19 @@ impl LuaObjectType {
     pub fn new(object_fields: Vec<(LuaIndexAccessKey, LuaType)>) -> Self {
         let mut fields = HashMap::new();
         let mut index_access = Vec::new();
-        for (key, value_type) in object_fields.into_iter() {}
+        for (key, value_type) in object_fields.into_iter() {
+            match key {
+                LuaIndexAccessKey::Integer(i) => {
+                    fields.insert(LuaReferenceKey::Integer(i), value_type);
+                }
+                LuaIndexAccessKey::String(s) => {
+                    fields.insert(LuaReferenceKey::Name(s.clone()), value_type.clone());
+                }
+                LuaIndexAccessKey::Type(t) => {
+                    index_access.push((t, value_type));
+                }
+            }
+        }
 
         Self {
             fields,
@@ -386,9 +402,27 @@ impl LuaObjectType {
         }
     }
 
-    // pub fn get_fields(&self) -> &[(LuaIndexAccessKey, LuaType)] {
-    //     &self.fields
-    // }
+    pub fn new_with_fields(
+        fields: HashMap<LuaReferenceKey, LuaType>,
+        index_access: Vec<(LuaType, LuaType)>,
+    ) -> Self {
+        Self {
+            fields,
+            index_access
+        }
+    }
+
+    pub fn get_fields(&self) -> &HashMap<LuaReferenceKey, LuaType> {
+        &self.fields
+    }
+
+    pub fn get_index_access(&self) -> &[(LuaType, LuaType)] {
+        &self.index_access
+    }
+
+    pub fn get_field(&self, key: &LuaReferenceKey) -> Option<&LuaType> {
+        self.fields.get(key)
+    }
 }
 
 impl From<LuaObjectType> for LuaType {
@@ -488,7 +522,7 @@ impl LuaGenericType {
         LuaType::Ref(self.base.clone())
     }
 
-    pub fn get_params(&self) -> &[LuaType] {
+    pub fn get_params(&self) -> &Vec<LuaType> {
         &self.params
     }
 }

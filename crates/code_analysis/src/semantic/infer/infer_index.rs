@@ -3,7 +3,8 @@ use rowan::TextRange;
 
 use crate::{
     db_index::{
-        DbIndex, LuaDeclTypeKind, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaTupleType, LuaType, LuaTypeDeclId
+        DbIndex, LuaDeclTypeKind, LuaGenericType, LuaIntersectionType, LuaMemberKey,
+        LuaMemberOwner, LuaObjectType, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType,
     },
     semantic::{
         member::{get_buildin_type_map_type_id, without_index_operator, without_members},
@@ -89,9 +90,13 @@ fn infer_member_by_member_key(
         }
         LuaType::Tuple(tuple_type) => infer_tuple_member(tuple_type, member_key),
         LuaType::Object(object_type) => infer_object_member(object_type, member_key),
-        LuaType::Union(union_type) => todo!(),
-        LuaType::Intersection(intersection_type) => todo!(),
-        LuaType::Generic(generic_type) => todo!(),
+        LuaType::Union(union_type) => infer_union_member(db, config, union_type, member_key),
+        LuaType::Intersection(intersection_type) => {
+            infer_intersection_member(db, config, intersection_type, member_key)
+        }
+        LuaType::Generic(generic_type) => {
+            infer_generic_member(db, config, generic_type, member_key)
+        }
         LuaType::ExistField(exist_field) => todo!(),
         _ => None,
     }
@@ -147,8 +152,69 @@ fn infer_tuple_member(tuple_type: &LuaTupleType, member_key: &LuaIndexKey) -> In
 }
 
 fn infer_object_member(object_type: &LuaObjectType, member_key: &LuaIndexKey) -> InferResult {
-    // let key = member_key.into();
-    // object_type.get_fields()
+    let member_type = object_type.get_field(&member_key.into())?;
+    Some(member_type.clone())
+}
+
+fn infer_union_member(
+    db: &DbIndex,
+    config: &LuaInferConfig,
+    union_type: &LuaUnionType,
+    member_key: &LuaIndexKey,
+) -> InferResult {
+    let mut member_types = Vec::new();
+    for member in union_type.get_types() {
+        let member_type =
+            infer_member_by_member_key(db, config, member, member_key, &mut InferGuard::new());
+        if let Some(member_type) = member_type {
+            member_types.push(member_type);
+        }
+    }
+
+    if member_types.is_empty() {
+        return None;
+    }
+
+    if member_types.len() == 1 {
+        return Some(member_types[0].clone());
+    }
+
+    Some(LuaType::Union(LuaUnionType::new(member_types).into()))
+}
+
+fn infer_intersection_member(
+    db: &DbIndex,
+    config: &LuaInferConfig,
+    intersection_type: &LuaIntersectionType,
+    member_key: &LuaIndexKey,
+) -> InferResult {
+    let mut member_type = LuaType::Unknown;
+    for member in intersection_type.get_types() {
+        let sub_member_type =
+            infer_member_by_member_key(db, config, member, member_key, &mut InferGuard::new())?;
+        if member_type.is_unknown() {
+            member_type = sub_member_type;
+        } else if member_type != sub_member_type {
+            return None;
+        }
+    }
+
+    Some(member_type)
+}
+
+fn infer_generic_member(
+    db: &DbIndex,
+    config: &LuaInferConfig,
+    generic_type: &LuaGenericType,
+    member_key: &LuaIndexKey,
+) -> InferResult {
+    let base_type = generic_type.get_base_type();
+    let member_type =
+        infer_member_by_member_key(db, config, &base_type, member_key, &mut InferGuard::new())?;
+
+    let generic_params = generic_type.get_params();
+    
+
 
     None
 }
