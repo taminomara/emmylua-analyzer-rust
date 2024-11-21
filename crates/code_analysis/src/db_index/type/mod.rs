@@ -1,19 +1,17 @@
 mod test;
+mod type_assert;
 mod type_decl;
 mod types;
-mod type_assert;
-mod total_f64;
-
 use std::collections::HashMap;
 
 use super::traits::LuaIndex;
 use crate::{FileId, InFiled};
 use flagset::FlagSet;
 use rowan::TextRange;
+pub use type_assert::TypeAssertion;
 use type_decl::LuaDeclLocation;
 pub use type_decl::{LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId};
 pub use types::*;
-pub use type_assert::TypeAssertion;
 
 #[derive(Debug)]
 pub struct LuaTypeIndex {

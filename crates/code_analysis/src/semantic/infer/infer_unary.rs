@@ -50,7 +50,7 @@ fn infer_unary_expr_not(inner_type: LuaType) -> InferResult {
 fn infer_unary_expr_unm(db: &DbIndex, inner_type: LuaType) -> InferResult {
     match inner_type {
         LuaType::IntegerConst(i) => Some(LuaType::IntegerConst(-i)),
-        LuaType::FloatConst(f) => Some(LuaType::FloatConst((-f.0).into())),
+        LuaType::FloatConst(f) => Some(LuaType::FloatConst((-f).into())),
         LuaType::Integer => Some(LuaType::Integer),
         _ => infer_unary_custom_operator(db, &inner_type, LuaOperatorMetaMethod::Unm),
     }

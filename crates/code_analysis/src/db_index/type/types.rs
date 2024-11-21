@@ -1,12 +1,13 @@
-use std::sync::Arc;
+use std::{collections::HashMap, hash::Hash, sync::Arc};
 
+use internment::ArcIntern;
 use rowan::TextRange;
 
 use crate::{db_index::LuaReferenceKey, InFiled};
 
-use super::{total_f64::TotalF64, type_decl::LuaTypeDeclId};
+use super::type_decl::LuaTypeDeclId;
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum LuaType {
     Unknown,
     Any,
@@ -22,9 +23,9 @@ pub enum LuaType {
     Io,
     SelfInfer,
     BooleanConst(bool),
-    StringConst(Arc<String>),
+    StringConst(ArcIntern<String>),
     IntegerConst(i64),
-    FloatConst(TotalF64),
+    FloatConst(f64),
     TableConst(InFiled<TextRange>),
     Ref(LuaTypeDeclId),
     Def(LuaTypeDeclId),
@@ -44,6 +45,116 @@ pub enum LuaType {
     StrTplRef(Arc<LuaStringTplType>),
     MuliReturn(Arc<LuaMultiReturn>),
     ExistField(Arc<LuaExistField>),
+}
+
+impl PartialEq for LuaType {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (LuaType::Unknown, LuaType::Unknown) => true,
+            (LuaType::Any, LuaType::Any) => true,
+            (LuaType::Nil, LuaType::Nil) => true,
+            (LuaType::Table, LuaType::Table) => true,
+            (LuaType::Userdata, LuaType::Userdata) => true,
+            (LuaType::Function, LuaType::Function) => true,
+            (LuaType::Thread, LuaType::Thread) => true,
+            (LuaType::Boolean, LuaType::Boolean) => true,
+            (LuaType::String, LuaType::String) => true,
+            (LuaType::Integer, LuaType::Integer) => true,
+            (LuaType::Number, LuaType::Number) => true,
+            (LuaType::Io, LuaType::Io) => true,
+            (LuaType::SelfInfer, LuaType::SelfInfer) => true,
+            (LuaType::BooleanConst(a), LuaType::BooleanConst(b)) => a == b,
+            (LuaType::StringConst(a), LuaType::StringConst(b)) => a == b,
+            (LuaType::IntegerConst(a), LuaType::IntegerConst(b)) => a == b,
+            (LuaType::FloatConst(a), LuaType::FloatConst(b)) => a == b,
+            (LuaType::TableConst(a), LuaType::TableConst(b)) => a == b,
+            (LuaType::Ref(a), LuaType::Ref(b)) => a == b,
+            (LuaType::Def(a), LuaType::Def(b)) => a == b,
+            (LuaType::Module(a), LuaType::Module(b)) => a == b,
+            (LuaType::Array(a), LuaType::Array(b)) => a == b,
+            (LuaType::KeyOf(a), LuaType::KeyOf(b)) => a == b,
+            (LuaType::Nullable(a), LuaType::Nullable(b)) => a == b,
+            (LuaType::Tuple(a), LuaType::Tuple(b)) => a == b,
+            (LuaType::DocFunction(a), LuaType::DocFunction(b)) => a == b,
+            (LuaType::Object(a), LuaType::Object(b)) => Arc::ptr_eq(a, b),
+            (LuaType::Union(a), LuaType::Union(b)) => Arc::ptr_eq(a, b),
+            (LuaType::Intersection(a), LuaType::Intersection(b)) => Arc::ptr_eq(a, b),
+            (LuaType::Extends(a), LuaType::Extends(b)) => Arc::ptr_eq(a, b),
+            (LuaType::Generic(a), LuaType::Generic(b)) => Arc::ptr_eq(a, b),
+            (LuaType::TableGeneric(a), LuaType::TableGeneric(b)) => a == b,
+            (LuaType::TplRef(a), LuaType::TplRef(b)) => a == b,
+            (LuaType::StrTplRef(a), LuaType::StrTplRef(b)) => Arc::ptr_eq(a, b),
+            (LuaType::MuliReturn(a), LuaType::MuliReturn(b)) => Arc::ptr_eq(a, b),
+            (LuaType::ExistField(a), LuaType::ExistField(b)) => a == b,
+            _ => false, // 不同变体之间不相等
+        }
+    }
+}
+
+impl Eq for LuaType {}
+
+impl Hash for LuaType {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            LuaType::Unknown => 0.hash(state),
+            LuaType::Any => 1.hash(state),
+            LuaType::Nil => 2.hash(state),
+            LuaType::Table => 3.hash(state),
+            LuaType::Userdata => 4.hash(state),
+            LuaType::Function => 5.hash(state),
+            LuaType::Thread => 6.hash(state),
+            LuaType::Boolean => 7.hash(state),
+            LuaType::String => 8.hash(state),
+            LuaType::Integer => 9.hash(state),
+            LuaType::Number => 10.hash(state),
+            LuaType::Io => 11.hash(state),
+            LuaType::SelfInfer => 12.hash(state),
+            LuaType::BooleanConst(a) => (13, a).hash(state),
+            LuaType::StringConst(a) => (14, a).hash(state),
+            LuaType::IntegerConst(a) => (15, a).hash(state),
+            LuaType::FloatConst(a) => (16, a.to_bits()).hash(state),
+            LuaType::TableConst(a) => (17, a).hash(state),
+            LuaType::Ref(a) => (18, a).hash(state),
+            LuaType::Def(a) => (19, a).hash(state),
+            LuaType::Module(a) => (20, a).hash(state),
+            LuaType::Array(a) => (21, a).hash(state),
+            LuaType::KeyOf(a) => (22, a).hash(state),
+            LuaType::Nullable(a) => (23, a).hash(state),
+            LuaType::Tuple(a) => (24, a).hash(state),
+            LuaType::DocFunction(a) => (25, a).hash(state),
+            LuaType::Object(a) => {
+                let ptr = Arc::as_ptr(a);
+                (26, ptr).hash(state)
+            }
+            LuaType::Union(a) => {
+                let ptr = Arc::as_ptr(a);
+                (27, ptr).hash(state)
+            }
+            LuaType::Intersection(a) => {
+                let ptr = Arc::as_ptr(a);
+                (28, ptr).hash(state)
+            }
+            LuaType::Extends(a) => {
+                let ptr = Arc::as_ptr(a);
+                (29, ptr).hash(state)
+            }
+            LuaType::Generic(a) => {
+                let ptr = Arc::as_ptr(a);
+                (30, ptr).hash(state)
+            }
+            LuaType::TableGeneric(a) => {
+                let ptr = Arc::as_ptr(a);
+                (31, ptr).hash(state)
+            }
+            LuaType::TplRef(a) => (32, a).hash(state),
+            LuaType::StrTplRef(a) => (33, a).hash(state),
+            LuaType::MuliReturn(a) => {
+                let ptr = Arc::as_ptr(a);
+                (34, ptr).hash(state)
+            }
+            LuaType::ExistField(a) => (35, a).hash(state),
+        }
+    }
 }
 
 #[allow(unused)]
@@ -253,23 +364,31 @@ impl From<LuaFunctionType> for LuaType {
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum LuaIndexAccessKey {
     Integer(i64),
-    String(String),
+    String(ArcIntern<String>),
     Type(LuaType),
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct LuaObjectType {
-    fields: Vec<(LuaIndexAccessKey, LuaType)>,
+    fields: HashMap<LuaReferenceKey, LuaType>,
+    index_access: Vec<(LuaType, LuaType)>,
 }
 
 impl LuaObjectType {
-    pub fn new(fields: Vec<(LuaIndexAccessKey, LuaType)>) -> Self {
-        Self { fields }
+    pub fn new(object_fields: Vec<(LuaIndexAccessKey, LuaType)>) -> Self {
+        let mut fields = HashMap::new();
+        let mut index_access = Vec::new();
+        for (key, value_type) in object_fields.into_iter() {}
+
+        Self {
+            fields,
+            index_access,
+        }
     }
 
-    pub fn get_fields(&self) -> &[(LuaIndexAccessKey, LuaType)] {
-        &self.fields
-    }
+    // pub fn get_fields(&self) -> &[(LuaIndexAccessKey, LuaType)] {
+    //     &self.fields
+    // }
 }
 
 impl From<LuaObjectType> for LuaType {

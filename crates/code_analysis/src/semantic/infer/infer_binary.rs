@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use emmylua_parser::{BinaryOperator, LuaBinaryExpr};
 
 use crate::db_index::{DbIndex, LuaOperatorMetaMethod, LuaType, TypeAssertion};
@@ -202,7 +200,7 @@ fn infer_binary_expr_pow(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
                 Some(LuaType::IntegerConst(int1.pow(*int2 as u32)))
             }
             (LuaType::FloatConst(num1), LuaType::IntegerConst(num2)) => {
-                Some(LuaType::FloatConst(num1.0.powf(*num2 as f64).into()))
+                Some(LuaType::FloatConst(num1.powf(*num2 as f64).into()))
             }
             _ => Some(LuaType::Number),
         };
@@ -280,13 +278,13 @@ fn infer_binary_expr_concat(db: &DbIndex, left: LuaType, right: LuaType) -> Infe
     if left.is_number() || left.is_string() || right.is_number() || right.is_string() {
         match (&left, &right) {
             (LuaType::StringConst(s1), LuaType::StringConst(s2)) => {
-                return Some(LuaType::StringConst(Arc::new(format!("{}{}", *s1, *s2))));
+                return Some(LuaType::StringConst(format!("{}{}", *s1, *s2).into()));
             }
             (LuaType::StringConst(s1), LuaType::IntegerConst(i)) => {
-                return Some(LuaType::StringConst(Arc::new(format!("{}{}", *s1, i))));
+                return Some(LuaType::StringConst(format!("{}{}", *s1, i).into()));
             }
             (LuaType::IntegerConst(i), LuaType::StringConst(s2)) => {
-                return Some(LuaType::StringConst(Arc::new(format!("{}{}", i, *s2))));
+                return Some(LuaType::StringConst(format!("{}{}", i, *s2).into()));
             }
             _ => return Some(LuaType::String),
         }

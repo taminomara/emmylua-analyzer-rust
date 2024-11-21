@@ -320,13 +320,13 @@ fn infer_object_type(analyzer: &mut DocAnalyzer, object_type: LuaDocObjectType) 
         let key = if let Some(field_key) = field.get_field_key() {
             match field_key {
                 LuaDocObjectFieldKey::Name(name) => {
-                    LuaIndexAccessKey::String(name.get_name_text().to_string())
+                    LuaIndexAccessKey::String(name.get_name_text().to_string().into())
                 }
                 LuaDocObjectFieldKey::Integer(int) => {
                     LuaIndexAccessKey::Integer(int.get_int_value())
                 }
                 LuaDocObjectFieldKey::String(str) => {
-                    LuaIndexAccessKey::String(str.get_value().to_string())
+                    LuaIndexAccessKey::String(str.get_value().to_string().into())
                 }
                 LuaDocObjectFieldKey::Type(t) => LuaIndexAccessKey::Type(infer_type(analyzer, t)),
             }
