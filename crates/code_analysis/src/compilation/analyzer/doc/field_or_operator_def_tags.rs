@@ -27,7 +27,7 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
     };
 
     if nullable && type_ref.is_nullable() {
-        type_ref = LuaType::Nullable(Box::new(type_ref));
+        type_ref = LuaType::Nullable(type_ref.into());
     }
 
     let description = if let Some(description) = tag.get_description() {

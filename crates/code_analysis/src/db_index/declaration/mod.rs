@@ -6,7 +6,7 @@ mod test;
 use std::collections::HashMap;
 
 pub use decl::{LocalAttribute, LuaDecl, LuaDeclId};
-pub use decl_tree::LuaDeclarationTree;
+pub use decl_tree::{LuaDeclarationTree, LuaDeclOrMemberId};
 use internment::ArcIntern;
 pub use scope::{LuaScopeId, LuaScopeKind};
 

@@ -17,7 +17,9 @@ impl TypeAssertion {
         match self {
             TypeAssertion::Exist => remove_nil_and_not_false(source),
             TypeAssertion::IsNativeLuaType(t) => force_type(t.clone(), source),
-            TypeAssertion::FieldExist(key) => LuaType::ExistField(LuaExistField::new((**key).clone(), source).into()),
+            TypeAssertion::FieldExist(key) => {
+                LuaType::ExistField(LuaExistField::new((**key).clone(), source).into())
+            }
         }
     }
 }
@@ -39,7 +41,7 @@ fn remove_nil_and_not_false(t: LuaType) -> LuaType {
                 LuaType::Union(LuaUnionType::new(new_types).into())
             }
         }
-        LuaType::Nullable(t) => remove_nil_and_not_false(*t),
+        LuaType::Nullable(t) => remove_nil_and_not_false((*t).clone()),
         t => t,
     }
 }
@@ -113,12 +115,12 @@ fn force_type(target: LuaType, source: LuaType) -> LuaType {
                         LuaType::Union(LuaUnionType::new(types).into())
                     }
                 }
-                _ => target
+                _ => target,
             }
         }
         LuaType::Nullable(inner) => {
             if !target.is_nullable() {
-                force_type(target, *inner.clone())
+                force_type(target, (**inner).clone())
             } else {
                 LuaType::Nil
             }

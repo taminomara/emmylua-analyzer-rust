@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use rowan::TextRange;
 
 use crate::{db_index::LuaReferenceKey, InFiled};
@@ -20,28 +22,28 @@ pub enum LuaType {
     Io,
     SelfInfer,
     BooleanConst(bool),
-    StringConst(Box<String>),
+    StringConst(Arc<String>),
     IntegerConst(i64),
     FloatConst(TotalF64),
     TableConst(InFiled<TextRange>),
     Ref(LuaTypeDeclId),
     Def(LuaTypeDeclId),
-    Module(Box<String>),
-    Array(Box<LuaType>),
-    KeyOf(Box<LuaType>),
-    Nullable(Box<LuaType>),
-    Tuple(Box<LuaTupleType>),
-    DocFunction(Box<LuaFunctionType>),
-    Object(Box<LuaObjectType>),
-    Union(Box<LuaUnionType>),
-    Intersection(Box<LuaIntersectionType>),
-    Extends(Box<LuaExtendedType>),
-    Generic(Box<LuaGenericType>),
-    TableGeneric(Box<Vec<LuaType>>),
+    Module(Arc<String>),
+    Array(Arc<LuaType>),
+    KeyOf(Arc<LuaType>),
+    Nullable(Arc<LuaType>),
+    Tuple(Arc<LuaTupleType>),
+    DocFunction(Arc<LuaFunctionType>),
+    Object(Arc<LuaObjectType>),
+    Union(Arc<LuaUnionType>),
+    Intersection(Arc<LuaIntersectionType>),
+    Extends(Arc<LuaExtendedType>),
+    Generic(Arc<LuaGenericType>),
+    TableGeneric(Arc<Vec<LuaType>>),
     TplRef(usize),
-    StrTplRef(Box<LuaStringTplType>),
-    MuliReturn(Box<LuaMultiReturn>),
-    ExistField(Box<LuaExistField>),
+    StrTplRef(Arc<LuaStringTplType>),
+    MuliReturn(Arc<LuaMultiReturn>),
+    ExistField(Arc<LuaExistField>),
 }
 
 #[allow(unused)]
@@ -201,11 +203,15 @@ impl LuaTupleType {
     pub fn get_types(&self) -> &[LuaType] {
         &self.types
     }
+
+    pub fn get_type(&self, idx: usize) -> Option<&LuaType> {
+        self.types.get(idx)
+    }
 }
 
 impl From<LuaTupleType> for LuaType {
     fn from(t: LuaTupleType) -> Self {
-        LuaType::Tuple(Box::new(t))
+        LuaType::Tuple(t.into())
     }
 }
 
@@ -240,7 +246,7 @@ impl LuaFunctionType {
 
 impl From<LuaFunctionType> for LuaType {
     fn from(t: LuaFunctionType) -> Self {
-        LuaType::DocFunction(Box::new(t))
+        LuaType::DocFunction(t.into())
     }
 }
 
@@ -268,7 +274,7 @@ impl LuaObjectType {
 
 impl From<LuaObjectType> for LuaType {
     fn from(t: LuaObjectType) -> Self {
-        LuaType::Object(Box::new(t))
+        LuaType::Object(t.into())
     }
 }
 
@@ -286,14 +292,14 @@ impl LuaUnionType {
         &self.types
     }
 
-    pub(crate) fn into_types(self) -> Vec<LuaType> {
-        self.types
+    pub(crate) fn into_types(&self) -> Vec<LuaType> {
+        self.types.clone()
     }
 }
 
 impl From<LuaUnionType> for LuaType {
     fn from(t: LuaUnionType) -> Self {
-        LuaType::Union(Box::new(t))
+        LuaType::Union(t.into())
     }
 }
 
@@ -311,14 +317,14 @@ impl LuaIntersectionType {
         &self.types
     }
 
-    pub(crate) fn into_types(self) -> Vec<LuaType> {
-        self.types
+    pub(crate) fn into_types(&self) -> Vec<LuaType> {
+        self.types.clone()
     }
 }
 
 impl From<LuaIntersectionType> for LuaType {
     fn from(t: LuaIntersectionType) -> Self {
-        LuaType::Intersection(Box::new(t))
+        LuaType::Intersection(t.into())
     }
 }
 
@@ -344,7 +350,7 @@ impl LuaExtendedType {
 
 impl From<LuaExtendedType> for LuaType {
     fn from(t: LuaExtendedType) -> Self {
-        LuaType::Extends(Box::new(t))
+        LuaType::Extends(t.into())
     }
 }
 
@@ -370,7 +376,7 @@ impl LuaGenericType {
 
 impl From<LuaGenericType> for LuaType {
     fn from(t: LuaGenericType) -> Self {
-        LuaType::Generic(Box::new(t))
+        LuaType::Generic(t.into())
     }
 }
 

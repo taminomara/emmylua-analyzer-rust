@@ -4,8 +4,11 @@ use crate::db_index::{DbIndex, LuaOperatorMetaMethod, LuaType};
 
 use super::{get_custom_type_operator, infer_expr, InferResult, LuaInferConfig};
 
-
-pub fn infer_unary_expr(db: &DbIndex, config: &LuaInferConfig, unary_expr: LuaUnaryExpr) -> InferResult {
+pub fn infer_unary_expr(
+    db: &DbIndex,
+    config: &mut LuaInferConfig,
+    unary_expr: LuaUnaryExpr,
+) -> InferResult {
     let op = unary_expr.get_op_token()?.get_op();
     let inner_expr = unary_expr.get_expr()?;
     let inner_type = infer_expr(db, config, inner_expr)?;
@@ -40,7 +43,7 @@ fn infer_unary_custom_operator(
 fn infer_unary_expr_not(inner_type: LuaType) -> InferResult {
     match inner_type {
         LuaType::BooleanConst(b) => Some(LuaType::BooleanConst(!b)),
-        _ => Some(LuaType::Boolean)
+        _ => Some(LuaType::Boolean),
     }
 }
 
@@ -49,13 +52,13 @@ fn infer_unary_expr_unm(db: &DbIndex, inner_type: LuaType) -> InferResult {
         LuaType::IntegerConst(i) => Some(LuaType::IntegerConst(-i)),
         LuaType::FloatConst(f) => Some(LuaType::FloatConst((-f.0).into())),
         LuaType::Integer => Some(LuaType::Integer),
-        _ => infer_unary_custom_operator(db, &inner_type, LuaOperatorMetaMethod::Unm)
+        _ => infer_unary_custom_operator(db, &inner_type, LuaOperatorMetaMethod::Unm),
     }
 }
 
 fn infer_unary_expr_bnot(db: &DbIndex, inner_type: LuaType) -> InferResult {
     match inner_type {
         LuaType::IntegerConst(i) => Some(LuaType::IntegerConst(!i)),
-        _ => infer_unary_custom_operator(db, &inner_type, LuaOperatorMetaMethod::BNot)
+        _ => infer_unary_custom_operator(db, &inner_type, LuaOperatorMetaMethod::BNot),
     }
 }

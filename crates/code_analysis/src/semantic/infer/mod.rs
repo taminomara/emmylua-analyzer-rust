@@ -1,12 +1,14 @@
 mod infer_binary;
-mod infer_unary;
-mod infer_table;
-mod infer_name;
 mod infer_config;
+mod infer_index;
+mod infer_name;
+mod infer_table;
+mod infer_unary;
 
-use emmylua_parser::{LuaExpr, LuaLiteralExpr, LuaLiteralToken};
+use emmylua_parser::{LuaAstNode, LuaExpr, LuaLiteralExpr, LuaLiteralToken};
 use infer_binary::infer_binary_expr;
 pub use infer_config::LuaInferConfig;
+use infer_index::infer_index_expr;
 use infer_name::infer_name_expr;
 use infer_table::infer_table_expr;
 use infer_unary::infer_unary_expr;
@@ -15,18 +17,27 @@ use crate::db_index::{DbIndex, LuaOperator, LuaOperatorMetaMethod, LuaType};
 
 pub type InferResult = Option<LuaType>;
 
-pub fn infer_expr(db: &DbIndex, config: &LuaInferConfig, expr: LuaExpr) -> InferResult {
-    match expr {
-        LuaExpr::CallExpr(lua_call_expr) => todo!(),
-        LuaExpr::TableExpr(lua_table_expr) => infer_table_expr(db, config, lua_table_expr),
-        LuaExpr::LiteralExpr(lua_literal_expr) => return infer_literal_expr(lua_literal_expr),
-        LuaExpr::BinaryExpr(lua_binary_expr) => return infer_binary_expr(db, config, lua_binary_expr),
-        LuaExpr::UnaryExpr(lua_unary_expr) => infer_unary_expr(db, config, lua_unary_expr),
-        LuaExpr::ClosureExpr(lua_closure_expr) => todo!(),
-        LuaExpr::ParenExpr(lua_paren_expr) => return infer_expr(db, config, lua_paren_expr.get_expr()?),
-        LuaExpr::NameExpr(lua_name_expr) => return infer_name_expr(db, config, lua_name_expr),
-        LuaExpr::IndexExpr(lua_index_expr) => todo!(),
+pub fn infer_expr(db: &DbIndex, config: &mut LuaInferConfig, expr: LuaExpr) -> InferResult {
+    let syntax_id = expr.get_syntax_id();
+    if let Some(result) = config.get_cache_expr_type(&syntax_id) {
+        return Some(result.clone());
     }
+
+    let result_type = match expr {
+        LuaExpr::CallExpr(call_expr) => todo!(),
+        LuaExpr::TableExpr(table_expr) => infer_table_expr(db, config, table_expr)?,
+        LuaExpr::LiteralExpr(literal_expr) => infer_literal_expr(literal_expr)?,
+        LuaExpr::BinaryExpr(binary_expr) => infer_binary_expr(db, config, binary_expr)?,
+        LuaExpr::UnaryExpr(unary_expr) => infer_unary_expr(db, config, unary_expr)?,
+        LuaExpr::ClosureExpr(closure_expr) => todo!(),
+        LuaExpr::ParenExpr(paren_expr) => infer_expr(db, config, paren_expr.get_expr()?)?,
+        LuaExpr::NameExpr(name_expr) => infer_name_expr(db, config, name_expr)?,
+        LuaExpr::IndexExpr(index_expr) => infer_index_expr(db, config, index_expr)?,
+    };
+
+    config.cache_expr_type(syntax_id, result_type.clone());
+
+    Some(result_type)
 }
 
 fn infer_literal_expr(expr: LuaLiteralExpr) -> InferResult {
@@ -43,7 +54,6 @@ fn infer_literal_expr(expr: LuaLiteralExpr) -> InferResult {
         LuaLiteralToken::String(str) => Some(LuaType::StringConst(str.get_value().into())),
     }
 }
-
 
 fn get_custom_type_operator(
     db: &DbIndex,

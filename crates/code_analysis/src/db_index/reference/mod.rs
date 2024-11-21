@@ -126,3 +126,15 @@ pub enum LuaReferenceKey {
     Name(ArcIntern<String>),
     Integer(i64),
 }
+
+impl From<String> for LuaReferenceKey {
+    fn from(name: String) -> Self {
+        LuaReferenceKey::Name(ArcIntern::new(name))
+    }
+}
+
+impl From<i64> for LuaReferenceKey {
+    fn from(integer: i64) -> Self {
+        LuaReferenceKey::Integer(integer)
+    }
+}

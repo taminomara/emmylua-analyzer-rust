@@ -29,7 +29,7 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
                 if let LuaType::Nullable(_) = t {
                     return t;
                 } else {
-                    return LuaType::Nullable(Box::new(t));
+                    return LuaType::Nullable(t.into());
                 }
             }
         }
@@ -39,14 +39,14 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
                 if t.is_unknown() {
                     return LuaType::Unknown;
                 }
-                return LuaType::Array(Box::new(t));
+                return LuaType::Array(t.into());
             }
         }
         LuaDocType::Literal(literal) => {
             if let Some(literal_token) = literal.get_literal() {
                 match literal_token {
                     LuaLiteralToken::String(str_token) => {
-                        return LuaType::StringConst(Box::new(str_token.get_value()))
+                        return LuaType::StringConst(str_token.get_value().into())
                     }
                     LuaLiteralToken::Number(number_token) => {
                         if number_token.is_int() {
@@ -71,7 +71,7 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
                 }
                 types.push(t);
             }
-            return LuaType::Tuple(Box::new(LuaTupleType::new(types)));
+            return LuaType::Tuple(LuaTupleType::new(types).into());
         }
         LuaDocType::Generic(generic_type) => {
             return infer_generic_type(analyzer, generic_type);
@@ -152,7 +152,7 @@ fn infer_generic_type(analyzer: &mut DocAnalyzer, generic_type: LuaDocGenericTyp
                         types.push(param_type);
                     }
                 }
-                return LuaType::TableGeneric(Box::new(types));
+                return LuaType::TableGeneric(types.into());
             }
 
             let id = if let Some(name_type_decl) = analyzer
@@ -176,7 +176,7 @@ fn infer_generic_type(analyzer: &mut DocAnalyzer, generic_type: LuaDocGenericTyp
                 }
             }
 
-            return LuaType::Generic(Box::new(LuaGenericType::new(id, generic_params)));
+            return LuaType::Generic(LuaGenericType::new(id, generic_params).into());
         }
     }
 
@@ -198,23 +198,23 @@ fn infer_binary_type(analyzer: &mut DocAnalyzer, binary_type: LuaDocBinaryType) 
             match op.get_op() {
                 LuaTypeBinaryOperator::Union => match (left_type, right_type) {
                     (LuaType::Union(left_type_union), LuaType::Union(right_type_union)) => {
-                        let mut left_types = (*left_type_union).into_types();
-                        let right_types = (*right_type_union).into_types();
+                        let mut left_types = left_type_union.into_types();
+                        let right_types = right_type_union.into_types();
                         left_types.extend(right_types);
-                        return LuaType::Union(Box::new(LuaUnionType::new(left_types)));
+                        return LuaType::Union(LuaUnionType::new(left_types).into());
                     }
                     (LuaType::Union(left_type_union), right) => {
                         let mut left_types = (*left_type_union).into_types();
                         left_types.push(right);
-                        return LuaType::Union(Box::new(LuaUnionType::new(left_types)));
+                        return LuaType::Union(LuaUnionType::new(left_types).into());
                     }
                     (left, LuaType::Union(right_type_union)) => {
                         let mut right_types = (*right_type_union).into_types();
                         right_types.push(left);
-                        return LuaType::Union(Box::new(LuaUnionType::new(right_types)));
+                        return LuaType::Union(LuaUnionType::new(right_types).into());
                     }
                     (left, right) => {
-                        return LuaType::Union(Box::new(LuaUnionType::new(vec![left, right])));
+                        return LuaType::Union(LuaUnionType::new(vec![left, right]).into());
                     }
                 },
                 LuaTypeBinaryOperator::Intersection => match (left_type, right_type) {
@@ -222,35 +222,35 @@ fn infer_binary_type(analyzer: &mut DocAnalyzer, binary_type: LuaDocBinaryType) 
                         LuaType::Intersection(left_type_union),
                         LuaType::Intersection(right_type_union),
                     ) => {
-                        let mut left_types = (*left_type_union).into_types();
-                        let right_types = (*right_type_union).into_types();
+                        let mut left_types = left_type_union.into_types();
+                        let right_types = right_type_union.into_types();
                         left_types.extend(right_types);
-                        return LuaType::Intersection(Box::new(LuaIntersectionType::new(
+                        return LuaType::Intersection(LuaIntersectionType::new(
                             left_types,
-                        )));
+                        ).into());
                     }
                     (LuaType::Intersection(left_type_union), right) => {
-                        let mut left_types = (*left_type_union).into_types();
+                        let mut left_types = left_type_union.into_types();
                         left_types.push(right);
-                        return LuaType::Intersection(Box::new(LuaIntersectionType::new(
+                        return LuaType::Intersection(LuaIntersectionType::new(
                             left_types,
-                        )));
+                        ).into());
                     }
                     (left, LuaType::Intersection(right_type_union)) => {
-                        let mut right_types = (*right_type_union).into_types();
+                        let mut right_types = right_type_union.into_types();
                         right_types.push(left);
-                        return LuaType::Intersection(Box::new(LuaIntersectionType::new(
+                        return LuaType::Intersection(LuaIntersectionType::new(
                             right_types,
-                        )));
+                        ).into());
                     }
                     (left, right) => {
-                        return LuaType::Intersection(Box::new(LuaIntersectionType::new(vec![
+                        return LuaType::Intersection(LuaIntersectionType::new(vec![
                             left, right,
-                        ])));
+                        ]).into());
                     }
                 },
                 LuaTypeBinaryOperator::Extends => {
-                    return LuaType::Extends(Box::new(LuaExtendedType::new(left_type, right_type)));
+                    return LuaType::Extends(LuaExtendedType::new(left_type, right_type).into());
                 }
                 _ => {}
             }
@@ -270,7 +270,7 @@ fn infer_unary_type(analyzer: &mut DocAnalyzer, unary_type: LuaDocUnaryType) -> 
         if let Some(op) = unary_type.get_op_token() {
             match op.get_op() {
                 LuaTypeUnaryOperator::Keyof => {
-                    return LuaType::KeyOf(Box::new(base));
+                    return LuaType::KeyOf(base.into());
                 }
                 _ => {}
             }
@@ -307,11 +307,11 @@ fn infer_func_type(analyzer: &mut DocAnalyzer, func: LuaDocFuncType) -> LuaType 
     }
 
     let is_async = func.is_async();
-    LuaType::DocFunction(Box::new(LuaFunctionType::new(
+    LuaType::DocFunction(LuaFunctionType::new(
         is_async,
         params_result,
         return_types,
-    )))
+    ).into())
 }
 
 fn infer_object_type(analyzer: &mut DocAnalyzer, object_type: LuaDocObjectType) -> LuaType {
@@ -343,5 +343,5 @@ fn infer_object_type(analyzer: &mut DocAnalyzer, object_type: LuaDocObjectType) 
         fields.push((key, type_ref));
     }
 
-    LuaType::Object(Box::new(LuaObjectType::new(fields)))
+    LuaType::Object(LuaObjectType::new(fields).into())
 }

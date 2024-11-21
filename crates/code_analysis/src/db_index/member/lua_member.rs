@@ -1,4 +1,4 @@
-use emmylua_parser::{LuaKind, LuaSyntaxId};
+use emmylua_parser::{LuaIndexKey, LuaKind, LuaSyntaxId};
 use internment::ArcIntern;
 use rowan::{TextRange, TextSize};
 
@@ -96,6 +96,48 @@ impl LuaMemberOwner {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LuaMemberKey {
+    None,
     Integer(i64),
     Name(ArcIntern<String>),
 }
+
+impl From<LuaIndexKey> for LuaMemberKey {
+    fn from(key: LuaIndexKey) -> Self {
+        match key {
+            LuaIndexKey::Name(name) => LuaMemberKey::Name(name.get_name_text().to_string().into()),
+            LuaIndexKey::String(str) => LuaMemberKey::Name(str.get_value().into()),
+            LuaIndexKey::Integer(i) => LuaMemberKey::Integer(i.get_int_value()),
+            _ => LuaMemberKey::None,
+        }
+    }
+}
+
+impl From<&LuaIndexKey> for LuaMemberKey {
+    fn from(key: &LuaIndexKey) -> Self {
+        match key {
+            LuaIndexKey::Name(name) => LuaMemberKey::Name(name.get_name_text().to_string().into()),
+            LuaIndexKey::String(str) => LuaMemberKey::Name(str.get_value().into()),
+            LuaIndexKey::Integer(i) => LuaMemberKey::Integer(i.get_int_value()),
+            _ => LuaMemberKey::None,
+        }
+    }
+}
+
+impl From<String> for LuaMemberKey {
+    fn from(name: String) -> Self {
+        LuaMemberKey::Name(name.into())
+    }
+}
+
+impl From<i64> for LuaMemberKey {
+    fn from(i: i64) -> Self {
+        LuaMemberKey::Integer(i)
+    }
+}
+
+impl From<&str> for LuaMemberKey {
+    fn from(name: &str) -> Self {
+        LuaMemberKey::Name(name.to_string().into())
+    }
+}
+

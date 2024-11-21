@@ -4,8 +4,8 @@ use emmylua_parser::{
 };
 
 use crate::db_index::{
-    LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaOperatorMetaMethod,
-    LuaPropertyOwnerId, LuaSignatureId, LuaType,
+    LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaPropertyOwnerId,
+    LuaSignatureId, LuaType,
 };
 
 use super::{
@@ -100,7 +100,7 @@ pub fn analyze_param(analyzer: &mut DocAnalyzer, tag: LuaDocTagParam) -> Option<
     };
 
     if nullable && !type_ref.is_nullable() {
-        type_ref = LuaType::Nullable(Box::new(type_ref));
+        type_ref = LuaType::Nullable(type_ref.into());
     }
 
     let description = if let Some(des) = tag.get_description() {
@@ -199,7 +199,7 @@ pub fn analyze_overload(analyzer: &mut DocAnalyzer, tag: LuaDocTagOverload) -> O
 
 pub fn analyze_module(analyzer: &mut DocAnalyzer, tag: LuaDocTagModule) -> Option<()> {
     let module_path = tag.get_string_token()?.get_value().to_string();
-    let decl_type = LuaType::Module(Box::new(module_path));
+    let decl_type = LuaType::Module(module_path.into());
     if let Some(owner) = get_owner_id(analyzer) {
         match owner {
             LuaPropertyOwnerId::LuaDecl(decl_id) => {

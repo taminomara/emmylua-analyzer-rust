@@ -1,6 +1,6 @@
 use emmylua_parser::{LuaAstNode, LuaNameExpr};
 
-use crate::db_index::{DbIndex, LuaReferenceKey};
+use crate::db_index::{DbIndex, LuaDeclOrMemberId, LuaReferenceKey};
 
 use super::{InferResult, LuaInferConfig};
 
@@ -15,7 +15,7 @@ pub fn infer_name_expr(
         return infer_self(db, config, name_expr);
     }
 
-    let file_id = config.file_id;
+    let file_id = config.get_file_id();
     let references_index = db.get_reference_index();
     let range = name_expr.get_range();
     let file_ref = references_index.get_local_reference(&file_id)?;
@@ -47,5 +47,30 @@ pub fn infer_name_expr(
 }
 
 fn infer_self(db: &DbIndex, config: &LuaInferConfig, name_expr: LuaNameExpr) -> InferResult {
-    None
+    let name = name_expr.get_name_token()?.get_name_text().to_string();
+    let file_id = config.get_file_id();
+    let tree = db.get_decl_index().get_decl_tree(&file_id)?;
+    let id = tree.find_self_decl(db, name_expr)?;
+    match id {
+        LuaDeclOrMemberId::Decl(decl_id) => {
+            let decl = db.get_decl_index().get_decl(&decl_id)?;
+            if decl.is_global() {
+                return Some(
+                    db.get_decl_index()
+                        .get_global_decl_type(&name.into())?
+                        .clone(),
+                );
+            }
+            Some(decl.get_type()?.clone())
+        }
+        LuaDeclOrMemberId::Member(member_id) => {
+            let member = db.get_member_index().get_member(&member_id)?;
+            let ty = member.get_decl_type();
+            if ty.is_unknown() {
+                None
+            } else {
+                Some(ty.clone())
+            }
+        }
+    }
 }
