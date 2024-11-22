@@ -314,6 +314,52 @@ pub enum LuaIndexKey {
     Expr(LuaExpr),
 }
 
+impl LuaIndexKey {
+    pub fn is_name(&self) -> bool {
+        matches!(self, LuaIndexKey::Name(_))
+    }
+
+    pub fn is_string(&self) -> bool {
+        matches!(self, LuaIndexKey::String(_))
+    }
+
+    pub fn is_integer(&self) -> bool {
+        matches!(self, LuaIndexKey::Integer(_))
+    }
+
+    pub fn is_expr(&self) -> bool {
+        matches!(self, LuaIndexKey::Expr(_))
+    }
+
+    pub fn get_name(&self) -> Option<&LuaNameToken> {
+        match self {
+            LuaIndexKey::Name(token) => Some(token),
+            _ => None,
+        }
+    }
+
+    pub fn get_string(&self) -> Option<&LuaStringToken> {
+        match self {
+            LuaIndexKey::String(token) => Some(token),
+            _ => None,
+        }
+    }
+
+    pub fn get_integer(&self) -> Option<&LuaNumberToken> {
+        match self {
+            LuaIndexKey::Integer(token) => Some(token),
+            _ => None,
+        }
+    }
+
+    pub fn get_expr(&self) -> Option<&LuaExpr> {
+        match self {
+            LuaIndexKey::Expr(expr) => Some(expr),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaParamName {
     syntax: LuaSyntaxNode,

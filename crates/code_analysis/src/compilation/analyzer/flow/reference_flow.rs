@@ -5,7 +5,7 @@ use emmylua_parser::{
 };
 use rowan::TextRange;
 
-use crate::db_index::{LuaFlowChain, LuaReferenceKey, LuaType, TypeAssertion};
+use crate::db_index::{LuaFlowChain, LuaMemberKey, LuaType, TypeAssertion};
 
 use super::FlowAnalyzer;
 
@@ -114,15 +114,15 @@ fn infer_name_expr(
             let reference_key = match key {
                 LuaIndexKey::Integer(i) => {
                     if i.is_int() {
-                        LuaReferenceKey::Integer(i.get_int_value())
+                        LuaMemberKey::Integer(i.get_int_value())
                     } else {
                         return None;
                     }
                 }
                 LuaIndexKey::Name(name) => {
-                    LuaReferenceKey::Name(name.get_name_text().to_string().into())
+                    LuaMemberKey::Name(name.get_name_text().to_string().into())
                 }
-                LuaIndexKey::String(string) => LuaReferenceKey::Name(string.get_value().into()),
+                LuaIndexKey::String(string) => LuaMemberKey::Name(string.get_value().into()),
                 _ => return None,
             };
 

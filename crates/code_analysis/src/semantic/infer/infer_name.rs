@@ -1,6 +1,6 @@
 use emmylua_parser::{LuaAstNode, LuaNameExpr};
 
-use crate::db_index::{DbIndex, LuaDeclOrMemberId, LuaReferenceKey};
+use crate::db_index::{DbIndex, LuaDeclOrMemberId, LuaMemberKey};
 
 use super::{InferResult, LuaInferConfig};
 
@@ -24,7 +24,7 @@ pub fn infer_name_expr(
         let decl = db.get_decl_index().get_decl(&decl_id)?;
         let mut decl_type = if decl.is_global() {
             db.get_decl_index()
-                .get_global_decl_type(&LuaReferenceKey::Name(name.into()))?
+                .get_global_decl_type(&LuaMemberKey::Name(name.into()))?
                 .clone()
         } else {
             decl.get_type()?.clone()
@@ -40,7 +40,7 @@ pub fn infer_name_expr(
     } else {
         let decl_type = db
             .get_decl_index()
-            .get_global_decl_type(&LuaReferenceKey::Name(name.into()))?
+            .get_global_decl_type(&LuaMemberKey::Name(name.into()))?
             .clone();
         Some(decl_type)
     }

@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 
 use super::{
-    LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIntersectionType, LuaObjectType,
-    LuaTupleType, LuaType, LuaUnionType,
+    LuaExistFieldType, LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIntersectionType, LuaMultiReturn, LuaObjectType, LuaTupleType, LuaType, LuaUnionType
 };
 
 pub fn instantiate(ty: &LuaType, params: &Vec<LuaType>) -> LuaType {
@@ -17,11 +16,11 @@ pub fn instantiate(ty: &LuaType, params: &Vec<LuaType>) -> LuaType {
         LuaType::Intersection(intersection) => instantiate_intersection(intersection, params),
         LuaType::Extends(extends) => instantiate_extends(extends, params),
         LuaType::Generic(generic) => instantiate_generic(generic, params),
-        LuaType::TableGeneric(arc) => todo!(),
-        LuaType::TplRef(_) => todo!(),
-        LuaType::StrTplRef(arc) => todo!(),
-        LuaType::MuliReturn(arc) => todo!(),
-        LuaType::ExistField(arc) => todo!(),
+        LuaType::TableGeneric(table_params) => instantiate_table_generic(table_params, params),
+        LuaType::TplRef(idx) => instantiate_tpl_ref(*idx, params),
+        // LuaType::StrTplRef(arc) => todo!(),
+        LuaType::MuliReturn(multi) => instantiate_multi_return(multi, params),
+        LuaType::ExistField(exit_field) => instantiate_exist_field(exit_field, params),
         _ => ty.clone(),
     }
 }
@@ -140,4 +139,45 @@ fn instantiate_generic(generic: &LuaGenericType, params: &Vec<LuaType>) -> LuaTy
     };
 
     LuaType::Generic(LuaGenericType::new(decl_id, new_params).into())
+}
+
+fn instantiate_table_generic(table_params: &Vec<LuaType>, params: &Vec<LuaType>) -> LuaType {
+    let mut new_params = Vec::new();
+    for param in table_params {
+        let new_param = instantiate(param, params);
+        new_params.push(new_param);
+    }
+
+    LuaType::TableGeneric(new_params.into())
+}
+
+fn instantiate_tpl_ref(idx: usize, params: &Vec<LuaType>) -> LuaType {
+    if let Some(ty) = params.get(idx) {
+        ty.clone()
+    } else {
+        LuaType::Unknown
+    }
+}
+
+fn instantiate_multi_return(multi_returns: &LuaMultiReturn, params: &Vec<LuaType>) -> LuaType {
+    match multi_returns {
+        LuaMultiReturn::Base(base) => {
+            let new_base = instantiate(base, params);
+            LuaType::MuliReturn(LuaMultiReturn::Base(new_base).into())
+        }
+        LuaMultiReturn::Multi(types) => {
+            let mut new_types = Vec::new();
+            for t in types {
+                let t = instantiate(t, params);
+                new_types.push(t);
+            }
+            LuaType::MuliReturn(LuaMultiReturn::Multi(new_types).into())
+        }
+    }
+}
+
+fn instantiate_exist_field(exit_field: &LuaExistFieldType, params: &Vec<LuaType>) -> LuaType {
+    let base = instantiate(&exit_field.get_origin(), params);
+    let field = exit_field.get_field();
+    LuaType::ExistField(LuaExistFieldType::new(field.clone(), base).into())
 }

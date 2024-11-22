@@ -6,18 +6,18 @@ mod test;
 use std::collections::HashMap;
 
 pub use decl::{LocalAttribute, LuaDecl, LuaDeclId};
-pub use decl_tree::{LuaDeclarationTree, LuaDeclOrMemberId};
+pub use decl_tree::{LuaDeclOrMemberId, LuaDeclarationTree};
 use internment::ArcIntern;
 pub use scope::{LuaScopeId, LuaScopeKind};
 
 use crate::FileId;
 
-use super::{reference::LuaReferenceKey, traits::LuaIndex, LuaType};
+use super::{traits::LuaIndex, LuaMemberKey, LuaType};
 
 #[derive(Debug)]
 pub struct LuaDeclIndex {
     decl_trees: HashMap<FileId, LuaDeclarationTree>,
-    global_decl: HashMap<LuaReferenceKey, Vec<LuaDeclId>>,
+    global_decl: HashMap<LuaMemberKey, Vec<LuaDeclId>>,
 }
 
 impl LuaDeclIndex {
@@ -31,7 +31,7 @@ impl LuaDeclIndex {
     pub fn add_global_decl(&mut self, name: String, decl_id: LuaDeclId) {
         let key = ArcIntern::new(name);
         self.global_decl
-            .entry(LuaReferenceKey::Name(key.clone()))
+            .entry(LuaMemberKey::Name(key.clone()))
             .or_insert_with(Vec::new)
             .push(decl_id);
     }
@@ -54,7 +54,7 @@ impl LuaDeclIndex {
         tree.get_decl_mut(*decl_id)
     }
 
-    pub fn get_global_decl_type(&self, key: &LuaReferenceKey) -> Option<LuaType> {
+    pub fn get_global_decl_type(&self, key: &LuaMemberKey) -> Option<LuaType> {
         let decls = self.global_decl.get(key)?;
         if decls.len() == 1 {
             let decl = self.get_decl(&decls[0])?;
@@ -81,7 +81,7 @@ impl LuaDeclIndex {
         Some(valid_type)
     }
 
-    pub fn get_global_decl_id(&self, key: &LuaReferenceKey) -> Option<LuaDeclId> {
+    pub fn get_global_decl_id(&self, key: &LuaMemberKey) -> Option<LuaDeclId> {
         let decls = self.global_decl.get(key)?;
         decls.first().cloned()
     }

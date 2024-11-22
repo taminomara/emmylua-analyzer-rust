@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
-use crate::db_index::LuaReferenceKey;
+use crate::db_index::LuaMemberKey;
 
-use super::{LuaExistField, LuaType, LuaUnionType};
+use super::{LuaExistFieldType, LuaType, LuaUnionType};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum TypeAssertion {
     Exist,
     IsNativeLuaType(LuaType),
-    FieldExist(Arc<LuaReferenceKey>),
+    FieldExist(Arc<LuaMemberKey>),
 }
 
 #[allow(unused)]
@@ -18,7 +18,7 @@ impl TypeAssertion {
             TypeAssertion::Exist => remove_nil_and_not_false(source),
             TypeAssertion::IsNativeLuaType(t) => force_type(t.clone(), source),
             TypeAssertion::FieldExist(key) => {
-                LuaType::ExistField(LuaExistField::new((**key).clone(), source).into())
+                LuaType::ExistField(LuaExistFieldType::new((**key).clone(), source).into())
             }
         }
     }

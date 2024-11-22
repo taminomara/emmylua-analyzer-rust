@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use super::{decl, scope};
 use crate::{
-    db_index::{DbIndex, LuaMemberId, LuaReferenceKey},
+    db_index::{DbIndex, LuaMemberId, LuaMemberKey},
     FileId,
 };
 use decl::{LuaDecl, LuaDeclId};
@@ -274,7 +274,7 @@ impl LuaDeclarationTree {
                         return Some(LuaDeclOrMemberId::Decl(decl.get_id()));
                     }
 
-                    let id = db.get_decl_index().get_global_decl_id(&LuaReferenceKey::Name(name.into()))?;
+                    let id = db.get_decl_index().get_global_decl_id(&LuaMemberKey::Name(name.into()))?;
                     return Some(LuaDeclOrMemberId::Decl(id))
                 }
                 LuaVarExpr::IndexExpr(prefx_index) => {

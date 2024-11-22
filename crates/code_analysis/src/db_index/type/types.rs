@@ -3,7 +3,7 @@ use std::{collections::HashMap, hash::Hash, sync::Arc};
 use internment::ArcIntern;
 use rowan::TextRange;
 
-use crate::{db_index::LuaReferenceKey, InFiled};
+use crate::{db_index::LuaMemberKey, InFiled};
 
 use super::{instantiate_generic::instantiate, type_decl::LuaTypeDeclId};
 
@@ -44,7 +44,7 @@ pub enum LuaType {
     TplRef(usize),
     StrTplRef(Arc<LuaStringTplType>),
     MuliReturn(Arc<LuaMultiReturn>),
-    ExistField(Arc<LuaExistField>),
+    ExistField(Arc<LuaExistFieldType>),
 }
 
 impl PartialEq for LuaType {
@@ -300,7 +300,7 @@ impl LuaType {
         matches!(self, LuaType::ExistField(_))
     }
 
-    pub fn instantiate_generic(&self, params: &Vec<LuaType>) -> LuaType {
+    pub fn instantiate(&self, params: &Vec<LuaType>) -> LuaType {
         instantiate(self, params)
     }
 }
@@ -374,7 +374,7 @@ pub enum LuaIndexAccessKey {
 
 #[derive(Debug, Clone)]
 pub struct LuaObjectType {
-    fields: HashMap<LuaReferenceKey, LuaType>,
+    fields: HashMap<LuaMemberKey, LuaType>,
     index_access: Vec<(LuaType, LuaType)>,
 }
 
@@ -385,10 +385,10 @@ impl LuaObjectType {
         for (key, value_type) in object_fields.into_iter() {
             match key {
                 LuaIndexAccessKey::Integer(i) => {
-                    fields.insert(LuaReferenceKey::Integer(i), value_type);
+                    fields.insert(LuaMemberKey::Integer(i), value_type);
                 }
                 LuaIndexAccessKey::String(s) => {
-                    fields.insert(LuaReferenceKey::Name(s.clone()), value_type.clone());
+                    fields.insert(LuaMemberKey::Name(s.clone()), value_type.clone());
                 }
                 LuaIndexAccessKey::Type(t) => {
                     index_access.push((t, value_type));
@@ -403,7 +403,7 @@ impl LuaObjectType {
     }
 
     pub fn new_with_fields(
-        fields: HashMap<LuaReferenceKey, LuaType>,
+        fields: HashMap<LuaMemberKey, LuaType>,
         index_access: Vec<(LuaType, LuaType)>,
     ) -> Self {
         Self {
@@ -412,7 +412,7 @@ impl LuaObjectType {
         }
     }
 
-    pub fn get_fields(&self) -> &HashMap<LuaReferenceKey, LuaType> {
+    pub fn get_fields(&self) -> &HashMap<LuaMemberKey, LuaType> {
         &self.fields
     }
 
@@ -420,7 +420,7 @@ impl LuaObjectType {
         &self.index_access
     }
 
-    pub fn get_field(&self, key: &LuaReferenceKey) -> Option<&LuaType> {
+    pub fn get_field(&self, key: &LuaMemberKey) -> Option<&LuaType> {
         self.fields.get(key)
     }
 }
@@ -569,17 +569,17 @@ impl LuaMultiReturn {
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub struct LuaExistField {
-    field: LuaReferenceKey,
+pub struct LuaExistFieldType {
+    field: LuaMemberKey,
     origin: LuaType,
 }
 
-impl LuaExistField {
-    pub fn new(field: LuaReferenceKey, origin: LuaType) -> Self {
+impl LuaExistFieldType {
+    pub fn new(field: LuaMemberKey, origin: LuaType) -> Self {
         Self { field, origin }
     }
 
-    pub fn get_field(&self) -> &LuaReferenceKey {
+    pub fn get_field(&self) -> &LuaMemberKey {
         &self.field
     }
 

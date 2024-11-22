@@ -1,4 +1,6 @@
 mod declaration;
+mod diagnostic;
+mod flow;
 mod member;
 mod meta;
 mod module;
@@ -9,26 +11,24 @@ mod signature;
 mod symbol;
 mod traits;
 mod r#type;
-mod diagnostic;
-mod flow;
 
 use crate::FileId;
 pub use declaration::*;
 #[allow(unused_imports)]
-pub use diagnostic::{DiagnosticIndex, AnalyzeError, DiagnosticAction};
-pub use flow::{LuaFlowIndex, LuaFlowChain};
+pub use diagnostic::{AnalyzeError, DiagnosticAction, DiagnosticIndex};
+pub use flow::{LuaFlowChain, LuaFlowIndex};
 #[allow(unused_imports)]
-pub use member::{LuaMember, LuaMemberId, LuaMemberIndex, LuaMemberOwner, LuaMemberKey};
+pub use member::{LuaMember, LuaMemberId, LuaMemberIndex, LuaMemberKey, LuaMemberOwner};
 use meta::MetaFile;
 use module::LuaModuleIndex;
+#[allow(unused_imports)]
+pub use operators::{LuaOperator, LuaOperatorId, LuaOperatorIndex, LuaOperatorMetaMethod};
 #[allow(unused_imports)]
 pub use property::{
     LuaPropertyId, LuaPropertyIndex, LuaPropertyOwnerId, LuaVersionCond, LuaVersionCondOp,
 };
-#[allow(unused_imports)]
-pub use operators::{LuaOperatorIndex, LuaOperatorMetaMethod, LuaOperatorId, LuaOperator};
 pub use r#type::*;
-pub use reference::{LuaReferenceIndex, LuaReferenceKey};
+pub use reference::LuaReferenceIndex;
 pub use signature::*;
 use traits::LuaIndex;
 

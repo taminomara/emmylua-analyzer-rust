@@ -17,6 +17,7 @@ pub fn without_members(type_: &LuaType) -> bool {
         | LuaType::Thread
         | LuaType::Unknown
         | LuaType::Any
+        | LuaType::SelfInfer
         | LuaType::Extends(_)
         | LuaType::StrTplRef(_)
         | LuaType::TplRef(_)

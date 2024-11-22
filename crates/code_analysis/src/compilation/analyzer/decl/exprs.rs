@@ -3,7 +3,7 @@ use emmylua_parser::{
 };
 
 use crate::{
-    db_index::{LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner, LuaReferenceKey},
+    db_index::{LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner},
     InFiled,
 };
 
@@ -51,15 +51,15 @@ pub fn analyze_name_expr(analyzer: &mut DeclAnalyzer, expr: LuaNameExpr) {
 pub fn analyze_index_expr(analyzer: &mut DeclAnalyzer, expr: LuaIndexExpr) -> Option<()> {
     let index_key = expr.get_index_key()?;
     let key = match index_key {
-        LuaIndexKey::Name(name) => LuaReferenceKey::Name(name.get_name_text().to_string().into()),
+        LuaIndexKey::Name(name) => LuaMemberKey::Name(name.get_name_text().to_string().into()),
         LuaIndexKey::Integer(int) => {
             if int.is_int() {
-                LuaReferenceKey::Integer(int.get_int_value())
+                LuaMemberKey::Integer(int.get_int_value())
             } else {
                 return None;
             }
         }
-        LuaIndexKey::String(string) => LuaReferenceKey::Name(string.get_value().into()),
+        LuaIndexKey::String(string) => LuaMemberKey::Name(string.get_value().into()),
         LuaIndexKey::Expr(_) => return None,
     };
 
@@ -114,28 +114,20 @@ pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, expr: LuaTableExpr) -> Op
 
         for field in expr.get_fields() {
             if let Some(field_key) = field.get_field_key() {
-                let key = match field_key {
-                    LuaIndexKey::Name(name) => {
-                        LuaReferenceKey::Name(name.get_name_text().to_string().into())
-                    }
-                    LuaIndexKey::Integer(int) => LuaReferenceKey::Integer(int.get_int_value()),
-                    LuaIndexKey::String(string) => LuaReferenceKey::Name(string.get_value().into()),
-                    LuaIndexKey::Expr(_) => return None,
-                };
-
+                let key: LuaMemberKey = field_key.into();
+                if key.is_none() {
+                    continue;
+                }
+                
                 analyzer.db.get_reference_index_mut().add_index_reference(
                     key.clone(),
                     file_id,
                     expr.get_syntax_id(),
                 );
-                let member_key = match key {
-                    LuaReferenceKey::Name(name) => LuaMemberKey::Name(name),
-                    LuaReferenceKey::Integer(int) => LuaMemberKey::Integer(int),
-                };
 
                 let member = LuaMember::new(
                     owner_id.clone(),
-                    member_key,
+                    key,
                     file_id,
                     expr.get_syntax_id(),
                     None,

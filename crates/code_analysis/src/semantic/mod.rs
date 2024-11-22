@@ -37,6 +37,8 @@ impl<'a> SemanticModel<'a> {
     }
 }
 
+/// Guard to prevent infinite recursion
+/// Some type may reference itself, so we need to check if we have already infered this type
 #[derive(Debug)]
 struct InferGuard {
     guard: HashSet<LuaTypeDeclId>,

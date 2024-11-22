@@ -1,4 +1,4 @@
-use emmylua_parser::{LuaIndexKey, LuaKind, LuaSyntaxId};
+use emmylua_parser::{LuaDocFieldKey, LuaIndexKey, LuaKind, LuaSyntaxId};
 use internment::ArcIntern;
 use rowan::{TextRange, TextSize};
 
@@ -78,7 +78,7 @@ impl LuaMemberId {
 pub enum LuaMemberOwner {
     None,
     Type(LuaTypeDeclId),
-    Table(InFiled<TextRange>)
+    Table(InFiled<TextRange>),
 }
 
 impl LuaMemberOwner {
@@ -99,6 +99,34 @@ pub enum LuaMemberKey {
     None,
     Integer(i64),
     Name(ArcIntern<String>),
+}
+
+impl LuaMemberKey {
+    pub fn is_none(&self) -> bool {
+        matches!(self, LuaMemberKey::None)
+    }
+
+    pub fn is_name(&self) -> bool {
+        matches!(self, LuaMemberKey::Name(_))
+    }
+
+    pub fn is_integer(&self) -> bool {
+        matches!(self, LuaMemberKey::Integer(_))
+    }
+
+    pub fn get_name(&self) -> Option<&str> {
+        match self {
+            LuaMemberKey::Name(name) => Some(name.as_ref()),
+            _ => None,
+        }
+    }
+
+    pub fn get_integer(&self) -> Option<i64> {
+        match self {
+            LuaMemberKey::Integer(i) => Some(*i),
+            _ => None,
+        }
+    }
 }
 
 impl From<LuaIndexKey> for LuaMemberKey {
@@ -123,6 +151,28 @@ impl From<&LuaIndexKey> for LuaMemberKey {
     }
 }
 
+impl From<LuaDocFieldKey> for LuaMemberKey {
+    fn from(key: LuaDocFieldKey) -> Self {
+        match key {
+            LuaDocFieldKey::Name(name) => LuaMemberKey::Name(name.get_name_text().to_string().into()),
+            LuaDocFieldKey::String(str) => LuaMemberKey::Name(str.get_value().into()),
+            LuaDocFieldKey::Integer(i) => LuaMemberKey::Integer(i.get_int_value()),
+            _ => LuaMemberKey::None,
+        }
+    }
+}
+
+impl From<&LuaDocFieldKey> for LuaMemberKey {
+    fn from(key: &LuaDocFieldKey) -> Self {
+        match key {
+            LuaDocFieldKey::Name(name) => LuaMemberKey::Name(name.get_name_text().to_string().into()),
+            LuaDocFieldKey::String(str) => LuaMemberKey::Name(str.get_value().into()),
+            LuaDocFieldKey::Integer(i) => LuaMemberKey::Integer(i.get_int_value()),
+            _ => LuaMemberKey::None,
+        }
+    }
+}
+
 impl From<String> for LuaMemberKey {
     fn from(name: String) -> Self {
         LuaMemberKey::Name(name.into())
@@ -140,4 +190,3 @@ impl From<&str> for LuaMemberKey {
         LuaMemberKey::Name(name.to_string().into())
     }
 }
-
