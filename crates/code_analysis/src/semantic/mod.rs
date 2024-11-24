@@ -13,6 +13,7 @@ use crate::{
     db_index::{DbIndex, LuaType},
     FileId,
 };
+pub(crate) use infer::infer_expr;
 
 #[derive(Debug)]
 pub struct SemanticModel<'a> {
@@ -33,7 +34,7 @@ impl<'a> SemanticModel<'a> {
     }
 
     pub fn infer_expr(&mut self, expr: LuaExpr) -> InferResult {
-        infer::infer_expr(self.db, &mut self.infer_config, expr)
+        infer_expr(self.db, &mut self.infer_config, expr)
     }
 }
 

@@ -2,9 +2,9 @@ use emmylua_parser::{LuaAstToken, LuaLocalStat};
 
 use crate::db_index::{LuaDeclId, LuaType};
 
-use super::{infer_expr::infer_expr, LuaAnalyzer};
+use super::MemberAnalyzer;
 
-pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) -> Option<()> {
+pub fn analyze_local_stat(analyzer: &mut MemberAnalyzer, local_stat: LuaLocalStat) -> Option<()> {
     let name_list: Vec<_> = local_stat.get_local_name_list().collect();
     let expr_list: Vec<_> = local_stat.get_value_exprs().collect();
 
@@ -19,9 +19,9 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
         let file_id = analyzer.file_id;
         let decl_id = LuaDeclId::new(file_id, position);
         let expr_type = if let Some(expr) = expr {
-            let ty = infer_expr(analyzer.db, expr);
+            let ty =  analyzer.infer_expr(expr);
             match ty {
-                Ok(ty) => {
+                Some(ty) => {
                     last_type = ty.clone();
                     last_index = i;
                     if let LuaType::MuliReturn(multi) = ty {
@@ -30,7 +30,7 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
                         LuaType::Nil
                     }
                 }
-                Err(_) => {
+                None => {
                     // record unresolve
                     continue;
                 }

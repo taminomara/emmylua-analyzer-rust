@@ -68,21 +68,12 @@ impl LuaCompilation {
     }
 
     pub fn get_semantic_model(&self, file_id: FileId) -> SemanticModel {
-        let mut require_map: HashSet<String> = HashSet::new();
-        if let Some(runtime) = &self.config.runtime {
-            if let Some(require_like_func) = &runtime.require_like_function {
-                for func in require_like_func {
-                    require_map.insert(func.clone());
-                }
-            }
-        }
-
-        let config = LuaInferConfig::new( file_id, require_map);
+        let config = self.config.get_infer_config(file_id);
         SemanticModel::new(file_id, &self.db, config)
     }
 
     fn update_index(&mut self, file_ids: Vec<FileId>) {
-        let mut context = analyzer::AnalyzeContext::new();
+        let mut context = analyzer::AnalyzeContext::new(&self.config);
         for file_id in file_ids {
             let tree = self.syntax_trees.get(&file_id).unwrap();
             context.add_tree(InFiled { file_id, value: tree });
