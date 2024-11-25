@@ -433,7 +433,7 @@ fn bind_def_type(analyzer: &mut DocAnalyzer, type_def: LuaType) -> Option<()> {
                 let member = analyzer
                     .db
                     .get_member_index_mut()
-                    .get_mut_member(&member_id)?;
+                    .get_member_mut(&member_id)?;
                 member.decl_type = type_def;
             }
         }
@@ -442,7 +442,7 @@ fn bind_def_type(analyzer: &mut DocAnalyzer, type_def: LuaType) -> Option<()> {
             let member = analyzer
                 .db
                 .get_member_index_mut()
-                .get_mut_member(&member_id)?;
+                .get_member_mut(&member_id)?;
             member.decl_type = type_def;
         }
         _ => {}

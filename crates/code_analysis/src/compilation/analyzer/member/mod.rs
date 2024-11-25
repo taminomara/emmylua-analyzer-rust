@@ -1,7 +1,7 @@
 mod stats;
 
 use emmylua_parser::{LuaAst, LuaAstNode, LuaExpr, LuaSyntaxTree};
-use stats::analyze_local_stat;
+use stats::{analyze_assign_stat, analyze_local_stat};
 
 use crate::{
     db_index::{DbIndex, LuaType},
@@ -9,7 +9,7 @@ use crate::{
     FileId,
 };
 
-use super::AnalyzeContext;
+use super::{unresolve::UnResolve, AnalyzeContext};
 
 pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     let tree_list = context.tree_list.clone();
@@ -22,6 +22,10 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
         for node in root.descendants::<LuaAst>() {
             analyze_node(&mut analyzer, node);
         }
+        let unresolved = analyzer.move_unresolved();
+        for unresolve in unresolved {
+            context.add_unresolve(unresolve);
+        }
     }
 }
 
@@ -29,6 +33,9 @@ fn analyze_node(analyzer: &mut MemberAnalyzer, node: LuaAst) {
     match node {
         LuaAst::LuaLocalStat(local_stat) => {
             analyze_local_stat(analyzer, local_stat);
+        }
+        LuaAst::LuaAssignStat(assign_stat) => {
+            analyze_assign_stat(analyzer, assign_stat);
         }
         _ => {}
     }
@@ -40,6 +47,7 @@ struct MemberAnalyzer<'a> {
     db: &'a mut DbIndex,
     tree: &'a LuaSyntaxTree,
     infer_config: LuaInferConfig,
+    unresolved: Vec<UnResolve>,
 }
 
 impl MemberAnalyzer<'_> {
@@ -54,6 +62,7 @@ impl MemberAnalyzer<'_> {
             db,
             tree,
             infer_config,
+            unresolved: Vec::new(),
         }
     }
 }
@@ -61,6 +70,14 @@ impl MemberAnalyzer<'_> {
 impl MemberAnalyzer<'_> {
     pub fn infer_expr(&mut self, expr: &LuaExpr) -> Option<LuaType> {
         infer_expr(self.db, &mut self.infer_config, expr.clone())
+    }
+
+    pub fn add_unresolved(&mut self, unresolved: UnResolve) {
+        self.unresolved.push(unresolved);
+    }
+
+    pub fn move_unresolved(self) -> Vec<UnResolve> {
+        self.unresolved
     }
 }
 

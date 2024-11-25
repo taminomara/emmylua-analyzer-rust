@@ -46,7 +46,7 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                         let member = analyzer
                             .db
                             .get_member_index_mut()
-                            .get_mut_member(&member_id)?;
+                            .get_member_mut(&member_id)?;
                         member.decl_type = type_ref.clone();
                     }
                 }
@@ -73,7 +73,7 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                 let member = analyzer
                     .db
                     .get_member_index_mut()
-                    .get_mut_member(&member_id)?;
+                    .get_member_mut(&member_id)?;
                 member.decl_type = first_type.clone();
             }
         }

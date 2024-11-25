@@ -116,6 +116,15 @@ impl LuaAstNode for LuaVarExpr {
     }
 }
 
+impl From<LuaVarExpr> for LuaExpr {
+    fn from(expr: LuaVarExpr) -> Self {
+        match expr {
+            LuaVarExpr::NameExpr(node) => LuaExpr::NameExpr(node),
+            LuaVarExpr::IndexExpr(node) => LuaExpr::IndexExpr(node),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LuaSingleArgExpr {
     TableExpr(LuaTableExpr),

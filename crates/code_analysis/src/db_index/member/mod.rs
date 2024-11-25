@@ -59,7 +59,7 @@ impl LuaMemberIndex {
         self.members.get(id)
     }
 
-    pub fn get_mut_member(&mut self, id: &LuaMemberId) -> Option<&mut LuaMember> {
+    pub fn get_member_mut(&mut self, id: &LuaMemberId) -> Option<&mut LuaMember> {
         self.members.get_mut(id)
     }
 
