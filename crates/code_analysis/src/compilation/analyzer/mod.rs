@@ -1,7 +1,7 @@
 mod decl;
 mod flow;
 mod doc;
-mod member;
+mod lua;
 mod unresolve;
 
 use crate::{db_index::DbIndex, Emmyrc, InFiled};
@@ -13,7 +13,7 @@ pub fn analyze(db: &mut DbIndex, context: AnalyzeContext) {
     decl::analyze(db, &mut context);
     flow::analyze(db, &mut context);
     doc::analyze(db, &mut context);
-    member::analyze(db, &mut context);
+    lua::analyze(db, &mut context);
 }
 
 #[allow(unused)]

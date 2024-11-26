@@ -170,6 +170,15 @@ impl LuaAstNode for LuaSingleArgExpr {
     }
 }
 
+impl From<LuaSingleArgExpr> for LuaExpr {
+    fn from(expr: LuaSingleArgExpr) -> Self {
+        match expr {
+            LuaSingleArgExpr::TableExpr(node) => LuaExpr::TableExpr(node),
+            LuaSingleArgExpr::LiteralExpr(node) => LuaExpr::LiteralExpr(node),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaNameExpr {
     syntax: LuaSyntaxNode,
@@ -209,6 +218,12 @@ impl LuaNameExpr {
     pub fn get_name_text(&self) -> Option<String> {
         self.get_name_token()
             .map(|it| it.get_name_text().to_string())
+    }
+}
+
+impl From<LuaNameExpr> for LuaVarExpr {
+    fn from(expr: LuaNameExpr) -> Self {
+        LuaVarExpr::NameExpr(expr)
     }
 }
 
@@ -292,6 +307,12 @@ impl LuaIndexExpr {
     }
 }
 
+impl From<LuaIndexExpr> for LuaVarExpr {
+    fn from(expr: LuaIndexExpr) -> Self {
+        LuaVarExpr::IndexExpr(expr)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaCallExpr {
     syntax: LuaSyntaxNode,
@@ -328,6 +349,12 @@ impl LuaCallExpr {
 
     pub fn get_args_list(&self) -> Option<LuaCallArgList> {
         self.child()
+    }
+}
+
+impl From<LuaCallExpr> for LuaExpr {
+    fn from(expr: LuaCallExpr) -> Self {
+        LuaExpr::CallExpr(expr)
     }
 }
 
@@ -392,6 +419,12 @@ impl LuaTableExpr {
     }
 }
 
+impl From<LuaTableExpr> for LuaSingleArgExpr {
+    fn from(expr: LuaTableExpr) -> Self {
+        LuaSingleArgExpr::TableExpr(expr)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaLiteralExpr {
     syntax: LuaSyntaxNode,
@@ -424,6 +457,12 @@ impl LuaAstNode for LuaLiteralExpr {
 impl LuaLiteralExpr {
     pub fn get_literal(&self) -> Option<LuaLiteralToken> {
         self.token()
+    }
+}
+
+impl From<LuaLiteralExpr> for LuaSingleArgExpr {
+    fn from(expr: LuaLiteralExpr) -> Self {
+        LuaSingleArgExpr::LiteralExpr(expr)
     }
 }
 
@@ -471,6 +510,12 @@ impl LuaBinaryExpr {
     }
 }
 
+impl From<LuaBinaryExpr> for LuaExpr {
+    fn from(expr: LuaBinaryExpr) -> Self {
+        LuaExpr::BinaryExpr(expr)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaUnaryExpr {
     syntax: LuaSyntaxNode,
@@ -507,6 +552,12 @@ impl LuaUnaryExpr {
 
     pub fn get_op_token(&self) -> Option<LuaUnaryOpToken> {
         self.token()
+    }
+}
+
+impl From<LuaUnaryExpr> for LuaExpr {
+    fn from(expr: LuaUnaryExpr) -> Self {
+        LuaExpr::UnaryExpr(expr)
     }
 }
 
@@ -549,6 +600,12 @@ impl LuaClosureExpr {
     }
 }
 
+impl From<LuaClosureExpr> for LuaExpr {
+    fn from(expr: LuaClosureExpr) -> Self {
+        LuaExpr::ClosureExpr(expr)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaParenExpr {
     syntax: LuaSyntaxNode,
@@ -581,5 +638,11 @@ impl LuaAstNode for LuaParenExpr {
 impl LuaParenExpr {
     pub fn get_expr(&self) -> Option<LuaExpr> {
         self.child()
+    }
+}
+
+impl From<LuaParenExpr> for LuaExpr {
+    fn from(expr: LuaParenExpr) -> Self {
+        LuaExpr::ParenExpr(expr)
     }
 }

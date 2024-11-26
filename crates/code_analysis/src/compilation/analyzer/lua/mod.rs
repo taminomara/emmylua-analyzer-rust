@@ -1,7 +1,14 @@
+mod func_body;
+mod module;
 mod stats;
 
-use emmylua_parser::{LuaAst, LuaAstNode, LuaExpr, LuaSyntaxTree};
-use stats::{analyze_assign_stat, analyze_local_stat};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaExpr};
+use module::analyze_chunk_return;
+pub use func_body::LuaReturnPoint;
+use stats::{
+    analyze_assign_stat, analyze_for_range_stat, analyze_func_stat, analyze_local_func_stat,
+    analyze_local_stat, analyze_table_field,
+};
 
 use crate::{
     db_index::{DbIndex, LuaType},
@@ -18,10 +25,11 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
         let tree = in_filed_tree.value;
         let root = tree.get_chunk_node();
         let config = context.config.get_infer_config(in_filed_tree.file_id);
-        let mut analyzer = MemberAnalyzer::new(db, in_filed_tree.file_id, &tree, config);
+        let mut analyzer = LuaAnalyzer::new(db, in_filed_tree.file_id, config);
         for node in root.descendants::<LuaAst>() {
             analyze_node(&mut analyzer, node);
         }
+        analyze_chunk_return(&mut analyzer, root);
         let unresolved = analyzer.move_unresolved();
         for unresolve in unresolved {
             context.add_unresolve(unresolve);
@@ -29,7 +37,7 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     }
 }
 
-fn analyze_node(analyzer: &mut MemberAnalyzer, node: LuaAst) {
+fn analyze_node(analyzer: &mut LuaAnalyzer, node: LuaAst) {
     match node {
         LuaAst::LuaLocalStat(local_stat) => {
             analyze_local_stat(analyzer, local_stat);
@@ -37,37 +45,46 @@ fn analyze_node(analyzer: &mut MemberAnalyzer, node: LuaAst) {
         LuaAst::LuaAssignStat(assign_stat) => {
             analyze_assign_stat(analyzer, assign_stat);
         }
+        LuaAst::LuaForRangeStat(for_range_stat) => {
+            analyze_for_range_stat(analyzer, for_range_stat);
+        }
+        LuaAst::LuaFuncStat(func_stat) => {
+            analyze_func_stat(analyzer, func_stat);
+        }
+        LuaAst::LuaLocalFuncStat(local_func_stat) => {
+            analyze_local_func_stat(analyzer, local_func_stat);
+        }
+        LuaAst::LuaTableField(field) => {
+            analyze_table_field(analyzer, field);
+        }
         _ => {}
     }
 }
 
 #[derive(Debug)]
-struct MemberAnalyzer<'a> {
+struct LuaAnalyzer<'a> {
     file_id: FileId,
     db: &'a mut DbIndex,
-    tree: &'a LuaSyntaxTree,
     infer_config: LuaInferConfig,
     unresolved: Vec<UnResolve>,
 }
 
-impl MemberAnalyzer<'_> {
+impl LuaAnalyzer<'_> {
     pub fn new<'a>(
         db: &'a mut DbIndex,
         file_id: FileId,
-        tree: &'a LuaSyntaxTree,
         infer_config: LuaInferConfig,
-    ) -> MemberAnalyzer<'a> {
-        MemberAnalyzer {
+    ) -> LuaAnalyzer<'a> {
+        LuaAnalyzer {
             file_id,
             db,
-            tree,
             infer_config,
             unresolved: Vec::new(),
         }
     }
 }
 
-impl MemberAnalyzer<'_> {
+impl LuaAnalyzer<'_> {
     pub fn infer_expr(&mut self, expr: &LuaExpr) -> Option<LuaType> {
         infer_expr(self.db, &mut self.infer_config, expr.clone())
     }

@@ -4,16 +4,18 @@ mod infer_index;
 mod infer_name;
 mod infer_table;
 mod infer_unary;
+mod infer_call;
 
-use emmylua_parser::{LuaAstNode, LuaExpr, LuaLiteralExpr, LuaLiteralToken};
+use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLiteralToken};
 use infer_binary::infer_binary_expr;
+use infer_call::infer_call_expr;
 pub use infer_config::LuaInferConfig;
 use infer_index::infer_index_expr;
 use infer_name::infer_name_expr;
 use infer_table::infer_table_expr;
 use infer_unary::infer_unary_expr;
 
-use crate::db_index::{DbIndex, LuaOperator, LuaOperatorMetaMethod, LuaType};
+use crate::db_index::{DbIndex, LuaOperator, LuaOperatorMetaMethod, LuaSignatureId, LuaType};
 
 pub type InferResult = Option<LuaType>;
 
@@ -24,12 +26,12 @@ pub fn infer_expr(db: &DbIndex, config: &mut LuaInferConfig, expr: LuaExpr) -> I
     }
 
     let result_type = match expr {
-        LuaExpr::CallExpr(call_expr) => todo!(),
+        LuaExpr::CallExpr(call_expr) => infer_call_expr(db, config, call_expr)?,
         LuaExpr::TableExpr(table_expr) => infer_table_expr(db, config, table_expr)?,
         LuaExpr::LiteralExpr(literal_expr) => infer_literal_expr(literal_expr)?,
         LuaExpr::BinaryExpr(binary_expr) => infer_binary_expr(db, config, binary_expr)?,
         LuaExpr::UnaryExpr(unary_expr) => infer_unary_expr(db, config, unary_expr)?,
-        LuaExpr::ClosureExpr(closure_expr) => todo!(),
+        LuaExpr::ClosureExpr(closure_expr) => infer_closure_expr(config, closure_expr)?,
         LuaExpr::ParenExpr(paren_expr) => infer_expr(db, config, paren_expr.get_expr()?)?,
         LuaExpr::NameExpr(name_expr) => infer_name_expr(db, config, name_expr)?,
         LuaExpr::IndexExpr(index_expr) => infer_index_expr(db, config, index_expr)?,
@@ -53,6 +55,10 @@ fn infer_literal_expr(expr: LuaLiteralExpr) -> InferResult {
         }
         LuaLiteralToken::String(str) => Some(LuaType::StringConst(str.get_value().into())),
     }
+}
+
+fn infer_closure_expr(config: &LuaInferConfig, closure: LuaClosureExpr) -> InferResult {
+    Some(LuaType::Signature(LuaSignatureId::new(config.get_file_id(), &closure)))
 }
 
 fn get_custom_type_operator(

@@ -3,7 +3,10 @@ use std::{collections::HashMap, hash::Hash, sync::Arc};
 use internment::ArcIntern;
 use rowan::TextRange;
 
-use crate::{db_index::LuaMemberKey, InFiled};
+use crate::{
+    db_index::{LuaMemberKey, LuaSignatureId},
+    InFiled,
+};
 
 use super::{instantiate_generic::instantiate, type_decl::LuaTypeDeclId};
 
@@ -29,7 +32,7 @@ pub enum LuaType {
     TableConst(InFiled<TextRange>),
     Ref(LuaTypeDeclId),
     Def(LuaTypeDeclId),
-    Module(Arc<String>),
+    Module(ArcIntern<String>),
     Array(Arc<LuaType>),
     KeyOf(Arc<LuaType>),
     Nullable(Arc<LuaType>),
@@ -45,6 +48,8 @@ pub enum LuaType {
     StrTplRef(Arc<LuaStringTplType>),
     MuliReturn(Arc<LuaMultiReturn>),
     ExistField(Arc<LuaExistFieldType>),
+    Signature(LuaSignatureId),
+    Instance(InFiled<TextRange>)
 }
 
 impl PartialEq for LuaType {
@@ -86,6 +91,8 @@ impl PartialEq for LuaType {
             (LuaType::StrTplRef(a), LuaType::StrTplRef(b)) => Arc::ptr_eq(a, b),
             (LuaType::MuliReturn(a), LuaType::MuliReturn(b)) => Arc::ptr_eq(a, b),
             (LuaType::ExistField(a), LuaType::ExistField(b)) => a == b,
+            (LuaType::Signature(a), LuaType::Signature(b)) => a == b,
+            (LuaType::Instance(a), LuaType::Instance(b)) => a == b,
             _ => false, // 不同变体之间不相等
         }
     }
@@ -153,6 +160,8 @@ impl Hash for LuaType {
                 (34, ptr).hash(state)
             }
             LuaType::ExistField(a) => (35, a).hash(state),
+            LuaType::Signature(a) => (36, a).hash(state),
+            LuaType::Instance(a) => (37, a).hash(state),
         }
     }
 }
@@ -267,6 +276,10 @@ impl LuaType {
 
     pub fn is_str_tpl_ref(&self) -> bool {
         matches!(self, LuaType::StrTplRef(_))
+    }
+
+    pub fn is_tpl(&self) -> bool {
+        matches!(self, LuaType::TplRef(_) | LuaType::StrTplRef(_))
     }
 
     pub fn is_self_infer(&self) -> bool {
@@ -408,7 +421,7 @@ impl LuaObjectType {
     ) -> Self {
         Self {
             fields,
-            index_access
+            index_access,
         }
     }
 

@@ -123,6 +123,7 @@ impl LuaModuleIndex {
             name: module_parts.last().unwrap().to_string(),
             module_id: parent_node_id,
             visible: true,
+            export_type: None,
         };
 
         self.file_module_map.insert(file_id, module_info);
@@ -132,6 +133,10 @@ impl LuaModuleIndex {
 
     pub fn get_module(&self, file_id: FileId) -> Option<&ModuleInfo> {
         self.file_module_map.get(&file_id)
+    }
+
+    pub fn get_module_mut(&mut self, file_id: FileId) -> Option<&mut ModuleInfo> {
+        self.file_module_map.get_mut(&file_id)
     }
 
     pub fn set_module_visibility(&mut self, file_id: FileId, visible: bool) {
