@@ -1,10 +1,12 @@
 use std::sync::{atomic::{AtomicBool, Ordering}, Arc};
 
+
 #[derive(Debug, Clone)]
 pub struct CancelToken {
     canceled: Arc<AtomicBool>
 }
 
+#[allow(unused)]
 impl CancelToken {
     pub fn new() -> Self {
         Self {

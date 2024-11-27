@@ -148,7 +148,7 @@ pub fn analyze_alias(analyzer: &mut DocAnalyzer, tag: LuaDocTagAlias) -> Option<
         let range = analyzer.comment.get_range();
         analyzer
             .generic_index
-            .add_generic_scope(vec![range], params_index);
+            .add_generic_scope(vec![range], params_index, false);
     }
 
     if let Some(super_type) = tag.get_type() {
@@ -257,7 +257,7 @@ fn add_generic_index(analyzer: &mut DocAnalyzer, params_index: HashMap<String, u
 
     analyzer
         .generic_index
-        .add_generic_scope(ranges, params_index);
+        .add_generic_scope(ranges, params_index, false);
 }
 
 fn get_local_stat_reference_ranges(
@@ -393,7 +393,7 @@ pub fn analyze_func_generic(analyzer: &mut DocAnalyzer, tag: LuaDocTagGeneric) -
         ranges.push(range);
         analyzer
             .generic_index
-            .add_generic_scope(ranges, params_result);
+            .add_generic_scope(ranges, params_result, true);
 
         let closure = find_owner_closure(analyzer)?;
         let signature_id = LuaSignatureId::new(analyzer.file_id, &closure);

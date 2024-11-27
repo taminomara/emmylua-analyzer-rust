@@ -3,8 +3,6 @@ use emmylua_parser::{
     LuaRepeatStat, LuaReturnStat, LuaStat, LuaWhileStat,
 };
 
-use super::LuaAnalyzer;
-
 #[derive(Debug)]
 pub enum LuaReturnPoint {
     Expr(LuaExpr),
@@ -21,9 +19,7 @@ enum ChangeFlow {
     Return,
 }
 
-pub fn analyze_func_body_returns(
-    body: LuaBlock,
-) -> Vec<LuaReturnPoint> {
+pub fn analyze_func_body_returns(body: LuaBlock) -> Vec<LuaReturnPoint> {
     let mut returns = Vec::new();
 
     let flow = analyze_block_returns(body, &mut returns);

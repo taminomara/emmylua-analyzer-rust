@@ -49,7 +49,8 @@ pub enum LuaType {
     MuliReturn(Arc<LuaMultiReturn>),
     ExistField(Arc<LuaExistFieldType>),
     Signature(LuaSignatureId),
-    Instance(InFiled<TextRange>)
+    Instance(InFiled<TextRange>),
+    FuncTplRef(usize),
 }
 
 impl PartialEq for LuaType {
@@ -93,6 +94,7 @@ impl PartialEq for LuaType {
             (LuaType::ExistField(a), LuaType::ExistField(b)) => a == b,
             (LuaType::Signature(a), LuaType::Signature(b)) => a == b,
             (LuaType::Instance(a), LuaType::Instance(b)) => a == b,
+            (LuaType::FuncTplRef(a), LuaType::FuncTplRef(b)) => a == b,
             _ => false, // 不同变体之间不相等
         }
     }
@@ -162,6 +164,7 @@ impl Hash for LuaType {
             LuaType::ExistField(a) => (35, a).hash(state),
             LuaType::Signature(a) => (36, a).hash(state),
             LuaType::Instance(a) => (37, a).hash(state),
+            LuaType::FuncTplRef(a) => (38, a).hash(state),
         }
     }
 }
@@ -270,7 +273,7 @@ impl LuaType {
         matches!(self, LuaType::TableGeneric(_))
     }
 
-    pub fn is_tpl_ref(&self) -> bool {
+    pub fn is_class_tpl(&self) -> bool {
         matches!(self, LuaType::TplRef(_))
     }
 
@@ -279,7 +282,7 @@ impl LuaType {
     }
 
     pub fn is_tpl(&self) -> bool {
-        matches!(self, LuaType::TplRef(_) | LuaType::StrTplRef(_))
+        matches!(self, LuaType::TplRef(_) | LuaType::StrTplRef(_) | LuaType::FuncTplRef(_))
     }
 
     pub fn is_self_infer(&self) -> bool {

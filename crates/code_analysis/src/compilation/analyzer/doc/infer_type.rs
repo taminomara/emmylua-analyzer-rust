@@ -1,14 +1,17 @@
 use emmylua_parser::{
     LuaAstNode, LuaDocBinaryType, LuaDocFuncType, LuaDocGenericType, LuaDocObjectFieldKey,
-    LuaDocObjectType, LuaDocType, LuaDocUnaryType, LuaLiteralToken, LuaTypeBinaryOperator,
-    LuaTypeUnaryOperator,
+    LuaDocObjectType, LuaDocStrTplType, LuaDocType, LuaDocUnaryType, LuaLiteralToken,
+    LuaTypeBinaryOperator, LuaTypeUnaryOperator,
 };
 use rowan::TextRange;
 
-use crate::{db_index::{
-    AnalyzeError, LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey,
-    LuaIntersectionType, LuaObjectType, LuaTupleType, LuaType, LuaUnionType,
-}, DiagnosticCode};
+use crate::{
+    db_index::{
+        AnalyzeError, LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey,
+        LuaIntersectionType, LuaObjectType, LuaStringTplType, LuaTupleType, LuaType, LuaUnionType,
+    },
+    DiagnosticCode,
+};
 
 use super::DocAnalyzer;
 
@@ -88,6 +91,9 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
         LuaDocType::Object(object_type) => {
             return infer_object_type(analyzer, object_type);
         }
+        LuaDocType::StrTpl(str_tpl) => {
+            return infer_str_tpl(analyzer, str_tpl);
+        }
         _ => {} // LuaDocType::Conditional(lua_doc_conditional_type) => todo!(),
                 // LuaDocType::Variadic(lua_doc_variadic_type) => todo!(),
                 // LuaDocType::StrTpl(lua_doc_str_tpl_type) => todo!(),
@@ -95,11 +101,7 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
     LuaType::Unknown
 }
 
-fn infer_buildin_or_ref_type(
-    analyzer: &mut DocAnalyzer,
-    name: &str,
-    range: TextRange,
-) -> LuaType {
+fn infer_buildin_or_ref_type(analyzer: &mut DocAnalyzer, name: &str, range: TextRange) -> LuaType {
     let position = range.start();
     match name {
         "Unknown" => LuaType::Unknown,
@@ -115,8 +117,12 @@ fn infer_buildin_or_ref_type(
         "io" => LuaType::Io,
         "self" => LuaType::SelfInfer,
         _ => {
-            if let Some(size) = analyzer.generic_index.find_generic(position, name) {
-                return LuaType::TplRef(size);
+            if let Some((size, is_func)) = analyzer.generic_index.find_generic(position, name) {
+                if is_func {
+                    return LuaType::FuncTplRef(size);
+                } else {
+                    return LuaType::TplRef(size);
+                };
             }
 
             if let Some(name_type_decl) = analyzer
@@ -127,14 +133,14 @@ fn infer_buildin_or_ref_type(
                 return LuaType::Ref(name_type_decl.get_id());
             }
 
-            analyzer
-                .db
-                .get_diagnostic_index_mut()
-                .add_diagnostic(analyzer.file_id, AnalyzeError::new(
+            analyzer.db.get_diagnostic_index_mut().add_diagnostic(
+                analyzer.file_id,
+                AnalyzeError::new(
                     DiagnosticCode::TypeNotFound,
                     format!("Type {} not found", name),
-                    range
-                ));
+                    range,
+                ),
+            );
 
             LuaType::Unknown
         }
@@ -225,28 +231,22 @@ fn infer_binary_type(analyzer: &mut DocAnalyzer, binary_type: LuaDocBinaryType) 
                         let mut left_types = left_type_union.into_types();
                         let right_types = right_type_union.into_types();
                         left_types.extend(right_types);
-                        return LuaType::Intersection(LuaIntersectionType::new(
-                            left_types,
-                        ).into());
+                        return LuaType::Intersection(LuaIntersectionType::new(left_types).into());
                     }
                     (LuaType::Intersection(left_type_union), right) => {
                         let mut left_types = left_type_union.into_types();
                         left_types.push(right);
-                        return LuaType::Intersection(LuaIntersectionType::new(
-                            left_types,
-                        ).into());
+                        return LuaType::Intersection(LuaIntersectionType::new(left_types).into());
                     }
                     (left, LuaType::Intersection(right_type_union)) => {
                         let mut right_types = right_type_union.into_types();
                         right_types.push(left);
-                        return LuaType::Intersection(LuaIntersectionType::new(
-                            right_types,
-                        ).into());
+                        return LuaType::Intersection(LuaIntersectionType::new(right_types).into());
                     }
                     (left, right) => {
-                        return LuaType::Intersection(LuaIntersectionType::new(vec![
-                            left, right,
-                        ]).into());
+                        return LuaType::Intersection(
+                            LuaIntersectionType::new(vec![left, right]).into(),
+                        );
                     }
                 },
                 LuaTypeBinaryOperator::Extends => {
@@ -307,11 +307,7 @@ fn infer_func_type(analyzer: &mut DocAnalyzer, func: LuaDocFuncType) -> LuaType 
     }
 
     let is_async = func.is_async();
-    LuaType::DocFunction(LuaFunctionType::new(
-        is_async,
-        params_result,
-        return_types,
-    ).into())
+    LuaType::DocFunction(LuaFunctionType::new(is_async, params_result, return_types).into())
 }
 
 fn infer_object_type(analyzer: &mut DocAnalyzer, object_type: LuaDocObjectType) -> LuaType {
@@ -344,4 +340,23 @@ fn infer_object_type(analyzer: &mut DocAnalyzer, object_type: LuaDocObjectType) 
     }
 
     LuaType::Object(LuaObjectType::new(fields).into())
+}
+
+fn infer_str_tpl(analyzer: &mut DocAnalyzer, str_tpl: LuaDocStrTplType) -> LuaType {
+    let prefix = match str_tpl.get_prefix() {
+        Some(prefix) => prefix,
+        None => "".to_string(),
+    };
+
+    let name = match str_tpl.get_tpl_name() {
+        Some(name) => name,
+        None => return LuaType::Unknown,
+    };
+
+    let tp = infer_buildin_or_ref_type(analyzer, &name, str_tpl.get_range());
+    if let LuaType::FuncTplRef(size) = tp {
+        let str_tpl_type = LuaStringTplType::new(prefix, size);
+        return LuaType::StrTplRef(str_tpl_type.into());
+    }
+    LuaType::Unknown
 }

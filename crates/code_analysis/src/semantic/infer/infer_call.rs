@@ -28,6 +28,15 @@ fn infer_call_result(
         LuaType::Signature(signature_id) => {
             infer_call_by_signature(db, config, signature_id.clone(), call_expr.clone())?
         }
+        LuaType::Def(type_def_id) => {
+            todo!()
+        }
+        LuaType::Ref(type_ref_id) => {
+            todo!()
+        }
+        LuaType::Generic(generic) => {
+            todo!()
+        }
         _ => return None,
     };
 
@@ -43,7 +52,7 @@ fn infer_call_by_doc_function(
     let rets = func.get_ret();
     let is_generic_rets = rets.iter().any(|ret| ret.is_tpl());
     let ret = if is_generic_rets {
-        // instantiate_doc_function(db, config, prefix_type);
+        instantiate_doc_function(db, config, func);
         todo!()
     } else {
         match rets.len() {
@@ -78,7 +87,7 @@ fn unwrapp_return_type(
 fn instantiate_doc_function(
     db: &DbIndex,
     config: &mut LuaInferConfig,
-    func: LuaType,
+    func: &LuaFunctionType,
 ) -> Option<LuaType> {
     todo!()
 }

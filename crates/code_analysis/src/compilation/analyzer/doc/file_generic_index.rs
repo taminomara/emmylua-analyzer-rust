@@ -2,9 +2,11 @@ use std::collections::HashMap;
 
 use rowan::{TextRange, TextSize};
 
+use crate::db_index::LuaType;
+
 #[derive(Debug, Clone)]
 pub struct FileGenericIndex {
-    generic_params: Vec<HashMap<String, usize>>,
+    generic_params: Vec<GenericParams>,
     root_node_ids: Vec<GenericEffectId>,
     effect_nodes: Vec<GenericEffectRangeNode>,
 }
@@ -18,9 +20,9 @@ impl FileGenericIndex {
         }
     }
 
-    pub fn add_generic_scope(&mut self, ranges: Vec<TextRange>, params: HashMap<String, usize>) {
+    pub fn add_generic_scope(&mut self, ranges: Vec<TextRange>, params: HashMap<String, usize>, is_func: bool) {
         let params_id = self.generic_params.len();
-        self.generic_params.push(params);
+        self.generic_params.push(GenericParams::new(params, is_func));
         let params_id = GenericParamId::new(params_id);
         let root_node_ids: Vec<_> = self.root_node_ids.clone();
         for range in ranges {
@@ -79,14 +81,16 @@ impl FileGenericIndex {
         false
     }
 
-    pub fn find_generic(&self, position: TextSize, name: &str) -> Option<usize> {
+    pub fn find_generic(&self, position: TextSize, name: &str) -> Option<(usize, bool)> {
         let params_id = self.find_generic_params(position)?;
 
         if let Some(params) = self.generic_params.get(params_id) {
-            params.get(name).cloned()
-        } else {
-            None
+            if let Some(id) = params.params.get(name) {
+                return Some((*id, params.is_func));
+            }
         }
+
+        None
     }
 
     fn find_generic_params(&self, position: TextSize) -> Option<usize> {
@@ -148,5 +152,20 @@ struct GenericEffectId {
 impl GenericEffectId {
     fn new(id: usize) -> Self {
         Self { id }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GenericParams {
+    params: HashMap<String, usize>,
+    is_func: bool
+}
+
+impl GenericParams {
+    pub fn new(params: HashMap<String, usize>, is_func: bool) -> Self {
+        Self {
+            params,
+            is_func
+        }
     }
 }
