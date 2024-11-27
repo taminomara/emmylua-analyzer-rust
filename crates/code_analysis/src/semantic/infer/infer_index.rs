@@ -11,6 +11,7 @@ use crate::{
         LuaTypeDeclId, LuaUnionType, TypeAssertion,
     },
     semantic::{
+        instantiate::instantiate_class,
         member::{get_buildin_type_map_type_id, without_index_operator, without_members},
         InferGuard,
     },
@@ -236,7 +237,7 @@ fn infer_generic_member(
         infer_member_by_member_key(db, config, &base_type, member_key, &mut InferGuard::new())?;
 
     let generic_params = generic_type.get_params();
-    Some(member_type.instantiate(generic_params))
+    Some(instantiate_class(&member_type, generic_params))
 }
 
 fn infer_exit_field_member(
@@ -293,13 +294,15 @@ fn infer_member_by_operator(
         LuaType::Intersection(intersection) => {
             infer_member_by_index_intersection(db, config, intersection, member_key, root)
         }
-        LuaType::Generic(generic) => infer_member_by_index_generic(db, config, generic, member_key, root),
+        LuaType::Generic(generic) => {
+            infer_member_by_index_generic(db, config, generic, member_key, root)
+        }
         LuaType::TableGeneric(table_generic) => {
             infer_member_by_index_table_generic(db, config, table_generic, member_key)
         }
         LuaType::ExistField(exist_field) => {
             infer_member_by_index_exist_field(db, config, exist_field, member_key, root)
-        },
+        }
         _ => None,
     }
 }
@@ -504,7 +507,7 @@ fn infer_member_by_index_generic(
         return infer_member_by_operator(
             db,
             config,
-            &origin_type.instantiate(generic_params),
+            &instantiate_class(origin_type, generic_params),
             member_key,
             root,
             &mut InferGuard::new(),
@@ -517,31 +520,46 @@ fn infer_member_by_index_generic(
     for index_operator_id in index_operator_ids {
         let index_operator = operator_index.get_operator(index_operator_id)?;
         let operand_type = index_operator.get_operands().first()?;
-        let instianted_operand_type = operand_type.instantiate(generic_params);
+        let instianted_operand_type = instantiate_class(&operand_type, generic_params);
         if instianted_operand_type.is_string() {
             if member_key.is_string() || member_key.is_name() {
-                return Some(index_operator.get_result().instantiate(generic_params));
+                return Some(instantiate_class(
+                    index_operator.get_result(),
+                    generic_params,
+                ));
             } else if member_key.is_expr() {
                 let expr = member_key.get_expr()?;
                 let expr_type = infer_expr(db, config, expr.clone())?;
                 if expr_type.is_string() {
-                    return Some(index_operator.get_result().instantiate(generic_params));
+                    return Some(instantiate_class(
+                        index_operator.get_result(),
+                        generic_params,
+                    ));
                 }
             }
         } else if instianted_operand_type.is_number() {
             if member_key.is_integer() {
-                return Some(index_operator.get_result().instantiate(generic_params));
+                return Some(instantiate_class(
+                    index_operator.get_result(),
+                    generic_params,
+                ));
             } else if member_key.is_expr() {
                 let expr = member_key.get_expr()?;
                 let expr_type = infer_expr(db, config, expr.clone())?;
                 if expr_type.is_number() {
-                    return Some(index_operator.get_result().instantiate(generic_params));
+                    return Some(instantiate_class(
+                        index_operator.get_result(),
+                        generic_params,
+                    ));
                 }
             }
         } else if let Some(expr) = member_key.get_expr() {
             let expr_type = infer_expr(db, config, expr.clone())?;
             if expr_type == *operand_type {
-                return Some(index_operator.get_result().instantiate(generic_params));
+                return Some(instantiate_class(
+                    index_operator.get_result(),
+                    generic_params,
+                ));
             }
         }
     }
@@ -552,7 +570,7 @@ fn infer_member_by_index_generic(
         let member_type = infer_member_by_operator(
             db,
             config,
-            &super_type.instantiate(generic_params),
+            &instantiate_class(&super_type, generic_params),
             member_key,
             root,
             &mut InferGuard::new(),
@@ -613,11 +631,17 @@ fn infer_member_by_index_exist_field(
     config: &mut LuaInferConfig,
     exist_field: &LuaExistFieldType,
     member_key: &LuaIndexKey,
-    root: &LuaSyntaxNode
+    root: &LuaSyntaxNode,
 ) -> InferResult {
     let base_type = exist_field.get_origin();
-    let member_type =
-        infer_member_by_operator(db, config, &base_type, member_key, root,&mut InferGuard::new());
+    let member_type = infer_member_by_operator(
+        db,
+        config,
+        &base_type,
+        member_key,
+        root,
+        &mut InferGuard::new(),
+    );
 
     let access_key: LuaMemberKey = member_key.into();
     let exit_field = exist_field.get_field();

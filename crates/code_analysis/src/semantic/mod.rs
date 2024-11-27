@@ -1,5 +1,6 @@
 mod infer;
 mod member;
+mod instantiate;
 
 use std::collections::{HashMap, HashSet};
 

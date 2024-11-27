@@ -52,7 +52,7 @@ fn infer_call_by_doc_function(
     let rets = func.get_ret();
     let is_generic_rets = rets.iter().any(|ret| ret.is_tpl());
     let ret = if is_generic_rets {
-        instantiate_doc_function(db, config, func);
+        instantiate_doc_function(db, config, func, call_expr);
         todo!()
     } else {
         match rets.len() {
@@ -88,6 +88,7 @@ fn instantiate_doc_function(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     func: &LuaFunctionType,
+    call_expr: LuaCallExpr
 ) -> Option<LuaType> {
     todo!()
 }

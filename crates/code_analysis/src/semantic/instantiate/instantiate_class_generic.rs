@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
-use super::{
-    LuaExistFieldType, LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIntersectionType, LuaMultiReturn, LuaObjectType, LuaTupleType, LuaType, LuaUnionType
+use crate::db_index::{
+    LuaExistFieldType, LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIntersectionType,
+    LuaMultiReturn, LuaObjectType, LuaTupleType, LuaType, LuaUnionType,
 };
 
-pub fn instantiate(ty: &LuaType, params: &Vec<LuaType>) -> LuaType {
+pub fn instantiate_class(ty: &LuaType, params: &Vec<LuaType>) -> LuaType {
     match ty {
         LuaType::Array(base) => instantiate_array(base, params),
         LuaType::KeyOf(base) => instantiate_key_of(base, params),
@@ -18,7 +19,6 @@ pub fn instantiate(ty: &LuaType, params: &Vec<LuaType>) -> LuaType {
         LuaType::Generic(generic) => instantiate_generic(generic, params),
         LuaType::TableGeneric(table_params) => instantiate_table_generic(table_params, params),
         LuaType::TplRef(idx) => instantiate_tpl_ref(*idx, params),
-        // LuaType::StrTplRef(arc) => todo!(),
         LuaType::MuliReturn(multi) => instantiate_multi_return(multi, params),
         LuaType::ExistField(exit_field) => instantiate_exist_field(exit_field, params),
         _ => ty.clone(),
@@ -26,17 +26,17 @@ pub fn instantiate(ty: &LuaType, params: &Vec<LuaType>) -> LuaType {
 }
 
 fn instantiate_array(base: &LuaType, params: &Vec<LuaType>) -> LuaType {
-    let base = instantiate(base, params);
+    let base = instantiate_class(base, params);
     LuaType::Array(base.into())
 }
 
 fn instantiate_key_of(base: &LuaType, params: &Vec<LuaType>) -> LuaType {
-    let base = instantiate(base, params);
+    let base = instantiate_class(base, params);
     LuaType::KeyOf(base.into())
 }
 
 fn instantiate_nullable(inner: &LuaType, params: &Vec<LuaType>) -> LuaType {
-    let base = instantiate(inner, params);
+    let base = instantiate_class(inner, params);
     LuaType::Nullable(base.into())
 }
 
@@ -44,7 +44,7 @@ fn instantiate_tuple(tuple: &LuaTupleType, params: &Vec<LuaType>) -> LuaType {
     let tuple_types = tuple.get_types();
     let mut new_types = Vec::new();
     for t in tuple_types {
-        let t = instantiate(t, params);
+        let t = instantiate_class(t, params);
         new_types.push(t);
     }
     LuaType::Tuple(LuaTupleType::new(new_types).into())
@@ -57,7 +57,7 @@ fn instantiate_doc_function(doc_func: &LuaFunctionType, params: &Vec<LuaType>) -
     let mut new_params = Vec::new();
     for (name, param_type) in func_params {
         if param_type.is_some() {
-            let new_param = instantiate(param_type.as_ref().unwrap(), params);
+            let new_param = instantiate_class(param_type.as_ref().unwrap(), params);
             new_params.push((name.clone(), Some(new_param)));
             continue;
         } else {
@@ -67,7 +67,7 @@ fn instantiate_doc_function(doc_func: &LuaFunctionType, params: &Vec<LuaType>) -
 
     let mut new_ret = Vec::new();
     for ret_type in ret {
-        let new_ret_type = instantiate(ret_type, params);
+        let new_ret_type = instantiate_class(ret_type, params);
         new_ret.push(new_ret_type);
     }
     LuaType::DocFunction(LuaFunctionType::new(is_async, new_params, new_ret).into())
@@ -79,14 +79,14 @@ fn instantiate_object(object: &LuaObjectType, params: &Vec<LuaType>) -> LuaType 
 
     let mut new_fields = HashMap::new();
     for (key, field) in fields {
-        let new_field = instantiate(field, params);
+        let new_field = instantiate_class(field, params);
         new_fields.insert(key.clone(), new_field);
     }
 
     let mut new_index_access = Vec::new();
     for (key, value) in index_acess {
-        let key = instantiate(&key, params);
-        let value = instantiate(&value, params);
+        let key = instantiate_class(&key, params);
+        let value = instantiate_class(&value, params);
         new_index_access.push((key, value));
     }
 
@@ -97,7 +97,7 @@ fn instantiate_union(union: &LuaUnionType, params: &Vec<LuaType>) -> LuaType {
     let types = union.get_types();
     let mut new_types = Vec::new();
     for t in types {
-        let t = instantiate(t, params);
+        let t = instantiate_class(t, params);
         new_types.push(t);
     }
 
@@ -108,7 +108,7 @@ fn instantiate_intersection(intersection: &LuaIntersectionType, params: &Vec<Lua
     let types = intersection.get_types();
     let mut new_types = Vec::new();
     for t in types {
-        let t = instantiate(t, params);
+        let t = instantiate_class(t, params);
         new_types.push(t);
     }
 
@@ -117,9 +117,9 @@ fn instantiate_intersection(intersection: &LuaIntersectionType, params: &Vec<Lua
 
 fn instantiate_extends(extends: &LuaExtendedType, params: &Vec<LuaType>) -> LuaType {
     let base = extends.get_base();
-    let new_base = instantiate(base, params);
+    let new_base = instantiate_class(base, params);
     let ext = extends.get_ext();
-    let new_ext = instantiate(ext, params);
+    let new_ext = instantiate_class(ext, params);
     LuaType::Extends(LuaExtendedType::new(new_base, new_ext).into())
 }
 
@@ -127,7 +127,7 @@ fn instantiate_generic(generic: &LuaGenericType, params: &Vec<LuaType>) -> LuaTy
     let generic_params = generic.get_params();
     let mut new_params = Vec::new();
     for param in generic_params {
-        let new_param = instantiate(param, params);
+        let new_param = instantiate_class(param, params);
         new_params.push(new_param);
     }
 
@@ -144,7 +144,7 @@ fn instantiate_generic(generic: &LuaGenericType, params: &Vec<LuaType>) -> LuaTy
 fn instantiate_table_generic(table_params: &Vec<LuaType>, params: &Vec<LuaType>) -> LuaType {
     let mut new_params = Vec::new();
     for param in table_params {
-        let new_param = instantiate(param, params);
+        let new_param = instantiate_class(param, params);
         new_params.push(new_param);
     }
 
@@ -162,13 +162,13 @@ fn instantiate_tpl_ref(idx: usize, params: &Vec<LuaType>) -> LuaType {
 fn instantiate_multi_return(multi_returns: &LuaMultiReturn, params: &Vec<LuaType>) -> LuaType {
     match multi_returns {
         LuaMultiReturn::Base(base) => {
-            let new_base = instantiate(base, params);
+            let new_base = instantiate_class(base, params);
             LuaType::MuliReturn(LuaMultiReturn::Base(new_base).into())
         }
         LuaMultiReturn::Multi(types) => {
             let mut new_types = Vec::new();
             for t in types {
-                let t = instantiate(t, params);
+                let t = instantiate_class(t, params);
                 new_types.push(t);
             }
             LuaType::MuliReturn(LuaMultiReturn::Multi(new_types).into())
@@ -177,7 +177,7 @@ fn instantiate_multi_return(multi_returns: &LuaMultiReturn, params: &Vec<LuaType
 }
 
 fn instantiate_exist_field(exit_field: &LuaExistFieldType, params: &Vec<LuaType>) -> LuaType {
-    let base = instantiate(&exit_field.get_origin(), params);
+    let base = instantiate_class(&exit_field.get_origin(), params);
     let field = exit_field.get_field();
     LuaType::ExistField(LuaExistFieldType::new(field.clone(), base).into())
 }

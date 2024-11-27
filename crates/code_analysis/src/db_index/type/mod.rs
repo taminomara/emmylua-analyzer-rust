@@ -2,7 +2,6 @@ mod test;
 mod type_assert;
 mod type_decl;
 mod types;
-mod instantiate_generic;
 
 use std::collections::HashMap;
 use super::traits::LuaIndex;

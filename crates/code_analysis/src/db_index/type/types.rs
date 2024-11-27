@@ -8,7 +8,7 @@ use crate::{
     InFiled,
 };
 
-use super::{instantiate_generic::instantiate, type_decl::LuaTypeDeclId};
+use super::type_decl::LuaTypeDeclId;
 
 #[derive(Debug, Clone)]
 pub enum LuaType {
@@ -282,7 +282,10 @@ impl LuaType {
     }
 
     pub fn is_tpl(&self) -> bool {
-        matches!(self, LuaType::TplRef(_) | LuaType::StrTplRef(_) | LuaType::FuncTplRef(_))
+        matches!(
+            self,
+            LuaType::TplRef(_) | LuaType::StrTplRef(_) | LuaType::FuncTplRef(_)
+        )
     }
 
     pub fn is_self_infer(&self) -> bool {
@@ -314,10 +317,6 @@ impl LuaType {
 
     pub fn is_exist_field(&self) -> bool {
         matches!(self, LuaType::ExistField(_))
-    }
-
-    pub fn instantiate(&self, params: &Vec<LuaType>) -> LuaType {
-        instantiate(self, params)
     }
 }
 
