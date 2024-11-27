@@ -69,10 +69,7 @@ pub struct LuaSyntaxId {
 
 impl LuaSyntaxId {
     pub fn new(kind: LuaKind, range: TextRange) -> Self {
-        LuaSyntaxId {
-            kind,
-            range,
-        }
+        LuaSyntaxId { kind, range }
     }
 
     pub fn from_ptr(ptr: LuaSyntaxNodePtr) -> Self {
@@ -156,5 +153,12 @@ impl LuaSyntaxId {
             }
         }
         None
+    }
+
+    pub fn to_node_at_range(root: &LuaSyntaxNode, range: TextRange) -> Option<LuaSyntaxNode> {
+        successors(Some(root.clone()), |node| {
+            node.child_or_token_at_range(range)?.into_node()
+        })
+        .find(|it| it.text_range() == range)
     }
 }

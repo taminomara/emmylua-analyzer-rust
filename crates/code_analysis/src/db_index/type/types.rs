@@ -602,3 +602,22 @@ impl LuaExistFieldType {
         &self.origin
     }
 }
+
+impl From<ArcIntern<String>> for LuaType {
+    fn from(s: ArcIntern<String>) -> Self {
+        let str: &str = s.as_ref();
+        match str {
+            "nil" => LuaType::Nil,
+            "table" => LuaType::Table,
+            "userdata" => LuaType::Userdata,
+            "function" => LuaType::Function,
+            "thread" => LuaType::Thread,
+            "boolean" => LuaType::Boolean,
+            "string" => LuaType::String,
+            "integer" => LuaType::Integer,
+            "number" => LuaType::Number,
+            "io" => LuaType::Io,
+            _ => LuaType::Ref(LuaTypeDeclId::new_by_id(s))
+        }
+    }
+}

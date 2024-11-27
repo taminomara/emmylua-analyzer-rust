@@ -52,8 +52,13 @@ fn infer_call_by_doc_function(
     let rets = func.get_ret();
     let is_generic_rets = rets.iter().any(|ret| ret.is_tpl());
     let ret = if is_generic_rets {
-        instantiate_doc_function(db, config, func, call_expr);
-        todo!()
+        let instantiate_func = instantiate_doc_function(db, config, func, call_expr)?;
+        let rets = instantiate_func.get_ret();
+        match rets.len() {
+            0 => LuaType::Nil,
+            1 => rets[0].clone(),
+            _ => LuaType::MuliReturn(LuaMultiReturn::Multi(rets.to_vec()).into()),
+        }
     } else {
         match rets.len() {
             0 => LuaType::Nil,
@@ -80,7 +85,7 @@ fn unwrapp_return_type(
     return_type: LuaType,
     call_expr: LuaCallExpr,
 ) -> Option<LuaType> {
-    todo!()
+    Some(return_type)
 }
 
 #[allow(unused)]
@@ -88,7 +93,7 @@ fn instantiate_doc_function(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     func: &LuaFunctionType,
-    call_expr: LuaCallExpr
-) -> Option<LuaType> {
+    call_expr: LuaCallExpr,
+) -> Option<LuaFunctionType> {
     todo!()
 }
