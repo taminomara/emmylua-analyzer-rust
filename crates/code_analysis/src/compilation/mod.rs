@@ -1,16 +1,16 @@
 mod analyzer;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use emmylua_parser::LuaSyntaxTree;
 
-use crate::{db_index::DbIndex, semantic::{LuaInferConfig, SemanticModel}, Emmyrc, FileId, InFiled};
+use crate::{db_index::DbIndex, semantic::SemanticModel, Emmyrc, FileId, InFiled};
 
 #[derive(Debug)]
 pub struct LuaCompilation {
     db: DbIndex,
     syntax_trees: HashMap<FileId, LuaSyntaxTree>,
-    config: Emmyrc
+    config: Emmyrc,
 }
 
 impl LuaCompilation {
@@ -18,7 +18,7 @@ impl LuaCompilation {
         Self {
             db: DbIndex::new(),
             syntax_trees: HashMap::new(),
-            config: Emmyrc::default()
+            config: Emmyrc::default(),
         }
     }
 
@@ -76,7 +76,10 @@ impl LuaCompilation {
         let mut context = analyzer::AnalyzeContext::new(&self.config);
         for file_id in file_ids {
             let tree = self.syntax_trees.get(&file_id).unwrap();
-            context.add_tree(InFiled { file_id, value: tree });
+            context.add_tree(InFiled {
+                file_id,
+                value: tree,
+            });
         }
 
         analyzer::analyze(&mut self.db, context);

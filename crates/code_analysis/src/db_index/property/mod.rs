@@ -3,7 +3,7 @@ mod version;
 
 use std::collections::{HashMap, HashSet};
 
-use emmylua_parser::{LuaVersionNumber, VisibilityKind};
+use emmylua_parser::VisibilityKind;
 use property::LuaProperty;
 pub use property::{LuaPropertyId, LuaPropertyOwnerId};
 pub use version::{LuaVersionCond, LuaVersionCondOp};

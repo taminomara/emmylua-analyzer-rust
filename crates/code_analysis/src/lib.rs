@@ -27,3 +27,6 @@ impl EmmyLuaAnalysis {
         }
     }
 }
+
+unsafe impl Send for EmmyLuaAnalysis {}
+unsafe impl Sync for EmmyLuaAnalysis {}

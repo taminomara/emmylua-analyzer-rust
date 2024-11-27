@@ -1,10 +1,12 @@
+mod closure;
 mod func_body;
 mod module;
 mod stats;
 
+use closure::analyze_closure;
 use emmylua_parser::{LuaAst, LuaAstNode, LuaExpr};
-use module::analyze_chunk_return;
 pub use func_body::LuaReturnPoint;
+use module::analyze_chunk_return;
 use stats::{
     analyze_assign_stat, analyze_for_range_stat, analyze_func_stat, analyze_local_func_stat,
     analyze_local_stat, analyze_table_field,
@@ -20,7 +22,6 @@ use super::{unresolve::UnResolve, AnalyzeContext};
 
 pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     let tree_list = context.tree_list.clone();
-    // first analyze
     for in_filed_tree in &tree_list {
         let tree = in_filed_tree.value;
         let root = tree.get_chunk_node();
@@ -56,6 +57,9 @@ fn analyze_node(analyzer: &mut LuaAnalyzer, node: LuaAst) {
         }
         LuaAst::LuaTableField(field) => {
             analyze_table_field(analyzer, field);
+        }
+        LuaAst::LuaClosureExpr(closure) => {
+            analyze_closure(analyzer, closure);
         }
         _ => {}
     }
@@ -97,9 +101,3 @@ impl LuaAnalyzer<'_> {
         self.unresolved
     }
 }
-
-// #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-// pub enum LuaAnalyzeStage {
-//     First,
-//     Second,
-// }

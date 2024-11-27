@@ -60,6 +60,16 @@ impl LuaMember {
     pub fn get_id(&self) -> LuaMemberId {
         LuaMemberId::new(self.syntax_id, self.file_id)
     }
+
+    pub fn with_owner(&self, owner: LuaMemberOwner) -> Self {
+        Self {
+            owner,
+            key: self.key.clone(),
+            file_id: self.file_id,
+            syntax_id: self.syntax_id,
+            decl_type: self.decl_type.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]

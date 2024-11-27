@@ -59,7 +59,7 @@ impl From<UnResolveModule> for UnResolve {
 #[derive(Debug)]
 pub struct UnResolveReturn {
     pub signature_id : LuaSignatureId,
-    pub return_exprs: Vec<LuaReturnPoint>
+    pub return_points: Vec<LuaReturnPoint>
 }
 
 impl From<UnResolveReturn> for UnResolve {

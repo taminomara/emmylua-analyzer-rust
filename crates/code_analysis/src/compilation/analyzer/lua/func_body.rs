@@ -1,6 +1,6 @@
 use emmylua_parser::{
-    LuaBlock, LuaCallExpr, LuaCallExprStat, LuaDoStat, LuaExpr, LuaForRangeStat, LuaForStat,
-    LuaIfStat, LuaNameExpr, LuaRepeatStat, LuaReturnStat, LuaStat, LuaWhileStat,
+    LuaBlock, LuaCallExprStat, LuaDoStat, LuaExpr, LuaForRangeStat, LuaForStat, LuaIfStat,
+    LuaRepeatStat, LuaReturnStat, LuaStat, LuaWhileStat,
 };
 
 use super::LuaAnalyzer;
@@ -22,12 +22,11 @@ enum ChangeFlow {
 }
 
 pub fn analyze_func_body_returns(
-    analyzer: &mut LuaAnalyzer,
     body: LuaBlock,
 ) -> Vec<LuaReturnPoint> {
     let mut returns = Vec::new();
 
-    let flow = analyze_block_returns(analyzer, body, &mut returns);
+    let flow = analyze_block_returns(body, &mut returns);
     match flow {
         Some(ChangeFlow::Break) | Some(ChangeFlow::None) => {
             returns.push(LuaReturnPoint::Nil);
@@ -38,39 +37,43 @@ pub fn analyze_func_body_returns(
     returns
 }
 
-fn analyze_block_returns(
-    analyzer: &mut LuaAnalyzer,
-    block: LuaBlock,
-    returns: &mut Vec<LuaReturnPoint>,
-) -> Option<ChangeFlow> {
+fn analyze_block_returns(block: LuaBlock, returns: &mut Vec<LuaReturnPoint>) -> Option<ChangeFlow> {
     for stat in block.get_stats() {
         match stat {
             LuaStat::DoStat(do_stat) => {
-                analyze_do_stat_returns(analyzer, do_stat, returns);
+                let flow = analyze_do_stat_returns(do_stat, returns);
+                match flow {
+                    Some(ChangeFlow::None) => {}
+                    _ => return flow,
+                }
             }
             LuaStat::WhileStat(while_stat) => {
-                analyze_while_stat_returns(analyzer, while_stat, returns);
+                analyze_while_stat_returns(while_stat, returns);
             }
             LuaStat::RepeatStat(repeat_stat) => {
-                analyze_repeat_stat_returns(analyzer, repeat_stat, returns);
+                analyze_repeat_stat_returns(repeat_stat, returns);
             }
             LuaStat::IfStat(if_stat) => {
-                analyze_if_stat_returns(analyzer, if_stat, returns);
+                analyze_if_stat_returns(if_stat, returns);
             }
             LuaStat::ForStat(for_stat) => {
-                analyze_for_stat_returns(analyzer, for_stat, returns);
+                analyze_for_stat_returns(for_stat, returns);
             }
             LuaStat::ForRangeStat(for_range_stat) => {
-                analyze_for_range_stat_returns(analyzer, for_range_stat, returns);
+                analyze_for_range_stat_returns(for_range_stat, returns);
             }
             LuaStat::CallExprStat(call_expr) => {
-                analyze_call_expr_stat_returns(call_expr, returns);
+                let flow = analyze_call_expr_stat_returns(call_expr, returns);
+                match flow {
+                    Some(ChangeFlow::Error) => return Some(ChangeFlow::Error),
+                    _ => {}
+                }
             }
             LuaStat::BreakStat(_) => {
                 return Some(ChangeFlow::Break);
             }
             LuaStat::ReturnStat(return_stat) => {
-                return analyze_return_stat_returns(analyzer, return_stat, returns);
+                return analyze_return_stat_returns(return_stat, returns);
             }
             _ => {}
         };
@@ -80,19 +83,17 @@ fn analyze_block_returns(
 }
 
 fn analyze_do_stat_returns(
-    analyzer: &mut LuaAnalyzer,
     do_stat: LuaDoStat,
     returns: &mut Vec<LuaReturnPoint>,
 ) -> Option<ChangeFlow> {
-    analyze_block_returns(analyzer, do_stat.get_block()?, returns)
+    analyze_block_returns(do_stat.get_block()?, returns)
 }
 
 fn analyze_while_stat_returns(
-    analyzer: &mut LuaAnalyzer,
     while_stat: LuaWhileStat,
     returns: &mut Vec<LuaReturnPoint>,
 ) -> Option<ChangeFlow> {
-    let flow = analyze_block_returns(analyzer, while_stat.get_block()?, returns);
+    let flow = analyze_block_returns(while_stat.get_block()?, returns);
     match flow {
         Some(ChangeFlow::Break) => Some(ChangeFlow::None),
         _ => flow,
@@ -100,11 +101,10 @@ fn analyze_while_stat_returns(
 }
 
 fn analyze_repeat_stat_returns(
-    analyzer: &mut LuaAnalyzer,
     repeat_stat: LuaRepeatStat,
     returns: &mut Vec<LuaReturnPoint>,
 ) -> Option<ChangeFlow> {
-    let flow = analyze_block_returns(analyzer, repeat_stat.get_block()?, returns);
+    let flow = analyze_block_returns(repeat_stat.get_block()?, returns);
     match flow {
         Some(ChangeFlow::Break) => Some(ChangeFlow::None),
         _ => flow,
@@ -112,11 +112,10 @@ fn analyze_repeat_stat_returns(
 }
 
 fn analyze_for_stat_returns(
-    analyzer: &mut LuaAnalyzer,
     for_stat: LuaForStat,
     returns: &mut Vec<LuaReturnPoint>,
 ) -> Option<ChangeFlow> {
-    let flow = analyze_block_returns(analyzer, for_stat.get_block()?, returns);
+    let flow = analyze_block_returns(for_stat.get_block()?, returns);
     match flow {
         Some(ChangeFlow::Break) => Some(ChangeFlow::None),
         _ => flow,
@@ -125,24 +124,22 @@ fn analyze_for_stat_returns(
 
 // todo
 fn analyze_if_stat_returns(
-    analyzer: &mut LuaAnalyzer,
     if_stat: LuaIfStat,
     returns: &mut Vec<LuaReturnPoint>,
 ) -> Option<ChangeFlow> {
-    analyze_block_returns(analyzer, if_stat.get_block()?, returns);
+    analyze_block_returns(if_stat.get_block()?, returns);
     for clause in if_stat.get_all_clause() {
-        analyze_block_returns(analyzer, clause.get_block()?, returns);
+        analyze_block_returns(clause.get_block()?, returns);
     }
 
     Some(ChangeFlow::None)
 }
 
 fn analyze_for_range_stat_returns(
-    analyzer: &mut LuaAnalyzer,
     for_range_stat: LuaForRangeStat,
     returns: &mut Vec<LuaReturnPoint>,
 ) -> Option<ChangeFlow> {
-    let flow = analyze_block_returns(analyzer, for_range_stat.get_block()?, returns);
+    let flow = analyze_block_returns(for_range_stat.get_block()?, returns);
     match flow {
         Some(ChangeFlow::Break) => Some(ChangeFlow::None),
         _ => flow,
@@ -164,7 +161,6 @@ fn analyze_call_expr_stat_returns(
 }
 
 fn analyze_return_stat_returns(
-    analyzer: &mut LuaAnalyzer,
     return_stat: LuaReturnStat,
     returns: &mut Vec<LuaReturnPoint>,
 ) -> Option<ChangeFlow> {

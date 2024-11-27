@@ -72,13 +72,10 @@ pub fn analyze_index_expr(analyzer: &mut DeclAnalyzer, expr: LuaIndexExpr) -> Op
     Some(())
 }
 
-pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) {
-    let params = expr.get_params_list();
-    if params.is_none() {
-        return;
-    }
+pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) -> Option<()> {
+    let params = expr.get_params_list()?;
 
-    for param in params.unwrap().get_params() {
+    for param in params.get_params() {
         let name = param.get_name_token().map_or_else(
             || {
                 if param.is_dots() {
@@ -102,6 +99,8 @@ pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) {
 
         analyzer.add_decl(decl);
     }
+
+    Some(())
 }
 
 pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, expr: LuaTableExpr) -> Option<()> {

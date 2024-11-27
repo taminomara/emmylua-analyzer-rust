@@ -8,23 +8,33 @@ use crate::{db_index::LuaType, FileId};
 #[derive(Debug)]
 pub struct LuaSignature {
     pub generic_params: Vec<(String, Option<LuaType>)>,
-    pub visibility: Option<String>,
     pub overloads: Vec<LuaType>,
     pub param_docs: HashMap<String, LuaDocParamInfo>,
     pub params: Vec<String>,
     pub return_docs: Vec<LuaDocReturnInfo>,
+    pub(crate) resolve_return: bool,
 }
 
 impl LuaSignature {
     pub fn new() -> Self {
         Self {
             generic_params: Vec::new(),
-            visibility: None,
             overloads: Vec::new(),
             param_docs: HashMap::new(),
             params: Vec::new(),
             return_docs: Vec::new(),
+            resolve_return: false,
         }
+    }
+}
+
+impl LuaSignature {
+    pub fn is_generic(&self) -> bool {
+        !self.generic_params.is_empty()
+    }
+
+    pub fn is_resolve_return(&self) -> bool {
+        self.resolve_return || !self.return_docs.is_empty()
     }
 }
 

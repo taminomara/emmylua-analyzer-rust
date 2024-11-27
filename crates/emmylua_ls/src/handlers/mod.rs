@@ -2,14 +2,14 @@ mod text_document_handler;
 
 use std::error::Error;
 
-use lsp_server::{Connection, Message, Notification, Request, RequestId, Response};
+use lsp_server::{Notification, Request, RequestId, Response};
 use lsp_types::{
-    notification::DidOpenTextDocument, HoverProviderCapability, ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind
+    notification::{Cancel, DidOpenTextDocument, Notification as lsp_notification}, CancelParams, HoverProviderCapability, NumberOrString, ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind
 };
 use serde::{de::DeserializeOwned, Serialize};
 use text_document_handler::on_did_open_text_document;
 
-use crate::context::{ServerContext, ServerContextSnapshot};
+use crate::context::{CancelToken, ServerContext, ServerContextSnapshot};
 
 pub fn server_capabilities() -> ServerCapabilities {
     ServerCapabilities {
@@ -31,8 +31,7 @@ pub fn on_req_handler(
     req: Request,
     server_context: &mut ServerContext,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
-    RequestDispatcher::new(req, server_context)
-        .finish();
+    RequestDispatcher::new(req, server_context).finish();
     // .on(handler)
     Ok(())
 }
@@ -42,6 +41,7 @@ pub fn on_notification_handler(
     server_context: &mut ServerContext,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
     NotificationDispatcher::new(notification, server_context)
+        .on_cancel()
         .on_sync::<DidOpenTextDocument>(on_did_open_text_document)
         .finish();
     // .on(handler)
@@ -61,9 +61,9 @@ impl<'a> RequestDispatcher<'a> {
         }
     }
 
-    pub fn on_sync<R>(
+    pub fn on<R>(
         &mut self,
-        handler: fn(snapshot: ServerContextSnapshot, R::Params) -> R::Result,
+        handler: fn(snapshot: ServerContextSnapshot, R::Params, CancelToken) -> Option<R::Result>,
     ) -> &mut Self
     where
         R: lsp_types::request::Request + 'static,
@@ -80,9 +80,9 @@ impl<'a> RequestDispatcher<'a> {
             let snapshot = self.context.snapshot();
             let id = req.id.clone();
             let m: Result<(RequestId, R::Params), _> = req.extract(R::METHOD);
-            self.context.task(move || {
-                let result = handler(snapshot, m.unwrap().1);
-                Response::new_ok(id, result)
+            self.context.task( id.clone(), move |cancel_token| {
+                let result = handler(snapshot, m.unwrap().1, cancel_token)?;
+                Some(Response::new_ok(id, result))
             });
         }
         self
@@ -148,6 +148,24 @@ impl<'a> NotificationDispatcher<'a> {
             let snapshot = self.context.snapshot();
             let m = notification.extract(R::METHOD);
             handler(snapshot, m.unwrap());
+        }
+        self
+    }
+
+    pub fn on_cancel(&mut self) -> &mut Self {
+        let notification = match &self.notification {
+            Some(req) if req.method == Cancel::METHOD => self.notification.take().unwrap(),
+            _ => return self,
+        };
+
+        if Cancel::METHOD == notification.method {
+            let m: Result<CancelParams, _> = notification.extract(Cancel::METHOD);
+            let req_id = match m.unwrap().id {
+                NumberOrString::Number(i) => i.into(),
+                NumberOrString::String(s) => s.into(),
+            };
+
+            self.context.cancel(req_id);
         }
         self
     }

@@ -30,8 +30,7 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
         match expr_type {
             Some(expr_type) => {
                 let decl_id = LuaDeclId::new(analyzer.file_id, position);
-                let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-                merge_decl_expr_type(decl, expr_type);
+                merge_decl_expr_type(analyzer.db, decl_id, expr_type);
             }
             None => {
                 let decl_id = LuaDeclId::new(analyzer.file_id, position);
@@ -60,7 +59,7 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
                         let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
                         let ret_type = multi.get_type(i - expr_count + 1);
                         if let Some(ty) = ret_type {
-                            merge_decl_expr_type(decl, ty.clone());
+                            merge_decl_expr_type(analyzer.db, decl_id, ty.clone());
                         } else {
                             decl.set_decl_type(LuaType::Unknown);
                         }
@@ -174,10 +173,7 @@ fn get_var_type_owner(
 }
 
 // assign stat is too complex
-pub fn analyze_assign_stat(
-    analyzer: &mut LuaAnalyzer,
-    assign_stat: LuaAssignStat,
-) -> Option<()> {
+pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignStat) -> Option<()> {
     let (var_list, expr_list) = assign_stat.get_var_and_expr_list();
     let expr_count = expr_list.len();
     let var_count = var_list.len();
@@ -300,7 +296,7 @@ fn merge_type_owner_and_expr_type(
             if decl_type.is_none() {
                 decl.set_decl_type(expr_type);
             } else {
-                merge_decl_expr_type(decl, expr_type);
+                merge_decl_expr_type(analyzer.db, decl_id, expr_type);
             }
         }
         TypeOwner::Member(member_id) => {
@@ -311,7 +307,7 @@ fn merge_type_owner_and_expr_type(
             if member.decl_type.is_unknown() {
                 member.decl_type = expr_type;
             } else {
-                merge_member_type(member, expr_type);
+                merge_member_type(analyzer.db, member_id, expr_type);
             }
         }
     }
