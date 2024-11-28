@@ -1,6 +1,7 @@
 mod infer;
 mod member;
 mod instantiate;
+mod type_compact;
 
 use std::collections::{HashMap, HashSet};
 

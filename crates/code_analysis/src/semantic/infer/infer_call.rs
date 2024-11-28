@@ -1,6 +1,9 @@
 use emmylua_parser::LuaCallExpr;
 
-use crate::db_index::{DbIndex, LuaFunctionType, LuaMultiReturn, LuaSignatureId, LuaType};
+use crate::{
+    db_index::{DbIndex, LuaFunctionType, LuaMultiReturn, LuaSignatureId, LuaType},
+    semantic::instantiate::instantiate_func,
+};
 
 use super::{infer_expr, LuaInferConfig};
 
@@ -50,9 +53,9 @@ fn infer_call_by_doc_function(
     call_expr: LuaCallExpr,
 ) -> Option<LuaType> {
     let rets = func.get_ret();
-    let is_generic_rets = rets.iter().any(|ret| ret.is_tpl());
+    let is_generic_rets = rets.iter().any(|ret| ret.contain_tpl());
     let ret = if is_generic_rets {
-        let instantiate_func = instantiate_doc_function(db, config, func, call_expr)?;
+        let instantiate_func = instantiate_doc_function(db, config, func, call_expr, false)?;
         let rets = instantiate_func.get_ret();
         match rets.len() {
             0 => LuaType::Nil,
@@ -76,6 +79,8 @@ fn infer_call_by_signature(
     signature_id: LuaSignatureId,
     call_expr: LuaCallExpr,
 ) -> Option<LuaType> {
+    let signature = db.get_signature_index().get(&signature_id)?;
+    // let rets = signature.get_ret();
     todo!()
 }
 
@@ -88,12 +93,40 @@ fn unwrapp_return_type(
     Some(return_type)
 }
 
-#[allow(unused)]
 fn instantiate_doc_function(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     func: &LuaFunctionType,
     call_expr: LuaCallExpr,
+    colon_define: bool,
 ) -> Option<LuaFunctionType> {
-    todo!()
+    let origin_params = func.get_params();
+    let mut func_param_types: Vec<_> = origin_params
+        .iter()
+        .map(|(_, t)| t.clone().unwrap_or(LuaType::Unknown))
+        .collect();
+
+    let mut func_return_types: Vec<_> = func.get_ret().to_vec();
+    let is_async = func.is_async();
+
+    instantiate_func(
+        db,
+        config,
+        colon_define,
+        call_expr,
+        &mut func_param_types,
+        &mut func_return_types,
+    )?;
+
+    let mut new_params = Vec::new();
+    for i in 0..origin_params.len() {
+        let new_param = func_param_types[i].clone();
+        new_params.push((origin_params[i].0.clone(), Some(new_param)));
+    }
+
+    Some(LuaFunctionType::new(
+        is_async,
+        new_params,
+        func_return_types,
+    ))
 }

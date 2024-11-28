@@ -51,6 +51,8 @@ pub enum LuaType {
     Signature(LuaSignatureId),
     Instance(InFiled<TextRange>),
     FuncTplRef(usize),
+    DocStringConst(ArcIntern<String>),
+    DocIntergerConst(i64),
 }
 
 impl PartialEq for LuaType {
@@ -95,6 +97,8 @@ impl PartialEq for LuaType {
             (LuaType::Signature(a), LuaType::Signature(b)) => a == b,
             (LuaType::Instance(a), LuaType::Instance(b)) => a == b,
             (LuaType::FuncTplRef(a), LuaType::FuncTplRef(b)) => a == b,
+            (LuaType::DocStringConst(a), LuaType::DocStringConst(b)) => a == b,
+            (LuaType::DocIntergerConst(a), LuaType::DocIntergerConst(b)) => a == b,
             _ => false, // 不同变体之间不相等
         }
     }
@@ -165,6 +169,8 @@ impl Hash for LuaType {
             LuaType::Signature(a) => (36, a).hash(state),
             LuaType::Instance(a) => (37, a).hash(state),
             LuaType::FuncTplRef(a) => (38, a).hash(state),
+            LuaType::DocStringConst(a) => (39, a).hash(state),
+            LuaType::DocIntergerConst(a) => (40, a).hash(state),
         }
     }
 }
@@ -199,11 +205,11 @@ impl LuaType {
     }
 
     pub fn is_string(&self) -> bool {
-        matches!(self, LuaType::StringConst(_) | LuaType::String)
+        matches!(self, LuaType::StringConst(_) | LuaType::String | LuaType::DocStringConst(_))
     }
 
     pub fn is_integer(&self) -> bool {
-        matches!(self, LuaType::IntegerConst(_) | LuaType::Integer)
+        matches!(self, LuaType::IntegerConst(_) | LuaType::Integer | LuaType::DocIntergerConst(_))
     }
 
     pub fn is_number(&self) -> bool {
@@ -318,6 +324,28 @@ impl LuaType {
     pub fn is_exist_field(&self) -> bool {
         matches!(self, LuaType::ExistField(_))
     }
+
+    pub fn contain_tpl(&self) -> bool {
+        match self {
+            LuaType::Array(base) => base.contain_tpl(),
+            LuaType::KeyOf(base) => base.contain_tpl(),
+            LuaType::Nullable(base) => base.contain_tpl(),
+            LuaType::Tuple(base) => base.contain_tpl(),
+            LuaType::DocFunction(base) => base.contain_tpl(),
+            LuaType::Object(base) => base.contain_tpl(),
+            LuaType::Union(base) => base.contain_tpl(),
+            LuaType::Intersection(base) => base.contain_tpl(),
+            LuaType::Extends(base) => base.contain_tpl(),
+            LuaType::Generic(base) => base.contain_tpl(),
+            LuaType::MuliReturn(multi) => multi.contain_tpl(),
+            LuaType::ExistField(field) => field.contain_tpl(),
+            LuaType::TableGeneric(params) => params.iter().any(|p| p.contain_tpl()),
+            LuaType::TplRef(_) => true,
+            LuaType::StrTplRef(_) => true,
+            LuaType::FuncTplRef(_) => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -336,6 +364,14 @@ impl LuaTupleType {
 
     pub fn get_type(&self, idx: usize) -> Option<&LuaType> {
         self.types.get(idx)
+    }
+
+    pub fn len(&self) -> usize {
+        self.types.len()
+    }
+
+    pub fn contain_tpl(&self) -> bool {
+        self.types.iter().any(|t| t.contain_tpl())
     }
 }
 
@@ -371,6 +407,13 @@ impl LuaFunctionType {
 
     pub fn get_ret(&self) -> &[LuaType] {
         &self.ret
+    }
+
+    pub fn contain_tpl(&self) -> bool {
+        self.params
+            .iter()
+            .any(|(_, t)| t.as_ref().map_or(false, |t| t.contain_tpl()))
+            || self.ret.iter().any(|t| t.contain_tpl())
     }
 }
 
@@ -438,6 +481,14 @@ impl LuaObjectType {
     pub fn get_field(&self, key: &LuaMemberKey) -> Option<&LuaType> {
         self.fields.get(key)
     }
+
+    pub fn contain_tpl(&self) -> bool {
+        self.fields.values().any(|t| t.contain_tpl())
+            || self
+                .index_access
+                .iter()
+                .any(|(k, v)| k.contain_tpl() || v.contain_tpl())
+    }
 }
 
 impl From<LuaObjectType> for LuaType {
@@ -463,6 +514,10 @@ impl LuaUnionType {
     pub(crate) fn into_types(&self) -> Vec<LuaType> {
         self.types.clone()
     }
+
+    pub fn contain_tpl(&self) -> bool {
+        self.types.iter().any(|t| t.contain_tpl())
+    }
 }
 
 impl From<LuaUnionType> for LuaType {
@@ -487,6 +542,10 @@ impl LuaIntersectionType {
 
     pub(crate) fn into_types(&self) -> Vec<LuaType> {
         self.types.clone()
+    }
+
+    pub fn contain_tpl(&self) -> bool {
+        self.types.iter().any(|t| t.contain_tpl())
     }
 }
 
@@ -514,6 +573,10 @@ impl LuaExtendedType {
     pub fn get_ext(&self) -> &LuaType {
         &self.ext
     }
+
+    pub fn contain_tpl(&self) -> bool {
+        self.base.contain_tpl() || self.ext.contain_tpl()
+    }
 }
 
 impl From<LuaExtendedType> for LuaType {
@@ -539,6 +602,10 @@ impl LuaGenericType {
 
     pub fn get_params(&self) -> &Vec<LuaType> {
         &self.params
+    }
+
+    pub fn contain_tpl(&self) -> bool {
+        self.params.iter().any(|t| t.contain_tpl())
     }
 }
 
@@ -581,6 +648,13 @@ impl LuaMultiReturn {
             LuaMultiReturn::Base(t) => Some(t),
         }
     }
+
+    pub fn contain_tpl(&self) -> bool {
+        match self {
+            LuaMultiReturn::Multi(types) => types.iter().any(|t| t.contain_tpl()),
+            LuaMultiReturn::Base(t) => t.contain_tpl(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -601,6 +675,10 @@ impl LuaExistFieldType {
     pub fn get_origin(&self) -> &LuaType {
         &self.origin
     }
+
+    pub fn contain_tpl(&self) -> bool {
+        self.origin.contain_tpl()
+    }
 }
 
 impl From<ArcIntern<String>> for LuaType {
@@ -617,7 +695,7 @@ impl From<ArcIntern<String>> for LuaType {
             "integer" => LuaType::Integer,
             "number" => LuaType::Number,
             "io" => LuaType::Io,
-            _ => LuaType::Ref(LuaTypeDeclId::new_by_id(s))
+            _ => LuaType::Ref(LuaTypeDeclId::new_by_id(s)),
         }
     }
 }

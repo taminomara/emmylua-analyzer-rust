@@ -49,11 +49,11 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
             if let Some(literal_token) = literal.get_literal() {
                 match literal_token {
                     LuaLiteralToken::String(str_token) => {
-                        return LuaType::StringConst(str_token.get_value().into())
+                        return LuaType::DocStringConst(str_token.get_value().into())
                     }
                     LuaLiteralToken::Number(number_token) => {
                         if number_token.is_int() {
-                            return LuaType::IntegerConst(number_token.get_int_value());
+                            return LuaType::DocIntergerConst(number_token.get_int_value());
                         } else {
                             return LuaType::Number;
                         }

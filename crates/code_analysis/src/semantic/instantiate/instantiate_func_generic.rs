@@ -7,10 +7,10 @@ use crate::{
     semantic::{infer_expr, LuaInferConfig},
 };
 
-use super::tpl_pattern::tpl_pattern_match;
+use super::{instantiate_class, tpl_pattern::tpl_pattern_match};
 
 pub fn instantiate_func(
-    db: &mut DbIndex,
+    db: &DbIndex,
     infer_config: &mut LuaInferConfig,
     colon_define: bool,
     call_expr: LuaCallExpr,
@@ -62,7 +62,7 @@ pub fn instantiate_func(
 }
 
 fn instantiate_func_by_args(
-    db: &mut DbIndex,
+    db: &DbIndex,
     infer_config: &mut LuaInferConfig,
     func_param_types: &mut Vec<LuaType>,
     func_return_types: &mut Vec<LuaType>,
@@ -86,6 +86,28 @@ fn instantiate_func_by_args(
             arg_type,
             &mut result,
         );
+    }
+
+    let max = *result.keys().max()?;
+    let mut generic_params = Vec::new();
+    for i in 0..max {
+        if let Some(generic_param) = result.get(&i) {
+            generic_params.push(generic_param.clone());
+        } else {
+            generic_params.push(LuaType::Unknown);
+        }
+    }
+
+    for i in 0..func_param_types.len() {
+        let func_param_type = &mut func_param_types[i];
+        let new_func_param_type = instantiate_class(&func_param_type, &generic_params);
+        *func_param_type = new_func_param_type;
+    }
+
+    for i in 0..func_return_types.len() {
+        let func_return_type = &mut func_return_types[i];
+        let new_func_return_type = instantiate_class(&func_return_type, &generic_params);
+        *func_return_type = new_func_return_type;
     }
 
     Some(())

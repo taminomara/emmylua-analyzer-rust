@@ -99,6 +99,13 @@ impl LuaMemberOwner {
         }
     }
 
+    pub fn get_table_range(&self) -> Option<&InFiled<TextRange>> {
+        match self {
+            LuaMemberOwner::Table(range) => Some(range),
+            _ => None,
+        }
+    }
+
     pub fn is_none(&self) -> bool {
         matches!(self, LuaMemberOwner::None)
     }
