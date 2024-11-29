@@ -166,6 +166,10 @@ impl LuaTypeIndex {
     pub fn get_type_decl(&self, decl_id: &LuaTypeDeclId) -> Option<&LuaTypeDecl> {
         self.full_name_type_map.get(decl_id)
     }
+
+    pub fn get_type_decl_mut(&mut self, decl_id: &LuaTypeDeclId) -> Option<&mut LuaTypeDecl> {
+        self.full_name_type_map.get_mut(decl_id)
+    }
 }
 
 impl LuaIndex for LuaTypeIndex {

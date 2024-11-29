@@ -133,10 +133,18 @@ fn infer_custom_type_member(
     infer_guard.check(&prefix_type_id)?;
     let type_index = db.get_type_index();
     let type_decl = type_index.get_type_decl(&prefix_type_id)?;
-    if type_decl.get_kind() == LuaDeclTypeKind::Alias {
-        let alias_types = type_index.get_super_types(&prefix_type_id)?;
-        let origin_type = alias_types.first()?;
-        return infer_member_by_member_key(db, config, origin_type, member_key, infer_guard);
+    if type_decl.is_alias() {
+        if let Some(origin_type) = type_decl.get_alias_origin() {
+            return infer_member_by_member_key(db, config, origin_type, member_key, infer_guard);
+        } else {
+            return infer_member_by_member_key(
+                db,
+                config,
+                &LuaType::String,
+                member_key,
+                infer_guard,
+            );
+        }
     }
 
     let key: LuaMemberKey = member_key.into();
@@ -151,7 +159,7 @@ fn infer_custom_type_member(
     }
 
     // find member by key in super
-    if type_decl.get_kind() == LuaDeclTypeKind::Class {
+    if type_decl.is_class() {
         let super_types = type_index.get_super_types(&prefix_type_id)?;
         for super_type in super_types {
             let member_type =
@@ -338,10 +346,18 @@ fn infer_member_by_index_custom_type(
     infer_guard.check(&prefix_type_id)?;
     let type_index = db.get_type_index();
     let type_decl = type_index.get_type_decl(&prefix_type_id)?;
-    if type_decl.get_kind() == LuaDeclTypeKind::Alias {
-        let alias_types = type_index.get_super_types(&prefix_type_id)?;
-        let origin_type = alias_types.first()?;
-        return infer_member_by_operator(db, config, origin_type, member_key, root, infer_guard);
+    if type_decl.is_alias() {
+        if let Some(origin_type) = type_decl.get_alias_origin() {
+            return infer_member_by_operator(
+                db,
+                config,
+                origin_type,
+                member_key,
+                root,
+                infer_guard,
+            );
+        }
+        return None;
     }
 
     // find member by key in self
@@ -384,7 +400,7 @@ fn infer_member_by_index_custom_type(
     }
 
     // find member by key in super
-    if type_decl.get_kind() == LuaDeclTypeKind::Class {
+    if type_decl.is_class() {
         let super_types = type_index.get_super_types(&prefix_type_id)?;
         for super_type in super_types {
             let member_type =
@@ -501,17 +517,18 @@ fn infer_member_by_index_generic(
     let generic_params = generic.get_params();
     let type_index = db.get_type_index();
     let type_decl = type_index.get_type_decl(&type_decl_id)?;
-    if type_decl.get_kind() == LuaDeclTypeKind::Alias {
-        let alias_types = type_index.get_super_types(&type_decl_id)?;
-        let origin_type = alias_types.first()?;
-        return infer_member_by_operator(
-            db,
-            config,
-            &instantiate_class(origin_type, generic_params),
-            member_key,
-            root,
-            &mut InferGuard::new(),
-        );
+    if type_decl.is_alias() {
+        if let Some(origin_type) = type_decl.get_alias_origin() {
+            return infer_member_by_operator(
+                db,
+                config,
+                &instantiate_class(origin_type, generic_params),
+                member_key,
+                root,
+                &mut InferGuard::new(),
+            );
+        }
+        return None;
     }
 
     let operator_index = db.get_operator_index();

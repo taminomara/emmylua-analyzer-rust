@@ -1,5 +1,5 @@
 use crate::db_index::{
-    DbIndex, LuaDeclTypeKind, LuaMemberOwner, LuaObjectType, LuaTupleType, LuaType, LuaTypeDeclId,
+    DbIndex, LuaMemberOwner, LuaObjectType, LuaTupleType, LuaType, LuaTypeDeclId,
 };
 
 use super::{InferGuard, LuaInferConfig};
@@ -27,7 +27,7 @@ fn infer_type_compact(
 
     let compact_type = if let LuaType::Ref(type_id) = compact_type {
         if let Some(escaped) = escape_alias(db, &type_id) {
-            escaped.clone()
+            escaped
         } else {
             compact_type.clone()
         }
@@ -126,16 +126,17 @@ fn infer_custom_type_compact(
 ) -> Option<bool> {
     infer_guard.check(type_id)?;
     let type_decl = db.get_type_index().get_type_decl(&type_id.clone())?;
-    if type_decl.get_kind() == LuaDeclTypeKind::Alias {
-        let supers = db.get_type_index().get_super_types(&type_id)?;
-        let origin_type = supers.get(0)?;
-        return Some(infer_type_compact(
-            db,
-            config,
-            origin_type,
-            compact_type,
-            infer_guard,
-        ));
+    if type_decl.is_alias() {
+        if let Some(origin_type) = type_decl.get_alias_origin() {
+            return Some(infer_type_compact(
+                db,
+                config,
+                origin_type,
+                compact_type,
+                infer_guard,
+            ));
+        }
+        // todo
     }
 
     // check same id
@@ -167,10 +168,12 @@ fn infer_custom_type_compact(
         _ => return Some(false),
     };
 
-    let supers = db.get_type_index().get_super_types(compact_id)?;
-    for compact_super in supers {
-        if infer_custom_type_compact(db, config, type_id, &compact_super, infer_guard)? {
-            return Some(true);
+    if type_decl.is_class() {
+        let supers = db.get_type_index().get_super_types(compact_id)?;
+        for compact_super in supers {
+            if infer_custom_type_compact(db, config, type_id, &compact_super, infer_guard)? {
+                return Some(true);
+            }
         }
     }
 
@@ -214,9 +217,10 @@ fn infer_custom_type_compact_table(
 
 fn escape_alias(db: &DbIndex, type_id: &LuaTypeDeclId) -> Option<LuaType> {
     let type_decl = db.get_type_index().get_type_decl(type_id)?;
-    if type_decl.get_kind() == LuaDeclTypeKind::Alias {
-        let supers = db.get_type_index().get_super_types(type_id)?;
-        return Some(supers.get(0)?.clone());
+    if type_decl.is_alias() {
+        if let Some(origin_type) = type_decl.get_alias_origin() {
+            return Some(origin_type.clone());
+        }
     }
 
     None

@@ -80,27 +80,30 @@ pub fn analyze_enum(analyzer: &mut DocAnalyzer, tag: LuaDocTagEnum) -> Option<()
     let file_id = analyzer.file_id;
     let name = tag.get_name_token()?.get_name_text().to_string();
 
-    let enum_decl = analyzer
-        .db
-        .get_type_index_mut()
-        .find_type_decl(file_id, &name)?;
-    if enum_decl.get_kind() != LuaDeclTypeKind::Enum {
-        return None;
-    }
+    let enum_decl_id = {
+        let enum_decl = analyzer
+            .db
+            .get_type_index()
+            .find_type_decl(file_id, &name)?;
+        if !enum_decl.is_enum() {
+            return None;
+        }
+        enum_decl.get_id()
+    };
 
-    let enum_decl_id = enum_decl.get_id();
     analyzer.current_type_id = Some(enum_decl_id.clone());
 
     if let Some(base_type) = tag.get_base_type() {
-        let super_type = infer_type(analyzer, base_type);
-        if super_type.is_unknown() {
+        let base_type = infer_type(analyzer, base_type);
+        if base_type.is_unknown() {
             return None;
         }
 
-        analyzer
+        let enum_decl = analyzer
             .db
             .get_type_index_mut()
-            .add_super_type(enum_decl_id.clone(), file_id, super_type);
+            .get_type_decl_mut(&enum_decl_id)?;
+        enum_decl.add_enum_base(base_type);
     }
 
     if let Some(description) = tag.get_description() {
@@ -123,15 +126,18 @@ pub fn analyze_alias(analyzer: &mut DocAnalyzer, tag: LuaDocTagAlias) -> Option<
     let file_id = analyzer.file_id;
     let name = tag.get_name_token()?.get_name_text().to_string();
 
-    let alias_decl = analyzer
-        .db
-        .get_type_index_mut()
-        .find_type_decl(file_id, &name)?;
-    if alias_decl.get_kind() != LuaDeclTypeKind::Alias {
-        return None;
-    }
+    let alias_decl_id = {
+        let alias_decl = analyzer
+            .db
+            .get_type_index()
+            .find_type_decl(file_id, &name)?;
+        if !alias_decl.is_alias() {
+            return None;
+        }
 
-    let alias_decl_id = alias_decl.get_id();
+        alias_decl.get_id()
+    };
+
     if let Some(generic_params) = tag.get_generic_decl_list() {
         let params = get_generic_params(analyzer, generic_params);
         let mut params_index = HashMap::new();
@@ -151,17 +157,18 @@ pub fn analyze_alias(analyzer: &mut DocAnalyzer, tag: LuaDocTagAlias) -> Option<
             .add_generic_scope(vec![range], params_index, false);
     }
 
-    if let Some(super_type) = tag.get_type() {
-        let super_type = infer_type(analyzer, super_type);
-        if super_type.is_unknown() {
+    if let Some(origin_type) = tag.get_type() {
+        let replace_type = infer_type(analyzer, origin_type);
+        if replace_type.is_unknown() {
             return None;
         }
-
-        analyzer
+        let alias = analyzer
             .db
             .get_type_index_mut()
-            .add_super_type(alias_decl_id.clone(), file_id, super_type);
+            .get_type_decl_mut(&alias_decl_id)?;
+        alias.add_alias_origin(replace_type);
     } else if let Some(field_list) = tag.get_alias_fields() {
+        let mut union_members = Vec::new();
         for (i, field) in field_list.get_fields().enumerate() {
             let alias_member_type = if let Some(field_type) = field.get_type() {
                 let type_ref = infer_type(analyzer, field_type);
@@ -181,7 +188,7 @@ pub fn analyze_alias(analyzer: &mut DocAnalyzer, tag: LuaDocTagAlias) -> Option<
                 Some(alias_member_type),
             );
             let member_id = analyzer.db.get_member_index_mut().add_member(member);
-
+            union_members.push(member_id);
             if let Some(description_text) = field.get_detail_text() {
                 if description_text.is_empty() {
                     continue;
@@ -194,6 +201,12 @@ pub fn analyze_alias(analyzer: &mut DocAnalyzer, tag: LuaDocTagAlias) -> Option<
                 );
             }
         }
+
+        let alias = analyzer
+            .db
+            .get_type_index_mut()
+            .get_type_decl_mut(&alias_decl_id)?;
+        alias.add_alias_union_members(union_members);
     }
 
     let description_text = tag.get_description()?.get_description_text();

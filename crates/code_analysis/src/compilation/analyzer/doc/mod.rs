@@ -1,10 +1,10 @@
+mod field_or_operator_def_tags;
 mod file_generic_index;
 mod infer_type;
-mod field_or_operator_def_tags;
+mod property_tags;
 mod tags;
 mod type_def_tags;
 mod type_ref_tags;
-mod property_tags;
 
 use super::AnalyzeContext;
 use crate::{
@@ -27,7 +27,6 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
                 &mut generic_index,
                 comment,
                 root.syntax().clone(),
-                context,
             );
             analyze_comment(&mut analyzer);
         }
@@ -42,25 +41,23 @@ fn analyze_comment(analyzer: &mut DocAnalyzer) {
 }
 
 #[derive(Debug)]
-pub struct DocAnalyzer<'a, 'b> {
+pub struct DocAnalyzer<'a> {
     file_id: FileId,
     db: &'a mut DbIndex,
     generic_index: &'a mut FileGenericIndex,
     current_type_id: Option<LuaTypeDeclId>,
     comment: LuaComment,
     root: LuaSyntaxNode,
-    context: &'a mut AnalyzeContext<'b>,
 }
 
-impl<'a, 'b> DocAnalyzer<'a, 'b> {
+impl<'a> DocAnalyzer<'a> {
     pub fn new(
         db: &'a mut DbIndex,
         file_id: FileId,
         generic_index: &'a mut FileGenericIndex,
         comment: LuaComment,
         root: LuaSyntaxNode,
-        context: &'a mut AnalyzeContext<'b>,
-    ) -> DocAnalyzer<'a, 'b> {
+    ) -> DocAnalyzer<'a> {
         DocAnalyzer {
             file_id,
             db,
@@ -68,7 +65,6 @@ impl<'a, 'b> DocAnalyzer<'a, 'b> {
             current_type_id: None,
             comment,
             root,
-            context,
         }
     }
 }
