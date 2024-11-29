@@ -13,6 +13,7 @@ pub struct LuaSignature {
     pub params: Vec<String>,
     pub return_docs: Vec<LuaDocReturnInfo>,
     pub(crate) resolve_return: bool,
+    pub is_colon_define: bool,
 }
 
 impl LuaSignature {
@@ -24,17 +25,29 @@ impl LuaSignature {
             params: Vec::new(),
             return_docs: Vec::new(),
             resolve_return: false,
+            is_colon_define: false,
         }
     }
-}
 
-impl LuaSignature {
     pub fn is_generic(&self) -> bool {
         !self.generic_params.is_empty()
     }
 
     pub fn is_resolve_return(&self) -> bool {
         self.resolve_return || !self.return_docs.is_empty()
+    }
+
+    pub fn get_type_params(&self) -> Vec<(String, Option<LuaType>)> {
+        let mut type_params = Vec::new();
+        for param_name in &self.params {
+            if let Some(param_info) = self.param_docs.get(param_name) {
+                type_params.push((param_name.clone(), Some(param_info.type_ref.clone())));
+            } else {
+                type_params.push((param_name.clone(), None));
+            }
+        }
+
+        type_params
     }
 }
 
@@ -61,7 +74,10 @@ pub struct LuaSignatureId {
 
 impl LuaSignatureId {
     pub fn new(file_id: FileId, closure: &LuaClosureExpr) -> Self {
-        Self { file_id, position: closure.get_position() }
+        Self {
+            file_id,
+            position: closure.get_position(),
+        }
     }
 
     pub fn get_file_id(&self) -> FileId {

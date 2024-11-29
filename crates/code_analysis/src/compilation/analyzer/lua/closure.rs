@@ -1,14 +1,38 @@
-use emmylua_parser::LuaClosureExpr;
+use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaFuncStat, LuaVarExpr};
 
-use crate::{compilation::analyzer::unresolve::UnResolveReturn, db_index::{LuaDocReturnInfo, LuaSignatureId}};
+use crate::{
+    compilation::analyzer::unresolve::UnResolveReturn,
+    db_index::{LuaDocReturnInfo, LuaSignatureId},
+};
 
 use super::{func_body::analyze_func_body_returns, LuaAnalyzer, LuaReturnPoint};
 
 pub fn analyze_closure(analyzer: &mut LuaAnalyzer, closure: LuaClosureExpr) -> Option<()> {
     let signature_id = LuaSignatureId::new(analyzer.file_id, &closure);
 
+    analyze_colon_define(analyzer, &signature_id, &closure);
     analyze_params(analyzer, &signature_id, &closure);
     analyze_return(analyzer, &signature_id, &closure);
+    Some(())
+}
+
+fn analyze_colon_define(
+    analyzer: &mut LuaAnalyzer,
+    signature_id: &LuaSignatureId,
+    closure: &LuaClosureExpr,
+) -> Option<()> {
+    let signature = analyzer
+        .db
+        .get_signature_index_mut()
+        .get_or_create(signature_id.clone());
+
+    let func_stat = closure.get_parent::<LuaFuncStat>()?;
+    let func_name = func_stat.get_func_name()?;
+    if let LuaVarExpr::IndexExpr(index_expr) = func_name {
+        let index_token = index_expr.get_index_token()?;
+        signature.is_colon_define = index_token.is_colon();
+    }
+
     Some(())
 }
 
@@ -55,12 +79,12 @@ fn analyze_return(
         None => {
             let unresolve = UnResolveReturn {
                 signature_id: signature_id.clone(),
-                return_points
+                return_points,
             };
 
             analyzer.add_unresolved(unresolve.into());
-            return None
-        },
+            return None;
+        }
     };
     let signature = analyzer
         .db

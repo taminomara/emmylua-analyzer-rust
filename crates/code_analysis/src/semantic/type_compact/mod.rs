@@ -1,5 +1,9 @@
+mod func_type;
+
+use func_type::infer_doc_func_type_compact;
+
 use crate::db_index::{
-    DbIndex, LuaMemberOwner, LuaObjectType, LuaTupleType, LuaType, LuaTypeDeclId,
+    DbIndex, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaTupleType, LuaType, LuaTypeDeclId,
 };
 
 use super::{InferGuard, LuaInferConfig};
@@ -65,6 +69,13 @@ fn infer_type_compact(
                 || compact_type.is_def()
                 || compact_type.is_ref()
         }
+        (LuaType::TableGeneric(_), _) => {
+            compact_type.is_table()
+                || compact_type.is_array()
+                || compact_type.is_def()
+                || compact_type.is_ref()
+                || compact_type.is_userdata()
+        }
         (LuaType::Userdata, _) => {
             compact_type.is_userdata() || compact_type.is_def() || compact_type.is_ref()
         }
@@ -99,6 +110,10 @@ fn infer_type_compact(
             .get_types()
             .iter()
             .all(|t| infer_type_compact(db, config, t, &compact_type, infer_guard)),
+        (LuaType::DocFunction(f), _) => {
+            infer_doc_func_type_compact(db, config, f, &compact_type, infer_guard)
+        }
+
         // template
         (LuaType::TplRef(_), _) => true,
         (LuaType::StrTplRef(_), _) => match compact_type {
@@ -136,39 +151,83 @@ fn infer_custom_type_compact(
                 infer_guard,
             ));
         }
-        // todo
-    }
+        if let Some(members) = type_decl.get_alias_union_members() {
+            for member_id in members {
+                let member = db.get_member_index().get_member(member_id)?;
+                let member_type = member.get_decl_type();
+                if infer_type_compact(db, config, member_type, compact_type, infer_guard) {
+                    return Some(true);
+                }
+            }
+        }
+    } else if type_decl.is_enum() {
+        let const_value = match compact_type {
+            LuaType::Def(compact_id) => {
+                if type_id == compact_id {
+                    return Some(true);
+                }
 
-    // check same id
-    let compact_id = match compact_type {
-        LuaType::Def(compact_id) => {
-            if type_id == compact_id {
+                return None;
+            }
+            LuaType::Ref(compact_id) => {
+                if type_id == compact_id {
+                    return Some(true);
+                }
+
+                return None;
+            }
+            LuaType::StringConst(s) => LuaMemberKey::Name(s.clone()),
+            LuaType::IntegerConst(i) => LuaMemberKey::Integer(*i),
+            _ => return None,
+        };
+
+        let member_map = db
+            .get_member_index()
+            .get_member_map(LuaMemberOwner::Type(type_id.clone()))?;
+
+        if type_decl.is_enum_key() {
+            if member_map.contains_key(&const_value) {
                 return Some(true);
             }
-
-            compact_id
-        }
-        LuaType::Ref(compact_id) => {
-            if type_id == compact_id {
-                return Some(true);
+        } else {
+            if let Some(member_id) = member_map.get(&const_value) {
+                let member = db.get_member_index().get_member(member_id)?;
+                let member_type = member.get_decl_type();
+                if infer_type_compact(db, config, member_type, compact_type, infer_guard) {
+                    return Some(true);
+                }
             }
-
-            compact_id
         }
-        LuaType::TableConst(range) => {
-            let table_member_owner = LuaMemberOwner::Table(range.clone());
-            return infer_custom_type_compact_table(
-                db,
-                config,
-                type_id,
-                table_member_owner,
-                infer_guard,
-            );
-        }
-        _ => return Some(false),
-    };
+    } else {
+        // check same id
+        let compact_id = match compact_type {
+            LuaType::Def(compact_id) => {
+                if type_id == compact_id {
+                    return Some(true);
+                }
 
-    if type_decl.is_class() {
+                compact_id
+            }
+            LuaType::Ref(compact_id) => {
+                if type_id == compact_id {
+                    return Some(true);
+                }
+
+                compact_id
+            }
+            LuaType::TableConst(range) => {
+                let table_member_owner = LuaMemberOwner::Table(range.clone());
+                return infer_custom_type_compact_table(
+                    db,
+                    config,
+                    type_id,
+                    table_member_owner,
+                    infer_guard,
+                );
+            }
+            _ => return Some(false),
+        };
+
         let supers = db.get_type_index().get_super_types(compact_id)?;
         for compact_super in supers {
             if infer_custom_type_compact(db, config, type_id, &compact_super, infer_guard)? {
