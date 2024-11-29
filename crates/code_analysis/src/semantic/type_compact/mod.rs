@@ -3,7 +3,8 @@ mod func_type;
 use func_type::infer_doc_func_type_compact;
 
 use crate::db_index::{
-    DbIndex, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaTupleType, LuaType, LuaTypeDeclId,
+    DbIndex, LuaGenericType, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaTupleType, LuaType,
+    LuaTypeDeclId,
 };
 
 use super::{InferGuard, LuaInferConfig};
@@ -113,7 +114,15 @@ fn infer_type_compact(
         (LuaType::DocFunction(f), _) => {
             infer_doc_func_type_compact(db, config, f, &compact_type, infer_guard)
         }
-
+        (LuaType::Nullable(base), _) => {
+            compact_type.is_nil()
+                || infer_type_compact(db, config, base, &compact_type, infer_guard)
+        }
+        // todo
+        (LuaType::Generic(source_generic), LuaType::Generic(compact_generic)) => {
+            infer_generic_type_compact(db, config, source_generic, compact_generic, infer_guard)
+                .unwrap_or(false)
+        }
         // template
         (LuaType::TplRef(_), _) => true,
         (LuaType::StrTplRef(_), _) => match compact_type {
@@ -337,6 +346,44 @@ fn infer_tuple_type_compact(
         let source_type = &source_types[i];
         let target_type = &target_types[i];
         if !infer_type_compact(db, config, source_type, target_type, infer_guard) {
+            return Some(false);
+        }
+    }
+
+    Some(true)
+}
+
+fn infer_generic_type_compact(
+    db: &DbIndex,
+    config: &mut LuaInferConfig,
+    source_generic: &LuaGenericType,
+    compact_generic: &LuaGenericType,
+    infer_guard: &mut InferGuard,
+) -> Option<bool> {
+    let source_base_id = source_generic.get_base_type_id();
+    infer_guard.check(&source_base_id)?;
+
+    let compact_base_id = compact_generic.get_base_type_id();
+    if source_base_id != compact_base_id {
+        return Some(false);
+    }
+
+    let source_params = source_generic.get_params();
+    let compact_params = compact_generic.get_params();
+    if source_params.len() != compact_params.len() {
+        return Some(false);
+    }
+
+    for i in 0..source_params.len() {
+        let source_param = &source_params[i];
+        let compact_param = &compact_params[i];
+        if !infer_type_compact(
+            db,
+            config,
+            source_param,
+            compact_param,
+            &mut InferGuard::new(),
+        ) {
             return Some(false);
         }
     }

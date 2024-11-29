@@ -2,6 +2,7 @@ mod infer;
 mod member;
 mod instantiate;
 mod type_compact;
+mod type_calc;
 
 use std::collections::{HashMap, HashSet};
 

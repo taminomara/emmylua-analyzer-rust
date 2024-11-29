@@ -604,6 +604,10 @@ impl LuaGenericType {
         LuaType::Ref(self.base.clone())
     }
 
+    pub fn get_base_type_id(&self) -> LuaTypeDeclId {
+        self.base.clone()
+    }
+
     pub fn get_params(&self) -> &Vec<LuaType> {
         &self.params
     }
