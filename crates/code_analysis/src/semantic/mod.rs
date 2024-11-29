@@ -3,6 +3,7 @@ mod member;
 mod instantiate;
 mod type_compact;
 mod type_calc;
+mod overload_resolve;
 
 use std::collections::{HashMap, HashSet};
 

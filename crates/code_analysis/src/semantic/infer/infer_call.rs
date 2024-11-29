@@ -80,7 +80,15 @@ fn infer_call_by_signature(
     call_expr: LuaCallExpr,
 ) -> Option<LuaType> {
     let signature = db.get_signature_index().get(&signature_id)?;
-    // let rets = signature.get_ret();
+    if !signature.is_resolve_return() {
+        return None;
+    }
+
+    let overloads = &signature.overloads;
+    if !overloads.is_empty() {
+        // check overload
+    }
+
     todo!()
 }
 
