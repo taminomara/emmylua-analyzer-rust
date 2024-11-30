@@ -1,12 +1,13 @@
 mod context;
 mod handlers;
 
-use handlers::{on_notification_handler, on_req_handler, server_capabilities};
+use handlers::{initialized_handler, on_notification_handler, on_req_handler, server_capabilities};
 use lsp_server::{Connection, Message};
 use lsp_types::InitializeParams;
 use std::error::Error;
 
-fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     let args: Vec<String> = std::env::args().collect();
     let (connection, threads) = if args.len() > 1 {
         let port = args[1].parse::<u16>().unwrap();
@@ -32,24 +33,28 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     let initialization_params =
         serde_json::from_value::<InitializeParams>(initialization_params_json)?;
 
-    main_loop(&connection, initialization_params)?;
+    main_loop(&connection, initialization_params).await?;
     threads.join()?;
 
     eprintln!("Server shutting down.");
     Ok(())
 }
 
-fn main_loop(
+async fn main_loop(
     connection: &Connection,
     params: InitializeParams,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
     let mut server_context = context::ServerContext::new(
-        params,
         Connection {
             sender: connection.sender.clone(),
             receiver: connection.receiver.clone(),
         },
     );
+
+    let server_context_snapshot = server_context.snapshot();
+    tokio::spawn(async move {
+        initialized_handler(server_context_snapshot, params).await;
+    });
 
     for msg in &connection.receiver {
         match msg {
@@ -58,11 +63,13 @@ fn main_loop(
                     return Ok(());
                 }
 
-                on_req_handler(req, &mut server_context)?;
+                on_req_handler(req, &mut server_context).await?;
             }
-
             Message::Notification(notify) => {
-                on_notification_handler(notify, &mut server_context)?;
+                on_notification_handler(notify, &mut server_context).await?;
+            }
+            Message::Response(_) => {
+                // connection.handle_response(response);
             }
             _ => {}
         }

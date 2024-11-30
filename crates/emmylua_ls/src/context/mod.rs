@@ -1,29 +1,22 @@
-mod cancel_token;
 mod snapshot;
 
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex, RwLock},
-};
-
-pub use cancel_token::CancelToken;
+use std::{collections::HashMap, sync::Arc};
 use code_analysis::EmmyLuaAnalysis;
 use lsp_server::{Connection, ErrorCode, Message, RequestId, Response};
 use lsp_types::InitializeParams;
 pub use snapshot::ServerContextSnapshot;
-use threadpool::ThreadPool;
+use tokio_util::sync::CancellationToken;
+use tokio::sync::{Mutex, RwLock};
 
 pub struct ServerContext {
-    thread_pool: ThreadPool,
     conn: Connection,
     analysis: Arc<RwLock<EmmyLuaAnalysis>>,
-    cancllations: Arc<Mutex<HashMap<RequestId, CancelToken>>>,
+    cancllations: Arc<Mutex<HashMap<RequestId, CancellationToken>>>,
 }
 
 impl ServerContext {
-    pub fn new(_: InitializeParams, conn: Connection) -> Self {
+    pub fn new(conn: Connection) -> Self {
         ServerContext {
-            thread_pool: ThreadPool::default(),
             conn,
             analysis: Arc::new(RwLock::new(EmmyLuaAnalysis::new())),
             cancllations: Arc::new(Mutex::new(HashMap::new())),
@@ -36,52 +29,42 @@ impl ServerContext {
         }
     }
 
-    pub fn task<F>(&mut self, req_id: RequestId, exec: F)
+    pub async fn task<F>(&self, req_id: RequestId, exec: F)
     where
-        F: FnOnce(CancelToken) -> Option<Response> + Send + 'static,
+        F: FnOnce(CancellationToken) -> Option<Response> + Send + 'static,
     {
-        let cancel_token = CancelToken::new();
+        let cancel_token = CancellationToken::new();
 
-        // Register cancellation token
         {
-            let mut cancellations = self.cancllations.lock().unwrap();
+            let mut cancellations = self.cancllations.lock().await;
             cancellations.insert(req_id.clone(), cancel_token.clone());
         }
 
         let sender = self.conn.sender.clone();
         let cancellations = self.cancllations.clone();
-        self.thread_pool.execute(move || {
-            let mut res = exec(cancel_token.clone());
-            if cancel_token.is_canceled() || res.is_none() {
-                res = Some(Response::new_err(
+
+        tokio::spawn(async move {
+            let res = exec(cancel_token.clone());
+            if cancel_token.is_cancelled() || res.is_none() {
+                let response = Response::new_err(
                     req_id.clone(),
                     ErrorCode::RequestCanceled as i32,
-                    "canccel".to_string(),
-                ));
+                    "cancel".to_string(),
+                );
+                let _ = sender.send(Message::Response(response));
+            } else if let Some(it) = res {
+                let _ = sender.send(Message::Response(it));
             }
-            let _ = sender.send(Message::Response(res.unwrap()));
 
-            // Remove cancellation token
-            {
-                let mut cancellations = cancellations.lock().unwrap();
-                cancellations.remove(&req_id);
-            }
+            let mut cancellations = cancellations.lock().await;
+            cancellations.remove(&req_id);
         });
     }
 
-    pub fn cancel(&mut self, req_id: RequestId) {
-        let cancellations = self.cancllations.lock().unwrap();
+    pub async fn cancel(&self, req_id: RequestId) {
+        let cancellations = self.cancllations.lock().await;
         if let Some(cancel_token) = cancellations.get(&req_id) {
             cancel_token.cancel();
         }
-    }
-
-    pub fn run<F>(&mut self, exec: F)
-    where
-        F: FnOnce() + Send + 'static,
-    {
-        self.thread_pool.execute(move || {
-            exec();
-        });
     }
 }
