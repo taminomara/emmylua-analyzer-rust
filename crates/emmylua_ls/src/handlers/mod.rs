@@ -10,6 +10,7 @@ use lsp_types::{
 };
 pub use notification_handler::on_notification_handler;
 pub use request_handler::on_req_handler;
+pub use response_handler::on_response_handler;
 pub use initialized_handler::initialized_handler;
 
 pub fn server_capabilities() -> ServerCapabilities {

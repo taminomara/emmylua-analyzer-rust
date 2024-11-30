@@ -1,7 +1,10 @@
 mod context;
 mod handlers;
 
-use handlers::{initialized_handler, on_notification_handler, on_req_handler, server_capabilities};
+use handlers::{
+    initialized_handler, on_notification_handler, on_req_handler, on_response_handler,
+    server_capabilities,
+};
 use lsp_server::{Connection, Message};
 use lsp_types::InitializeParams;
 use std::error::Error;
@@ -44,12 +47,10 @@ async fn main_loop(
     connection: &Connection,
     params: InitializeParams,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
-    let mut server_context = context::ServerContext::new(
-        Connection {
-            sender: connection.sender.clone(),
-            receiver: connection.receiver.clone(),
-        },
-    );
+    let mut server_context = context::ServerContext::new(Connection {
+        sender: connection.sender.clone(),
+        receiver: connection.receiver.clone(),
+    });
 
     let server_context_snapshot = server_context.snapshot();
     tokio::spawn(async move {
@@ -68,10 +69,9 @@ async fn main_loop(
             Message::Notification(notify) => {
                 on_notification_handler(notify, &mut server_context).await?;
             }
-            Message::Response(_) => {
-                // connection.handle_response(response);
+            Message::Response(response) => {
+                on_response_handler(response, &mut server_context).await?;
             }
-            _ => {}
         }
     }
 

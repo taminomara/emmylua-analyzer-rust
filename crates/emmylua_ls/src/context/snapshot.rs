@@ -3,7 +3,9 @@ use tokio::sync::RwLock;
 
 use code_analysis::EmmyLuaAnalysis;
 
-#[derive(Debug, Clone)]
+use super::client::ClientProxy;
+
 pub struct ServerContextSnapshot {
     pub analysis: Arc<RwLock<EmmyLuaAnalysis>>,
+    pub client: Arc<ClientProxy>,
 }

@@ -1,24 +1,32 @@
+mod client;
 mod snapshot;
 
-use std::{collections::HashMap, sync::Arc};
+use client::ClientProxy;
 use code_analysis::EmmyLuaAnalysis;
 use lsp_server::{Connection, ErrorCode, Message, RequestId, Response};
-use lsp_types::InitializeParams;
 pub use snapshot::ServerContextSnapshot;
-use tokio_util::sync::CancellationToken;
+use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{Mutex, RwLock};
+use tokio_util::sync::CancellationToken;
 
 pub struct ServerContext {
     conn: Connection,
     analysis: Arc<RwLock<EmmyLuaAnalysis>>,
+    client: Arc<ClientProxy>,
     cancllations: Arc<Mutex<HashMap<RequestId, CancellationToken>>>,
 }
 
 impl ServerContext {
     pub fn new(conn: Connection) -> Self {
+        let client = ClientProxy::new(Connection {
+            sender: conn.sender.clone(),
+            receiver: conn.receiver.clone(),
+        });
+
         ServerContext {
             conn,
             analysis: Arc::new(RwLock::new(EmmyLuaAnalysis::new())),
+            client: Arc::new(client),
             cancllations: Arc::new(Mutex::new(HashMap::new())),
         }
     }
@@ -26,6 +34,7 @@ impl ServerContext {
     pub fn snapshot(&self) -> ServerContextSnapshot {
         ServerContextSnapshot {
             analysis: self.analysis.clone(),
+            client: self.client.clone(),
         }
     }
 
@@ -66,5 +75,9 @@ impl ServerContext {
         if let Some(cancel_token) = cancellations.get(&req_id) {
             cancel_token.cancel();
         }
+    }
+
+    pub async fn send_response(&self, response: Response) {
+        self.client.on_response(response).await;
     }
 }
