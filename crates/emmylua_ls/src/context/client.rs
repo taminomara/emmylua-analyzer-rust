@@ -4,7 +4,8 @@ use std::{
 };
 
 use lsp_server::{Connection, Message, Notification, RequestId, Response};
-use lsp_types::{ConfigurationItem, ConfigurationParams};
+use lsp_types::ConfigurationParams;
+use serde::de::DeserializeOwned;
 use tokio::{
     select,
     sync::{oneshot, Mutex},
@@ -72,11 +73,14 @@ impl ClientProxy {
         id.into()
     }
 
-    pub async fn get_configuration(
+    pub async fn get_configuration<C>(
         &self,
         params: ConfigurationParams,
         cancel_token: CancellationToken,
-    ) -> Option<Vec<ConfigurationItem>> {
+    ) -> Option<Vec<C>>
+    where
+        C: DeserializeOwned,
+    {
         let request_id = self.next_id();
         let response = self
             .send_request(request_id, "workspace/configuration", params, cancel_token)

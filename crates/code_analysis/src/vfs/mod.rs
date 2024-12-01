@@ -5,6 +5,8 @@ mod test;
 
 pub use document::LuaDocument;
 use emmylua_parser::{LineIndex, LuaParser, LuaSyntaxTree};
+pub use in_filed::InFiled;
+pub use loader::{load_workspace_files, LuaFileInfo};
 use lsp_types::Uri;
 use rowan::NodeCache;
 use std::collections::HashMap;
@@ -12,9 +14,6 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
 use url::Url;
-
-pub use in_filed::InFiled;
-pub use loader::load_workspace_files;
 
 use crate::Emmyrc;
 

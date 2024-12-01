@@ -9,6 +9,7 @@ emmylua_parser = { path = "../emmylua_parser" }
 globset = "0.4.15"
 walkdir = "2.5.0"
 flagset = "0.4.6"
+encoding_rs = "0.8"
 
 serde.workspace = true
 serde_json.workspace = true

@@ -105,6 +105,7 @@ name = "code_analysis"
 version = "0.1.0"
 dependencies = [
  "emmylua_parser",
+ "encoding_rs",
  "flagset",
  "globset",
  "internment",
@@ -176,6 +177,15 @@ name = "emmylua_parser"
 version = "0.6.0"
 dependencies = [
  "rowan",
+]
+
+[[package]]
+name = "encoding_rs"
+version = "0.8.35"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "75030f3c4f45dafd7586dd6780965a8c7e8e285a5ecb86713e63a79c5b2766f3"
+dependencies = [
+ "cfg-if",
 ]
 
 [[package]]
