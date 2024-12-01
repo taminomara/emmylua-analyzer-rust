@@ -1,30 +1,31 @@
-mod loader;
-mod in_filed;
-mod test;
 mod document;
+mod in_filed;
+mod loader;
+mod test;
 
-
+pub use document::LuaDocument;
+use emmylua_parser::{LineIndex, LuaParser, LuaSyntaxTree};
+use lsp_types::Uri;
+use rowan::NodeCache;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
-use document::LuaDocument;
-use emmylua_parser::LineIndex;
+use std::sync::Arc;
 use url::Url;
-use lsp_types::Uri;
 
-pub use loader::load_workspace_files;
 pub use in_filed::InFiled;
+pub use loader::load_workspace_files;
+
+use crate::Emmyrc;
 
 #[derive(Eq, PartialEq, Hash, Debug, Clone, Copy)]
 pub struct FileId {
-    pub id: u32
+    pub id: u32,
 }
 
 impl FileId {
     pub fn new() -> Self {
-        FileId {
-            id: 0
-        }
+        FileId { id: 0 }
     }
 }
 
@@ -34,6 +35,9 @@ pub struct Vfs {
     file_uri_map: HashMap<u32, Uri>,
     file_data: Vec<Option<String>>,
     line_index_map: HashMap<FileId, LineIndex>,
+    tree_map: HashMap<FileId, Arc<LuaSyntaxTree>>,
+    emmyrc: Option<Arc<Emmyrc>>,
+    node_cache: NodeCache,
 }
 
 impl Vfs {
@@ -42,7 +46,10 @@ impl Vfs {
             file_id_map: HashMap::new(),
             file_uri_map: HashMap::new(),
             file_data: Vec::new(),
-            line_index_map: HashMap::new()
+            line_index_map: HashMap::new(),
+            tree_map: HashMap::new(),
+            emmyrc: None,
+            node_cache: NodeCache::default(),
         }
     }
 
@@ -62,23 +69,35 @@ impl Vfs {
         self.file_id_map.get(uri).map(|&id| FileId { id })
     }
 
-    pub fn set_file_content(&mut self, uri: &Uri, data: Option<String>) -> bool {
+    pub fn set_file_content(&mut self, uri: &Uri, data: Option<String>) -> FileId {
         let fid = self.file_id(uri);
         if let Some(data) = &data {
             let line_index = LineIndex::parse(&data);
+            let parse_config = self
+                .emmyrc
+                .as_ref()
+                .unwrap()
+                .get_parse_config(&mut self.node_cache);
+            let tree = Arc::new(LuaParser::parse(&data, parse_config));
+            self.tree_map.insert(fid, tree);
             self.line_index_map.insert(fid, line_index);
         } else {
             self.line_index_map.remove(&fid);
+            self.tree_map.remove(&fid);
         }
         self.file_data[fid.id as usize] = data;
-        true
+        fid
+    }
+
+    pub fn set_config(&mut self, emmyrc: Arc<Emmyrc>) {
+        self.emmyrc = Some(emmyrc);
     }
 
     pub fn get_file_content(&self, id: &FileId) -> Option<&String> {
         let opt = &self.file_data[id.id as usize];
         if let Some(s) = opt {
             Some(s)
-        } else{
+        } else {
             None
         }
     }
@@ -87,16 +106,19 @@ impl Vfs {
         let uri = self.file_uri_map.get(&id.id)?;
         let text = self.get_file_content(id)?;
         let line_index = self.line_index_map.get(id)?;
-        Some(LuaDocument::new(*id, uri, text, line_index))
+        let tree = self.tree_map.get(id)?;
+        Some(LuaDocument::new(*id, uri, text, line_index, tree.clone()))
+    }
+
+    pub fn get_syntax_tree(&self, id: &FileId) -> Option<Arc<LuaSyntaxTree>> {
+        self.tree_map.get(id).cloned()
     }
 }
 
 pub fn file_path_to_uri(path: &PathBuf) -> Option<Uri> {
     match Url::from_file_path(path) {
         Ok(url) => Some(Uri::from_str(url.as_str()).unwrap()),
-        Err(_) => {
-            None
-        },
+        Err(_) => None,
     }
 }
 

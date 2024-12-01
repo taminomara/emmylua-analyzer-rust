@@ -1,6 +1,6 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
-use emmylua_parser::LineIndex;
+use emmylua_parser::{LineIndex, LuaSyntaxTree};
 use lsp_types::Uri;
 use rowan::TextSize;
 
@@ -12,15 +12,17 @@ pub struct LuaDocument<'a> {
     uri: &'a Uri,
     text: &'a str,
     line_index: &'a LineIndex,
+    tree: Arc<LuaSyntaxTree>
 }
 
 impl<'a> LuaDocument<'a> {
-    pub fn new(file_id: FileId, uri: &'a Uri, text: &'a str, line_index: &'a LineIndex) -> Self {
+    pub fn new(file_id: FileId, uri: &'a Uri, text: &'a str, line_index: &'a LineIndex, tree: Arc<LuaSyntaxTree>) -> Self {
         LuaDocument {
             file_id,
             uri,
             text,
             line_index,
+            tree
         }
     }
 
@@ -38,6 +40,10 @@ impl<'a> LuaDocument<'a> {
 
     pub fn get_text(&self) -> &str {
         self.text
+    }
+
+    pub fn get_tree(&self) -> Arc<LuaSyntaxTree> {
+        self.tree.clone()
     }
 
     pub fn get_line_count(&self) -> usize {

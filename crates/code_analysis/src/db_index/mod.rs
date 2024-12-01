@@ -12,7 +12,7 @@ mod symbol;
 mod traits;
 mod r#type;
 
-use crate::FileId;
+use crate::{FileId, Vfs};
 pub use declaration::*;
 #[allow(unused_imports)]
 pub use diagnostic::{AnalyzeError, DiagnosticAction, DiagnosticIndex};
@@ -45,6 +45,7 @@ pub struct DbIndex {
     diagnostic_index: DiagnosticIndex,
     operator_index: LuaOperatorIndex,
     flow_index: LuaFlowIndex,
+    vfs: Vfs,
 }
 
 #[allow(unused)]
@@ -62,6 +63,7 @@ impl DbIndex {
             diagnostic_index: DiagnosticIndex::new(),
             operator_index: LuaOperatorIndex::new(),
             flow_index: LuaFlowIndex::new(),
+            vfs: Vfs::new(),
         }
     }
 
@@ -157,6 +159,14 @@ impl DbIndex {
 
     pub fn get_flow_index(&self) -> &LuaFlowIndex {
         &self.flow_index
+    }
+
+    pub fn get_vfs(&self) -> &Vfs {
+        &self.vfs
+    }
+
+    pub fn get_vfs_mut(&mut self) -> &mut Vfs {
+        &mut self.vfs
     }
 }
 

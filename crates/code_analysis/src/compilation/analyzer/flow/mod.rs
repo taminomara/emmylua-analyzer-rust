@@ -9,7 +9,7 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     let tree_list = context.tree_list.clone();
     // build decl and ref flow chain
     for in_filed_tree in &tree_list {
-        let tree = in_filed_tree.value;
+        let tree = in_filed_tree.value.as_ref();
         let mut analyzer = FlowAnalyzer::new(db, in_filed_tree.file_id, &tree);
         reference_flow::analyze(&mut analyzer);
     }

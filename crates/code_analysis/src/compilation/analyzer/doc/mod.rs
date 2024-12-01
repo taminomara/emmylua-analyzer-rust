@@ -17,7 +17,7 @@ use file_generic_index::FileGenericIndex;
 pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     let tree_list = context.tree_list.clone();
     for in_filed_tree in tree_list.iter() {
-        let tree = in_filed_tree.value;
+        let tree = in_filed_tree.value.as_ref();
         let root = tree.get_chunk_node();
         let mut generic_index = FileGenericIndex::new();
         for comment in root.descendants::<LuaComment>() {

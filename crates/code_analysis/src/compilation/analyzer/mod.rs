@@ -4,6 +4,8 @@ mod doc;
 mod lua;
 mod unresolve;
 
+use std::sync::Arc;
+
 use crate::{db_index::DbIndex, Emmyrc, InFiled};
 use emmylua_parser::LuaSyntaxTree;
 use unresolve::UnResolve;
@@ -18,14 +20,14 @@ pub fn analyze(db: &mut DbIndex, context: AnalyzeContext) {
 
 #[allow(unused)]
 #[derive(Debug)]
-pub struct AnalyzeContext<'a> {
-    tree_list: Vec<InFiled<&'a LuaSyntaxTree>>,
-    config: &'a Emmyrc,
+pub struct AnalyzeContext {
+    tree_list: Vec<InFiled<Arc<LuaSyntaxTree>>>,
+    config: Arc<Emmyrc>,
     unresolves: Vec<UnResolve>,
 }
 #[allow(unused)]
-impl<'a> AnalyzeContext<'a> {
-    pub fn new(emmyrc: &'a Emmyrc) -> Self {
+impl AnalyzeContext {
+    pub fn new(emmyrc: Arc<Emmyrc>) -> Self {
         Self {
             tree_list: Vec::new(),
             config: emmyrc,
@@ -33,7 +35,7 @@ impl<'a> AnalyzeContext<'a> {
         }
     }
 
-    pub fn add_tree(&mut self, tree: InFiled<&'a LuaSyntaxTree>) {
+    pub fn add_tree(&mut self, tree: InFiled<Arc<LuaSyntaxTree>>) {
         self.tree_list.push(tree);
     }
 
