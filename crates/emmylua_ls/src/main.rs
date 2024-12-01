@@ -1,5 +1,6 @@
 mod context;
 mod handlers;
+mod util;
 
 use handlers::{
     initialized_handler, on_notification_handler, on_req_handler, on_response_handler,

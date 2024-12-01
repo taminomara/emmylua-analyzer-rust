@@ -1,9 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
 use serde::{Deserialize, Serialize};
-use tokio_util::sync::CancellationToken;
 
-use crate::context::ServerContextSnapshot;
+use crate::{context::ServerContextSnapshot, util::time_cancel_token};
 
 use super::ClientId;
 
@@ -42,7 +41,7 @@ async fn get_client_config_vscode(context: &ServerContextSnapshot, config:&mut C
             section: Some("files".to_string()),
         }],
     };
-    let cancel_token = CancellationToken::new();
+    let cancel_token = time_cancel_token(Duration::from_secs(5));
     let files_configs = client.get_configuration::<VscodeFilesConfig>(params, cancel_token).await?;
     for files_config in files_configs {
         if let Some(exclude) = files_config.exclude {
