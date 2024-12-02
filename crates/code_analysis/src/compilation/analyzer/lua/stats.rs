@@ -141,8 +141,15 @@ fn get_var_type_owner(
                     var_index.get_index_key()?;
 
                     let member_owner = match prefix_type {
-                        LuaType::TableConst(in_file_range) => LuaMemberOwner::Table(in_file_range),
-                        LuaType::Def(def_id) => LuaMemberOwner::Type(def_id),
+                        LuaType::TableConst(in_file_range) => LuaMemberOwner::Element(in_file_range),
+                        LuaType::Def(def_id) => {
+                            let type_decl = analyzer.db.get_type_index().get_type_decl(&def_id)?;
+                            // if is exact type, no need to extend field
+                            if type_decl.is_exact() {
+                                return None;
+                            }
+                            LuaMemberOwner::Type(def_id)
+                        },
                         // is ref need extend field?
                         _ => {
                             return None;

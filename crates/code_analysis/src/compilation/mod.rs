@@ -42,6 +42,7 @@ impl LuaCompilation {
 
     pub fn remove_index(&mut self, file_ids: Vec<FileId>) {
         self.db.remove_index(file_ids);
+        
     }
 
     pub fn get_db(&self) -> &DbIndex {

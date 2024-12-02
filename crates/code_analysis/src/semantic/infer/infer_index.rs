@@ -6,12 +6,12 @@ use rowan::TextRange;
 
 use crate::{
     db_index::{
-        DbIndex, LuaDeclTypeKind, LuaExistFieldType, LuaGenericType, LuaIntersectionType,
-        LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaOperatorMetaMethod, LuaTupleType, LuaType,
-        LuaTypeDeclId, LuaUnionType, TypeAssertion,
+        DbIndex, LuaExistFieldType, LuaGenericType, LuaIntersectionType, LuaMemberKey,
+        LuaMemberOwner, LuaObjectType, LuaOperatorMetaMethod, LuaTupleType, LuaType, LuaTypeDeclId,
+        LuaUnionType, TypeAssertion,
     },
     semantic::{
-        instantiate::instantiate_class,
+        instantiate::instantiate_type,
         member::{get_buildin_type_map_type_id, without_index_operator, without_members},
         InferGuard,
     },
@@ -73,7 +73,7 @@ fn infer_member_by_member_key(
 
     match &prefix_type {
         LuaType::TableConst(id) => {
-            let member_owner = LuaMemberOwner::Table(id.clone());
+            let member_owner = LuaMemberOwner::Element(id.clone());
             infer_table_member(db, member_owner, member_key)
         }
         LuaType::String | LuaType::Io | LuaType::StringConst(_) => {
@@ -245,7 +245,7 @@ fn infer_generic_member(
         infer_member_by_member_key(db, config, &base_type, member_key, &mut InferGuard::new())?;
 
     let generic_params = generic_type.get_params();
-    Some(instantiate_class(&member_type, generic_params))
+    Some(instantiate_type(&member_type, generic_params))
 }
 
 fn infer_exit_field_member(
@@ -522,7 +522,7 @@ fn infer_member_by_index_generic(
             return infer_member_by_operator(
                 db,
                 config,
-                &instantiate_class(origin_type, generic_params),
+                &instantiate_type(origin_type, generic_params),
                 member_key,
                 root,
                 &mut InferGuard::new(),
@@ -537,10 +537,10 @@ fn infer_member_by_index_generic(
     for index_operator_id in index_operator_ids {
         let index_operator = operator_index.get_operator(index_operator_id)?;
         let operand_type = index_operator.get_operands().first()?;
-        let instianted_operand_type = instantiate_class(&operand_type, generic_params);
+        let instianted_operand_type = instantiate_type(&operand_type, generic_params);
         if instianted_operand_type.is_string() {
             if member_key.is_string() || member_key.is_name() {
-                return Some(instantiate_class(
+                return Some(instantiate_type(
                     index_operator.get_result(),
                     generic_params,
                 ));
@@ -548,7 +548,7 @@ fn infer_member_by_index_generic(
                 let expr = member_key.get_expr()?;
                 let expr_type = infer_expr(db, config, expr.clone())?;
                 if expr_type.is_string() {
-                    return Some(instantiate_class(
+                    return Some(instantiate_type(
                         index_operator.get_result(),
                         generic_params,
                     ));
@@ -556,7 +556,7 @@ fn infer_member_by_index_generic(
             }
         } else if instianted_operand_type.is_number() {
             if member_key.is_integer() {
-                return Some(instantiate_class(
+                return Some(instantiate_type(
                     index_operator.get_result(),
                     generic_params,
                 ));
@@ -564,7 +564,7 @@ fn infer_member_by_index_generic(
                 let expr = member_key.get_expr()?;
                 let expr_type = infer_expr(db, config, expr.clone())?;
                 if expr_type.is_number() {
-                    return Some(instantiate_class(
+                    return Some(instantiate_type(
                         index_operator.get_result(),
                         generic_params,
                     ));
@@ -573,7 +573,7 @@ fn infer_member_by_index_generic(
         } else if let Some(expr) = member_key.get_expr() {
             let expr_type = infer_expr(db, config, expr.clone())?;
             if expr_type == *operand_type {
-                return Some(instantiate_class(
+                return Some(instantiate_type(
                     index_operator.get_result(),
                     generic_params,
                 ));
@@ -587,7 +587,7 @@ fn infer_member_by_index_generic(
         let member_type = infer_member_by_operator(
             db,
             config,
-            &instantiate_class(&super_type, generic_params),
+            &instantiate_type(&super_type, generic_params),
             member_key,
             root,
             &mut InferGuard::new(),

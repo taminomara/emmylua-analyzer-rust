@@ -94,6 +94,12 @@ fn infer_binary_expr_add(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
             (LuaType::FloatConst(num1), LuaType::FloatConst(num2)) => {
                 Some(LuaType::FloatConst(num1 + num2))
             }
+            (LuaType::IntegerConst(int1), LuaType::FloatConst(num2)) => {
+                Some(LuaType::FloatConst((*int1 as f64 + *num2).into()))
+            }
+            (LuaType::FloatConst(num1), LuaType::IntegerConst(int2)) => {
+                Some(LuaType::FloatConst((*num1 + *int2 as f64).into()))
+            }
             _ => {
                 if left.is_integer() && right.is_integer() {
                     Some(LuaType::Integer)
@@ -115,6 +121,12 @@ fn infer_binary_expr_sub(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
             }
             (LuaType::FloatConst(num1), LuaType::FloatConst(num2)) => {
                 Some(LuaType::FloatConst(num1 - num2))
+            }
+            (LuaType::IntegerConst(int1), LuaType::FloatConst(num2)) => {
+                Some(LuaType::FloatConst((*int1 as f64 - *num2).into()))
+            }
+            (LuaType::FloatConst(num1), LuaType::IntegerConst(int2)) => {
+                Some(LuaType::FloatConst((*num1 - *int2 as f64).into()))
             }
             _ => {
                 if left.is_integer() && right.is_integer() {
@@ -138,6 +150,12 @@ fn infer_binary_expr_mul(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
             (LuaType::FloatConst(num1), LuaType::FloatConst(num2)) => {
                 Some(LuaType::FloatConst(num1 * num2))
             }
+            (LuaType::IntegerConst(int1), LuaType::FloatConst(num2)) => {
+                Some(LuaType::FloatConst((*int1 as f64 * *num2).into()))
+            }
+            (LuaType::FloatConst(num1), LuaType::IntegerConst(int2)) => {
+                Some(LuaType::FloatConst((*num1 * *int2 as f64).into()))
+            }
             _ => {
                 if left.is_integer() && right.is_integer() {
                     Some(LuaType::Integer)
@@ -159,6 +177,12 @@ fn infer_binary_expr_div(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
             }
             (LuaType::FloatConst(num1), LuaType::FloatConst(num2)) => {
                 Some(LuaType::FloatConst(num1 / num2))
+            }
+            (LuaType::IntegerConst(int1), LuaType::FloatConst(num2)) => {
+                Some(LuaType::FloatConst((*int1 as f64 / *num2).into()))
+            }
+            (LuaType::FloatConst(num1), LuaType::IntegerConst(int2)) => {
+                Some(LuaType::FloatConst(*num1 / *int2 as f64))
             }
             _ => Some(LuaType::Number),
         };

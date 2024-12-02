@@ -52,7 +52,7 @@ pub fn load_workspace_files(
     Ok(files)
 }
 
-fn read_file_with_encoding(path: &Path, encoding: &str) -> Option<String> {
+pub fn read_file_with_encoding(path: &Path, encoding: &str) -> Option<String> {
     let content = fs::read(path).ok()?;
     let encoding = Encoding::for_label(encoding.as_bytes()).unwrap_or(UTF_8);
 

@@ -1,4 +1,4 @@
-use emmylua_parser::{LuaDocFieldKey, LuaIndexKey, LuaKind, LuaSyntaxId};
+use emmylua_parser::{LuaDocFieldKey, LuaIndexKey, LuaSyntaxId};
 use internment::ArcIntern;
 use rowan::{TextRange, TextSize};
 
@@ -88,7 +88,7 @@ impl LuaMemberId {
 pub enum LuaMemberOwner {
     None,
     Type(LuaTypeDeclId),
-    Table(InFiled<TextRange>),
+    Element(InFiled<TextRange>),
 }
 
 impl LuaMemberOwner {
@@ -99,9 +99,9 @@ impl LuaMemberOwner {
         }
     }
 
-    pub fn get_table_range(&self) -> Option<&InFiled<TextRange>> {
+    pub fn get_element_range(&self) -> Option<&InFiled<TextRange>> {
         match self {
-            LuaMemberOwner::Table(range) => Some(range),
+            LuaMemberOwner::Element(range) => Some(range),
             _ => None,
         }
     }

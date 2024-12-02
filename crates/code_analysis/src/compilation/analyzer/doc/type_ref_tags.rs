@@ -190,9 +190,14 @@ pub fn analyze_overload(analyzer: &mut DocAnalyzer, tag: LuaDocTagOverload) -> O
         analyzer.db.get_operator_index_mut().add_operator(operator);
     } else if let Some(closure) = find_owner_closure(analyzer) {
         let type_ref = infer_type(analyzer, tag.get_type()?);
-        let id = LuaSignatureId::new(analyzer.file_id, &closure);
-        let signature = analyzer.db.get_signature_index_mut().get_or_create(id);
-        signature.overloads.push(type_ref);
+        match type_ref {
+            LuaType::DocFunction(func) => {
+                let id = LuaSignatureId::new(analyzer.file_id, &closure);
+                let signature = analyzer.db.get_signature_index_mut().get_or_create(id);
+                signature.overloads.push(func);
+            }
+            _ => {}
+        }
     }
     Some(())
 }

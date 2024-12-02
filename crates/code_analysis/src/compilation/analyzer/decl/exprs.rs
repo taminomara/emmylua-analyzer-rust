@@ -106,7 +106,7 @@ pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) -
 pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, expr: LuaTableExpr) -> Option<()> {
     if expr.is_object() {
         let file_id = analyzer.get_file_id();
-        let owner_id = LuaMemberOwner::Table(InFiled {
+        let owner_id = LuaMemberOwner::Element(InFiled {
             file_id,
             value: expr.get_range(),
         });

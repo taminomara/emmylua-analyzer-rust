@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr, LuaSyntaxNode};
+use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxNode};
 
 use crate::{
     db_index::{DbIndex, LuaType},
     semantic::{infer_expr, LuaInferConfig},
 };
 
-use super::{instantiate_class, tpl_pattern::tpl_pattern_match};
+use super::{instantiate_type, tpl_pattern::tpl_pattern_match};
 
 pub fn instantiate_func(
     db: &DbIndex,
@@ -24,11 +24,7 @@ pub fn instantiate_func(
         arg_types.push(arg_type);
     }
 
-    let prefix_expr = call_expr.get_prefix_expr()?;
-    let colon_call = match prefix_expr {
-        LuaExpr::IndexExpr(index_expr) => index_expr.get_index_token()?.is_colon(),
-        _ => false,
-    };
+    let colon_call = call_expr.is_colon_call();
 
     match (colon_define, colon_call) {
         (true, true) | (false, false) => {}
@@ -100,13 +96,13 @@ fn instantiate_func_by_args(
 
     for i in 0..func_param_types.len() {
         let func_param_type = &mut func_param_types[i];
-        let new_func_param_type = instantiate_class(&func_param_type, &generic_params);
+        let new_func_param_type = instantiate_type(&func_param_type, &generic_params);
         *func_param_type = new_func_param_type;
     }
 
     for i in 0..func_return_types.len() {
         let func_return_type = &mut func_return_types[i];
-        let new_func_return_type = instantiate_class(&func_return_type, &generic_params);
+        let new_func_return_type = instantiate_type(&func_return_type, &generic_params);
         *func_return_type = new_func_return_type;
     }
 

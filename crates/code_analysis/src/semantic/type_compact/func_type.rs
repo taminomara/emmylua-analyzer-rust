@@ -154,21 +154,16 @@ fn infer_doc_func_type_compact_for_signature(
     }
 
     let signature_params = signature.get_type_params();
-    for overload_type in &signature.overloads {
-        match overload_type {
-            LuaType::DocFunction(overload_func) => {
-                if infer_doc_func_type_compact_for_params(
-                    db,
-                    config,
-                    source_func,
-                    overload_func,
-                    infer_guard,
-                    signature.is_colon_define,
-                ) {
-                    return Some(true);
-                }
-            }
-            _ => {}
+    for overload_func in &signature.overloads {
+        if infer_doc_func_type_compact_for_params(
+            db,
+            config,
+            source_func,
+            overload_func,
+            infer_guard,
+            signature.is_colon_define,
+        ) {
+            return Some(true);
         }
     }
 

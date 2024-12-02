@@ -63,7 +63,7 @@ fn merge_def_type_with_table(
     def_id: LuaTypeDeclId,
     table_range: InFiled<TextRange>,
 ) -> Option<()> {
-    let expr_member_owner = LuaMemberOwner::Table(table_range);
+    let expr_member_owner = LuaMemberOwner::Element(table_range);
     let member_index = db.get_member_index_mut();
     let expr_members = member_index
         .get_member_map(expr_member_owner)?

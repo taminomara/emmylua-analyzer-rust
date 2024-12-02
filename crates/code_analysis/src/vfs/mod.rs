@@ -68,6 +68,10 @@ impl Vfs {
         self.file_id_map.get(uri).map(|&id| FileId { id })
     }
 
+    pub fn get_uri(&self, id: &FileId) -> Option<&Uri> {
+        self.file_uri_map.get(&id.id)
+    }
+
     pub fn set_file_content(&mut self, uri: &Uri, data: Option<String>) -> FileId {
         let fid = self.file_id(uri);
         if let Some(data) = &data {

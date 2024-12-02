@@ -225,7 +225,7 @@ fn infer_custom_type_compact(
                 compact_id
             }
             LuaType::TableConst(range) => {
-                let table_member_owner = LuaMemberOwner::Table(range.clone());
+                let table_member_owner = LuaMemberOwner::Element(range.clone());
                 return infer_custom_type_compact_table(
                     db,
                     config,
@@ -273,7 +273,7 @@ fn infer_custom_type_compact_table(
     let supers = db.get_type_index().get_super_types(type_id);
     if let Some(supers) = supers {
         for super_type in supers {
-            let table_type = LuaType::TableConst(table_owner.get_table_range()?.clone());
+            let table_type = LuaType::TableConst(table_owner.get_element_range()?.clone());
             if !infer_type_compact(db, config, &super_type, &table_type, infer_guard) {
                 return Some(false);
             }
@@ -303,7 +303,7 @@ fn infer_object_type_compact(
 ) -> Option<bool> {
     match compact_type {
         LuaType::TableConst(range) => {
-            let table_owner = LuaMemberOwner::Table(range.clone());
+            let table_owner = LuaMemberOwner::Element(range.clone());
             let member_index = db.get_member_index();
             let members = member_index.get_member_map(table_owner.clone())?;
             let fields = source.get_fields();

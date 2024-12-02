@@ -1,14 +1,14 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use emmylua_parser::{LuaAstNode, LuaClosureExpr};
 use rowan::TextSize;
 
-use crate::{db_index::LuaType, FileId};
+use crate::{db_index::{LuaFunctionType, LuaType}, FileId};
 
 #[derive(Debug)]
 pub struct LuaSignature {
     pub generic_params: Vec<(String, Option<LuaType>)>,
-    pub overloads: Vec<LuaType>,
+    pub overloads: Vec<Arc<LuaFunctionType>>,
     pub param_docs: HashMap<String, LuaDocParamInfo>,
     pub params: Vec<String>,
     pub return_docs: Vec<LuaDocReturnInfo>,

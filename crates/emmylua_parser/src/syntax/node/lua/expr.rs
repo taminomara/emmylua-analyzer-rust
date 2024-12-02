@@ -350,6 +350,19 @@ impl LuaCallExpr {
     pub fn get_args_list(&self) -> Option<LuaCallArgList> {
         self.child()
     }
+
+    pub fn is_colon_call(&self) -> bool {
+        let prefix = self.get_prefix_expr();
+        if let Some(prefix) = prefix {
+            if let LuaExpr::IndexExpr(index_expr) = prefix {
+                if let Some(index_token) = index_expr.get_index_token() {
+                    return index_token.is_colon();
+                }
+            }
+        }
+
+        return false;
+    }
 }
 
 impl From<LuaCallExpr> for LuaExpr {

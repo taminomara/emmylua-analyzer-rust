@@ -49,7 +49,7 @@ pub enum LuaType {
     MuliReturn(Arc<LuaMultiReturn>),
     ExistField(Arc<LuaExistFieldType>),
     Signature(LuaSignatureId),
-    Instance(InFiled<TextRange>),
+    Instance(Arc<LuaInstanceType>),
     FuncTplRef(usize),
     DocStringConst(ArcIntern<String>),
     DocIntergerConst(i64),
@@ -705,5 +705,25 @@ impl From<ArcIntern<String>> for LuaType {
             "io" => LuaType::Io,
             _ => LuaType::Ref(LuaTypeDeclId::new_by_id(s)),
         }
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct LuaInstanceType {
+    base: LuaType,
+    range: InFiled<TextRange>,
+}
+
+impl LuaInstanceType {
+    pub fn new(base: LuaType, range: InFiled<TextRange>) -> Self {
+        Self { base, range }
+    }
+
+    pub fn get_base(&self) -> &LuaType {
+        &self.base
+    }
+
+    pub fn get_range(&self) -> &InFiled<TextRange> {
+        &self.range
     }
 }
