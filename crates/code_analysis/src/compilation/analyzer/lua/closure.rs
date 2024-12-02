@@ -78,6 +78,7 @@ fn analyze_return(
         Some(returns) => returns,
         None => {
             let unresolve = UnResolveReturn {
+                file_id: analyzer.file_id,
                 signature_id: signature_id.clone(),
                 return_points,
             };

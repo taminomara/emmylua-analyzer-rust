@@ -17,6 +17,7 @@ pub fn analyze(db: &mut DbIndex, context: AnalyzeContext) {
     flow::analyze(db, &mut context);
     doc::analyze(db, &mut context);
     lua::analyze(db, &mut context);
+    unresolve::analyze(db, &mut context);
 }
 
 fn module_analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {

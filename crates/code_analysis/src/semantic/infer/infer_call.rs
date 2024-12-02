@@ -23,6 +23,16 @@ pub fn infer_call_expr(
     call_expr: LuaCallExpr,
 ) -> Option<LuaType> {
     let prefix_expr = call_expr.get_prefix_expr()?;
+    if let LuaExpr::NameExpr(name_expr) = &prefix_expr {
+        let name = name_expr.get_name_text();
+        if let Some(func_name) = name {
+            if config.is_require_function(&func_name) {
+                return infer_require_call(db, config, call_expr);
+            }
+        }
+    }
+
+
     let prefix_type = infer_expr(db, config, prefix_expr)?;
 
     infer_call_result(db, config, prefix_type, call_expr, &mut InferGuard::new())
@@ -334,4 +344,25 @@ fn unwrapp_return_type(
     }
 
     Some(return_type)
+}
+
+fn infer_require_call(
+    db: &DbIndex,
+    config: &mut LuaInferConfig,
+    call_expr: LuaCallExpr,
+) -> Option<LuaType> {
+    let arg_list = call_expr.get_args_list()?;
+    let first_arg = arg_list.get_args().next()?;
+    let require_path_type = infer_expr(db, config, first_arg)?;
+    let module_path: String = match &require_path_type {
+        LuaType::StringConst(module_path) => {
+            module_path.as_ref().to_string()
+        }
+        _ => {
+            return None;
+        }
+    };
+
+    let module_info = db.get_module_index().find_module(&module_path)?;
+    module_info.export_type.clone()
 }
