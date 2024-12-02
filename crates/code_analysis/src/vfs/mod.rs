@@ -34,7 +34,7 @@ pub struct Vfs {
     file_uri_map: HashMap<u32, Uri>,
     file_data: Vec<Option<String>>,
     line_index_map: HashMap<FileId, LineIndex>,
-    tree_map: HashMap<FileId, Arc<LuaSyntaxTree>>,
+    tree_map: HashMap<FileId, LuaSyntaxTree>,
     emmyrc: Option<Arc<Emmyrc>>,
     node_cache: NodeCache,
 }
@@ -77,7 +77,7 @@ impl Vfs {
                 .as_ref()
                 .unwrap()
                 .get_parse_config(&mut self.node_cache);
-            let tree = Arc::new(LuaParser::parse(&data, parse_config));
+            let tree = LuaParser::parse(&data, parse_config);
             self.tree_map.insert(fid, tree);
             self.line_index_map.insert(fid, line_index);
         } else {
@@ -106,11 +106,11 @@ impl Vfs {
         let text = self.get_file_content(id)?;
         let line_index = self.line_index_map.get(id)?;
         let tree = self.tree_map.get(id)?;
-        Some(LuaDocument::new(*id, uri, text, line_index, tree.clone()))
+        Some(LuaDocument::new(*id, uri, text, line_index, tree.get_chunk_node()))
     }
 
-    pub fn get_syntax_tree(&self, id: &FileId) -> Option<Arc<LuaSyntaxTree>> {
-        self.tree_map.get(id).cloned()
+    pub fn get_syntax_tree(&self, id: &FileId) -> Option<&LuaSyntaxTree> {
+        self.tree_map.get(id)
     }
 }
 

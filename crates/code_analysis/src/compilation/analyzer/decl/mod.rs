@@ -5,7 +5,7 @@ mod stats;
 use crate::db_index::{DbIndex, LuaScopeKind};
 
 use super::AnalyzeContext;
-use emmylua_parser::{LuaAst, LuaAstNode, LuaSyntaxKind, LuaSyntaxTree};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaChunk, LuaSyntaxKind};
 use rowan::{TextRange, TextSize, WalkEvent};
 
 use crate::{
@@ -15,7 +15,7 @@ use crate::{
 
 pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     for in_filed_tree in context.tree_list.iter() {
-        let mut analyzer = DeclAnalyzer::new(db, in_filed_tree.file_id, in_filed_tree.value.as_ref());
+        let mut analyzer = DeclAnalyzer::new(db, in_filed_tree.file_id, in_filed_tree.value.clone());
         analyzer.analyze();
         let decl_tree = analyzer.get_decl_tree();
         db.get_decl_index_mut().add_decl_tree(decl_tree);
@@ -112,24 +112,23 @@ fn is_scope_owner(node: &LuaAst) -> bool {
 #[derive(Debug)]
 pub struct DeclAnalyzer<'a> {
     db: &'a mut DbIndex,
-    tree: &'a LuaSyntaxTree,
+    root: LuaChunk,
     decl: LuaDeclarationTree,
     scopes: Vec<LuaScopeId>,
 }
 
 impl<'a> DeclAnalyzer<'a> {
-    pub fn new(db: &'a mut DbIndex, file_id: FileId, tree: &'a LuaSyntaxTree) -> DeclAnalyzer<'a> {
+    pub fn new(db: &'a mut DbIndex, file_id: FileId, tree: LuaChunk) -> DeclAnalyzer<'a> {
         DeclAnalyzer {
             db,
-            tree,
+            root: tree,
             decl: LuaDeclarationTree::new(file_id),
             scopes: Vec::new(),
         }
     }
 
     pub fn analyze(&mut self) {
-        let tree = self.tree;
-        let root = tree.get_chunk_node();
+        let root = self.root.clone();
         for walk_event in root.walk_descendants::<LuaAst>() {
             match walk_event {
                 WalkEvent::Enter(node) => walk_node_enter(self, node),

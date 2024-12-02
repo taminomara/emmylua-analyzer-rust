@@ -23,14 +23,13 @@ use super::{unresolve::UnResolve, AnalyzeContext};
 pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     let tree_list = context.tree_list.clone();
     for in_filed_tree in &tree_list {
-        let tree = in_filed_tree.value.as_ref();
-        let root = tree.get_chunk_node();
+        let root = &in_filed_tree.value;
         let config = context.config.get_infer_config(in_filed_tree.file_id);
         let mut analyzer = LuaAnalyzer::new(db, in_filed_tree.file_id, config);
         for node in root.descendants::<LuaAst>() {
             analyze_node(&mut analyzer, node);
         }
-        analyze_chunk_return(&mut analyzer, root);
+        analyze_chunk_return(&mut analyzer, root.clone());
         let unresolved = analyzer.move_unresolved();
         for unresolve in unresolved {
             context.add_unresolve(unresolve);

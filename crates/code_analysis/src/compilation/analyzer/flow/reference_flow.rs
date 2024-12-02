@@ -13,14 +13,14 @@ pub fn analyze(analyzer: &mut FlowAnalyzer) -> Option<()> {
     let refs_map = references_index
         .get_local_references_map(&analyzer.file_id)?
         .clone();
-    let tree = analyzer.tree;
+    let root = analyzer.root.syntax();
     let file_id = analyzer.file_id;
 
     for (decl_id, ranges) in refs_map {
         let mut flow_chains = LuaFlowChain::new(decl_id);
         for range in ranges {
             let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), range.clone());
-            let node = LuaNameExpr::cast(syntax_id.to_node(tree)?)?;
+            let node = LuaNameExpr::cast(syntax_id.to_node_from_root(root)?)?;
             infer_name_expr(analyzer, &mut flow_chains, node);
         }
         analyzer

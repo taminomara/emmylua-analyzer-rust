@@ -2,7 +2,7 @@ mod analyzer;
 
 use std::sync::Arc;
 
-use crate::{db_index::DbIndex, semantic::SemanticModel, Emmyrc, FileId, InFiled, Vfs};
+use crate::{db_index::DbIndex, semantic::SemanticModel, Emmyrc, FileId, InFiled};
 
 #[derive(Debug)]
 pub struct LuaCompilation {
@@ -31,9 +31,9 @@ impl LuaCompilation {
         let mut context = analyzer::AnalyzeContext::new(self.config.clone());
         for file_id in file_ids {
             let tree = self.db.get_vfs().get_syntax_tree(&file_id).unwrap();
-            context.add_tree(InFiled {
+            context.add_tree_chunk(InFiled {
                 file_id,
-                value: tree,
+                value: tree.get_chunk_node(),
             });
         }
 

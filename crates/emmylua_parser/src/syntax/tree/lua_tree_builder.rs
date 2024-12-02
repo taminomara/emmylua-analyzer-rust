@@ -1,4 +1,4 @@
-use rowan::NodeCache;
+use rowan::{GreenNode, NodeCache};
 
 use crate::{
     kind::{LuaSyntaxKind, LuaTokenKind},
@@ -89,8 +89,8 @@ impl<'a> LuaTreeBuilder<'a> {
         self.green_builder.finish_node();
     }
 
-    pub fn finish(self) -> LuaSyntaxNode {
+    pub fn finish(self) -> GreenNode {
         let root = self.green_builder.finish(&self.text);
-        LuaSyntaxNode::new_root(root)
+        root
     }
 }
