@@ -4,7 +4,6 @@ use crate::{
     kind::{LuaSyntaxKind, LuaTokenKind},
     parser::MarkEvent,
     text::SourceRange,
-    LuaSyntaxNode,
 };
 
 use super::lua_green_builder::LuaGreenNodeBuilder;
