@@ -1,6 +1,6 @@
 mod client_config;
-mod lua_finder;
 mod config_loader;
+mod lua_finder;
 
 use std::path::PathBuf;
 
@@ -15,12 +15,19 @@ pub async fn initialized_handler(
     context: ServerContextSnapshot,
     params: InitializeParams,
 ) -> Option<()> {
-    let analysis = context.analysis.write().await;
+    let mut analysis = context.analysis.write().await;
     let client_id = get_client_id(&params.client_info);
     let client_config = get_client_config(&context, client_id).await;
     let workspace_folders = get_workspace_folders(&params);
+    for workspace_root in &workspace_folders {
+        analysis.add_workspace_root(workspace_root.clone());
+    }
     let files = collect_files(&workspace_folders, &client_config);
-
+    let files = files
+        .into_iter()
+        .map(|file| file.into_tuple())
+        .collect();
+    analysis.update_files_by_path(files);
 
     Some(())
 }

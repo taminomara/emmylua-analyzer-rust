@@ -1,4 +1,4 @@
-use std::{error::Error, fs, path::Path};
+use std::{error::Error, fs, path::{Path, PathBuf}};
 
 use encoding_rs::{Encoding, UTF_8};
 use globset::{Glob, GlobSetBuilder};
@@ -8,6 +8,12 @@ use walkdir::WalkDir;
 pub struct LuaFileInfo {
     pub path: String,
     pub content: String,
+}
+
+impl LuaFileInfo {
+    pub fn into_tuple(self) -> (PathBuf, Option<String>) {
+        (PathBuf::from(self.path), Some(self.content))
+    }
 }
 
 #[allow(unused)]

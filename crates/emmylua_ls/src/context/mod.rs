@@ -23,9 +23,11 @@ impl ServerContext {
             receiver: conn.receiver.clone(),
         });
 
+        let mut analysis = EmmyLuaAnalysis::new();
+        analysis.init_std_lib();
         ServerContext {
             conn,
-            analysis: Arc::new(RwLock::new(EmmyLuaAnalysis::new())),
+            analysis: Arc::new(RwLock::new(analysis)),
             client: Arc::new(client),
             cancllations: Arc::new(Mutex::new(HashMap::new())),
         }

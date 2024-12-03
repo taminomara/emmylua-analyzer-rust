@@ -36,6 +36,7 @@ impl LuaModuleIndex {
 
         let root_node = ModuleNode::default();
         index.module_nodes.insert(index.module_root_id, root_node);
+        index.set_module_patterns(vec!["?.lua".to_string(), "?/init.lua".to_string()]);
         index
     }
 

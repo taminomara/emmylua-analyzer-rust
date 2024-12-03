@@ -5,10 +5,7 @@ mod diagnostic;
 mod semantic;
 mod vfs;
 
-use std::{
-    path::PathBuf,
-    sync::Arc,
-};
+use std::{env, path::PathBuf, sync::Arc};
 
 #[allow(unused)]
 pub use compilation::*;
@@ -29,6 +26,55 @@ impl EmmyLuaAnalysis {
         Self {
             compilation: LuaCompilation::new(),
         }
+    }
+
+    pub fn init_std_lib(&mut self) -> Option<()> {
+        let resource_dir = self.get_resource_dir();
+        match resource_dir {
+            Some(resource_dir) => {
+                eprintln!("resource dir: {:?}, loading ...", resource_dir);
+                let std_lib_dir = resource_dir.join("std");
+                self.add_workspace_root(std_lib_dir.clone());
+                let match_pattern = vec!["**/*.lua".to_string()];
+                let files =
+                    load_workspace_files(&std_lib_dir, &match_pattern, &Vec::new(), None).ok()?;
+
+                let files = files.into_iter().map(|file| file.into_tuple()).collect();
+                self.update_files_by_path(files);
+            }
+            None => {
+                eprintln!("Failed to find resource directory, std lib will not be loaded.");
+            }
+        }
+
+        Some(())
+    }
+
+    pub fn get_resource_dir(&self) -> Option<PathBuf> {
+        let exe_path = env::current_exe().ok()?;
+        let mut current_dir = exe_path.parent()?.to_path_buf();
+
+        loop {
+            let potential = current_dir.join("resources");
+            eprintln!("try location resource dir: {:?} ...", potential);
+            if potential.is_dir() {
+                return Some(potential);
+            }
+
+            match current_dir.parent() {
+                Some(parent) => current_dir = parent.to_path_buf(),
+                None => break,
+            }
+        }
+
+        None
+    }
+
+    pub fn add_workspace_root(&mut self, root: PathBuf) {
+        self.compilation
+            .get_db_mut()
+            .get_module_index_mut()
+            .add_workspace_root(root);
     }
 
     pub fn update_file_by_uri(&mut self, uri: &Uri, text: Option<String>) {
