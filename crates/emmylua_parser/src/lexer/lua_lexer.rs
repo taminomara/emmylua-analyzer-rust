@@ -396,11 +396,9 @@ impl LuaLexer<'_> {
                 ']' => {
                     self.reader.bump();
                     let count = self.reader.eat_when('=');
-                    if count == sep {
+                    if count == sep && self.reader.current_char() == ']' {
+                        self.reader.bump();
                         end = true;
-                        if self.reader.current_char() == ']' {
-                            self.reader.bump();
-                        }
                         break;
                     }
                 }
@@ -529,4 +527,3 @@ impl LuaLexer<'_> {
         }
     }
 }
-

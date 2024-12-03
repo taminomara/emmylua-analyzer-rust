@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::{LuaAstNode, LuaParser, ParserConfig};
+    use crate::{LineIndex, LuaAstNode, LuaParser, ParserConfig};
     use std::thread;
 
     #[test]
