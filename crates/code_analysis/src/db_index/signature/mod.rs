@@ -30,6 +30,10 @@ impl LuaSignatureIndex {
     pub fn get(&self, signature_id: &LuaSignatureId) -> Option<&LuaSignature> {
         self.signatures.get(signature_id)
     }
+
+    pub fn get_mut(&mut self, signature_id: &LuaSignatureId) -> Option<&mut LuaSignature> {
+        self.signatures.get_mut(signature_id)
+    }
 }
 
 impl LuaIndex for LuaSignatureIndex {

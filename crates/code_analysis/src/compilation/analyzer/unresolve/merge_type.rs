@@ -48,7 +48,15 @@ fn merge_type(db: &mut DbIndex, decl_type: LuaType, expr_type: LuaType) -> LuaTy
                 LuaType::TableConst(in_filed_range) => {
                     merge_def_type_with_table(db, def.clone(), in_filed_range);
                 }
-                // LuaType::Instance(in_filed_range) => {}
+                LuaType::Instance(instance) => {
+                    let base_ref = instance.get_base();
+                    match base_ref {
+                        LuaType::TableConst(in_filed_range) => {
+                            merge_def_type_with_table(db, def.clone(), in_filed_range.clone());
+                        }
+                        _ => {}
+                    }
+                }
                 _ => {}
             }
 

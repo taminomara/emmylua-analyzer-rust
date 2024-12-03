@@ -154,6 +154,7 @@ fn get_var_type_owner(
                             }
                             LuaMemberOwner::Type(def_id)
                         }
+                        LuaType::Instance(instance) => LuaMemberOwner::Element(instance.get_range().clone()),
                         // is ref need extend field?
                         _ => {
                             return None;

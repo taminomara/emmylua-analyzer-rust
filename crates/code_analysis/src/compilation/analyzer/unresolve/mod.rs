@@ -9,7 +9,7 @@ use crate::{
 use emmylua_parser::{LuaCallExpr, LuaExpr};
 use infer_manager::InferManager;
 pub use merge_type::{merge_decl_expr_type, merge_member_type};
-use resolve::try_resolve_decl;
+use resolve::{try_resolve_decl, try_resolve_iter_var, try_resolve_member, try_resolve_module, try_resolve_return_point};
 
 use super::{lua::LuaReturnPoint, AnalyzeContext};
 
@@ -33,34 +33,34 @@ fn try_resolve(
 ) -> bool {
     let mut changed = false;
     for i in 0..unresolves.len() {
-        let un_resolve = &unresolves[i];
+        let un_resolve = &mut unresolves[i];
 
         let resolve = match un_resolve {
             UnResolve::Decl(un_resolve_decl) => {
                 let config = infer_manager.get_infer_config(un_resolve_decl.file_id);
                 try_resolve_decl(db, config, un_resolve_decl).unwrap_or(false)
             }
-            UnResolve::Member(un_resolve_member) => {
-                todo!();
-                true
+            UnResolve::Member(ref mut un_resolve_member) => {
+                let config = infer_manager.get_infer_config(un_resolve_member.file_id);
+                try_resolve_member(db, config, un_resolve_member).unwrap_or(false)
             }
             UnResolve::Module(un_resolve_module) => {
-                todo!();
-                true
+                let config = infer_manager.get_infer_config(un_resolve_module.file_id);
+                try_resolve_module(db, config, un_resolve_module).unwrap_or(false)
             }
             UnResolve::Return(un_resolve_return) => {
-                todo!();
-                true
+                let config = infer_manager.get_infer_config(un_resolve_return.file_id);
+                try_resolve_return_point(db, config, un_resolve_return).unwrap_or(false)
             }
-            UnResolve::ClosureParams(un_resolve_closure_params) => {
-                todo!();
-                true
-            }
+            // UnResolve::ClosureParams(un_resolve_closure_params) => {
+            //     todo!();
+            //     true
+            // }
             UnResolve::IterDecl(un_resolve_iter_var) => {
-                todo!();
-                true
+                let config = infer_manager.get_infer_config(un_resolve_iter_var.file_id);
+                try_resolve_iter_var(db, config, un_resolve_iter_var).unwrap_or(false)
             }
-            UnResolve::None => continue,
+            UnResolve::ClosureParams(_) | UnResolve::None => continue,
         };
 
         if resolve {
@@ -138,6 +138,7 @@ impl From<UnResolveReturn> for UnResolve {
     }
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub struct UnResolveClosureParams {
     pub file_id: FileId,

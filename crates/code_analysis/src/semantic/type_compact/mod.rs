@@ -118,7 +118,6 @@ fn infer_type_compact(
             compact_type.is_nil()
                 || infer_type_compact(db, config, base, &compact_type, infer_guard)
         }
-        // todo
         (LuaType::Generic(source_generic), LuaType::Generic(compact_generic)) => {
             infer_generic_type_compact(db, config, source_generic, compact_generic, infer_guard)
                 .unwrap_or(false)
