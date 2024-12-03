@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod test {
     use crate::{LineIndex, LuaAstNode, LuaParser, ParserConfig};
+    use std::time::Instant;
     use std::{fs, thread};
 
     #[test]
@@ -28,5 +29,4 @@ mod test {
             handle.join().unwrap();
         }
     }
-
 }

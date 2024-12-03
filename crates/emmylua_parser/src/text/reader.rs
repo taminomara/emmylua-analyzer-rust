@@ -1,4 +1,4 @@
-use std::str::Chars;
+use std::{iter::Peekable, str::Chars};
 
 use super::text_range::SourceRange;
 pub const EOF: char = '\0';
@@ -7,7 +7,7 @@ pub const EOF: char = '\0';
 pub struct Reader<'a> {
     text: &'a str,
     valid_range: SourceRange,
-    chars: Chars<'a>,
+    chars: Peekable<Chars<'a>>,
     save_buffer_byte_pos: usize,
     save_buffer_byte_len: usize,
     current_char_len: usize,
@@ -25,7 +25,7 @@ impl<'a> Reader<'a> {
         Self {
             text,
             valid_range: range,
-            chars: text.chars(),
+            chars: text.chars().peekable(),
             save_buffer_byte_pos: 0,
             save_buffer_byte_len: 0,
             current_char_len: 0,
@@ -69,8 +69,8 @@ impl<'a> Reader<'a> {
         self.current
     }
 
-    pub fn next_char(&self) -> char {
-        self.chars.clone().next().unwrap_or(EOF)
+    pub fn next_char(&mut self) -> char {
+        self.chars.peek().cloned().unwrap_or(EOF)
     }
 
     pub fn saved_range(&self) -> SourceRange {

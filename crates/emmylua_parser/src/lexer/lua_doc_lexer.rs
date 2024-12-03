@@ -10,7 +10,7 @@ pub struct LuaDocLexer<'a> {
     origin_text: &'a str,
     origin_token_kind: LuaTokenKind,
     pub state: LuaDocLexerState,
-    reader: Option<Reader<'a>>,
+    pub reader: Option<Reader<'a>>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -47,10 +47,6 @@ impl LuaDocLexer<'_> {
     pub fn reset(&mut self, kind: LuaTokenKind, range: SourceRange) {
         self.reader = Some(Reader::new_with_range(self.origin_text, range));
         self.origin_token_kind = kind;
-    }
-
-    pub fn get_reader(&self) -> Option<&Reader> {
-        self.reader.as_ref()
     }
 
     #[allow(unused)]
@@ -356,8 +352,7 @@ impl LuaDocLexer<'_> {
                 reader.bump();
             }
             LuaTokenKind::TkDocDetail
-        }
-        else {
+        } else {
             reader.eat_while(|_| true);
             LuaTokenKind::TkDocTrivia
         }

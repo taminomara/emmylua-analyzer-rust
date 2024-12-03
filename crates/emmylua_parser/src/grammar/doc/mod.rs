@@ -55,7 +55,7 @@ fn parse_docs(p: &mut LuaDocParser) {
             }
         }
 
-        if let Some(reader) = p.lexer.get_reader() {
+        if let Some(reader) = &p.lexer.reader {
             if !reader.is_eof()
                 && p.current_token() != LuaTokenKind::TkDocStart
                 && p.current_token() != LuaTokenKind::TkDocLongStart
