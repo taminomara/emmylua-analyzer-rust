@@ -1,5 +1,4 @@
----@meta
----@module no-require
+---@meta no-require
 -- Copyright (c) 2018. tangzx(love.tangzx@qq.com)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -146,11 +145,12 @@ function ipairs(t) end
 ---@param env? any
 function load(chunk, chunkname, mode, env) end
 
----@version 5.1
+
 ---
 ---Loads a chunk from the given string.
 ---
 ---
+---@version 5.1
 ---@param text       string
 ---@param chunkname? string
 ---@return function?
@@ -395,7 +395,7 @@ function xpcall(f, msgh, ...) end
 ---@return T...
 function unpack(list, i, j) end
 
----@version >= 5.4
+---@version > 5.4
 ---@param message string
 function warn(message) end
 

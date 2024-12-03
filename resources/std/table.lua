@@ -146,11 +146,11 @@ function table.pack(...) end
 ---@deprecated
 function table.foreach(list, callback) end
 
----@version 5.1, JIT
+
 ---
 ---Executes the given f over the numerical indices of table. For each index, f is called with the index and respective value as arguments. Indices are visited in sequential order, from 1 to n, where n is the size of the table. If f returns a non-nil value, then the loop is broken and this value is returned as the result of foreachi.
 ---
----
+---@version 5.1, JIT
 ---@generic T
 ---@param list any
 ---@param callback fun(key: string, value: any):T|nil
@@ -158,12 +158,12 @@ function table.foreach(list, callback) end
 ---@deprecated
 function table.foreachi(list, callback) end
 
----@version 5.1, JIT
+
 ---
 ---Returns the number of elements in the table. This function is equivalent to `#list`.
 ---
 ---[View documents](command:extension.lua.doc?["en-us/54/manual.html/pdf-table.getn"])
----
+---@version 5.1, JIT
 ---@generic T
 ---@param list T[]
 ---@return integer

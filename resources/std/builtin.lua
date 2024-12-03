@@ -1,5 +1,5 @@
----@meta
----@module no-require
+---@meta no-require
+
 -- Copyright (c) 2018. tangzx(love.tangzx@qq.com)
 --
 -- Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -40,6 +40,8 @@
 --- particularly attractive for small machines and embedded systems. (See
 --- macro LUA_32BITS in file luaconf.h.)
 ---@class number
+
+---@class integer
 
 ---
 --- The type *userdata* is provided to allow arbitrary C data to be stored in 
@@ -100,9 +102,6 @@
 
 ---@class self
 
----@class integer : number
 ---@alias int integer
 
 ---@class namespace<T: string>
-
----@class instance<T> : T

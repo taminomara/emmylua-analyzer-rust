@@ -270,7 +270,7 @@ function debug.setuservalue(udata, value, n) end
 ---@return string
 function debug.traceback(thread, message, level) end
 
----@version >=5.2, JIT
+
 --- Returns a unique identifier (as a light userdata) for the upvalue numbered
 --- `n` from the given function.
 ---
@@ -278,15 +278,17 @@ function debug.traceback(thread, message, level) end
 --- closures share upvalues. Lua closures that share an upvalue (that is, that
 --- access a same external local variable) will return identical ids for those
 --- upvalue indices.
+---@version >5.2, JIT
 ---@param f fun():number
 ---@param n number
 ---@return number
 function debug.upvalueid(f, n) end
 
----@version >=5.2, JIT
+
 ---
 --- Make the `n1`-th upvalue of the Lua closure f1 refer to the `n2`-th upvalue
 --- of the Lua closure f2.
+---@version >5.2, JIT
 ---@param f1 fun():any
 ---@param n1 number
 ---@param f2 fun():any
