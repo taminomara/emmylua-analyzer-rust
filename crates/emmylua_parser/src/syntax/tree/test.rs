@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod test {
-    use crate::{LineIndex, LuaAstNode, LuaParser, ParserConfig};
-    use std::time::Instant;
-    use std::{fs, thread};
+    use crate::{LuaAstNode, LuaLanguageLevel, LuaParser, ParserConfig};
+    // use std::time::Instant;
+    use std::thread;
 
     #[test]
     fn test_multithreaded_syntax_tree_traversal() {
@@ -28,5 +28,29 @@ mod test {
         for handle in handles {
             handle.join().unwrap();
         }
+    }
+
+    #[test]
+    fn test_lua51() {
+        let code = r#"
+if a ~= b then
+end
+        "#;
+        let parse_config = ParserConfig::new(LuaLanguageLevel::Lua51, None);
+        let tree = LuaParser::parse(code, parse_config);
+        assert_eq!(tree.get_errors().len(), 0);
+    }
+
+    #[test]
+    fn test_tree_struct() {
+        let code = r#"
+function f()
+    -- hh
+    local t
+end
+        "#;
+        let tree = LuaParser::parse(code, ParserConfig::default());
+        let chunk = tree.get_chunk_node();
+        println!("{:?}", chunk.dump());
     }
 }

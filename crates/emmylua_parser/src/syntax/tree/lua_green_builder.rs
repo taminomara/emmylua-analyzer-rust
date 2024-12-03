@@ -3,6 +3,7 @@ use rowan::{GreenNode, NodeCache};
 use crate::{
     kind::{LuaSyntaxKind, LuaTokenKind},
     text::SourceRange,
+    LuaChunk,
 };
 
 #[derive(Debug, Clone)]
@@ -60,39 +61,54 @@ impl LuaGreenNodeBuilder<'_> {
             return;
         }
 
-        let (parent_kind, first_start) = self.parents.pop().unwrap();
+        let (parent_kind, mut first_start) = self.parents.pop().unwrap();
         let mut child_start = first_start;
         let mut child_end = self.children.len() - 1;
         let child_count = self.children.len();
-        let green = if parent_kind != LuaSyntaxKind::Block && parent_kind != LuaSyntaxKind::Chunk {
-            while child_start < child_count {
-                if self.is_trivia(self.children[child_start]) {
-                    child_start += 1;
-                } else {
-                    break;
+        let green = match parent_kind {
+            LuaSyntaxKind::Block | LuaSyntaxKind::Chunk => {
+                while child_start > 0 {
+                    if self.is_trivia(self.children[child_start - 1]) {
+                        child_start -= 1;
+                    } else {
+                        break;
+                    }
                 }
-            }
-            while child_end >= child_start {
-                if self.is_trivia(self.children[child_end]) {
-                    child_end -= 1;
-                } else {
-                    break;
+                if child_start < first_start {
+                    first_start = child_start;
                 }
-            }
 
-            let children = self
-                .children
-                .drain(child_start..=child_end)
-                .collect::<Vec<_>>();
-            LuaGreenElement::Node {
-                kind: parent_kind,
-                children,
+                let children = self.children.drain(first_start..).collect::<Vec<_>>();
+
+                LuaGreenElement::Node {
+                    kind: parent_kind,
+                    children,
+                }
             }
-        } else {
-            let children = self.children.drain(first_start..).collect::<Vec<_>>();
-            LuaGreenElement::Node {
-                kind: parent_kind,
-                children,
+            _ => {
+                while child_start < child_count {
+                    if self.is_trivia(self.children[child_start]) {
+                        child_start += 1;
+                    } else {
+                        break;
+                    }
+                }
+                while child_end >= child_start {
+                    if self.is_trivia(self.children[child_end]) {
+                        child_end -= 1;
+                    } else {
+                        break;
+                    }
+                }
+
+                let children = self
+                    .children
+                    .drain(child_start..=child_end)
+                    .collect::<Vec<_>>();
+                LuaGreenElement::Node {
+                    kind: parent_kind,
+                    children,
+                }
             }
         };
 
@@ -150,8 +166,7 @@ impl LuaGreenNodeBuilder<'_> {
     pub fn finish(mut self, text: &str) -> GreenNode {
         if let Some(root_pos) = self.children.pop() {
             self.build_rowan_green(root_pos, text);
-        }
-        else {
+        } else {
             self.builder.start_node(LuaSyntaxKind::Chunk.into());
             self.builder.finish_node();
         }

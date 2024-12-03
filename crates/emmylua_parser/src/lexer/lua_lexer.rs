@@ -164,15 +164,14 @@ impl LuaLexer<'_> {
                 }
             }
             '~' => {
-                if !self.lexer_config.support_integer_operation() {
-                    self.errors.push(LuaParseError::from_source_range(
-                        "bitwise operation is not supported",
-                        self.reader.saved_range(),
-                    ));
-                }
-
                 self.reader.bump();
                 if self.reader.current_char() != '=' {
+                    if !self.lexer_config.support_integer_operation() {
+                        self.errors.push(LuaParseError::from_source_range(
+                            "bitwise operation is not supported",
+                            self.reader.saved_range(),
+                        ));
+                    }
                     return LuaTokenKind::TkBitXor;
                 }
                 self.reader.bump();

@@ -146,9 +146,9 @@ Syntax(Chunk)@0..770
           Syntax(ParamName)@168..169
             Token(TkName)@168..169 "y"
           Token(TkRightParen)@169..170 ")"
-        Token(TkEndOfLine)@170..171 "\n"
-        Token(TkWhitespace)@171..187 "                "
-        Syntax(Block)@187..312
+        Syntax(Block)@170..312
+          Token(TkEndOfLine)@170..171 "\n"
+          Token(TkWhitespace)@171..187 "                "
           Syntax(IfStat)@187..299
             Token(TkIf)@187..189 "if"
             Token(TkWhitespace)@189..190 " "
@@ -162,9 +162,9 @@ Syntax(Chunk)@0..770
                 Token(TkName)@194..195 "y"
             Token(TkWhitespace)@195..196 " "
             Token(TkThen)@196..200 "then"
-            Token(TkEndOfLine)@200..201 "\n"
-            Token(TkWhitespace)@201..221 "                    "
-            Syntax(Block)@221..246
+            Syntax(Block)@200..246
+              Token(TkEndOfLine)@200..201 "\n"
+              Token(TkWhitespace)@201..221 "                    "
               Syntax(ReturnStat)@221..229
                 Token(TkReturn)@221..227 "return"
                 Token(TkWhitespace)@227..228 " "
@@ -174,9 +174,9 @@ Syntax(Chunk)@0..770
               Token(TkWhitespace)@230..246 "                "
             Syntax(ElseClauseStat)@246..296
               Token(TkElse)@246..250 "else"
-              Token(TkEndOfLine)@250..251 "\n"
-              Token(TkWhitespace)@251..271 "                    "
-              Syntax(Block)@271..296
+              Syntax(Block)@250..296
+                Token(TkEndOfLine)@250..251 "\n"
+                Token(TkWhitespace)@251..271 "                    "
                 Syntax(ReturnStat)@271..279
                   Token(TkReturn)@271..277 "return"
                   Token(TkWhitespace)@277..278 " "
@@ -206,9 +206,9 @@ Syntax(Chunk)@0..770
         Token(TkInt)@340..342 "10"
       Token(TkWhitespace)@342..343 " "
       Token(TkDo)@343..345 "do"
-      Token(TkEndOfLine)@345..346 "\n"
-      Token(TkWhitespace)@346..362 "                "
-      Syntax(Block)@362..383
+      Syntax(Block)@345..383
+        Token(TkEndOfLine)@345..346 "\n"
+        Token(TkWhitespace)@346..362 "                "
         Syntax(CallExprStat)@362..370
           Syntax(CallExpr)@362..370
             Syntax(NameExpr)@362..367
@@ -237,9 +237,9 @@ Syntax(Chunk)@0..770
           Token(TkInt)@410..411 "0"
       Token(TkWhitespace)@411..412 " "
       Token(TkDo)@412..414 "do"
-      Token(TkEndOfLine)@414..415 "\n"
-      Token(TkWhitespace)@415..431 "                "
-      Syntax(Block)@431..453
+      Syntax(Block)@414..453
+        Token(TkEndOfLine)@414..415 "\n"
+        Token(TkWhitespace)@415..431 "                "
         Syntax(AssignStat)@431..440
           Syntax(NameExpr)@431..432
             Token(TkName)@431..432 "a"
@@ -262,9 +262,9 @@ Syntax(Chunk)@0..770
     Token(TkWhitespace)@458..470 "            "
     Syntax(RepeatStat)@470..528
       Token(TkRepeat)@470..476 "repeat"
-      Token(TkEndOfLine)@476..477 "\n"
-      Token(TkWhitespace)@477..493 "                "
-      Syntax(Block)@493..515
+      Syntax(Block)@476..515
+        Token(TkEndOfLine)@476..477 "\n"
+        Token(TkWhitespace)@477..493 "                "
         Syntax(AssignStat)@493..502
           Syntax(NameExpr)@493..494
             Token(TkName)@493..494 "a"
@@ -322,9 +322,9 @@ Syntax(Chunk)@0..770
               Syntax(ParamName)@597..600
                 Token(TkName)@597..600 "key"
               Token(TkRightParen)@600..601 ")"
-            Token(TkEndOfLine)@601..602 "\n"
-            Token(TkWhitespace)@602..622 "                    "
-            Syntax(Block)@622..655
+            Syntax(Block)@601..655
+              Token(TkEndOfLine)@601..602 "\n"
+              Token(TkWhitespace)@602..622 "                    "
               Syntax(ReturnStat)@622..638
                 Token(TkReturn)@622..628 "return"
                 Token(TkWhitespace)@628..629 " "
@@ -863,9 +863,9 @@ Syntax(Chunk)@0..146
           Token(TkInt)@16..17 "0"
       Token(TkWhitespace)@17..18 " "
       Token(TkThen)@18..22 "then"
-      Token(TkEndOfLine)@22..23 "\n"
-      Token(TkWhitespace)@23..35 "            "
-      Syntax(Block)@35..52
+      Syntax(Block)@22..52
+        Token(TkEndOfLine)@22..23 "\n"
+        Token(TkWhitespace)@23..35 "            "
         Syntax(ReturnStat)@35..43
           Token(TkReturn)@35..41 "return"
           Token(TkWhitespace)@41..42 " "
@@ -886,9 +886,9 @@ Syntax(Chunk)@0..146
             Token(TkInt)@63..64 "0"
         Token(TkWhitespace)@64..65 " "
         Token(TkThen)@65..69 "then"
-        Token(TkEndOfLine)@69..70 "\n"
-        Token(TkWhitespace)@70..82 "            "
-        Syntax(Block)@82..100
+        Syntax(Block)@69..100
+          Token(TkEndOfLine)@69..70 "\n"
+          Token(TkWhitespace)@70..82 "            "
           Syntax(ReturnStat)@82..91
             Token(TkReturn)@82..88 "return"
             Token(TkWhitespace)@88..89 " "
@@ -900,9 +900,9 @@ Syntax(Chunk)@0..146
           Token(TkWhitespace)@92..100 "        "
       Syntax(ElseClauseStat)@100..134
         Token(TkElse)@100..104 "else"
-        Token(TkEndOfLine)@104..105 "\n"
-        Token(TkWhitespace)@105..117 "            "
-        Syntax(Block)@117..134
+        Syntax(Block)@104..134
+          Token(TkEndOfLine)@104..105 "\n"
+          Token(TkWhitespace)@105..117 "            "
           Syntax(ReturnStat)@117..125
             Token(TkReturn)@117..123 "return"
             Token(TkWhitespace)@123..124 " "
@@ -997,9 +997,9 @@ Syntax(Chunk)@0..205
           Syntax(ParamName)@25..26
             Token(TkName)@25..26 "b"
           Token(TkRightParen)@26..27 ")"
-        Token(TkEndOfLine)@27..28 "\n"
-        Token(TkWhitespace)@28..40 "            "
-        Syntax(Block)@40..61
+        Syntax(Block)@27..61
+          Token(TkEndOfLine)@27..28 "\n"
+          Token(TkWhitespace)@28..40 "            "
           Syntax(ReturnStat)@40..52
             Token(TkReturn)@40..46 "return"
             Token(TkWhitespace)@46..47 " "
@@ -1034,9 +1034,9 @@ Syntax(Chunk)@0..205
           Syntax(ParamName)@91..92
             Token(TkName)@91..92 "b"
           Token(TkRightParen)@92..93 ")"
-        Token(TkEndOfLine)@93..94 "\n"
-        Token(TkWhitespace)@94..106 "            "
-        Syntax(Block)@106..127
+        Syntax(Block)@93..127
+          Token(TkEndOfLine)@93..94 "\n"
+          Token(TkWhitespace)@94..106 "            "
           Syntax(ReturnStat)@106..118
             Token(TkReturn)@106..112 "return"
             Token(TkWhitespace)@112..113 " "
@@ -1071,9 +1071,9 @@ Syntax(Chunk)@0..205
           Syntax(ParamName)@157..158
             Token(TkName)@157..158 "b"
           Token(TkRightParen)@158..159 ")"
-        Token(TkEndOfLine)@159..160 "\n"
-        Token(TkWhitespace)@160..172 "            "
-        Syntax(Block)@172..193
+        Syntax(Block)@159..193
+          Token(TkEndOfLine)@159..160 "\n"
+          Token(TkWhitespace)@160..172 "            "
           Syntax(ReturnStat)@172..184
             Token(TkReturn)@172..178 "return"
             Token(TkWhitespace)@178..179 " "
