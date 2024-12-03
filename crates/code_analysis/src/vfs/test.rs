@@ -4,15 +4,18 @@ mod tests {
 
     use lsp_types::Uri;
 
-    use crate::{file_path_to_uri, uri_to_file_path, Vfs};
+    use crate::{file_path_to_uri, uri_to_file_path, Emmyrc, Vfs};
 
     fn create_vfs() -> Vfs {
-        Vfs::new()
+        let mut vfs = Vfs::new();
+        vfs.set_config(Emmyrc::default().into());
+        vfs
     }
 
     #[test]
     fn test_basic() {
         let mut vfs = create_vfs();
+
         let uri = Uri::from_str("file:///C:/Users/username/Documents/test.lua").unwrap();
         let id = vfs.file_id(&uri);
         assert_eq!(id.id, 0);
