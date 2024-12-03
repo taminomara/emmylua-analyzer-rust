@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test {
     use crate::{LineIndex, LuaAstNode, LuaParser, ParserConfig};
-    use std::thread;
+    use std::{fs, thread};
 
     #[test]
     fn test_multithreaded_syntax_tree_traversal() {
@@ -28,4 +28,5 @@ mod test {
             handle.join().unwrap();
         }
     }
+
 }

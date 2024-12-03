@@ -52,8 +52,8 @@ fn parse_stat(p: &mut LuaParser) -> ParseResult {
         LuaTokenKind::TkDo => parse_do(p)?,
         LuaTokenKind::TkRepeat => parse_repeat(p)?,
         LuaTokenKind::TkGoto => parse_goto(p)?,
-        LuaTokenKind::TkColon => parse_empty_stat(p)?,
         LuaTokenKind::TkDbColon => parse_label_stat(p)?,
+        LuaTokenKind::TkSemicolon => parse_empty_stat(p)?,
         _ => parse_assign_or_expr_stat(p)?,
     };
 
@@ -273,7 +273,7 @@ fn parse_attrib(p: &mut LuaParser) -> ParseResult {
 fn parse_return(p: &mut LuaParser) -> ParseResult {
     let m = p.mark(LuaSyntaxKind::ReturnStat);
     p.bump();
-    if p.current_token() != LuaTokenKind::TkEnd && p.current_token() != LuaTokenKind::TkSemicolon {
+    if !block_follow(p) && p.current_token() != LuaTokenKind::TkSemicolon {
         parse_expr(p)?;
         while p.current_token() == LuaTokenKind::TkComma {
             p.bump();
