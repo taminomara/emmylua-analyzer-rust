@@ -1,34 +1,30 @@
 use std::{path::PathBuf, sync::Arc};
 
 use super::client_config::ClientConfig;
-use code_analysis::Emmyrc;
-use config::{Config, File};
+use code_analysis::{load_configs, Emmyrc};
 use log::info;
 
 pub fn init_config(config_root: Option<PathBuf>, client_config: ClientConfig) -> Arc<Emmyrc> {
-    let mut config_builder = Config::builder();
-
+    let mut config_files = Vec::new();
     if let Some(config_root) = &config_root {
         let luarc_path = config_root.join(".luarc.json");
         if luarc_path.exists() {
             info!("load config from: {:?}", luarc_path);
-            config_builder =
-                config_builder.add_source(File::with_name(luarc_path.to_str().unwrap()));
+            config_files.push(luarc_path);
         }
         let emmyrc_path = config_root.join(".emmyrc.json");
         if emmyrc_path.exists() {
             info!("load config from: {:?}", emmyrc_path);
-            config_builder =
-                config_builder.add_source(File::with_name(emmyrc_path.to_str().unwrap()));
+            config_files.push(emmyrc_path);
         }
     }
 
-    let config = config_builder.build().ok().unwrap();
-    let mut emmyrc: Emmyrc = config.try_deserialize().ok().unwrap();
+    let mut emmyrc = load_configs(config_files);
     merge_client_config(client_config, &mut emmyrc);
     if let Some(workspace_root) = &config_root {
         pre_process_emmyrc(&mut emmyrc, workspace_root);
     }
+
     emmyrc.into()
 }
 
@@ -98,8 +94,5 @@ fn pre_process_path(path: &str, workspace: &PathBuf) -> String {
     }
 
     path = path.replace("${workspaceFolder}", &workspace.to_string_lossy());
-    std::fs::canonicalize(path)
-        .unwrap()
-        .to_string_lossy()
-        .to_string()
+    path
 }

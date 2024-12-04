@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct EmmyrcWorkspace {
     pub ignore_dir: Option<Vec<String>>,
     pub ignore_globs: Option<Vec<String>>,

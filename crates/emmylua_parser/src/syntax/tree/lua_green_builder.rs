@@ -3,7 +3,6 @@ use rowan::{GreenNode, NodeCache};
 use crate::{
     kind::{LuaSyntaxKind, LuaTokenKind},
     text::SourceRange,
-    LuaChunk,
 };
 
 #[derive(Debug, Clone)]

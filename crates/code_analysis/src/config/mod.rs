@@ -1,5 +1,5 @@
 mod configs;
-
+mod config_loader;
 
 use std::collections::HashSet;
 
@@ -8,10 +8,11 @@ use emmylua_parser::{LuaLanguageLevel, ParserConfig};
 use rowan::NodeCache;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
+pub use config_loader::load_configs;
 use crate::{semantic::LuaInferConfig, FileId};
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct Emmyrc {
     #[serde(rename = "$schema")]
     pub schema: Option<String>,

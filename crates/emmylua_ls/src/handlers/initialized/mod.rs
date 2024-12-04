@@ -1,15 +1,15 @@
 mod client_config;
-mod config_finder;
-mod lua_finder;
+mod init_config;
+mod collect_files;
 
 use std::{path::PathBuf, str::FromStr};
 
 use client_config::get_client_config;
 use code_analysis::uri_to_file_path;
-use config_finder::init_config;
+use init_config::init_config;
 use log::info;
 use lsp_types::{ClientInfo, InitializeParams};
-use lua_finder::collect_files;
+use collect_files::collect_files;
 
 use crate::{context::ServerContextSnapshot, logger::init_logger};
 
@@ -20,7 +20,7 @@ pub async fn initialized_handler(
     let mut analysis = context.analysis.write().await;
     let client_id = get_client_id(&params.client_info);
     let client_config = get_client_config(&context, client_id).await;
-    let workspace_folders = get_workspace_folders(&params);
+    let mut workspace_folders = get_workspace_folders(&params);
     for workspace_root in &workspace_folders {
         info!("add workspace root: {:?}", workspace_root);
         analysis.add_workspace_root(workspace_root.clone());
@@ -51,8 +51,20 @@ pub async fn initialized_handler(
                 analysis.add_workspace_root(PathBuf::from_str(workspace_root).unwrap());
             }
         }
+
+        if let Some(library) = &workspace.library {
+            for lib in library {
+                info!("add library: {:?}", lib);
+                analysis.add_workspace_root(PathBuf::from_str(lib).unwrap());
+                workspace_folders.push(PathBuf::from_str(lib).unwrap());
+            }
+        }
     }
 
+    let emmyrc_json = serde_json::to_string_pretty(emmyrc.as_ref()).unwrap();
+    info!("current config : {}", emmyrc_json);
+
+    // load files
     let files = collect_files(&workspace_folders, &emmyrc);
     let files = files.into_iter().map(|file| file.into_tuple()).collect();
     analysis.update_files_by_path(files);

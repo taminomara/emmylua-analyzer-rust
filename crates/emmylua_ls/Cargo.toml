@@ -13,7 +13,6 @@ code_analysis = { path = "../code_analysis" }
 serde.workspace = true
 serde_json.workspace = true
 lsp-types.workspace = true
-config.workspace = true
 log.workspace = true
 fern.workspace = true
 chrono.workspace = true

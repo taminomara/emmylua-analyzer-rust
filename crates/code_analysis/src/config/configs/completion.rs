@@ -2,6 +2,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct EmmyrcCompletion {
     pub auto_require: Option<bool>,
     pub auto_require_function: Option<String>,

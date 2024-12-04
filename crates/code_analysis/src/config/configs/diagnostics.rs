@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::DiagnosticCode;
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct EmmyrcDiagnostic {
     pub disable: Option<Vec<DiagnosticCode>>,
     pub enable: Option<bool>,

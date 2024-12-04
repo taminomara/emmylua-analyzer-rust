@@ -9,7 +9,7 @@ use std::{env, path::PathBuf, sync::Arc};
 
 #[allow(unused)]
 pub use compilation::*;
-pub use config::Emmyrc;
+pub use config::{Emmyrc, load_configs};
 #[allow(unused)]
 pub use diagnostic::*;
 use log::{error, info};

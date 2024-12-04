@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct EmmyrcRuntime {
     pub version: Option<EmmyrcLuaVersion>,
     pub require_like_function: Option<Vec<String>>,
