@@ -11,7 +11,7 @@ mod semantictoken;
 
 
 pub use completion::EmmyrcCompletion;
-pub use diagnostics::EmmyrcDiagnostics;
+pub use diagnostics::EmmyrcDiagnostic;
 pub use signature::EmmyrcSignature;
 pub use inlayhint::EmmyrcInlayHint;
 pub use runtime::{EmmyrcRuntime, EmmyrcLuaVersion};

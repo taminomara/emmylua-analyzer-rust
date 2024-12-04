@@ -9,7 +9,7 @@ use code_analysis::uri_to_file_path;
 use lsp_types::{ClientInfo, InitializeParams};
 use lua_finder::collect_files;
 
-use crate::context::ServerContextSnapshot;
+use crate::{context::ServerContextSnapshot, logger::init_logger};
 
 pub async fn initialized_handler(
     context: ServerContextSnapshot,
@@ -22,11 +22,15 @@ pub async fn initialized_handler(
     for workspace_root in &workspace_folders {
         analysis.add_workspace_root(workspace_root.clone());
     }
+
+    let main_root: Option<&str> = match workspace_folders.last() {
+        Some(path) => path.to_str(),
+        None => None,
+    };
+    init_logger(main_root);
+
     let files = collect_files(&workspace_folders, &client_config);
-    let files = files
-        .into_iter()
-        .map(|file| file.into_tuple())
-        .collect();
+    let files = files.into_iter().map(|file| file.into_tuple()).collect();
     analysis.update_files_by_path(files);
 
     Some(())

@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use code_analysis::FileId;
+use log::info;
 use lsp_types::DidOpenTextDocumentParams;
 use tokio::select;
 use tokio_util::sync::CancellationToken;
@@ -11,7 +12,7 @@ pub async fn on_did_open_text_document(
     _: ServerContextSnapshot,
     params: DidOpenTextDocumentParams,
 ) -> Option<()> {
-    eprintln!("on_did_open_text_document {:?}", params.text_document.uri);
+    info!("on_did_open_text_document {:?}", params.text_document.uri);
 
     Some(())
 }

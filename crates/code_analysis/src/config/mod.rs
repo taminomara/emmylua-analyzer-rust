@@ -3,7 +3,7 @@ mod configs;
 
 use std::collections::HashSet;
 
-use configs::{EmmyrcCodeLen, EmmyrcCompletion, EmmyrcDiagnostics, EmmyrcInlayHint, EmmyrcLuaVersion, EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken, EmmyrcSignature, EmmyrcStrict, EmmyrcWorkspace};
+use configs::{EmmyrcCodeLen, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcInlayHint, EmmyrcLuaVersion, EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken, EmmyrcSignature, EmmyrcStrict, EmmyrcWorkspace};
 use emmylua_parser::{LuaLanguageLevel, ParserConfig};
 use rowan::NodeCache;
 use schemars::JsonSchema;
@@ -17,7 +17,7 @@ pub struct Emmyrc {
     pub schema: Option<String>,
 
     pub completion: Option<EmmyrcCompletion>,
-    pub diagnostics: Option<EmmyrcDiagnostics>,
+    pub diagnostics: Option<EmmyrcDiagnostic>,
     pub signature: Option<EmmyrcSignature>,
     pub hint: Option<EmmyrcInlayHint>,
     pub runtime: Option<EmmyrcRuntime>,

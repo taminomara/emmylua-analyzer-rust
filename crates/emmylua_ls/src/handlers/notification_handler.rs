@@ -1,5 +1,6 @@
 use std::{error::Error, future::Future};
 
+use log::error;
 use lsp_server::Notification;
 use lsp_types::{
     notification::{Cancel, DidOpenTextDocument, Notification as lsp_notification},
@@ -104,7 +105,7 @@ impl<'a> NotificationDispatcher<'a> {
 
     pub fn finish(&mut self) {
         if let Some(notification) = &self.notification {
-            eprintln!(
+            error!(
                 "handler not found for notification. [{}]",
                 notification.method
             )

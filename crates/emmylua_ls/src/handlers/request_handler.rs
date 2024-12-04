@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use log::error;
 use lsp_server::{Request, RequestId, Response};
 use serde::{de::DeserializeOwned, Serialize};
 use tokio_util::sync::CancellationToken;
@@ -62,7 +63,7 @@ impl<'a> RequestDispatcher<'a> {
 
     pub fn finish(&mut self) {
         if let Some(req) = &self.req {
-            eprintln!("handler not found for request. [{}]", req.method)
+            error!("handler not found for request. [{}]", req.method)
         }
     }
 }

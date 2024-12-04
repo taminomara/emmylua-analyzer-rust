@@ -2,6 +2,7 @@ mod module_info;
 mod module_node;
 mod test;
 
+use log::error;
 use module_info::ModuleInfo;
 use module_node::{ModuleNode, ModuleNodeId};
 use regex::Regex;
@@ -53,7 +54,7 @@ impl LuaModuleIndex {
             match Regex::new(&regex_str) {
                 Ok(re) => self.module_patterns.push(re),
                 Err(e) => {
-                    eprintln!("Invalid module pattern: {}, error: {}", item, e);
+                    error!("Invalid module pattern: {}, error: {}", item, e);
                     return;
                 }
             };

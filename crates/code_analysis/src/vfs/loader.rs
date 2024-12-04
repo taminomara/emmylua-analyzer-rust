@@ -2,6 +2,7 @@ use std::{error::Error, fs, path::{Path, PathBuf}};
 
 use encoding_rs::{Encoding, UTF_8};
 use globset::{Glob, GlobSetBuilder};
+use log::error;
 use walkdir::WalkDir;
 
 #[derive(Debug)]
@@ -64,7 +65,7 @@ pub fn read_file_with_encoding(path: &Path, encoding: &str) -> Option<String> {
 
     let (content, _, has_error) = encoding.decode(&content);
     if has_error{
-        eprintln!("Error decoding file: {:?}", path);
+        error!("Error decoding file: {:?}", path);
         return None;
     }
 

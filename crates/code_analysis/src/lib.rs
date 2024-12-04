@@ -12,6 +12,7 @@ pub use compilation::*;
 pub use config::Emmyrc;
 #[allow(unused)]
 pub use diagnostic::*;
+use log::{error, info};
 use lsp_types::Uri;
 #[allow(unused)]
 pub use vfs::*;
@@ -32,7 +33,7 @@ impl EmmyLuaAnalysis {
         let resource_dir = self.get_resource_dir();
         match resource_dir {
             Some(resource_dir) => {
-                eprintln!("resource dir: {:?}, loading ...", resource_dir);
+                info!("resource dir: {:?}, loading ...", resource_dir);
                 let std_lib_dir = resource_dir.join("std");
                 self.add_workspace_root(std_lib_dir.clone());
                 let match_pattern = vec!["**/*.lua".to_string()];
@@ -43,7 +44,7 @@ impl EmmyLuaAnalysis {
                 self.update_files_by_path(files);
             }
             None => {
-                eprintln!("Failed to find resource directory, std lib will not be loaded.");
+                error!("Failed to find resource directory, std lib will not be loaded.");
             }
         }
 
@@ -56,7 +57,7 @@ impl EmmyLuaAnalysis {
 
         loop {
             let potential = current_dir.join("resources");
-            eprintln!("try location resource dir: {:?} ...", potential);
+            info!("try location resource dir: {:?} ...", potential);
             if potential.is_dir() {
                 return Some(potential);
             }

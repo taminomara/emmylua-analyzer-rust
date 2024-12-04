@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use code_analysis::{load_workspace_files, LuaFileInfo};
+use log::{debug, info};
 
 use super::client_config::ClientConfig;
 
@@ -20,7 +21,7 @@ pub fn collect_files(workspaces: &Vec<PathBuf>, client_config: &ClientConfig) ->
     }
 
     let encoding = &client_config.encoding;
-    eprintln!(
+    info!(
         "collect_files from: {:?} match_pattern: {:?} exclude: {:?}",
         workspaces, match_pattern, exclude
     );
@@ -32,10 +33,10 @@ pub fn collect_files(workspaces: &Vec<PathBuf>, client_config: &ClientConfig) ->
         }
     }
 
-    eprintln!("load files from workspace count: {:?}", files.len());
+    info!("load files from workspace count: {:?}", files.len());
     if cfg!(debug_assertions) {
         for file in &files {
-            eprintln!("loaded file: {:?}", file.path);
+            debug!("loaded file: {:?}", file.path);
         }
     }
     files
