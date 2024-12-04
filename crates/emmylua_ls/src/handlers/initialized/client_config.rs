@@ -7,7 +7,7 @@ use crate::{context::ServerContextSnapshot, util::time_cancel_token};
 use super::ClientId;
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ClientConfig {
     pub client_id: ClientId,
     pub exclude: Vec<String>,

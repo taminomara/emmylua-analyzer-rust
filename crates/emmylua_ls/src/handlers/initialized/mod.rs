@@ -1,11 +1,13 @@
 mod client_config;
-mod config_loader;
+mod config_finder;
 mod lua_finder;
 
-use std::path::PathBuf;
+use std::{path::PathBuf, str::FromStr};
 
 use client_config::get_client_config;
 use code_analysis::uri_to_file_path;
+use config_finder::init_config;
+use log::info;
 use lsp_types::{ClientInfo, InitializeParams};
 use lua_finder::collect_files;
 
@@ -20,16 +22,38 @@ pub async fn initialized_handler(
     let client_config = get_client_config(&context, client_id).await;
     let workspace_folders = get_workspace_folders(&params);
     for workspace_root in &workspace_folders {
+        info!("add workspace root: {:?}", workspace_root);
         analysis.add_workspace_root(workspace_root.clone());
     }
-
-    let main_root: Option<&str> = match workspace_folders.last() {
+    let main_root: Option<&str> = match workspace_folders.first() {
         Some(path) => path.to_str(),
         None => None,
     };
-    init_logger(main_root);
 
-    let files = collect_files(&workspace_folders, &client_config);
+    // init logger
+    init_logger(main_root);
+    info!("client_id: {:?}", client_id);
+    let params_json = serde_json::to_string_pretty(&params).unwrap();
+    info!("initialization_params: {}", params_json);
+
+    // init config
+    // todo! support multi config
+    let config_root: Option<PathBuf> = match main_root {
+        Some(root) => Some(PathBuf::from(root)),
+        None => None,
+    };
+
+    let emmyrc = init_config(config_root, client_config.clone());
+    if let Some(workspace) = &emmyrc.workspace {
+        if let Some(workspace_roots) = &workspace.workspace_roots {
+            for workspace_root in workspace_roots {
+                info!("add workspace root: {:?}", workspace_root);
+                analysis.add_workspace_root(PathBuf::from_str(workspace_root).unwrap());
+            }
+        }
+    }
+
+    let files = collect_files(&workspace_folders, &emmyrc);
     let files = files.into_iter().map(|file| file.into_tuple()).collect();
     analysis.update_files_by_path(files);
 
