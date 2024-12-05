@@ -6,7 +6,7 @@ mod test;
 pub use document::LuaDocument;
 use emmylua_parser::{LineIndex, LuaParser, LuaSyntaxTree};
 pub use in_filed::InFiled;
-pub use loader::{load_workspace_files, LuaFileInfo};
+pub use loader::{load_workspace_files, LuaFileInfo, read_file_with_encoding};
 use lsp_types::Uri;
 use rowan::NodeCache;
 use std::collections::HashMap;
@@ -92,7 +92,7 @@ impl Vfs {
         fid
     }
 
-    pub fn set_config(&mut self, emmyrc: Arc<Emmyrc>) {
+    pub fn update_config(&mut self, emmyrc: Arc<Emmyrc>) {
         self.emmyrc = Some(emmyrc);
     }
 

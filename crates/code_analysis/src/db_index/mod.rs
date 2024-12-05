@@ -12,7 +12,9 @@ mod symbol;
 mod traits;
 mod r#type;
 
-use crate::{FileId, Vfs};
+use std::sync::Arc;
+
+use crate::{Emmyrc, FileId, Vfs};
 pub use declaration::*;
 #[allow(unused_imports)]
 pub use diagnostic::{AnalyzeError, DiagnosticAction, DiagnosticIndex};
@@ -167,6 +169,11 @@ impl DbIndex {
 
     pub fn get_vfs_mut(&mut self) -> &mut Vfs {
         &mut self.vfs
+    }
+
+    pub fn update_config(&mut self, config: Arc<Emmyrc>) {
+        self.vfs.update_config(config.clone());
+        self.modules_index.update_config(config.clone());
     }
 }
 

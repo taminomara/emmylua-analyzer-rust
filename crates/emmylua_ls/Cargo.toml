@@ -16,3 +16,4 @@ lsp-types.workspace = true
 log.workspace = true
 fern.workspace = true
 chrono.workspace = true
+notify.workspace = true

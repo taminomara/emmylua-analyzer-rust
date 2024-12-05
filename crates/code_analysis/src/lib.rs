@@ -20,12 +20,15 @@ pub use vfs::*;
 #[derive(Debug)]
 pub struct EmmyLuaAnalysis {
     pub compilation: LuaCompilation,
+    pub emmyrc: Arc<Emmyrc>,
 }
 
 impl EmmyLuaAnalysis {
     pub fn new() -> Self {
+        let emmyrc = Arc::new(Emmyrc::default());
         Self {
-            compilation: LuaCompilation::new(),
+            compilation: LuaCompilation::new(emmyrc.clone()),
+            emmyrc
         }
     }
 
@@ -71,6 +74,10 @@ impl EmmyLuaAnalysis {
         None
     }
 
+    pub fn get_file_id(&self, uri: &Uri) -> Option<FileId> {
+        self.compilation.get_db().get_vfs().get_file_id(uri)
+    }
+
     pub fn add_workspace_root(&mut self, root: PathBuf) {
         self.compilation
             .get_db_mut()
@@ -78,7 +85,7 @@ impl EmmyLuaAnalysis {
             .add_workspace_root(root);
     }
 
-    pub fn update_file_by_uri(&mut self, uri: &Uri, text: Option<String>) {
+    pub fn update_file_by_uri(&mut self, uri: &Uri, text: Option<String>)  -> Option<FileId> {
         let is_removed = text.is_none();
         let file_id = self
             .compilation
@@ -90,15 +97,16 @@ impl EmmyLuaAnalysis {
         if !is_removed {
             self.compilation.update_index(vec![file_id]);
         }
+
+        Some(file_id)
     }
 
-    pub fn update_file_by_path(&mut self, path: &PathBuf, text: Option<String>) -> Option<()> {
+    pub fn update_file_by_path(&mut self, path: &PathBuf, text: Option<String>) -> Option<FileId> {
         let uri = file_path_to_uri(&path)?;
-        self.update_file_by_uri(&uri, text);
-        Some(())
+        self.update_file_by_uri(&uri, text)
     }
 
-    pub fn update_files_by_uri(&mut self, files: Vec<(Uri, Option<String>)>) {
+    pub fn update_files_by_uri(&mut self, files: Vec<(Uri, Option<String>)>) -> Vec<FileId> {
         let mut removed_files = Vec::new();
         let mut updated_files = Vec::new();
         for (uri, text) in files {
@@ -115,10 +123,11 @@ impl EmmyLuaAnalysis {
         }
 
         self.compilation.remove_index(removed_files);
-        self.compilation.update_index(updated_files);
+        self.compilation.update_index(updated_files.clone());
+        updated_files
     }
 
-    pub fn update_files_by_path(&mut self, files: Vec<(PathBuf, Option<String>)>) {
+    pub fn update_files_by_path(&mut self, files: Vec<(PathBuf, Option<String>)>) -> Vec<FileId> {
         let files = files
             .into_iter()
             .filter_map(|(path, text)| {
@@ -126,11 +135,15 @@ impl EmmyLuaAnalysis {
                 Some((uri, text))
             })
             .collect();
-        self.update_files_by_uri(files);
+        self.update_files_by_uri(files)
     }
 
     pub fn update_config(&mut self, config: Arc<Emmyrc>) {
         self.compilation.update_config(config);
+    }
+
+    pub fn get_emmyrc(&self) -> Arc<Emmyrc> {
+        self.emmyrc.clone()
     }
 }
 

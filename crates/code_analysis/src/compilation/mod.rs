@@ -7,28 +7,27 @@ use crate::{db_index::DbIndex, semantic::SemanticModel, Emmyrc, FileId, InFiled}
 #[derive(Debug)]
 pub struct LuaCompilation {
     db: DbIndex,
-    config: Arc<Emmyrc>,
+    emmyrc: Arc<Emmyrc>,
 }
 
 impl LuaCompilation {
-    pub fn new() -> Self {
-        let config = Arc::new(Emmyrc::default());
+    pub fn new(emmyrc: Arc<Emmyrc>) -> Self {
         let mut compilation = Self {
             db: DbIndex::new(),
-            config: config.clone(),
+            emmyrc: emmyrc.clone(),
         };
 
-        compilation.db.get_vfs_mut().set_config(config);
+        compilation.db.update_config(emmyrc.clone());
         compilation
     }
 
     pub fn get_semantic_model(&self, file_id: FileId) -> SemanticModel {
-        let config = self.config.get_infer_config(file_id);
-        SemanticModel::new(file_id, &self.db, config, self.config.clone())
+        let config = self.emmyrc.get_infer_config(file_id);
+        SemanticModel::new(file_id, &self.db, config, self.emmyrc.clone())
     }
 
     pub fn update_index(&mut self, file_ids: Vec<FileId>) {
-        let mut context = analyzer::AnalyzeContext::new(self.config.clone());
+        let mut context = analyzer::AnalyzeContext::new(self.emmyrc.clone());
         for file_id in file_ids {
             let tree = self.db.get_vfs().get_syntax_tree(&file_id).unwrap();
             context.add_tree_chunk(InFiled {
@@ -54,7 +53,7 @@ impl LuaCompilation {
     }
 
     pub fn update_config(&mut self, config: Arc<Emmyrc>) {
-        self.config = config.clone();
-        self.db.get_vfs_mut().set_config(config);
+        self.emmyrc = config.clone();
+        self.db.update_config(config);
     }
 }

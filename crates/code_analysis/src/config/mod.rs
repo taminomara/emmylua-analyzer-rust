@@ -77,4 +77,12 @@ impl Emmyrc {
 
         ParserConfig::new(lua_language_level, Some(node_cache))
     }
+
+    pub fn get_encoding(&self) -> &str {
+        if let Some(workspace) = &self.workspace {
+            workspace.encoding.as_deref().unwrap_or("utf-8")
+        } else {
+            "utf-8"
+        }
+    }
 }

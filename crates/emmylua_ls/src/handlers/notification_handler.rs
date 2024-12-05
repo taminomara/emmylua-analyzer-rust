@@ -3,14 +3,14 @@ use std::{error::Error, future::Future};
 use log::error;
 use lsp_server::Notification;
 use lsp_types::{
-    notification::{Cancel, DidOpenTextDocument, Notification as lsp_notification},
+    notification::{Cancel, DidChangeTextDocument, DidChangeWatchedFiles, DidOpenTextDocument, DidSaveTextDocument, Notification as lsp_notification},
     CancelParams, NumberOrString,
 };
 use serde::de::DeserializeOwned;
 
 use crate::context::{ServerContext, ServerContextSnapshot};
 
-use super::text_document::on_did_open_text_document;
+use super::text_document::{on_did_change_text_document, on_did_change_watched_files, on_did_open_text_document, on_did_save_text_document};
 
 pub async fn on_notification_handler(
     notification: Notification,
@@ -20,6 +20,9 @@ pub async fn on_notification_handler(
         .on_cancel()
         .await
         .on_async::<DidOpenTextDocument, _, _>(on_did_open_text_document)
+        .on_async::<DidSaveTextDocument, _, _>(on_did_save_text_document)
+        .on_async::<DidChangeTextDocument, _, _>(on_did_change_text_document)
+        .on_async::<DidChangeWatchedFiles, _, _>(on_did_change_watched_files)
         .finish();
     // .on(handler)
     Ok(())

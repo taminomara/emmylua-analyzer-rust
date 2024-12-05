@@ -1,33 +1,46 @@
-use std::time::Duration;
-
-use code_analysis::FileId;
-use log::info;
-use lsp_types::DidOpenTextDocumentParams;
-use tokio::select;
-use tokio_util::sync::CancellationToken;
+use lsp_types::{DidChangeTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams};
 
 use crate::context::ServerContextSnapshot;
 
 pub async fn on_did_open_text_document(
-    _: ServerContextSnapshot,
+    context: ServerContextSnapshot,
     params: DidOpenTextDocumentParams,
 ) -> Option<()> {
-    info!("on_did_open_text_document {:?}", params.text_document.uri);
+    let mut analysis = context.analysis.write().await;
+    let uri = params.text_document.uri;
+    let text = params.text_document.text;
+    let file_id = analysis.update_file_by_uri(&uri, Some(text));
+    if let Some(file_id) = file_id {
+        context.file_diagnostic.add_diagnostic_task(file_id).await;
+    }
 
     Some(())
 }
 
-
-async fn on_document_diagnostic(
-    file_id: FileId,
-    cancel_token: CancellationToken,
+pub async fn on_did_save_text_document(
+    context: ServerContextSnapshot,
+    params: DidSaveTextDocumentParams,
 ) -> Option<()> {
+    let analysis = context.analysis.read().await;
+    let uri = params.text_document.uri;
+    let file_id = analysis.get_file_id(&uri);
+    if let Some(file_id) = file_id {
+        context.file_diagnostic.add_diagnostic_task(file_id).await;
+    }
 
-    select! {
-        _ = tokio::time::sleep(Duration::from_secs(1)) => {}
-        _ = cancel_token.cancelled() => {
-            return None;
-        }
+    Some(())
+}
+
+pub async fn on_did_change_text_document(
+    context: ServerContextSnapshot,
+    params: DidChangeTextDocumentParams,
+) -> Option<()> {
+    let mut analysis = context.analysis.write().await;
+    let uri = params.text_document.uri;
+    let text = params.content_changes.first()?.text.clone();
+    let file_id = analysis.update_file_by_uri(&uri, Some(text));
+    if let Some(file_id) = file_id {
+        context.file_diagnostic.add_diagnostic_task(file_id).await;
     }
 
     Some(())

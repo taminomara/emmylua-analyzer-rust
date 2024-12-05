@@ -8,7 +8,7 @@ mod tests {
 
     fn create_vfs() -> Vfs {
         let mut vfs = Vfs::new();
-        vfs.set_config(Emmyrc::default().into());
+        vfs.update_config(Emmyrc::default().into());
         vfs
     }
 

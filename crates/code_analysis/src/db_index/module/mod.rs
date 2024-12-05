@@ -8,10 +8,10 @@ use module_node::{ModuleNode, ModuleNodeId};
 use regex::Regex;
 
 use super::traits::LuaIndex;
-use crate::FileId;
+use crate::{Emmyrc, FileId};
 use std::{
     collections::HashMap,
-    path::{Path, PathBuf},
+    path::{Path, PathBuf}, sync::Arc,
 };
 
 #[derive(Debug)]
@@ -37,7 +37,7 @@ impl LuaModuleIndex {
 
         let root_node = ModuleNode::default();
         index.module_nodes.insert(index.module_root_id, root_node);
-        index.set_module_patterns(vec!["?.lua".to_string(), "?/init.lua".to_string()]);
+
         index
     }
 
@@ -218,6 +218,34 @@ impl LuaModuleIndex {
     #[allow(unused)]
     pub fn remove_workspace_root(&mut self, root: &Path) {
         self.workspace_root.retain(|r| r != root);
+    }
+
+    pub fn update_config(&mut self, config: Arc<Emmyrc>) {
+        let extension = if let Some(runtime) = &config.runtime {
+            let mut extension_names = Vec::new();
+            if let Some(extensions) = &runtime.extensions {
+                for extension in extensions {
+                    if extension.starts_with(".") {
+                        extension_names.push(extension[1..].to_string());
+                    } else if extension.starts_with("*.") {
+                        extension_names.push(extension[2..].to_string());
+                    } else {
+                        extension_names.push(extension.clone());
+                    }
+                }
+            }
+            extension_names
+        } else {
+            vec!["lua".to_string()]
+        };
+
+        let mut patterns = Vec::new();
+        for extension in extension {
+            patterns.push(format!("?.{}", extension));
+            patterns.push(format!("?/init.{}", extension));
+        }
+
+        self.set_module_patterns(patterns);
     }
 }
 
