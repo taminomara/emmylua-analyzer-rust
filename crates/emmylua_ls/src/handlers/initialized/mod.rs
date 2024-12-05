@@ -11,6 +11,7 @@ use init_config::init_config;
 use log::info;
 use lsp_types::{ClientInfo, InitializeParams};
 use collect_files::collect_files;
+use regsiter_file_watch::register_files_watch;
 
 use crate::{context::ServerContextSnapshot, logger::init_logger};
 
@@ -70,6 +71,7 @@ pub async fn initialized_handler(
     let files = files.into_iter().map(|file| file.into_tuple()).collect();
     analysis.update_files_by_path(files);
 
+    register_files_watch(context.client.clone());
     Some(())
 }
 
