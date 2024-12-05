@@ -1,14 +1,18 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Serialize, Deserialize, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcRuntime {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<EmmyrcLuaVersion>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub require_like_function: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub framework_versions: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub extensions: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub require_pattern: Option<Vec<String>>,
 }
 

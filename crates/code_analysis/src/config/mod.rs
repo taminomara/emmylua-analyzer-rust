@@ -1,31 +1,45 @@
-mod configs;
 mod config_loader;
+mod configs;
 
 use std::collections::HashSet;
 
-use configs::{EmmyrcCodeLen, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcInlayHint, EmmyrcLuaVersion, EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken, EmmyrcSignature, EmmyrcStrict, EmmyrcWorkspace};
+use crate::{semantic::LuaInferConfig, FileId};
+pub use config_loader::load_configs;
+use configs::{
+    EmmyrcCodeLen, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcInlayHint, EmmyrcLuaVersion,
+    EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken, EmmyrcSignature, EmmyrcStrict,
+    EmmyrcWorkspace,
+};
 use emmylua_parser::{LuaLanguageLevel, ParserConfig};
 use rowan::NodeCache;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-pub use config_loader::load_configs;
-use crate::{semantic::LuaInferConfig, FileId};
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Emmyrc {
     #[serde(rename = "$schema")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub schema: Option<String>,
-
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub completion: Option<EmmyrcCompletion>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub diagnostics: Option<EmmyrcDiagnostic>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<EmmyrcSignature>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub hint: Option<EmmyrcInlayHint>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub runtime: Option<EmmyrcRuntime>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub workspace: Option<EmmyrcWorkspace>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub resource: Option<EmmyrcResource>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub code_lens: Option<EmmyrcCodeLen>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub strict: Option<EmmyrcStrict>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub semantic_tokens: Option<EmmyrcSemanticToken>,
 }
 
@@ -63,5 +77,4 @@ impl Emmyrc {
 
         ParserConfig::new(lua_language_level, Some(node_cache))
     }
-
 }

@@ -1,7 +1,7 @@
 mod client;
 mod snapshot;
 
-use client::ClientProxy;
+pub use client::ClientProxy;
 use code_analysis::EmmyLuaAnalysis;
 use lsp_server::{Connection, ErrorCode, Message, RequestId, Response};
 pub use snapshot::ServerContextSnapshot;

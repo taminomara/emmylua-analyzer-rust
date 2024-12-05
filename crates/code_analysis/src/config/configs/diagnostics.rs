@@ -9,11 +9,17 @@ use crate::DiagnosticCode;
 #[derive(Serialize, Deserialize, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcDiagnostic {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub disable: Option<Vec<DiagnosticCode>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub enable: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub globals: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub globals_regex: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub severity: Option<HashMap<DiagnosticCode, DiagnosticSeveritySetting>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub enables: Option<Vec<DiagnosticCode>>,
 }
 

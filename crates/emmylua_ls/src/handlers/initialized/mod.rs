@@ -1,6 +1,7 @@
 mod client_config;
 mod init_config;
 mod collect_files;
+mod regsiter_file_watch;
 
 use std::{path::PathBuf, str::FromStr};
 

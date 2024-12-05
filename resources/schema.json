@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Setting",
+  "title": "Emmyrc",
   "type": "object",
   "properties": {
     "$schema": {
@@ -9,10 +9,10 @@
         "null"
       ]
     },
-    "code_lens": {
+    "codeLens": {
       "anyOf": [
         {
-          "$ref": "#/definitions/CodeLens"
+          "$ref": "#/definitions/EmmyrcCodeLen"
         },
         {
           "type": "null"
@@ -22,7 +22,7 @@
     "completion": {
       "anyOf": [
         {
-          "$ref": "#/definitions/Completion"
+          "$ref": "#/definitions/EmmyrcCompletion"
         },
         {
           "type": "null"
@@ -32,7 +32,7 @@
     "diagnostics": {
       "anyOf": [
         {
-          "$ref": "#/definitions/Diagnostics"
+          "$ref": "#/definitions/EmmyrcDiagnostic"
         },
         {
           "type": "null"
@@ -42,7 +42,7 @@
     "hint": {
       "anyOf": [
         {
-          "$ref": "#/definitions/Hint"
+          "$ref": "#/definitions/EmmyrcInlayHint"
         },
         {
           "type": "null"
@@ -52,7 +52,7 @@
     "resource": {
       "anyOf": [
         {
-          "$ref": "#/definitions/Resource"
+          "$ref": "#/definitions/EmmyrcResource"
         },
         {
           "type": "null"
@@ -62,17 +62,17 @@
     "runtime": {
       "anyOf": [
         {
-          "$ref": "#/definitions/Runtime"
+          "$ref": "#/definitions/EmmyrcRuntime"
         },
         {
           "type": "null"
         }
       ]
     },
-    "semantic_tokens": {
+    "semanticTokens": {
       "anyOf": [
         {
-          "$ref": "#/definitions/SemanticTokens"
+          "$ref": "#/definitions/EmmyrcSemanticToken"
         },
         {
           "type": "null"
@@ -82,7 +82,7 @@
     "signature": {
       "anyOf": [
         {
-          "$ref": "#/definitions/Signature"
+          "$ref": "#/definitions/EmmyrcSignature"
         },
         {
           "type": "null"
@@ -92,7 +92,7 @@
     "strict": {
       "anyOf": [
         {
-          "$ref": "#/definitions/Strict"
+          "$ref": "#/definitions/EmmyrcStrict"
         },
         {
           "type": "null"
@@ -102,7 +102,7 @@
     "workspace": {
       "anyOf": [
         {
-          "$ref": "#/definitions/Workspace"
+          "$ref": "#/definitions/EmmyrcWorkspace"
         },
         {
           "type": "null"
@@ -111,56 +111,6 @@
     }
   },
   "definitions": {
-    "CodeLens": {
-      "type": "object",
-      "properties": {
-        "enable": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        }
-      }
-    },
-    "Completion": {
-      "type": "object",
-      "properties": {
-        "auto_require": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "auto_require_function": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "auto_require_naming_convention": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/FilenameConvention"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "call_snippet": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "postfix": {
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      }
-    },
     "DiagnosticCode": {
       "type": "string",
       "enum": [
@@ -195,7 +145,57 @@
         "Hint"
       ]
     },
-    "Diagnostics": {
+    "EmmyrcCodeLen": {
+      "type": "object",
+      "properties": {
+        "enable": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "EmmyrcCompletion": {
+      "type": "object",
+      "properties": {
+        "autoRequire": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "autoRequireFunction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "autoRequireNamingConvention": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EmmyrcFilenameConvention"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "callSnippet": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "postfix": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "EmmyrcDiagnostic": {
       "type": "object",
       "properties": {
         "disable": {
@@ -231,7 +231,7 @@
             "type": "string"
           }
         },
-        "globals_regex": {
+        "globalsRegex": {
           "type": [
             "array",
             "null"
@@ -251,7 +251,7 @@
         }
       }
     },
-    "FilenameConvention": {
+    "EmmyrcFilenameConvention": {
       "type": "string",
       "enum": [
         "keep",
@@ -260,28 +260,28 @@
         "camel-case"
       ]
     },
-    "Hint": {
+    "EmmyrcInlayHint": {
       "type": "object",
       "properties": {
-        "index_hint": {
+        "indexHint": {
           "type": [
             "boolean",
             "null"
           ]
         },
-        "local_hint": {
+        "localHint": {
           "type": [
             "boolean",
             "null"
           ]
         },
-        "override_hint": {
+        "overrideHint": {
           "type": [
             "boolean",
             "null"
           ]
         },
-        "param_hint": {
+        "paramHint": {
           "type": [
             "boolean",
             "null"
@@ -289,7 +289,7 @@
         }
       }
     },
-    "LuaVersion": {
+    "EmmyrcLuaVersion": {
       "type": "string",
       "enum": [
         "Lua5.1",
@@ -300,7 +300,7 @@
         "LuaLatest"
       ]
     },
-    "Resource": {
+    "EmmyrcResource": {
       "type": "object",
       "properties": {
         "paths": {
@@ -314,7 +314,7 @@
         }
       }
     },
-    "Runtime": {
+    "EmmyrcRuntime": {
       "type": "object",
       "properties": {
         "extensions": {
@@ -326,7 +326,7 @@
             "type": "string"
           }
         },
-        "framework_versions": {
+        "frameworkVersions": {
           "type": [
             "array",
             "null"
@@ -335,7 +335,7 @@
             "type": "string"
           }
         },
-        "require_like_function": {
+        "requireLikeFunction": {
           "type": [
             "array",
             "null"
@@ -344,7 +344,7 @@
             "type": "string"
           }
         },
-        "require_pattern": {
+        "requirePattern": {
           "type": [
             "array",
             "null"
@@ -356,7 +356,7 @@
         "version": {
           "anyOf": [
             {
-              "$ref": "#/definitions/LuaVersion"
+              "$ref": "#/definitions/EmmyrcLuaVersion"
             },
             {
               "type": "null"
@@ -365,7 +365,7 @@
         }
       }
     },
-    "SemanticTokens": {
+    "EmmyrcSemanticToken": {
       "type": "object",
       "properties": {
         "enable": {
@@ -376,10 +376,10 @@
         }
       }
     },
-    "Signature": {
+    "EmmyrcSignature": {
       "type": "object",
       "properties": {
-        "detail_signature_helper": {
+        "detailSignatureHelper": {
           "type": [
             "boolean",
             "null"
@@ -387,16 +387,16 @@
         }
       }
     },
-    "Strict": {
+    "EmmyrcStrict": {
       "type": "object",
       "properties": {
-        "require_path": {
+        "requirePath": {
           "type": [
             "boolean",
             "null"
           ]
         },
-        "type_call": {
+        "typeCall": {
           "type": [
             "boolean",
             "null"
@@ -404,7 +404,7 @@
         }
       }
     },
-    "Workspace": {
+    "EmmyrcWorkspace": {
       "type": "object",
       "properties": {
         "encoding": {
@@ -413,7 +413,7 @@
             "null"
           ]
         },
-        "ignore_dir": {
+        "ignoreDir": {
           "type": [
             "array",
             "null"
@@ -422,7 +422,7 @@
             "type": "string"
           }
         },
-        "ignore_globs": {
+        "ignoreGlobs": {
           "type": [
             "array",
             "null"
@@ -440,14 +440,14 @@
             "type": "string"
           }
         },
-        "preload_file_size": {
+        "preloadFileSize": {
           "type": [
             "integer",
             "null"
           ],
           "format": "int32"
         },
-        "workspace_roots": {
+        "workspaceRoots": {
           "type": [
             "array",
             "null"
