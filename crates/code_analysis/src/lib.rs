@@ -14,12 +14,14 @@ pub use config::{Emmyrc, load_configs};
 pub use diagnostic::*;
 use log::{error, info};
 use lsp_types::Uri;
+use tokio_util::sync::CancellationToken;
 #[allow(unused)]
 pub use vfs::*;
 
 #[derive(Debug)]
 pub struct EmmyLuaAnalysis {
     pub compilation: LuaCompilation,
+    pub diagnostic: LuaDiagnostic,
     pub emmyrc: Arc<Emmyrc>,
 }
 
@@ -28,6 +30,7 @@ impl EmmyLuaAnalysis {
         let emmyrc = Arc::new(Emmyrc::default());
         Self {
             compilation: LuaCompilation::new(emmyrc.clone()),
+            diagnostic: LuaDiagnostic::new(emmyrc.clone()),
             emmyrc
         }
     }
@@ -76,6 +79,10 @@ impl EmmyLuaAnalysis {
 
     pub fn get_file_id(&self, uri: &Uri) -> Option<FileId> {
         self.compilation.get_db().get_vfs().get_file_id(uri)
+    }
+
+    pub fn get_uri(&self, file_id: FileId) -> Option<Uri> {
+        self.compilation.get_db().get_vfs().get_uri(&file_id).cloned()
     }
 
     pub fn add_workspace_root(&mut self, root: PathBuf) {
@@ -144,6 +151,10 @@ impl EmmyLuaAnalysis {
 
     pub fn get_emmyrc(&self) -> Arc<Emmyrc> {
         self.emmyrc.clone()
+    }
+
+    pub async fn diagnose_file(&self, file_id: FileId, cancel_token: CancellationToken) -> Option<Vec<lsp_types::Diagnostic>> {
+        self.diagnostic.diagnose_file(&self.compilation, file_id, cancel_token).await
     }
 }
 

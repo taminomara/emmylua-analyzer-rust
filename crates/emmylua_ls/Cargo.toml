@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 lsp-server = "0.7.7"
 tokio = { version = "1", features = ["full"] }
-tokio-util = "0.7"
 dirs = "5"
 
 code_analysis = { path = "../code_analysis" }
@@ -17,3 +16,4 @@ log.workspace = true
 fern.workspace = true
 chrono.workspace = true
 notify.workspace = true
+tokio-util.workspace = true

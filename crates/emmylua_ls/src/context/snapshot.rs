@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use tokio::sync::{Mutex, RwLock};
 
 use code_analysis::EmmyLuaAnalysis;
 
@@ -10,5 +10,5 @@ pub struct ServerContextSnapshot {
     pub analysis: Arc<RwLock<EmmyLuaAnalysis>>,
     pub client: Arc<ClientProxy>,
     pub file_diagnostic: Arc<FileDiagnostic>,
-    pub config_manager: Arc<ConfigManager>,
+    pub config_manager: Arc<Mutex<ConfigManager>>,
 }

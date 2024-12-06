@@ -5,14 +5,12 @@ mod overload_resolve;
 mod type_calc;
 mod type_compact;
 
-use std::{
-    collections::{HashMap, HashSet},
-    sync::Arc,
-};
+use std::{collections::HashSet, sync::Arc};
 
-use emmylua_parser::{LuaExpr, LuaSyntaxId};
+use emmylua_parser::{LuaChunk, LuaExpr};
 use infer::InferResult;
 pub use infer::LuaInferConfig;
+use rowan::TextRange;
 
 use crate::{db_index::LuaTypeDeclId, Emmyrc, LuaDocument};
 #[allow(unused_imports)]
@@ -27,8 +25,8 @@ pub struct SemanticModel<'a> {
     file_id: FileId,
     db: &'a DbIndex,
     infer_config: LuaInferConfig,
-    expr_type_caches: HashMap<LuaSyntaxId, LuaType>,
     emmyrc: Arc<Emmyrc>,
+    root: LuaChunk,
 }
 
 impl<'a> SemanticModel<'a> {
@@ -37,18 +35,23 @@ impl<'a> SemanticModel<'a> {
         db: &'a DbIndex,
         infer_config: LuaInferConfig,
         emmyrc: Arc<Emmyrc>,
+        root: LuaChunk,
     ) -> Self {
         Self {
             file_id,
             db,
             infer_config,
-            expr_type_caches: HashMap::new(),
             emmyrc,
+            root,
         }
     }
 
     pub fn get_document(&self) -> LuaDocument {
         self.db.get_vfs().get_document(&self.file_id).unwrap()
+    }
+
+    pub fn get_file_parse_error(&self) -> Option<Vec<(String, TextRange)>> {
+        self.db.get_vfs().get_file_parse_error(&self.file_id)
     }
 
     pub fn infer_expr(&mut self, expr: LuaExpr) -> InferResult {
@@ -57,6 +60,10 @@ impl<'a> SemanticModel<'a> {
 
     pub fn get_emmyrc(&self) -> &Emmyrc {
         &self.emmyrc
+    }
+
+    pub fn get_root(&self) -> &LuaChunk {
+        &self.root
     }
 }
 

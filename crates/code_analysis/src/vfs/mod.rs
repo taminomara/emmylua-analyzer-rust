@@ -8,7 +8,7 @@ use emmylua_parser::{LineIndex, LuaParser, LuaSyntaxTree};
 pub use in_filed::InFiled;
 pub use loader::{load_workspace_files, LuaFileInfo, read_file_with_encoding};
 use lsp_types::Uri;
-use rowan::NodeCache;
+use rowan::{NodeCache, TextRange};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -109,13 +109,28 @@ impl Vfs {
         let uri = self.file_uri_map.get(&id.id)?;
         let text = self.get_file_content(id)?;
         let line_index = self.line_index_map.get(id)?;
-        let tree = self.tree_map.get(id)?;
-        Some(LuaDocument::new(*id, uri, text, line_index, tree.get_chunk_node()))
+        Some(LuaDocument::new(*id, uri, text, line_index))
     }
 
     pub fn get_syntax_tree(&self, id: &FileId) -> Option<&LuaSyntaxTree> {
         self.tree_map.get(id)
     }
+
+    pub fn get_file_parse_error(&self, id: &FileId) -> Option<Vec<(String, TextRange)>> {
+        let mut errors = Vec::new();
+        let tree = self.tree_map.get(id)?;
+        for error in tree.get_errors() {
+            errors.push((error.message.clone(), error.range.clone()));
+        }
+
+        if errors.is_empty() {
+            None
+        } else {
+            Some(errors)
+        }
+    }
+
+
 }
 
 pub fn file_path_to_uri(path: &PathBuf) -> Option<Uri> {

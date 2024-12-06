@@ -1,12 +1,13 @@
 mod client;
-mod snapshot;
-mod file_diagnostic;
 mod config_manager;
+mod file_diagnostic;
+mod snapshot;
 
 pub use client::ClientProxy;
 use code_analysis::EmmyLuaAnalysis;
+pub use config_manager::load_emmy_config;
 use config_manager::ConfigManager;
-use file_diagnostic::FileDiagnostic;
+pub use file_diagnostic::FileDiagnostic;
 use lsp_server::{Connection, ErrorCode, Message, RequestId, Response};
 pub use snapshot::ServerContextSnapshot;
 use std::{collections::HashMap, sync::Arc};
@@ -19,7 +20,7 @@ pub struct ServerContext {
     client: Arc<ClientProxy>,
     cancllations: Arc<Mutex<HashMap<RequestId, CancellationToken>>>,
     file_diagnostic: Arc<FileDiagnostic>,
-    config_manager: Arc<ConfigManager>,
+    config_manager: Arc<Mutex<ConfigManager>>,
 }
 
 impl ServerContext {
@@ -35,7 +36,11 @@ impl ServerContext {
         let analysis = Arc::new(RwLock::new(analysis));
 
         let file_diagnostic = Arc::new(FileDiagnostic::new(analysis.clone(), client.clone()));
-        let config_manager = Arc::new(ConfigManager::new(analysis.clone(), client.clone()));
+        let config_manager = Arc::new(Mutex::new(ConfigManager::new(
+            analysis.clone(),
+            client.clone(),
+            file_diagnostic.clone(),
+        )));
         ServerContext {
             conn,
             analysis,

@@ -21,9 +21,16 @@ impl LuaCompilation {
         compilation
     }
 
-    pub fn get_semantic_model(&self, file_id: FileId) -> SemanticModel {
+    pub fn get_semantic_model(&self, file_id: FileId) -> Option<SemanticModel> {
         let config = self.emmyrc.get_infer_config(file_id);
-        SemanticModel::new(file_id, &self.db, config, self.emmyrc.clone())
+        let tree = self.db.get_vfs().get_syntax_tree(&file_id)?;
+        Some(SemanticModel::new(
+            file_id,
+            &self.db,
+            config,
+            self.emmyrc.clone(),
+            tree.get_chunk_node(),
+        ))
     }
 
     pub fn update_index(&mut self, file_ids: Vec<FileId>) {
@@ -41,7 +48,6 @@ impl LuaCompilation {
 
     pub fn remove_index(&mut self, file_ids: Vec<FileId>) {
         self.db.remove_index(file_ids);
-        
     }
 
     pub fn get_db(&self) -> &DbIndex {

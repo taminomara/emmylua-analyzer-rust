@@ -12,7 +12,6 @@ pub struct LuaDocument<'a> {
     uri: &'a Uri,
     text: &'a str,
     line_index: &'a LineIndex,
-    root: LuaChunk,
 }
 
 impl<'a> LuaDocument<'a> {
@@ -21,14 +20,12 @@ impl<'a> LuaDocument<'a> {
         uri: &'a Uri,
         text: &'a str,
         line_index: &'a LineIndex,
-        root: LuaChunk,
     ) -> Self {
         LuaDocument {
             file_id,
             uri,
             text,
             line_index,
-            root,
         }
     }
 
@@ -46,10 +43,6 @@ impl<'a> LuaDocument<'a> {
 
     pub fn get_text(&self) -> &str {
         self.text
-    }
-
-    pub fn get_root(&self) -> LuaChunk {
-        self.root.clone()
     }
 
     pub fn get_line_count(&self) -> usize {

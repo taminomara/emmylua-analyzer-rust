@@ -16,24 +16,46 @@ pub async fn on_did_change_watched_files(
         let file_type = get_file_type(&file_event.uri);
         match file_type {
             Some(WatchedFileType::Lua) => {
-                collect_lua_files(&mut watched_lua_files, file_event.uri, file_event.typ, encoding);
+                collect_lua_files(
+                    &mut watched_lua_files,
+                    file_event.uri,
+                    file_event.typ,
+                    encoding,
+                );
             }
             Some(WatchedFileType::Editorconfig) => {
+                if file_event.typ == FileChangeType::DELETED {
+                    continue;
+                }
                 let editorconfig_path = uri_to_file_path(&file_event.uri).unwrap();
-                context.config_manager.update_editorconfig(editorconfig_path);
+                context
+                    .config_manager
+                    .lock()
+                    .await
+                    .update_editorconfig(editorconfig_path);
             }
             Some(WatchedFileType::Emmyrc) => {
+                if file_event.typ == FileChangeType::DELETED {
+                    continue;
+                }
                 let emmyrc_path = uri_to_file_path(&file_event.uri).unwrap();
                 let file_dir = emmyrc_path.parent().unwrap().to_path_buf();
-                context.config_manager.add_update_emmyrc_task(file_dir);
+                context
+                    .config_manager
+                    .lock()
+                    .await
+                    .add_update_emmyrc_task(file_dir)
+                    .await;
             }
-            None => {
-            }
+            None => {}
         }
     }
 
     let file_ids = analysis.update_files_by_uri(watched_lua_files);
-    context.file_diagnostic.add_files_diagnostic_task(file_ids).await;
+    context
+        .file_diagnostic
+        .add_files_diagnostic_task(file_ids)
+        .await;
 
     Some(())
 }
