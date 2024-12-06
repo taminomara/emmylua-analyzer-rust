@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use emmylua_parser::{LineIndex, LuaChunk};
+use emmylua_parser::LineIndex;
 use lsp_types::Uri;
 use rowan::TextSize;
 

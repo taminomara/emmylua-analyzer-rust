@@ -1,4 +1,4 @@
-use std::{collections::HashSet, path::PathBuf, sync::Arc};
+use std::{collections::HashSet, path::PathBuf};
 
 use serde_json::Value;
 
@@ -38,7 +38,13 @@ pub fn load_configs(config_files: Vec<PathBuf>) -> Emmyrc {
         Emmyrc::default()
     } else if config_jsons.len() == 1 {
         let first_config = config_jsons.into_iter().next().unwrap();
-        let emmyrc: Emmyrc = serde_json::from_value(first_config).ok().unwrap();
+        let emmyrc: Emmyrc = match serde_json::from_value(first_config.clone()).ok() {
+            Some(config) => config,
+            None => {
+                log::error!("Failed to parse config file: {:?}", first_config);
+                Emmyrc::default()
+            }
+        };
         emmyrc
     } else {
         let merge_config =
@@ -48,7 +54,13 @@ pub fn load_configs(config_files: Vec<PathBuf>) -> Emmyrc {
                     merge_values(&mut acc, item);
                     acc
                 });
-        let emmyrc: Emmyrc = serde_json::from_value(merge_config).ok().unwrap();
+        let emmyrc: Emmyrc = match serde_json::from_value(merge_config.clone()).ok() {
+            Some(config) => config,
+            None => {
+                log::error!("Failed to parse config file: {:?}", merge_config);
+                Emmyrc::default()
+            }
+        };
         emmyrc
     }
 }
