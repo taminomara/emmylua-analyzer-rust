@@ -31,7 +31,7 @@ impl ClientProxy {
         }
     }
 
-    fn send_notification(&self, method: &str, params: impl serde::Serialize) {
+    pub fn send_notification(&self, method: &str, params: impl serde::Serialize) {
         let _ = self.conn.sender.send(Message::Notification(Notification {
             method: method.to_string(),
             params: serde_json::to_value(params).unwrap(),

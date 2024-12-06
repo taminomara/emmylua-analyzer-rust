@@ -2,6 +2,7 @@ mod client;
 mod config_manager;
 mod file_diagnostic;
 mod snapshot;
+mod status_bar;
 
 pub use client::ClientProxy;
 use code_analysis::EmmyLuaAnalysis;
@@ -10,17 +11,20 @@ use config_manager::ConfigManager;
 pub use file_diagnostic::FileDiagnostic;
 use lsp_server::{Connection, ErrorCode, Message, RequestId, Response};
 pub use snapshot::ServerContextSnapshot;
+pub use status_bar::VsCodeStatusBar;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{Mutex, RwLock};
 use tokio_util::sync::CancellationToken;
 
 pub struct ServerContext {
+    #[allow(unused)]
     conn: Connection,
     analysis: Arc<RwLock<EmmyLuaAnalysis>>,
     client: Arc<ClientProxy>,
     cancllations: Arc<Mutex<HashMap<RequestId, CancellationToken>>>,
     file_diagnostic: Arc<FileDiagnostic>,
     config_manager: Arc<Mutex<ConfigManager>>,
+    status_bar: Arc<VsCodeStatusBar>,
 }
 
 impl ServerContext {
@@ -34,13 +38,18 @@ impl ServerContext {
         analysis.init_std_lib();
 
         let analysis = Arc::new(RwLock::new(analysis));
-
-        let file_diagnostic = Arc::new(FileDiagnostic::new(analysis.clone(), client.clone()));
+        let status_bar = Arc::new(VsCodeStatusBar::new(client.clone()));
+        let file_diagnostic = Arc::new(FileDiagnostic::new(
+            analysis.clone(),
+            client.clone(),
+            status_bar.clone(),
+        ));
         let config_manager = Arc::new(Mutex::new(ConfigManager::new(
             analysis.clone(),
             client.clone(),
-            file_diagnostic.clone(),
+            status_bar.clone(),
         )));
+
         ServerContext {
             conn,
             analysis,
@@ -48,6 +57,7 @@ impl ServerContext {
             file_diagnostic,
             cancllations: Arc::new(Mutex::new(HashMap::new())),
             config_manager,
+            status_bar,
         }
     }
 
@@ -57,6 +67,7 @@ impl ServerContext {
             client: self.client.clone(),
             file_diagnostic: self.file_diagnostic.clone(),
             config_manager: self.config_manager.clone(),
+            status_bar: self.status_bar.clone(),
         }
     }
 

@@ -1,6 +1,6 @@
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
-use super::{ClientProxy, FileDiagnostic};
+use super::{ClientProxy, FileDiagnostic, VsCodeStatusBar};
 use crate::handlers::{init_analysis, ClientConfig};
 use code_analysis::{load_configs, EmmyLuaAnalysis, Emmyrc};
 use log::{debug, info};
@@ -13,7 +13,7 @@ use tokio_util::sync::CancellationToken;
 pub struct ConfigManager {
     analysis: Arc<RwLock<EmmyLuaAnalysis>>,
     client: Arc<ClientProxy>,
-    file_diagnostic: Arc<FileDiagnostic>,
+    status_bar: Arc<VsCodeStatusBar>,
     pub client_config: ClientConfig,
     pub workspace_folders: Vec<PathBuf>,
     config_update_token: Arc<Mutex<Option<CancellationToken>>>,
@@ -23,12 +23,12 @@ impl ConfigManager {
     pub fn new(
         analysis: Arc<RwLock<EmmyLuaAnalysis>>,
         client: Arc<ClientProxy>,
-        file_diagnostic: Arc<FileDiagnostic>,
+        status_bar: Arc<VsCodeStatusBar>,
     ) -> Self {
         Self {
             analysis,
             client,
-            file_diagnostic,
+            status_bar,
             client_config: ClientConfig::default(),
             workspace_folders: Vec::new(),
             config_update_token: Arc::new(Mutex::new(None)),
@@ -48,17 +48,15 @@ impl ConfigManager {
 
         let analysis = self.analysis.clone();
         let client = self.client.clone();
-        let file_diagnostic = self.file_diagnostic.clone();
         let workspace_folders = self.workspace_folders.clone();
         let config_update_token = self.config_update_token.clone();
         let client_config = self.client_config.clone();
+        let status_bar = self.status_bar.clone();
         tokio::spawn(async move {
             select! {
                 _ = tokio::time::sleep(Duration::from_secs(2)) => {
                     let emmyrc = load_emmy_config(Some(file_dir.clone()), client_config);
-                    let mut analysis = analysis.write().await;
-                    analysis.update_config(emmyrc.clone());
-                    init_analysis(&mut analysis, &client, &file_diagnostic, workspace_folders, &emmyrc).await;
+                    init_analysis(analysis, client, &status_bar, workspace_folders, emmyrc).await;
                     // After completion, remove from HashMap
                     let mut tokens = config_update_token.lock().await;
                     tokens.take();

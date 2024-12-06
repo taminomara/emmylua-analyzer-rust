@@ -5,19 +5,26 @@ use log::{debug, info};
 use tokio::sync::{Mutex, RwLock};
 use tokio_util::sync::CancellationToken;
 
-use super::ClientProxy;
+use super::{status_bar::VsCodeStatusBar, ClientProxy};
 
 pub struct FileDiagnostic {
     analysis: Arc<RwLock<EmmyLuaAnalysis>>,
     client: Arc<ClientProxy>,
+    #[allow(unused)]
+    status_bar: Arc<VsCodeStatusBar>,
     diagnostic_tokens: Arc<Mutex<HashMap<FileId, CancellationToken>>>,
 }
 
 impl FileDiagnostic {
-    pub fn new(analysis: Arc<RwLock<EmmyLuaAnalysis>>, client: Arc<ClientProxy>) -> Self {
+    pub fn new(
+        analysis: Arc<RwLock<EmmyLuaAnalysis>>,
+        client: Arc<ClientProxy>,
+        status_bar: Arc<VsCodeStatusBar>,
+    ) -> Self {
         Self {
             analysis,
             client,
+            status_bar,
             diagnostic_tokens: Arc::new(Mutex::new(HashMap::new())),
         }
     }

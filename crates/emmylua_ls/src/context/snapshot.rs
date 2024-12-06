@@ -3,7 +3,7 @@ use tokio::sync::{Mutex, RwLock};
 
 use code_analysis::EmmyLuaAnalysis;
 
-use super::{client::ClientProxy, config_manager::ConfigManager, file_diagnostic::FileDiagnostic};
+use super::{client::ClientProxy, config_manager::ConfigManager, file_diagnostic::FileDiagnostic, status_bar::VsCodeStatusBar};
 
 #[derive(Clone)]
 pub struct ServerContextSnapshot {
@@ -11,4 +11,5 @@ pub struct ServerContextSnapshot {
     pub client: Arc<ClientProxy>,
     pub file_diagnostic: Arc<FileDiagnostic>,
     pub config_manager: Arc<Mutex<ConfigManager>>,
+    pub status_bar: Arc<VsCodeStatusBar>,
 }

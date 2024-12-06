@@ -2,25 +2,28 @@ mod client_config;
 mod collect_files;
 mod regsiter_file_watch;
 
-use std::{path::PathBuf, str::FromStr};
+use std::{path::PathBuf, str::FromStr, sync::Arc};
 
 use crate::{
-    context::{load_emmy_config, ClientProxy, FileDiagnostic, ServerContextSnapshot},
+    context::{
+        load_emmy_config, ClientProxy, FileDiagnostic, ServerContextSnapshot, VsCodeStatusBar,
+    },
     logger::init_logger,
 };
 use client_config::get_client_config;
 pub use client_config::ClientConfig;
-use code_analysis::{uri_to_file_path, EmmyLuaAnalysis, Emmyrc};
+use code_analysis::{uri_to_file_path, EmmyLuaAnalysis, Emmyrc, FileId};
 use collect_files::collect_files;
 use log::info;
 use lsp_types::{ClientInfo, InitializeParams};
 use regsiter_file_watch::register_files_watch;
+use tokio::sync::RwLock;
+use tokio_util::sync::CancellationToken;
 
 pub async fn initialized_handler(
     context: ServerContextSnapshot,
     params: InitializeParams,
 ) -> Option<()> {
-    let mut analysis = context.analysis.write().await;
     let client_id = get_client_id(&params.client_info);
     let client_config = get_client_config(&context, client_id).await;
     let workspace_folders = get_workspace_folders(&params);
@@ -43,11 +46,6 @@ pub async fn initialized_handler(
     };
 
     let emmyrc = load_emmy_config(config_root, client_config.clone());
-    // update config
-    analysis.update_config(emmyrc.clone());
-
-    let emmyrc_json = serde_json::to_string_pretty(emmyrc.as_ref()).unwrap();
-    info!("current config : {}", emmyrc_json);
 
     let mut config_manager = context.config_manager.lock().await;
     config_manager.workspace_folders = workspace_folders.clone();
@@ -55,11 +53,11 @@ pub async fn initialized_handler(
     drop(config_manager);
 
     init_analysis(
-        &mut analysis,
-        &context.client,
-        &context.file_diagnostic,
+        context.analysis.clone(),
+        context.client.clone(),
+        &context.status_bar,
         workspace_folders,
-        &emmyrc,
+        emmyrc,
     )
     .await;
 
@@ -69,43 +67,97 @@ pub async fn initialized_handler(
 
 #[allow(unused)]
 pub async fn init_analysis(
-    analysis: &mut EmmyLuaAnalysis,
-    client_proxy: &ClientProxy,
-    file_diagnostic: &FileDiagnostic,
+    analysis: Arc<RwLock<EmmyLuaAnalysis>>,
+    client_proxy: Arc<ClientProxy>,
+    status_bar: &VsCodeStatusBar,
     workspace_folders: Vec<PathBuf>,
-    emmyrc: &Emmyrc,
+    emmyrc: Arc<Emmyrc>,
     // todo add cancel token
 ) {
+    let mut mut_analysis = analysis.write().await;
+
+    // update config
+    mut_analysis.update_config(emmyrc.clone());
+
+    let emmyrc_json = serde_json::to_string_pretty(emmyrc.as_ref()).unwrap();
+    info!("current config : {}", emmyrc_json);
+
+    status_bar.set_server_status("ok", true, "Load workspace");
+    status_bar.report_progress("Load workspace", 0.0);
+
     let mut workspace_folders = workspace_folders;
     for workspace_root in &workspace_folders {
         info!("add workspace root: {:?}", workspace_root);
-        analysis.add_workspace_root(workspace_root.clone());
+        mut_analysis.add_workspace_root(workspace_root.clone());
     }
 
     if let Some(workspace) = &emmyrc.workspace {
         if let Some(workspace_roots) = &workspace.workspace_roots {
             for workspace_root in workspace_roots {
                 info!("add workspace root: {:?}", workspace_root);
-                analysis.add_workspace_root(PathBuf::from_str(workspace_root).unwrap());
+                mut_analysis.add_workspace_root(PathBuf::from_str(workspace_root).unwrap());
             }
         }
 
         if let Some(library) = &workspace.library {
             for lib in library {
                 info!("add library: {:?}", lib);
-                analysis.add_workspace_root(PathBuf::from_str(lib).unwrap());
+                mut_analysis.add_workspace_root(PathBuf::from_str(lib).unwrap());
                 workspace_folders.push(PathBuf::from_str(lib).unwrap());
             }
         }
     }
 
+    status_bar.report_progress("Collect files", 0.1);
     // load files
     let files = collect_files(&workspace_folders, &emmyrc);
-    let files = files.into_iter().map(|file| file.into_tuple()).collect();
-    let file_ids = analysis.update_files_by_path(files);
+    let files: Vec<(PathBuf, Option<String>)> =
+        files.into_iter().map(|file| file.into_tuple()).collect();
 
-    // add tdiagnostic
-    file_diagnostic.add_files_diagnostic_task(file_ids).await;
+    let file_count = files.len();
+    status_bar.report_progress(format!("Index {} files", file_count).as_str(), 0.5);
+    let file_ids = mut_analysis.update_files_by_path(files);
+
+    drop(mut_analysis);
+
+    let cancle_token = CancellationToken::new();
+    // diagnostic files
+    let (tx, mut rx) = tokio::sync::mpsc::channel::<FileId>(100);
+    for file_id in file_ids {
+        let analysis = analysis.clone();
+        let token = cancle_token.clone();
+        let client = client_proxy.clone();
+        let tx = tx.clone();
+        tokio::spawn(async move {
+            let analysis = analysis.read().await;
+            let diagnostics = analysis.diagnose_file(file_id, token).await;
+            if let Some(diagnostics) = diagnostics {
+                let uri = analysis.get_uri(file_id).unwrap();
+                let diagnostic_param = lsp_types::PublishDiagnosticsParams {
+                    uri,
+                    diagnostics,
+                    version: None,
+                };
+                client.publish_diagnostics(diagnostic_param);
+            }
+            let _ = tx.send(file_id).await;
+        });
+    }
+
+    let mut count = 0;
+    while let Some(_) = rx.recv().await {
+        count += 1;
+        status_bar.report_progress(
+            format!("diagnostic {}/{}", count, file_count).as_str(),
+            0.75,
+        );
+        if count == file_count {
+            break;
+        }
+    }
+
+    status_bar.report_progress("Finished!", 1.0);
+    status_bar.set_server_status("ok", false, "Finished!");
 }
 
 fn get_workspace_folders(params: &InitializeParams) -> Vec<PathBuf> {
