@@ -30,7 +30,7 @@ impl EmmyLuaAnalysis {
         let emmyrc = Arc::new(Emmyrc::default());
         Self {
             compilation: LuaCompilation::new(emmyrc.clone()),
-            diagnostic: LuaDiagnostic::new(emmyrc.clone()),
+            diagnostic: LuaDiagnostic::new(),
             emmyrc
         }
     }
@@ -146,7 +146,8 @@ impl EmmyLuaAnalysis {
     }
 
     pub fn update_config(&mut self, config: Arc<Emmyrc>) {
-        self.compilation.update_config(config);
+        self.compilation.update_config(config.clone());
+        self.diagnostic.update_config(config);
     }
 
     pub fn get_emmyrc(&self) -> Arc<Emmyrc> {

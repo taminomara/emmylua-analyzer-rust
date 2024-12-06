@@ -1,16 +1,17 @@
 mod lua_syntax_error;
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
+use std::fmt::Debug;
 use tokio_util::sync::CancellationToken;
 
 use crate::semantic::SemanticModel;
 
 use super::{lua_diagnostic_code::get_default_severity, DiagnosticCode};
 
-pub fn check(context: &mut DiagnosticContext, cancel_token: CancellationToken) -> Option<()> {
-    lua_syntax_error::check(context, &cancel_token)?;
+pub trait LuaChecker: Debug + Send + Sync {
+    fn check(&self, context: &mut DiagnosticContext) -> Option<()>;
 
-    Some(())
+    fn get_code(&self) -> DiagnosticCode;
 }
 
 pub struct DiagnosticContext<'a> {
@@ -26,7 +27,13 @@ impl<'a> DiagnosticContext<'a> {
         }
     }
 
-    pub fn add_diagnostic(&mut self, code: DiagnosticCode, range: TextRange, message: String, data: Option<serde_json::Value>) {
+    pub fn add_diagnostic(
+        &mut self,
+        code: DiagnosticCode,
+        range: TextRange,
+        message: String,
+        data: Option<serde_json::Value>,
+    ) {
         let diagnostic = Diagnostic {
             message,
             range: self.translate_range(range).unwrap_or(lsp_types::Range {
