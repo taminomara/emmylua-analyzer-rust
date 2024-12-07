@@ -2,9 +2,8 @@ mod lua_syntax_error;
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
 use std::fmt::Debug;
-use tokio_util::sync::CancellationToken;
 
-use crate::semantic::SemanticModel;
+use crate::{db_index::DbIndex, semantic::SemanticModel, FileId};
 
 use super::{lua_diagnostic_code::get_default_severity, DiagnosticCode};
 
@@ -13,6 +12,11 @@ pub trait LuaChecker: Debug + Send + Sync {
 
     fn get_code(&self) -> DiagnosticCode;
 }
+
+pub fn init_checkers() -> Vec<Box<dyn LuaChecker>> {
+    vec![Box::new(lua_syntax_error::LuaSyntaxErrorChecker())]
+}
+
 
 pub struct DiagnosticContext<'a> {
     semantic_model: SemanticModel<'a>,
@@ -25,6 +29,14 @@ impl<'a> DiagnosticContext<'a> {
             semantic_model,
             diagnostics: Vec::new(),
         }
+    }
+
+    pub fn get_db(&self) -> &DbIndex {
+        &self.semantic_model.get_db()
+    }
+
+    pub fn get_file_id(&self) -> FileId {
+        self.semantic_model.get_file_id()
     }
 
     pub fn add_diagnostic(
@@ -47,7 +59,7 @@ impl<'a> DiagnosticContext<'a> {
                 },
             }),
             severity: self.get_severity(code),
-            code: Some(NumberOrString::String(code.get_name())),
+            code: Some(NumberOrString::String(code.get_name().to_string())),
             source: Some("EmmyLua".into()),
             tags: self.get_tags(code),
             data,

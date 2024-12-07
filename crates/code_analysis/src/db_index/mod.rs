@@ -17,7 +17,7 @@ use std::sync::Arc;
 use crate::{Emmyrc, FileId, Vfs};
 pub use declaration::*;
 #[allow(unused_imports)]
-pub use diagnostic::{AnalyzeError, DiagnosticAction, DiagnosticIndex};
+pub use diagnostic::{AnalyzeError, DiagnosticAction, DiagnosticIndex, DiagnosticActionKind};
 pub use flow::{LuaFlowChain, LuaFlowIndex};
 #[allow(unused_imports)]
 pub use member::{LuaMember, LuaMemberId, LuaMemberIndex, LuaMemberKey, LuaMemberOwner};

@@ -94,3 +94,14 @@ pub fn analyze_version(analyzer: &mut DocAnalyzer, version: LuaDocTagVersion) ->
 
     Some(())
 }
+
+pub fn analyze_async(analyzer: &mut DocAnalyzer) -> Option<()> {
+    let owner_id = get_owner_id(analyzer)?;
+
+    analyzer
+        .db
+        .get_property_index_mut()
+        .add_async(analyzer.file_id, owner_id);
+
+    Some(())
+}

@@ -11,10 +11,11 @@ pub struct LuaProperty {
     pub description: Option<Box<String>>,
     pub visibility: Option<VisibilityKind>,
     pub source: Option<Box<String>>,
-    pub nodiscard: bool,
-    pub deprecated: bool,
+    pub is_nodiscard: bool,
+    pub is_deprecated: bool,
     pub deprecated_message: Option<Box<String>>,
     pub version_conds: Option<Box<Vec<LuaVersionCond>>>,
+    pub is_async: bool,
 }
 
 impl LuaProperty {
@@ -25,10 +26,11 @@ impl LuaProperty {
             description: None,
             visibility: None,
             source: None,
-            nodiscard: false,
-            deprecated: false,
+            is_nodiscard: false,
+            is_deprecated: false,
             deprecated_message: None,
             version_conds: None,
+            is_async: false,
         }
     }
 }

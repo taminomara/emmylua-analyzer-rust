@@ -65,6 +65,14 @@ impl<'a> SemanticModel<'a> {
     pub fn get_root(&self) -> &LuaChunk {
         &self.root
     }
+
+    pub fn get_db(&self) -> &DbIndex {
+        self.db
+    }
+
+    pub fn get_file_id(&self) -> FileId {
+        self.file_id
+    }
 }
 
 /// Guard to prevent infinite recursion

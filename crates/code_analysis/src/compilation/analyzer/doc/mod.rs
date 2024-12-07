@@ -5,6 +5,7 @@ mod property_tags;
 mod tags;
 mod type_def_tags;
 mod type_ref_tags;
+mod diagnostic_tags;
 
 use super::AnalyzeContext;
 use crate::{

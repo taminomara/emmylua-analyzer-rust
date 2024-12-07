@@ -17,6 +17,22 @@ impl DiagnosticAction {
             code
         }
     }
+
+    pub fn get_range(&self) -> TextRange {
+        self.range
+    }
+
+    pub fn is_enable(&self) -> bool {
+        matches!(self.kind, DiagnosticActionKind::Enable)
+    }
+
+    pub fn is_disable(&self) -> bool {
+        matches!(self.kind, DiagnosticActionKind::Disable)
+    }
+
+    pub fn get_code(&self) -> DiagnosticCode {
+        self.code
+    }
 }
 
 
