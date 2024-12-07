@@ -1,10 +1,11 @@
-mod diagnostic_action;
 mod analyze_error;
+mod diagnostic_action;
 
 use std::collections::{HashMap, HashSet};
 
 pub use analyze_error::AnalyzeError;
 pub use diagnostic_action::{DiagnosticAction, DiagnosticActionKind};
+use rowan::TextRange;
 
 use crate::{DiagnosticCode, FileId};
 
@@ -29,7 +30,10 @@ impl DiagnosticIndex {
     }
 
     pub fn add_diagnostic_action(&mut self, file_id: FileId, diagnostic: DiagnosticAction) {
-        self.diagnostic_actions.entry(file_id).or_default().push(diagnostic);
+        self.diagnostic_actions
+            .entry(file_id)
+            .or_default()
+            .push(diagnostic);
     }
 
     pub fn add_file_diagnostic_disabled(&mut self, file_id: FileId, code: DiagnosticCode) {
@@ -51,11 +55,33 @@ impl DiagnosticIndex {
     }
 
     pub fn add_diagnostic(&mut self, file_id: FileId, diagnostic: AnalyzeError) {
-        self.diagnostics.entry(file_id).or_default().push(diagnostic);
+        self.diagnostics
+            .entry(file_id)
+            .or_default()
+            .push(diagnostic);
     }
 
     pub fn get_diagnostics(&self, file_id: FileId) -> Option<&Vec<AnalyzeError>> {
         self.diagnostics.get(&file_id)
+    }
+
+    pub fn is_file_diagnostic_code_disabled(
+        &self,
+        file_id: &FileId,
+        code: &DiagnosticCode,
+        range: &TextRange,
+    ) -> bool {
+        if let Some(disabled) = self.diagnostic_actions.get(file_id) {
+            for action in disabled {
+                if action.get_code() == *code
+                    && action.is_disable()
+                    && action.get_range().intersect(*range).is_some()
+                {
+                    return true;
+                }
+            }
+        }
+        false
     }
 
     pub fn is_file_disabled(&self, file_id: &FileId, code: &DiagnosticCode) -> bool {

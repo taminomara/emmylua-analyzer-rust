@@ -17,7 +17,6 @@ pub fn init_checkers() -> Vec<Box<dyn LuaChecker>> {
     vec![Box::new(lua_syntax_error::LuaSyntaxErrorChecker())]
 }
 
-
 pub struct DiagnosticContext<'a> {
     semantic_model: SemanticModel<'a>,
     diagnostics: Vec<Diagnostic>,
@@ -46,6 +45,10 @@ impl<'a> DiagnosticContext<'a> {
         message: String,
         data: Option<serde_json::Value>,
     ) {
+        if !self.should_report_diagnostic(&code, &range) {
+            return;
+        }
+
         let diagnostic = Diagnostic {
             message,
             range: self.translate_range(range).unwrap_or(lsp_types::Range {
@@ -67,6 +70,12 @@ impl<'a> DiagnosticContext<'a> {
         };
 
         self.diagnostics.push(diagnostic);
+    }
+
+    fn should_report_diagnostic(&self, code: &DiagnosticCode, range: &TextRange) -> bool {
+        let diagnostic_index = self.get_db().get_diagnostic_index();
+        
+        !diagnostic_index.is_file_diagnostic_code_disabled(&self.get_file_id(), code, range)
     }
 
     fn get_severity(&self, code: DiagnosticCode) -> Option<DiagnosticSeverity> {

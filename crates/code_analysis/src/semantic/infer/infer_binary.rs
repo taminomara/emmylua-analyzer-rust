@@ -173,16 +173,28 @@ fn infer_binary_expr_div(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
     if left.is_number() && right.is_number() {
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
-                Some(LuaType::FloatConst((*int1 as f64 / *int2 as f64).into()))
+                if *int2 != 0 {
+                    return Some(LuaType::FloatConst((*int1 as f64 / *int2 as f64).into()));
+                }
+                Some(LuaType::Number)
             }
             (LuaType::FloatConst(num1), LuaType::FloatConst(num2)) => {
-                Some(LuaType::FloatConst(num1 / num2))
+                if *num2 != 0.0 {
+                    return Some(LuaType::FloatConst(num1 / num2));
+                }
+                Some(LuaType::Number)
             }
             (LuaType::IntegerConst(int1), LuaType::FloatConst(num2)) => {
-                Some(LuaType::FloatConst((*int1 as f64 / *num2).into()))
+                if *num2 != 0.0 {
+                    return Some(LuaType::FloatConst((*int1 as f64 / *num2).into()));
+                }
+                Some(LuaType::Number)
             }
             (LuaType::FloatConst(num1), LuaType::IntegerConst(int2)) => {
-                Some(LuaType::FloatConst(*num1 / *int2 as f64))
+                if *int2 != 0 {
+                    return Some(LuaType::FloatConst(*num1 / *int2 as f64));
+                }
+                Some(LuaType::Number)
             }
             _ => Some(LuaType::Number),
         };
@@ -195,7 +207,10 @@ fn infer_binary_expr_idiv(db: &DbIndex, left: LuaType, right: LuaType) -> InferR
     if left.is_integer() && right.is_integer() {
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
-                Some(LuaType::IntegerConst(int1 / int2))
+                if *int2 != 0 {
+                    return Some(LuaType::IntegerConst(int1 / int2));
+                }
+                Some(LuaType::Integer)
             }
             _ => Some(LuaType::Integer),
         };
@@ -208,7 +223,10 @@ fn infer_binary_expr_mod(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
     if left.is_integer() && right.is_integer() {
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
-                Some(LuaType::IntegerConst(int1 % int2))
+                if *int2 != 0 {
+                    return Some(LuaType::IntegerConst(int1 % int2));
+                }
+                Some(LuaType::Integer)
             }
             _ => Some(LuaType::Integer),
         };

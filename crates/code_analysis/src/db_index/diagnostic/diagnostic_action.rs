@@ -39,5 +39,5 @@ impl DiagnosticAction {
 #[derive(Debug)]
 pub enum DiagnosticActionKind {
     Disable,
-    Enable,
+    Enable, // donot use this
 }
