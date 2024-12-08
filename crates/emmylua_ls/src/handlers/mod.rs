@@ -4,11 +4,11 @@ mod request_handler;
 mod response_handler;
 mod text_document;
 mod hover;
+mod document_symbol;
 
 pub use initialized::initialized_handler;
 use lsp_types::{
-    HoverProviderCapability, SaveOptions, ServerCapabilities, TextDocumentSyncCapability,
-    TextDocumentSyncKind, TextDocumentSyncSaveOptions,
+    DocumentSymbolOptions, HoverProviderCapability, OneOf, SaveOptions, ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncSaveOptions
 };
 pub use notification_handler::on_notification_handler;
 pub use request_handler::on_req_handler;
@@ -29,6 +29,10 @@ pub fn server_capabilities() -> ServerCapabilities {
             },
         )),
         hover_provider: Some(HoverProviderCapability::Simple(true)),
+        document_symbol_provider: Some(OneOf::Right(DocumentSymbolOptions {
+            label: Some("EmmyLua".into()),
+            work_done_progress_options: Default::default(),
+        })),
         ..Default::default()
     }
 }

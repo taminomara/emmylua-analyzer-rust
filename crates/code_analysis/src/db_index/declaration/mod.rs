@@ -8,7 +8,7 @@ use std::collections::HashMap;
 pub use decl::{LocalAttribute, LuaDecl, LuaDeclId};
 pub use decl_tree::{LuaDeclOrMemberId, LuaDeclarationTree};
 use internment::ArcIntern;
-pub use scope::{LuaScopeId, LuaScopeKind};
+pub use scope::{LuaScopeId, LuaScopeKind, LuaScope, ScopeOrDeclId};
 
 use crate::FileId;
 

@@ -6,17 +6,15 @@ mod semantic;
 mod vfs;
 
 use std::{env, path::PathBuf, sync::Arc};
-
-#[allow(unused)]
 pub use compilation::*;
 pub use config::{Emmyrc, load_configs};
-#[allow(unused)]
 pub use diagnostic::*;
 use log::{error, info};
 use lsp_types::Uri;
 use tokio_util::sync::CancellationToken;
-#[allow(unused)]
 pub use vfs::*;
+pub use semantic::*;
+pub use db_index::*;
 
 #[macro_use]
 extern crate rust_i18n;

@@ -287,6 +287,14 @@ impl LuaDeclarationTree {
 
         None
     }
+
+    pub fn get_root_scope(&self) -> Option<&LuaScope> {
+        self.scopes.get(0)
+    }
+
+    pub fn get_scope(&self, scope_id: &LuaScopeId) -> Option<&LuaScope> {
+        self.scopes.get(scope_id.id as usize)
+    }
 }
 
 #[derive(Debug)]

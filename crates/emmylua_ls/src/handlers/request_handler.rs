@@ -2,13 +2,13 @@ use std::{error::Error, future::Future};
 
 use log::error;
 use lsp_server::{Request, RequestId, Response};
-use lsp_types::request::HoverRequest;
+use lsp_types::request::{DocumentSymbolRequest, HoverRequest};
 use serde::{de::DeserializeOwned, Serialize};
 use tokio_util::sync::CancellationToken;
 
 use crate::context::{ServerContext, ServerContextSnapshot};
 
-use super::hover::on_hover;
+use super::{document_symbol::on_document_symbol, hover::on_hover};
 
 pub async fn on_req_handler(
     req: Request,
@@ -16,6 +16,7 @@ pub async fn on_req_handler(
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
     RequestDispatcher::new(req, server_context)
         .on_async::<HoverRequest, _, _>(on_hover).await
+        .on_async::<DocumentSymbolRequest,_, _>(on_document_symbol).await
         .finish();
     Ok(())
 }

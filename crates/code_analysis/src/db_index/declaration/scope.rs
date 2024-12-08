@@ -1,4 +1,3 @@
-use emmylua_parser::LuaSyntaxId;
 use rowan::{TextRange, TextSize};
 
 use crate::FileId;
