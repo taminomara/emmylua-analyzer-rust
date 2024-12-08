@@ -55,7 +55,7 @@ pub fn float_token_value(token: &LuaSyntaxToken) -> Result<f64, LuaParseError> {
 
         let mut value = float_part.parse::<f64>().map_err(|e| {
             LuaParseError::new(
-                &format!("The float literal '{}' is invalid, {}", text, e),
+                &t!("The float literal '%{text}' is invalid, %{err}", text = text, err = e),
                 token.text_range(),
             )
         })?;
@@ -91,15 +91,15 @@ pub fn int_token_value(token: &LuaSyntaxToken) -> Result<i64, LuaParseError> {
                 || *e.kind() == std::num::IntErrorKind::NegOverflow
             {
                 Err(LuaParseError::new(
-                    &format!(
-                        "The integer literal '{}' is too large to be represented in type 'long'",
-                        text
+                    &t!(
+                        "The integer literal '%{text}' is too large to be represented in type 'long'",
+                        text = text
                     ),
                     range,
                 ))
             } else {
                 Err(LuaParseError::new(
-                    &format!("The integer literal '{}' is invalid, {}", text, e),
+                    &t!("The integer literal '%{text}' is invalid, %{err}", text = text, err = e),
                     range,
                 ))
             }

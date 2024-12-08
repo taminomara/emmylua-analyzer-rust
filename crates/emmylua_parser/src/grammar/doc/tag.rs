@@ -281,7 +281,7 @@ fn parse_tag_field(p: &mut LuaDocParser) -> ParseResult {
         }
         _ => {
             return Err(LuaParseError::from_source_range(
-                &format!("expect field name or '[', but get {:?}", p.current_token()),
+                &t!("expect field name or '[', but get %{current}", current = p.current_token()),
                 p.current_token_range(),
             ))
         }
@@ -326,7 +326,7 @@ fn parse_tag_param(p: &mut LuaDocParser) -> ParseResult {
     }
     else{
         return Err(LuaParseError::from_source_range(
-            &format!("expect param name or '...', but get {:?}", p.current_token()),
+            &t!("expect param name or '...', but get %{current}", current = p.current_token()),
             p.current_token_range(),
         ))
     }

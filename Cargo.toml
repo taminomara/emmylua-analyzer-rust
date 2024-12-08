@@ -13,8 +13,11 @@ lsp-types = { version = "0.97.0", features = ["proposed"]}
 schemars = "0.8.21"
 regex = "1"
 internment = { version = "0.8", features = ["arc"] }
-rust_i18n = "3"
+rust-i18n = "3"
 log = "0.4"
 fern = "0.7"
 chrono = "0.4"
 tokio-util = "0.7"
+
+[workspace.build-dependencies]
+rust-i18n = "3"

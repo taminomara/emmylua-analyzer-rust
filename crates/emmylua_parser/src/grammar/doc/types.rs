@@ -42,7 +42,7 @@ fn parse_sub_type(p: &mut LuaDocParser, limit: i32) -> ParseResult {
             Ok(_) => {}
             Err(err) => {
                 p.push_error(LuaParseError::from_source_range(
-                    "unary operator not followed by type",
+                    &t!("unary operator not followed by type"),
                     range,
                 ));
                 return Err(err);
@@ -62,7 +62,7 @@ fn parse_sub_type(p: &mut LuaDocParser, limit: i32) -> ParseResult {
             Ok(_) => {}
             Err(err) => {
                 p.push_error(LuaParseError::from_source_range(
-                    "binary operator not followed by type",
+                    &t!("binary operator not followed by type"),
                     range,
                 ));
 
@@ -105,7 +105,7 @@ fn parse_primary_type(p: &mut LuaDocParser) -> ParseResult {
         LuaTokenKind::TkStringTemplateType => parse_string_template_type(p),
         LuaTokenKind::TkDots => parse_vararg_type(p),
         _ => Err(LuaParseError::from_source_range(
-            "expect type",
+            &t!("expect type"),
             p.current_token_range(),
         )),
     }
@@ -154,7 +154,7 @@ fn parse_typed_field(p: &mut LuaDocParser) -> ParseResult {
         }
         _ => {
             return Err(LuaParseError::from_source_range(
-                "expect name or [<number>] or [<string>]",
+                &t!("expect name or [<number>] or [<string>]"),
                 p.current_token_range(),
             ));
         }
@@ -213,7 +213,7 @@ pub fn parse_fun_type(p: &mut LuaDocParser) -> ParseResult {
 
     if p.current_token_text() != "fun" {
         return Err(LuaParseError::from_source_range(
-            "expect fun",
+            &t!("expect fun"),
             p.current_token_range(),
         ));
     }
@@ -255,7 +255,7 @@ fn parse_typed_param(p: &mut LuaDocParser) -> ParseResult {
         }
         _ => {
             return Err(LuaParseError::from_source_range(
-                "expect name or ...",
+                &t!("expect name or ..."),
                 p.current_token_range(),
             ));
         }

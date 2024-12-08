@@ -1,3 +1,5 @@
+use core::fmt;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u16)]
 pub enum LuaTokenKind {
@@ -133,4 +135,10 @@ pub enum LuaTokenKind {
     TkDocMatch,           // =
     TkDocBoolean,         // true false
     TKDocPath,            // path
+}
+
+impl fmt::Display for LuaTokenKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }

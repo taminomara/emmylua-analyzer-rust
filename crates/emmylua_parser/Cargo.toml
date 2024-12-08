@@ -1,6 +1,6 @@
 [package]
 name = "emmylua_parser"
-version = "0.6.2"
+version = "0.7.0"
 edition = "2021"
 authors = ["CppCXY"]
 description = "A parser for EmmyLua and luals"
@@ -12,3 +12,8 @@ categories = ["development-tools", "parsing"]
 
 [dependencies]
 rowan.workspace = true
+rust-i18n.workspace = true
+
+[package.metadata.i18n]
+available-locales = ["en", "zh_CN", "zh_HK", "zh_TW"]
+default-locale = "en"

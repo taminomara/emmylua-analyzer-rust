@@ -1,4 +1,7 @@
-mod lua_syntax_error;
+mod syntax_error;
+mod type_not_found;
+mod duplicate_type;
+
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
 use std::fmt::Debug;
@@ -14,7 +17,11 @@ pub trait LuaChecker: Debug + Send + Sync {
 }
 
 pub fn init_checkers() -> Vec<Box<dyn LuaChecker>> {
-    vec![Box::new(lua_syntax_error::LuaSyntaxErrorChecker())]
+    vec![
+        Box::new(syntax_error::SyntaxErrorChecker()),
+        Box::new(type_not_found::TypeNotFoundChecker()),
+        Box::new(duplicate_type::DuplicateTypeChecker()),
+    ]
 }
 
 pub struct DiagnosticContext<'a> {
@@ -74,7 +81,7 @@ impl<'a> DiagnosticContext<'a> {
 
     fn should_report_diagnostic(&self, code: &DiagnosticCode, range: &TextRange) -> bool {
         let diagnostic_index = self.get_db().get_diagnostic_index();
-        
+
         !diagnostic_index.is_file_diagnostic_code_disabled(&self.get_file_id(), code, range)
     }
 

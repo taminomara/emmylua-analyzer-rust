@@ -21,7 +21,7 @@ fn parse_sub_expr(p: &mut LuaParser, limit: i32) -> ParseResult {
             Ok(_) => {}
             Err(err) => {
                 p.push_error(LuaParseError::from_source_range(
-                    "unary operator not followed by expression",
+                    &t!("unary operator not followed by expression"),
                     range,
                 ));
                 return Err(err);
@@ -41,7 +41,7 @@ fn parse_sub_expr(p: &mut LuaParser, limit: i32) -> ParseResult {
             Ok(_) => {}
             Err(err) => {
                 p.push_error(LuaParseError::from_source_range(
-                    "binary operator not followed by expression",
+                    &t!("binary operator not followed by expression"),
                     range,
                 ));
 
@@ -114,7 +114,7 @@ fn parse_param_name(p: &mut LuaParser) -> ParseResult {
         p.bump();
     } else {
         return Err(LuaParseError::from_source_range(
-            "expect parameter name",
+            &t!("expect parameter name"),
             p.current_token_range(),
         ));
     }
@@ -224,7 +224,7 @@ fn parse_primary_expr(p: &mut LuaParser) -> ParseResult {
             Ok(m.complete(p))
         }
         _ => Err(LuaParseError::from_source_range(
-            "expect primary expression",
+            &t!("expect primary expression"),
             p.current_token_range(),
         )),
     }
@@ -243,7 +243,7 @@ fn parse_index_struct(p: &mut LuaParser) -> Result<(), LuaParseError> {
         }
         _ => {
             return Err(LuaParseError::from_source_range(
-                "expect index struct",
+                &t!("expect index struct"),
                 p.current_token_range(),
             ));
         }
@@ -276,7 +276,7 @@ fn parse_args(p: &mut LuaParser) -> ParseResult {
         }
         _ => {
             return Err(LuaParseError::from_source_range(
-                "expect args",
+                &t!("expect args"),
                 p.current_token_range(),
             ));
         }

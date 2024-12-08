@@ -159,8 +159,11 @@ impl LuaPropertyIndex {
 impl LuaIndex for LuaPropertyIndex {
     fn remove(&mut self, file_id: FileId) {
         if let Some(properties) = self.in_filed_descriptions.remove(&file_id) {
-            for property in properties {
-                self.properties.remove(&property);
+            for property_id in properties {
+                let property = self.properties.remove(&property_id);
+                if let Some(property) = property {
+                    self.properties_map.remove(&property.owner);
+                }
             }
         }
     }

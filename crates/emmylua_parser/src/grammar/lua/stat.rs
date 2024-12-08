@@ -152,7 +152,7 @@ fn parse_for(p: &mut LuaParser) -> ParseResult {
         }
         _ => {
             return Err(LuaParseError::from_source_range(
-                "unexpected token",
+                &t!("unexpected token"),
                 p.current_token_range(),
             ));
         }
@@ -231,7 +231,7 @@ fn parse_local(p: &mut LuaParser) -> ParseResult {
         }
         _ => {
             return Err(LuaParseError::from_source_range(
-                &format!("unexpected token {:?}", p.current_token()),
+                &t!("unexpected token %{token}", token = p.current_token()),
                 p.current_token_range(),
             ));
         }
@@ -259,9 +259,9 @@ fn parse_attrib(p: &mut LuaParser) -> ParseResult {
     expect_token(p, LuaTokenKind::TkGt)?;
     if !p.parse_config.support_local_attrib() {
         p.errors.push(LuaParseError::from_source_range(
-            &format!(
-                "local attribute is not supported for current version: {:?}",
-                p.parse_config.level
+            &t!(
+                "local attribute is not supported for current version: %{level}",
+                level = p.parse_config.level
             ),
             range,
         ));
@@ -328,7 +328,7 @@ fn parse_assign_or_expr_stat(p: &mut LuaParser) -> ParseResult {
 
     if cm.kind != LuaSyntaxKind::NameExpr && cm.kind != LuaSyntaxKind::IndexExpr {
         return Err(LuaParseError::from_source_range(
-            "unexpected expr for varList",
+            &t!("unexpected expr for varList"),
             range,
         ));
     }
@@ -338,7 +338,7 @@ fn parse_assign_or_expr_stat(p: &mut LuaParser) -> ParseResult {
         cm = parse_expr(p)?;
         if cm.kind != LuaSyntaxKind::NameExpr && cm.kind != LuaSyntaxKind::IndexExpr {
             return Err(LuaParseError::from_source_range(
-                "unexpected expr for varList",
+                &t!("unexpected expr for varList"),
                 range,
             ));
         }
@@ -352,7 +352,7 @@ fn parse_assign_or_expr_stat(p: &mut LuaParser) -> ParseResult {
             parse_expr(p)?;
         }
     } else {
-        return Err(LuaParseError::from_source_range("unfinished stat", range));
+        return Err(LuaParseError::from_source_range(&t!("unfinished stat"), range));
     }
 
     if_token_bump(p, LuaTokenKind::TkSemicolon);

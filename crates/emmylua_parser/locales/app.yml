@@ -1,0 +1,186 @@
+_version: 2
+Invalid escape sequence '\%{char}':
+  en: Invalid escape sequence '\%{char}'
+  zh_CN: 无效的转义序列 '\%{char}'
+  zh_HK: 無效的轉義序列 '\%{char}'
+  zh_TW: 無效的轉義序列 '\%{char}'
+Invalid hex escape sequence '\x%{hex}':
+  en: Invalid hex escape sequence '\x%{hex}'
+  zh_CN: 无效的十六进制转义序列 '\x%{hex}'
+  zh_HK: 無效的十六進制轉義序列 '\x%{hex}'
+  zh_TW: 無效的十六進制轉義序列 '\x%{hex}'
+Invalid long string end, expected '%{eq}]':
+  en: Invalid long string end, expected '%{eq}]'
+  zh_CN: 无效的长字符串结尾，期望 '%{eq}]'
+  zh_HK: 無效的長字符串結尾，期望 '%{eq}]'
+  zh_TW: 無效的長字符串結尾，期望 '%{eq}]'
+Invalid long string start:
+  en: Invalid long string start
+  zh_CN: 无效的长字符串开始
+  zh_HK: 無效的長字符串開始
+  zh_TW: 無效的長字符串開始
+Invalid long string start, expected '[', found '%{char}':
+  en: Invalid long string start, expected '[', found '%{char}'
+  zh_CN: 无效的长字符串开始，期望 '[', 但找到 '%{char}'
+  zh_HK: 無效的長字符串開始，期望 '[', 但找到 '%{char}'
+  zh_TW: 無效的長字符串開始，期望 '[', 但找到 '%{char}'
+Invalid long string start, expected '[', found end of input:
+  en: Invalid long string start, expected '[', found end of input
+  zh_CN: 无效的长字符串开始，期望 '[', 但找到输入结束
+  zh_HK: 無效的長字符串開始，期望 '[', 但找到輸入結束
+  zh_TW: 無效的長字符串開始，期望 '[', 但找到輸入結束
+Invalid unicode escape sequence '\u{{%{unicode_hex}}}':
+  en: Invalid unicode escape sequence '\u{{%{unicode_hex}}}'
+  zh_CN: 无效的Unicode转义序列 '\u{{%{unicode_hex}}}'
+  zh_HK: 無效的Unicode轉義序列 '\u{{%{unicode_hex}}}'
+  zh_TW: 無效的Unicode轉義序列 '\u{{%{unicode_hex}}}'
+String too short:
+  en: String too short
+  zh_CN: 字符串太短
+  zh_HK: 字符串太短
+  zh_TW: 字符串太短
+The float literal '%{text}' is invalid, %{err}:
+  en: The float literal '%{text}' is invalid, %{err}
+  zh_CN: 浮点字面量 '%{text}' 无效, %{err}
+  zh_HK: 浮點字面量 '%{text}' 無效, %{err}
+  zh_TW: 浮點字面量 '%{text}' 無效, %{err}
+The integer literal '%{text}' is invalid, %{err}:
+  en: The integer literal '%{text}' is invalid, %{err}
+  zh_CN: 整数字面量 '%{text}' 无效, %{err}
+  zh_HK: 整數字面量 '%{text}' 無效, %{err}
+  zh_TW: 整數字面量 '%{text}' 無效, %{err}
+The integer literal '%{text}' is too large to be represented in type 'long':
+  en: The integer literal '%{text}' is too large to be represented in type 'long'
+  zh_CN: 整数字面量 '%{text}' 太大，无法用 'long' 类型表示
+  zh_HK: 整數字面量 '%{text}' 太大，無法用 'long' 類型表示
+  zh_TW: 整數字面量 '%{text}' 太大，無法用 'long' 類型表示
+binary operator not followed by expression:
+  en: binary operator not followed by expression
+  zh_CN: 二元运算符后没有表达式
+  zh_HK: 二元運算符後沒有表達式
+  zh_TW: 二元運算符後沒有表達式
+binary operator not followed by type:
+  en: binary operator not followed by type
+  zh_CN: 二元运算符后没有类型
+  zh_HK: 二元運算符後沒有類型
+  zh_TW: 二元運算符後沒有類型
+bitwise operation is not supported:
+  en: bitwise operation is not supported
+  zh_CN: 不支持位运算
+  zh_HK: 不支持位運算
+  zh_TW: 不支持位運算
+expect args:
+  en: expect args
+  zh_CN: 需要参数
+  zh_HK: 需要參數
+  zh_TW: 需要參數
+expect field name or '[', but get %{current}:
+  en: expect field name or '[', but get %{current}
+  zh_CN: 需要字段名或 '[', 但得到 %{current}
+  zh_HK: 需要字段名或 '[', 但得到 %{current}
+  zh_TW: 需要字段名或 '[', 但得到 %{current}
+expect fun:
+  en: expect fun
+  zh_CN: 需要函数
+  zh_HK: 需要函數
+  zh_TW: 需要函數
+expect index struct:
+  en: expect index struct
+  zh_CN: 需要索引结构
+  zh_HK: 需要索引結構
+  zh_TW: 需要索引結構
+expect name or ...:
+  en: expect name or ...
+  zh_CN: 需要名称或 ...
+  zh_HK: 需要名稱或 ...
+  zh_TW: 需要名稱或 ...
+expect name or [<number>] or [<string>]:
+  en: expect name or [<number>] or [<string>]
+  zh_CN: 需要名称或 [<数字>] 或 [<字符串>]
+  zh_HK: 需要名稱或 [<數字>] 或 [<字符串>]
+  zh_TW: 需要名稱或 [<數字>] 或 [<字符串>]
+expect param name or '...', but get %{current}:
+  en: expect param name or '...', but get %{current}
+  zh_CN: 需要参数名或 '...', 但得到 %{current}
+  zh_HK: 需要參數名或 '...', 但得到 %{current}
+  zh_TW: 需要參數名或 '...', 但得到 %{current}
+expect parameter name:
+  en: expect parameter name
+  zh_CN: 需要参数名
+  zh_HK: 需要參數名
+  zh_TW: 需要參數名
+expect primary expression:
+  en: expect primary expression
+  zh_CN: 需要主表达式
+  zh_HK: 需要主表達式
+  zh_TW: 需要主表達式
+expect type:
+  en: expect type
+  zh_CN: 需要类型
+  zh_HK: 需要類型
+  zh_TW: 需要類型
+expected %{token}, but get %{current}:
+  en: expected %{token}, but get %{current}
+  zh_CN: 期望 %{token}, 但得到 %{current}
+  zh_HK: 期望 %{token}, 但得到 %{current}
+  zh_TW: 期望 %{token}, 但得到 %{current}
+integer division is not supported:
+  en: integer division is not supported
+  zh_CN: 不支持整数除法
+  zh_HK: 不支持整數除法
+  zh_TW: 不支持整數除法
+integer power operation is not supported:
+  en: integer power operation is not supported
+  zh_CN: 不支持整数幂运算
+  zh_HK: 不支持整數冪運算
+  zh_TW: 不支持整數冪運算
+invalid long string delimiter:
+  en: invalid long string delimiter
+  zh_CN: 无效的长字符串定界符
+  zh_HK: 無效的長字符串定界符
+  zh_TW: 無效的長字符串定界符
+'local attribute is not supported for current version: %{level}':
+  en: 'local attribute is not supported for current version: %{level}'
+  zh_CN: '当前版本不支持本地属性: %{level}'
+  zh_HK: '當前版本不支持本地屬性: %{level}'
+  zh_TW: '當前版本不支持本地屬性: %{level}'
+unary operator not followed by expression:
+  en: unary operator not followed by expression
+  zh_CN: 一元运算符后没有表达式
+  zh_HK: 一元運算符後沒有表達式
+  zh_TW: 一元運算符後沒有表達式
+unary operator not followed by type:
+  en: unary operator not followed by type
+  zh_CN: 一元运算符后没有类型
+  zh_HK: 一元運算符後沒有類型
+  zh_TW: 一元運算符後沒有類型
+unexpected expr for varList:
+  en: unexpected expr for varList
+  zh_CN: varList 中的意外表达式
+  zh_HK: varList 中的意外表達式
+  zh_TW: varList 中的意外表達式
+unexpected token:
+  en: unexpected token
+  zh_CN: 意外的标记
+  zh_HK: 意外的標記
+  zh_TW: 意外的標記
+unexpected token %{token}:
+  en: unexpected token %{token}
+  zh_CN: 意外的标记 %{token}
+  zh_HK: 意外的標記 %{token}
+  zh_TW: 意外的標記 %{token}
+unfinished long string or comment:
+  en: unfinished long string or comment
+  zh_CN: 未完成的长字符串或注释
+  zh_HK: 未完成的長字符串或註釋
+  zh_TW: 未完成的長字符串或註釋
+unfinished stat:
+  en: unfinished stat
+  zh_CN: 未完成的语句
+  zh_HK: 未完成的語句
+  zh_TW: 未完成的語句
+unfinished string:
+  en: unfinished string
+  zh_CN: 未完成的字符串
+  zh_HK: 未完成的字符串
+  zh_TW: 未完成的字符串

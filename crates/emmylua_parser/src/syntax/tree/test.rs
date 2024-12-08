@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::{LuaAstNode, LuaLanguageLevel, LuaParser, ParserConfig};
+    use crate::{set_locale, LuaAstNode, LuaLanguageLevel, LuaParser, ParserConfig};
     // use std::time::Instant;
     use std::thread;
 
@@ -52,5 +52,18 @@ end
         let tree = LuaParser::parse(code, ParserConfig::default());
         let chunk = tree.get_chunk_node();
         println!("{:?}", chunk.dump());
+    }
+
+    #[test]
+    fn test_error() {
+        let code = r#"
+local
+"#;
+        set_locale("zh_CN");
+        let tree = LuaParser::parse(code, ParserConfig::default());
+        let errors = tree.get_errors();
+        for error in errors {
+            println!("{:?}", error);
+        }
     }
 }

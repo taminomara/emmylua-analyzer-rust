@@ -2,6 +2,10 @@
 
 EmmyLua-Parser is a parser for Lua5.1, Lua5.2, Lua5.3, Lua5.4, and LuaJIT and also supports EmmyLua/LuaCats annotations. Its purpose is to generate AST and CST from the parsed code for further analysis.
 
+### Internationalization (i18n) Support
+
+This crate supports multiple languages, defaulting to English (en-US). Users can optionally initialize i18n to set a different language.
+
 ### Features
 
 - Lossless syntax tree generation

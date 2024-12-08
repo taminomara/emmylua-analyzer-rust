@@ -53,7 +53,7 @@ impl LuaDiagnostic {
         if !self.enable {
             return None;
         }
-        
+
         let model = compilation.get_semantic_model(file_id)?;
         let mut context = DiagnosticContext::new(model);
         for checker in &self.checkers {
@@ -61,7 +61,8 @@ impl LuaDiagnostic {
                 return None;
             }
 
-            if self.can_run(&context, checker) {
+            let code = checker.get_code();
+            if self.is_checker_enable_by_code(&context, &code) {
                 checker.check(&mut context);
             }
         }
@@ -69,13 +70,14 @@ impl LuaDiagnostic {
         Some(context.get_diagnostics())
     }
 
-    fn can_run(&self, context: &DiagnosticContext, checker: &Box<dyn LuaChecker>) -> bool {
+    fn is_checker_enable_by_code(
+        &self,
+        context: &DiagnosticContext,
+        code: &DiagnosticCode,
+    ) -> bool {
         let file_id = context.get_file_id();
         let db = context.get_db();
-
-        let code = checker.get_code();
         let diagnostic_index = db.get_diagnostic_index();
-
         // force enable
         if diagnostic_index.is_file_enabled(&file_id, &code) {
             return true;
