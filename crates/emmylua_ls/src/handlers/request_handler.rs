@@ -1,18 +1,22 @@
-use std::error::Error;
+use std::{error::Error, future::Future};
 
 use log::error;
 use lsp_server::{Request, RequestId, Response};
+use lsp_types::request::HoverRequest;
 use serde::{de::DeserializeOwned, Serialize};
 use tokio_util::sync::CancellationToken;
 
 use crate::context::{ServerContext, ServerContextSnapshot};
 
+use super::hover::on_hover;
+
 pub async fn on_req_handler(
     req: Request,
     server_context: &mut ServerContext,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
-    RequestDispatcher::new(req, server_context).finish();
-    // .on(handler)
+    RequestDispatcher::new(req, server_context)
+        .on_async::<HoverRequest, _, _>(on_hover).await
+        .finish();
     Ok(())
 }
 
@@ -29,18 +33,16 @@ impl<'a> RequestDispatcher<'a> {
         }
     }
 
-    pub async fn on_async<R>(
+    pub async fn on_async<R, F, Fut>(
         &mut self,
-        handler: fn(
-            snapshot: ServerContextSnapshot,
-            R::Params,
-            CancellationToken,
-        ) -> Option<R::Result>,
+        handler: F
     ) -> &mut Self
     where
         R: lsp_types::request::Request + 'static,
         R::Params: DeserializeOwned + Send + std::fmt::Debug + 'static,
         R::Result: Serialize + 'static,
+        F: Fn(ServerContextSnapshot, R::Params, CancellationToken) -> Fut + Send + 'static,
+        Fut: Future<Output = R::Result> + Send + 'static,
     {
         let req = match &self.req {
             Some(req) if req.method == R::METHOD => self.req.take().unwrap(),
@@ -52,8 +54,8 @@ impl<'a> RequestDispatcher<'a> {
             let id = req.id.clone();
             let m: Result<(RequestId, R::Params), _> = req.extract(R::METHOD);
             self.context
-                .task(id.clone(), move |cancel_token| {
-                    let result = handler(snapshot, m.unwrap().1, cancel_token)?;
+                .task(id.clone(), |cancel_token| async move {
+                    let result = handler(snapshot, m.unwrap().1, cancel_token).await;
                     Some(Response::new_ok(id, result))
                 })
                 .await;
@@ -63,7 +65,13 @@ impl<'a> RequestDispatcher<'a> {
 
     pub fn finish(&mut self) {
         if let Some(req) = &self.req {
-            error!("handler not found for request. [{}]", req.method)
+            error!("handler not found for request. [{}]", req.method);
+            let response = Response::new_err(
+                req.id.clone(),
+                lsp_server::ErrorCode::MethodNotFound as i32,
+                "handler not found".to_string(),
+            );
+            self.context.send(response);
         }
     }
 }

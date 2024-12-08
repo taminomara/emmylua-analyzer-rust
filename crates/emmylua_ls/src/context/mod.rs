@@ -12,7 +12,7 @@ pub use file_diagnostic::FileDiagnostic;
 use lsp_server::{Connection, ErrorCode, Message, RequestId, Response};
 pub use snapshot::ServerContextSnapshot;
 pub use status_bar::VsCodeStatusBar;
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, future::Future, sync::Arc};
 use tokio::sync::{Mutex, RwLock};
 use tokio_util::sync::CancellationToken;
 
@@ -71,9 +71,14 @@ impl ServerContext {
         }
     }
 
-    pub async fn task<F>(&self, req_id: RequestId, exec: F)
+    pub fn send(&self, response: Response) {
+        let _ = self.conn.sender.send(Message::Response(response));
+    }
+
+    pub async fn task<F, Fut>(&self, req_id: RequestId, exec: F)
     where
-        F: FnOnce(CancellationToken) -> Option<Response> + Send + 'static,
+        F: FnOnce(CancellationToken) -> Fut + Send + 'static,
+        Fut: Future<Output = Option<Response>> + Send + 'static,
     {
         let cancel_token = CancellationToken::new();
 
@@ -86,12 +91,19 @@ impl ServerContext {
         let cancellations = self.cancllations.clone();
 
         tokio::spawn(async move {
-            let res = exec(cancel_token.clone());
-            if cancel_token.is_cancelled() || res.is_none() {
+            let res = exec(cancel_token.clone()).await;
+            if cancel_token.is_cancelled() {
                 let response = Response::new_err(
                     req_id.clone(),
                     ErrorCode::RequestCanceled as i32,
                     "cancel".to_string(),
+                );
+                let _ = sender.send(Message::Response(response));
+            } else if res.is_none() {
+                let response = Response::new_err(
+                    req_id.clone(),
+                    ErrorCode::InternalError as i32,
+                    "internal error".to_string(),
                 );
                 let _ = sender.send(Message::Response(response));
             } else if let Some(it) = res {

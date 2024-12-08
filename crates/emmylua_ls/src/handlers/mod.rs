@@ -3,6 +3,7 @@ mod notification_handler;
 mod request_handler;
 mod response_handler;
 mod text_document;
+mod hover;
 
 pub use initialized::initialized_handler;
 use lsp_types::{
