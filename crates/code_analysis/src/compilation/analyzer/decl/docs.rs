@@ -39,7 +39,7 @@ pub fn analyze_doc_tag_class(analyzer: &mut DeclAnalyzer, class: LuaDocTagClass)
     if let Err(e) = r {
         analyzer.db.get_diagnostic_index_mut().add_diagnostic(
             file_id,
-            AnalyzeError::new(DiagnosticCode::DuplicateType, e, range),
+            AnalyzeError::new(DiagnosticCode::DuplicateType, &e, range),
         );
     }
 }
@@ -97,7 +97,7 @@ pub fn analyze_doc_tag_enum(analyzer: &mut DeclAnalyzer, enum_: LuaDocTagEnum) {
     if let Err(e) = r {
         analyzer.db.get_diagnostic_index_mut().add_diagnostic(
             file_id,
-            AnalyzeError::new(DiagnosticCode::DuplicateType, e, range),
+            AnalyzeError::new(DiagnosticCode::DuplicateType, &e, range),
         );
     }
 }
@@ -124,7 +124,7 @@ pub fn analyze_doc_tag_alias(analyzer: &mut DeclAnalyzer, alias: LuaDocTagAlias)
     if let Err(e) = r {
         analyzer.db.get_diagnostic_index_mut().add_diagnostic(
             file_id,
-            AnalyzeError::new(DiagnosticCode::DuplicateType, e, range),
+            AnalyzeError::new(DiagnosticCode::DuplicateType, &e, range),
         );
     }
 }

@@ -89,7 +89,7 @@ impl LuaTypeIndex {
             };
 
             if !can_add {
-                return Err(format!("Type {} already defined", full_name));
+                return Err(t!("Type '%{name}' already defined", name = full_name).to_string());
             }
 
             if let Some(decl_attrib) = &mut decls.attrib {

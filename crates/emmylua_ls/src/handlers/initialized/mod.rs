@@ -1,12 +1,13 @@
 mod client_config;
 mod collect_files;
 mod regsiter_file_watch;
+mod locale;
 
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
 use crate::{
     context::{
-        load_emmy_config, ClientProxy, FileDiagnostic, ServerContextSnapshot, VsCodeStatusBar,
+        load_emmy_config, ClientProxy, ServerContextSnapshot, VsCodeStatusBar,
     },
     logger::init_logger,
 };
@@ -31,6 +32,8 @@ pub async fn initialized_handler(
         Some(path) => path.to_str(),
         None => None,
     };
+    // init locale
+    locale::set_ls_locale(&params);
 
     // init logger
     init_logger(main_root);

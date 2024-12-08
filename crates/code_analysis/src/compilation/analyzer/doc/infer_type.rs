@@ -137,7 +137,7 @@ fn infer_buildin_or_ref_type(analyzer: &mut DocAnalyzer, name: &str, range: Text
                 analyzer.file_id,
                 AnalyzeError::new(
                     DiagnosticCode::TypeNotFound,
-                    format!("Type {} not found", name),
+                    &t!("Type '%{name}' not found", name = name),
                     range,
                 ),
             );

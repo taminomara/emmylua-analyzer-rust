@@ -18,6 +18,16 @@ use tokio_util::sync::CancellationToken;
 #[allow(unused)]
 pub use vfs::*;
 
+#[macro_use]
+extern crate rust_i18n;
+
+rust_i18n::i18n!("./locales", fallback="en");
+
+pub fn set_locale(locale: &str) {
+    rust_i18n::set_locale(locale);
+    emmylua_parser::set_locale(locale);
+}
+
 #[derive(Debug)]
 pub struct EmmyLuaAnalysis {
     pub compilation: LuaCompilation,

@@ -169,6 +169,7 @@ dependencies = [
  "lsp-types",
  "regex",
  "rowan",
+ "rust-i18n",
  "schemars",
  "serde",
  "serde_json",

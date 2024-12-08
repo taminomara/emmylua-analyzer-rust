@@ -10,10 +10,10 @@ pub struct AnalyzeError {
 }
 
 impl AnalyzeError {
-    pub fn new(kind: DiagnosticCode, message: String, range: TextRange) -> Self {
+    pub fn new(kind: DiagnosticCode, message: &str, range: TextRange) -> Self {
         Self {
             kind,
-            message,
+            message: message.to_string(),
             range
         }
     }
