@@ -1705,4 +1705,33 @@ Syntax(Chunk)@0..36
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_region() {
+        let code = r#"
+        --region hhhh
+        --endregion
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..51
+  Syntax(Block)@0..51
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..42
+      Token(TkNormalStart)@9..11 "--"
+      Token(TkDocRegion)@11..17 "region"
+      Token(TkWhitespace)@17..18 " "
+      Syntax(DocDescription)@18..33
+        Token(TkDocDetail)@18..22 "hhhh"
+        Token(TkEndOfLine)@22..23 "\n"
+        Token(TkWhitespace)@23..31 "        "
+        Token(TkNormalStart)@31..33 "--"
+      Token(TkDocEndRegion)@33..42 "endregion"
+    Token(TkEndOfLine)@42..43 "\n"
+    Token(TkWhitespace)@43..51 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
 }

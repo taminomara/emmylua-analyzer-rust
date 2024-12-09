@@ -135,6 +135,8 @@ pub enum LuaTokenKind {
     TkDocMatch,           // =
     TkDocBoolean,         // true false
     TKDocPath,            // path
+    TkDocRegion,          // region
+    TkDocEndRegion,       // endregion
 }
 
 impl fmt::Display for LuaTokenKind {

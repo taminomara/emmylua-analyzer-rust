@@ -25,6 +25,7 @@ pub enum LuaDocLexerState {
     See,
     Version,
     Source,
+    NormalDescription,
 }
 
 impl LuaDocLexer<'_> {
@@ -69,6 +70,7 @@ impl LuaDocLexer<'_> {
             LuaDocLexerState::See => self.lex_see(),
             LuaDocLexerState::Version => self.lex_version(),
             LuaDocLexerState::Source => self.lex_source(),
+            LuaDocLexerState::NormalDescription => self.lex_normal_description(),
             _ => LuaTokenKind::None,
         }
     }
@@ -443,6 +445,29 @@ impl LuaDocLexer<'_> {
                 LuaTokenKind::TKDocPath
             }
             _ => self.lex_normal(),
+        }
+    }
+
+    fn lex_normal_description(&mut self) -> LuaTokenKind {
+        let reader = self.reader.as_mut().unwrap();
+        match reader.current_char() {
+            ch if is_doc_whitespace(ch) => {
+                reader.eat_while(is_doc_whitespace);
+                LuaTokenKind::TkWhitespace
+            }
+            ch if ch.is_ascii_alphabetic() => {
+                reader.eat_while(|c| c.is_ascii_alphabetic());
+                let text = reader.current_saved_text();
+                return match text {
+                    "region" => LuaTokenKind::TkDocRegion,
+                    "endregion" => LuaTokenKind::TkDocEndRegion,
+                    _ => {
+                        reader.eat_while(|_| true);
+                        LuaTokenKind::TkDocDetail
+                    }
+                }
+            }
+            _ => self.lex_description()
         }
     }
 }

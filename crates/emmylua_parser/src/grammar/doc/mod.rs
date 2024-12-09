@@ -34,8 +34,15 @@ fn parse_docs(p: &mut LuaDocParser) {
                 parse_long_tag(p);
             }
             LuaTokenKind::TkNormalStart => {
-                p.set_state(LuaDocLexerState::Description);
+                p.set_state(LuaDocLexerState::NormalDescription);
                 p.bump();
+
+                if matches!(
+                    p.current_token(),
+                    LuaTokenKind::TkDocRegion | LuaTokenKind::TkDocEndRegion
+                ) {
+                    p.bump();
+                }
 
                 parse_description(p);
             }
@@ -96,7 +103,11 @@ fn expect_token(p: &mut LuaDocParser, token: LuaTokenKind) -> Result<(), LuaPars
         Ok(())
     } else {
         Err(LuaParseError::from_source_range(
-            &t!("expected %{token}, but get %{current}", token = token, current = p.current_token()),
+            &t!(
+                "expected %{token}, but get %{current}",
+                token = token,
+                current = p.current_token()
+            ),
             p.current_token_range(),
         ))
     }

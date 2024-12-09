@@ -125,6 +125,8 @@ fn parse_object_or_mapped_type(p: &mut LuaDocParser) -> ParseResult {
         }
     }
 
+    expect_token(p,LuaTokenKind::TkRightBrace)?;
+
     Ok(m.complete(p))
 }
 
