@@ -8,7 +8,6 @@ mod operators;
 mod property;
 mod reference;
 mod signature;
-mod symbol;
 mod traits;
 mod r#type;
 

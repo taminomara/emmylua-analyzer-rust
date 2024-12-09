@@ -1,6 +1,6 @@
 use emmylua_parser::{LuaDocFieldKey, LuaIndexKey, LuaSyntaxId};
 use internment::ArcIntern;
-use rowan::{TextRange, TextSize};
+use rowan::TextRange;
 
 use crate::{
     db_index::{LuaType, LuaTypeDeclId},

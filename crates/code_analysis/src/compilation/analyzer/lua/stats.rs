@@ -2,7 +2,6 @@ use emmylua_parser::{
     LuaAssignStat, LuaAstNode, LuaAstToken, LuaExpr, LuaForRangeStat, LuaFuncStat,
     LuaLocalFuncStat, LuaLocalStat, LuaTableField, LuaVarExpr,
 };
-use serde::de;
 
 use crate::{
     compilation::analyzer::unresolve::{

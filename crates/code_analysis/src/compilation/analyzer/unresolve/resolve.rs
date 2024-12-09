@@ -88,13 +88,6 @@ pub fn try_resolve_module(
     Some(true)
 }
 
-enum ResolveReturnPoint {
-    Expr(LuaType),
-    MuliExpr(Vec<LuaType>),
-    Nil,
-    Error,
-}
-
 pub fn try_resolve_return_point(
     db: &mut DbIndex,
     config: &mut LuaInferConfig,

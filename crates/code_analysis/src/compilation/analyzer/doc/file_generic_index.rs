@@ -2,8 +2,6 @@ use std::collections::HashMap;
 
 use rowan::{TextRange, TextSize};
 
-use crate::db_index::LuaType;
-
 #[derive(Debug, Clone)]
 pub struct FileGenericIndex {
     generic_params: Vec<GenericParams>,

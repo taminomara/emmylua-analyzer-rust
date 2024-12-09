@@ -136,7 +136,7 @@ pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaPropertyOwnerId> {
 
                     return Some(LuaPropertyOwnerId::Member(member_id));
                 }
-                _ => None,
+                // _ => None,
             }
         }
         LuaAst::LuaLocalStat(local_stat) => {
