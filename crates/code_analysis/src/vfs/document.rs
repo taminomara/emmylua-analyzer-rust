@@ -49,6 +49,10 @@ impl<'a> LuaDocument<'a> {
         self.text
     }
 
+    pub fn get_text_slice(&self, range: TextRange) -> &str {
+        &self.text[range.start().into()..range.end().into()]
+    }
+
     pub fn get_line_count(&self) -> usize {
         self.line_index.line_count()
     }
@@ -89,6 +93,12 @@ impl<'a> LuaDocument<'a> {
             uri: self.uri.clone(),
             range: self.to_lsp_range(range)?,
         })
+    }
+
+    pub fn to_rowan_range(&self, range: lsp_types::Range) -> Option<TextRange> {
+        let start = self.get_offset(range.start.line as usize, range.start.character as usize)?;
+        let end = self.get_offset(range.end.line as usize, range.end.character as usize)?;
+        Some(TextRange::new(start, end))
     }
 
 }

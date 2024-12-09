@@ -1,3 +1,4 @@
+mod document_color;
 mod document_symbol;
 mod fold_range;
 mod hover;
@@ -9,11 +10,8 @@ mod text_document;
 
 pub use initialized::initialized_handler;
 pub use initialized::{init_analysis, ClientConfig};
-use lsp_server::Message;
 use lsp_types::{
-    DocumentSymbolOptions, FoldingRangeProviderCapability, HoverProviderCapability, OneOf,
-    SaveOptions, ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind,
-    TextDocumentSyncSaveOptions,
+    ColorProviderCapability, DocumentSymbolOptions, FoldingRangeProviderCapability, HoverProviderCapability, OneOf, SaveOptions, ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncSaveOptions
 };
 pub use notification_handler::on_notification_handler;
 pub use request_handler::on_req_handler;
@@ -38,7 +36,7 @@ pub fn server_capabilities() -> ServerCapabilities {
             work_done_progress_options: Default::default(),
         })),
         folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
+        color_provider: Some(ColorProviderCapability::Simple(true)),
         ..Default::default()
     }
 }
-
