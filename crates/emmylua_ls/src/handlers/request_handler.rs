@@ -2,21 +2,25 @@ use std::{error::Error, future::Future};
 
 use log::error;
 use lsp_server::{Request, RequestId, Response};
-use lsp_types::request::{DocumentSymbolRequest, HoverRequest};
+use lsp_types::request::{DocumentSymbolRequest, FoldingRangeRequest, HoverRequest};
 use serde::{de::DeserializeOwned, Serialize};
 use tokio_util::sync::CancellationToken;
 
 use crate::context::{ServerContext, ServerContextSnapshot};
 
-use super::{document_symbol::on_document_symbol, hover::on_hover};
+use super::{document_symbol::on_document_symbol, fold_range::on_folding_range_handler, hover::on_hover};
 
 pub async fn on_req_handler(
     req: Request,
     server_context: &mut ServerContext,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
     RequestDispatcher::new(req, server_context)
-        .on_async::<HoverRequest, _, _>(on_hover).await
-        .on_async::<DocumentSymbolRequest,_, _>(on_document_symbol).await
+        .on_parallel::<HoverRequest, _, _>(on_hover)
+        .await
+        .on_parallel::<DocumentSymbolRequest, _, _>(on_document_symbol)
+        .await
+        .on_parallel::<FoldingRangeRequest, _, _>(on_folding_range_handler)
+        .await
         .finish();
     Ok(())
 }
@@ -34,10 +38,7 @@ impl<'a> RequestDispatcher<'a> {
         }
     }
 
-    pub async fn on_async<R, F, Fut>(
-        &mut self,
-        handler: F
-    ) -> &mut Self
+    pub async fn on_parallel<R, F, Fut>(&mut self, handler: F) -> &mut Self
     where
         R: lsp_types::request::Request + 'static,
         R::Params: DeserializeOwned + Send + std::fmt::Debug + 'static,

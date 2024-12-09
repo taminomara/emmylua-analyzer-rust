@@ -68,7 +68,7 @@ impl ConfigManager {
         });
     }
 
-    pub fn update_editorconfig(&self, path: PathBuf) {}
+    pub fn update_editorconfig(&self, _: PathBuf) {}
 }
 
 pub fn load_emmy_config(config_root: Option<PathBuf>, client_config: ClientConfig) -> Arc<Emmyrc> {

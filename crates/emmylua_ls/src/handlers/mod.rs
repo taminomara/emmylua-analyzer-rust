@@ -1,19 +1,23 @@
+mod document_symbol;
+mod fold_range;
+mod hover;
 mod initialized;
 mod notification_handler;
 mod request_handler;
 mod response_handler;
 mod text_document;
-mod hover;
-mod document_symbol;
 
 pub use initialized::initialized_handler;
+pub use initialized::{init_analysis, ClientConfig};
+use lsp_server::Message;
 use lsp_types::{
-    DocumentSymbolOptions, HoverProviderCapability, OneOf, SaveOptions, ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncSaveOptions
+    DocumentSymbolOptions, FoldingRangeProviderCapability, HoverProviderCapability, OneOf,
+    SaveOptions, ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind,
+    TextDocumentSyncSaveOptions,
 };
 pub use notification_handler::on_notification_handler;
 pub use request_handler::on_req_handler;
 pub use response_handler::on_response_handler;
-pub use initialized::{ClientConfig, init_analysis};
 
 pub fn server_capabilities() -> ServerCapabilities {
     ServerCapabilities {
@@ -33,6 +37,8 @@ pub fn server_capabilities() -> ServerCapabilities {
             label: Some("EmmyLua".into()),
             work_done_progress_options: Default::default(),
         })),
+        folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
         ..Default::default()
     }
 }
+

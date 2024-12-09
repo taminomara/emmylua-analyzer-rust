@@ -3,14 +3,20 @@ use std::{error::Error, future::Future};
 use log::error;
 use lsp_server::Notification;
 use lsp_types::{
-    notification::{Cancel, DidChangeTextDocument, DidChangeWatchedFiles, DidOpenTextDocument, DidSaveTextDocument, Notification as lsp_notification},
+    notification::{
+        Cancel, DidChangeTextDocument, DidChangeWatchedFiles, DidOpenTextDocument,
+        DidSaveTextDocument, Notification as lsp_notification,
+    },
     CancelParams, NumberOrString,
 };
 use serde::de::DeserializeOwned;
 
 use crate::context::{ServerContext, ServerContextSnapshot};
 
-use super::text_document::{on_did_change_text_document, on_did_change_watched_files, on_did_open_text_document, on_did_save_text_document};
+use super::text_document::{
+    on_did_change_text_document, on_did_change_watched_files, on_did_open_text_document,
+    on_did_save_text_document,
+};
 
 pub async fn on_notification_handler(
     notification: Notification,
@@ -19,10 +25,11 @@ pub async fn on_notification_handler(
     NotificationDispatcher::new(notification, server_context)
         .on_cancel()
         .await
-        .on_async::<DidOpenTextDocument, _, _>(on_did_open_text_document)
-        .on_async::<DidSaveTextDocument, _, _>(on_did_save_text_document)
-        .on_async::<DidChangeTextDocument, _, _>(on_did_change_text_document)
-        .on_async::<DidChangeWatchedFiles, _, _>(on_did_change_watched_files)
+        .on_parallel::<DidOpenTextDocument, _, _>(on_did_open_text_document)
+        .on_parallel::<DidSaveTextDocument, _, _>(on_did_save_text_document)
+        .on_sync::<DidChangeTextDocument, _, _>(on_did_change_text_document)
+        .await
+        .on_parallel::<DidChangeWatchedFiles, _, _>(on_did_change_watched_files)
         .finish();
     // .on(handler)
     Ok(())
@@ -44,7 +51,7 @@ impl<'a> NotificationDispatcher<'a> {
         }
     }
 
-    pub fn on_async<R, F, Fut>(&mut self, handler: F) -> &mut Self
+    pub fn on_parallel<R, F, Fut>(&mut self, handler: F) -> &mut Self
     where
         R: lsp_types::notification::Notification + 'static,
         R::Params: DeserializeOwned + Send + std::fmt::Debug + 'static,
@@ -66,14 +73,12 @@ impl<'a> NotificationDispatcher<'a> {
         self
     }
 
-    #[allow(dead_code)]
-    pub fn on_sync<R>(
-        &mut self,
-        handler: fn(ServerContextSnapshot, R::Params) -> Option<()>,
-    ) -> &mut Self
+    pub async fn on_sync<R, F, Fut>(&mut self, handler: F) -> &mut Self
     where
         R: lsp_types::notification::Notification + 'static,
         R::Params: DeserializeOwned + Send + std::fmt::Debug + 'static,
+        F: Fn(ServerContextSnapshot, R::Params) -> Fut + Send + 'static,
+        Fut: Future<Output = Option<()>> + Send + 'static,
     {
         let notification = match &self.notification {
             Some(req) if req.method == R::METHOD => self.notification.take().unwrap(),
@@ -83,7 +88,7 @@ impl<'a> NotificationDispatcher<'a> {
         if R::METHOD == notification.method {
             let snapshot = self.context.snapshot();
             let m = notification.extract(R::METHOD);
-            handler(snapshot, m.unwrap());
+            handler(snapshot, m.unwrap()).await;
         }
         self
     }

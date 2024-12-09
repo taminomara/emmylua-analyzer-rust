@@ -39,6 +39,7 @@ pub async fn on_did_change_text_document(
     let uri = params.text_document.uri;
     let text = params.content_changes.first()?.text.clone();
     let file_id = analysis.update_file_by_uri(&uri, Some(text));
+    drop(analysis);
     if let Some(file_id) = file_id {
         context.file_diagnostic.add_diagnostic_task(file_id).await;
     }

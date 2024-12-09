@@ -18,6 +18,3 @@ log = "0.4"
 fern = "0.7"
 chrono = "0.4"
 tokio-util = "0.7"
-
-[workspace.build-dependencies]
-rust-i18n = "3"
