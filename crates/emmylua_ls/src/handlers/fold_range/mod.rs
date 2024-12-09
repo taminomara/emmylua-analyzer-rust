@@ -9,9 +9,7 @@ use emmylua_parser::{LuaAst, LuaAstNode};
 use expr::{build_closure_expr_fold_range, build_string_fold_range, build_table_expr_fold_range};
 use lsp_types::{FoldingRange, FoldingRangeParams};
 use stats::{
-    build_do_stat_fold_range, build_for_range_stat_fold_range, build_for_stat_fold_range,
-    build_func_stat_fold_range, build_local_func_stat_fold_range, build_repeat_stat_fold_range,
-    build_while_stat_fold_range,
+    build_do_stat_fold_range, build_for_range_stat_fold_range, build_for_stat_fold_range, build_func_stat_fold_range, build_if_stat_fold_range, build_local_func_stat_fold_range, build_repeat_stat_fold_range, build_while_stat_fold_range
 };
 use tokio_util::sync::CancellationToken;
 
@@ -70,6 +68,9 @@ fn build_folding_ranges(builder: &mut FoldingRangeBuilder) {
             }
             LuaAst::LuaClosureExpr(closure) => {
                 build_closure_expr_fold_range(builder, closure);
+            }
+            LuaAst::LuaIfStat(if_stat) => {
+                build_if_stat_fold_range(builder, if_stat);
             }
             _ => {}
         }

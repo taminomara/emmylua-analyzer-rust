@@ -81,10 +81,10 @@ pub fn build_closure_expr_fold_range(
     let folding_range = FoldingRange {
         start_line: lsp_range.start.line,
         start_character: Some(lsp_range.start.character),
-        end_line: lsp_range.end.line,
-        end_character: Some(lsp_range.end.character),
+        end_line: lsp_range.end.line - 1,
+        end_character: Some(0),
         kind: Some(FoldingRangeKind::Region),
-        collapsed_text: Some("function .. end".to_string()),
+        collapsed_text: Some("function ..".to_string()),
     };
 
     builder.push(folding_range);

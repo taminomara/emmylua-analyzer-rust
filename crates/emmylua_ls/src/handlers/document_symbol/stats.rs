@@ -1,7 +1,6 @@
 use code_analysis::{LuaDeclId, LuaSignatureId, LuaType};
 use emmylua_parser::{
-    LuaAssignStat, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaFuncStat,
-    LuaLocalFuncStat, LuaLocalStat,
+    LuaAssignStat, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaFuncStat, LuaIfClauseStat, LuaIfStat, LuaLocalFuncStat, LuaLocalStat
 };
 use lsp_types::SymbolKind;
 
@@ -165,5 +164,38 @@ pub fn build_func_stat_symbol(
     let symbol = LuaSymbol::new(name, desc.1, desc.0, func.get_range());
 
     builder.add_node_symbol(func.syntax().clone(), symbol);
+    Some(())
+}
+
+pub fn build_if_stat_symbol(
+    builder: &mut DocumentSymbolBuilder,
+    if_stat: LuaIfStat,
+) -> Option<()> {
+    let if_symbol = LuaSymbol::new(
+        "if".to_string(),
+        None,
+        SymbolKind::MODULE,
+        if_stat.get_range(),
+    );
+
+    builder.add_node_symbol(if_stat.syntax().clone(), if_symbol);
+
+    for branch in if_stat.get_all_clause() {
+        let name = match &branch {
+            LuaIfClauseStat::Else(_) => "else",
+            LuaIfClauseStat::ElseIf(_) => "elseif",
+        };
+
+        let symbol = LuaSymbol::new(
+            name.to_string(),
+            None,
+            SymbolKind::MODULE,
+            branch.get_range(),
+        );
+
+        builder.add_node_symbol(branch.syntax().clone(), symbol);
+    }
+
+
     Some(())
 }

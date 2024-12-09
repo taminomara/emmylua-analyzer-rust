@@ -9,7 +9,8 @@ use expr::{build_closure_expr_symbol, build_table_symbol};
 use lsp_types::{DocumentSymbol, DocumentSymbolParams, DocumentSymbolResponse, SymbolKind};
 use stats::{
     build_assign_stat_symbol, build_for_range_stat_symbol, build_for_stat_symbol,
-    build_func_stat_symbol, build_local_func_stat_symbol, build_local_stat_symbol,
+    build_func_stat_symbol, build_if_stat_symbol, build_local_func_stat_symbol,
+    build_local_stat_symbol,
 };
 use tokio_util::sync::CancellationToken;
 
@@ -81,6 +82,9 @@ fn build_child_document_symbols(buider: &mut DocumentSymbolBuilder, root: &LuaCh
             }
             LuaAst::LuaTableExpr(table) => {
                 build_table_symbol(buider, table);
+            }
+            LuaAst::LuaIfStat(if_stat) => {
+                build_if_stat_symbol(buider, if_stat);
             }
             _ => {}
         }

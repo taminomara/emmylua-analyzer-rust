@@ -1,10 +1,10 @@
 use std::fmt::format;
 
 use emmylua_parser::{
-    LuaAstNode, LuaDoStat, LuaForRangeStat, LuaForStat, LuaFuncStat, LuaLocalFuncStat,
-    LuaRepeatStat, LuaWhileStat,
+    LuaAstNode, LuaDoStat, LuaForRangeStat, LuaForStat, LuaFuncStat, LuaIfClauseStat, LuaIfStat, LuaLocalFuncStat, LuaRepeatStat, LuaWhileStat
 };
 use lsp_types::{FoldingRange, FoldingRangeKind};
+use rowan::TextRange;
 
 use super::builder::FoldingRangeBuilder;
 
@@ -22,7 +22,7 @@ pub fn build_for_stat_fold_range(
     let folding_range = FoldingRange {
         start_line: lsp_range.start.line,
         start_character: Some(lsp_range.start.character),
-        end_line: lsp_range.end.line,
+        end_line: lsp_range.end.line - 1,
         end_character: Some(lsp_range.end.character),
         kind: Some(FoldingRangeKind::Region),
         collapsed_text: Some("fori .. end".to_string()),
@@ -46,7 +46,7 @@ pub fn build_for_range_stat_fold_range(
     let folding_range = FoldingRange {
         start_line: lsp_range.start.line,
         start_character: Some(lsp_range.start.character),
-        end_line: lsp_range.end.line,
+        end_line: lsp_range.end.line - 1,
         end_character: Some(lsp_range.end.character),
         kind: Some(FoldingRangeKind::Region),
         collapsed_text: Some("for .. end".to_string()),
@@ -70,7 +70,7 @@ pub fn build_while_stat_fold_range(
     let folding_range = FoldingRange {
         start_line: lsp_range.start.line,
         start_character: Some(lsp_range.start.character),
-        end_line: lsp_range.end.line,
+        end_line: lsp_range.end.line - 1,
         end_character: Some(lsp_range.end.character),
         kind: Some(FoldingRangeKind::Region),
         collapsed_text: Some("while .. end".to_string()),
@@ -94,7 +94,7 @@ pub fn build_repeat_stat_fold_range(
     let folding_range = FoldingRange {
         start_line: lsp_range.start.line,
         start_character: Some(lsp_range.start.character),
-        end_line: lsp_range.end.line,
+        end_line: lsp_range.end.line - 1,
         end_character: Some(lsp_range.end.character),
         kind: Some(FoldingRangeKind::Region),
         collapsed_text: Some("repeat .. until".to_string()),
@@ -118,7 +118,7 @@ pub fn build_do_stat_fold_range(
     let folding_range = FoldingRange {
         start_line: lsp_range.start.line,
         start_character: Some(lsp_range.start.character),
-        end_line: lsp_range.end.line,
+        end_line: lsp_range.end.line - 1,
         end_character: Some(lsp_range.end.character),
         kind: Some(FoldingRangeKind::Region),
         collapsed_text: Some("do .. end".to_string()),
@@ -145,7 +145,7 @@ pub fn build_local_func_stat_fold_range(
     let folding_range = FoldingRange {
         start_line: lsp_range.start.line,
         start_character: Some(lsp_range.start.character),
-        end_line: lsp_range.end.line,
+        end_line: lsp_range.end.line - 1,
         end_character: Some(lsp_range.end.character),
         kind: Some(FoldingRangeKind::Region),
         collapsed_text: Some(format!("local function {} .. end", func_name_text)),
@@ -172,12 +172,51 @@ pub fn build_func_stat_fold_range(
     let folding_range = FoldingRange {
         start_line: lsp_range.start.line,
         start_character: Some(lsp_range.start.character),
-        end_line: lsp_range.end.line,
+        end_line: lsp_range.end.line - 1,
         end_character: Some(lsp_range.end.character),
         kind: Some(FoldingRangeKind::Region),
         collapsed_text: Some(format!("function {} .. end", func_name_text)),
     };
 
     builder.push(folding_range);
+    Some(())
+}
+
+pub fn build_if_stat_fold_range(
+    builder: &mut FoldingRangeBuilder,
+    if_stat: LuaIfStat,
+) -> Option<()> {
+    let mut branch_positions = Vec::new();
+    let if_start_position = if_stat.get_position();
+    branch_positions.push(if_start_position);
+    for branch in if_stat.get_all_clause() {
+        let branch_position = branch.get_position();
+        branch_positions.push(branch_position);
+    }
+    let end_position = if_stat.get_range().end();
+    branch_positions.push(end_position);
+
+    let len = branch_positions.len() - 1;
+    for i in 0..len {
+        let start = branch_positions[i];
+        let end = branch_positions[i + 1];
+        let range = TextRange::new(start, end);
+        let lsp_range = builder.get_document().to_lsp_range(range)?;
+        if lsp_range.start.line == lsp_range.end.line {
+            continue;
+        }
+
+        let folding_range = FoldingRange {
+            start_line: lsp_range.start.line,
+            start_character: Some(lsp_range.start.character),
+            end_line: lsp_range.end.line - 1,
+            end_character: Some(lsp_range.end.character),
+            kind: Some(FoldingRangeKind::Region),
+            collapsed_text: None,
+        };
+
+        builder.push(folding_range);
+    }
+
     Some(())
 }
