@@ -281,7 +281,6 @@ impl LuaDeclarationTree {
                     let member_id = LuaMemberId::new(prefx_index.get_syntax_id(), self.file_id);
                     return Some(LuaDeclOrMemberId::Member(member_id))
                 }
-                _ => {}
             }
         }
 

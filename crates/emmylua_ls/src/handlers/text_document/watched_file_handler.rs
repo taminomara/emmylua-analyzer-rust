@@ -1,5 +1,5 @@
 use code_analysis::{read_file_with_encoding, uri_to_file_path};
-use lsp_types::{DidChangeWatchedFilesParams, FileChangeType, FileEvent, Uri};
+use lsp_types::{DidChangeWatchedFilesParams, FileChangeType, Uri};
 
 use crate::context::ServerContextSnapshot;
 

@@ -1,9 +1,11 @@
 mod builder;
+mod expr;
 mod stats;
 
 use builder::{DocumentSymbolBuilder, LuaSymbol};
-use code_analysis::{LuaDeclId, SemanticModel};
-use emmylua_parser::{LuaAst, LuaAstNode, LuaBlock, LuaChunk, LuaClosureExpr};
+use code_analysis::SemanticModel;
+use emmylua_parser::{LuaAst, LuaAstNode, LuaBlock, LuaChunk};
+use expr::{build_closure_expr_symbol, build_table_symbol};
 use lsp_types::{DocumentSymbol, DocumentSymbolParams, DocumentSymbolResponse, SymbolKind};
 use stats::{
     build_assign_stat_symbol, build_for_range_stat_symbol, build_for_stat_symbol,
@@ -77,6 +79,9 @@ fn build_child_document_symbols(buider: &mut DocumentSymbolBuilder, root: &LuaCh
             LuaAst::LuaClosureExpr(closure) => {
                 build_closure_expr_symbol(buider, closure);
             }
+            LuaAst::LuaTableExpr(table) => {
+                build_table_symbol(buider, table);
+            }
             _ => {}
         }
     }
@@ -93,37 +98,5 @@ fn build_block_symbol(builder: &mut DocumentSymbolBuilder, block: LuaBlock) -> O
     );
 
     builder.add_node_symbol(block.syntax().clone(), symbol);
-    Some(())
-}
-
-fn build_closure_expr_symbol(
-    builder: &mut DocumentSymbolBuilder,
-    closure: LuaClosureExpr,
-) -> Option<()> {
-    let symbol = LuaSymbol::new(
-        "closure".to_string(),
-        None,
-        SymbolKind::MODULE,
-        closure.get_range(),
-    );
-
-    builder.add_node_symbol(closure.syntax().clone(), symbol);
-
-    let file_id = builder.get_file_id();
-    let param_list = closure.get_params_list()?;
-    for param in param_list.get_params() {
-        let decl_id = LuaDeclId::new(file_id, param.get_position());
-        let decl = builder.get_decl(&decl_id)?;
-        let desc = builder.get_symbol_kind_and_detail(decl.get_type());
-        let symbol = LuaSymbol::new(
-            decl.get_name().to_string(),
-            desc.1,
-            desc.0,
-            decl.get_range(),
-        );
-
-        builder.add_node_symbol(param.syntax().clone(), symbol);
-    }
-
     Some(())
 }

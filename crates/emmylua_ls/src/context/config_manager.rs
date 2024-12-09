@@ -1,6 +1,6 @@
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
-use super::{ClientProxy, FileDiagnostic, VsCodeStatusBar};
+use super::{ClientProxy, VsCodeStatusBar};
 use crate::handlers::{init_analysis, ClientConfig};
 use code_analysis::{load_configs, EmmyLuaAnalysis, Emmyrc};
 use log::{debug, info};
