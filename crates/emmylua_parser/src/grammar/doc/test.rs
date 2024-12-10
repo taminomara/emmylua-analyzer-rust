@@ -1734,4 +1734,44 @@ Syntax(Chunk)@0..51
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_compact_luals_1() {
+        let code = r#"
+        ---@param a 
+        ---| aaa
+        ---| bbb
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..64
+  Syntax(Block)@0..64
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..55
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagParam)@13..55
+        Token(TkTagParam)@13..18 "param"
+        Token(TkWhitespace)@18..19 " "
+        Token(TkName)@19..20 "a"
+        Token(TkWhitespace)@20..21 " "
+        Token(TkEndOfLine)@21..22 "\n"
+        Token(TkWhitespace)@22..30 "        "
+        Token(TkDocContinueOr)@30..34 "---|"
+        Token(TkWhitespace)@34..35 " "
+        Syntax(TypeBinary)@35..55
+          Syntax(TypeName)@35..38
+            Token(TkName)@35..38 "aaa"
+          Token(TkEndOfLine)@38..39 "\n"
+          Token(TkWhitespace)@39..47 "        "
+          Token(TkDocContinueOr)@47..51 "---|"
+          Token(TkWhitespace)@51..52 " "
+          Syntax(TypeName)@52..55
+            Token(TkName)@52..55 "bbb"
+    Token(TkEndOfLine)@55..56 "\n"
+    Token(TkWhitespace)@56..64 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
 }

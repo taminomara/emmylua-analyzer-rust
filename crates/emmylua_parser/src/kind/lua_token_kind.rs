@@ -124,7 +124,7 @@ pub enum LuaTokenKind {
     TkDocIn,              // in
     TkDocInfer,           // infer
     TkDocContinue,        // ---
-    TkDocContinueOr,      // ---|
+    TkDocContinueOr,      // ---| or ---|+  or ---|>
     TkDocDetail,          // a description
     TkDocQuestion,        // '?'
     TkDocVisibility,      // public private protected package

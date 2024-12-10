@@ -111,6 +111,11 @@ impl LuaDocLexer<'_> {
                             }
                             '|' => {
                                 reader.bump();
+                                // compact luals
+                                if matches!(reader.current_char(), '+' | '>') {
+                                    reader.bump();
+                                }
+
                                 LuaTokenKind::TkDocContinueOr
                             }
                             _ => LuaTokenKind::TkNormalStart,
