@@ -15,6 +15,7 @@ use super::{
     document_color::{on_document_color, on_document_color_presentation},
     document_link::{on_document_link_handler, on_document_link_resolve_handler},
     document_symbol::on_document_symbol,
+    emmy_annotator::{on_emmy_annotator_handler, EmmyAnnotatorRequest},
     fold_range::on_folding_range_handler,
     hover::on_hover,
 };
@@ -37,6 +38,8 @@ pub async fn on_req_handler(
         .on_parallel::<DocumentLinkRequest, _, _>(on_document_link_handler)
         .await
         .on_parallel::<DocumentLinkResolve, _, _>(on_document_link_resolve_handler)
+        .await
+        .on_parallel::<EmmyAnnotatorRequest, _, _>(on_emmy_annotator_handler)
         .await
         .finish();
     Ok(())

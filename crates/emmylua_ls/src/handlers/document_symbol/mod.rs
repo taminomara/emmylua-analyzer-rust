@@ -4,7 +4,7 @@ mod stats;
 
 use builder::{DocumentSymbolBuilder, LuaSymbol};
 use code_analysis::SemanticModel;
-use emmylua_parser::{LuaAst, LuaAstNode, LuaBlock, LuaChunk};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaChunk};
 use expr::{build_closure_expr_symbol, build_table_symbol};
 use lsp_types::{DocumentSymbol, DocumentSymbolParams, DocumentSymbolResponse, SymbolKind};
 use stats::{
@@ -56,9 +56,6 @@ fn build_document_symbol(semantic_model: &mut SemanticModel) -> Option<DocumentS
 fn build_child_document_symbols(buider: &mut DocumentSymbolBuilder, root: &LuaChunk) -> Option<()> {
     for child in root.descendants::<LuaAst>() {
         match child {
-            LuaAst::LuaBlock(block) => {
-                build_block_symbol(buider, block);
-            }
             LuaAst::LuaLocalStat(local_stat) => {
                 build_local_stat_symbol(buider, local_stat);
             }
@@ -90,17 +87,5 @@ fn build_child_document_symbols(buider: &mut DocumentSymbolBuilder, root: &LuaCh
         }
     }
 
-    Some(())
-}
-
-fn build_block_symbol(builder: &mut DocumentSymbolBuilder, block: LuaBlock) -> Option<()> {
-    let symbol = LuaSymbol::new(
-        "block".to_string(),
-        None,
-        SymbolKind::MODULE,
-        block.get_range(),
-    );
-
-    builder.add_node_symbol(block.syntax().clone(), symbol);
     Some(())
 }

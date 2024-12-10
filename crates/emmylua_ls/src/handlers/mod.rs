@@ -8,6 +8,7 @@ mod notification_handler;
 mod request_handler;
 mod response_handler;
 mod text_document;
+mod emmy_annotator;
 
 pub use initialized::initialized_handler;
 pub use initialized::{init_analysis, ClientConfig};
