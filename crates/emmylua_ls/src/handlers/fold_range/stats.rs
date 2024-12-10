@@ -1,7 +1,6 @@
-use std::fmt::format;
-
 use emmylua_parser::{
-    LuaAstNode, LuaDoStat, LuaForRangeStat, LuaForStat, LuaFuncStat, LuaIfClauseStat, LuaIfStat, LuaLocalFuncStat, LuaRepeatStat, LuaWhileStat
+    LuaAstNode, LuaDoStat, LuaForRangeStat, LuaForStat, LuaFuncStat, LuaIfStat, LuaLocalFuncStat,
+    LuaRepeatStat, LuaWhileStat,
 };
 use lsp_types::{FoldingRange, FoldingRangeKind};
 use rowan::TextRange;

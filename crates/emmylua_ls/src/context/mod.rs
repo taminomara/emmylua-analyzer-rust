@@ -23,7 +23,7 @@ pub struct ServerContext {
     client: Arc<ClientProxy>,
     cancllations: Arc<Mutex<HashMap<RequestId, CancellationToken>>>,
     file_diagnostic: Arc<FileDiagnostic>,
-    config_manager: Arc<Mutex<ConfigManager>>,
+    config_manager: Arc<RwLock<ConfigManager>>,
     status_bar: Arc<VsCodeStatusBar>,
 }
 
@@ -44,7 +44,7 @@ impl ServerContext {
             client.clone(),
             status_bar.clone(),
         ));
-        let config_manager = Arc::new(Mutex::new(ConfigManager::new(
+        let config_manager = Arc::new(RwLock::new(ConfigManager::new(
             analysis.clone(),
             client.clone(),
             status_bar.clone(),

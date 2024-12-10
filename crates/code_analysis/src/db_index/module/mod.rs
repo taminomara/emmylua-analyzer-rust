@@ -2,7 +2,7 @@ mod module_info;
 mod module_node;
 mod test;
 
-use log::error;
+use log::{error, info};
 use module_info::ModuleInfo;
 use module_node::{ModuleNode, ModuleNodeId};
 use regex::Regex;
@@ -59,6 +59,8 @@ impl LuaModuleIndex {
                 }
             };
         }
+
+        info!("update module pattern: {:?}", self.module_patterns);
     }
 
     pub fn add_module_by_path(&mut self, file_id: FileId, path: &str) -> Option<()> {
@@ -155,10 +157,16 @@ impl LuaModuleIndex {
         }
 
         let mut parent_node_id = self.module_root_id;
-        for part in &module_parts {
+        for part in module_parts {
             let parent_node = self.module_nodes.get(&parent_node_id)?;
-            let child_id = parent_node.children.get(*part)?;
-            parent_node_id = *child_id;
+            let child_id = match parent_node.children.get(part) {
+                Some(id) => *id,
+                None => {
+                    info!("parent {:?}", parent_node.children);
+                    return None
+                },
+            };
+            parent_node_id = child_id;
         }
 
         let node = self.module_nodes.get(&parent_node_id)?;
@@ -188,15 +196,22 @@ impl LuaModuleIndex {
 
     fn extract_module_path(&self, path: &str) -> Option<String> {
         let path = Path::new(path);
+        let mut matched_module_path: Option<String> = None;
         for root in &self.workspace_root {
             if let Ok(relative_path) = path.strip_prefix(root) {
                 let relative_path_str = relative_path.to_str().unwrap_or("");
                 let module_path = self.match_pattern(relative_path_str);
-                return module_path;
+                if matched_module_path.is_none() {
+                    matched_module_path = module_path;
+                } else if let Some(module_path) = module_path {
+                    if module_path.len() < matched_module_path.as_ref().unwrap().len() {
+                        matched_module_path = Some(module_path);
+                    }
+                }
             }
         }
 
-        None
+        matched_module_path
     }
 
     fn match_pattern(&self, path: &str) -> Option<String> {
@@ -221,8 +236,8 @@ impl LuaModuleIndex {
     }
 
     pub fn update_config(&mut self, config: Arc<Emmyrc>) {
-        let extension = if let Some(runtime) = &config.runtime {
-            let mut extension_names = Vec::new();
+        let mut extension_names = Vec::new();
+        if let Some(runtime) = &config.runtime {
             if let Some(extensions) = &runtime.extensions {
                 for extension in extensions {
                     if extension.starts_with(".") {
@@ -234,13 +249,14 @@ impl LuaModuleIndex {
                     }
                 }
             }
-            extension_names
-        } else {
-            vec!["lua".to_string()]
-        };
+        }
+
+        if !extension_names.contains(&"lua".to_string()) {
+            extension_names.push("lua".to_string());
+        }
 
         let mut patterns = Vec::new();
-        for extension in extension {
+        for extension in extension_names {
             patterns.push(format!("?.{}", extension));
             patterns.push(format!("?/init.{}", extension));
         }

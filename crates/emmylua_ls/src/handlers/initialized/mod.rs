@@ -50,7 +50,7 @@ pub async fn initialized_handler(
 
     let emmyrc = load_emmy_config(config_root, client_config.clone());
 
-    let mut config_manager = context.config_manager.lock().await;
+    let mut config_manager = context.config_manager.write().await;
     config_manager.workspace_folders = workspace_folders.clone();
     config_manager.client_config = client_config.clone();
     drop(config_manager);

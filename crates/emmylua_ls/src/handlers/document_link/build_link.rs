@@ -1,0 +1,162 @@
+use std::path::PathBuf;
+
+use code_analysis::{file_path_to_uri, DbIndex, Emmyrc, LuaDocument};
+use emmylua_parser::{
+    LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaExpr, LuaLiteralExpr, LuaStringToken, LuaSyntaxNode, LuaTokenKind
+};
+use lsp_types::DocumentLink;
+
+pub fn build_links(
+    db: &DbIndex,
+    root: LuaSyntaxNode,
+    document: &LuaDocument,
+    emmyrc: &Emmyrc,
+    workspace_folders: Vec<PathBuf>,
+) -> Option<Vec<DocumentLink>> {
+    let string_tokens = root
+        .descendants_with_tokens()
+        .filter_map(|it| it.into_token())
+        .filter_map(|it| LuaStringToken::cast(it));
+
+    let mut result = vec![];
+    for token in string_tokens {
+        try_build_file_link(
+            db,
+            token,
+            document,
+            &mut result,
+            &emmyrc,
+            &workspace_folders,
+        );
+    }
+
+    Some(result)
+}
+
+fn try_build_file_link(
+    db: &DbIndex,
+    token: LuaStringToken,
+    document: &LuaDocument,
+    result: &mut Vec<DocumentLink>,
+    emmyrc: &Emmyrc,
+    workspace_folders: &Vec<PathBuf>,
+) -> Option<()> {
+    if is_require_path(token.clone(), emmyrc).unwrap_or(false) {
+        try_build_module_link(db, token, document, result);
+        return Some(());
+    }
+
+    let file_path = token.get_value();
+    if file_path.find(|c| c == '\\' || c == '/').is_some() {
+        let suffix_path = PathBuf::from(file_path);
+        if suffix_path.exists() {
+            if let Some(uri) = file_path_to_uri(&suffix_path) {
+                let document_link = DocumentLink {
+                    target: Some(uri),
+                    range: document.to_lsp_range(token.get_range())?,
+                    tooltip: None,
+                    data: None,
+                };
+
+                result.push(document_link);
+            }
+            return Some(());
+        }
+
+        for workspace_folder in workspace_folders {
+            let full_path = workspace_folder.join(&suffix_path);
+            if full_path.exists() {
+                if let Some(uri) = file_path_to_uri(&full_path) {
+                    let token_range = token.get_range();
+                    let lsp_range = document.to_lsp_range(token_range)?;
+                    let document_link = DocumentLink {
+                        target: Some(uri),
+                        range: lsp_range,
+                        tooltip: None,
+                        data: None,
+                    };
+
+                    result.push(document_link);
+                }
+                return Some(());
+            }
+        }
+
+        let resource_paths = if let Some(resource) = &emmyrc.resource {
+            resource.paths.clone()
+        } else {
+            None
+        }?;
+
+        for resource_path in resource_paths {
+            let full_path = PathBuf::from(resource_path).join(&suffix_path);
+            if full_path.exists() {
+                if let Some(uri) = file_path_to_uri(&full_path) {
+                    let document_link = DocumentLink {
+                        target: Some(uri),
+                        range: document.to_lsp_range(token.get_range())?,
+                        tooltip: None,
+                        data: None,
+                    };
+
+                    result.push(document_link);
+                }
+                return Some(());
+            }
+        }
+    }
+
+    Some(())
+}
+
+fn try_build_module_link(
+    db: &DbIndex,
+    token: LuaStringToken,
+    document: &LuaDocument,
+    result: &mut Vec<DocumentLink>,
+) -> Option<()> {
+    let module_path = token.get_value();
+    let module_index = db.get_module_index();
+    let founded_module = module_index.find_module(&module_path)?;
+    let file_id = founded_module.file_id;
+    let vfs = db.get_vfs();
+    let uri = vfs.get_uri(&file_id)?;
+    let range = token.get_range();
+    let lsp_range = document.to_lsp_range(range)?;
+    let document_link = DocumentLink {
+        target: Some(uri.clone()),
+        range: lsp_range,
+        tooltip: None,
+        data: None,
+    };
+
+    result.push(document_link);
+
+    Some(())
+}
+
+fn is_require_path(token: LuaStringToken, emmyrc: &Emmyrc) -> Option<bool> {
+    let call_expr_prefix = token
+        .get_parent::<LuaLiteralExpr>()?
+        .get_parent::<LuaCallArgList>()?
+        .get_parent::<LuaCallExpr>()?
+        .get_prefix_expr()?;
+
+    if let LuaExpr::NameExpr(name_expr) = call_expr_prefix {
+        let name = name_expr.get_name_text()?;
+        if name == "require" {
+            return Some(true);
+        }
+        if let Some(runtime) = &emmyrc.runtime {
+            if let Some(require_like_functions) = &runtime.require_like_function {
+                for require_like_function in require_like_functions {
+                    if name == *require_like_function {
+                        return Some(true);
+                    }
+                }
+            }
+        }
+    }
+
+    Some(false)
+}

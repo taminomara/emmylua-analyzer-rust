@@ -3,8 +3,8 @@ use std::{error::Error, future::Future};
 use log::error;
 use lsp_server::{Request, RequestId, Response};
 use lsp_types::request::{
-    ColorPresentationRequest, DocumentColor, DocumentSymbolRequest, FoldingRangeRequest,
-    HoverRequest,
+    ColorPresentationRequest, DocumentColor, DocumentLinkRequest, DocumentLinkResolve,
+    DocumentSymbolRequest, FoldingRangeRequest, HoverRequest,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use tokio_util::sync::CancellationToken;
@@ -12,8 +12,11 @@ use tokio_util::sync::CancellationToken;
 use crate::context::{ServerContext, ServerContextSnapshot};
 
 use super::{
-    document_color::{on_document_color, on_document_color_presentation}, document_symbol::on_document_symbol,
-    fold_range::on_folding_range_handler, hover::on_hover,
+    document_color::{on_document_color, on_document_color_presentation},
+    document_link::{on_document_link_handler, on_document_link_resolve_handler},
+    document_symbol::on_document_symbol,
+    fold_range::on_folding_range_handler,
+    hover::on_hover,
 };
 
 pub async fn on_req_handler(
@@ -30,6 +33,10 @@ pub async fn on_req_handler(
         .on_parallel::<DocumentColor, _, _>(on_document_color)
         .await
         .on_parallel::<ColorPresentationRequest, _, _>(on_document_color_presentation)
+        .await
+        .on_parallel::<DocumentLinkRequest, _, _>(on_document_link_handler)
+        .await
+        .on_parallel::<DocumentLinkResolve, _, _>(on_document_link_resolve_handler)
         .await
         .finish();
     Ok(())
