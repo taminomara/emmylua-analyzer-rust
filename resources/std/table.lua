@@ -113,7 +113,7 @@ function table.remove(list, pos) end
 ---@return number
 function table.sort(list, comp) end
 
----@version >=5.2, JIT
+---@version > 5.2, JIT
 --- Returns the elements from the given list. This function is equivalent to
 --- return `list[i]`, `list[i+1]`, `···`, `list[j]`
 --- By default, i is 1 and j is #list.
@@ -124,7 +124,7 @@ function table.sort(list, comp) end
 ---@return T...
 function table.unpack(list, i, j) end
 
----@version >=5.2, JIT
+---@version > 5.2, JIT
 ---
 ---Returns a new table with all arguments stored into keys `1`, `2`, etc. and with a field `"n"` with the total number of arguments.
 ---

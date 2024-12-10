@@ -94,7 +94,7 @@ package.preload = {}
 ---@version 5.1
 package.loaders = {}
 
----@version >= 5.2
+---@version > 5.2
 --- A table used by require to control how to load modules.
 ---
 --- Each entry in this table is a *searcher function*. When looking for a
@@ -139,7 +139,7 @@ package.loaders = {}
 --- The first searcher returns no extra value.
 package.searchers = {}
 
----@version >=5.2,JIT
+---@version > 5.2,JIT
 ---
 --- Searches for the given name in the given path.
 ---
