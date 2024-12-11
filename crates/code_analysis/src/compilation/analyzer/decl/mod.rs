@@ -105,7 +105,8 @@ fn is_scope_owner(node: &LuaAst) -> bool {
         | LuaSyntaxKind::RepeatStat
         | LuaSyntaxKind::ForRangeStat
         | LuaSyntaxKind::ForStat
-        | LuaSyntaxKind::LocalStat => true,
+        | LuaSyntaxKind::LocalStat
+        | LuaSyntaxKind::FuncStat => true,
         _ => false,
     }
 }

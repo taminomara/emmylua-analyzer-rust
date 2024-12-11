@@ -125,7 +125,6 @@ impl EmmyLuaAnalysis {
         let mut removed_files = Vec::new();
         let mut updated_files = Vec::new();
         for (uri, text) in files {
-            eprintln!("update file: {:?} ...", uri_to_file_path(&uri));
             let is_new_text = text.is_some();
             let file_id = self
                 .compilation

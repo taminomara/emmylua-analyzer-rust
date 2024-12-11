@@ -4,7 +4,7 @@ use emmylua_parser::{
 
 use crate::{
     db_index::{LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner},
-    InFiled,
+    InFiled, LuaDeclId,
 };
 
 use super::DeclAnalyzer;
@@ -22,6 +22,11 @@ pub fn analyze_name_expr(analyzer: &mut DeclAnalyzer, expr: LuaNameExpr) {
     let position = expr.get_position();
     let range = expr.get_range();
     let file_id = analyzer.get_file_id();
+    let decl_id = LuaDeclId::new(file_id, position);
+    if analyzer.decl.get_decl(&decl_id).is_some() {
+        return;
+    }
+
     let (decl_id, is_local) = if let Some(decl) = analyzer.find_decl(&name, position) {
         if decl.is_local() {
             // reference local variable

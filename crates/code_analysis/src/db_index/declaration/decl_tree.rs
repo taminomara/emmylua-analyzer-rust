@@ -83,10 +83,10 @@ impl LuaDeclarationTree {
         F: FnMut(ScopeOrDeclId) -> bool,
     {
         let cur_index = scope.get_children().iter().rposition(|child| match child {
-            ScopeOrDeclId::Decl(decl_id) => decl_id.position <= start_pos,
+            ScopeOrDeclId::Decl(decl_id) => decl_id.position < start_pos,
             ScopeOrDeclId::Scope(scope_id) => {
                 let child_scope = self.scopes.get(scope_id.id as usize).unwrap();
-                child_scope.get_position() <= start_pos
+                child_scope.get_position() < start_pos
             }
         });
 
@@ -124,7 +124,7 @@ impl LuaDeclarationTree {
                 let parent = scope.get_parent();
                 if let Some(parent) = parent {
                     let parent_scope = self.scopes.get(parent.id as usize).unwrap();
-                    self.walk_up(parent_scope, start_pos, level, f);
+                    self.walk_up(parent_scope, scope.get_position(), level, f);
                 }
             }
             LuaScopeKind::Repeat => {
