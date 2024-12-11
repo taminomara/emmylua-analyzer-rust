@@ -51,6 +51,7 @@ fn walk_node_enter(analyzer: &mut DeclAnalyzer, node: LuaAst) {
             stats::analyze_func_stat(analyzer, stat);
         }
         LuaAst::LuaLocalFuncStat(stat) => {
+            analyzer.create_scope(stat.get_range(), LuaScopeKind::FuncStat);
             stats::analyze_local_func_stat(analyzer, stat);
         }
         LuaAst::LuaRepeatStat(stat) => {
@@ -106,7 +107,8 @@ fn is_scope_owner(node: &LuaAst) -> bool {
         | LuaSyntaxKind::ForRangeStat
         | LuaSyntaxKind::ForStat
         | LuaSyntaxKind::LocalStat
-        | LuaSyntaxKind::FuncStat => true,
+        | LuaSyntaxKind::FuncStat
+        | LuaSyntaxKind::LocalFuncStat => true,
         _ => false,
     }
 }

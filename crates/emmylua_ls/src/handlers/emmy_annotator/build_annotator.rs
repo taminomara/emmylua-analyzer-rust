@@ -2,8 +2,7 @@ use std::collections::HashSet;
 
 use code_analysis::{DbIndex, LuaDeclId, LuaDocument, SemanticModel};
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaLocalStat, LuaNameExpr,
-    LuaParamList,
+    LuaAst, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaLocalFuncStat, LuaLocalStat, LuaNameExpr, LuaParamList
 };
 use rowan::TextRange;
 
@@ -28,6 +27,15 @@ pub fn build_annotators(semantic: &SemanticModel) -> Vec<EmmyAnnotator> {
             }
             LuaAst::LuaForStat(for_stat) => {
                 build_for_stat_annotator(&db, &document, &mut use_range_set, &mut result, for_stat);
+            }
+            LuaAst::LuaLocalFuncStat(local_func_stat) => {
+                build_local_func_stat_annotator(
+                    &db,
+                    &document,
+                    &mut use_range_set,
+                    &mut result,
+                    local_func_stat,
+                );
             }
             LuaAst::LuaForRangeStat(for_range_stat) => {
                 build_for_range_annotator(
@@ -228,5 +236,41 @@ fn build_for_range_annotator(
 
         result.push(annotator);
     }
+    Some(())
+}
+
+fn build_local_func_stat_annotator(
+    db: &DbIndex,
+    document: &LuaDocument,
+    use_range_set: &mut HashSet<TextRange>,
+    result: &mut Vec<EmmyAnnotator>,
+    local_func_stat: LuaLocalFuncStat,
+) -> Option<()> {
+    let file_id = document.get_file_id();
+    let func_name = local_func_stat.get_local_name()?;
+    let name_token = func_name.get_name_token()?;
+    let name_range = name_token.get_range();
+
+    let mut annotator = EmmyAnnotator {
+        typ: EmmyAnnotatorType::Local,
+        ranges: vec![],
+    };
+
+    let lsp_range = document.to_lsp_range(name_range)?;
+    annotator.ranges.push(lsp_range);
+
+    let decl_id = LuaDeclId::new(file_id, name_token.get_position());
+    let ref_ranges = db
+        .get_reference_index()
+        .get_local_references(&file_id, &decl_id);
+    if let Some(ref_ranges) = ref_ranges {
+        for range in ref_ranges {
+            use_range_set.insert(*range);
+            annotator.ranges.push(document.to_lsp_range(*range)?);
+        }
+    }
+
+    result.push(annotator);
+
     Some(())
 }
