@@ -5,11 +5,17 @@ use emmylua_parser::{
 use crate::db_index::{LuaMemberId, LuaPropertyOwnerId, LuaSignatureId};
 
 use super::{
-    diagnostic_tags::analyze_diagnostic, field_or_operator_def_tags::{analyze_field, analyze_operator}, property_tags::{
-        analyze_async, analyze_deprecated, analyze_nodiscard, analyze_source, analyze_version, analyze_visibility
-    }, type_def_tags::{analyze_alias, analyze_class, analyze_enum, analyze_func_generic}, type_ref_tags::{
+    diagnostic_tags::analyze_diagnostic,
+    field_or_operator_def_tags::{analyze_field, analyze_operator},
+    property_tags::{
+        analyze_async, analyze_deprecated, analyze_nodiscard, analyze_source, analyze_version,
+        analyze_visibility,
+    },
+    type_def_tags::{analyze_alias, analyze_class, analyze_enum, analyze_func_generic},
+    type_ref_tags::{
         analyze_module, analyze_overload, analyze_param, analyze_return, analyze_type,
-    }, DocAnalyzer
+    },
+    DocAnalyzer,
 };
 
 pub fn analyze_tag(analyzer: &mut DocAnalyzer, tag: LuaDocTag) -> Option<()> {
@@ -63,7 +69,7 @@ pub fn analyze_tag(analyzer: &mut DocAnalyzer, tag: LuaDocTag) -> Option<()> {
         }
         LuaDocTag::Async(_) => {
             analyze_async(analyzer)?;
-        },
+        }
 
         // field or operator
         LuaDocTag::Field(filed) => {
@@ -76,7 +82,7 @@ pub fn analyze_tag(analyzer: &mut DocAnalyzer, tag: LuaDocTag) -> Option<()> {
         // diagnostic
         LuaDocTag::Diagnostic(diagnostic) => {
             analyze_diagnostic(analyzer, diagnostic)?;
-        },
+        }
 
         // cast type
         // LuaDocTag::Cast(lua_doc_tag_cast) => todo!(),
@@ -135,8 +141,7 @@ pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaPropertyOwnerId> {
                     let member_id = LuaMemberId::new(index_expr.get_syntax_id(), analyzer.file_id);
 
                     return Some(LuaPropertyOwnerId::Member(member_id));
-                }
-                // _ => None,
+                } // _ => None,
             }
         }
         LuaAst::LuaLocalStat(local_stat) => {

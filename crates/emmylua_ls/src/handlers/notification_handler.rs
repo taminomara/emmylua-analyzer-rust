@@ -25,10 +25,10 @@ pub async fn on_notification_handler(
     NotificationDispatcher::new(notification, server_context)
         .on_cancel()
         .await
-        .on_parallel::<DidOpenTextDocument, _, _>(on_did_open_text_document)
-        .on_parallel::<DidSaveTextDocument, _, _>(on_did_save_text_document)
         .on_sync::<DidChangeTextDocument, _, _>(on_did_change_text_document)
         .await
+        .on_parallel::<DidOpenTextDocument, _, _>(on_did_open_text_document)
+        .on_parallel::<DidSaveTextDocument, _, _>(on_did_save_text_document)
         .on_parallel::<DidChangeWatchedFiles, _, _>(on_did_change_watched_files)
         .finish();
     // .on(handler)
