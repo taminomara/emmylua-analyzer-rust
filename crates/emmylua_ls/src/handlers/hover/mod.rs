@@ -3,7 +3,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
-
+#[allow(unused_variables)]
 pub async fn on_hover(
     context: ServerContextSnapshot,
     params: HoverParams,
