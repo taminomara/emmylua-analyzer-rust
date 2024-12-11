@@ -92,7 +92,7 @@ impl LuaGreenNodeBuilder<'_> {
                         break;
                     }
                 }
-                while child_end >= child_start {
+                while child_end > child_start {
                     if self.is_trivia(self.children[child_end]) {
                         child_end -= 1;
                     } else {
@@ -163,8 +163,8 @@ impl LuaGreenNodeBuilder<'_> {
 
     #[inline]
     pub fn finish(mut self, text: &str) -> GreenNode {
-        if let Some(root_pos) = self.children.pop() {
-            self.build_rowan_green(root_pos, text);
+        if let Some(root_pos) = self.children.get(0) {
+            self.build_rowan_green(*root_pos, text);
         } else {
             self.builder.start_node(LuaSyntaxKind::Chunk.into());
             self.builder.finish_node();

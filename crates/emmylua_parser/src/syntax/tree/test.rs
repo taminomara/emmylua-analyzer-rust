@@ -66,4 +66,17 @@ local
             println!("{:?}", error);
         }
     }
+
+    #[test]
+    fn test_bad_syntax() {
+        let code = r#"
+JsonData.this[] = nil
+
+---@param key string
+---@return boolean
+local t
+        "#;
+
+        let _ = LuaParser::parse(code, ParserConfig::default());
+    }
 }

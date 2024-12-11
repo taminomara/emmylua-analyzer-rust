@@ -1,5 +1,10 @@
 use crate::{
-    grammar::parse_chunk, kind::LuaTokenKind, lexer::{LuaLexer, LuaTokenData}, parser_error::LuaParseError, text::SourceRange, LineIndex, LuaSyntaxTree, LuaTreeBuilder
+    grammar::parse_chunk,
+    kind::LuaTokenKind,
+    lexer::{LuaLexer, LuaTokenData},
+    parser_error::LuaParseError,
+    text::SourceRange,
+    LuaSyntaxTree, LuaTreeBuilder,
 };
 
 use super::{
@@ -60,14 +65,6 @@ impl<'a> LuaParser<'a> {
 
         parse_chunk(&mut parser);
         let errors = parser.get_errors();
-        if !errors.is_empty() {
-            let line_index = LineIndex::parse(text);
-            for err in &errors {
-                let line_col = line_index.get_line_col(err.range.start(), &text).unwrap();
-                eprintln!("[{}:{}] {:?}", line_col.0 + 1, line_col.1, err);
-            }
-
-        }
         let root = {
             let mut builder = LuaTreeBuilder::new(
                 parser.origin_text(),
@@ -318,10 +315,7 @@ fn is_invalid_kind(kind: LuaTokenKind) -> bool {
 #[cfg(test)]
 mod tests {
     use crate::{
-        kind::LuaTokenKind,
-        lexer::LuaLexer,
-        parser::ParserConfig,
-        parser_error::LuaParseError,
+        kind::LuaTokenKind, lexer::LuaLexer, parser::ParserConfig, parser_error::LuaParseError,
         LuaParser,
     };
 
