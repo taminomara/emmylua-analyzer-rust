@@ -259,6 +259,10 @@ impl LuaDocLexer<'_> {
                             }
                             '|' => {
                                 reader.bump();
+                                // compact luals
+                                if matches!(reader.current_char(), '+' | '>') {
+                                    reader.bump();
+                                }
                                 LuaTokenKind::TkDocContinueOr
                             }
                             _ => LuaTokenKind::TkDocContinue,
@@ -470,9 +474,9 @@ impl LuaDocLexer<'_> {
                         reader.eat_while(|_| true);
                         LuaTokenKind::TkDocDetail
                     }
-                }
+                };
             }
-            _ => self.lex_description()
+            _ => self.lex_description(),
         }
     }
 }

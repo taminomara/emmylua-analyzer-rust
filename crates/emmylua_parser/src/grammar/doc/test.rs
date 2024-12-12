@@ -1736,7 +1736,7 @@ Syntax(Chunk)@0..51
     }
 
     #[test]
-    fn test_compact_luals_1() {
+    fn test_compact_luals_param() {
         let code = r#"
         ---@param a 
         ---| aaa
@@ -1772,6 +1772,84 @@ Syntax(Chunk)@0..64
     Token(TkWhitespace)@56..64 "        "
         "#;
 
+        assert_ast_eq!(code, result);
+    }
+
+    #[test]
+    fn test_compact_luals_return() {
+        let code = r#"
+        ---@return
+        ---| aaa
+        ---| bbb
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..62
+  Syntax(Block)@0..62
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..53
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagReturn)@13..53
+        Token(TkTagReturn)@13..19 "return"
+        Token(TkEndOfLine)@19..20 "\n"
+        Token(TkWhitespace)@20..28 "        "
+        Token(TkDocContinueOr)@28..32 "---|"
+        Token(TkWhitespace)@32..33 " "
+        Syntax(TypeBinary)@33..53
+          Syntax(TypeName)@33..36
+            Token(TkName)@33..36 "aaa"
+          Token(TkEndOfLine)@36..37 "\n"
+          Token(TkWhitespace)@37..45 "        "
+          Token(TkDocContinueOr)@45..49 "---|"
+          Token(TkWhitespace)@49..50 " "
+          Syntax(TypeName)@50..53
+            Token(TkName)@50..53 "bbb"
+    Token(TkEndOfLine)@53..54 "\n"
+    Token(TkWhitespace)@54..62 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
+
+    #[test]
+    fn test_compact_luals_alias() {
+        let code = r#"
+        ---@alias a
+        ---|+ "12313"
+        ---|+ "123131"
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..74
+  Syntax(Block)@0..74
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..65
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagAlias)@13..65
+        Token(TkTagAlias)@13..18 "alias"
+        Token(TkWhitespace)@18..19 " "
+        Token(TkName)@19..20 "a"
+        Token(TkEndOfLine)@20..21 "\n"
+        Token(TkWhitespace)@21..29 "        "
+        Syntax(DocAliasOrTypeList)@29..65
+          Token(TkDocContinueOr)@29..34 "---|+"
+          Token(TkWhitespace)@34..35 " "
+          Syntax(DocAliasOrType)@35..42
+            Syntax(TypeLiteral)@35..42
+              Token(TkString)@35..42 "\"12313\""
+          Token(TkEndOfLine)@42..43 "\n"
+          Token(TkWhitespace)@43..51 "        "
+          Token(TkDocContinueOr)@51..56 "---|+"
+          Token(TkWhitespace)@56..57 " "
+          Syntax(DocAliasOrType)@57..65
+            Syntax(TypeLiteral)@57..65
+              Token(TkString)@57..65 "\"123131\""
+    Token(TkEndOfLine)@65..66 "\n"
+    Token(TkWhitespace)@66..74 "        "
+        "#;
+        
         assert_ast_eq!(code, result);
     }
 }
