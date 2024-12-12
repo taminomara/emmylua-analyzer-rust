@@ -1,5 +1,6 @@
 mod keyword_hover;
 
+use code_analysis::humanize_type;
 use emmylua_parser::{LuaAstNode, LuaExpr};
 use keyword_hover::{hover_keyword, is_keyword};
 use lsp_types::{Hover, HoverContents, HoverParams, MarkupContent};
@@ -44,12 +45,13 @@ pub async fn on_hover(
     let node = LuaExpr::cast(token.parent()?)?;
     let expr_type = semantic_model.infer_expr(node)?;
 
+    let db = semantic_model.get_db();
     // TODO: add detail hover
     // Some(hover)
     let hover = Hover {
         contents: HoverContents::Markup(MarkupContent {
             kind: lsp_types::MarkupKind::Markdown,
-            value: format!("{:?}", expr_type),
+            value: format!("{}", humanize_type(db, &expr_type)),
         }),
         range: None,
     };

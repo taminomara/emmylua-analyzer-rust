@@ -44,13 +44,13 @@ pub enum LuaType {
     Extends(Arc<LuaExtendedType>),
     Generic(Arc<LuaGenericType>),
     TableGeneric(Arc<Vec<LuaType>>),
-    TplRef(usize),
+    TplRef(Arc<GenericTpl>),
     StrTplRef(Arc<LuaStringTplType>),
     MuliReturn(Arc<LuaMultiReturn>),
     ExistField(Arc<LuaExistFieldType>),
     Signature(LuaSignatureId),
     Instance(Arc<LuaInstanceType>),
-    FuncTplRef(usize),
+    FuncTplRef(Arc<GenericTpl>),
     DocStringConst(ArcIntern<String>),
     DocIntergerConst(i64),
 }
@@ -625,13 +625,18 @@ impl From<LuaGenericType> for LuaType {
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct LuaStringTplType {
-    prefix: String,
-    usize: usize,
+    prefix: ArcIntern<String>,
+    tpl_id: usize,
+    name: ArcIntern<String>,
 }
 
 impl LuaStringTplType {
-    pub fn new(prefix: String, usize: usize) -> Self {
-        Self { prefix, usize }
+    pub fn new(prefix: &str, name: &str, usize: usize) -> Self {
+        Self {
+            prefix: ArcIntern::new(prefix.to_string()),
+            tpl_id: usize,
+            name: ArcIntern::new(name.to_string()),
+        }
     }
 
     pub fn get_prefix(&self) -> &str {
@@ -639,7 +644,11 @@ impl LuaStringTplType {
     }
 
     pub fn get_usize(&self) -> usize {
-        self.usize
+        self.tpl_id
+    }
+
+    pub fn get_name(&self) -> &str {
+        &self.name
     }
 }
 
@@ -725,5 +734,25 @@ impl LuaInstanceType {
 
     pub fn get_range(&self) -> &InFiled<TextRange> {
         &self.range
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct GenericTpl {
+    tpl_id: usize,
+    name: ArcIntern<String>
+}
+
+impl GenericTpl {
+    pub fn new(tpl_id: usize, name: ArcIntern<String>) -> Self {
+        Self { tpl_id, name }
+    }
+
+    pub fn get_tpl_id(&self) -> usize {
+        self.tpl_id
+    }
+
+    pub fn get_name(&self) -> &str {
+        &self.name
     }
 }

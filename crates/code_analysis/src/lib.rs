@@ -4,6 +4,7 @@ mod db_index;
 mod diagnostic;
 mod semantic;
 mod vfs;
+mod render;
 
 use std::{env, path::PathBuf, sync::Arc};
 pub use compilation::*;
@@ -15,6 +16,7 @@ use tokio_util::sync::CancellationToken;
 pub use vfs::*;
 pub use semantic::*;
 pub use db_index::*;
+pub use render::*;
 
 #[macro_use]
 extern crate rust_i18n;

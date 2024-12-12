@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use emmylua_parser::{
     LuaAstNode, LuaDocBinaryType, LuaDocFuncType, LuaDocGenericType, LuaDocObjectFieldKey,
     LuaDocObjectType, LuaDocStrTplType, LuaDocType, LuaDocUnaryType, LuaLiteralToken,
@@ -10,7 +12,7 @@ use crate::{
         AnalyzeError, LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey,
         LuaIntersectionType, LuaObjectType, LuaStringTplType, LuaTupleType, LuaType, LuaUnionType,
     },
-    DiagnosticCode,
+    DiagnosticCode, GenericTpl,
 };
 
 use super::DocAnalyzer;
@@ -119,9 +121,15 @@ fn infer_buildin_or_ref_type(analyzer: &mut DocAnalyzer, name: &str, range: Text
         _ => {
             if let Some((size, is_func)) = analyzer.generic_index.find_generic(position, name) {
                 if is_func {
-                    return LuaType::FuncTplRef(size);
+                    return LuaType::FuncTplRef(Arc::new(GenericTpl::new(
+                        size,
+                        name.to_string().into(),
+                    )));
                 } else {
-                    return LuaType::TplRef(size);
+                    return LuaType::TplRef(Arc::new(GenericTpl::new(
+                        size,
+                        name.to_string().into(),
+                    )));
                 };
             }
 
@@ -354,8 +362,8 @@ fn infer_str_tpl(analyzer: &mut DocAnalyzer, str_tpl: LuaDocStrTplType) -> LuaTy
     };
 
     let tp = infer_buildin_or_ref_type(analyzer, &name, str_tpl.get_range());
-    if let LuaType::FuncTplRef(size) = tp {
-        let str_tpl_type = LuaStringTplType::new(prefix, size);
+    if let LuaType::FuncTplRef(tpl) = tp {
+        let str_tpl_type = LuaStringTplType::new(&prefix, &tpl.get_name(), tpl.get_tpl_id());
         return LuaType::StrTplRef(str_tpl_type.into());
     }
     LuaType::Unknown

@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use crate::db_index::{
+use crate::{db_index::{
     LuaExistFieldType, LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIntersectionType,
     LuaMultiReturn, LuaObjectType, LuaTupleType, LuaType, LuaUnionType,
-};
+}, GenericTpl};
 
 pub fn instantiate_type(ty: &LuaType, params: &Vec<LuaType>) -> LuaType {
     match ty {
@@ -18,7 +18,7 @@ pub fn instantiate_type(ty: &LuaType, params: &Vec<LuaType>) -> LuaType {
         LuaType::Extends(extends) => instantiate_extends(extends, params),
         LuaType::Generic(generic) => instantiate_generic(generic, params),
         LuaType::TableGeneric(table_params) => instantiate_table_generic(table_params, params),
-        LuaType::TplRef(idx) => instantiate_tpl_ref(*idx, params),
+        LuaType::TplRef(tpl) => instantiate_tpl_ref(tpl, params),
         LuaType::MuliReturn(multi) => instantiate_multi_return(multi, params),
         LuaType::ExistField(exit_field) => instantiate_exist_field(exit_field, params),
         _ => ty.clone(),
@@ -151,8 +151,8 @@ fn instantiate_table_generic(table_params: &Vec<LuaType>, params: &Vec<LuaType>)
     LuaType::TableGeneric(new_params.into())
 }
 
-fn instantiate_tpl_ref(idx: usize, params: &Vec<LuaType>) -> LuaType {
-    if let Some(ty) = params.get(idx) {
+fn instantiate_tpl_ref(tpl: &GenericTpl, params: &Vec<LuaType>) -> LuaType {
+    if let Some(ty) = params.get(tpl.get_tpl_id()) {
         ty.clone()
     } else {
         LuaType::Unknown

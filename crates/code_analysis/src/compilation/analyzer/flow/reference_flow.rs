@@ -207,7 +207,7 @@ fn infer_lua_type_assert(
         }
     };
 
-    let range = get_effect_range(LuaExpr::CallExpr(call_expr))?;
+    let range = get_effect_range(LuaExpr::BinaryExpr(parent))?;
     flow_chains.add_type_assert(type_assert, range);
 
     Some(())

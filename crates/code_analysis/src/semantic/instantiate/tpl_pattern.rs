@@ -18,8 +18,8 @@ pub fn tpl_pattern_match(
     result: &mut HashMap<usize, LuaType>,
 ) -> Option<()> {
     match pattern {
-        LuaType::FuncTplRef(size) => {
-            result.insert(*size, target.clone());
+        LuaType::FuncTplRef(tpl) => {
+            result.insert(tpl.get_tpl_id(), target.clone());
         }
         LuaType::StrTplRef(str_tpl) => match target {
             LuaType::StringConst(s) => {
