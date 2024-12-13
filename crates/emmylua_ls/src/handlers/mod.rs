@@ -9,14 +9,12 @@ mod request_handler;
 mod response_handler;
 mod text_document;
 mod emmy_annotator;
+mod document_selection_range;
 
 pub use initialized::initialized_handler;
 pub use initialized::{init_analysis, ClientConfig};
 use lsp_types::{
-    ColorProviderCapability, DocumentLinkOptions, DocumentSymbolOptions,
-    FoldingRangeProviderCapability, HoverProviderCapability, OneOf, SaveOptions,
-    ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind,
-    TextDocumentSyncSaveOptions,
+    ColorProviderCapability, DocumentLinkOptions, DocumentSymbolOptions, FoldingRangeProviderCapability, HoverProviderCapability, OneOf, SaveOptions, SelectionRangeProviderCapability, ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncSaveOptions
 };
 pub use notification_handler::on_notification_handler;
 pub use request_handler::on_req_handler;
@@ -46,6 +44,7 @@ pub fn server_capabilities() -> ServerCapabilities {
             resolve_provider: Some(false),
             work_done_progress_options: Default::default(),
         }),
+        selection_range_provider: Some(SelectionRangeProviderCapability::Simple(true)),
         ..Default::default()
     }
 }

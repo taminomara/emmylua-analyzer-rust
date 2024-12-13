@@ -4,7 +4,7 @@ use log::error;
 use lsp_server::{Request, RequestId, Response};
 use lsp_types::request::{
     ColorPresentationRequest, DocumentColor, DocumentLinkRequest, DocumentLinkResolve,
-    DocumentSymbolRequest, FoldingRangeRequest, HoverRequest,
+    DocumentSymbolRequest, FoldingRangeRequest, HoverRequest, SelectionRangeRequest,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use tokio_util::sync::CancellationToken;
@@ -14,6 +14,7 @@ use crate::context::{ServerContext, ServerContextSnapshot};
 use super::{
     document_color::{on_document_color, on_document_color_presentation},
     document_link::{on_document_link_handler, on_document_link_resolve_handler},
+    document_selection_range::on_document_selection_range_handle,
     document_symbol::on_document_symbol,
     emmy_annotator::{on_emmy_annotator_handler, EmmyAnnotatorRequest},
     fold_range::on_folding_range_handler,
@@ -40,6 +41,8 @@ pub async fn on_req_handler(
         .on_parallel::<DocumentLinkResolve, _, _>(on_document_link_resolve_handler)
         .await
         .on_parallel::<EmmyAnnotatorRequest, _, _>(on_emmy_annotator_handler)
+        .await
+        .on_parallel::<SelectionRangeRequest, _, _>(on_document_selection_range_handle)
         .await
         .finish();
     Ok(())
