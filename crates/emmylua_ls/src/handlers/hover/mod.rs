@@ -20,10 +20,13 @@ pub async fn on_hover(
     let analysis = context.analysis.read().await;
     let file_id = analysis.get_file_id(&uri)?;
     let mut semantic_model = analysis.compilation.get_semantic_model(file_id)?;
-    let document = semantic_model.get_document();
+
     let root = semantic_model.get_root();
-    let position_offset =
-        document.get_offset(position.line as usize, position.character as usize)?;
+    let position_offset = {
+        let document = semantic_model.get_document();
+        document.get_offset(position.line as usize, position.character as usize)?
+    };
+
     let token = match root.syntax().token_at_offset(position_offset) {
         TokenAtOffset::Single(token) => token,
         TokenAtOffset::Between(_, right) => right,
@@ -32,29 +35,31 @@ pub async fn on_hover(
         }
     };
 
-    if is_keyword(token.clone()) {
-        return Some(Hover {
-            contents: HoverContents::Markup(MarkupContent {
-                kind: lsp_types::MarkupKind::Markdown,
-                value: hover_keyword(token.clone()),
-            }),
-            range: document.to_lsp_range(token.text_range()),
-        });
+    match token {
+        keywords if is_keyword(keywords.clone()) => {
+            let document = semantic_model.get_document();
+            return Some(Hover {
+                contents: HoverContents::Markup(MarkupContent {
+                    kind: lsp_types::MarkupKind::Markdown,
+                    value: hover_keyword(keywords.clone()),
+                }),
+                range: document.to_lsp_range(keywords.text_range()),
+            });
+        }
+        _ => {
+            let semantic_info = semantic_model.get_semantic_info(token.clone().into())?;
+            let typ = semantic_info.typ;
+            let db = semantic_model.get_db();
+            let hover_text = humanize_type(db, &typ);
+            let document = semantic_model.get_document();
+            let range = document.to_lsp_range(token.text_range());
+            Some(Hover {
+                contents: HoverContents::Markup(MarkupContent {
+                    kind: lsp_types::MarkupKind::Markdown,
+                    value: hover_text,
+                }),
+                range,
+            })
+        }
     }
-
-    let node = LuaExpr::cast(token.parent()?)?;
-    let expr_type = semantic_model.infer_expr(node)?;
-
-    let db = semantic_model.get_db();
-    // TODO: add detail hover
-    // Some(hover)
-    let hover = Hover {
-        contents: HoverContents::Markup(MarkupContent {
-            kind: lsp_types::MarkupKind::Markdown,
-            value: format!("{}", humanize_type(db, &expr_type)),
-        }),
-        range: None,
-    };
-
-    Some(hover)
 }

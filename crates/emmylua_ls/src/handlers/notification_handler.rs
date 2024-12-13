@@ -31,7 +31,7 @@ pub async fn on_notification_handler(
         .on_parallel::<DidSaveTextDocument, _, _>(on_did_save_text_document)
         .on_parallel::<DidChangeWatchedFiles, _, _>(on_did_change_watched_files)
         .finish();
-    // .on(handler)
+
     Ok(())
 }
 

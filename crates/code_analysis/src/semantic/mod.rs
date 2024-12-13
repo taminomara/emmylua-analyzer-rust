@@ -2,15 +2,17 @@ mod infer;
 mod instantiate;
 mod member;
 mod overload_resolve;
+mod semantic_info;
 mod type_calc;
 mod type_compact;
 
 use std::{collections::HashSet, sync::Arc};
 
-use emmylua_parser::{LuaChunk, LuaExpr};
+use emmylua_parser::{LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken};
 use infer::InferResult;
 pub use infer::LuaInferConfig;
-use rowan::TextRange;
+use rowan::{NodeOrToken, TextRange};
+use semantic_info::{infer_node_semantic_info, infer_token_semantic_info, SemanticInfo};
 
 use crate::{db_index::LuaTypeDeclId, Emmyrc, LuaDocument};
 #[allow(unused_imports)]
@@ -56,6 +58,20 @@ impl<'a> SemanticModel<'a> {
 
     pub fn infer_expr(&mut self, expr: LuaExpr) -> InferResult {
         infer_expr(self.db, &mut self.infer_config, expr)
+    }
+
+    pub fn get_semantic_info(
+        &mut self,
+        node_or_token: NodeOrToken<LuaSyntaxNode, LuaSyntaxToken>,
+    ) -> Option<SemanticInfo> {
+        match node_or_token {
+            NodeOrToken::Node(node) => {
+                infer_node_semantic_info(self.db, &mut self.infer_config, node)
+            }
+            NodeOrToken::Token(token) => {
+                infer_token_semantic_info(self.db, &mut self.infer_config, token)
+            }
+        }
     }
 
     pub fn get_emmyrc(&self) -> &Emmyrc {
