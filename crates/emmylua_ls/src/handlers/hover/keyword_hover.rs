@@ -1,4 +1,5 @@
 use emmylua_parser::{LuaSyntaxToken, LuaTokenKind};
+use meta_text::meta_keyword;
 
 pub fn is_keyword(token: LuaSyntaxToken) -> bool {
     match token.kind().into() {
@@ -25,22 +26,22 @@ pub fn is_keyword(token: LuaSyntaxToken) -> bool {
 // todo add usage
 pub fn hover_keyword(token: LuaSyntaxToken) -> String {
     match token.kind().into() {
-        LuaTokenKind::TkLocal => "local".to_string(),
-        LuaTokenKind::TkFunction => "function".to_string(),
-        LuaTokenKind::TkEnd => "end".to_string(),
-        LuaTokenKind::TkIf => "if".to_string(),
-        LuaTokenKind::TkThen => "then".to_string(),
-        LuaTokenKind::TkElse => "else".to_string(),
-        LuaTokenKind::TkElseIf => "elseif".to_string(),
-        LuaTokenKind::TkWhile => "while".to_string(),
-        LuaTokenKind::TkDo => "do".to_string(),
-        LuaTokenKind::TkFor => "for".to_string(),
-        LuaTokenKind::TkIn => "in".to_string(),
-        LuaTokenKind::TkRepeat => "repeat".to_string(),
-        LuaTokenKind::TkUntil => "until".to_string(),
-        LuaTokenKind::TkReturn => "return".to_string(),
-        LuaTokenKind::TkBreak => "break".to_string(),
-        LuaTokenKind::TkGoto => "goto".to_string(),
+        LuaTokenKind::TkLocal => meta_keyword("local"),
+        LuaTokenKind::TkFunction => meta_keyword("function"),
+        LuaTokenKind::TkEnd => meta_keyword("end"),
+        LuaTokenKind::TkIf => meta_keyword("if"),
+        LuaTokenKind::TkThen => meta_keyword("then"),
+        LuaTokenKind::TkElse => meta_keyword("else"),
+        LuaTokenKind::TkElseIf => meta_keyword("elseif"),
+        LuaTokenKind::TkWhile => meta_keyword("while"),
+        LuaTokenKind::TkDo => meta_keyword("do"),
+        LuaTokenKind::TkFor => meta_keyword("for"),
+        LuaTokenKind::TkIn => meta_keyword("in"),
+        LuaTokenKind::TkRepeat => meta_keyword("repeat"),
+        LuaTokenKind::TkUntil => meta_keyword("until"),
+        LuaTokenKind::TkReturn => meta_keyword("return"),
+        LuaTokenKind::TkBreak => meta_keyword("break"),
+        LuaTokenKind::TkGoto => meta_keyword("goto"),
         _ => "".to_string()
     }
 }

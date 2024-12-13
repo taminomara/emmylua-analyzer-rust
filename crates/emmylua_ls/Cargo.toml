@@ -10,6 +10,7 @@ dirs = "5"
 
 code_analysis = { path = "../code_analysis" }
 emmylua_parser = { path = "../emmylua_parser" }
+meta_text = { path = "../meta_text" }
 serde.workspace = true
 serde_json.workspace = true
 lsp-types.workspace = true
