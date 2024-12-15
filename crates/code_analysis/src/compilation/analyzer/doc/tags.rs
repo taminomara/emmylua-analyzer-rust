@@ -1,8 +1,9 @@
-use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaClosureExpr, LuaDocTag, LuaLocalName, LuaVarExpr,
-};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaClosureExpr, LuaDocTag, LuaLocalName, LuaVarExpr};
 
-use crate::db_index::{LuaMemberId, LuaPropertyOwnerId, LuaSignatureId};
+use crate::{
+    db_index::{LuaMemberId, LuaPropertyOwnerId, LuaSignatureId},
+    LuaDeclId,
+};
 
 use super::{
     diagnostic_tags::analyze_diagnostic,
@@ -129,31 +130,20 @@ pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaPropertyOwnerId> {
             let first_var = assign.child::<LuaVarExpr>()?;
             match first_var {
                 LuaVarExpr::NameExpr(name_expr) => {
-                    let name = name_expr.get_name_text()?;
-                    let decl = analyzer
-                        .db
-                        .get_decl_index_mut()
-                        .get_decl_tree(&analyzer.file_id)?
-                        .find_local_decl(&name, name_expr.get_position())?;
-                    return Some(LuaPropertyOwnerId::LuaDecl(decl.get_id()));
+                    let decl_id = LuaDeclId::new(analyzer.file_id, name_expr.get_position());
+                    let _ = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
+                    return Some(LuaPropertyOwnerId::LuaDecl(decl_id));
                 }
                 LuaVarExpr::IndexExpr(index_expr) => {
                     let member_id = LuaMemberId::new(index_expr.get_syntax_id(), analyzer.file_id);
-
                     return Some(LuaPropertyOwnerId::Member(member_id));
                 } // _ => None,
             }
         }
         LuaAst::LuaLocalStat(local_stat) => {
             let local_name = local_stat.child::<LuaLocalName>()?;
-            let name_token = local_name.get_name_token()?;
-            let name = name_token.get_name_text();
-            let decl = analyzer
-                .db
-                .get_decl_index_mut()
-                .get_decl_tree(&analyzer.file_id)?
-                .find_local_decl(&name, name_token.get_position())?;
-            return Some(LuaPropertyOwnerId::LuaDecl(decl.get_id()));
+            let decl_id = LuaDeclId::new(analyzer.file_id, local_name.get_position());
+            return Some(LuaPropertyOwnerId::LuaDecl(decl_id));
         }
         LuaAst::LuaTableField(field) => {
             let member_id = LuaMemberId::new(field.get_syntax_id(), analyzer.file_id);

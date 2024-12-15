@@ -12,7 +12,8 @@ use emmylua_parser::{LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken};
 use infer::InferResult;
 pub use infer::LuaInferConfig;
 use rowan::{NodeOrToken, TextRange};
-use semantic_info::{infer_node_semantic_info, infer_token_semantic_info, SemanticInfo};
+pub use semantic_info::SemanticInfo;
+use semantic_info::{infer_node_semantic_info, infer_token_semantic_info};
 
 use crate::{db_index::LuaTypeDeclId, Emmyrc, LuaDocument};
 #[allow(unused_imports)]

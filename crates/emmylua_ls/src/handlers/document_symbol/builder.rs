@@ -150,22 +150,23 @@ impl<'a> DocumentSymbolBuilder<'a> {
                     let detail = format!("({})", param_names.join(", "));
                     (SymbolKind::FUNCTION, Some(detail))
                 }
+                LuaType::Signature(s) => {
+                    let signature = self.db.get_signature_index().get(s);
+                    if let Some(signature) = signature {
+                        let params = signature.get_type_params();
+                        let mut param_names = Vec::new();
+                        for param in params {
+                            param_names.push(param.0.to_string());
+                        }
+
+                        let detail = format!("({})", param_names.join(", "));
+                        return (SymbolKind::FUNCTION, Some(detail));
+                    } else {
+                        return (SymbolKind::FUNCTION, None);
+                    }
+                }
                 _ => (SymbolKind::FUNCTION, None),
             };
-        } else if let LuaType::Signature(s) = ty {
-            let signature = self.db.get_signature_index().get(s);
-            if let Some(signature) = signature {
-                let params = signature.get_type_params();
-                let mut param_names = Vec::new();
-                for param in params {
-                    param_names.push(param.0.to_string());
-                }
-
-                let detail = format!("({})", param_names.join(", "));
-                return (SymbolKind::FUNCTION, Some(detail))
-            } else {
-                return (SymbolKind::FUNCTION, None)
-            }
         } else if ty.is_boolean() {
             return (SymbolKind::BOOLEAN, None);
         }

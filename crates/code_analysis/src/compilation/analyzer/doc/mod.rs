@@ -1,3 +1,4 @@
+mod diagnostic_tags;
 mod field_or_operator_def_tags;
 mod file_generic_index;
 mod infer_type;
@@ -5,15 +6,15 @@ mod property_tags;
 mod tags;
 mod type_def_tags;
 mod type_ref_tags;
-mod diagnostic_tags;
 
 use super::AnalyzeContext;
 use crate::{
     db_index::{DbIndex, LuaTypeDeclId},
     FileId,
 };
-use emmylua_parser::{LuaAstNode, LuaComment, LuaSyntaxNode};
+use emmylua_parser::{LuaAstNode, LuaComment, LuaDocDescriptionOwner, LuaSyntaxNode};
 use file_generic_index::FileGenericIndex;
+use tags::get_owner_id;
 
 pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     let tree_list = context.tree_list.clone();
@@ -33,11 +34,21 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     }
 }
 
-fn analyze_comment(analyzer: &mut DocAnalyzer) {
-    let comment = &analyzer.comment;
+fn analyze_comment(analyzer: &mut DocAnalyzer) -> Option<()> {
+    let comment = analyzer.comment.clone();
     for tag in comment.get_doc_tags() {
         tags::analyze_tag(analyzer, tag);
     }
+
+    let owenr = get_owner_id(analyzer)?;
+    let comment_description = comment.get_description()?.get_description_text();
+    analyzer.db.get_property_index_mut().add_description(
+        analyzer.file_id,
+        owenr,
+        comment_description,
+    );
+
+    Some(())
 }
 
 #[derive(Debug)]

@@ -279,19 +279,12 @@ fn get_local_stat_reference_ranges(
 ) -> Option<Vec<TextRange>> {
     let file_id = analyzer.file_id;
     let first_local = local_stat.child::<LuaLocalName>()?;
-    let first_local_name = first_local.get_name_token()?.get_name_text().to_string();
-    let decl = analyzer
-        .db
-        .get_decl_index_mut()
-        .get_decl_tree(&file_id)?
-        .find_local_decl(&first_local_name, first_local.get_position())?;
+    let decl_id = LuaDeclId::new(file_id, first_local.get_position());
     let mut ranges = Vec::new();
-
-    let id = decl.get_id();
     let refs = analyzer
         .db
         .get_reference_index_mut()
-        .get_local_references(&file_id, &id)?;
+        .get_local_references(&file_id, &decl_id)?;
     for reference_range in refs {
         let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), reference_range.clone());
         let name_node = syntax_id.to_node_from_root(&analyzer.root)?;

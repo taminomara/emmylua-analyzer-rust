@@ -8,7 +8,7 @@ use std::collections::HashMap;
 pub use decl::{LocalAttribute, LuaDecl, LuaDeclId};
 pub use decl_tree::{LuaDeclOrMemberId, LuaDeclarationTree};
 use internment::ArcIntern;
-pub use scope::{LuaScopeId, LuaScopeKind, LuaScope, ScopeOrDeclId};
+pub use scope::{LuaScope, LuaScopeId, LuaScopeKind, ScopeOrDeclId};
 
 use crate::FileId;
 
@@ -83,7 +83,28 @@ impl LuaDeclIndex {
 
     pub fn get_global_decl_id(&self, key: &LuaMemberKey) -> Option<LuaDeclId> {
         let decls = self.global_decl.get(key)?;
-        decls.first().cloned()
+        if decls.len() == 1 {
+            return Some(decls[0]);
+        }
+
+        let mut valid_decl_id = None;
+        for decl_id in decls {
+            let decl = self.get_decl(decl_id)?;
+            let ty = decl.get_type();
+            if let Some(ty) = ty {
+                if ty.is_def() || ty.is_ref() {
+                    return Some(*decl_id);
+                }
+
+                if valid_decl_id.is_none() {
+                    valid_decl_id = Some(*decl_id);
+                } else if ty.is_table() {
+                    valid_decl_id = Some(*decl_id);
+                }
+            }
+        }
+
+        valid_decl_id
     }
 }
 

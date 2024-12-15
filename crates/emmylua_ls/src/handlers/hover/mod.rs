@@ -1,5 +1,8 @@
 mod keyword_hover;
+mod build_hover;
+mod hover_humanize;
 
+use build_hover::build_semantic_info_hover;
 use code_analysis::humanize_type;
 use emmylua_parser::{LuaAstNode, LuaExpr};
 use keyword_hover::{hover_keyword, is_keyword};
@@ -48,18 +51,9 @@ pub async fn on_hover(
         }
         _ => {
             let semantic_info = semantic_model.get_semantic_info(token.clone().into())?;
-            let typ = semantic_info.typ;
             let db = semantic_model.get_db();
-            let hover_text = humanize_type(db, &typ);
             let document = semantic_model.get_document();
-            let range = document.to_lsp_range(token.text_range());
-            Some(Hover {
-                contents: HoverContents::Markup(MarkupContent {
-                    kind: lsp_types::MarkupKind::Markdown,
-                    value: hover_text,
-                }),
-                range,
-            })
+            build_semantic_info_hover(db, &document, token, semantic_info)
         }
     }
 }

@@ -256,7 +256,7 @@ impl LuaType {
     }
 
     pub fn is_function(&self) -> bool {
-        matches!(self, LuaType::DocFunction(_) | LuaType::Function)
+        matches!(self, LuaType::DocFunction(_) | LuaType::Function | LuaType::Signature(_))
     }
 
     pub fn is_object(&self) -> bool {
@@ -314,6 +314,8 @@ impl LuaType {
                 | LuaType::IntegerConst(_)
                 | LuaType::FloatConst(_)
                 | LuaType::TableConst(_)
+                | LuaType::DocStringConst(_)
+                | LuaType::DocIntergerConst(_)
         )
     }
 

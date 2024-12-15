@@ -1,11 +1,11 @@
 mod infer_expr_info;
 
 use emmylua_parser::{
-    LuaAstNode, LuaExpr, LuaSyntaxKind, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind,
+    LuaAstNode, LuaExpr, LuaSyntaxKind, LuaSyntaxNode, LuaSyntaxToken, LuaTableField, LuaTokenKind,
 };
-use infer_expr_info::get_expr_semantic_info;
+use infer_expr_info::infer_expr_semantic_info;
 
-use crate::{DbIndex, LuaDeclId, LuaPropertyOwnerId, LuaType};
+use crate::{DbIndex, LuaDeclId, LuaMemberId, LuaPropertyOwnerId, LuaType};
 
 use super::{infer_expr, LuaInferConfig};
 
@@ -51,7 +51,18 @@ pub fn infer_node_semantic_info(
     match node {
         expr_node if LuaExpr::can_cast(expr_node.kind().into()) => {
             let expr = LuaExpr::cast(expr_node)?;
-            get_expr_semantic_info(db, infer_config, expr)
+            infer_expr_semantic_info(db, infer_config, expr)
+        }
+        table_field_node if LuaTableField::can_cast(table_field_node.kind().into()) => {
+            let table_field = LuaTableField::cast(table_field_node)?;
+            let member_id =
+                LuaMemberId::new(table_field.get_syntax_id(), infer_config.get_file_id());
+            let member = db.get_member_index().get_member(&member_id)?;
+            let typ = member.get_decl_type().clone();
+            Some(SemanticInfo {
+                typ,
+                property_owner: Some(LuaPropertyOwnerId::Member(member_id)),
+            })
         }
         _ => None,
     }
