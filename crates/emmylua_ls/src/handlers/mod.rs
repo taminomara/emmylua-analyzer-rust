@@ -1,6 +1,9 @@
+mod completion;
 mod document_color;
 mod document_link;
+mod document_selection_range;
 mod document_symbol;
+mod emmy_annotator;
 mod fold_range;
 mod hover;
 mod initialized;
@@ -8,13 +11,15 @@ mod notification_handler;
 mod request_handler;
 mod response_handler;
 mod text_document;
-mod emmy_annotator;
-mod document_selection_range;
 
 pub use initialized::initialized_handler;
 pub use initialized::{init_analysis, ClientConfig};
 use lsp_types::{
-    ColorProviderCapability, DocumentLinkOptions, DocumentSymbolOptions, FoldingRangeProviderCapability, HoverProviderCapability, OneOf, SaveOptions, SelectionRangeProviderCapability, ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncSaveOptions
+    ColorProviderCapability, CompletionOptions, CompletionOptionsCompletionItem,
+    DocumentLinkOptions, DocumentSymbolOptions, FoldingRangeProviderCapability,
+    HoverProviderCapability, OneOf, SaveOptions, SelectionRangeProviderCapability,
+    ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind,
+    TextDocumentSyncSaveOptions,
 };
 pub use notification_handler::on_notification_handler;
 pub use request_handler::on_req_handler;
@@ -45,6 +50,20 @@ pub fn server_capabilities() -> ServerCapabilities {
             work_done_progress_options: Default::default(),
         }),
         selection_range_provider: Some(SelectionRangeProviderCapability::Simple(true)),
+        completion_provider: Some(CompletionOptions {
+            resolve_provider: Some(true),
+            trigger_characters: Some(
+                vec![".", ":", "(", "[", "\"", "\'", ",", "@", "\\", "/"]
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+            ),
+            work_done_progress_options: Default::default(),
+            completion_item: Some(CompletionOptionsCompletionItem {
+                label_details_support: Some(true),
+            }),
+            all_commit_characters: Default::default(),
+        }),
         ..Default::default()
     }
 }

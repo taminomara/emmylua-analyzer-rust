@@ -3,8 +3,9 @@ use std::{error::Error, future::Future};
 use log::error;
 use lsp_server::{Request, RequestId, Response};
 use lsp_types::request::{
-    ColorPresentationRequest, DocumentColor, DocumentLinkRequest, DocumentLinkResolve,
-    DocumentSymbolRequest, FoldingRangeRequest, HoverRequest, SelectionRangeRequest,
+    ColorPresentationRequest, Completion, DocumentColor, DocumentLinkRequest, DocumentLinkResolve,
+    DocumentSymbolRequest, FoldingRangeRequest, HoverRequest, ResolveCompletionItem,
+    SelectionRangeRequest,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use tokio_util::sync::CancellationToken;
@@ -12,6 +13,7 @@ use tokio_util::sync::CancellationToken;
 use crate::context::{ServerContext, ServerContextSnapshot};
 
 use super::{
+    completion::{on_completion_handler, on_completion_resolve_handler},
     document_color::{on_document_color, on_document_color_presentation},
     document_link::{on_document_link_handler, on_document_link_resolve_handler},
     document_selection_range::on_document_selection_range_handle,
@@ -43,6 +45,10 @@ pub async fn on_req_handler(
         .on_parallel::<EmmyAnnotatorRequest, _, _>(on_emmy_annotator_handler)
         .await
         .on_parallel::<SelectionRangeRequest, _, _>(on_document_selection_range_handle)
+        .await
+        .on_parallel::<Completion, _, _>(on_completion_handler)
+        .await
+        .on_parallel::<ResolveCompletionItem, _, _>(on_completion_resolve_handler)
         .await
         .finish();
     Ok(())

@@ -66,7 +66,7 @@ impl LuaDeclIndex {
             let decl = self.get_decl(decl_id)?;
             let ty = decl.get_type();
             if let Some(ty) = ty {
-                if ty.is_def() || ty.is_ref() {
+                if ty.is_def() || ty.is_ref() || ty.is_function() {
                     return Some(ty.clone());
                 }
 
@@ -111,5 +111,9 @@ impl LuaDeclIndex {
 impl LuaIndex for LuaDeclIndex {
     fn remove(&mut self, file_id: FileId) {
         self.decl_trees.remove(&file_id);
+        self.global_decl.retain(|_, v| {
+            v.retain(|decl_id| decl_id.file_id != file_id);
+            !v.is_empty()
+        });
     }
 }
