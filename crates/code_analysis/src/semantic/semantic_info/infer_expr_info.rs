@@ -135,7 +135,8 @@ fn infer_index_expr_semantic_info(
     };
 
     let member_key = index_expr.get_index_key()?.into();
-    if let Some(member_type) = infer_member_semantic_info_by_member_key(
+    eprintln!("prefix_type: {:?} key: {:?}, typ: {:?}", prefix_type, member_key, typ);
+    if let Some(member_info) = infer_member_semantic_info_by_member_key(
         db,
         infer_config,
         &prefix_type,
@@ -143,7 +144,7 @@ fn infer_index_expr_semantic_info(
         &typ,
         &mut InferGuard::new(),
     ) {
-        return Some(member_type);
+        return Some(member_info);
     }
 
     Some(SemanticInfo {

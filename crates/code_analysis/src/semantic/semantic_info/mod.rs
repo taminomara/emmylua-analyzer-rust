@@ -1,7 +1,7 @@
 mod infer_expr_info;
 
 use emmylua_parser::{
-    LuaAstNode, LuaExpr, LuaSyntaxKind, LuaSyntaxNode, LuaSyntaxToken, LuaTableField, LuaTokenKind,
+    LuaAstNode, LuaExpr, LuaSyntaxKind, LuaSyntaxNode, LuaSyntaxToken, LuaTableField,
 };
 use infer_expr_info::infer_expr_semantic_info;
 
@@ -20,10 +20,6 @@ pub fn infer_token_semantic_info(
     infer_config: &mut LuaInferConfig,
     token: LuaSyntaxToken,
 ) -> Option<SemanticInfo> {
-    if !matches!(token.kind().into(), LuaTokenKind::TkName) {
-        return None;
-    }
-
     let parent = token.parent()?;
     match parent.kind().into() {
         LuaSyntaxKind::ForStat

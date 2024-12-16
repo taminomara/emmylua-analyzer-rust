@@ -1,5 +1,6 @@
 use code_analysis::{
-    humanize_type, DbIndex, LuaDeclId, LuaDocument, LuaPropertyOwnerId, LuaType, SemanticInfo,
+    humanize_type, DbIndex, LuaDeclId, LuaDocument, LuaMemberId, LuaMemberKey, LuaMemberOwner,
+    LuaPropertyOwnerId, LuaType, SemanticInfo,
 };
 use emmylua_parser::LuaSyntaxToken;
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
@@ -19,7 +20,9 @@ pub fn build_semantic_info_hover(
 
     match semantic_info.property_owner.unwrap() {
         LuaPropertyOwnerId::LuaDecl(decl_id) => build_decl_hover(db, document, token, typ, decl_id),
-
+        LuaPropertyOwnerId::Member(member_id) => {
+            build_member_hover(db, document, token, typ, member_id)
+        }
         _ => None,
     }
 }
@@ -81,6 +84,62 @@ fn build_decl_hover(
 
     let property_owner = LuaPropertyOwnerId::LuaDecl(decl_id);
     add_description(db, &mut marked_strings, &typ, property_owner);
+
+    Some(Hover {
+        contents: HoverContents::Array(marked_strings),
+        range: document.to_lsp_range(token.text_range()),
+    })
+}
+
+fn build_member_hover(
+    db: &DbIndex,
+    document: &LuaDocument,
+    token: LuaSyntaxToken,
+    typ: LuaType,
+    member_id: LuaMemberId,
+) -> Option<Hover> {
+    let mut marked_strings = Vec::new();
+    let member = db.get_member_index().get_member(&member_id)?;
+
+    let member_name = match member.get_key() {
+        LuaMemberKey::Name(name) => name.to_string(),
+        LuaMemberKey::Integer(i) => format!("[{}]", i),
+        _ => return None,
+    };
+
+    if typ.is_function() {
+        let hover_text = hover_function_type(db, &typ, &member_name, false);
+        marked_strings.push(MarkedString::from_language_code(
+            "lua".to_string(),
+            hover_text,
+        ));
+
+        if let LuaMemberOwner::Type(ty) = &member.get_owner() {
+            marked_strings.push(MarkedString::from_markdown(format!(
+                "in class `{}`",
+                ty.get_name()
+            )));
+        }
+    } else if typ.is_const() {
+        let const_value = hover_const_type(db, &typ);
+        marked_strings.push(MarkedString::from_language_code(
+            "lua".to_string(),
+            format!("(field) {}: {}", member_name, const_value),
+        ));
+    } else {
+        let type_humanize_text = humanize_type(db, &typ);
+        marked_strings.push(MarkedString::from_language_code(
+            "lua".to_string(),
+            format!("(field) {}: {}", member_name, type_humanize_text),
+        ));
+    }
+
+    add_description(
+        db,
+        &mut marked_strings,
+        &typ,
+        LuaPropertyOwnerId::Member(member_id),
+    );
 
     Some(Hover {
         contents: HoverContents::Array(marked_strings),

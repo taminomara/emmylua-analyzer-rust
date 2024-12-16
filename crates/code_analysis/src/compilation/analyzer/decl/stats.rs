@@ -131,7 +131,22 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
     let func_name = stat.get_func_name()?;
 
     match func_name {
-        LuaVarExpr::NameExpr(_) => {}
+        LuaVarExpr::NameExpr(name_expr) => {
+            let name_token = name_expr.get_name_token()?;
+            let position = name_token.get_position();
+            let name = name_token.get_name_text().to_string();
+            if analyzer.find_decl(&name, position).is_none() {
+                let decl = LuaDecl::Global {
+                    name,
+                    file_id: analyzer.get_file_id(),
+                    range: name_token.get_range(),
+                    decl_type: None,
+                };
+
+                analyzer.add_decl(decl);
+            }
+        }
+
         LuaVarExpr::IndexExpr(index_name) => {
             let index_key = index_name.get_index_key()?;
             let key: LuaMemberKey = index_key.into();

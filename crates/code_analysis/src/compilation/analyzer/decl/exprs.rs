@@ -23,11 +23,9 @@ pub fn analyze_name_expr(analyzer: &mut DeclAnalyzer, expr: LuaNameExpr) {
     let range = expr.get_range();
     let file_id = analyzer.get_file_id();
     let decl_id = LuaDeclId::new(file_id, position);
-    if analyzer.decl.get_decl(&decl_id).is_some() {
-        return;
-    }
-
-    let (decl_id, is_local) = if let Some(decl) = analyzer.find_decl(&name, position) {
+    let (decl_id, is_local) = if analyzer.decl.get_decl(&decl_id).is_some() {
+        (Some(decl_id), false)
+    } else if let Some(decl) = analyzer.find_decl(&name, position) {
         if decl.is_local() {
             // reference local variable
             (Some(decl.get_id()), true)
@@ -122,20 +120,15 @@ pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, expr: LuaTableExpr) -> Op
                 if key.is_none() {
                     continue;
                 }
-                
+
                 analyzer.db.get_reference_index_mut().add_index_reference(
                     key.clone(),
                     file_id,
                     expr.get_syntax_id(),
                 );
 
-                let member = LuaMember::new(
-                    owner_id.clone(),
-                    key,
-                    file_id,
-                    expr.get_syntax_id(),
-                    None,
-                );
+                let member =
+                    LuaMember::new(owner_id.clone(), key, file_id, field.get_syntax_id(), None);
                 analyzer.db.get_member_index_mut().add_member(member);
             }
         }

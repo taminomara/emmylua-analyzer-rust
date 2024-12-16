@@ -3,8 +3,7 @@ mod build_hover;
 mod hover_humanize;
 
 use build_hover::build_semantic_info_hover;
-use code_analysis::humanize_type;
-use emmylua_parser::{LuaAstNode, LuaExpr};
+use emmylua_parser::LuaAstNode;
 use keyword_hover::{hover_keyword, is_keyword};
 use lsp_types::{Hover, HoverContents, HoverParams, MarkupContent};
 use rowan::TokenAtOffset;
