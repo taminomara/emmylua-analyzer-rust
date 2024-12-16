@@ -134,3 +134,48 @@ pub const KEYWORD_COMPLETIONS: &[KeywordCompletionInfo] = &[
         kind: CompletionItemKind::SNIPPET,
     },
 ];
+
+pub const KEYWORD_EXPR_COMPLETIONS: &[KeywordCompletionInfo] = &[
+    KeywordCompletionInfo {
+        label: "and",
+        detail: "",
+        insert_text: "and",
+        kind: CompletionItemKind::KEYWORD,
+    },
+    KeywordCompletionInfo {
+        label: "or",
+        detail: "",
+        insert_text: "or",
+        kind: CompletionItemKind::KEYWORD,
+    },
+    KeywordCompletionInfo {
+        label: "not",
+        detail: "",
+        insert_text: "not",
+        kind: CompletionItemKind::KEYWORD,
+    },
+    KeywordCompletionInfo {
+        label: "true",
+        detail: "",
+        insert_text: "true",
+        kind: CompletionItemKind::CONSTANT,
+    },
+    KeywordCompletionInfo {
+        label: "false",
+        detail: "",
+        insert_text: "false",
+        kind: CompletionItemKind::CONSTANT,
+    },
+    KeywordCompletionInfo {
+        label: "nil",
+        detail: "",
+        insert_text: "nil",
+        kind: CompletionItemKind::CONSTANT,
+    },
+    KeywordCompletionInfo {
+        label: "function",
+        detail: "(function (...) .. end)",
+        insert_text: "function(${1:...})\n\t${0}\nend",
+        kind: CompletionItemKind::SNIPPET,
+    },
+];
