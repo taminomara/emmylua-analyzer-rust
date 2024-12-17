@@ -22,6 +22,22 @@ pub struct FileId {
     pub id: u32,
 }
 
+impl FromStr for FileId {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let id = s.parse().map_err(|_| ())?;
+        Ok(FileId { id })
+    }
+}
+
+impl ToString for FileId {
+    fn to_string(&self) -> String {
+        self.id.to_string()
+    }
+}
+
+
 impl FileId {
     pub fn new() -> Self {
         FileId { id: 0 }

@@ -1,9 +1,11 @@
 use code_analysis::{
-    humanize_type, DbIndex, LuaDeclId, LuaDocument, LuaMemberId, LuaMemberKey, LuaMemberOwner,
-    LuaPropertyOwnerId, LuaType, SemanticInfo,
+    DbIndex, LuaDeclId, LuaDocument, LuaMemberId, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId,
+    LuaType, SemanticInfo,
 };
 use emmylua_parser::LuaSyntaxToken;
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
+
+use crate::util::humanize_type;
 
 use super::hover_humanize::{hover_const_type, hover_function_type};
 

@@ -1,8 +1,9 @@
-mod completion_context;
+mod completion_builder;
 mod providers;
 mod data;
+mod add_completions;
 
-use completion_context::CompletionContext;
+use completion_builder::CompletionBuilder;
 use emmylua_parser::LuaAstNode;
 use lsp_types::{CompletionItem, CompletionParams, CompletionResponse};
 use providers::add_completions;
@@ -35,13 +36,14 @@ pub async fn on_completion_handler(
         }
     };
 
-    let mut completion_context = CompletionContext::new(token, semantic_model, cancel_token);
-    add_completions(&mut completion_context);
+    let mut builder = CompletionBuilder::new(token, semantic_model, cancel_token);
+    add_completions(&mut builder);
     Some(CompletionResponse::Array(
-        completion_context.get_completion_items(),
+        builder.get_completion_items(),
     ))
 }
 
+#[allow(unused_variables)]
 pub async fn on_completion_resolve_handler(
     context: ServerContextSnapshot,
     params: CompletionItem,

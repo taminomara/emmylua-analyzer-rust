@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use emmylua_parser::{LuaKind, LuaSyntaxId, LuaSyntaxKind};
 use rowan::{TextRange, TextSize};
 
@@ -91,6 +93,26 @@ impl LuaDecl {
 pub struct LuaDeclId {
     pub file_id: FileId,
     pub position: TextSize,
+}
+
+impl FromStr for LuaDeclId {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.split('|').collect();
+        if parts.len() != 2 {
+            return Err(());
+        }
+        let file_id = parts[0].parse().map_err(|_| ())?;
+        let position = parts[1].parse::<u32>().map_err(|_| ())?;
+        Ok(Self { file_id, position: position.into() })
+    }
+}
+
+impl ToString for LuaDeclId {
+    fn to_string(&self) -> String {
+        format!("{}:{}", self.file_id.to_string(), u32::from(self.position))
+    }
 }
 
 impl LuaDeclId {

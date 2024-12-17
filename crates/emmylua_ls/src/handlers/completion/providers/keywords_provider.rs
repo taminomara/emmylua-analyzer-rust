@@ -1,21 +1,27 @@
 use emmylua_parser::{LuaAstNode, LuaNameExpr, LuaSyntaxKind};
-use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat, InsertTextMode};
+use lsp_types::{CompletionItem, CompletionItemLabelDetails, InsertTextFormat, InsertTextMode};
 
-use crate::handlers::completion::{completion_context::CompletionContext, data::{KEYWORD_COMPLETIONS, KEYWORD_EXPR_COMPLETIONS}};
+use crate::handlers::completion::{
+    completion_builder::CompletionBuilder,
+    data::{KEYWORD_COMPLETIONS, KEYWORD_EXPR_COMPLETIONS},
+};
 
-pub fn add_completion(context: &mut CompletionContext) -> Option<()> {
-    if context.is_cancelled() {
+pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
+    if builder.is_cancelled() {
         return None;
     }
 
-    let name_expr = LuaNameExpr::cast(context.trigger_token.parent()?)?;
-    add_stat_keyword_completions(context, name_expr);
+    let name_expr = LuaNameExpr::cast(builder.trigger_token.parent()?)?;
+    add_stat_keyword_completions(builder, name_expr);
 
-    add_expr_keyword_completions(context);
+    add_expr_keyword_completions(builder);
     Some(())
 }
 
-fn add_stat_keyword_completions(context: &mut CompletionContext, name_expr: LuaNameExpr) -> Option<()> {
+fn add_stat_keyword_completions(
+    builder: &mut CompletionBuilder,
+    name_expr: LuaNameExpr,
+) -> Option<()> {
     if name_expr.syntax().parent()?.parent()?.kind() != LuaSyntaxKind::Block.into() {
         return None;
     }
@@ -34,13 +40,13 @@ fn add_stat_keyword_completions(context: &mut CompletionContext, name_expr: LuaN
             ..CompletionItem::default()
         };
 
-        context.add_completion_item(item)?;
+        builder.add_completion_item(item)?;
     }
 
     Some(())
 }
 
-fn add_expr_keyword_completions(context: &mut CompletionContext) -> Option<()> {
+fn add_expr_keyword_completions(builder: &mut CompletionBuilder) -> Option<()> {
     for keyword_info in KEYWORD_EXPR_COMPLETIONS {
         let item = CompletionItem {
             label: keyword_info.label.to_string(),
@@ -55,7 +61,7 @@ fn add_expr_keyword_completions(context: &mut CompletionContext) -> Option<()> {
             ..CompletionItem::default()
         };
 
-        context.add_completion_item(item)?;
+        builder.add_completion_item(item)?;
     }
 
     Some(())

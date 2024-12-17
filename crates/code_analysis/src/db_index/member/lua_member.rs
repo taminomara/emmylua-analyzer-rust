@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use emmylua_parser::{LuaDocFieldKey, LuaIndexKey, LuaSyntaxId};
 use internment::ArcIntern;
 use rowan::TextRange;
@@ -78,11 +80,33 @@ pub struct LuaMemberId {
     id: LuaSyntaxId,
 }
 
+impl FromStr for LuaMemberId {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.split('|').collect();
+        if parts.len() != 2 {
+            return Err(());
+        }
+
+        let file_id = parts[0].parse().map_err(|_| ())?;
+        let id = parts[1].parse().map_err(|_| ())?;
+        Ok(Self { file_id, id })
+    }
+}
+
+impl ToString for LuaMemberId {
+    fn to_string(&self) -> String {
+        format!("{}|{}", self.file_id.to_string(), self.id.to_string())
+    }
+}
+
 impl LuaMemberId {
     pub fn new(id: LuaSyntaxId, file_id: FileId) -> Self {
         Self { id, file_id }
     }
 }
+
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub enum LuaMemberOwner {

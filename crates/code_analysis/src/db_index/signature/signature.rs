@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 use emmylua_parser::{LuaAstNode, LuaClosureExpr};
 use rowan::TextSize;
@@ -71,6 +71,29 @@ pub struct LuaSignatureId {
     file_id: FileId,
     position: TextSize,
 }
+
+impl FromStr for LuaSignatureId {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.split('|').collect();
+        if parts.len() != 2 {
+            return Err(());
+        }
+
+        let file_id = parts[0].parse().map_err(|_| ())?;
+        let position = parts[1].parse::<u32>().map_err(|_| ())?;
+
+        Ok(Self { file_id, position: position.into() })
+    }
+}
+
+impl ToString for LuaSignatureId {
+    fn to_string(&self) -> String {
+        format!("{}|{}", self.file_id.to_string(), u32::from(self.position))
+    }
+}
+
 
 impl LuaSignatureId {
     pub fn new(file_id: FileId, closure: &LuaClosureExpr) -> Self {

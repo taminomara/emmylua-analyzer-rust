@@ -3,7 +3,7 @@ mod node;
 mod traits;
 mod tree;
 
-use std::iter::successors;
+use std::{iter::successors, str::FromStr};
 
 use rowan::{Language, TextRange};
 
@@ -160,5 +160,35 @@ impl LuaSyntaxId {
             node.child_or_token_at_range(range)?.into_node()
         })
         .find(|it| it.text_range() == range)
+    }
+}
+
+impl FromStr for LuaSyntaxId {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.split(',').collect();
+        if parts.len() != 3 {
+            return Err(());
+        }
+
+        let kind = parts[0].parse::<u16>().map_err(|_| ())?;
+        let lua_kind = LuaKind::from_raw(kind);
+        let start = parts[1].parse::<u32>().map_err(|_| ())?;
+        let end = parts[2].parse::<u32>().map_err(|_| ())?;
+        let range = TextRange::new(start.into(), end.into());
+
+        Ok(LuaSyntaxId::new(lua_kind, range))
+    }
+}
+
+impl ToString for LuaSyntaxId {
+    fn to_string(&self) -> String {
+        format!(
+            "{},{},{}",
+            self.kind.get_raw(),
+            u32::from(self.range.start()),
+            u32::from(self.range.end())
+        )
     }
 }

@@ -4,24 +4,22 @@ mod db_index;
 mod diagnostic;
 mod semantic;
 mod vfs;
-mod render;
 
-use std::{env, path::PathBuf, sync::Arc};
 pub use compilation::*;
-pub use config::{Emmyrc, load_configs};
+pub use config::{load_configs, Emmyrc};
+pub use db_index::*;
 pub use diagnostic::*;
 use log::{error, info};
 use lsp_types::Uri;
+pub use semantic::*;
+use std::{env, path::PathBuf, sync::Arc};
 use tokio_util::sync::CancellationToken;
 pub use vfs::*;
-pub use semantic::*;
-pub use db_index::*;
-pub use render::*;
 
 #[macro_use]
 extern crate rust_i18n;
 
-rust_i18n::i18n!("./locales", fallback="en");
+rust_i18n::i18n!("./locales", fallback = "en");
 
 pub fn set_locale(locale: &str) {
     rust_i18n::set_locale(locale);
@@ -41,7 +39,7 @@ impl EmmyLuaAnalysis {
         Self {
             compilation: LuaCompilation::new(emmyrc.clone()),
             diagnostic: LuaDiagnostic::new(),
-            emmyrc
+            emmyrc,
         }
     }
 
@@ -92,7 +90,11 @@ impl EmmyLuaAnalysis {
     }
 
     pub fn get_uri(&self, file_id: FileId) -> Option<Uri> {
-        self.compilation.get_db().get_vfs().get_uri(&file_id).cloned()
+        self.compilation
+            .get_db()
+            .get_vfs()
+            .get_uri(&file_id)
+            .cloned()
     }
 
     pub fn add_workspace_root(&mut self, root: PathBuf) {
@@ -102,7 +104,7 @@ impl EmmyLuaAnalysis {
             .add_workspace_root(root);
     }
 
-    pub fn update_file_by_uri(&mut self, uri: &Uri, text: Option<String>)  -> Option<FileId> {
+    pub fn update_file_by_uri(&mut self, uri: &Uri, text: Option<String>) -> Option<FileId> {
         let is_removed = text.is_none();
         let file_id = self
             .compilation
@@ -164,8 +166,14 @@ impl EmmyLuaAnalysis {
         self.emmyrc.clone()
     }
 
-    pub async fn diagnose_file(&self, file_id: FileId, cancel_token: CancellationToken) -> Option<Vec<lsp_types::Diagnostic>> {
-        self.diagnostic.diagnose_file(&self.compilation, file_id, cancel_token).await
+    pub async fn diagnose_file(
+        &self,
+        file_id: FileId,
+        cancel_token: CancellationToken,
+    ) -> Option<Vec<lsp_types::Diagnostic>> {
+        self.diagnostic
+            .diagnose_file(&self.compilation, file_id, cancel_token)
+            .await
     }
 }
 

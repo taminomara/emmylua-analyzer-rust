@@ -3,7 +3,7 @@ use emmylua_parser::LuaSyntaxToken;
 use lsp_types::CompletionItem;
 use tokio_util::sync::CancellationToken;
 
-pub struct CompletionContext<'a> {
+pub struct CompletionBuilder<'a> {
     pub trigger_token: LuaSyntaxToken,
     pub semantic_model: SemanticModel<'a>,
     completion_items: Vec<CompletionItem>,
@@ -11,7 +11,8 @@ pub struct CompletionContext<'a> {
     stopped: bool,
 }
 
-impl<'a> CompletionContext<'a> {
+#[allow(unused)]
+impl<'a> CompletionBuilder<'a> {
     pub fn new(
         trigger_token: LuaSyntaxToken,
         semantic_model: SemanticModel<'a>,

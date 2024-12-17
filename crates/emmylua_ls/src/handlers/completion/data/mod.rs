@@ -178,4 +178,10 @@ pub const KEYWORD_EXPR_COMPLETIONS: &[KeywordCompletionInfo] = &[
         insert_text: "function(${1:...})\n\t${0}\nend",
         kind: CompletionItemKind::SNIPPET,
     },
+    KeywordCompletionInfo {
+        label: "and or",
+        detail: "(a and b or c)",
+        insert_text: "${1:a} and ${2:b} or ${3:c}",
+        kind: CompletionItemKind::SNIPPET,
+    }
 ];

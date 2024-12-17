@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use flagset::{flags, FlagSet};
 use internment::ArcIntern;
 use rowan::TextRange;
@@ -212,6 +214,20 @@ impl LuaTypeDeclId {
 
     pub fn get_name(&self) -> &str {
         &self.id
+    }
+}
+
+impl FromStr for LuaTypeDeclId {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self::new(s))
+    }
+}
+
+impl ToString for LuaTypeDeclId {
+    fn to_string(&self) -> String {
+        self.id.to_string()
     }
 }
 

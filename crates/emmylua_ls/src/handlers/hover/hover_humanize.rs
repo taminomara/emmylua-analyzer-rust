@@ -1,4 +1,6 @@
-use code_analysis::{humanize_type, DbIndex, LuaPropertyOwnerId, LuaSignatureId, LuaType};
+use code_analysis::{DbIndex, LuaPropertyOwnerId, LuaSignatureId, LuaType};
+
+use crate::util::humanize_type;
 
 pub fn hover_const_type(db: &DbIndex, typ: &LuaType) -> String {
     let const_value = humanize_type(db, typ);

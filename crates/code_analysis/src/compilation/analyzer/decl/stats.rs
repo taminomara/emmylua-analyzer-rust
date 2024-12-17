@@ -3,7 +3,7 @@ use emmylua_parser::{
     LuaLocalFuncStat, LuaLocalStat, LuaVarExpr,
 };
 
-use crate::db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner};
+use crate::{db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner}, LuaType};
 
 use super::DeclAnalyzer;
 
@@ -82,30 +82,26 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
     Some(())
 }
 
-pub fn analyze_for_stat(analyzer: &mut DeclAnalyzer, stat: LuaForStat) {
-    let it_var = stat.get_var_name();
-    let (name, pos, range) = if let Some(token) = &it_var {
-        (
-            token.get_name_text().to_string(),
-            token.get_position(),
-            token.get_range(),
-        )
-    } else {
-        return;
-    };
+pub fn analyze_for_stat(analyzer: &mut DeclAnalyzer, stat: LuaForStat) -> Option<()> {
+    let it_var = stat.get_var_name()?;
+    let name = it_var.get_name_text().to_string();
+    let pos = it_var.get_position();
+    let range = it_var.get_range();
 
     if analyzer.find_decl(&name, pos).is_none() {
         let decl = LuaDecl::Local {
             name,
             file_id: analyzer.get_file_id(),
-            kind: it_var.unwrap().syntax().kind(),
+            kind: it_var.syntax().kind(),
             range,
             attrib: Some(LocalAttribute::IterConst),
-            decl_type: None,
+            decl_type: Some(LuaType::Integer),
         };
 
         analyzer.add_decl(decl);
     }
+
+    Some(())
 }
 
 pub fn analyze_for_range_stat(analyzer: &mut DeclAnalyzer, stat: LuaForRangeStat) {

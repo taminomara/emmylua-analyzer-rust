@@ -1,4 +1,4 @@
-use crate::{
+use code_analysis::{
     DbIndex, GenericTpl, LuaExistFieldType, LuaExtendedType, LuaFunctionType, LuaGenericType,
     LuaInstanceType, LuaIntersectionType, LuaMemberKey, LuaMultiReturn, LuaObjectType,
     LuaSignatureId, LuaStringTplType, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType,

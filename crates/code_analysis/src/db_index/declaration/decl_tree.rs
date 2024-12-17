@@ -52,6 +52,22 @@ impl LuaDeclarationTree {
         result
     }
 
+    pub fn get_env_decls(&self, position: TextSize) -> Option<Vec<LuaDeclId>> {
+        let scope = self.find_scope(position)?;
+        let mut result = Vec::new();
+        self.walk_up(scope, position, 0, &mut |decl_id| {
+            match decl_id {
+                ScopeOrDeclId::Decl(decl_id) => {
+                    result.push(decl_id);
+                }
+                ScopeOrDeclId::Scope(_) => {}
+            }
+
+            false
+        });
+        Some(result)
+    }
+
     fn find_scope(&self, position: TextSize) -> Option<&LuaScope> {
         if self.scopes.is_empty() {
             return None;
@@ -274,12 +290,14 @@ impl LuaDeclarationTree {
                         return Some(LuaDeclOrMemberId::Decl(decl.get_id()));
                     }
 
-                    let id = db.get_decl_index().get_global_decl_id(&LuaMemberKey::Name(name.into()))?;
-                    return Some(LuaDeclOrMemberId::Decl(id))
+                    let id = db
+                        .get_decl_index()
+                        .get_global_decl_id(&LuaMemberKey::Name(name.into()))?;
+                    return Some(LuaDeclOrMemberId::Decl(id));
                 }
                 LuaVarExpr::IndexExpr(prefx_index) => {
                     let member_id = LuaMemberId::new(prefx_index.get_syntax_id(), self.file_id);
-                    return Some(LuaDeclOrMemberId::Member(member_id))
+                    return Some(LuaDeclOrMemberId::Member(member_id));
                 }
             }
         }
