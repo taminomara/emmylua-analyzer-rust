@@ -26,7 +26,7 @@ pub fn add_decl_completion(builder: &mut CompletionBuilder, decl_id: LuaDeclId) 
         kind: Some(get_completion_kind(&typ)),
         data: Some(property_owner.to_string().into()),
         label_details: Some(lsp_types::CompletionItemLabelDetails {
-            detail: get_detail(builder, &typ),
+            detail: get_detail(builder, &property_owner, &typ),
             description: get_description(builder, &typ)
         }),
         ..Default::default()

@@ -39,5 +39,21 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         add_decl_completion(builder, decl_id.clone());
     }
 
+    let global_env = builder.semantic_model.get_db().get_decl_index().get_global_decls();
+    for decl_id in global_env.iter() {
+        let name = builder
+            .semantic_model
+            .get_db()
+            .get_decl_index()
+            .get_decl(decl_id)?
+            .get_name().to_string();
+        if duplicated_name.contains(&name) {
+            continue;
+        }
+        
+        duplicated_name.insert(name);
+        add_decl_completion(builder, decl_id.clone());
+    }
+
     Some(())
 }

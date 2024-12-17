@@ -106,6 +106,16 @@ impl LuaDeclIndex {
 
         valid_decl_id
     }
+
+    pub fn get_global_decls(&self) -> Vec<LuaDeclId> {
+        let mut decls = Vec::new();
+        for (_, v) in &self.global_decl {
+            decls.extend(v);
+        }
+
+        decls
+    }
+
 }
 
 impl LuaIndex for LuaDeclIndex {
