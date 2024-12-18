@@ -86,7 +86,7 @@ fn instantiate_func_by_args(
 
     let max = *result.keys().max()?;
     let mut generic_params = Vec::new();
-    for i in 0..max {
+    for i in 0..=max {
         if let Some(generic_param) = result.get(&i) {
             generic_params.push(generic_param.clone());
         } else {
