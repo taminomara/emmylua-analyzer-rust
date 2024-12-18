@@ -25,6 +25,7 @@ pub enum LuaType {
     Number,
     Io,
     SelfInfer,
+    Global,
     BooleanConst(bool),
     StringConst(ArcIntern<String>),
     IntegerConst(i64),
@@ -71,6 +72,7 @@ impl PartialEq for LuaType {
             (LuaType::Number, LuaType::Number) => true,
             (LuaType::Io, LuaType::Io) => true,
             (LuaType::SelfInfer, LuaType::SelfInfer) => true,
+            (LuaType::Global, LuaType::Global) => true,
             (LuaType::BooleanConst(a), LuaType::BooleanConst(b)) => a == b,
             (LuaType::StringConst(a), LuaType::StringConst(b)) => a == b,
             (LuaType::IntegerConst(a), LuaType::IntegerConst(b)) => a == b,
@@ -122,55 +124,56 @@ impl Hash for LuaType {
             LuaType::Number => 10.hash(state),
             LuaType::Io => 11.hash(state),
             LuaType::SelfInfer => 12.hash(state),
-            LuaType::BooleanConst(a) => (13, a).hash(state),
-            LuaType::StringConst(a) => (14, a).hash(state),
-            LuaType::IntegerConst(a) => (15, a).hash(state),
-            LuaType::FloatConst(a) => (16, a.to_bits()).hash(state),
-            LuaType::TableConst(a) => (17, a).hash(state),
-            LuaType::Ref(a) => (18, a).hash(state),
-            LuaType::Def(a) => (19, a).hash(state),
-            LuaType::Module(a) => (20, a).hash(state),
-            LuaType::Array(a) => (21, a).hash(state),
-            LuaType::KeyOf(a) => (22, a).hash(state),
-            LuaType::Nullable(a) => (23, a).hash(state),
-            LuaType::Tuple(a) => (24, a).hash(state),
-            LuaType::DocFunction(a) => (25, a).hash(state),
+            LuaType::Global => 13.hash(state),
+            LuaType::BooleanConst(a) => (14, a).hash(state),
+            LuaType::StringConst(a) => (15, a).hash(state),
+            LuaType::IntegerConst(a) => (16, a).hash(state),
+            LuaType::FloatConst(a) => (17, a.to_bits()).hash(state),
+            LuaType::TableConst(a) => (18, a).hash(state),
+            LuaType::Ref(a) => (19, a).hash(state),
+            LuaType::Def(a) => (20, a).hash(state),
+            LuaType::Module(a) => (21, a).hash(state),
+            LuaType::Array(a) => (22, a).hash(state),
+            LuaType::KeyOf(a) => (23, a).hash(state),
+            LuaType::Nullable(a) => (24, a).hash(state),
+            LuaType::Tuple(a) => (25, a).hash(state),
+            LuaType::DocFunction(a) => (26, a).hash(state),
             LuaType::Object(a) => {
-                let ptr = Arc::as_ptr(a);
-                (26, ptr).hash(state)
-            }
-            LuaType::Union(a) => {
                 let ptr = Arc::as_ptr(a);
                 (27, ptr).hash(state)
             }
-            LuaType::Intersection(a) => {
+            LuaType::Union(a) => {
                 let ptr = Arc::as_ptr(a);
                 (28, ptr).hash(state)
             }
-            LuaType::Extends(a) => {
+            LuaType::Intersection(a) => {
                 let ptr = Arc::as_ptr(a);
                 (29, ptr).hash(state)
             }
-            LuaType::Generic(a) => {
+            LuaType::Extends(a) => {
                 let ptr = Arc::as_ptr(a);
                 (30, ptr).hash(state)
             }
-            LuaType::TableGeneric(a) => {
+            LuaType::Generic(a) => {
                 let ptr = Arc::as_ptr(a);
                 (31, ptr).hash(state)
             }
-            LuaType::TplRef(a) => (32, a).hash(state),
-            LuaType::StrTplRef(a) => (33, a).hash(state),
+            LuaType::TableGeneric(a) => {
+                let ptr = Arc::as_ptr(a);
+                (32, ptr).hash(state)
+            }
+            LuaType::TplRef(a) => (33, a).hash(state),
+            LuaType::StrTplRef(a) => (34, a).hash(state),
             LuaType::MuliReturn(a) => {
                 let ptr = Arc::as_ptr(a);
-                (34, ptr).hash(state)
+                (35, ptr).hash(state)
             }
-            LuaType::ExistField(a) => (35, a).hash(state),
-            LuaType::Signature(a) => (36, a).hash(state),
-            LuaType::Instance(a) => (37, a).hash(state),
-            LuaType::FuncTplRef(a) => (38, a).hash(state),
-            LuaType::DocStringConst(a) => (39, a).hash(state),
-            LuaType::DocIntergerConst(a) => (40, a).hash(state),
+            LuaType::ExistField(a) => (36, a).hash(state),
+            LuaType::Signature(a) => (37, a).hash(state),
+            LuaType::Instance(a) => (38, a).hash(state),
+            LuaType::FuncTplRef(a) => (39, a).hash(state),
+            LuaType::DocStringConst(a) => (40, a).hash(state),
+            LuaType::DocIntergerConst(a) => (41, a).hash(state),
         }
     }
 }
@@ -205,11 +208,17 @@ impl LuaType {
     }
 
     pub fn is_string(&self) -> bool {
-        matches!(self, LuaType::StringConst(_) | LuaType::String | LuaType::DocStringConst(_))
+        matches!(
+            self,
+            LuaType::StringConst(_) | LuaType::String | LuaType::DocStringConst(_)
+        )
     }
 
     pub fn is_integer(&self) -> bool {
-        matches!(self, LuaType::IntegerConst(_) | LuaType::Integer | LuaType::DocIntergerConst(_))
+        matches!(
+            self,
+            LuaType::IntegerConst(_) | LuaType::Integer | LuaType::DocIntergerConst(_)
+        )
     }
 
     pub fn is_number(&self) -> bool {
@@ -256,7 +265,10 @@ impl LuaType {
     }
 
     pub fn is_function(&self) -> bool {
-        matches!(self, LuaType::DocFunction(_) | LuaType::Function | LuaType::Signature(_))
+        matches!(
+            self,
+            LuaType::DocFunction(_) | LuaType::Function | LuaType::Signature(_)
+        )
     }
 
     pub fn is_object(&self) -> bool {
@@ -331,6 +343,10 @@ impl LuaType {
         matches!(self, LuaType::ExistField(_))
     }
 
+    pub fn is_global(&self) -> bool {
+        matches!(self, LuaType::Global)
+    }
+
     pub fn contain_tpl(&self) -> bool {
         match self {
             LuaType::Array(base) => base.contain_tpl(),
@@ -368,8 +384,9 @@ impl LuaTupleType {
         &self.types
     }
 
+    // lua tuple start from 1
     pub fn get_type(&self, idx: usize) -> Option<&LuaType> {
-        self.types.get(idx)
+        self.types.get(idx + 1)
     }
 
     pub fn len(&self) -> usize {
@@ -714,6 +731,8 @@ impl From<ArcIntern<String>> for LuaType {
             "integer" => LuaType::Integer,
             "number" => LuaType::Number,
             "io" => LuaType::Io,
+            "global" => LuaType::Global,
+            "self" => LuaType::SelfInfer,
             _ => LuaType::Ref(LuaTypeDeclId::new_by_id(s)),
         }
     }
@@ -742,7 +761,7 @@ impl LuaInstanceType {
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct GenericTpl {
     tpl_id: usize,
-    name: ArcIntern<String>
+    name: ArcIntern<String>,
 }
 
 impl GenericTpl {

@@ -106,6 +106,7 @@ fn infer_member_by_member_key(
         LuaType::ExistField(exist_field) => {
             infer_exit_field_member(db, config, exist_field, member_key)
         }
+        LuaType::Global => infer_global_field_member(db, config, member_key),
         _ => None,
     }
 }
@@ -160,12 +161,13 @@ fn infer_custom_type_member(
 
     // find member by key in super
     if type_decl.is_class() {
-        let super_types = type_index.get_super_types(&prefix_type_id)?;
-        for super_type in super_types {
-            let member_type =
-                infer_member_by_member_key(db, config, &super_type, member_key, infer_guard);
-            if member_type.is_some() {
-                return member_type;
+        if let Some(super_types) = type_index.get_super_types(&prefix_type_id) {
+            for super_type in super_types {
+                let member_type =
+                    infer_member_by_member_key(db, config, &super_type, member_key, infer_guard);
+                if member_type.is_some() {
+                    return member_type;
+                }
             }
         }
     }
@@ -670,4 +672,18 @@ fn infer_member_by_index_exist_field(
     } else {
         member_type
     }
+}
+
+fn infer_global_field_member(
+    db: &DbIndex,
+    _: &LuaInferConfig,
+    member_key: &LuaIndexKey,
+) -> InferResult {
+    let name = member_key.get_name()?.get_name_text();
+    let global_member = db
+        .get_decl_index()
+        .get_global_decl_id(&LuaMemberKey::Name(name.to_string().into()))?;
+
+    let decl = db.get_decl_index().get_decl(&global_member)?;
+    Some(decl.get_type()?.clone())
 }

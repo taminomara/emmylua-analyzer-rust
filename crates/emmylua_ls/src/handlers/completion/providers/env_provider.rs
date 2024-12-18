@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use code_analysis::LuaType;
 use emmylua_parser::{LuaAstNode, LuaNameExpr};
 
 use crate::handlers::completion::{
@@ -11,9 +12,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         return None;
     }
 
-    if !LuaNameExpr::can_cast(builder.trigger_token.parent()?.kind().into()) {
-        return None;
-    }
+    let name_expr = LuaNameExpr::cast(builder.trigger_token.parent()?)?;
 
     let file_id = builder.semantic_model.get_file_id();
     let decl_tree = builder
@@ -25,34 +24,59 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     let mut duplicated_name = HashSet::new();
     let local_env = decl_tree.get_env_decls(builder.trigger_token.text_range().start())?;
     for decl_id in local_env.iter() {
-        let name = builder
-            .semantic_model
-            .get_db()
-            .get_decl_index()
-            .get_decl(decl_id)?
-            .get_name().to_string();
+        let (name, mut typ) = {
+            let decl = builder
+                .semantic_model
+                .get_db()
+                .get_decl_index()
+                .get_decl(&decl_id)?;
+            (
+                decl.get_name().to_string(),
+                decl.get_type().cloned().unwrap_or(LuaType::Unknown),
+            )
+        };
         if duplicated_name.contains(&name) {
             continue;
         }
-        
-        duplicated_name.insert(name);
-        add_decl_completion(builder, decl_id.clone());
+
+        if let Some(chain) = builder
+            .semantic_model
+            .get_db()
+            .get_flow_index()
+            .get_flow_chain(file_id, decl_id.clone())
+        {
+            for type_assert in chain.get_type_asserts(name_expr.get_position()) {
+                typ = type_assert.tighten_type(typ);
+            }
+        }
+
+        duplicated_name.insert(name.clone());
+        add_decl_completion(builder, decl_id.clone(), &name, &typ);
     }
 
-    let global_env = builder.semantic_model.get_db().get_decl_index().get_global_decls();
+    let global_env = builder
+        .semantic_model
+        .get_db()
+        .get_decl_index()
+        .get_global_decls();
     for decl_id in global_env.iter() {
-        let name = builder
-            .semantic_model
-            .get_db()
-            .get_decl_index()
-            .get_decl(decl_id)?
-            .get_name().to_string();
+        let (name, typ) = {
+            let decl = builder
+                .semantic_model
+                .get_db()
+                .get_decl_index()
+                .get_decl(&decl_id)?;
+            (
+                decl.get_name().to_string(),
+                decl.get_type().cloned().unwrap_or(LuaType::Unknown),
+            )
+        };
         if duplicated_name.contains(&name) {
             continue;
         }
-        
-        duplicated_name.insert(name);
-        add_decl_completion(builder, decl_id.clone());
+
+        duplicated_name.insert(name.clone());
+        add_decl_completion(builder, decl_id.clone(), &name, &typ);
     }
 
     Some(())

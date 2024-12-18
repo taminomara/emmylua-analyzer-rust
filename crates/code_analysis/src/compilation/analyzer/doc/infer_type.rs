@@ -118,6 +118,7 @@ fn infer_buildin_or_ref_type(analyzer: &mut DocAnalyzer, name: &str, range: Text
         "number" => LuaType::Number,
         "io" => LuaType::Io,
         "self" => LuaType::SelfInfer,
+        "global" => LuaType::Global,
         _ => {
             if let Some((size, is_func)) = analyzer.generic_index.find_generic(position, name) {
                 if is_func {

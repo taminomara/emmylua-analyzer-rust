@@ -1,4 +1,7 @@
-use crate::db_index::{LuaType, LuaTypeDeclId};
+mod infer_members;
+
+use crate::{db_index::{LuaType, LuaTypeDeclId}, LuaMemberKey, LuaPropertyOwnerId};
+pub use infer_members::infer_members;
 
 pub fn without_members(type_: &LuaType) -> bool {
     match type_ {
@@ -62,3 +65,12 @@ pub fn get_buildin_type_map_type_id(type_: &LuaType) -> Option<LuaTypeDeclId> {
         _ => None,
     }
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaMemberInfo {
+    pub property_owner_id: Option<LuaPropertyOwnerId>,
+    pub key: LuaMemberKey,
+    pub typ: LuaType,
+}
+
+type InferMembersResult = Option<Vec<LuaMemberInfo>>;

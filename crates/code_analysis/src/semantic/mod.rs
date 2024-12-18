@@ -11,9 +11,11 @@ use std::{collections::HashSet, sync::Arc};
 use emmylua_parser::{LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken};
 use infer::InferResult;
 pub use infer::LuaInferConfig;
+use member::infer_members;
 use rowan::{NodeOrToken, TextRange};
 pub use semantic_info::SemanticInfo;
 use semantic_info::{infer_node_semantic_info, infer_token_semantic_info};
+pub use member::LuaMemberInfo;
 
 use crate::{db_index::LuaTypeDeclId, Emmyrc, LuaDocument};
 #[allow(unused_imports)]
@@ -59,6 +61,10 @@ impl<'a> SemanticModel<'a> {
 
     pub fn infer_expr(&mut self, expr: LuaExpr) -> InferResult {
         infer_expr(self.db, &mut self.infer_config, expr)
+    }
+
+    pub fn infer_member_infos(&self, prefix_type: &LuaType) -> Option<Vec<LuaMemberInfo>> {
+        infer_members(self.db, prefix_type)
     }
 
     pub fn get_semantic_info(

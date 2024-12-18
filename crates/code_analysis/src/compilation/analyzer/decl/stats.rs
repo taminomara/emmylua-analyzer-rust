@@ -3,7 +3,10 @@ use emmylua_parser::{
     LuaLocalFuncStat, LuaLocalStat, LuaVarExpr,
 };
 
-use crate::{db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner}, LuaType};
+use crate::{
+    db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner},
+    LuaType,
+};
 
 use super::DeclAnalyzer;
 
@@ -64,6 +67,26 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
                 if key.is_none() {
                     continue;
                 }
+
+                // if let Some(LuaVarExpr::NameExpr(name_expr)) = index_expr.get_prefix_expr() {
+                //     let name_text = name_expr.get_name_text()?;
+                //     if name_text == "_G" || name_text == "_ENV" {
+                //         if analyzer
+                //             .find_decl(&name_text, index_expr.get_position())
+                //             .is_none()
+                //         {
+                //             let decl = LuaDecl::Global {
+                //                 name: name_text.to_string(),
+                //                 file_id: analyzer.get_file_id(),
+                //                 range: name_expr.get_range(),
+                //                 decl_type: None,
+                //             };
+
+                //             analyzer.add_decl(decl);
+                //         }
+                //         continue;
+                //     }
+                // }
 
                 let file_id = analyzer.get_file_id();
                 let member = LuaMember::new(

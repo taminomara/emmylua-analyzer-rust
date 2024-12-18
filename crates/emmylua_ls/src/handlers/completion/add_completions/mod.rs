@@ -1,7 +1,9 @@
 mod add_decl_completion;
+mod add_member_completion;
 
 pub use add_decl_completion::add_decl_completion;
-use code_analysis::{LuaPropertyId, LuaPropertyOwnerId, LuaType};
+pub use add_member_completion::{add_member_completion, CompletionTriggerStatus};
+use code_analysis::{LuaPropertyOwnerId, LuaType};
 use lsp_types::CompletionItemKind;
 
 use crate::util::humanize_type;

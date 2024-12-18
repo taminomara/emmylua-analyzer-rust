@@ -59,6 +59,10 @@ impl LuaReferenceIndex {
         self.local_references.get(file_id)
     }
 
+    pub fn create_local_reference(&mut self, file_id: FileId) {
+        self.local_references.entry(file_id).or_insert_with(LocalReference::new);
+    }
+
     pub fn get_local_references(
         &self,
         file_id: &FileId,
