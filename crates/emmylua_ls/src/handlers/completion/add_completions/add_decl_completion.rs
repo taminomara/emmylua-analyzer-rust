@@ -31,7 +31,7 @@ pub fn add_decl_completion(
         kind: Some(get_completion_kind(&typ)),
         data: Some(property_owner.to_string().into()),
         label_details: Some(lsp_types::CompletionItemLabelDetails {
-            detail: get_detail(builder, &property_owner, &typ),
+            detail: get_detail(builder, &property_owner, &typ, false),
             description: get_description(builder, &typ),
         }),
         ..Default::default()

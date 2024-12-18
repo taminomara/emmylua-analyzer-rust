@@ -61,6 +61,7 @@ fn get_detail(
     builder: &CompletionBuilder,
     property_owner_id: &LuaPropertyOwnerId,
     typ: &LuaType,
+    add_self: bool,
 ) -> Option<String> {
     match typ {
         LuaType::Signature(signature_id) => {
@@ -70,20 +71,26 @@ fn get_detail(
                 .get_signature_index()
                 .get(&signature_id)?;
 
-            let params_str = signature
+            let mut params_str = signature
                 .get_type_params()
                 .iter()
                 .map(|param| param.0.clone())
                 .collect::<Vec<_>>();
-
+            if add_self {
+                params_str.insert(0, "self".to_string());
+            }
             Some(format!("({})", params_str.join(", ")))
         }
         LuaType::DocFunction(f) => {
-            let params_str = f
+            let mut params_str = f
                 .get_params()
                 .iter()
                 .map(|param| param.0.clone())
                 .collect::<Vec<_>>();
+
+            if add_self {
+                params_str.insert(0, "self".to_string());
+            }
 
             Some(format!("({})", params_str.join(", ")))
         }

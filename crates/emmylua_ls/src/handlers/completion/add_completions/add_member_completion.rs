@@ -42,8 +42,8 @@ pub fn add_member_completion(
             _ => return None,
         },
         CompletionTriggerStatus::LeftBracket => match member_key {
-            LuaMemberKey::Name(name) => format!("[{}]", name.to_string()),
-            LuaMemberKey::Integer(index) => format!("[{}]", index),
+            LuaMemberKey::Name(name) => format!("\"{}\"", name.to_string()),
+            LuaMemberKey::Integer(index) => format!("{}", index),
             _ => return None,
         },
     };
@@ -57,7 +57,7 @@ pub fn add_member_completion(
     };
 
     let detail = if let Some(id) = &property_owner {
-        get_detail(builder, id, &typ)
+        get_detail(builder, id, &typ, false)
     } else {
         None
     };
