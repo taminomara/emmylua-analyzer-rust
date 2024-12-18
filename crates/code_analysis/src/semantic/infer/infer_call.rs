@@ -278,7 +278,7 @@ fn infer_call_by_custom_generic_type(
     for overload_id in operator_ids {
         let operator = operator_index.get_operator(overload_id)?;
         let func = operator.get_call_operator_type()?;
-        let new_f = instantiate_type(func, generic_params);
+        let new_f = instantiate_type(db, func, generic_params);
         match new_f {
             LuaType::DocFunction(f) => {
                 overloads.push(f.clone());

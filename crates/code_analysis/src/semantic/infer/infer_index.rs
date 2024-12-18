@@ -247,7 +247,7 @@ fn infer_generic_member(
         infer_member_by_member_key(db, config, &base_type, member_key, &mut InferGuard::new())?;
 
     let generic_params = generic_type.get_params();
-    Some(instantiate_type(&member_type, generic_params))
+    Some(instantiate_type(db, &member_type, generic_params))
 }
 
 fn infer_exit_field_member(
@@ -524,7 +524,7 @@ fn infer_member_by_index_generic(
             return infer_member_by_operator(
                 db,
                 config,
-                &instantiate_type(origin_type, generic_params),
+                &instantiate_type(db, origin_type, generic_params),
                 member_key,
                 root,
                 &mut InferGuard::new(),
@@ -539,10 +539,11 @@ fn infer_member_by_index_generic(
     for index_operator_id in index_operator_ids {
         let index_operator = operator_index.get_operator(index_operator_id)?;
         let operand_type = index_operator.get_operands().first()?;
-        let instianted_operand_type = instantiate_type(&operand_type, generic_params);
+        let instianted_operand_type = instantiate_type(db, &operand_type, generic_params);
         if instianted_operand_type.is_string() {
             if member_key.is_string() || member_key.is_name() {
                 return Some(instantiate_type(
+                    db,
                     index_operator.get_result(),
                     generic_params,
                 ));
@@ -551,6 +552,7 @@ fn infer_member_by_index_generic(
                 let expr_type = infer_expr(db, config, expr.clone())?;
                 if expr_type.is_string() {
                     return Some(instantiate_type(
+                        db,
                         index_operator.get_result(),
                         generic_params,
                     ));
@@ -559,6 +561,7 @@ fn infer_member_by_index_generic(
         } else if instianted_operand_type.is_number() {
             if member_key.is_integer() {
                 return Some(instantiate_type(
+                    db,
                     index_operator.get_result(),
                     generic_params,
                 ));
@@ -567,6 +570,7 @@ fn infer_member_by_index_generic(
                 let expr_type = infer_expr(db, config, expr.clone())?;
                 if expr_type.is_number() {
                     return Some(instantiate_type(
+                        db,
                         index_operator.get_result(),
                         generic_params,
                     ));
@@ -576,6 +580,7 @@ fn infer_member_by_index_generic(
             let expr_type = infer_expr(db, config, expr.clone())?;
             if expr_type == *operand_type {
                 return Some(instantiate_type(
+                    db,
                     index_operator.get_result(),
                     generic_params,
                 ));
@@ -589,7 +594,7 @@ fn infer_member_by_index_generic(
         let member_type = infer_member_by_operator(
             db,
             config,
-            &instantiate_type(&super_type, generic_params),
+            &instantiate_type(db, &super_type, generic_params),
             member_key,
             root,
             &mut InferGuard::new(),

@@ -27,7 +27,7 @@ pub fn tpl_pattern_match(
                 let type_name = if prefix.is_empty() {
                     s.clone()
                 } else {
-                    ArcIntern::new(format!("{}.{}", prefix, s))
+                    ArcIntern::new(format!("{}{}", prefix, s))
                 };
                 result.insert(str_tpl.get_usize(), type_name.into());
             }

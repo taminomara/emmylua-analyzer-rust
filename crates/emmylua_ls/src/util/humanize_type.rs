@@ -262,7 +262,7 @@ fn humanize_str_tpl_ref_type(str_tpl: &LuaStringTplType) -> String {
     if prefix.is_empty() {
         str_tpl.get_name().to_string()
     } else {
-        format!("{}.`{}`", prefix, str_tpl.get_name())
+        format!("{}`{}`", prefix, str_tpl.get_name())
     }
 }
 

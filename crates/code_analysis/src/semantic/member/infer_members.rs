@@ -200,7 +200,7 @@ fn infer_generic_members(
 
     let generic_params = generic_type.get_params();
     for info in members.iter_mut() {
-        info.typ = instantiate_type(&info.typ, generic_params);
+        info.typ = instantiate_type(db, &info.typ, generic_params);
     }
 
     Some(members)

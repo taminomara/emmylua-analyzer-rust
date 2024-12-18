@@ -96,13 +96,13 @@ fn instantiate_func_by_args(
 
     for i in 0..func_param_types.len() {
         let func_param_type = &mut func_param_types[i];
-        let new_func_param_type = instantiate_type(&func_param_type, &generic_params);
+        let new_func_param_type = instantiate_type(db, &func_param_type, &generic_params);
         *func_param_type = new_func_param_type;
     }
 
     for i in 0..func_return_types.len() {
         let func_return_type = &mut func_return_types[i];
-        let new_func_return_type = instantiate_type(&func_return_type, &generic_params);
+        let new_func_return_type = instantiate_type(db, &func_return_type, &generic_params);
         *func_return_type = new_func_return_type;
     }
 
