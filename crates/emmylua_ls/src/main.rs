@@ -11,6 +11,9 @@ use lsp_server::{Connection, Message};
 use lsp_types::InitializeParams;
 use std::error::Error;
 
+const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
+const CRATE_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     let args: Vec<String> = std::env::args().collect();
@@ -22,21 +25,18 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
         Connection::stdio()
     };
 
-    let server_capabilities = serde_json::to_value(server_capabilities()).unwrap();
-
-    let initialization_params_json = match connection.initialize(server_capabilities) {
-        Ok(it) => it,
-        Err(err) => {
-            if err.channel_is_disconnected() {
-                return Ok(());
-            } else {
-                return Err(err.into());
-            }
+    let (id, params) = connection.initialize_start()?;
+    let initialization_params: InitializeParams = serde_json::from_value(params).unwrap();
+    let server_capbilities = server_capabilities();
+    let initialize_data = serde_json::json!({
+        "capabilities": server_capbilities,
+        "serverInfo": {
+            "name": CRATE_NAME,
+            "version": CRATE_VERSION
         }
-    };
+    });
 
-    let initialization_params =
-        serde_json::from_value::<InitializeParams>(initialization_params_json)?;
+    connection.initialize_finish(id, initialize_data)?;
 
     main_loop(&connection, initialization_params).await?;
     threads.join()?;
