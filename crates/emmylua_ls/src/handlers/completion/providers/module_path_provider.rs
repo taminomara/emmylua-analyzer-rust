@@ -38,7 +38,8 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         "".to_string()
     };
 
-    let prefix = if let Some(last_sep) = prefix_content.rfind(|c| c == '/' || c == '\\' || c == '.') {
+    let prefix = if let Some(last_sep) = prefix_content.rfind(|c| c == '/' || c == '\\' || c == '.')
+    {
         let (path, _) = prefix_content.split_at(last_sep + 1);
         path
     } else {
@@ -49,26 +50,33 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     let mut module_completions = Vec::new();
     let module_info = db.get_module_index().find_module_node(&module_path)?;
     for (name, module_id) in &module_info.children {
-        eprintln!("name: {}, module_id: {:?}", name, module_id);
         let child_module_node = db.get_module_index().get_module_node(module_id)?;
-        let child_file_id = child_module_node.file_ids.first()?;
-        let child_module_info = db.get_module_index().get_module(*child_file_id)?;
-        let uri = db.get_vfs().get_uri(child_file_id)?;
-        let filter_text = format!("{}{}", prefix, name);
-        let completion_item = CompletionItem {
-            label: name.clone(),
-            kind: Some(lsp_types::CompletionItemKind::MODULE),
-            filter_text: Some(filter_text.clone()),
-            insert_text: Some(filter_text),
-            label_details: Some(lsp_types::CompletionItemLabelDetails {
-                detail: Some(format!("  (in {})", child_module_info.full_module_name)),
-                description: Some(format!("{}", uri.as_str())),
-            }),
-            ..Default::default()
-        };
+        if let Some(child_file_id) = child_module_node.file_ids.first() {
+            let child_module_info = db.get_module_index().get_module(*child_file_id)?;
+            if child_module_info.visible {
+                let uri = db.get_vfs().get_uri(child_file_id)?;
+                let filter_text = format!("{}{}", prefix, name);
+                let completion_item = CompletionItem {
+                    label: name.clone(),
+                    kind: Some(lsp_types::CompletionItemKind::FILE),
+                    filter_text: Some(filter_text.clone()),
+                    insert_text: Some(filter_text),
+                    detail: Some(uri.to_string()),
+                    ..Default::default()
+                };
+                module_completions.push(completion_item);
+            }
+        } else {
+            let completion_item = CompletionItem {
+                label: name.clone(),
+                kind: Some(lsp_types::CompletionItemKind::FOLDER),
+                filter_text: Some(name.clone()),
+                insert_text: Some(name.clone()),
+                ..Default::default()
+            };
 
-        eprintln!("completion_item: {:?}", completion_item);
-        module_completions.push(completion_item);
+            module_completions.push(completion_item);
+        }
     }
 
     let _ = module_info;
