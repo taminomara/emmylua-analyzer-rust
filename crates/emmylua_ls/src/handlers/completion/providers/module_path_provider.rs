@@ -83,6 +83,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     for completion_item in module_completions {
         builder.add_completion_item(completion_item)?;
     }
+    builder.stop_here();
 
     Some(())
 }

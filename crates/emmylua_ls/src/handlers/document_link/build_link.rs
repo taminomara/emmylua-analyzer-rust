@@ -12,7 +12,6 @@ pub fn build_links(
     root: LuaSyntaxNode,
     document: &LuaDocument,
     emmyrc: &Emmyrc,
-    workspace_folders: Vec<PathBuf>,
 ) -> Option<Vec<DocumentLink>> {
     let string_tokens = root
         .descendants_with_tokens()
@@ -27,7 +26,6 @@ pub fn build_links(
             document,
             &mut result,
             &emmyrc,
-            &workspace_folders,
         );
     }
 
@@ -40,7 +38,6 @@ fn try_build_file_link(
     document: &LuaDocument,
     result: &mut Vec<DocumentLink>,
     emmyrc: &Emmyrc,
-    workspace_folders: &Vec<PathBuf>,
 ) -> Option<()> {
     if is_require_path(token.clone(), emmyrc).unwrap_or(false) {
         try_build_module_link(db, token, document, result);
@@ -62,25 +59,6 @@ fn try_build_file_link(
                 result.push(document_link);
             }
             return Some(());
-        }
-
-        for workspace_folder in workspace_folders {
-            let full_path = workspace_folder.join(&suffix_path);
-            if full_path.exists() {
-                if let Some(uri) = file_path_to_uri(&full_path) {
-                    let token_range = token.get_range();
-                    let lsp_range = document.to_lsp_range(token_range)?;
-                    let document_link = DocumentLink {
-                        target: Some(uri),
-                        range: lsp_range,
-                        tooltip: None,
-                        data: None,
-                    };
-
-                    result.push(document_link);
-                }
-                return Some(());
-            }
         }
 
         let resource_paths = if let Some(resource) = &emmyrc.resource {

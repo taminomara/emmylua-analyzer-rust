@@ -13,9 +13,6 @@ pub async fn on_document_link_handler(
     _: CancellationToken,
 ) -> Option<Vec<DocumentLink>> {
     let uri = params.text_document.uri;
-    let config_manager = context.config_manager.read().await;
-    let workspace_folders = config_manager.workspace_folders.clone();
-    let _ = config_manager;
     let analysis = context.analysis.read().await;
     let file_id = analysis.get_file_id(&uri)?;
     let semantic_model = analysis.compilation.get_semantic_model(file_id)?;
@@ -24,7 +21,7 @@ pub async fn on_document_link_handler(
     let db = semantic_model.get_db();
     let emmyrc = analysis.get_emmyrc();
 
-    build_links(&db, root.syntax().clone(), &document, &emmyrc, workspace_folders)
+    build_links(&db, root.syntax().clone(), &document, &emmyrc)
 }
 
 #[allow(unused_variables)]

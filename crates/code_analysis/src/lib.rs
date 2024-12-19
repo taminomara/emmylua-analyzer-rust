@@ -158,6 +158,7 @@ impl EmmyLuaAnalysis {
     }
 
     pub fn update_config(&mut self, config: Arc<Emmyrc>) {
+        self.emmyrc = config.clone();
         self.compilation.update_config(config.clone());
         self.diagnostic.update_config(config);
     }

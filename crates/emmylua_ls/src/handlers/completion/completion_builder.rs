@@ -28,7 +28,7 @@ impl<'a> CompletionBuilder<'a> {
     }
 
     pub fn is_cancelled(&self) -> bool {
-        self.stopped ||self.cancel_token.is_cancelled()
+        self.stopped || self.cancel_token.is_cancelled()
     }
 
     pub fn add_completion_item(&mut self, item: CompletionItem) -> Option<()> {
