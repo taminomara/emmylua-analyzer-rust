@@ -6,9 +6,10 @@ mod test;
 pub use document::LuaDocument;
 use emmylua_parser::{LineIndex, LuaParser, LuaSyntaxTree};
 pub use in_filed::InFiled;
-pub use loader::{load_workspace_files, LuaFileInfo, read_file_with_encoding};
+pub use loader::{load_workspace_files, read_file_with_encoding, LuaFileInfo};
 use lsp_types::Uri;
 use rowan::{NodeCache, TextRange};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -22,21 +23,24 @@ pub struct FileId {
     pub id: u32,
 }
 
-impl FromStr for FileId {
-    type Err = ();
+impl Serialize for FileId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u32(self.id)
+    }
+}
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let id = s.parse().map_err(|_| ())?;
+impl<'de> Deserialize<'de> for FileId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let id = u32::deserialize(deserializer)?;
         Ok(FileId { id })
     }
 }
-
-impl ToString for FileId {
-    fn to_string(&self) -> String {
-        self.id.to_string()
-    }
-}
-
 
 impl FileId {
     pub fn new() -> Self {
@@ -145,8 +149,6 @@ impl Vfs {
             Some(errors)
         }
     }
-
-
 }
 
 pub fn file_path_to_uri(path: &PathBuf) -> Option<Uri> {

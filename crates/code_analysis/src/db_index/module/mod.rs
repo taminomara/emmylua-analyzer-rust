@@ -11,7 +11,8 @@ use super::traits::LuaIndex;
 use crate::{Emmyrc, FileId};
 use std::{
     collections::HashMap,
-    path::{Path, PathBuf}, sync::Arc,
+    path::{Path, PathBuf},
+    sync::Arc,
 };
 
 #[derive(Debug)]
@@ -161,10 +162,7 @@ impl LuaModuleIndex {
             let parent_node = self.module_nodes.get(&parent_node_id)?;
             let child_id = match parent_node.children.get(part) {
                 Some(id) => *id,
-                None => {
-                    info!("parent {:?}", parent_node.children);
-                    return None
-                },
+                None => return None,
             };
             parent_node_id = child_id;
         }
@@ -178,6 +176,10 @@ impl LuaModuleIndex {
     /// The module path is a string separated by dots.
     /// For example, "a.b.c" represents the module "c" in the module "b" in the module "a".
     pub fn find_module_node(&self, module_path: &str) -> Option<&ModuleNode> {
+        if module_path.is_empty() {
+            return self.module_nodes.get(&self.module_root_id);
+        }
+
         let module_path = module_path.replace(['\\', '/'], ".");
         let module_parts: Vec<&str> = module_path.split('.').collect();
         if module_parts.is_empty() {
@@ -192,6 +194,10 @@ impl LuaModuleIndex {
         }
 
         self.module_nodes.get(&parent_node_id)
+    }
+
+    pub fn get_module_node(&self, module_id: &ModuleNodeId) -> Option<&ModuleNode> {
+        self.module_nodes.get(module_id)
     }
 
     fn extract_module_path(&self, path: &str) -> Option<String> {

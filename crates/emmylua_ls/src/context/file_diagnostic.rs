@@ -51,7 +51,7 @@ impl FileDiagnostic {
         // Spawn a new task to perform diagnostic
         tokio::spawn(async move {
             tokio::select! {
-                _ = tokio::time::sleep(Duration::from_secs(1)) => {
+                _ = tokio::time::sleep(Duration::from_millis(500)) => {
                     let analysis = analysis.read().await;
                     if let Some(uri) = analysis.get_uri(file_id_clone) {
                         let diagnostics = analysis.diagnose_file(file_id_clone, cancel_token).await;

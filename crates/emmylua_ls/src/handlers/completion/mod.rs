@@ -1,12 +1,16 @@
-mod completion_builder;
-mod providers;
-mod data;
 mod add_completions;
+mod completion_builder;
+mod data;
+mod providers;
+mod resolve_completion;
 
+use add_completions::CompletionData;
 use completion_builder::CompletionBuilder;
 use emmylua_parser::LuaAstNode;
+use log::error;
 use lsp_types::{CompletionItem, CompletionParams, CompletionResponse};
 use providers::add_completions;
+use resolve_completion::resolve_completion;
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
 
@@ -38,9 +42,7 @@ pub async fn on_completion_handler(
 
     let mut builder = CompletionBuilder::new(token, semantic_model, cancel_token);
     add_completions(&mut builder);
-    Some(CompletionResponse::Array(
-        builder.get_completion_items(),
-    ))
+    Some(CompletionResponse::Array(builder.get_completion_items()))
 }
 
 #[allow(unused_variables)]
@@ -49,5 +51,20 @@ pub async fn on_completion_resolve_handler(
     params: CompletionItem,
     cancel_token: CancellationToken,
 ) -> CompletionItem {
-    params
+    let analysis = context.analysis.read().await;
+    let db = analysis.compilation.get_db();
+    let mut completion_item = params;
+    if let Some(data) = completion_item.data.clone() {
+        let completion_data = match serde_json::from_value::<CompletionData>(data.clone()) {
+            Ok(data) => data,
+            Err(err) => {
+                error!("Failed to deserialize completion data: {:?}", err);
+                return completion_item;
+            }
+        };
+
+        resolve_completion(db, &mut completion_item, completion_data);
+    }
+
+    completion_item
 }

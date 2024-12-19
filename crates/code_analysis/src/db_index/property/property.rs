@@ -1,6 +1,5 @@
-use std::str::FromStr;
-
 use emmylua_parser::VisibilityKind;
+use serde::{Deserialize, Serialize};
 
 use crate::db_index::{member::LuaMemberId, LuaDeclId, LuaSignatureId, LuaTypeDeclId};
 
@@ -48,7 +47,7 @@ impl LuaPropertyId {
     }
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LuaPropertyOwnerId {
     TypeDecl(LuaTypeDeclId),
     Member(LuaMemberId),
@@ -56,32 +55,26 @@ pub enum LuaPropertyOwnerId {
     Signature(LuaSignatureId),
 }
 
-impl FromStr for LuaPropertyOwnerId {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = s.split(':').collect();
-        if parts.len() != 2 {
-            return Err(());
-        }
-
-        match parts[0] {
-            "TypeDecl" => parts[1].parse().map(LuaPropertyOwnerId::TypeDecl).map_err(|_| ()),
-            "Member" => parts[1].parse().map(LuaPropertyOwnerId::Member).map_err(|_| ()),
-            "LuaDecl" => parts[1].parse().map(LuaPropertyOwnerId::LuaDecl).map_err(|_| ()),
-            "Signature" => parts[1].parse().map(LuaPropertyOwnerId::Signature).map_err(|_| ()),
-            _ => Err(()),
-        }
+impl From<LuaDeclId> for LuaPropertyOwnerId {
+    fn from(id: LuaDeclId) -> Self {
+        LuaPropertyOwnerId::LuaDecl(id)
     }
 }
 
-impl ToString for LuaPropertyOwnerId {
-    fn to_string(&self) -> String {
-        match self {
-            LuaPropertyOwnerId::TypeDecl(id) => format!("TypeDecl:{}", id.to_string()),
-            LuaPropertyOwnerId::Member(id) => format!("Member:{}", id.to_string()),
-            LuaPropertyOwnerId::LuaDecl(id) => format!("LuaDecl:{}", id.to_string()),
-            LuaPropertyOwnerId::Signature(id) => format!("Signature:{}", id.to_string()),
-        }
+impl From<LuaTypeDeclId> for LuaPropertyOwnerId {
+    fn from(id: LuaTypeDeclId) -> Self {
+        LuaPropertyOwnerId::TypeDecl(id)
+    }
+}
+
+impl From<LuaMemberId> for LuaPropertyOwnerId {
+    fn from(id: LuaMemberId) -> Self {
+        LuaPropertyOwnerId::Member(id)
+    }
+}
+
+impl From<LuaSignatureId> for LuaPropertyOwnerId {
+    fn from(id: LuaSignatureId) -> Self {
+        LuaPropertyOwnerId::Signature(id)
     }
 }

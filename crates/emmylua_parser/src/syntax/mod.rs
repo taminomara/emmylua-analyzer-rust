@@ -3,9 +3,12 @@ mod node;
 mod traits;
 mod tree;
 
-use std::{iter::successors, str::FromStr};
+use serde::de::{self, Visitor};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt;
+use std::iter::successors;
 
-use rowan::{Language, TextRange};
+use rowan::{Language, TextRange, TextSize};
 
 use crate::kind::{LuaKind, LuaSyntaxKind, LuaTokenKind};
 pub use comment_trait::*;
@@ -163,32 +166,58 @@ impl LuaSyntaxId {
     }
 }
 
-impl FromStr for LuaSyntaxId {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = s.split(',').collect();
-        if parts.len() != 3 {
-            return Err(());
-        }
-
-        let kind = parts[0].parse::<u16>().map_err(|_| ())?;
-        let lua_kind = LuaKind::from_raw(kind);
-        let start = parts[1].parse::<u32>().map_err(|_| ())?;
-        let end = parts[2].parse::<u32>().map_err(|_| ())?;
-        let range = TextRange::new(start.into(), end.into());
-
-        Ok(LuaSyntaxId::new(lua_kind, range))
+impl Serialize for LuaSyntaxId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let kind_raw = self.kind.get_raw();
+        let start = u32::from(self.range.start());
+        let end = u32::from(self.range.end());
+        let range_combined = ((start as u64) << 32) | (end as u64);
+        let value = format!("{:x}:{:x}", kind_raw, range_combined);
+        serializer.serialize_str(&value)
     }
 }
 
-impl ToString for LuaSyntaxId {
-    fn to_string(&self) -> String {
-        format!(
-            "{},{},{}",
-            self.kind.get_raw(),
-            u32::from(self.range.start()),
-            u32::from(self.range.end())
-        )
+impl<'de> Deserialize<'de> for LuaSyntaxId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct LuaSyntaxIdVisitor;
+
+        impl<'de> Visitor<'de> for LuaSyntaxIdVisitor {
+            type Value = LuaSyntaxId;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a string with format 'kind:range'")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                let parts: Vec<&str> = value.split(':').collect();
+                if parts.len() != 2 {
+                    return Err(E::custom("expected format 'kind:range'"));
+                }
+
+                let kind_raw = u16::from_str_radix(parts[0], 16)
+                    .map_err(|e| E::custom(format!("invalid kind: {}", e)))?;
+                let range_combined = u64::from_str_radix(parts[1], 16)
+                    .map_err(|e| E::custom(format!("invalid range: {}", e)))?;
+
+                let start = TextSize::new(((range_combined >> 32) & 0xFFFFFFFF) as u32);
+                let end = TextSize::new((range_combined & 0xFFFFFFFF) as u32);
+
+                Ok(LuaSyntaxId {
+                    kind: LuaKind::from_raw(kind_raw),
+                    range: TextRange::new(start, end),
+                })
+            }
+        }
+
+        deserializer.deserialize_str(LuaSyntaxIdVisitor)
     }
 }

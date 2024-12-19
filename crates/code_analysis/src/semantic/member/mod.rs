@@ -71,6 +71,13 @@ pub struct LuaMemberInfo {
     pub property_owner_id: Option<LuaPropertyOwnerId>,
     pub key: LuaMemberKey,
     pub typ: LuaType,
+    pub origin_typ: Option<LuaType>
+}
+
+impl LuaMemberInfo {
+    pub fn get_origin_type(&self) -> &LuaType {
+        self.origin_typ.as_ref().unwrap_or(&self.typ)
+    }
 }
 
 type InferMembersResult = Option<Vec<LuaMemberInfo>>;

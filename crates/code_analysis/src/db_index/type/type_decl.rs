@@ -1,8 +1,7 @@
-use std::str::FromStr;
-
 use flagset::{flags, FlagSet};
 use internment::ArcIntern;
 use rowan::TextRange;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{db_index::LuaMemberId, FileId};
 
@@ -217,17 +216,24 @@ impl LuaTypeDeclId {
     }
 }
 
-impl FromStr for LuaTypeDeclId {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self::new(s))
+impl Serialize for LuaTypeDeclId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.id)
     }
 }
 
-impl ToString for LuaTypeDeclId {
-    fn to_string(&self) -> String {
-        self.id.to_string()
+impl<'de> Deserialize<'de> for LuaTypeDeclId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Ok(LuaTypeDeclId {
+            id: ArcIntern::new(s),
+        })
     }
 }
 

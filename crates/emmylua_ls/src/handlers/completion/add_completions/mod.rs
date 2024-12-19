@@ -5,6 +5,8 @@ pub use add_decl_completion::add_decl_completion;
 pub use add_member_completion::{add_member_completion, CompletionTriggerStatus};
 use code_analysis::{LuaPropertyOwnerId, LuaType};
 use lsp_types::CompletionItemKind;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::util::humanize_type;
 
@@ -57,11 +59,18 @@ fn is_deprecated(builder: &CompletionBuilder, id: LuaPropertyOwnerId) -> bool {
     property.unwrap().is_deprecated
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CallDisplay {
+    None,
+    AddSelf,
+    RemoveFirst,
+}
+
 fn get_detail(
     builder: &CompletionBuilder,
     property_owner_id: &LuaPropertyOwnerId,
     typ: &LuaType,
-    add_self: bool,
+    display: CallDisplay,
 ) -> Option<String> {
     match typ {
         LuaType::Signature(signature_id) => {
@@ -76,9 +85,19 @@ fn get_detail(
                 .iter()
                 .map(|param| param.0.clone())
                 .collect::<Vec<_>>();
-            if add_self {
-                params_str.insert(0, "self".to_string());
+
+            match display {
+                CallDisplay::AddSelf => {
+                    params_str.insert(0, "self".to_string());
+                }
+                CallDisplay::RemoveFirst => {
+                    if !params_str.is_empty() {
+                        params_str.remove(0);
+                    }
+                }
+                _ => {}
             }
+
             Some(format!("({})", params_str.join(", ")))
         }
         LuaType::DocFunction(f) => {
@@ -88,8 +107,16 @@ fn get_detail(
                 .map(|param| param.0.clone())
                 .collect::<Vec<_>>();
 
-            if add_self {
-                params_str.insert(0, "self".to_string());
+            match display {
+                CallDisplay::AddSelf => {
+                    params_str.insert(0, "self".to_string());
+                }
+                CallDisplay::RemoveFirst => {
+                    if !params_str.is_empty() {
+                        params_str.remove(0);
+                    }
+                }
+                _ => {}
             }
 
             Some(format!("({})", params_str.join(", ")))
@@ -153,5 +180,24 @@ fn get_description(builder: &CompletionBuilder, typ: &LuaType) -> Option<String>
         }
         _ if typ.is_unknown() => None,
         _ => Some(humanize_type(builder.semantic_model.get_db(), typ)),
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum CompletionData {
+    PropertyOwnerId(LuaPropertyOwnerId),
+    Module(String)
+}
+
+#[allow(unused)]
+impl CompletionData {
+    pub fn from_property_owner_id(id: LuaPropertyOwnerId) -> Option<Value> {
+        let data = Self::PropertyOwnerId(id);
+        Some(serde_json::to_value(data).unwrap())
+    }
+
+    pub fn from_module(module: String) -> Option<Value> {
+        let data = Self::Module(module);
+        Some(serde_json::to_value(data).unwrap())
     }
 }

@@ -1,9 +1,10 @@
-use std::str::FromStr;
-
-use emmylua_parser::{LuaKind, LuaSyntaxId, LuaSyntaxKind};
-use rowan::{TextRange, TextSize};
+use std::fmt;
 
 use crate::{db_index::LuaType, FileId};
+use emmylua_parser::{LuaKind, LuaSyntaxId, LuaSyntaxKind};
+use rowan::{TextRange, TextSize};
+use serde::de::{self, Visitor};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Eq, PartialEq, Hash, Debug, Clone)]
 pub enum LuaDecl {
@@ -66,7 +67,7 @@ impl LuaDecl {
         }
     }
 
-    pub (crate) fn set_decl_type(&mut self, decl_type: LuaType) {
+    pub(crate) fn set_decl_type(&mut self, decl_type: LuaType) {
         match self {
             LuaDecl::Local { decl_type: dt, .. } => *dt = Some(decl_type),
             LuaDecl::Global { decl_type: dt, .. } => *dt = Some(decl_type),
@@ -76,7 +77,9 @@ impl LuaDecl {
     pub fn get_syntax_id(&self) -> LuaSyntaxId {
         match self {
             LuaDecl::Local { kind, range, .. } => LuaSyntaxId::new(*kind, *range),
-            LuaDecl::Global { range, .. } => LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), *range),
+            LuaDecl::Global { range, .. } => {
+                LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), *range)
+            }
         }
     }
 
@@ -95,23 +98,55 @@ pub struct LuaDeclId {
     pub position: TextSize,
 }
 
-impl FromStr for LuaDeclId {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = s.split('|').collect();
-        if parts.len() != 2 {
-            return Err(());
-        }
-        let file_id = parts[0].parse().map_err(|_| ())?;
-        let position = parts[1].parse::<u32>().map_err(|_| ())?;
-        Ok(Self { file_id, position: position.into() })
+impl Serialize for LuaDeclId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let value = format!("{}|{}", self.file_id.id, u32::from(self.position));
+        serializer.serialize_str(&value)
     }
 }
 
-impl ToString for LuaDeclId {
-    fn to_string(&self) -> String {
-        format!("{}:{}", self.file_id.to_string(), u32::from(self.position))
+impl<'de> Deserialize<'de> for LuaDeclId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct LuaDeclIdVisitor;
+
+        impl<'de> Visitor<'de> for LuaDeclIdVisitor {
+            type Value = LuaDeclId;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a string with format 'file_id:position'")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                let parts: Vec<&str> = value.split('|').collect();
+                if parts.len() != 2 {
+                    return Err(E::custom("expected format 'file_id:position'"));
+                }
+
+                let file_id = FileId {
+                    id: parts[0]
+                        .parse()
+                        .map_err(|e| E::custom(format!("invalid file_id: {}", e)))?,
+                };
+                let position = TextSize::new(
+                    parts[1]
+                        .parse()
+                        .map_err(|e| E::custom(format!("invalid position: {}", e)))?,
+                );
+
+                Ok(LuaDeclId { file_id, position })
+            }
+        }
+
+        deserializer.deserialize_str(LuaDeclIdVisitor)
     }
 }
 

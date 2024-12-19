@@ -1,9 +1,11 @@
-use code_analysis::{LuaMemberInfo, LuaMemberKey};
+use code_analysis::{DbIndex, LuaMemberInfo, LuaMemberKey, LuaType};
 use lsp_types::CompletionItem;
 
 use crate::handlers::completion::completion_builder::CompletionBuilder;
 
-use super::{check_visibility, get_completion_kind, get_description, get_detail, is_deprecated};
+use super::{
+    check_visibility, get_completion_kind, get_description, get_detail, is_deprecated, CallDisplay, CompletionData,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CompletionTriggerStatus {
@@ -21,7 +23,7 @@ pub fn add_member_completion(
     if builder.is_cancelled() {
         return None;
     }
-    let property_owner = member_info.property_owner_id;
+    let property_owner = &member_info.property_owner_id;
     if let Some(property_owner) = &property_owner {
         check_visibility(builder, property_owner.clone())?;
     }
@@ -48,16 +50,22 @@ pub fn add_member_completion(
         },
     };
 
-    let typ = member_info.typ;
+    let display = get_call_show(
+        builder.semantic_model.get_db(),
+        member_info.get_origin_type(),
+        status,
+    )
+    .unwrap_or(CallDisplay::None);
 
+    let typ = member_info.typ;
     let data = if let Some(id) = &property_owner {
-        Some(id.to_string().into())
+        CompletionData::from_property_owner_id(id.clone().into())
     } else {
         None
     };
 
     let detail = if let Some(id) = &property_owner {
-        get_detail(builder, id, &typ, false)
+        get_detail(builder, id, &typ, display)
     } else {
         None
     };
@@ -85,4 +93,24 @@ pub fn add_member_completion(
     builder.add_completion_item(completion_item)?;
 
     Some(())
+}
+
+fn get_call_show(
+    db: &DbIndex,
+    typ: &LuaType,
+    status: CompletionTriggerStatus,
+) -> Option<CallDisplay> {
+    let sig_id = match typ {
+        LuaType::Signature(sig_id) => sig_id,
+        _ => return None,
+    };
+    let signature = db.get_signature_index().get(sig_id)?;
+    let colon_define = signature.is_colon_define;
+    let colon_call = status == CompletionTriggerStatus::Colon;
+
+    match (colon_call, colon_define) {
+        (false, true) => Some(CallDisplay::AddSelf),
+        (true, false) => Some(CallDisplay::RemoveFirst),
+        _ => Some(CallDisplay::None),
+    }
 }

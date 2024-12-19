@@ -1,8 +1,7 @@
-use std::str::FromStr;
-
 use emmylua_parser::{LuaDocFieldKey, LuaIndexKey, LuaSyntaxId};
 use internment::ArcIntern;
 use rowan::TextRange;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     db_index::{LuaType, LuaTypeDeclId},
@@ -74,31 +73,10 @@ impl LuaMember {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash, Serialize, Deserialize)]
 pub struct LuaMemberId {
     file_id: FileId,
     id: LuaSyntaxId,
-}
-
-impl FromStr for LuaMemberId {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = s.split('|').collect();
-        if parts.len() != 2 {
-            return Err(());
-        }
-
-        let file_id = parts[0].parse().map_err(|_| ())?;
-        let id = parts[1].parse().map_err(|_| ())?;
-        Ok(Self { file_id, id })
-    }
-}
-
-impl ToString for LuaMemberId {
-    fn to_string(&self) -> String {
-        format!("{}|{}", self.file_id.to_string(), self.id.to_string())
-    }
 }
 
 impl LuaMemberId {
@@ -106,7 +84,6 @@ impl LuaMemberId {
         Self { id, file_id }
     }
 }
-
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub enum LuaMemberOwner {
@@ -195,7 +172,9 @@ impl From<&LuaIndexKey> for LuaMemberKey {
 impl From<LuaDocFieldKey> for LuaMemberKey {
     fn from(key: LuaDocFieldKey) -> Self {
         match key {
-            LuaDocFieldKey::Name(name) => LuaMemberKey::Name(name.get_name_text().to_string().into()),
+            LuaDocFieldKey::Name(name) => {
+                LuaMemberKey::Name(name.get_name_text().to_string().into())
+            }
             LuaDocFieldKey::String(str) => LuaMemberKey::Name(str.get_value().into()),
             LuaDocFieldKey::Integer(i) => LuaMemberKey::Integer(i.get_int_value()),
             _ => LuaMemberKey::None,
@@ -206,7 +185,9 @@ impl From<LuaDocFieldKey> for LuaMemberKey {
 impl From<&LuaDocFieldKey> for LuaMemberKey {
     fn from(key: &LuaDocFieldKey) -> Self {
         match key {
-            LuaDocFieldKey::Name(name) => LuaMemberKey::Name(name.get_name_text().to_string().into()),
+            LuaDocFieldKey::Name(name) => {
+                LuaMemberKey::Name(name.get_name_text().to_string().into())
+            }
             LuaDocFieldKey::String(str) => LuaMemberKey::Name(str.get_value().into()),
             LuaDocFieldKey::Integer(i) => LuaMemberKey::Integer(i.get_int_value()),
             _ => LuaMemberKey::None,

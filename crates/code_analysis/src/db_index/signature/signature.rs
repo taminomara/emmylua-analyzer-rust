@@ -1,9 +1,15 @@
-use std::{collections::HashMap, str::FromStr, sync::Arc};
+use serde::de::{self, Visitor};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt;
+use std::{collections::HashMap, sync::Arc};
 
 use emmylua_parser::{LuaAstNode, LuaClosureExpr};
 use rowan::TextSize;
 
-use crate::{db_index::{LuaFunctionType, LuaType}, FileId};
+use crate::{
+    db_index::{LuaFunctionType, LuaType},
+    FileId,
+};
 
 #[derive(Debug)]
 pub struct LuaSignature {
@@ -72,28 +78,57 @@ pub struct LuaSignatureId {
     position: TextSize,
 }
 
-impl FromStr for LuaSignatureId {
-    type Err = ();
+impl Serialize for LuaSignatureId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let value = format!("{}|{}", self.file_id.id, u32::from(self.position));
+        serializer.serialize_str(&value)
+    }
+}
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = s.split('|').collect();
-        if parts.len() != 2 {
-            return Err(());
+impl<'de> Deserialize<'de> for LuaSignatureId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct LuaSignatureIdVisitor;
+
+        impl<'de> Visitor<'de> for LuaSignatureIdVisitor {
+            type Value = LuaSignatureId;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a string with format 'file_id:position'")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                let parts: Vec<&str> = value.split('|').collect();
+                if parts.len() != 2 {
+                    return Err(E::custom("expected format 'file_id:position'"));
+                }
+
+                let file_id = FileId {
+                    id: parts[0]
+                        .parse()
+                        .map_err(|e| E::custom(format!("invalid file_id: {}", e)))?,
+                };
+                let position = TextSize::new(
+                    parts[1]
+                        .parse()
+                        .map_err(|e| E::custom(format!("invalid position: {}", e)))?,
+                );
+
+                Ok(LuaSignatureId { file_id, position })
+            }
         }
 
-        let file_id = parts[0].parse().map_err(|_| ())?;
-        let position = parts[1].parse::<u32>().map_err(|_| ())?;
-
-        Ok(Self { file_id, position: position.into() })
+        deserializer.deserialize_str(LuaSignatureIdVisitor)
     }
 }
-
-impl ToString for LuaSignatureId {
-    fn to_string(&self) -> String {
-        format!("{}|{}", self.file_id.to_string(), u32::from(self.position))
-    }
-}
-
 
 impl LuaSignatureId {
     pub fn new(file_id: FileId, closure: &LuaClosureExpr) -> Self {

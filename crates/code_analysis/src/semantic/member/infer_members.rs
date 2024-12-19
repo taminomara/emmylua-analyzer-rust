@@ -59,6 +59,7 @@ fn infer_normal_members(db: &DbIndex, member_owner: LuaMemberOwner) -> InferMemb
             property_owner_id: Some(LuaPropertyOwnerId::Member(*member_id)),
             key: member.get_key().clone(),
             typ: member.get_decl_type().clone(),
+            origin_typ: None,
         });
     }
 
@@ -90,6 +91,7 @@ fn infer_custom_type_members(
             property_owner_id: Some(LuaPropertyOwnerId::Member(*member_id)),
             key: member.get_key().clone(),
             typ: member.get_decl_type().clone(),
+            origin_typ: None,
         });
     }
 
@@ -113,6 +115,7 @@ fn infer_tuple_members(tuple_type: &LuaTupleType) -> InferMembersResult {
             property_owner_id: None,
             key: LuaMemberKey::Integer((idx + 1) as i64),
             typ: typ.clone(),
+            origin_typ: None,
         });
     }
 
@@ -126,6 +129,7 @@ fn infer_object_members(object_type: &LuaObjectType) -> InferMembersResult {
             property_owner_id: None,
             key: key.clone(),
             typ: typ.clone(),
+            origin_typ: None,
         });
     }
 
@@ -182,6 +186,7 @@ fn infer_intersection_members(
                     property_owner_id: None,
                     key,
                     typ,
+                    origin_typ: None,
                 });
             }
         }
@@ -200,7 +205,9 @@ fn infer_generic_members(
 
     let generic_params = generic_type.get_params();
     for info in members.iter_mut() {
+        let origin_typ = info.typ.clone();
         info.typ = instantiate_type(db, &info.typ, generic_params);
+        info.origin_typ = Some(origin_typ);
     }
 
     Some(members)
@@ -228,6 +235,7 @@ fn infer_exist_field_members(db: &DbIndex, exist_field: &LuaExistFieldType) -> I
             property_owner_id: None,
             key: field.clone(),
             typ: LuaType::Any,
+            origin_typ: None,
         });
     }
 
@@ -244,6 +252,7 @@ fn infer_global_members(db: &DbIndex) -> InferMembersResult {
             property_owner_id: Some(LuaPropertyOwnerId::LuaDecl(decl_id)),
             key: LuaMemberKey::Name(decl.get_name().to_string().into()),
             typ: decl.get_type().cloned().unwrap_or(LuaType::Unknown),
+            origin_typ: None,
         });
     }
 
