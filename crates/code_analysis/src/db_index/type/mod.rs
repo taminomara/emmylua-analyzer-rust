@@ -3,16 +3,15 @@ mod type_assert;
 mod type_decl;
 mod types;
 
-use std::collections::HashMap;
 use super::traits::LuaIndex;
 use crate::{FileId, InFiled};
 use flagset::FlagSet;
 use rowan::TextRange;
+use std::collections::HashMap;
 pub use type_assert::TypeAssertion;
 use type_decl::LuaDeclLocation;
 pub use type_decl::{LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId};
 pub use types::*;
-
 
 #[derive(Debug)]
 pub struct LuaTypeIndex {
@@ -112,7 +111,6 @@ impl LuaTypeIndex {
         Ok(())
     }
 
-    #[allow(unused)]
     pub fn find_type_decl(&self, file_id: FileId, name: &str) -> Option<&LuaTypeDecl> {
         if let Some(ns) = self.get_file_namespace(&file_id) {
             let full_name = LuaTypeDeclId::new(&format!("{}.{}", ns, name));
@@ -131,6 +129,69 @@ impl LuaTypeIndex {
 
         let id = LuaTypeDeclId::new(name);
         self.full_name_type_map.get(&id)
+    }
+
+    pub fn find_type_decls(
+        &self,
+        file_id: FileId,
+        prefix: &str,
+    ) -> HashMap<String, Option<LuaTypeDeclId>> {
+        let mut result = HashMap::new();
+        let all_type_ids = self.full_name_type_map.keys().collect::<Vec<_>>();
+        if let Some(ns) = self.get_file_namespace(&file_id) {
+            let prefix = &format!("{}.{}", ns, prefix);
+            for id in all_type_ids.clone() {
+                let id_name = id.get_name();
+                if id_name.starts_with(prefix) {
+                    let rest_name = id_name.strip_prefix(prefix).unwrap();
+                    if let Some(i) = rest_name.find('.') {
+                        let name = rest_name[..i].to_string();
+                        if !result.contains_key(&name) {
+                            result.insert(name, None);
+                        }
+                    } else {
+                        result.insert(rest_name.to_string(), Some(id.clone()));
+                    }
+                }
+            }
+        }
+
+        if let Some(usings) = self.get_file_using_namespace(&file_id) {
+            for ns in usings {
+                let prefix = &format!("{}.{}", ns, prefix);
+                for id in all_type_ids.clone() {
+                    let id_name = id.get_name();
+                    if id_name.starts_with(prefix) {
+                        let rest_name = id_name.strip_prefix(prefix).unwrap();
+                        if let Some(i) = rest_name.find('.') {
+                            let name = rest_name[..i].to_string();
+                            if !result.contains_key(&name) {
+                                result.insert(name, None);
+                            }
+                        } else {
+                            result.insert(rest_name.to_string(), Some(id.clone()));
+                        }
+                    }
+                }
+            }
+        }
+
+        for id in all_type_ids {
+            let id_name = id.get_name();
+            if id_name.starts_with(prefix) {
+                let rest_name = id_name.strip_prefix(prefix).unwrap();
+                if let Some(i) = rest_name.find('.') {
+                    let name = rest_name[..i].to_string();
+                    if !result.contains_key(&name) {
+                        result.insert(name, None);
+                    }
+                } else {
+                    result.insert(rest_name.to_string(), Some(id.clone()));
+                }
+            }
+        }
+
+        result
     }
 
     pub fn add_generic_params(
