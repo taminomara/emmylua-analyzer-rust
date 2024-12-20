@@ -424,6 +424,7 @@ impl LuaLexer<'_> {
             Hex,
             HexFloat,
             WithExpo,
+            Bin,
         }
 
         let mut state = NumberState::Int;
@@ -433,6 +434,12 @@ impl LuaLexer<'_> {
             '0' if matches!(self.reader.current_char(), 'X' | 'x') => {
                 self.reader.bump();
                 state = NumberState::Hex;
+            }
+            '0' if matches!(self.reader.current_char(), 'B' | 'b')
+                && self.lexer_config.support_binary_integer() =>
+            {
+                self.reader.bump();
+                state = NumberState::Bin;
             }
             '.' => {
                 state = NumberState::Float;
@@ -496,6 +503,7 @@ impl LuaLexer<'_> {
                     _ => false,
                 },
                 NumberState::WithExpo => matches!(ch, '0'..='9'),
+                NumberState::Bin => matches!(ch, '0' | '1'),
             };
 
             if continue_ {
@@ -513,7 +521,10 @@ impl LuaLexer<'_> {
         }
 
         if self.lexer_config.support_ll_integer() {
-            if matches!(state, NumberState::Int | NumberState::Hex) {
+            if matches!(
+                state,
+                NumberState::Int | NumberState::Hex | NumberState::Bin
+            ) {
                 self.reader
                     .eat_while(|ch| matches!(ch, 'u' | 'U' | 'l' | 'L'));
                 return LuaTokenKind::TkInt;

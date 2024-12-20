@@ -55,7 +55,11 @@ pub fn float_token_value(token: &LuaSyntaxToken) -> Result<f64, LuaParseError> {
 
         let mut value = float_part.parse::<f64>().map_err(|e| {
             LuaParseError::new(
-                &t!("The float literal '%{text}' is invalid, %{err}", text = text, err = e),
+                &t!(
+                    "The float literal '%{text}' is invalid, %{err}",
+                    text = text,
+                    err = e
+                ),
                 token.text_range(),
             )
         })?;
@@ -71,18 +75,36 @@ pub fn float_token_value(token: &LuaSyntaxToken) -> Result<f64, LuaParseError> {
     Ok(value)
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum IntegerRepr {
+    Normal,
+    Hex,
+    Bin,
+}
+
 pub fn int_token_value(token: &LuaSyntaxToken) -> Result<i64, LuaParseError> {
     let text = token.text();
-    let hex = text.starts_with("0x") || text.starts_with("0X");
-    let text = text.trim_end_matches(|c| c == 'u' || c == 'l' || c == 'U' || c == 'L');
-
-    let value = if hex {
-        let text = &text[2..];
-        i64::from_str_radix(text, 16)
+    let repr = if text.starts_with("0x") || text.starts_with("0X") {
+        IntegerRepr::Hex
+    } else if text.starts_with("0b") || text.starts_with("0B") {
+        IntegerRepr::Bin
     } else {
-        text.parse::<i64>()
+        IntegerRepr::Normal
     };
 
+    let text = text.trim_end_matches(|c| c == 'u' || c == 'l' || c == 'U' || c == 'L');
+
+    let value = match repr {
+        IntegerRepr::Hex => {
+            let text = &text[2..];
+            i64::from_str_radix(text, 16)
+        }
+        IntegerRepr::Bin => {
+            let text = &text[2..];
+            i64::from_str_radix(text, 2)
+        }
+        IntegerRepr::Normal => text.parse::<i64>(),
+    };
     match value {
         Ok(value) => Ok(value),
         Err(e) => {
@@ -99,7 +121,11 @@ pub fn int_token_value(token: &LuaSyntaxToken) -> Result<i64, LuaParseError> {
                 ))
             } else {
                 Err(LuaParseError::new(
-                    &t!("The integer literal '%{text}' is invalid, %{err}", text = text, err = e),
+                    &t!(
+                        "The integer literal '%{text}' is invalid, %{err}",
+                        text = text,
+                        err = e
+                    ),
                     range,
                 ))
             }

@@ -7,7 +7,13 @@ pub struct LexerConfig {
 
 impl LexerConfig {
     pub fn support_goto(&self) -> bool {
-        matches!(self.language_level, LuaLanguageLevel::Lua52 | LuaLanguageLevel::Lua53 | LuaLanguageLevel::Lua54 | LuaLanguageLevel::LuaJIT)
+        matches!(
+            self.language_level,
+            LuaLanguageLevel::Lua52
+                | LuaLanguageLevel::Lua53
+                | LuaLanguageLevel::Lua54
+                | LuaLanguageLevel::LuaJIT
+        )
     }
 
     pub fn support_complex_number(&self) -> bool {
@@ -18,8 +24,18 @@ impl LexerConfig {
         matches!(self.language_level, LuaLanguageLevel::LuaJIT)
     }
 
+    pub fn support_binary_integer(&self) -> bool {
+        matches!(
+            self.language_level,
+            LuaLanguageLevel::LuaJIT
+        )
+    }
+
     pub fn support_integer_operation(&self) -> bool {
-        matches!(self.language_level, LuaLanguageLevel::Lua53 | LuaLanguageLevel::Lua54)
+        matches!(
+            self.language_level,
+            LuaLanguageLevel::Lua53 | LuaLanguageLevel::Lua54
+        )
     }
 }
 

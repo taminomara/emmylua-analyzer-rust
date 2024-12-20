@@ -244,4 +244,9 @@ mod tests {
         "0x11LL",
         17
     );
+    test_int_token_value!(
+        test_number_token_value_int9,
+        "0b10101",
+        21
+    );
 }
