@@ -7,6 +7,7 @@ mod emmy_annotator;
 mod fold_range;
 mod hover;
 mod initialized;
+mod inlay_hint;
 mod notification_handler;
 mod request_handler;
 mod response_handler;
@@ -17,9 +18,9 @@ pub use initialized::{init_analysis, ClientConfig};
 use lsp_types::{
     ColorProviderCapability, CompletionOptions, CompletionOptionsCompletionItem,
     DocumentLinkOptions, DocumentSymbolOptions, FoldingRangeProviderCapability,
-    HoverProviderCapability, OneOf, SaveOptions, SelectionRangeProviderCapability,
-    ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind,
-    TextDocumentSyncSaveOptions,
+    HoverProviderCapability, InlayHintOptions, InlayHintServerCapabilities, OneOf, SaveOptions,
+    SelectionRangeProviderCapability, ServerCapabilities, TextDocumentSyncCapability,
+    TextDocumentSyncKind, TextDocumentSyncSaveOptions,
 };
 pub use notification_handler::on_notification_handler;
 pub use request_handler::on_req_handler;
@@ -64,6 +65,12 @@ pub fn server_capabilities() -> ServerCapabilities {
             }),
             all_commit_characters: Default::default(),
         }),
+        inlay_hint_provider: Some(OneOf::Right(InlayHintServerCapabilities::Options(
+            InlayHintOptions {
+                resolve_provider: Some(false),
+                work_done_progress_options: Default::default(),
+            },
+        ))),
         ..Default::default()
     }
 }

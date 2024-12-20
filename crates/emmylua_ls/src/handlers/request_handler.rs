@@ -4,8 +4,8 @@ use log::error;
 use lsp_server::{Request, RequestId, Response};
 use lsp_types::request::{
     ColorPresentationRequest, Completion, DocumentColor, DocumentLinkRequest, DocumentLinkResolve,
-    DocumentSymbolRequest, FoldingRangeRequest, HoverRequest, ResolveCompletionItem,
-    SelectionRangeRequest,
+    DocumentSymbolRequest, FoldingRangeRequest, HoverRequest, InlayHintRequest,
+    InlayHintResolveRequest, ResolveCompletionItem, SelectionRangeRequest,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use tokio_util::sync::CancellationToken;
@@ -21,6 +21,7 @@ use super::{
     emmy_annotator::{on_emmy_annotator_handler, EmmyAnnotatorRequest},
     fold_range::on_folding_range_handler,
     hover::on_hover,
+    inlay_hint::{on_inlay_hint_handler, on_resolve_inlay_hint},
 };
 
 pub async fn on_req_handler(
@@ -49,6 +50,10 @@ pub async fn on_req_handler(
         .on_parallel::<Completion, _, _>(on_completion_handler)
         .await
         .on_parallel::<ResolveCompletionItem, _, _>(on_completion_resolve_handler)
+        .await
+        .on_parallel::<InlayHintRequest, _, _>(on_inlay_hint_handler)
+        .await
+        .on_parallel::<InlayHintResolveRequest, _, _>(on_resolve_inlay_hint)
         .await
         .finish();
     Ok(())
