@@ -243,17 +243,14 @@ impl LuaModuleIndex {
 
     pub fn update_config(&mut self, config: Arc<Emmyrc>) {
         let mut extension_names = Vec::new();
-        if let Some(runtime) = &config.runtime {
-            if let Some(extensions) = &runtime.extensions {
-                for extension in extensions {
-                    if extension.starts_with(".") {
-                        extension_names.push(extension[1..].to_string());
-                    } else if extension.starts_with("*.") {
-                        extension_names.push(extension[2..].to_string());
-                    } else {
-                        extension_names.push(extension.clone());
-                    }
-                }
+
+        for extension in &config.runtime.extensions {
+            if extension.starts_with(".") {
+                extension_names.push(extension[1..].to_string());
+            } else if extension.starts_with("*.") {
+                extension_names.push(extension[2..].to_string());
+            } else {
+                extension_names.push(extension.clone());
             }
         }
 

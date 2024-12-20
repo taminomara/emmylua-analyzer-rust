@@ -7,11 +7,7 @@ pub fn collect_files(workspaces: &Vec<PathBuf>, emmyrc: &Emmyrc) -> Vec<LuaFileI
     let mut files = Vec::new();
     let (match_pattern, exclude) = calculate_include_and_exclude(emmyrc);
 
-    let encoding = if let Some(workspace) = &emmyrc.workspace {
-        workspace.encoding.clone().unwrap_or("utf-8".to_string())
-    } else {
-        "utf-8".to_string()
-    };
+    let encoding = &emmyrc.workspace.encoding;
 
     info!(
         "collect_files from: {:?} match_pattern: {:?} exclude: {:?}",
@@ -19,7 +15,7 @@ pub fn collect_files(workspaces: &Vec<PathBuf>, emmyrc: &Emmyrc) -> Vec<LuaFileI
     );
     for workspace in workspaces {
         let loaded =
-            load_workspace_files(&workspace, &match_pattern, &exclude, Some(&encoding)).ok();
+            load_workspace_files(&workspace, &match_pattern, &exclude, Some(encoding)).ok();
         if let Some(loaded) = loaded {
             files.extend(loaded);
         }
@@ -37,38 +33,23 @@ pub fn collect_files(workspaces: &Vec<PathBuf>, emmyrc: &Emmyrc) -> Vec<LuaFileI
 pub fn calculate_include_and_exclude(emmyrc: &Emmyrc) -> (Vec<String>, Vec<String>) {
     let mut include = vec!["**/*.lua".to_string()];
     let mut exclude = Vec::new();
-    let mut extensions = Vec::new();
 
-    if let Some(runtime) = &emmyrc.runtime {
-        if let Some(exts) = &runtime.extensions {
-            extensions.extend(exts.clone());
+    for extension in &emmyrc.runtime.extensions {
+        if extension.starts_with(".") {
+            include.push(format!("**/*{}", extension));
+        } else if extension.starts_with("*.") {
+            include.push(format!("**/{}", extension));
+        } else {
+            include.push(extension.clone());
         }
     }
 
-    if let Some(runtime) = &emmyrc.runtime {
-        if let Some(extensions) = &runtime.extensions {
-            for extension in extensions {
-                if extension.starts_with(".") {
-                    include.push(format!("**/*{}", extension));
-                } else if extension.starts_with("*.") {
-                    include.push(format!("**/{}", extension));
-                } else {
-                    include.push(extension.clone());
-                }
-            }
-        }
+    for ignore_glob in &emmyrc.workspace.ignore_globs {
+        exclude.push(ignore_glob.clone());
     }
-
-    if let Some(workspace) = &emmyrc.workspace {
-        if let Some(ignore_globs) = &workspace.ignore_globs {
-            exclude.extend(ignore_globs.clone());
-        }
-
-        if let Some(ignore_dirs) = &workspace.ignore_dir {
-            for dir in ignore_dirs {
-                exclude.push(format!("{}/**", dir));
-            }
-        }
+    
+    for dir in &emmyrc.workspace.ignore_dir {
+        exclude.push(format!("{}/**", dir));
     }
 
     // remove duplicate

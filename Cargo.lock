@@ -166,6 +166,7 @@ dependencies = [
 name = "code_analysis"
 version = "0.1.0"
 dependencies = [
+ "dirs",
  "emmylua_parser",
  "encoding_rs",
  "flagset",
@@ -282,7 +283,6 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "code_analysis",
- "dirs",
  "emmylua_parser",
  "fern",
  "log",

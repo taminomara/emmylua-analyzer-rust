@@ -1,19 +1,36 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema, Default)]
 #[serde(rename_all = "camelCase")]
+/// Configuration for EmmyLua code completion.
 pub struct EmmyrcCompletion {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub auto_require: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub auto_require_function: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub auto_require_naming_convention: Option<EmmyrcFilenameConvention>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub call_snippet: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub postfix: Option<String>,
+    /// Whether to automatically require modules.
+    #[serde(default = "default_true")]
+    pub auto_require: bool,
+    /// The function used for auto-requiring modules.
+    #[serde(default = "default_require_function")]
+    pub auto_require_function: String,
+    /// The naming convention for auto-required filenames.
+    #[serde(default)]
+    pub auto_require_naming_convention: EmmyrcFilenameConvention,
+    /// Whether to use call snippets in completions.
+    #[serde(default)]
+    pub call_snippet: bool,
+    /// The postfix trigger used in completions.
+    #[serde(default = "default_postfix")]
+    pub postfix: String,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_require_function() -> String {
+    "require".to_string()
+}
+
+fn default_postfix() -> String {
+    "@".to_string()
 }
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema)]
@@ -24,3 +41,10 @@ pub enum EmmyrcFilenameConvention {
     PascalCase,
     CamelCase,
 }
+
+impl Default for EmmyrcFilenameConvention {
+    fn default() -> Self {
+        EmmyrcFilenameConvention::Keep
+    }
+}
+

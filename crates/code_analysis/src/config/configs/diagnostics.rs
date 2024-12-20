@@ -6,21 +6,32 @@ use serde::{Deserialize, Serialize};
 
 use crate::DiagnosticCode;
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema, Default)]
 #[serde(rename_all = "camelCase")]
+/// Represents the diagnostic configuration for Emmyrc.
 pub struct EmmyrcDiagnostic {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disable: Option<Vec<DiagnosticCode>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub enable: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub globals: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub globals_regex: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub severity: Option<HashMap<DiagnosticCode, DiagnosticSeveritySetting>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub enables: Option<Vec<DiagnosticCode>>,
+    /// A list of diagnostic codes that are disabled.
+    #[serde(default)]
+    pub disable: Vec<DiagnosticCode>,
+    /// A flag indicating whether diagnostics are enabled.
+    #[serde(default = "default_true")]
+    pub enable: bool,
+    /// A list of global variables.
+    #[serde(default)]
+    pub globals: Vec<String>,
+    /// A list of regular expressions for global variables.
+    #[serde(default)]
+    pub globals_regex: Vec<String>,
+    /// A map of diagnostic codes to their severity settings.
+    #[serde(default)]
+    pub severity: HashMap<DiagnosticCode, DiagnosticSeveritySetting>,
+    /// A list of diagnostic codes that are enabled.
+    #[serde(default)]
+    pub enables: Vec<DiagnosticCode>,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema)]

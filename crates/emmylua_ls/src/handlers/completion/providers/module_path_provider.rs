@@ -89,13 +89,9 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
 }
 
 fn is_require_call(emmyrc: &Emmyrc, name: &str) -> bool {
-    if let Some(runtime) = &emmyrc.runtime {
-        if let Some(funs) = &runtime.require_like_function {
-            for fun in funs {
-                if name == fun {
-                    return true;
-                }
-            }
+    for fun in &emmyrc.runtime.require_like_function {
+        if name == fun {
+            return true;
         }
     }
 

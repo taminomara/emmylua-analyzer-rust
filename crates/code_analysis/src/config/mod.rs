@@ -1,7 +1,7 @@
 mod config_loader;
 mod configs;
 
-use std::collections::HashSet;
+use std::{collections::HashSet, path::PathBuf};
 
 use crate::{semantic::LuaInferConfig, FileId};
 pub use config_loader::load_configs;
@@ -21,38 +21,32 @@ pub struct Emmyrc {
     #[serde(rename = "$schema")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub schema: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub completion: Option<EmmyrcCompletion>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub diagnostics: Option<EmmyrcDiagnostic>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub signature: Option<EmmyrcSignature>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub hint: Option<EmmyrcInlayHint>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub runtime: Option<EmmyrcRuntime>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub workspace: Option<EmmyrcWorkspace>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub resource: Option<EmmyrcResource>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub code_lens: Option<EmmyrcCodeLen>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub strict: Option<EmmyrcStrict>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub semantic_tokens: Option<EmmyrcSemanticToken>,
+    #[serde(default)]
+    pub completion: EmmyrcCompletion,
+    #[serde(default)]
+    pub diagnostics: EmmyrcDiagnostic,
+    #[serde(default)]
+    pub signature: EmmyrcSignature,
+    #[serde(default)]
+    pub hint: EmmyrcInlayHint,
+    #[serde(default)]
+    pub runtime: EmmyrcRuntime,
+    #[serde(default)]
+    pub workspace: EmmyrcWorkspace,
+    #[serde(default)]
+    pub resource: EmmyrcResource,
+    #[serde(default)]
+    pub code_lens: EmmyrcCodeLen,
+    #[serde(default)]
+    pub strict: EmmyrcStrict,
+    #[serde(default)]
+    pub semantic_tokens: EmmyrcSemanticToken,
 }
 
 impl Emmyrc {
     pub fn get_infer_config(&self, file_id: FileId) -> LuaInferConfig {
-        let mut require_map: HashSet<String> = HashSet::new();
-        if let Some(runtime) = &self.runtime {
-            if let Some(require_like_func) = &runtime.require_like_function {
-                for func in require_like_func {
-                    require_map.insert(func.clone());
-                }
-            }
-        }
+        let require_map: HashSet<String> =
+            self.runtime.require_like_function.iter().cloned().collect();
 
         LuaInferConfig::new(file_id, require_map)
     }
@@ -61,10 +55,7 @@ impl Emmyrc {
         &self,
         node_cache: &'cache mut NodeCache,
     ) -> ParserConfig<'cache> {
-        let level = match &self.runtime {
-            Some(runtime) => runtime.version.as_ref().unwrap_or(&EmmyrcLuaVersion::Lua54),
-            None => &EmmyrcLuaVersion::Lua54,
-        };
+        let level = &self.runtime.version;
 
         let lua_language_level = match level {
             EmmyrcLuaVersion::Lua51 => LuaLanguageLevel::Lua51,
@@ -78,11 +69,48 @@ impl Emmyrc {
         ParserConfig::new(lua_language_level, Some(node_cache))
     }
 
-    pub fn get_encoding(&self) -> &str {
-        if let Some(workspace) = &self.workspace {
-            workspace.encoding.as_deref().unwrap_or("utf-8")
-        } else {
-            "utf-8"
-        }
+    pub fn pre_process_emmyrc(&mut self, workspace_root: &PathBuf) {
+        let new_workspace_roots = self
+            .workspace
+            .workspace_roots
+            .iter()
+            .map(|root| pre_process_path(root, workspace_root))
+            .collect::<Vec<String>>();
+        self.workspace.workspace_roots = new_workspace_roots;
+
+        let new_ignore_dir = self
+            .workspace
+            .ignore_dir
+            .iter()
+            .map(|dir| pre_process_path(dir, workspace_root))
+            .collect::<Vec<String>>();
+        self.workspace.ignore_dir = new_ignore_dir;
+
+        let new_paths = self
+            .resource
+            .paths
+            .iter()
+            .map(|path| pre_process_path(path, workspace_root))
+            .collect::<Vec<String>>();
+        self.resource.paths = new_paths;
     }
+}
+
+fn pre_process_path(path: &str, workspace: &PathBuf) -> String {
+    let mut path = path.to_string();
+
+    if path.starts_with('~') {
+        let home_dir = dirs::home_dir().unwrap();
+        path = home_dir.join(&path[1..]).to_string_lossy().to_string();
+    } else if path.starts_with("./") {
+        path = workspace.join(&path[2..]).to_string_lossy().to_string();
+    } else if path.starts_with('/') {
+        path = workspace
+            .join(path.trim_start_matches('/'))
+            .to_string_lossy()
+            .to_string();
+    }
+
+    path = path.replace("${workspaceFolder}", &workspace.to_string_lossy());
+    path
 }

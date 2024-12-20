@@ -1,8 +1,9 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcResource {
-    pub paths: Option<Vec<String>>,
+    #[serde(default)]
+    pub paths: Vec<String>,
 }

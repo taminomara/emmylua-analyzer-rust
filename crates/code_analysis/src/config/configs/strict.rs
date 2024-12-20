@@ -1,11 +1,16 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcStrict {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub require_path: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub type_call: Option<bool>,
+    /// Whether to enable strict mode require path.
+    #[serde(default = "default_true")]
+    pub require_path: bool,
+    #[serde(default)]
+    pub type_call: bool,
+}
+
+fn default_true() -> bool {
+    true
 }

@@ -9,7 +9,7 @@ pub async fn on_did_change_watched_files(
 ) -> Option<()> {
     let mut analysis = context.analysis.write().await;
     let emmyrc = analysis.get_emmyrc();
-    let encoding = emmyrc.get_encoding();
+    let encoding = &emmyrc.workspace.encoding;
     let mut watched_lua_files: Vec<(Uri, Option<String>)> = Vec::new();
     // let
     for file_event in params.changes.into_iter() {

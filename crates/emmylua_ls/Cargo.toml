@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 lsp-server = "0.7.7"
 tokio = { version = "1", features = ["full"] }
-dirs = "5"
 
 code_analysis = { path = "../code_analysis" }
 emmylua_parser = { path = "../emmylua_parser" }

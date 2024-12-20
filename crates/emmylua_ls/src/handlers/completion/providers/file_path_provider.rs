@@ -24,11 +24,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         ""
     };
 
-    let resources = if let Some(resources) = builder.semantic_model.get_emmyrc().resource.as_ref() {
-        resources.paths.clone()?
-    } else {
-        return None;
-    };
+    let resources = builder.semantic_model.get_emmyrc().resource.paths.clone();
 
     let suffix = prefix;
 

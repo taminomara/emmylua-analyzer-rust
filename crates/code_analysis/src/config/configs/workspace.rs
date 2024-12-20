@@ -1,20 +1,24 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcWorkspace {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub ignore_dir: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub ignore_globs: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub library: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub workspace_roots: Option<Vec<String>>,
+    #[serde(default)]
+    pub ignore_dir: Vec<String>,
+    #[serde(default)]
+    pub ignore_globs: Vec<String>,
+    #[serde(default)]
+    pub library: Vec<String>,
+    #[serde(default)]
+    pub workspace_roots: Vec<String>,
     // unused
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub preload_file_size: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub encoding: Option<String>,
+    #[serde(default)]
+    pub preload_file_size: i32,
+    #[serde(default = "encoding_default")]
+    pub encoding: String,
+}
+
+fn encoding_default() -> String {
+    "utf-8".to_string()
 }

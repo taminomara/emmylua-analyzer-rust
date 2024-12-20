@@ -29,19 +29,9 @@ impl LuaDiagnostic {
     }
 
     pub fn update_config(&mut self, emmyrc: Arc<Emmyrc>) {
-        if let Some(diagnostic) = &emmyrc.diagnostics {
-            if let Some(enable) = &diagnostic.enable {
-                self.enable = *enable;
-            }
-
-            if let Some(disable) = &diagnostic.disable {
-                self.workspace_disabled = disable.iter().cloned().collect();
-            }
-
-            if let Some(enable) = &diagnostic.enables {
-                self.workspace_enabled = enable.iter().cloned().collect();
-            }
-        }
+        self.enable = emmyrc.diagnostics.enable;
+        self.workspace_disabled = emmyrc.diagnostics.disable.iter().cloned().collect();
+        self.workspace_enabled = emmyrc.diagnostics.enables.iter().cloned().collect();
     }
 
     pub async fn diagnose_file(

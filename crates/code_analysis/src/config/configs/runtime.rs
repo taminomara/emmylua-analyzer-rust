@@ -1,19 +1,19 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcRuntime {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<EmmyrcLuaVersion>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub require_like_function: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub framework_versions: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub extensions: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub require_pattern: Option<Vec<String>>,
+    #[serde(default)]
+    pub version: EmmyrcLuaVersion,
+    #[serde(default)]
+    pub require_like_function: Vec<String>,
+    #[serde(default)]
+    pub framework_versions: Vec<String>,
+    #[serde(default)]
+    pub extensions: Vec<String>,
+    #[serde(default)]
+    pub require_pattern: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema)]
@@ -31,3 +31,10 @@ pub enum EmmyrcLuaVersion {
     #[serde(rename = "LuaLatest")]
     LuaLatest,
 }
+
+impl Default for EmmyrcLuaVersion {
+    fn default() -> Self {
+        EmmyrcLuaVersion::LuaLatest
+    }
+}
+

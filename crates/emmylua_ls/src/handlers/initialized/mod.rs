@@ -1,14 +1,12 @@
 mod client_config;
 mod collect_files;
-mod regsiter_file_watch;
 mod locale;
+mod regsiter_file_watch;
 
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
 use crate::{
-    context::{
-        load_emmy_config, ClientProxy, ServerContextSnapshot, VsCodeStatusBar,
-    },
+    context::{load_emmy_config, ClientProxy, ServerContextSnapshot, VsCodeStatusBar},
     logger::init_logger,
 };
 use client_config::get_client_config;
@@ -94,21 +92,15 @@ pub async fn init_analysis(
         mut_analysis.add_workspace_root(workspace_root.clone());
     }
 
-    if let Some(workspace) = &emmyrc.workspace {
-        if let Some(workspace_roots) = &workspace.workspace_roots {
-            for workspace_root in workspace_roots {
-                info!("add workspace root: {:?}", workspace_root);
-                mut_analysis.add_workspace_root(PathBuf::from_str(workspace_root).unwrap());
-            }
-        }
+    for workspace_root in &emmyrc.workspace.workspace_roots {
+        info!("add workspace root: {:?}", workspace_root);
+        mut_analysis.add_workspace_root(PathBuf::from_str(workspace_root).unwrap());
+    }
 
-        if let Some(library) = &workspace.library {
-            for lib in library {
-                info!("add library: {:?}", lib);
-                mut_analysis.add_workspace_root(PathBuf::from_str(lib).unwrap());
-                workspace_folders.push(PathBuf::from_str(lib).unwrap());
-            }
-        }
+    for lib in &emmyrc.workspace.library {
+        info!("add library: {:?}", lib);
+        mut_analysis.add_workspace_root(PathBuf::from_str(lib).unwrap());
+        workspace_folders.push(PathBuf::from_str(lib).unwrap());
     }
 
     status_bar.report_progress("Collect files", 0.1);

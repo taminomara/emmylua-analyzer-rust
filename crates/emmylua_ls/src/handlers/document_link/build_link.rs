@@ -20,13 +20,7 @@ pub fn build_links(
 
     let mut result = vec![];
     for token in string_tokens {
-        try_build_file_link(
-            db,
-            token,
-            document,
-            &mut result,
-            &emmyrc,
-        );
+        try_build_file_link(db, token, document, &mut result, &emmyrc);
     }
 
     Some(result)
@@ -61,12 +55,7 @@ fn try_build_file_link(
             return Some(());
         }
 
-        let resource_paths = if let Some(resource) = &emmyrc.resource {
-            resource.paths.clone()
-        } else {
-            None
-        }?;
-
+        let resource_paths = emmyrc.resource.paths.clone();
         for resource_path in resource_paths {
             let full_path = PathBuf::from(resource_path).join(&suffix_path);
             if full_path.exists() {
@@ -126,13 +115,10 @@ fn is_require_path(token: LuaStringToken, emmyrc: &Emmyrc) -> Option<bool> {
         if name == "require" {
             return Some(true);
         }
-        if let Some(runtime) = &emmyrc.runtime {
-            if let Some(require_like_functions) = &runtime.require_like_function {
-                for require_like_function in require_like_functions {
-                    if name == *require_like_function {
-                        return Some(true);
-                    }
-                }
+
+        for require_like_function in &emmyrc.runtime.require_like_function {
+            if name == *require_like_function {
+                return Some(true);
             }
         }
     }
