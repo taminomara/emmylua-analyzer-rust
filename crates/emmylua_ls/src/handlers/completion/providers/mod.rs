@@ -3,6 +3,7 @@ mod file_path_provider;
 mod keywords_provider;
 mod member_provider;
 mod module_path_provider;
+mod doc_tag_provider;
 
 use super::completion_builder::CompletionBuilder;
 
@@ -12,6 +13,7 @@ pub fn add_completions(builder: &mut CompletionBuilder) -> Option<()> {
     keywords_provider::add_completion(builder);
     env_provider::add_completion(builder);
     member_provider::add_completion(builder);
+    doc_tag_provider::add_completion(builder);
 
     Some(())
 }
