@@ -32,7 +32,6 @@ pub fn infer_call_expr(
         }
     }
 
-
     let prefix_type = infer_expr(db, config, prefix_expr)?;
 
     infer_call_result(db, config, prefix_type, call_expr, &mut InferGuard::new())
@@ -128,8 +127,12 @@ fn infer_call_by_signature(
         };
 
         if signature.is_generic() && ret.contain_tpl() {
-            let fake_doc_function =
-                LuaFunctionType::new(false, signature.get_type_params(), vec![ret.clone()]);
+            let fake_doc_function = LuaFunctionType::new(
+                false,
+                signature.is_colon_define,
+                signature.get_type_params(),
+                vec![ret.clone()],
+            );
             let instantiate_func = instantiate_doc_function(
                 db,
                 config,
@@ -156,6 +159,7 @@ fn infer_call_by_signature(
         };
         let fake_doc_function = Arc::new(LuaFunctionType::new(
             false,
+            signature.is_colon_define,
             signature.get_type_params(),
             vec![ret.clone()],
         ));
@@ -212,6 +216,7 @@ fn instantiate_doc_function(
 
     Some(LuaFunctionType::new(
         is_async,
+        colon_define,
         new_params,
         func_return_types,
     ))
@@ -355,9 +360,7 @@ fn infer_require_call(
     let first_arg = arg_list.get_args().next()?;
     let require_path_type = infer_expr(db, config, first_arg)?;
     let module_path: String = match &require_path_type {
-        LuaType::StringConst(module_path) => {
-            module_path.as_ref().to_string()
-        }
+        LuaType::StringConst(module_path) => module_path.as_ref().to_string(),
         _ => {
             return None;
         }

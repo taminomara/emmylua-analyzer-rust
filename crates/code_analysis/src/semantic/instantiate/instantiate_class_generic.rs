@@ -4,7 +4,8 @@ use crate::{
     db_index::{
         LuaExistFieldType, LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIntersectionType,
         LuaMultiReturn, LuaObjectType, LuaTupleType, LuaType, LuaUnionType,
-    }, DbIndex, GenericTpl, LuaPropertyOwnerId, LuaSignatureId
+    },
+    DbIndex, GenericTpl, LuaPropertyOwnerId, LuaSignatureId,
 };
 
 pub fn instantiate_type(db: &DbIndex, ty: &LuaType, params: &Vec<LuaType>) -> LuaType {
@@ -62,6 +63,7 @@ fn instantiate_doc_function(
     let func_params = doc_func.get_params();
     let ret = doc_func.get_ret();
     let is_async = doc_func.is_async();
+    let colon_define = doc_func.is_colon_define();
     let mut new_params = Vec::new();
     for (name, param_type) in func_params {
         if param_type.is_some() {
@@ -78,7 +80,7 @@ fn instantiate_doc_function(
         let new_ret_type = instantiate_type(db, ret_type, params);
         new_ret.push(new_ret_type);
     }
-    LuaType::DocFunction(LuaFunctionType::new(is_async, new_params, new_ret).into())
+    LuaType::DocFunction(LuaFunctionType::new(is_async, colon_define, new_params, new_ret).into())
 }
 
 fn instantiate_object(db: &DbIndex, object: &LuaObjectType, params: &Vec<LuaType>) -> LuaType {
@@ -217,14 +219,20 @@ fn instantiate_signature(
             .iter()
             .map(|ret| ret.type_ref.clone())
             .collect();
-        let is_async = if let Some(property) = db.get_property_index().get_property(LuaPropertyOwnerId::Signature(
-            signature_id.clone()
-        )) {
+        let is_async = if let Some(property) = db
+            .get_property_index()
+            .get_property(LuaPropertyOwnerId::Signature(signature_id.clone()))
+        {
             property.is_async
         } else {
             false
         };
-        let fake_doc_function = LuaFunctionType::new(is_async, signature.get_type_params(), rets);
+        let fake_doc_function = LuaFunctionType::new(
+            is_async,
+            signature.is_colon_define,
+            signature.get_type_params(),
+            rets,
+        );
         let instantiate_func = instantiate_doc_function(db, &fake_doc_function, params);
         return instantiate_func;
     }

@@ -169,6 +169,7 @@ fn infer_doc_func_type_compact_for_signature(
 
     let fake_doc_func = LuaFunctionType::new(
         false,
+        signature.is_colon_define,
         signature_params.iter().cloned().collect(),
         Vec::new(),
     );

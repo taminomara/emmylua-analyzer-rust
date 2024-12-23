@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use emmylua_parser::{
-    LuaAstNode, LuaDocBinaryType, LuaDocFuncType, LuaDocGenericType, LuaDocObjectFieldKey,
+    LuaAst, LuaAstNode, LuaDocBinaryType, LuaDocFuncType, LuaDocGenericType, LuaDocObjectFieldKey,
     LuaDocObjectType, LuaDocStrTplType, LuaDocType, LuaDocUnaryType, LuaLiteralToken,
-    LuaTypeBinaryOperator, LuaTypeUnaryOperator,
+    LuaTypeBinaryOperator, LuaTypeUnaryOperator, LuaVarExpr,
 };
 use rowan::TextRange;
 
@@ -316,7 +316,26 @@ fn infer_func_type(analyzer: &mut DocAnalyzer, func: LuaDocFuncType) -> LuaType 
     }
 
     let is_async = func.is_async();
-    LuaType::DocFunction(LuaFunctionType::new(is_async, params_result, return_types).into())
+    let is_colon = get_colon_define(analyzer).unwrap_or(false);
+
+    LuaType::DocFunction(
+        LuaFunctionType::new(is_async, is_colon, params_result, return_types).into(),
+    )
+}
+
+fn get_colon_define(analyzer: &mut DocAnalyzer) -> Option<bool> {
+    let owner = analyzer.comment.get_owner()?;
+    match owner {
+        LuaAst::LuaFuncStat(func_stat) => {
+            let func_name = func_stat.get_func_name()?;
+            if let LuaVarExpr::IndexExpr(index_expr) = func_name {
+                return Some(index_expr.get_index_token()?.is_colon());
+            }
+        }
+        _ => {}
+    }
+
+    None
 }
 
 fn infer_object_type(analyzer: &mut DocAnalyzer, object_type: LuaDocObjectType) -> LuaType {

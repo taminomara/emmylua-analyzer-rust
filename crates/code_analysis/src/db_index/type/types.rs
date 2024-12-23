@@ -407,14 +407,21 @@ impl From<LuaTupleType> for LuaType {
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct LuaFunctionType {
     is_async: bool,
+    is_colon_define: bool,
     params: Vec<(String, Option<LuaType>)>,
     ret: Vec<LuaType>,
 }
 
 impl LuaFunctionType {
-    pub fn new(is_async: bool, params: Vec<(String, Option<LuaType>)>, ret: Vec<LuaType>) -> Self {
+    pub fn new(
+        is_async: bool,
+        is_colon_define: bool,
+        params: Vec<(String, Option<LuaType>)>,
+        ret: Vec<LuaType>,
+    ) -> Self {
         Self {
             is_async,
+            is_colon_define,
             params,
             ret,
         }
@@ -422,6 +429,10 @@ impl LuaFunctionType {
 
     pub fn is_async(&self) -> bool {
         self.is_async
+    }
+
+    pub fn is_colon_define(&self) -> bool {
+        self.is_colon_define
     }
 
     pub fn get_params(&self) -> &[(String, Option<LuaType>)] {

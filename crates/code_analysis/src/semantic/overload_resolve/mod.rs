@@ -84,6 +84,7 @@ fn resolve_signature_by_generic(
         }
         let new_func = Arc::new(LuaFunctionType::new(
             func.is_async(),
+            func.is_colon_define(),
             new_params,
             func_return_types,
         ));
