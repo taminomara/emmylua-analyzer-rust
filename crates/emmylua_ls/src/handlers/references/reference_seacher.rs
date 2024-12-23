@@ -92,8 +92,8 @@ fn search_member_references(
                 semantic_cache.get_mut(&in_filed_syntax_id.file_id)?
             };
         let root = semantic_model.get_root();
-        let token = in_filed_syntax_id.value.to_token_from_root(root.syntax())?;
-        let semantic_info = semantic_model.get_semantic_info(token.into())?;
+        let node = in_filed_syntax_id.value.to_node_from_root(root.syntax())?;
+        let semantic_info = semantic_model.get_semantic_info(node.into())?;
         if semantic_info.property_owner? == LuaPropertyOwnerId::Member(member_id) {
             let document = semantic_model.get_document();
             let range = in_filed_syntax_id.value.get_range();
