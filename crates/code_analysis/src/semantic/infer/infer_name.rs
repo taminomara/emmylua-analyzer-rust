@@ -47,13 +47,13 @@ pub fn infer_name_expr(
 }
 
 fn infer_self(db: &DbIndex, config: &LuaInferConfig, name_expr: LuaNameExpr) -> InferResult {
-    let name = name_expr.get_name_token()?.get_name_text().to_string();
     let file_id = config.get_file_id();
     let tree = db.get_decl_index().get_decl_tree(&file_id)?;
     let id = tree.find_self_decl(db, name_expr)?;
     match id {
         LuaDeclOrMemberId::Decl(decl_id) => {
             let decl = db.get_decl_index().get_decl(&decl_id)?;
+            let name = decl.get_name();
             if decl.is_global() {
                 return Some(
                     db.get_decl_index()

@@ -16,7 +16,7 @@ pub fn infer_expr_semantic_info(
     infer_config: &mut LuaInferConfig,
     expr: LuaExpr,
 ) -> Option<SemanticInfo> {
-    let typ = infer_expr(db, infer_config, expr.clone())?;
+    let typ = infer_expr(db, infer_config, expr.clone()).unwrap_or(LuaType::Unknown);
     let file_id = infer_config.get_file_id();
     let maybe_decl_id = LuaDeclId::new(file_id, expr.get_position());
     if let Some(_) = db.get_decl_index().get_decl(&maybe_decl_id) {

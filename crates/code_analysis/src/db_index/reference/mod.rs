@@ -14,7 +14,7 @@ use super::{traits::LuaIndex, LuaDeclId, LuaMemberKey};
 #[derive(Debug)]
 pub struct LuaReferenceIndex {
     local_references: HashMap<FileId, LocalReference>,
-    index_reference: HashMap<LuaMemberKey, HashMap<FileId, LuaSyntaxId>>,
+    index_reference: HashMap<LuaMemberKey, HashMap<FileId, Vec<LuaSyntaxId>>>,
 }
 
 impl LuaReferenceIndex {
@@ -37,10 +37,9 @@ impl LuaReferenceIndex {
         self.index_reference
             .entry(LuaMemberKey::Name(key.clone()))
             .or_insert_with(HashMap::new)
-            .insert(
-                file_id,
-                LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), range),
-            );
+            .entry(file_id)
+            .or_insert_with(Vec::new)
+            .push(LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), range));
     }
 
     pub fn add_index_reference(
@@ -52,7 +51,9 @@ impl LuaReferenceIndex {
         self.index_reference
             .entry(key)
             .or_insert_with(HashMap::new)
-            .insert(file_id, syntax_id);
+            .entry(file_id)
+            .or_insert_with(Vec::new)
+            .push(syntax_id);
     }
 
     pub fn get_local_reference(&self, file_id: &FileId) -> Option<&LocalReference> {
@@ -93,13 +94,14 @@ impl LuaReferenceIndex {
             .index_reference
             .get(&LuaMemberKey::Name(ArcIntern::new(name.to_string())))?
             .iter()
-            .filter_map(|(id, syntax_id)| {
-                if id == &file_id {
-                    Some(syntax_id.get_range())
+            .filter_map(|(key_file_id, syntax_ids)| {
+                if *key_file_id != file_id {
+                    Some(syntax_ids.iter().map(|syntax_id| syntax_id.get_range()))
                 } else {
                     None
                 }
             })
+            .flatten()
             .collect();
 
         Some(results)
@@ -110,13 +112,16 @@ impl LuaReferenceIndex {
             .index_reference
             .get(&key)?
             .iter()
-            .filter_map(|(file_id, syntax_id)| {
-                if syntax_id.get_kind() == LuaSyntaxKind::NameExpr {
-                    Some(InFiled::new(*file_id, syntax_id.get_range()))
-                } else {
-                    None
-                }
+            .map(|(file_id, syntax_ids)| {
+                syntax_ids.iter().filter_map(|syntax_id| {
+                    if syntax_id.get_kind() == LuaSyntaxKind::NameExpr {
+                        Some(InFiled::new(*file_id, syntax_id.get_range()))
+                    } else {
+                        None
+                    }
+                })
             })
+            .flatten()
             .collect();
 
         Some(results)
@@ -127,7 +132,12 @@ impl LuaReferenceIndex {
             .index_reference
             .get(&key)?
             .iter()
-            .map(|(file_id, syntax_id)| InFiled::new(*file_id, *syntax_id))
+            .map(|(file_id, syntax_ids)| {
+                syntax_ids
+                    .iter()
+                    .map(|syntax_id| InFiled::new(*file_id, *syntax_id))
+            })
+            .flatten()
             .collect();
 
         Some(results)
