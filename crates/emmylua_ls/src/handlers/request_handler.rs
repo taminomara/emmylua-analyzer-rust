@@ -5,7 +5,7 @@ use lsp_server::{Request, RequestId, Response};
 use lsp_types::request::{
     ColorPresentationRequest, Completion, DocumentColor, DocumentLinkRequest, DocumentLinkResolve,
     DocumentSymbolRequest, FoldingRangeRequest, GotoDefinition, HoverRequest, InlayHintRequest,
-    InlayHintResolveRequest, ResolveCompletionItem, SelectionRangeRequest,
+    InlayHintResolveRequest, References, ResolveCompletionItem, SelectionRangeRequest,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use tokio_util::sync::CancellationToken;
@@ -23,6 +23,7 @@ use super::{
     fold_range::on_folding_range_handler,
     hover::on_hover,
     inlay_hint::{on_inlay_hint_handler, on_resolve_inlay_hint},
+    references::on_references_handler,
 };
 
 pub async fn on_req_handler(
@@ -57,6 +58,8 @@ pub async fn on_req_handler(
         .on_parallel::<InlayHintResolveRequest, _, _>(on_resolve_inlay_hint)
         .await
         .on_parallel::<GotoDefinition, _, _>(on_goto_defination_handler)
+        .await
+        .on_parallel::<References, _, _>(on_references_handler)
         .await
         .finish();
     Ok(())

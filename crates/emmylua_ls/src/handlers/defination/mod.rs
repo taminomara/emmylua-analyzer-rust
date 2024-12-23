@@ -1,7 +1,5 @@
-use std::vec;
-
 use code_analysis::LuaPropertyOwnerId;
-use emmylua_parser::LuaAstNode;
+use emmylua_parser::{LuaAstNode, LuaTokenKind};
 use lsp_types::{GotoDefinitionParams, GotoDefinitionResponse};
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
@@ -26,7 +24,13 @@ pub async fn on_goto_defination_handler(
 
     let token = match root.syntax().token_at_offset(position_offset) {
         TokenAtOffset::Single(token) => token,
-        TokenAtOffset::Between(_, right) => right,
+        TokenAtOffset::Between(left, right) => {
+            if left.kind() == LuaTokenKind::TkName.into() {
+                left
+            } else {
+                right
+            }
+        }
         TokenAtOffset::None => {
             return None;
         }
@@ -35,19 +39,28 @@ pub async fn on_goto_defination_handler(
     let semantic_info = semantic_model.get_semantic_info(token.clone().into())?;
     match semantic_info.property_owner? {
         LuaPropertyOwnerId::LuaDecl(decl_id) => {
-            let decl = semantic_model.get_db().get_decl_index().get_decl(&decl_id)?;
+            let decl = semantic_model
+                .get_db()
+                .get_decl_index()
+                .get_decl(&decl_id)?;
             let document = semantic_model.get_document_by_file_id(decl_id.file_id)?;
             let location = document.to_lsp_location(decl.get_range())?;
-            return Some(GotoDefinitionResponse::Scalar(location))
+            return Some(GotoDefinitionResponse::Scalar(location));
         }
         LuaPropertyOwnerId::Member(member_id) => {
-            let member = semantic_model.get_db().get_member_index().get_member(&member_id)?;
+            let member = semantic_model
+                .get_db()
+                .get_member_index()
+                .get_member(&member_id)?;
             let document = semantic_model.get_document_by_file_id(member_id.file_id)?;
             let location = document.to_lsp_location(member.get_range())?;
-            return Some(GotoDefinitionResponse::Scalar(location))
+            return Some(GotoDefinitionResponse::Scalar(location));
         }
         LuaPropertyOwnerId::TypeDecl(type_decl_id) => {
-            let type_decl = semantic_model.get_db().get_type_index().get_type_decl(&type_decl_id)?;
+            let type_decl = semantic_model
+                .get_db()
+                .get_type_index()
+                .get_type_decl(&type_decl_id)?;
             let mut locations = Vec::new();
             for lua_location in type_decl.get_locations() {
                 let document = semantic_model.get_document_by_file_id(lua_location.file_id)?;
@@ -55,11 +68,10 @@ pub async fn on_goto_defination_handler(
                 locations.push(location);
             }
 
-            return Some(GotoDefinitionResponse::Array(locations))
+            return Some(GotoDefinitionResponse::Array(locations));
         }
-        _ =>{}
+        _ => {}
     }
-
 
     None
 }

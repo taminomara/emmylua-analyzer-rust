@@ -60,7 +60,9 @@ impl LuaReferenceIndex {
     }
 
     pub fn create_local_reference(&mut self, file_id: FileId) {
-        self.local_references.entry(file_id).or_insert_with(LocalReference::new);
+        self.local_references
+            .entry(file_id)
+            .or_insert_with(LocalReference::new);
     }
 
     pub fn get_local_references(
@@ -108,7 +110,24 @@ impl LuaReferenceIndex {
             .index_reference
             .get(&key)?
             .iter()
-            .map(|(file_id, syntax_id)| InFiled::new(*file_id, syntax_id.get_range()))
+            .filter_map(|(file_id, syntax_id)| {
+                if syntax_id.get_kind() == LuaSyntaxKind::NameExpr {
+                    Some(InFiled::new(*file_id, syntax_id.get_range()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        Some(results)
+    }
+
+    pub fn get_index_references(&self, key: &LuaMemberKey) -> Option<Vec<InFiled<LuaSyntaxId>>> {
+        let results = self
+            .index_reference
+            .get(&key)?
+            .iter()
+            .map(|(file_id, syntax_id)| InFiled::new(*file_id, *syntax_id))
             .collect();
 
         Some(results)

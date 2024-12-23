@@ -29,7 +29,7 @@ pub fn infer_token_semantic_info(
             let file_id = infer_config.get_file_id();
             let decl_id = LuaDeclId::new(file_id, token.text_range().start());
             let decl = db.get_decl_index().get_decl(&decl_id)?;
-            let typ = decl.get_type().cloned()?;
+            let typ = decl.get_type().cloned().unwrap_or(LuaType::Unknown);
             Some(SemanticInfo {
                 typ,
                 property_owner: Some(LuaPropertyOwnerId::LuaDecl(decl_id)),

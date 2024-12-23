@@ -83,10 +83,6 @@ function string.dump(func, strip) end
 ---@return number, number, string
 function string.find(s, pattern, init, plain) end
 
---- a built-in type
---- represents a format string
----@class strFmt<T> : string
-
 ---
 --- Returns a formatted version of its variable number of arguments following
 --- the description given in its first argument (which must be a string). The
@@ -117,7 +113,7 @@ function string.find(s, pattern, init, plain) end
 --- has any modifier (flags, width, length), the string argument should not
 --- contain embedded zeros.
 ---@generic T
----@param fmt strFmt<T>
+---@param fmt string
 ---@param ... T...
 ---@return string
 ---@nodiscard

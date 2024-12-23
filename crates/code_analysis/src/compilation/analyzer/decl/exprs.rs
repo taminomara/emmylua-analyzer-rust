@@ -123,7 +123,7 @@ pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, expr: LuaTableExpr) -> Op
                 analyzer.db.get_reference_index_mut().add_index_reference(
                     key.clone(),
                     file_id,
-                    expr.get_syntax_id(),
+                    field.get_syntax_id(),
                 );
 
                 let member =
