@@ -75,7 +75,7 @@ impl LuaMember {
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash, Serialize, Deserialize)]
 pub struct LuaMemberId {
-    file_id: FileId,
+    pub file_id: FileId,
     id: LuaSyntaxId,
 }
 

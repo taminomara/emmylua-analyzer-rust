@@ -1,4 +1,5 @@
 mod completion;
+mod defination;
 mod document_color;
 mod document_link;
 mod document_selection_range;
@@ -12,6 +13,7 @@ mod notification_handler;
 mod request_handler;
 mod response_handler;
 mod text_document;
+mod references;
 
 pub use initialized::initialized_handler;
 pub use initialized::{init_analysis, ClientConfig};
@@ -71,6 +73,8 @@ pub fn server_capabilities() -> ServerCapabilities {
                 work_done_progress_options: Default::default(),
             },
         ))),
+        definition_provider: Some(OneOf::Left(true)),
+        references_provider: Some(OneOf::Left(true)),
         ..Default::default()
     }
 }

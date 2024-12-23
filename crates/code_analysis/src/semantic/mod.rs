@@ -55,6 +55,10 @@ impl<'a> SemanticModel<'a> {
         self.db.get_vfs().get_document(&self.file_id).unwrap()
     }
 
+    pub fn get_document_by_file_id(&self, file_id: FileId) -> Option<LuaDocument> {
+        self.db.get_vfs().get_document(&file_id)
+    }
+
     pub fn get_file_parse_error(&self) -> Option<Vec<(String, TextRange)>> {
         self.db.get_vfs().get_file_parse_error(&self.file_id)
     }

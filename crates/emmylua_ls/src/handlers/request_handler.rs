@@ -4,7 +4,7 @@ use log::error;
 use lsp_server::{Request, RequestId, Response};
 use lsp_types::request::{
     ColorPresentationRequest, Completion, DocumentColor, DocumentLinkRequest, DocumentLinkResolve,
-    DocumentSymbolRequest, FoldingRangeRequest, HoverRequest, InlayHintRequest,
+    DocumentSymbolRequest, FoldingRangeRequest, GotoDefinition, HoverRequest, InlayHintRequest,
     InlayHintResolveRequest, ResolveCompletionItem, SelectionRangeRequest,
 };
 use serde::{de::DeserializeOwned, Serialize};
@@ -14,6 +14,7 @@ use crate::context::{ServerContext, ServerContextSnapshot};
 
 use super::{
     completion::{on_completion_handler, on_completion_resolve_handler},
+    defination::on_goto_defination_handler,
     document_color::{on_document_color, on_document_color_presentation},
     document_link::{on_document_link_handler, on_document_link_resolve_handler},
     document_selection_range::on_document_selection_range_handle,
@@ -54,6 +55,8 @@ pub async fn on_req_handler(
         .on_parallel::<InlayHintRequest, _, _>(on_inlay_hint_handler)
         .await
         .on_parallel::<InlayHintResolveRequest, _, _>(on_resolve_inlay_hint)
+        .await
+        .on_parallel::<GotoDefinition, _, _>(on_goto_defination_handler)
         .await
         .finish();
     Ok(())
