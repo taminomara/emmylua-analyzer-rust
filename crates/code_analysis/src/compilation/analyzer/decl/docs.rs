@@ -1,6 +1,5 @@
 use emmylua_parser::{
-    LuaAstToken, LuaAstTokenChildren, LuaDocTagAlias, LuaDocTagClass, LuaDocTagEnum, LuaDocTagMeta,
-    LuaDocTagNamespace, LuaDocTagUsing, LuaNameToken,
+    LuaAstToken, LuaDocAttribute, LuaDocTagAlias, LuaDocTagClass, LuaDocTagEnum, LuaDocTagMeta, LuaDocTagNamespace, LuaDocTagUsing
 };
 use flagset::FlagSet;
 
@@ -16,7 +15,7 @@ pub fn analyze_doc_tag_class(analyzer: &mut DeclAnalyzer, class: LuaDocTagClass)
     let name = name_token.get_name_text().to_string();
     let range = name_token.syntax().text_range();
 
-    let attrib = get_attrib_value(class.get_attrib()?.get_attrib_tokens());
+    let attrib = get_attrib_value(class.get_attrib());
 
     let file_id = analyzer.get_file_id();
     let r = analyzer.db.get_type_index_mut().add_type_decl(
@@ -38,11 +37,11 @@ pub fn analyze_doc_tag_class(analyzer: &mut DeclAnalyzer, class: LuaDocTagClass)
 }
 
 fn get_attrib_value(
-    attrib: LuaAstTokenChildren<LuaNameToken>,
+    attrib: Option<LuaDocAttribute>,
 ) -> Option<FlagSet<LuaTypeAttribute>> {
     let mut attr: FlagSet<LuaTypeAttribute> = LuaTypeAttribute::None.into();
 
-    for token in attrib {
+    for token in attrib?.get_attrib_tokens() {
         match token.get_name_text() {
             "partial" => {
                 attr |= LuaTypeAttribute::Partial;
@@ -67,7 +66,7 @@ pub fn analyze_doc_tag_enum(analyzer: &mut DeclAnalyzer, enum_: LuaDocTagEnum) -
     let name = name_token.get_name_text().to_string();
     let range = name_token.syntax().text_range();
 
-    let attrib = get_attrib_value(enum_.get_attrib()?.get_attrib_tokens());
+    let attrib = get_attrib_value(enum_.get_attrib());
 
     let file_id = analyzer.get_file_id();
     let r = analyzer.db.get_type_index_mut().add_type_decl(
