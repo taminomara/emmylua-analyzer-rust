@@ -189,23 +189,20 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
     Some(())
 }
 
-pub fn analyze_local_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalFuncStat) {
-    if let Some(local_name) = stat.get_local_name() {
-        let name = if let Some(name_token) = local_name.get_name_token() {
-            name_token.get_name_text().to_string()
-        } else {
-            return;
-        };
-        let range = local_name.get_range();
-        let decl = LuaDecl::Local {
-            name,
-            file_id: analyzer.get_file_id(),
-            kind: local_name.syntax().kind().into(),
-            range,
-            attrib: None,
-            decl_type: None,
-        };
+pub fn analyze_local_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalFuncStat) -> Option<()> {
+    let local_name = stat.get_local_name()?;
+    let name = local_name.get_name_token()?.get_name_text().to_string();
+    let range = local_name.get_range();
+    let decl = LuaDecl::Local {
+        name,
+        file_id: analyzer.get_file_id(),
+        kind: local_name.syntax().kind().into(),
+        range,
+        attrib: None,
+        decl_type: None,
+    };
 
-        analyzer.add_decl(decl);
-    }
+    analyzer.add_decl(decl);
+
+    Some(())
 }

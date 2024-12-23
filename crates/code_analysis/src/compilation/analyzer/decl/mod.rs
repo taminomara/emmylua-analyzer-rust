@@ -15,7 +15,8 @@ use crate::{
 
 pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     for in_filed_tree in context.tree_list.iter() {
-        db.get_reference_index_mut().create_local_reference(in_filed_tree.file_id);
+        db.get_reference_index_mut()
+            .create_local_reference(in_filed_tree.file_id);
         let mut analyzer =
             DeclAnalyzer::new(db, in_filed_tree.file_id, in_filed_tree.value.clone());
         analyzer.analyze();

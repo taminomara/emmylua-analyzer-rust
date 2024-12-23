@@ -9,14 +9,11 @@ use crate::{
 
 use super::DeclAnalyzer;
 
-pub fn analyze_name_expr(analyzer: &mut DeclAnalyzer, expr: LuaNameExpr) {
-    let name = expr.get_name_token().map_or_else(
-        || "".to_string(),
-        |name_token| name_token.get_name_text().to_string(),
-    );
+pub fn analyze_name_expr(analyzer: &mut DeclAnalyzer, expr: LuaNameExpr) -> Option<()> {
+    let name = expr.get_name_token()?.get_name_text().to_string();
     // donot analyze self here
     if name == "self" {
-        return;
+        return Some(());
     }
 
     let position = expr.get_position();
@@ -31,7 +28,7 @@ pub fn analyze_name_expr(analyzer: &mut DeclAnalyzer, expr: LuaNameExpr) {
             (Some(decl.get_id()), true)
         } else {
             if decl.get_position() == position {
-                return;
+                return Some(());
             }
             // reference in filed global variable
             (Some(decl.get_id()), false)
@@ -49,6 +46,8 @@ pub fn analyze_name_expr(analyzer: &mut DeclAnalyzer, expr: LuaNameExpr) {
     if !is_local {
         reference_index.add_global_reference(name, file_id, range);
     }
+
+    Some(())
 }
 
 pub fn analyze_index_expr(analyzer: &mut DeclAnalyzer, expr: LuaIndexExpr) -> Option<()> {

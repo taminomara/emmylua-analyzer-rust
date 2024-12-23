@@ -76,13 +76,7 @@ impl LuaTypeIndex {
         if let Some(decls) = self.full_name_type_map.get_mut(&id) {
             let can_add = match (decls.get_attrib(), attrib) {
                 (Some(a), Some(b)) => {
-                    if a.contains(LuaTypeAttribute::Partial)
-                        && b.contains(LuaTypeAttribute::Partial)
-                    {
-                        true
-                    } else {
-                        false
-                    }
+                    a.contains(LuaTypeAttribute::Partial) && b.contains(LuaTypeAttribute::Partial)
                 }
                 _ => false,
             };

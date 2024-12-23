@@ -11,21 +11,12 @@ use crate::{
 
 use super::DeclAnalyzer;
 
-pub fn analyze_doc_tag_class(analyzer: &mut DeclAnalyzer, class: LuaDocTagClass) {
-    let (name, range) = if let Some(name_token) = class.get_name_token() {
-        (
-            name_token.get_name_text().to_string(),
-            name_token.syntax().text_range(),
-        )
-    } else {
-        return;
-    };
+pub fn analyze_doc_tag_class(analyzer: &mut DeclAnalyzer, class: LuaDocTagClass) -> Option<()> {
+    let name_token = class.get_name_token()?;
+    let name = name_token.get_name_text().to_string();
+    let range = name_token.syntax().text_range();
 
-    let attrib = if let Some(attrib) = class.get_attrib() {
-        get_attrib_value(attrib.get_attrib_tokens())
-    } else {
-        None
-    };
+    let attrib = get_attrib_value(class.get_attrib()?.get_attrib_tokens());
 
     let file_id = analyzer.get_file_id();
     let r = analyzer.db.get_type_index_mut().add_type_decl(
@@ -42,6 +33,8 @@ pub fn analyze_doc_tag_class(analyzer: &mut DeclAnalyzer, class: LuaDocTagClass)
             AnalyzeError::new(DiagnosticCode::DuplicateType, &e, range),
         );
     }
+
+    Some(())
 }
 
 fn get_attrib_value(
@@ -69,21 +62,12 @@ fn get_attrib_value(
     Some(attr)
 }
 
-pub fn analyze_doc_tag_enum(analyzer: &mut DeclAnalyzer, enum_: LuaDocTagEnum) {
-    let (name, range) = if let Some(name_token) = enum_.get_name_token() {
-        (
-            name_token.get_name_text().to_string(),
-            name_token.syntax().text_range(),
-        )
-    } else {
-        return;
-    };
+pub fn analyze_doc_tag_enum(analyzer: &mut DeclAnalyzer, enum_: LuaDocTagEnum) -> Option<()> {
+    let name_token = enum_.get_name_token()?;
+    let name = name_token.get_name_text().to_string();
+    let range = name_token.syntax().text_range();
 
-    let attrib = if let Some(attrib) = enum_.get_attrib() {
-        get_attrib_value(attrib.get_attrib_tokens())
-    } else {
-        None
-    };
+    let attrib = get_attrib_value(enum_.get_attrib()?.get_attrib_tokens());
 
     let file_id = analyzer.get_file_id();
     let r = analyzer.db.get_type_index_mut().add_type_decl(
@@ -100,17 +84,14 @@ pub fn analyze_doc_tag_enum(analyzer: &mut DeclAnalyzer, enum_: LuaDocTagEnum) {
             AnalyzeError::new(DiagnosticCode::DuplicateType, &e, range),
         );
     }
+
+    Some(())
 }
 
-pub fn analyze_doc_tag_alias(analyzer: &mut DeclAnalyzer, alias: LuaDocTagAlias) {
-    let (name, range) = if let Some(name_token) = alias.get_name_token() {
-        (
-            name_token.get_name_text().to_string(),
-            name_token.syntax().text_range(),
-        )
-    } else {
-        return;
-    };
+pub fn analyze_doc_tag_alias(analyzer: &mut DeclAnalyzer, alias: LuaDocTagAlias) -> Option<()> {
+    let name_token = alias.get_name_token()?;
+    let name = name_token.get_name_text().to_string();
+    let range = name_token.syntax().text_range();
 
     let file_id = analyzer.get_file_id();
     let r = analyzer.db.get_type_index_mut().add_type_decl(
@@ -127,34 +108,35 @@ pub fn analyze_doc_tag_alias(analyzer: &mut DeclAnalyzer, alias: LuaDocTagAlias)
             AnalyzeError::new(DiagnosticCode::DuplicateType, &e, range),
         );
     }
+
+    Some(())
 }
 
-pub fn analyze_doc_tag_namespace(analyzer: &mut DeclAnalyzer, namespace: LuaDocTagNamespace) {
-    let name = if let Some(name_token) = namespace.get_name_token() {
-        name_token.get_name_text().to_string()
-    } else {
-        return;
-    };
+pub fn analyze_doc_tag_namespace(
+    analyzer: &mut DeclAnalyzer,
+    namespace: LuaDocTagNamespace,
+) -> Option<()> {
+    let name = namespace.get_name_token()?.get_name_text().to_string();
 
     let file_id = analyzer.get_file_id();
     analyzer
         .db
         .get_type_index_mut()
         .add_file_namespace(file_id, name);
+
+    Some(())
 }
 
-pub fn analyze_doc_tag_using(analyzer: &mut DeclAnalyzer, using: LuaDocTagUsing) {
-    let name = if let Some(name_token) = using.get_name_token() {
-        name_token.get_name_text().to_string()
-    } else {
-        return;
-    };
+pub fn analyze_doc_tag_using(analyzer: &mut DeclAnalyzer, using: LuaDocTagUsing) -> Option<()> {
+    let name = using.get_name_token()?.get_name_text().to_string();
 
     let file_id = analyzer.get_file_id();
     analyzer
         .db
         .get_type_index_mut()
-        .add_file_using_namespace(file_id, name)
+        .add_file_using_namespace(file_id, name);
+
+    Some(())
 }
 
 pub fn analyze_doc_tag_meta(analyzer: &mut DeclAnalyzer, tag: LuaDocTagMeta) {
