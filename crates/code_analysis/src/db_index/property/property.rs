@@ -8,7 +8,6 @@ use super::version::LuaVersionCond;
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct LuaProperty {
     pub id: LuaPropertyId,
-    pub owner: LuaPropertyOwnerId,
     pub description: Option<Box<String>>,
     pub visibility: Option<VisibilityKind>,
     pub source: Option<Box<String>>,
@@ -20,10 +19,9 @@ pub struct LuaProperty {
 }
 
 impl LuaProperty {
-    pub fn new(owner: LuaPropertyOwnerId, id: LuaPropertyId) -> Self {
+    pub fn new(id: LuaPropertyId) -> Self {
         Self {
             id,
-            owner,
             description: None,
             visibility: None,
             source: None,

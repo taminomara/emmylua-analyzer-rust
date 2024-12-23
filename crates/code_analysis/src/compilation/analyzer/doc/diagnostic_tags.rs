@@ -19,7 +19,7 @@ pub fn analyze_diagnostic(
     match action {
         "disable" => analyze_diagnostic_disable(analyzer, diagnostic)?,
         "disable-next-line" => analyze_diagnostic_disable_next_line(analyzer, diagnostic)?,
-        "enable" => analyze_diagnostic_enable(analyzer, diagnostic),
+        "enable" => analyze_diagnostic_enable(analyzer, diagnostic)?,
         _ => {}
     };
 
@@ -98,7 +98,10 @@ fn analyze_diagnostic_disable_next_line(
     Some(())
 }
 
-fn analyze_diagnostic_enable(analyzer: &mut DocAnalyzer, diagnostic: LuaDocTagDiagnostic) {
+fn analyze_diagnostic_enable(
+    analyzer: &mut DocAnalyzer,
+    diagnostic: LuaDocTagDiagnostic,
+) -> Option<()> {
     let diagnostic_index = analyzer.db.get_diagnostic_index_mut();
     let diagnostic_code_list = diagnostic.get_code_list().unwrap();
     for code in diagnostic_code_list.get_codes() {
@@ -111,4 +114,6 @@ fn analyze_diagnostic_enable(analyzer: &mut DocAnalyzer, diagnostic: LuaDocTagDi
 
         diagnostic_index.add_file_diagnostic_enabled(analyzer.file_id, diagnostic_code);
     }
+
+    Some(())
 }
