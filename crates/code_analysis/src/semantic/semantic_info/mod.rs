@@ -6,7 +6,7 @@ use emmylua_parser::{
 };
 use infer_expr_info::infer_expr_semantic_info;
 
-use crate::{DbIndex, LuaDeclId, LuaMemberId, LuaPropertyOwnerId, LuaType};
+use crate::{DbIndex, LuaDeclId, LuaMember, LuaMemberId, LuaPropertyOwnerId, LuaType};
 
 use super::{infer_expr, LuaInferConfig};
 
@@ -74,21 +74,43 @@ pub fn infer_node_semantic_info(
         }
         tags if LuaDocTag::can_cast(tags.kind().into()) => {
             let tag = LuaDocTag::cast(tags)?;
-            let name = match tag {
-                LuaDocTag::Alias(alias) => alias.get_name_token()?.get_name_text().to_string(),
-                LuaDocTag::Class(class) => class.get_name_token()?.get_name_text().to_string(),
-                LuaDocTag::Enum(enum_) => enum_.get_name_token()?.get_name_text().to_string(),
+            match tag {
+                LuaDocTag::Alias(alias) => {
+                    type_def_tag_info(alias.get_name_token()?.get_name_text(), db, infer_config)
+                }
+                LuaDocTag::Class(class) => {
+                    type_def_tag_info(class.get_name_token()?.get_name_text(), db, infer_config)
+                }
+                LuaDocTag::Enum(enum_) => {
+                    type_def_tag_info(enum_.get_name_token()?.get_name_text(), db, infer_config)
+                }
+                LuaDocTag::Field(field) => {
+                    let member_id =
+                        LuaMemberId::new(field.get_syntax_id(), infer_config.get_file_id());
+                    let member = db.get_member_index().get_member(&member_id)?;
+                    let typ = member.get_decl_type();
+                    Some(SemanticInfo {
+                        typ: typ.clone(),
+                        property_owner: Some(LuaPropertyOwnerId::Member(member_id)),
+                    })
+                }
                 _ => return None,
-            };
-
-            let type_decl = db
-                .get_type_index()
-                .find_type_decl(infer_config.get_file_id(), &name)?;
-            Some(SemanticInfo {
-                typ: LuaType::Ref(type_decl.get_id()),
-                property_owner: LuaPropertyOwnerId::TypeDecl(type_decl.get_id()).into(),
-            })
+            }
         }
         _ => None,
     }
+}
+
+fn type_def_tag_info(
+    name: &str,
+    db: &DbIndex,
+    infer_config: &mut LuaInferConfig,
+) -> Option<SemanticInfo> {
+    let type_decl = db
+        .get_type_index()
+        .find_type_decl(infer_config.get_file_id(), name)?;
+    Some(SemanticInfo {
+        typ: LuaType::Ref(type_decl.get_id()),
+        property_owner: LuaPropertyOwnerId::TypeDecl(type_decl.get_id()).into(),
+    })
 }

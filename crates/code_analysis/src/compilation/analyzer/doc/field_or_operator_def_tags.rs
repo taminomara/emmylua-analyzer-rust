@@ -42,36 +42,51 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
             let key = LuaMemberKey::Name(name_token.get_name_text().to_string().into());
             let member = LuaMember::new(
                 owner,
-                key,
+                key.clone(),
                 analyzer.file_id,
                 tag.get_syntax_id(),
                 Some(type_ref),
             );
 
+            analyzer.db.get_reference_index_mut().add_index_reference(
+                key,
+                analyzer.file_id,
+                tag.get_syntax_id(),
+            );
             analyzer.db.get_member_index_mut().add_member(member)
         }
         LuaDocFieldKey::String(string_token) => {
             let key = LuaMemberKey::Name(string_token.get_value().into());
             let member = LuaMember::new(
                 owner,
-                key,
+                key.clone(),
                 analyzer.file_id,
                 tag.get_syntax_id(),
                 Some(type_ref),
             );
 
+            analyzer.db.get_reference_index_mut().add_index_reference(
+                key,
+                analyzer.file_id,
+                tag.get_syntax_id(),
+            );
             analyzer.db.get_member_index_mut().add_member(member)
         }
         LuaDocFieldKey::Integer(int_token) => {
             let key = LuaMemberKey::Integer(int_token.get_int_value());
             let member = LuaMember::new(
                 owner,
-                key,
+                key.clone(),
                 analyzer.file_id,
                 tag.get_syntax_id(),
                 Some(type_ref),
             );
 
+            analyzer.db.get_reference_index_mut().add_index_reference(
+                key,
+                analyzer.file_id,
+                tag.get_syntax_id(),
+            );
             analyzer.db.get_member_index_mut().add_member(member)
         }
         LuaDocFieldKey::Type(doc_type) => {
