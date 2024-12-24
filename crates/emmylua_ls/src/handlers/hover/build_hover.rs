@@ -1,6 +1,6 @@
 use code_analysis::{
     DbIndex, LuaDeclId, LuaDocument, LuaMemberId, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId,
-    LuaType, SemanticInfo,
+    LuaType, LuaTypeDeclId, SemanticInfo,
 };
 use emmylua_parser::LuaSyntaxToken;
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
@@ -24,6 +24,9 @@ pub fn build_semantic_info_hover(
         LuaPropertyOwnerId::LuaDecl(decl_id) => build_decl_hover(db, document, token, typ, decl_id),
         LuaPropertyOwnerId::Member(member_id) => {
             build_member_hover(db, document, token, typ, member_id)
+        }
+        LuaPropertyOwnerId::TypeDecl(type_decl_id) => {
+            build_type_decl_hover(db, document, token, typ, type_decl_id)
         }
         _ => None,
     }
@@ -169,4 +172,69 @@ fn add_description(
             }
         }
     }
+}
+
+fn build_type_decl_hover(
+    db: &DbIndex,
+    document: &LuaDocument,
+    token: LuaSyntaxToken,
+    typ: LuaType,
+    type_decl_id: LuaTypeDeclId,
+) -> Option<Hover> {
+    let mut marked_strings = Vec::new();
+    let type_decl = db.get_type_index().get_type_decl(&type_decl_id)?;
+    if type_decl.is_alias() {
+        if let Some(origin) = type_decl.get_alias_origin() {
+            let origin_type = humanize_type(db, &origin);
+            marked_strings.push(MarkedString::from_language_code(
+                "lua".to_string(),
+                format!("(type alias) {} = {}", type_decl.get_name(), origin_type),
+            ));
+        } else {
+            marked_strings.push(MarkedString::from_language_code(
+                "lua".to_string(),
+                format!("(type alias) {}", type_decl.get_name()),
+            ));
+
+            let mut s = String::new();
+            let member_ids = type_decl.get_alias_union_members()?;
+            for member_id in member_ids {
+                let member = db.get_member_index().get_member(&member_id)?;
+                let type_humanize_text = humanize_type(db, &member.get_decl_type());
+                let property_owner = LuaPropertyOwnerId::Member(member_id.clone());
+                let description = db
+                    .get_property_index()
+                    .get_property(property_owner)
+                    .and_then(|p| p.description.clone());
+                if let Some(description) = description {
+                    s.push_str(&format!("    | {}  --{}\n", type_humanize_text, description));
+                } else {
+                    s.push_str(&format!("    | {}\n", type_humanize_text));
+                }
+            }
+
+            marked_strings.push(MarkedString::from_language_code(
+                "lua".to_string(),
+                s,
+            ));
+        }
+    } else if type_decl.is_enum() {
+        marked_strings.push(MarkedString::from_language_code(
+            "lua".to_string(),
+            format!("(enum) {}", type_decl.get_name()),
+        ));
+    } else {
+        marked_strings.push(MarkedString::from_language_code(
+            "lua".to_string(),
+            format!("(class) {}", type_decl.get_name()),
+        ));
+    }
+
+    let property_owner = LuaPropertyOwnerId::TypeDecl(type_decl_id);
+    add_description(db, &mut marked_strings, &typ, property_owner);
+
+    Some(Hover {
+        contents: HoverContents::Array(marked_strings),
+        range: document.to_lsp_range(token.text_range()),
+    })
 }
