@@ -10,18 +10,19 @@ mod hover;
 mod initialized;
 mod inlay_hint;
 mod notification_handler;
+mod references;
+mod rename;
 mod request_handler;
 mod response_handler;
 mod text_document;
-mod references;
 
 pub use initialized::initialized_handler;
 pub use initialized::{init_analysis, ClientConfig};
 use lsp_types::{
     ColorProviderCapability, CompletionOptions, CompletionOptionsCompletionItem,
     DocumentLinkOptions, DocumentSymbolOptions, FoldingRangeProviderCapability,
-    HoverProviderCapability, InlayHintOptions, InlayHintServerCapabilities, OneOf, SaveOptions,
-    SelectionRangeProviderCapability, ServerCapabilities, TextDocumentSyncCapability,
+    HoverProviderCapability, InlayHintOptions, InlayHintServerCapabilities, OneOf, RenameOptions,
+    SaveOptions, SelectionRangeProviderCapability, ServerCapabilities, TextDocumentSyncCapability,
     TextDocumentSyncKind, TextDocumentSyncSaveOptions,
 };
 pub use notification_handler::on_notification_handler;
@@ -75,6 +76,10 @@ pub fn server_capabilities() -> ServerCapabilities {
         ))),
         definition_provider: Some(OneOf::Left(true)),
         references_provider: Some(OneOf::Left(true)),
+        rename_provider: Some(OneOf::Right(RenameOptions {
+            prepare_provider: Some(true),
+            work_done_progress_options: Default::default(),
+        })),
         ..Default::default()
     }
 }

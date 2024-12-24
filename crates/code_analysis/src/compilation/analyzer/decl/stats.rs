@@ -10,7 +10,7 @@ use crate::{
 
 use super::DeclAnalyzer;
 
-pub fn analyze_local_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalStat) {
+pub fn analyze_local_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalStat) -> Option<()> {
     let local_name_list = stat.get_local_name_list();
     for local_name in local_name_list {
         let name = if let Some(name_token) = local_name.get_name_token() {
@@ -40,6 +40,8 @@ pub fn analyze_local_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalStat) {
         };
         analyzer.add_decl(decl);
     }
+
+    Some(())
 }
 
 pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> Option<()> {
@@ -109,14 +111,13 @@ pub fn analyze_for_stat(analyzer: &mut DeclAnalyzer, stat: LuaForStat) -> Option
     let it_var = stat.get_var_name()?;
     let name = it_var.get_name_text().to_string();
     let pos = it_var.get_position();
-    let range = it_var.get_range();
 
     if analyzer.find_decl(&name, pos).is_none() {
         let decl = LuaDecl::Local {
             name,
             file_id: analyzer.get_file_id(),
             kind: it_var.syntax().kind(),
-            range,
+            range: it_var.get_range(),
             attrib: Some(LocalAttribute::IterConst),
             decl_type: Some(LuaType::Integer),
         };
@@ -131,13 +132,12 @@ pub fn analyze_for_range_stat(analyzer: &mut DeclAnalyzer, stat: LuaForRangeStat
     let var_list = stat.get_var_name_list();
     for var in var_list {
         let name = var.get_name_text().to_string();
-        let range = var.get_range();
 
         let decl = LuaDecl::Local {
             name,
             file_id: analyzer.get_file_id(),
             kind: var.syntax().kind().into(),
-            range,
+            range: var.get_range(),
             attrib: Some(LocalAttribute::IterConst),
             decl_type: None,
         };
@@ -204,12 +204,12 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
 pub fn analyze_local_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalFuncStat) -> Option<()> {
     let local_name = stat.get_local_name()?;
     let name = local_name.get_name_token()?.get_name_text().to_string();
-    let range = local_name.get_range();
+
     let decl = LuaDecl::Local {
         name,
         file_id: analyzer.get_file_id(),
         kind: local_name.syntax().kind().into(),
-        range,
+        range: local_name.get_range(),
         attrib: None,
         decl_type: None,
     };

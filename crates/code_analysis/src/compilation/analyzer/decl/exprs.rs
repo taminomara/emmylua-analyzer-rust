@@ -1,5 +1,5 @@
 use emmylua_parser::{
-    LuaAstNode, LuaClosureExpr, LuaIndexExpr, LuaIndexKey, LuaNameExpr, LuaTableExpr,
+    LuaAstNode, LuaAstToken, LuaClosureExpr, LuaIndexExpr, LuaIndexKey, LuaNameExpr, LuaTableExpr
 };
 
 use crate::{
@@ -10,14 +10,15 @@ use crate::{
 use super::DeclAnalyzer;
 
 pub fn analyze_name_expr(analyzer: &mut DeclAnalyzer, expr: LuaNameExpr) -> Option<()> {
-    let name = expr.get_name_token()?.get_name_text().to_string();
+    let name_token = expr.get_name_token()?;
+    let name = name_token.get_name_text().to_string();
     // donot analyze self here
     if name == "self" {
         return Some(());
     }
 
-    let position = expr.get_position();
-    let range = expr.get_range();
+    let position = name_token.get_position();
+    let range = name_token.get_range();
     let file_id = analyzer.get_file_id();
     let decl_id = LuaDeclId::new(file_id, position);
     let (decl_id, is_local) = if analyzer.decl.get_decl(&decl_id).is_some() {
@@ -88,13 +89,12 @@ pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) -
             },
             |name_token| name_token.get_name_text().to_string(),
         );
-
-        let range = param.get_range();
+        
         let decl = LuaDecl::Local {
             name,
             file_id: analyzer.get_file_id(),
             kind: param.syntax().kind().into(),
-            range,
+            range: param.get_range(),
             attrib: None,
             decl_type: None,
         };

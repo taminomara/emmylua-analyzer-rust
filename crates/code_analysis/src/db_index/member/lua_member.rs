@@ -54,6 +54,10 @@ impl LuaMember {
         self.syntax_id.get_range()
     }
 
+    pub fn get_syntax_id(&self) -> LuaSyntaxId {
+        self.syntax_id
+    }
+
     pub fn get_decl_type(&self) -> &LuaType {
         &self.decl_type
     }
