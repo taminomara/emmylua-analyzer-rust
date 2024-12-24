@@ -31,7 +31,7 @@ impl LuaMemberIndex {
             self.owner_members
                 .entry(owner)
                 .or_insert_with(HashMap::new)
-                .insert(key, id);
+                .entry(key).or_insert(id);
         }
         let file_id = member.get_file_id();
         self.in_field_members

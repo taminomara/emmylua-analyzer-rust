@@ -4,12 +4,12 @@ use emmylua_parser::LineIndex;
 use lsp_types::Uri;
 use rowan::{TextRange, TextSize};
 
-use super::{uri_to_file_path, FileId};
+use super::{file_path_to_uri, FileId};
 
 #[derive(Debug)]
 pub struct LuaDocument<'a> {
     file_id: FileId,
-    uri: &'a Uri,
+    path: &'a PathBuf,
     text: &'a str,
     line_index: &'a LineIndex,
 }
@@ -17,13 +17,13 @@ pub struct LuaDocument<'a> {
 impl<'a> LuaDocument<'a> {
     pub fn new(
         file_id: FileId,
-        uri: &'a Uri,
+        path: &'a PathBuf,
         text: &'a str,
         line_index: &'a LineIndex,
     ) -> Self {
         LuaDocument {
             file_id,
-            uri,
+            path,
             text,
             line_index,
         }
@@ -34,15 +34,15 @@ impl<'a> LuaDocument<'a> {
     }
 
     pub fn get_file_name(&self) -> Option<String> {
-        uri_to_file_path(self.uri)?.file_name()?.to_str().map(|s| s.to_string())
+        self.path.file_name()?.to_str().map(|s| s.to_string())
     }
 
-    pub fn get_uri(&self) -> &Uri {
-        self.uri
+    pub fn get_uri(&self) -> Uri {
+        file_path_to_uri(self.path).unwrap()
     }
 
-    pub fn get_file_path(&self) -> Option<PathBuf> {
-        uri_to_file_path(self.uri)
+    pub fn get_file_path(&self) -> &PathBuf {
+        self.path
     }
 
     pub fn get_text(&self) -> &str {
@@ -90,7 +90,7 @@ impl<'a> LuaDocument<'a> {
 
     pub fn to_lsp_location(&self, range: TextRange) -> Option<lsp_types::Location> {
         Some(lsp_types::Location {
-            uri: self.uri.clone(),
+            uri: self.get_uri(),
             range: self.to_lsp_range(range)?,
         })
     }
@@ -100,5 +100,4 @@ impl<'a> LuaDocument<'a> {
         let end = self.get_offset(range.end.line as usize, range.end.character as usize)?;
         Some(TextRange::new(start, end))
     }
-
 }

@@ -93,7 +93,6 @@ impl EmmyLuaAnalysis {
             .get_db()
             .get_vfs()
             .get_uri(&file_id)
-            .cloned()
     }
 
     pub fn add_workspace_root(&mut self, root: PathBuf) {

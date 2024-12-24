@@ -6,7 +6,7 @@ mod unresolve;
 
 use std::sync::Arc;
 
-use crate::{db_index::DbIndex, uri_to_file_path, Emmyrc, InFiled};
+use crate::{db_index::DbIndex, Emmyrc, InFiled};
 use emmylua_parser::LuaChunk;
 use unresolve::UnResolve;
 
@@ -23,13 +23,9 @@ pub fn analyze(db: &mut DbIndex, context: AnalyzeContext) {
 fn module_analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     for in_filed_tree in &context.tree_list {
         let file_id = in_filed_tree.file_id;
-        let uri = db.get_vfs().get_uri(&file_id);
-        if let Some(uri) = uri {
-            let path = uri_to_file_path(uri);
-            if let Some(path) = path {
-                db.get_module_index_mut()
-                    .add_module_by_path(file_id, path.to_str().unwrap());
-            }
+        if let Some(path) = db.get_vfs().get_file_path(&file_id).cloned() {
+            db.get_module_index_mut()
+                .add_module_by_path(file_id, path.to_str().unwrap());
         }
     }
 }

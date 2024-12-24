@@ -21,8 +21,8 @@ mod tests {
         assert_eq!(id.id, 0);
         let id_another = vfs.get_file_id(&uri).unwrap();
         assert_eq!(id_another, id);
-
         let uri2 = Uri::from_str("file:///C:/Users/username/Documents/test2.lua").unwrap();
+        
         let id2 = vfs.file_id(&uri2);
         assert_eq!(id2.id, 1);
         assert!(id2 != id);

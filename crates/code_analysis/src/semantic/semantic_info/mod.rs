@@ -1,7 +1,7 @@
 mod infer_expr_info;
 
 use emmylua_parser::{
-    LuaAstNode, LuaDocNameType, LuaExpr, LuaSyntaxKind, LuaSyntaxNode, LuaSyntaxToken,
+    LuaAstNode, LuaDocNameType, LuaDocTag, LuaExpr, LuaSyntaxKind, LuaSyntaxNode, LuaSyntaxToken,
     LuaTableField,
 };
 use infer_expr_info::infer_expr_semantic_info;
@@ -64,6 +64,23 @@ pub fn infer_node_semantic_info(
         name_type if LuaDocNameType::can_cast(name_type.kind().into()) => {
             let name_type = LuaDocNameType::cast(name_type)?;
             let name = name_type.get_name_text()?;
+            let type_decl = db
+                .get_type_index()
+                .find_type_decl(infer_config.get_file_id(), &name)?;
+            Some(SemanticInfo {
+                typ: LuaType::Ref(type_decl.get_id()),
+                property_owner: LuaPropertyOwnerId::TypeDecl(type_decl.get_id()).into(),
+            })
+        }
+        tags if LuaDocTag::can_cast(tags.kind().into()) => {
+            let tag = LuaDocTag::cast(tags)?;
+            let name = match tag {
+                LuaDocTag::Alias(alias) => alias.get_name_token()?.get_name_text().to_string(),
+                LuaDocTag::Class(class) => class.get_name_token()?.get_name_text().to_string(),
+                LuaDocTag::Enum(enum_) => enum_.get_name_token()?.get_name_text().to_string(),
+                _ => return None,
+            };
+
             let type_decl = db
                 .get_type_index()
                 .find_type_decl(infer_config.get_file_id(), &name)?;
