@@ -6,7 +6,7 @@ use lsp_types::request::{
     CodeLensRequest, CodeLensResolve, ColorPresentationRequest, Completion, DocumentColor,
     DocumentLinkRequest, DocumentLinkResolve, DocumentSymbolRequest, FoldingRangeRequest,
     GotoDefinition, HoverRequest, InlayHintRequest, InlayHintResolveRequest, PrepareRenameRequest,
-    References, Rename, ResolveCompletionItem, SelectionRangeRequest,
+    References, Rename, ResolveCompletionItem, SelectionRangeRequest, SignatureHelpRequest,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use tokio_util::sync::CancellationToken;
@@ -27,6 +27,7 @@ use super::{
     inlay_hint::{on_inlay_hint_handler, on_resolve_inlay_hint},
     references::on_references_handler,
     rename::{on_prepare_rename_handler, on_rename_handler},
+    signature_helper::on_signature_helper_handler,
 };
 
 pub async fn on_req_handler(
@@ -71,6 +72,8 @@ pub async fn on_req_handler(
         .on_parallel::<CodeLensRequest, _, _>(on_code_lens_handler)
         .await
         .on_parallel::<CodeLensResolve, _, _>(on_resolve_code_lens_handler)
+        .await
+        .on_parallel::<SignatureHelpRequest, _, _>(on_signature_helper_handler)
         .await
         .finish();
     Ok(())

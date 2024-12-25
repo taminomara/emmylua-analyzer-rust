@@ -1,3 +1,4 @@
+mod code_lens;
 mod completion;
 mod defination;
 mod document_color;
@@ -14,8 +15,8 @@ mod references;
 mod rename;
 mod request_handler;
 mod response_handler;
+mod signature_helper;
 mod text_document;
-mod code_lens;
 
 pub use initialized::initialized_handler;
 pub use initialized::{init_analysis, ClientConfig};
@@ -23,8 +24,8 @@ use lsp_types::{
     CodeLensOptions, ColorProviderCapability, CompletionOptions, CompletionOptionsCompletionItem,
     DocumentLinkOptions, DocumentSymbolOptions, FoldingRangeProviderCapability,
     HoverProviderCapability, InlayHintOptions, InlayHintServerCapabilities, OneOf, RenameOptions,
-    SaveOptions, SelectionRangeProviderCapability, ServerCapabilities, TextDocumentSyncCapability,
-    TextDocumentSyncKind, TextDocumentSyncSaveOptions,
+    SaveOptions, SelectionRangeProviderCapability, ServerCapabilities, SignatureHelpOptions,
+    TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncSaveOptions,
 };
 pub use notification_handler::on_notification_handler;
 pub use request_handler::on_req_handler;
@@ -83,6 +84,10 @@ pub fn server_capabilities() -> ServerCapabilities {
         })),
         code_lens_provider: Some(CodeLensOptions {
             resolve_provider: Some(true),
+        }),
+        signature_help_provider: Some(SignatureHelpOptions {
+            trigger_characters: Some(vec!["(", ","].iter().map(|s| s.to_string()).collect()),
+            ..Default::default()
         }),
         ..Default::default()
     }
