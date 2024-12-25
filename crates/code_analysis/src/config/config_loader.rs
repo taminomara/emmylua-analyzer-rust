@@ -38,10 +38,10 @@ pub fn load_configs(config_files: Vec<PathBuf>) -> Emmyrc {
         Emmyrc::default()
     } else if config_jsons.len() == 1 {
         let first_config = config_jsons.into_iter().next().unwrap();
-        let emmyrc: Emmyrc = match serde_json::from_value(first_config.clone()).ok() {
-            Some(config) => config,
-            None => {
-                log::error!("Failed to parse config file: {:?}", first_config);
+        let emmyrc: Emmyrc = match serde_json::from_value(first_config.clone()) {
+            Ok(config) => config,
+            Err(err) => {
+                log::error!("Failed to parse config, error: {:?}", err);
                 Emmyrc::default()
             }
         };
@@ -54,10 +54,10 @@ pub fn load_configs(config_files: Vec<PathBuf>) -> Emmyrc {
                     merge_values(&mut acc, item);
                     acc
                 });
-        let emmyrc: Emmyrc = match serde_json::from_value(merge_config.clone()).ok() {
-            Some(config) => config,
-            None => {
-                log::error!("Failed to parse config file: {:?}", merge_config);
+        let emmyrc: Emmyrc = match serde_json::from_value(merge_config.clone()) {
+            Ok(config) => config,
+            Err(err) => {
+                log::error!("Failed to parse config: error: {:?}", err);
                 Emmyrc::default()
             }
         };
