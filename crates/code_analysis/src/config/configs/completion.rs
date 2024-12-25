@@ -1,6 +1,6 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-#[derive(Serialize, Deserialize, Debug, JsonSchema, Default)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 /// Configuration for EmmyLua code completion.
 pub struct EmmyrcCompletion {
@@ -19,6 +19,18 @@ pub struct EmmyrcCompletion {
     /// The postfix trigger used in completions.
     #[serde(default = "default_postfix")]
     pub postfix: String,
+}
+
+impl Default for EmmyrcCompletion {
+    fn default() -> Self {
+        Self {
+            auto_require: default_true(),
+            auto_require_function: default_require_function(),
+            auto_require_naming_convention: Default::default(),
+            call_snippet: false,
+            postfix: default_postfix(),
+        }
+    }
 }
 
 fn default_true() -> bool {

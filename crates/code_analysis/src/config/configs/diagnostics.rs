@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::DiagnosticCode;
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema, Default)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 /// Represents the diagnostic configuration for Emmyrc.
 pub struct EmmyrcDiagnostic {
@@ -28,6 +28,19 @@ pub struct EmmyrcDiagnostic {
     /// A list of diagnostic codes that are enabled.
     #[serde(default)]
     pub enables: Vec<DiagnosticCode>,
+}
+
+impl Default for EmmyrcDiagnostic {
+    fn default() -> Self {
+        Self {
+            disable: Vec::new(),
+            enable: default_true(),
+            globals: Vec::new(),
+            globals_regex: Vec::new(),
+            severity: HashMap::new(),
+            enables: Vec::new(),
+        }
+    }
 }
 
 fn default_true() -> bool {

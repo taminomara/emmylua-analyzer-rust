@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema, Default)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcRuntime {
     #[serde(default)]
@@ -14,6 +14,18 @@ pub struct EmmyrcRuntime {
     pub extensions: Vec<String>,
     #[serde(default)]
     pub require_pattern: Vec<String>,
+}
+
+impl Default for EmmyrcRuntime {
+    fn default() -> Self {
+        Self {
+            version: Default::default(),
+            require_like_function: Default::default(),
+            framework_versions: Default::default(),
+            extensions: Default::default(),
+            require_pattern: Default::default(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema)]

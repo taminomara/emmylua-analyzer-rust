@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema, Default)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcWorkspace {
     #[serde(default)]
@@ -17,6 +17,19 @@ pub struct EmmyrcWorkspace {
     pub preload_file_size: i32,
     #[serde(default = "encoding_default")]
     pub encoding: String,
+}
+
+impl Default for EmmyrcWorkspace {
+    fn default() -> Self {
+        Self {
+            ignore_dir: Vec::new(),
+            ignore_globs: Vec::new(),
+            library: Vec::new(),
+            workspace_roots: Vec::new(),
+            preload_file_size: 0,
+            encoding: encoding_default(),
+        }
+    }
 }
 
 fn encoding_default() -> String {

@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema, Default)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcInlayHint {
     #[serde(default = "default_true")]
@@ -12,6 +12,17 @@ pub struct EmmyrcInlayHint {
     pub local_hint: bool,
     #[serde(default = "default_true")]
     pub override_hint: bool,
+}
+
+impl Default for EmmyrcInlayHint {
+    fn default() -> Self {
+        Self {
+            param_hint: default_true(),
+            index_hint: default_true(),
+            local_hint: default_true(),
+            override_hint: default_true(),
+        }
+    }
 }
 
 fn default_true() -> bool {
