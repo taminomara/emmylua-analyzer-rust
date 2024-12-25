@@ -72,6 +72,11 @@ mod tests {
 
             let windows_path = Path::new("C:\\Users\\username\\Documents\\test.lua");
             assert_eq!(path2, windows_path);
+
+            let uri = Uri::from_str("file:///c%3A/Users//username/Desktop/learn/test%20main/test.lua").unwrap();
+            let path = uri_to_file_path(&uri).unwrap();
+            let path2 = Path::new("C:/Users//username/Desktop/learn/test main/test.lua");
+            assert_eq!(path, path2);
         }
     }
 }
