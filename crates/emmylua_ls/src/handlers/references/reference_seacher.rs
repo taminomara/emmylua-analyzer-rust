@@ -93,30 +93,12 @@ fn search_member_references(
             };
         let root = semantic_model.get_root();
         let node = in_filed_syntax_id.value.to_node_from_root(root.syntax())?;
-        let semantic_info = semantic_model.get_semantic_info(node.into())?;
-        let property_owner = semantic_info.property_owner?;
-        if property_owner == LuaPropertyOwnerId::Member(member_id) {
+        let property_owner = semantic_model.get_property_owner_id(node.clone().into())?;
+        if semantic_model.is_reference_to(node, property_owner) {
             let document = semantic_model.get_document();
             let range = in_filed_syntax_id.value.get_range();
             let location = document.to_lsp_location(range)?;
             result.push(location);
-        } else if let LuaPropertyOwnerId::Member(ref_member_id) = &property_owner {
-            let ref_owner = semantic_model
-                .get_db()
-                .get_member_index()
-                .get_member(ref_member_id)?
-                .get_owner();
-            let self_onwer = semantic_model
-                .get_db()
-                .get_member_index()
-                .get_member(&member_id)?
-                .get_owner();
-            if ref_owner == self_onwer {
-                let document = semantic_model.get_document();
-                let range = in_filed_syntax_id.value.get_range();
-                let location = document.to_lsp_location(range)?;
-                result.push(location);
-            }
         }
     }
 

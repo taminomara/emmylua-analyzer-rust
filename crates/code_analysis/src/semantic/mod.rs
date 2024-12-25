@@ -2,6 +2,7 @@ mod infer;
 mod instantiate;
 mod member;
 mod overload_resolve;
+mod reference;
 mod semantic_info;
 mod type_calc;
 mod type_compact;
@@ -12,12 +13,16 @@ use emmylua_parser::{LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken};
 use infer::InferResult;
 pub use infer::LuaInferConfig;
 use member::infer_members;
+pub use member::LuaMemberInfo;
+use reference::is_reference_to;
 use rowan::{NodeOrToken, TextRange};
 pub use semantic_info::SemanticInfo;
-use semantic_info::{infer_node_semantic_info, infer_token_semantic_info};
-pub use member::LuaMemberInfo;
+use semantic_info::{
+    infer_node_property_owner, infer_node_semantic_info, infer_token_property_owner,
+    infer_token_semantic_info,
+};
 
-use crate::{db_index::LuaTypeDeclId, Emmyrc, LuaDocument};
+use crate::{db_index::LuaTypeDeclId, Emmyrc, LuaDocument, LuaPropertyOwnerId};
 #[allow(unused_imports)]
 use crate::{
     db_index::{DbIndex, LuaType},
@@ -83,6 +88,28 @@ impl<'a> SemanticModel<'a> {
                 infer_token_semantic_info(self.db, &mut self.infer_config, token)
             }
         }
+    }
+
+    pub fn get_property_owner_id(
+        &mut self,
+        node_or_token: NodeOrToken<LuaSyntaxNode, LuaSyntaxToken>,
+    ) -> Option<LuaPropertyOwnerId> {
+        match node_or_token {
+            NodeOrToken::Node(node) => {
+                infer_node_property_owner(self.db, &mut self.infer_config, node)
+            }
+            NodeOrToken::Token(token) => {
+                infer_token_property_owner(self.db, &mut self.infer_config, token)
+            }
+        }
+    }
+
+    pub fn is_reference_to(
+        &mut self,
+        node: LuaSyntaxNode,
+        property_owner: LuaPropertyOwnerId,
+    ) -> bool {
+        is_reference_to(self.db, &mut self.infer_config, node, property_owner).unwrap_or(false)
     }
 
     pub fn get_emmyrc(&self) -> &Emmyrc {
