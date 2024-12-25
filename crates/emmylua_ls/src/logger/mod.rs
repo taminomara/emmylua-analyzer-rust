@@ -1,6 +1,7 @@
 use std::{env, fs};
 
 use chrono::Local;
+use code_analysis::file_path_to_uri;
 use fern::Dispatch;
 use log::{info, LevelFilter};
 
@@ -71,7 +72,8 @@ pub fn init_logger(root: Option<&str>) {
         return;
     }
 
-    eprintln!("init logger success with file: {:?}", log_file_path);
+    let uri = file_path_to_uri(&log_file_path).unwrap();
+    eprintln!("init logger success with file: {}", uri.as_str());
     info!("{} v{}", CRATE_NAME, CRATE_VERSION);
 }
 

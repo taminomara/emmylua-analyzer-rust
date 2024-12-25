@@ -140,6 +140,7 @@ fn rename_member_references(
         .get_reference_index()
         .get_index_references(&key)?;
 
+    let property_owner = LuaPropertyOwnerId::Member(member_id);
     let mut semantic_cache = HashMap::new();
     for in_filed_syntax_id in index_references {
         let semantic_model =
@@ -152,8 +153,7 @@ fn rename_member_references(
             };
         let root = semantic_model.get_root();
         let node = in_filed_syntax_id.value.to_node_from_root(root.syntax())?;
-        let semantic_info = semantic_model.get_property_owner_id(node.clone().into())?;
-        if semantic_model.is_reference_to(node.clone(), semantic_info) {
+        if semantic_model.is_reference_to(node.clone(), property_owner.clone()) {
             let range = get_member_name_token_lsp_range(semantic_model, node.clone())?;
             result
                 .entry(semantic_model.get_document().get_uri())

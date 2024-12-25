@@ -82,6 +82,7 @@ pub fn search_member_references(
 
     let mut semantic_cache = HashMap::new();
 
+    let property_owner = LuaPropertyOwnerId::Member(member_id);
     for in_filed_syntax_id in index_references {
         let semantic_model =
             if let Some(semantic_model) = semantic_cache.get_mut(&in_filed_syntax_id.file_id) {
@@ -93,8 +94,7 @@ pub fn search_member_references(
             };
         let root = semantic_model.get_root();
         let node = in_filed_syntax_id.value.to_node_from_root(root.syntax())?;
-        let property_owner = semantic_model.get_property_owner_id(node.clone().into())?;
-        if semantic_model.is_reference_to(node, property_owner) {
+        if semantic_model.is_reference_to(node, property_owner.clone()) {
             let document = semantic_model.get_document();
             let range = in_filed_syntax_id.value.get_range();
             let location = document.to_lsp_location(range)?;
