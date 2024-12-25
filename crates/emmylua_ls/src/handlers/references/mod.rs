@@ -5,8 +5,8 @@ use lsp_types::{Location, ReferenceParams};
 use reference_seacher::search_references;
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
-
 use crate::context::ServerContextSnapshot;
+pub use reference_seacher::{search_member_references, search_decl_references};
 
 pub async fn on_references_handler(
     context: ServerContextSnapshot,

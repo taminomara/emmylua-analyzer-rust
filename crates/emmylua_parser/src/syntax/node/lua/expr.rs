@@ -5,7 +5,7 @@ use crate::{
         node::{LuaBinaryOpToken, LuaNameToken, LuaUnaryOpToken},
         traits::{LuaAstChildren, LuaAstNode},
     },
-    LuaAstToken, LuaIndexToken, LuaLiteralToken, LuaSyntaxNode, LuaTokenKind,
+    LuaAstToken, LuaIndexToken, LuaLiteralToken, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind,
 };
 
 use super::{LuaBlock, LuaCallArgList, LuaIndexKey, LuaParamList, LuaTableField};
@@ -304,6 +304,11 @@ impl LuaIndexExpr {
         }
 
         None
+    }
+
+    pub fn get_index_name_token(&self) -> Option<LuaSyntaxToken> {
+        let index_token = self.get_index_token()?;
+        index_token.syntax().next_token()
     }
 }
 

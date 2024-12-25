@@ -15,11 +15,12 @@ mod rename;
 mod request_handler;
 mod response_handler;
 mod text_document;
+mod code_lens;
 
 pub use initialized::initialized_handler;
 pub use initialized::{init_analysis, ClientConfig};
 use lsp_types::{
-    ColorProviderCapability, CompletionOptions, CompletionOptionsCompletionItem,
+    CodeLensOptions, ColorProviderCapability, CompletionOptions, CompletionOptionsCompletionItem,
     DocumentLinkOptions, DocumentSymbolOptions, FoldingRangeProviderCapability,
     HoverProviderCapability, InlayHintOptions, InlayHintServerCapabilities, OneOf, RenameOptions,
     SaveOptions, SelectionRangeProviderCapability, ServerCapabilities, TextDocumentSyncCapability,
@@ -80,6 +81,9 @@ pub fn server_capabilities() -> ServerCapabilities {
             prepare_provider: Some(true),
             work_done_progress_options: Default::default(),
         })),
+        code_lens_provider: Some(CodeLensOptions {
+            resolve_provider: Some(true),
+        }),
         ..Default::default()
     }
 }

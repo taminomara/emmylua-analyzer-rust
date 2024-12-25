@@ -3,10 +3,10 @@ use std::{error::Error, future::Future};
 use log::error;
 use lsp_server::{Request, RequestId, Response};
 use lsp_types::request::{
-    ColorPresentationRequest, Completion, DocumentColor, DocumentLinkRequest, DocumentLinkResolve,
-    DocumentSymbolRequest, FoldingRangeRequest, GotoDefinition, HoverRequest, InlayHintRequest,
-    InlayHintResolveRequest, PrepareRenameRequest, References, Rename, ResolveCompletionItem,
-    SelectionRangeRequest,
+    CodeLensRequest, CodeLensResolve, ColorPresentationRequest, Completion, DocumentColor,
+    DocumentLinkRequest, DocumentLinkResolve, DocumentSymbolRequest, FoldingRangeRequest,
+    GotoDefinition, HoverRequest, InlayHintRequest, InlayHintResolveRequest, PrepareRenameRequest,
+    References, Rename, ResolveCompletionItem, SelectionRangeRequest,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use tokio_util::sync::CancellationToken;
@@ -14,6 +14,7 @@ use tokio_util::sync::CancellationToken;
 use crate::context::{ServerContext, ServerContextSnapshot};
 
 use super::{
+    code_lens::{on_code_lens_handler, on_resolve_code_lens_handler},
     completion::{on_completion_handler, on_completion_resolve_handler},
     defination::on_goto_defination_handler,
     document_color::{on_document_color, on_document_color_presentation},
@@ -66,6 +67,10 @@ pub async fn on_req_handler(
         .on_parallel::<Rename, _, _>(on_rename_handler)
         .await
         .on_parallel::<PrepareRenameRequest, _, _>(on_prepare_rename_handler)
+        .await
+        .on_parallel::<CodeLensRequest, _, _>(on_code_lens_handler)
+        .await
+        .on_parallel::<CodeLensResolve, _, _>(on_resolve_code_lens_handler)
         .await
         .finish();
     Ok(())

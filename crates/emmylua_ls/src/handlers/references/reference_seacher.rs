@@ -26,7 +26,7 @@ pub fn search_references(
     Some(result)
 }
 
-fn search_decl_references(
+pub fn search_decl_references(
     semantic_model: &mut SemanticModel,
     decl_id: LuaDeclId,
     result: &mut Vec<Location>,
@@ -64,7 +64,7 @@ fn search_decl_references(
     Some(())
 }
 
-fn search_member_references(
+pub fn search_member_references(
     semantic_model: &SemanticModel,
     compilation: &LuaCompilation,
     member_id: LuaMemberId,
