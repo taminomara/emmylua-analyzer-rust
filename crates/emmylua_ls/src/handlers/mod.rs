@@ -87,6 +87,7 @@ pub fn server_capabilities() -> ServerCapabilities {
         }),
         signature_help_provider: Some(SignatureHelpOptions {
             trigger_characters: Some(vec!["(", ","].iter().map(|s| s.to_string()).collect()),
+            retrigger_characters: Some(vec!["(", ","].iter().map(|s| s.to_string()).collect()),
             ..Default::default()
         }),
         ..Default::default()

@@ -55,6 +55,10 @@ impl LuaSignature {
 
         type_params
     }
+
+    pub fn get_param_doc(&self, param_name: &str) -> Option<&LuaDocParamInfo> {
+        self.param_docs.get(param_name)
+    }
 }
 
 #[derive(Debug)]
