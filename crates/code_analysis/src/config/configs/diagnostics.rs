@@ -48,6 +48,7 @@ fn default_true() -> bool {
 }
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub enum DiagnosticSeveritySetting {
     Error,
     Warning,
