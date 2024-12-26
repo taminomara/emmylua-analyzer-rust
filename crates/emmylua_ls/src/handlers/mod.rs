@@ -16,17 +16,14 @@ mod references;
 mod rename;
 mod request_handler;
 mod response_handler;
+mod semantic_token;
 mod signature_helper;
 mod text_document;
 
 pub use initialized::initialized_handler;
 pub use initialized::{init_analysis, ClientConfig};
 use lsp_types::{
-    CodeLensOptions, ColorProviderCapability, CompletionOptions, CompletionOptionsCompletionItem,
-    DocumentLinkOptions, DocumentSymbolOptions, FoldingRangeProviderCapability,
-    HoverProviderCapability, InlayHintOptions, InlayHintServerCapabilities, OneOf, RenameOptions,
-    SaveOptions, SelectionRangeProviderCapability, ServerCapabilities, SignatureHelpOptions,
-    TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncSaveOptions,
+    CodeLensOptions, ColorProviderCapability, CompletionOptions, CompletionOptionsCompletionItem, DocumentLinkOptions, DocumentSymbolOptions, FoldingRangeProviderCapability, HoverProviderCapability, InlayHintOptions, InlayHintServerCapabilities, OneOf, RenameOptions, SaveOptions, SelectionRangeProviderCapability, SemanticTokensFullOptions, SemanticTokensOptions, SemanticTokensServerCapabilities, ServerCapabilities, SignatureHelpOptions, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncSaveOptions
 };
 pub use notification_handler::on_notification_handler;
 pub use request_handler::on_req_handler;
@@ -93,6 +90,13 @@ pub fn server_capabilities() -> ServerCapabilities {
         }),
         // The general implementation may not be as good as the editor itself, so this feature is temporarily disabled
         // document_highlight_provider: Some(OneOf::Left(true)),
+        // todo: enable semantic token
+        // semantic_tokens_provider: Some(SemanticTokensServerCapabilities::SemanticTokensOptions(
+        //     SemanticTokensOptions {
+        //         full: Some(SemanticTokensFullOptions::Bool(true)),
+        //         ..Default::default()
+        //     },
+        // )),
         ..Default::default()
     }
 }
