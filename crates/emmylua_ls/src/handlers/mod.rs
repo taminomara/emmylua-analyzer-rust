@@ -2,6 +2,7 @@ mod code_lens;
 mod completion;
 mod defination;
 mod document_color;
+mod document_highlight;
 mod document_link;
 mod document_selection_range;
 mod document_symbol;
@@ -90,6 +91,8 @@ pub fn server_capabilities() -> ServerCapabilities {
             retrigger_characters: Some(vec!["(", ","].iter().map(|s| s.to_string()).collect()),
             ..Default::default()
         }),
+        // The general implementation may not be as good as the editor itself, so this feature is temporarily disabled
+        // document_highlight_provider: Some(OneOf::Left(true)),
         ..Default::default()
     }
 }

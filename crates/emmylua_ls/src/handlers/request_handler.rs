@@ -4,9 +4,10 @@ use log::error;
 use lsp_server::{Request, RequestId, Response};
 use lsp_types::request::{
     CodeLensRequest, CodeLensResolve, ColorPresentationRequest, Completion, DocumentColor,
-    DocumentLinkRequest, DocumentLinkResolve, DocumentSymbolRequest, FoldingRangeRequest,
-    GotoDefinition, HoverRequest, InlayHintRequest, InlayHintResolveRequest, PrepareRenameRequest,
-    References, Rename, ResolveCompletionItem, SelectionRangeRequest, SignatureHelpRequest,
+    DocumentHighlightRequest, DocumentLinkRequest, DocumentLinkResolve, DocumentSymbolRequest,
+    FoldingRangeRequest, GotoDefinition, HoverRequest, InlayHintRequest, InlayHintResolveRequest,
+    PrepareRenameRequest, References, Rename, ResolveCompletionItem, SelectionRangeRequest,
+    SignatureHelpRequest,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use tokio_util::sync::CancellationToken;
@@ -14,20 +15,7 @@ use tokio_util::sync::CancellationToken;
 use crate::context::{ServerContext, ServerContextSnapshot};
 
 use super::{
-    code_lens::{on_code_lens_handler, on_resolve_code_lens_handler},
-    completion::{on_completion_handler, on_completion_resolve_handler},
-    defination::on_goto_defination_handler,
-    document_color::{on_document_color, on_document_color_presentation},
-    document_link::{on_document_link_handler, on_document_link_resolve_handler},
-    document_selection_range::on_document_selection_range_handle,
-    document_symbol::on_document_symbol,
-    emmy_annotator::{on_emmy_annotator_handler, EmmyAnnotatorRequest},
-    fold_range::on_folding_range_handler,
-    hover::on_hover,
-    inlay_hint::{on_inlay_hint_handler, on_resolve_inlay_hint},
-    references::on_references_handler,
-    rename::{on_prepare_rename_handler, on_rename_handler},
-    signature_helper::on_signature_helper_handler,
+    code_lens::{on_code_lens_handler, on_resolve_code_lens_handler}, completion::{on_completion_handler, on_completion_resolve_handler}, defination::on_goto_defination_handler, document_color::{on_document_color, on_document_color_presentation}, document_highlight::on_document_highlight_handler, document_link::{on_document_link_handler, on_document_link_resolve_handler}, document_selection_range::on_document_selection_range_handle, document_symbol::on_document_symbol, emmy_annotator::{on_emmy_annotator_handler, EmmyAnnotatorRequest}, fold_range::on_folding_range_handler, hover::on_hover, inlay_hint::{on_inlay_hint_handler, on_resolve_inlay_hint}, references::on_references_handler, rename::{on_prepare_rename_handler, on_rename_handler}, signature_helper::on_signature_helper_handler
 };
 
 pub async fn on_req_handler(
@@ -74,6 +62,8 @@ pub async fn on_req_handler(
         .on_parallel::<CodeLensResolve, _, _>(on_resolve_code_lens_handler)
         .await
         .on_parallel::<SignatureHelpRequest, _, _>(on_signature_helper_handler)
+        .await
+        .on_parallel::<DocumentHighlightRequest, _, _>(on_document_highlight_handler)
         .await
         .finish();
     Ok(())
