@@ -21,7 +21,11 @@ impl LuaInferConfig {
     }
 
     pub fn is_require_function(&self, function_name: &str) -> bool {
-        self.require_function.contains(function_name)
+        if self.require_function.contains(function_name) {
+            return true
+        }
+
+        function_name == "require"
     }
 
     pub fn get_file_id(&self) -> FileId {
