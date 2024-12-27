@@ -1,4 +1,5 @@
 mod code_lens;
+mod command;
 mod completion;
 mod defination;
 mod document_color;
@@ -20,10 +21,17 @@ mod semantic_token;
 mod signature_helper;
 mod text_document;
 
+use command::COMMANDS;
 pub use initialized::initialized_handler;
 pub use initialized::{init_analysis, ClientConfig};
 use lsp_types::{
-    CodeLensOptions, ColorProviderCapability, CompletionOptions, CompletionOptionsCompletionItem, DocumentLinkOptions, DocumentSymbolOptions, FoldingRangeProviderCapability, HoverProviderCapability, InlayHintOptions, InlayHintServerCapabilities, OneOf, RenameOptions, SaveOptions, SelectionRangeProviderCapability, SemanticTokensFullOptions, SemanticTokensOptions, SemanticTokensServerCapabilities, ServerCapabilities, SignatureHelpOptions, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncSaveOptions
+    CodeLensOptions, ColorProviderCapability, CompletionOptions, CompletionOptionsCompletionItem,
+    DocumentLinkOptions, DocumentSymbolOptions, ExecuteCommandOptions,
+    FoldingRangeProviderCapability, HoverProviderCapability, InlayHintOptions,
+    InlayHintServerCapabilities, OneOf, RenameOptions, SaveOptions,
+    SelectionRangeProviderCapability, SemanticTokensFullOptions, SemanticTokensOptions,
+    SemanticTokensServerCapabilities, ServerCapabilities, SignatureHelpOptions,
+    TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncSaveOptions,
 };
 pub use notification_handler::on_notification_handler;
 pub use request_handler::on_req_handler;
@@ -88,15 +96,18 @@ pub fn server_capabilities() -> ServerCapabilities {
             retrigger_characters: Some(vec!["(", ","].iter().map(|s| s.to_string()).collect()),
             ..Default::default()
         }),
-        // The general implementation may not be as good as the editor itself, so this feature is temporarily disabled
-        // document_highlight_provider: Some(OneOf::Left(true)),
+        document_highlight_provider: Some(OneOf::Left(true)),
         // todo: enable semantic token
-        // semantic_tokens_provider: Some(SemanticTokensServerCapabilities::SemanticTokensOptions(
-        //     SemanticTokensOptions {
-        //         full: Some(SemanticTokensFullOptions::Bool(true)),
-        //         ..Default::default()
-        //     },
-        // )),
+        semantic_tokens_provider: Some(SemanticTokensServerCapabilities::SemanticTokensOptions(
+            SemanticTokensOptions {
+                full: Some(SemanticTokensFullOptions::Bool(true)),
+                ..Default::default()
+            },
+        )),
+        execute_command_provider: Some(ExecuteCommandOptions {
+            commands: COMMANDS.iter().map(|s| s.to_string()).collect(),
+            ..Default::default()
+        }),
         ..Default::default()
     }
 }

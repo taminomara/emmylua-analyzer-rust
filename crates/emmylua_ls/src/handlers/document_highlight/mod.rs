@@ -1,10 +1,12 @@
-use code_analysis::LuaPropertyOwnerId;
+mod highlight_tokens;
+
 use emmylua_parser::{LuaAstNode, LuaTokenKind};
 use lsp_types::{DocumentHighlight, DocumentHighlightParams};
 use rowan::TokenAtOffset;
+use highlight_tokens::highlight_tokens;
 use tokio_util::sync::CancellationToken;
 
-use crate::{context::ServerContextSnapshot, handlers::references::search_decl_references};
+use crate::context::ServerContextSnapshot;
 
 pub async fn on_document_highlight_handler(
     context: ServerContextSnapshot,
@@ -36,28 +38,5 @@ pub async fn on_document_highlight_handler(
         }
     };
 
-    let mut locations = Vec::new();
-    let property_owner = semantic_model.get_property_owner_id(token.into())?;
-    match property_owner {
-        LuaPropertyOwnerId::LuaDecl(decl_id) => {
-            search_decl_references(&mut semantic_model, decl_id, &mut locations);
-        }
-        _ => {}
-    }
-
-    // temporarily impl
-    let mut result = Vec::new();
-    let document = semantic_model.get_document();
-    let uri = document.get_uri();
-    for location in locations {
-        if location.uri != uri {
-            continue;
-        }
-        result.push(DocumentHighlight {
-            range: location.range,
-            kind: None,
-        });
-    }
-
-    Some(result)
+    highlight_tokens(&mut semantic_model, token)
 }
