@@ -3,7 +3,7 @@ mod build_color;
 use build_color::{build_colors, convert_color_to_hex};
 use emmylua_parser::LuaAstNode;
 use lsp_types::{
-    ColorInformation, ColorPresentation, ColorPresentationParams, DocumentColorParams, TextEdit,
+    ClientCapabilities, ColorInformation, ColorPresentation, ColorPresentationParams, ColorProviderCapability, DocumentColorParams, ServerCapabilities, TextEdit
 };
 use tokio_util::sync::CancellationToken;
 
@@ -73,4 +73,12 @@ pub async fn on_document_color_presentation(
     }];
 
     color_presentations
+}
+
+pub fn register_capabilities(
+    server_capabilities: &mut ServerCapabilities,
+    _: &ClientCapabilities,
+) -> Option<()> {
+    server_capabilities.color_provider = Some(ColorProviderCapability::Simple(true));
+    Some(())
 }

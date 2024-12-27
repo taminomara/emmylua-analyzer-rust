@@ -1,12 +1,12 @@
 mod reference_seacher;
 
+use crate::context::ServerContextSnapshot;
 use emmylua_parser::{LuaAstNode, LuaTokenKind};
-use lsp_types::{Location, ReferenceParams};
+use lsp_types::{ClientCapabilities, Location, OneOf, ReferenceParams, ServerCapabilities};
 use reference_seacher::search_references;
+pub use reference_seacher::{search_decl_references, search_member_references};
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
-use crate::context::ServerContextSnapshot;
-pub use reference_seacher::{search_member_references, search_decl_references};
 
 pub async fn on_references_handler(
     context: ServerContextSnapshot,
@@ -39,4 +39,12 @@ pub async fn on_references_handler(
     };
 
     search_references(&mut semantic_model, &analysis.compilation, token)
+}
+
+pub fn register_capabilities(
+    server_capabilities: &mut ServerCapabilities,
+    _: &ClientCapabilities,
+) -> Option<()> {
+    server_capabilities.references_provider = Some(OneOf::Left(true));
+    Some(())
 }

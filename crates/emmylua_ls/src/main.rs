@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
 
     let (id, params) = connection.initialize_start()?;
     let initialization_params: InitializeParams = serde_json::from_value(params).unwrap();
-    let server_capbilities = server_capabilities();
+    let server_capbilities = server_capabilities(&initialization_params.capabilities);
     let initialize_data = serde_json::json!({
         "capabilities": server_capbilities,
         "serverInfo": {

@@ -4,7 +4,8 @@ use crate::context::ServerContextSnapshot;
 use build_signature_helper::build_signature_helper;
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxKind, LuaTokenKind};
 use lsp_types::{
-    SignatureHelp, SignatureHelpContext, SignatureHelpParams, SignatureHelpTriggerKind,
+    ClientCapabilities, ServerCapabilities, SignatureHelp, SignatureHelpContext,
+    SignatureHelpOptions, SignatureHelpParams, SignatureHelpTriggerKind,
 };
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
@@ -60,7 +61,9 @@ pub async fn on_signature_helper_handler(
         let node = token.parent_ancestors().find(|node| {
             matches!(
                 node.kind().into(),
-                LuaSyntaxKind::CallArgList | LuaSyntaxKind::TypeGeneric | LuaSyntaxKind::DocTypeList
+                LuaSyntaxKind::CallArgList
+                    | LuaSyntaxKind::TypeGeneric
+                    | LuaSyntaxKind::DocTypeList
             )
         })?;
         match node.kind().into() {
@@ -73,4 +76,16 @@ pub async fn on_signature_helper_handler(
             _ => None,
         }
     }
+}
+
+pub fn register_capabilities(
+    server_capabilities: &mut ServerCapabilities,
+    _: &ClientCapabilities,
+) -> Option<()> {
+    server_capabilities.signature_help_provider = Some(SignatureHelpOptions {
+        trigger_characters: Some(vec!["(", ","].iter().map(|s| s.to_string()).collect()),
+        retrigger_characters: Some(vec!["(", ","].iter().map(|s| s.to_string()).collect()),
+        ..Default::default()
+    });
+    Some(())
 }

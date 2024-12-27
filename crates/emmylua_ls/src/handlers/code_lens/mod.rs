@@ -3,7 +3,9 @@ mod resolve_code_lens;
 
 use build_code_lens::build_code_lens;
 use code_analysis::{LuaDeclId, LuaMemberId};
-use lsp_types::{CodeLens, CodeLensParams};
+use lsp_types::{
+    ClientCapabilities, CodeLens, CodeLensOptions, CodeLensParams, ServerCapabilities,
+};
 use resolve_code_lens::resolve_code_lens;
 use serde::{Deserialize, Serialize};
 use tokio_util::sync::CancellationToken;
@@ -30,12 +32,7 @@ pub async fn on_resolve_code_lens_handler(
 ) -> CodeLens {
     let analysis = context.analysis.read().await;
     let compilation = &analysis.compilation;
-    let client_id = context
-        .config_manager
-        .read()
-        .await
-        .client_config
-        .client_id;
+    let client_id = context.config_manager.read().await.client_config.client_id;
 
     resolve_code_lens(compilation, code_lens.clone(), client_id).unwrap_or(code_lens)
 }
@@ -44,4 +41,14 @@ pub async fn on_resolve_code_lens_handler(
 pub enum CodeLensData {
     Member(LuaMemberId),
     DeclId(LuaDeclId),
+}
+
+pub fn register_capabilities(
+    server_capabilities: &mut ServerCapabilities,
+    _: &ClientCapabilities,
+) -> Option<()> {
+    server_capabilities.code_lens_provider = Some(CodeLensOptions {
+        resolve_provider: Some(true),
+    });
+    Some(())
 }

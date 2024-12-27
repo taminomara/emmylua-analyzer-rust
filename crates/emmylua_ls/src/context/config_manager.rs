@@ -16,7 +16,6 @@ pub struct ConfigManager {
     status_bar: Arc<VsCodeStatusBar>,
     pub client_config: ClientConfig,
     pub workspace_folders: Vec<PathBuf>,
-    pub semantic_multiline_support: bool,
     config_update_token: Arc<Mutex<Option<CancellationToken>>>,
 }
 
@@ -32,7 +31,6 @@ impl ConfigManager {
             status_bar,
             client_config: ClientConfig::default(),
             workspace_folders: Vec::new(),
-            semantic_multiline_support: false,
             config_update_token: Arc::new(Mutex::new(None)),
         }
     }

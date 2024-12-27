@@ -1,9 +1,11 @@
 mod highlight_tokens;
 
 use emmylua_parser::{LuaAstNode, LuaTokenKind};
-use lsp_types::{DocumentHighlight, DocumentHighlightParams};
-use rowan::TokenAtOffset;
 use highlight_tokens::highlight_tokens;
+use lsp_types::{
+    ClientCapabilities, DocumentHighlight, DocumentHighlightParams, OneOf, ServerCapabilities,
+};
+use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
@@ -39,4 +41,12 @@ pub async fn on_document_highlight_handler(
     };
 
     highlight_tokens(&mut semantic_model, token)
+}
+
+pub fn register_capabilities(
+    server_capabilities: &mut ServerCapabilities,
+    _: &ClientCapabilities,
+) -> Option<()> {
+    server_capabilities.document_highlight_provider = Some(OneOf::Left(true));
+    Some(())
 }

@@ -1,5 +1,5 @@
 use emmylua_parser::LuaAstNode;
-use lsp_types::{SelectionRange, SelectionRangeParams};
+use lsp_types::{ClientCapabilities, SelectionRange, SelectionRangeParams, SelectionRangeProviderCapability, ServerCapabilities};
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
 
@@ -52,4 +52,12 @@ pub async fn on_document_selection_range_handle(
     }
 
     Some(result)
+}
+
+pub fn register_capabilities(
+    server_capabilities: &mut ServerCapabilities,
+    _: &ClientCapabilities,
+) -> Option<()> {
+    server_capabilities.selection_range_provider = Some(SelectionRangeProviderCapability::Simple(true));
+    Some(())
 }

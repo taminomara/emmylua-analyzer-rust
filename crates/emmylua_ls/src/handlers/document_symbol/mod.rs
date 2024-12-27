@@ -6,7 +6,9 @@ use builder::{DocumentSymbolBuilder, LuaSymbol};
 use code_analysis::SemanticModel;
 use emmylua_parser::{LuaAst, LuaAstNode, LuaChunk};
 use expr::{build_closure_expr_symbol, build_table_symbol};
-use lsp_types::{DocumentSymbol, DocumentSymbolParams, DocumentSymbolResponse, SymbolKind};
+use lsp_types::{
+    ClientCapabilities, DocumentSymbol, DocumentSymbolOptions, DocumentSymbolParams, DocumentSymbolResponse, OneOf, ServerCapabilities, SymbolKind
+};
 use stats::{
     build_assign_stat_symbol, build_for_range_stat_symbol, build_for_stat_symbol,
     build_func_stat_symbol, build_if_stat_symbol, build_local_func_stat_symbol,
@@ -87,5 +89,16 @@ fn build_child_document_symbols(buider: &mut DocumentSymbolBuilder, root: &LuaCh
         }
     }
 
+    Some(())
+}
+
+pub fn register_capabilities(
+    server_capabilities: &mut ServerCapabilities,
+    _: &ClientCapabilities,
+) -> Option<()> {
+    server_capabilities.document_symbol_provider = Some(OneOf::Right(DocumentSymbolOptions {
+        label: Some("EmmyLua".into()),
+        work_done_progress_options: Default::default(),
+    }));
     Some(())
 }

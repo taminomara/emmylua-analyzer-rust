@@ -51,10 +51,6 @@ pub async fn initialized_handler(
     let mut config_manager = context.config_manager.write().await;
     config_manager.workspace_folders = workspace_folders.clone();
     config_manager.client_config = client_config.clone();
-    if is_support_muliline_tokens(&params.capabilities) {
-        config_manager.semantic_multiline_support = true;
-    }
-
     drop(config_manager);
 
     init_analysis(
@@ -231,16 +227,4 @@ fn get_client_id(client_info: &Option<ClientInfo>) -> ClientId {
         }
         None => ClientId::Other,
     }
-}
-
-fn is_support_muliline_tokens(client_capability: &lsp_types::ClientCapabilities) -> bool {
-    if let Some(text_document) = &client_capability.text_document {
-        if let Some(support) = &text_document.semantic_tokens {
-            if let Some(support) = &support.multiline_token_support {
-                return *support;
-            }
-        }
-    }
-
-    false
 }

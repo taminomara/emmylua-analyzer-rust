@@ -1,7 +1,10 @@
 mod rename_references;
 
 use emmylua_parser::{LuaAstNode, LuaTokenKind};
-use lsp_types::{PrepareRenameResponse, RenameParams, TextDocumentPositionParams, WorkspaceEdit};
+use lsp_types::{
+    ClientCapabilities, OneOf, PrepareRenameResponse, RenameOptions, RenameParams,
+    ServerCapabilities, TextDocumentPositionParams, WorkspaceEdit,
+};
 use rename_references::rename_references;
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
@@ -38,7 +41,12 @@ pub async fn on_rename_handler(
         }
     };
 
-    rename_references(&mut semantic_model, &analysis.compilation, token, params.new_name)
+    rename_references(
+        &mut semantic_model,
+        &analysis.compilation,
+        token,
+        params.new_name,
+    )
 }
 
 pub async fn on_prepare_rename_handler(
@@ -81,4 +89,15 @@ pub async fn on_prepare_rename_handler(
     } else {
         None
     }
+}
+
+pub fn register_capabilities(
+    server_capabilities: &mut ServerCapabilities,
+    _: &ClientCapabilities,
+) -> Option<()> {
+    server_capabilities.rename_provider = Some(OneOf::Right(RenameOptions {
+        prepare_provider: Some(true),
+        work_done_progress_options: Default::default(),
+    }));
+    Some(())
 }

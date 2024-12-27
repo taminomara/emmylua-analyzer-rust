@@ -8,7 +8,10 @@ use add_completions::CompletionData;
 use completion_builder::CompletionBuilder;
 use emmylua_parser::LuaAstNode;
 use log::error;
-use lsp_types::{CompletionItem, CompletionParams, CompletionResponse};
+use lsp_types::{
+    ClientCapabilities, CompletionItem, CompletionOptions, CompletionOptionsCompletionItem,
+    CompletionParams, CompletionResponse, ServerCapabilities,
+};
 use providers::add_completions;
 use resolve_completion::resolve_completion;
 use rowan::TokenAtOffset;
@@ -67,4 +70,26 @@ pub async fn on_completion_resolve_handler(
     }
 
     completion_item
+}
+
+pub fn register_capabilities(
+    server_capabilities: &mut ServerCapabilities,
+    _: &ClientCapabilities,
+) -> Option<()> {
+    server_capabilities.completion_provider = Some(CompletionOptions {
+        resolve_provider: Some(true),
+        trigger_characters: Some(
+            vec![".", ":", "(", "[", "\"", "\'", ",", "@", "\\", "/"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
+        ),
+        work_done_progress_options: Default::default(),
+        completion_item: Some(CompletionOptionsCompletionItem {
+            label_details_support: Some(true),
+        }),
+        all_commit_characters: Default::default(),
+    });
+
+    Some(())
 }

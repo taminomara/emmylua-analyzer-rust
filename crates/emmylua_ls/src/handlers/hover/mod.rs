@@ -5,7 +5,7 @@ mod hover_humanize;
 use build_hover::build_semantic_info_hover;
 use emmylua_parser::LuaAstNode;
 use keyword_hover::{hover_keyword, is_keyword};
-use lsp_types::{Hover, HoverContents, HoverParams, MarkupContent};
+use lsp_types::{ClientCapabilities, Hover, HoverContents, HoverParams, HoverProviderCapability, MarkupContent, ServerCapabilities};
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
 
@@ -55,4 +55,12 @@ pub async fn on_hover(
             build_semantic_info_hover(db, &document, token, semantic_info)
         }
     }
+}
+
+pub fn register_capabilities(
+    server_capabilities: &mut ServerCapabilities,
+    _: &ClientCapabilities,
+) -> Option<()> {
+    server_capabilities.hover_provider = Some(HoverProviderCapability::Simple(true));
+    Some(())
 }

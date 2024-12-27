@@ -7,9 +7,14 @@ use builder::FoldingRangeBuilder;
 use comment::build_comment_fold_range;
 use emmylua_parser::{LuaAst, LuaAstNode};
 use expr::{build_closure_expr_fold_range, build_string_fold_range, build_table_expr_fold_range};
-use lsp_types::{FoldingRange, FoldingRangeParams};
+use lsp_types::{
+    ClientCapabilities, FoldingRange, FoldingRangeParams, FoldingRangeProviderCapability,
+    ServerCapabilities,
+};
 use stats::{
-    build_do_stat_fold_range, build_for_range_stat_fold_range, build_for_stat_fold_range, build_func_stat_fold_range, build_if_stat_fold_range, build_local_func_stat_fold_range, build_repeat_stat_fold_range, build_while_stat_fold_range
+    build_do_stat_fold_range, build_for_range_stat_fold_range, build_for_stat_fold_range,
+    build_func_stat_fold_range, build_if_stat_fold_range, build_local_func_stat_fold_range,
+    build_repeat_stat_fold_range, build_while_stat_fold_range,
 };
 use tokio_util::sync::CancellationToken;
 
@@ -75,4 +80,12 @@ fn build_folding_ranges(builder: &mut FoldingRangeBuilder) {
             _ => {}
         }
     }
+}
+
+pub fn register_capabilities(
+    server_capabilities: &mut ServerCapabilities,
+    _: &ClientCapabilities,
+) -> Option<()> {
+    server_capabilities.folding_range_provider = Some(FoldingRangeProviderCapability::Simple(true));
+    Some(())
 }

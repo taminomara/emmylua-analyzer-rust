@@ -2,7 +2,9 @@ mod build_link;
 
 use build_link::build_links;
 use emmylua_parser::LuaAstNode;
-use lsp_types::{DocumentLink, DocumentLinkParams};
+use lsp_types::{
+    ClientCapabilities, DocumentLink, DocumentLinkOptions, DocumentLinkParams, ServerCapabilities,
+};
 use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
@@ -31,4 +33,15 @@ pub async fn on_document_link_resolve_handler(
     _: CancellationToken,
 ) -> DocumentLink {
     params
+}
+
+pub fn register_capabilities(
+    server_capabilities: &mut ServerCapabilities,
+    _: &ClientCapabilities,
+) -> Option<()> {
+    server_capabilities.document_link_provider = Some(DocumentLinkOptions {
+        resolve_provider: Some(false),
+        work_done_progress_options: Default::default(),
+    });
+    Some(())
 }

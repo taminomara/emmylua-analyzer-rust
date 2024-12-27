@@ -1,6 +1,8 @@
 use code_analysis::LuaPropertyOwnerId;
 use emmylua_parser::{LuaAstNode, LuaTokenKind};
-use lsp_types::{GotoDefinitionParams, GotoDefinitionResponse};
+use lsp_types::{
+    ClientCapabilities, GotoDefinitionParams, GotoDefinitionResponse, OneOf, ServerCapabilities,
+};
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
 
@@ -74,4 +76,12 @@ pub async fn on_goto_defination_handler(
     }
 
     None
+}
+
+pub fn register_capabilities(
+    server_capabilities: &mut ServerCapabilities,
+    _: &ClientCapabilities,
+) -> Option<()> {
+    server_capabilities.definition_provider = Some(OneOf::Left(true));
+    Some(())
 }
