@@ -29,13 +29,15 @@ use lsp_types::{
     DocumentLinkOptions, DocumentSymbolOptions, ExecuteCommandOptions,
     FoldingRangeProviderCapability, HoverProviderCapability, InlayHintOptions,
     InlayHintServerCapabilities, OneOf, RenameOptions, SaveOptions,
-    SelectionRangeProviderCapability, SemanticTokensFullOptions, SemanticTokensOptions,
-    SemanticTokensServerCapabilities, ServerCapabilities, SignatureHelpOptions,
-    TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncSaveOptions,
+    SelectionRangeProviderCapability, SemanticTokensFullOptions, SemanticTokensLegend,
+    SemanticTokensOptions, SemanticTokensServerCapabilities, ServerCapabilities,
+    SignatureHelpOptions, TextDocumentSyncCapability, TextDocumentSyncKind,
+    TextDocumentSyncSaveOptions,
 };
 pub use notification_handler::on_notification_handler;
 pub use request_handler::on_req_handler;
 pub use response_handler::on_response_handler;
+use semantic_token::{SEMANTIC_TOKEN_MODIFIERS, SEMANTIC_TOKEN_TYPES};
 
 pub fn server_capabilities() -> ServerCapabilities {
     ServerCapabilities {
@@ -97,9 +99,12 @@ pub fn server_capabilities() -> ServerCapabilities {
             ..Default::default()
         }),
         document_highlight_provider: Some(OneOf::Left(true)),
-        // todo: enable semantic token
         semantic_tokens_provider: Some(SemanticTokensServerCapabilities::SemanticTokensOptions(
             SemanticTokensOptions {
+                legend: SemanticTokensLegend {
+                    token_modifiers: SEMANTIC_TOKEN_MODIFIERS.iter().cloned().collect(),
+                    token_types: SEMANTIC_TOKEN_TYPES.iter().cloned().collect(),
+                },
                 full: Some(SemanticTokensFullOptions::Bool(true)),
                 ..Default::default()
             },
