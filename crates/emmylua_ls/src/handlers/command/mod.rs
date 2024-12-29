@@ -1,18 +1,23 @@
+mod commands;
+
+use commands::get_commands_list;
 use lsp_types::{
     ClientCapabilities, ExecuteCommandOptions, ExecuteCommandParams, ServerCapabilities,
 };
 use serde_json::Value;
 use tokio_util::sync::CancellationToken;
-
 use crate::context::ServerContextSnapshot;
-
-pub const COMMANDS: &[&str] = &["emmy.auto.require", "emmy.fix.format"];
+#[allow(unused)]
+pub use commands::*;
 
 pub async fn on_execute_command_handler(
     context: ServerContextSnapshot,
     params: ExecuteCommandParams,
     _: CancellationToken,
 ) -> Option<Value> {
+    let args = params.arguments;
+    let command_name = params.command.as_str();
+    commands::dispatch_command(context, command_name, args).await;
     None
 }
 
@@ -21,7 +26,7 @@ pub fn register_capabilities(
     _: &ClientCapabilities,
 ) -> Option<()> {
     server_capabilities.execute_command_provider = Some(ExecuteCommandOptions {
-        commands: COMMANDS.iter().map(|s| s.to_string()).collect(),
+        commands: get_commands_list(),
         ..Default::default()
     });
     Some(())
