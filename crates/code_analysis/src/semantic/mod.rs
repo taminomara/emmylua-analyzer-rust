@@ -9,13 +9,13 @@ mod type_compact;
 
 use std::{collections::HashSet, sync::Arc};
 
-use emmylua_parser::{LuaAstNode, LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken};
+use emmylua_parser::{LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken};
 use infer::InferResult;
 pub use infer::LuaInferConfig;
 use member::infer_members;
 pub use member::LuaMemberInfo;
 use reference::is_reference_to;
-use rowan::{GreenNode, NodeOrToken, TextRange};
+use rowan::{NodeOrToken, TextRange};
 pub use semantic_info::SemanticInfo;
 use semantic_info::{
     infer_node_property_owner, infer_node_semantic_info, infer_token_property_owner,

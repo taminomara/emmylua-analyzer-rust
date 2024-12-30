@@ -15,7 +15,7 @@ use crate::{
         member::{get_buildin_type_map_type_id, without_index_operator, without_members},
         InferGuard,
     },
-    InFiled,
+    InFiled, LuaInstanceType,
 };
 
 use super::{infer_expr, InferResult, LuaInferConfig};
@@ -107,6 +107,7 @@ fn infer_member_by_member_key(
             infer_exit_field_member(db, config, exist_field, member_key)
         }
         LuaType::Global => infer_global_field_member(db, config, member_key),
+        LuaType::Instance(inst) => infer_instance_member(db, config, inst, member_key, infer_guard),
         _ => None,
     }
 }
@@ -270,6 +271,30 @@ fn infer_exit_field_member(
     } else {
         member_type
     }
+}
+
+fn infer_instance_member(
+    db: &DbIndex,
+    config: &LuaInferConfig,
+    inst: &LuaInstanceType,
+    member_key: &LuaIndexKey,
+    infer_guard: &mut InferGuard,
+) -> InferResult {
+    let range = inst.get_range();
+
+    let orign_type = inst.get_base();
+    if let Some(result) =
+        infer_member_by_member_key(db, config, &orign_type, member_key, infer_guard)
+    {
+        return Some(result);
+    }
+
+    let member_owner = LuaMemberOwner::Element(range.clone());
+    if let Some(result) = infer_table_member(db, member_owner, member_key) {
+        return Some(result);
+    }
+
+    None
 }
 
 fn infer_member_by_operator(

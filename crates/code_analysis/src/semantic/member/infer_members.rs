@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use crate::{
     semantic::{instantiate::instantiate_type, InferGuard},
-    DbIndex, LuaExistFieldType, LuaGenericType, LuaIntersectionType, LuaMemberKey, LuaMemberOwner,
-    LuaObjectType, LuaPropertyOwnerId, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType,
-    TypeAssertion,
+    DbIndex, LuaExistFieldType, LuaGenericType, LuaInstanceType, LuaIntersectionType, LuaMemberKey,
+    LuaMemberOwner, LuaObjectType, LuaPropertyOwnerId, LuaTupleType, LuaType, LuaTypeDeclId,
+    LuaUnionType, TypeAssertion,
 };
 
 use super::{get_buildin_type_map_type_id, InferMembersResult, LuaMemberInfo};
@@ -45,6 +45,7 @@ fn infer_members_guard(
         LuaType::Generic(generic_type) => infer_generic_members(db, generic_type, infer_guard),
         LuaType::ExistField(exist_field) => infer_exist_field_members(db, exist_field),
         LuaType::Global => infer_global_members(db),
+        LuaType::Instance(inst) => infer_instance_members(db, inst, infer_guard),
         _ => None,
     }
 }
@@ -254,6 +255,26 @@ fn infer_global_members(db: &DbIndex) -> InferMembersResult {
             typ: decl.get_type().cloned().unwrap_or(LuaType::Unknown),
             origin_typ: None,
         });
+    }
+
+    Some(members)
+}
+
+fn infer_instance_members(
+    db: &DbIndex,
+    inst: &LuaInstanceType,
+    infer_guard: &mut InferGuard,
+) -> InferMembersResult {
+    let mut members = Vec::new();
+    let range = inst.get_range();
+    let member_owner = LuaMemberOwner::Element(range.clone());
+    if let Some(normal_members) = infer_normal_members(db, member_owner) {
+        members.extend(normal_members);
+    }
+
+    let origin_type = inst.get_base();
+    if let Some(origin_members) = infer_members_guard(db, origin_type, infer_guard) {
+        members.extend(origin_members);
     }
 
     Some(members)

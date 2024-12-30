@@ -5,8 +5,8 @@ use crate::{
         member::{get_buildin_type_map_type_id, without_members},
         InferGuard,
     },
-    DbIndex, LuaDeclId, LuaDeclOrMemberId, LuaInferConfig, LuaMemberId, LuaMemberKey,
-    LuaMemberOwner, LuaPropertyOwnerId, LuaType, LuaTypeDeclId, LuaUnionType,
+    DbIndex, LuaDeclId, LuaDeclOrMemberId, LuaInferConfig, LuaInstanceType, LuaMemberId,
+    LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId, LuaType, LuaTypeDeclId, LuaUnionType,
 };
 
 use super::infer_expr;
@@ -181,6 +181,9 @@ fn infer_member_property_owner_by_member_key(
             member_key,
             infer_guard,
         ),
+        LuaType::Instance(inst) => {
+            infer_instance_member_property_by_member_key(db, config, inst, member_key, infer_guard)
+        }
         _ => None,
     }
 }
@@ -272,6 +275,30 @@ fn infer_union_member_semantic_info(
         ) {
             return Some(property_owner_id);
         }
+    }
+
+    None
+}
+
+fn infer_instance_member_property_by_member_key(
+    db: &DbIndex,
+    config: &LuaInferConfig,
+    inst: &LuaInstanceType,
+    member_key: &LuaMemberKey,
+    infer_guard: &mut InferGuard,
+) -> Option<LuaPropertyOwnerId> {
+    let range = inst.get_range();
+
+    let orign_type = inst.get_base();
+    if let Some(result) =
+        infer_member_property_owner_by_member_key(db, config, orign_type, member_key, infer_guard)
+    {
+        return Some(result);
+    }
+
+    let member_owner = LuaMemberOwner::Element(range.clone());
+    if let Some(result) = infer_table_member_property_owner(db, member_owner, member_key) {
+        return Some(result);
     }
 
     None
