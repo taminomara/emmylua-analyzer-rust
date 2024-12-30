@@ -225,6 +225,10 @@ impl LuaTypeIndex {
         self.full_name_type_map.get(decl_id)
     }
 
+    pub fn get_all_types(&self) -> Vec<&LuaTypeDecl> {
+        self.full_name_type_map.values().collect()
+    }
+
     pub fn get_type_decl_mut(&mut self, decl_id: &LuaTypeDeclId) -> Option<&mut LuaTypeDecl> {
         self.full_name_type_map.get_mut(decl_id)
     }

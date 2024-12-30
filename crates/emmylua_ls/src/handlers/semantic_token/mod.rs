@@ -11,7 +11,7 @@ use lsp_types::{
 pub use semantic_token_builder::{SEMANTIC_TOKEN_MODIFIERS, SEMANTIC_TOKEN_TYPES};
 use tokio_util::sync::CancellationToken;
 
-static mut SEMANTIC_MULTILINE_SUPPORT: bool = true;
+static mut SEMANTIC_MULTILINE_SUPPORT: bool = false;
 
 pub async fn on_semantic_token_handler(
     context: ServerContextSnapshot,

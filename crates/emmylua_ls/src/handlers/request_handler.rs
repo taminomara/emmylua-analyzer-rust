@@ -8,7 +8,7 @@ use lsp_types::request::{
     DocumentSymbolRequest, ExecuteCommand, FoldingRangeRequest, GotoDefinition, HoverRequest,
     InlayHintRequest, InlayHintResolveRequest, InlineValueRequest, PrepareRenameRequest,
     References, Rename, ResolveCompletionItem, SelectionRangeRequest, SemanticTokensFullRequest,
-    SignatureHelpRequest,
+    SignatureHelpRequest, WorkspaceSymbolRequest,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use tokio_util::sync::CancellationToken;
@@ -34,7 +34,7 @@ use super::{
     references::on_references_handler,
     rename::{on_prepare_rename_handler, on_rename_handler},
     semantic_token::on_semantic_token_handler,
-    signature_helper::on_signature_helper_handler,
+    signature_helper::on_signature_helper_handler, workspace_symbol::on_workspace_symbol_handler,
 };
 
 pub async fn on_req_handler(
@@ -91,6 +91,8 @@ pub async fn on_req_handler(
         .on_parallel::<CodeActionRequest, _, _>(on_code_action_handler)
         .await
         .on_parallel::<InlineValueRequest, _, _>(on_inline_values_handler)
+        .await
+        .on_parallel::<WorkspaceSymbolRequest, _, _>(on_workspace_symbol_handler)
         .await
         .finish();
     Ok(())

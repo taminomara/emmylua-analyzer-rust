@@ -13,6 +13,7 @@ mod fold_range;
 mod hover;
 mod initialized;
 mod inlay_hint;
+mod inline_values;
 mod notification_handler;
 mod references;
 mod rename;
@@ -21,7 +22,7 @@ mod response_handler;
 mod semantic_token;
 mod signature_helper;
 mod text_document;
-mod inline_values;
+mod workspace_symbol;
 
 pub use initialized::initialized_handler;
 pub use initialized::{init_analysis, ClientConfig};
@@ -57,5 +58,6 @@ pub fn server_capabilities(client_capabilities: &ClientCapabilities) -> ServerCa
     capabilities!(command);
     capabilities!(code_actions);
     capabilities!(inline_values);
+    capabilities!(workspace_symbol);
     server_capabilities
 }

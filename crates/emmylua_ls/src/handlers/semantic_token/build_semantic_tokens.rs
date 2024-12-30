@@ -135,11 +135,15 @@ fn build_tokens_semantic_token(
         LuaTokenKind::TkDocDetail => {
             builder.push(token, SemanticTokenType::COMMENT);
         }
-        LuaTokenKind::TkDocQuestion => todo!(),
-        LuaTokenKind::TkDocVisibility => todo!(),
-        LuaTokenKind::TkDocReadonly => todo!(),
-        LuaTokenKind::TkAt => todo!(),
-        LuaTokenKind::TkDocVersionNumber => todo!(),
+        LuaTokenKind::TkDocQuestion => {
+            builder.push(token, SemanticTokenType::OPERATOR);
+        }
+        LuaTokenKind::TkDocVisibility => {
+            builder.push(token, SemanticTokenType::DECORATOR);
+        }
+        LuaTokenKind::TkDocVersionNumber => {
+            builder.push(token, SemanticTokenType::NUMBER);
+        }
         LuaTokenKind::TkStringTemplateType => {
             builder.push(token, SemanticTokenType::STRING);
         }
