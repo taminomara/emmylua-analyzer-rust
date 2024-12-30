@@ -22,17 +22,19 @@ pub fn infer_expr_property_owner(
         return Some(LuaPropertyOwnerId::LuaDecl(maybe_decl_id));
     };
 
-    let member_id = LuaMemberId::new(expr.get_syntax_id(), file_id);
-    if let Some(_) = db.get_member_index().get_member(&member_id) {
-        return Some(LuaPropertyOwnerId::Member(member_id));
-    };
-
     match expr {
         LuaExpr::NameExpr(name_expr) => infer_name_expr_property_owner(db, infer_config, name_expr),
         LuaExpr::IndexExpr(index_expr) => {
             infer_index_expr_property_owner(db, infer_config, index_expr)
         }
-        _ => None,
+        _ => {
+            let member_id = LuaMemberId::new(expr.get_syntax_id(), file_id);
+            if let Some(_) = db.get_member_index().get_member(&member_id) {
+                return Some(LuaPropertyOwnerId::Member(member_id));
+            };
+
+            None
+        }
     }
 }
 

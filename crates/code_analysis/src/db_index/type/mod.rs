@@ -5,6 +5,7 @@ mod types;
 
 use super::traits::LuaIndex;
 use crate::{FileId, InFiled};
+use emmylua_parser::LuaSyntaxId;
 use flagset::FlagSet;
 use rowan::TextRange;
 use std::collections::HashMap;
@@ -21,6 +22,7 @@ pub struct LuaTypeIndex {
     full_name_type_map: HashMap<LuaTypeDeclId, LuaTypeDecl>,
     generic_params: HashMap<LuaTypeDeclId, Vec<(String, Option<LuaType>)>>,
     supers: HashMap<LuaTypeDeclId, Vec<InFiled<LuaType>>>,
+    as_force_type: HashMap<InFiled<LuaSyntaxId>, LuaType>,
 }
 
 impl LuaTypeIndex {
@@ -32,6 +34,7 @@ impl LuaTypeIndex {
             full_name_type_map: HashMap::new(),
             generic_params: HashMap::new(),
             supers: HashMap::new(),
+            as_force_type: HashMap::new(),
         }
     }
 
@@ -225,6 +228,14 @@ impl LuaTypeIndex {
     pub fn get_type_decl_mut(&mut self, decl_id: &LuaTypeDeclId) -> Option<&mut LuaTypeDecl> {
         self.full_name_type_map.get_mut(decl_id)
     }
+
+    pub fn add_as_force_type(&mut self, syntax_id: InFiled<LuaSyntaxId>, ty: LuaType) {
+        self.as_force_type.insert(syntax_id, ty);
+    }
+
+    pub fn get_as_force_type(&self, syntax_id: &InFiled<LuaSyntaxId>) -> Option<&LuaType> {
+        self.as_force_type.get(syntax_id)
+    }
 }
 
 impl LuaIndex for LuaTypeIndex {
@@ -255,5 +266,7 @@ impl LuaIndex for LuaTypeIndex {
                 }
             }
         }
+
+        self.as_force_type.retain(|id, _| id.file_id != file_id);
     }
 }

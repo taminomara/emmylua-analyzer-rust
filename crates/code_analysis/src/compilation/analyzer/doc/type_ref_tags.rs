@@ -1,11 +1,15 @@
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaDocDescriptionOwner, LuaDocTagModule, LuaDocTagOverload,
-    LuaDocTagParam, LuaDocTagReturn, LuaDocTagType, LuaLocalName, LuaVarExpr,
+    LuaAst, LuaAstNode, LuaAstToken, LuaDocDescriptionOwner, LuaDocTagAs, LuaDocTagModule,
+    LuaDocTagOverload, LuaDocTagParam, LuaDocTagReturn, LuaDocTagType, LuaExpr, LuaLocalName,
+    LuaVarExpr,
 };
 
-use crate::db_index::{
-    LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaPropertyOwnerId,
-    LuaSignatureId, LuaType,
+use crate::{
+    db_index::{
+        LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaPropertyOwnerId,
+        LuaSignatureId, LuaType,
+    },
+    InFiled,
 };
 
 use super::{
@@ -217,12 +221,17 @@ pub fn analyze_module(analyzer: &mut DocAnalyzer, tag: LuaDocTagModule) -> Optio
     Some(())
 }
 
-// pub fn analyze_as(analyzer: &mut DocAnalyzer, tag: LuaDocTagAs) -> Option<()> {
-//     // if let Some(owner) = analyzer.comment.get_owner() {
-//     //     let type_ref = infer_type(analyzer, tag.get_type_list().get(0)?);
-//     //     let id = LuaSignatureId::new(analyzer.file_id, owner.get_position());
-//     //     let signature = analyzer.db.get_signature_index().get_or_create(id);
-//     //     signature.as_type = Some(type_ref);
-//     // }
-//     // Some(())
-// }
+pub fn analyze_as(analyzer: &mut DocAnalyzer, tag: LuaDocTagAs) -> Option<()> {
+    let as_type = tag.get_type()?;
+    let type_ref = infer_type(analyzer, as_type);
+    let owner = analyzer.comment.get_owner()?;
+    let expr = LuaExpr::cast(owner.syntax().clone())?;
+    let file_id = analyzer.file_id;
+    let in_filed_syntax_id = InFiled::new(file_id, expr.get_syntax_id());
+    analyzer
+        .db
+        .get_type_index_mut()
+        .add_as_force_type(in_filed_syntax_id, type_ref);
+
+    Some(())
+}

@@ -15,7 +15,7 @@ use infer_name::infer_name_expr;
 use infer_table::infer_table_expr;
 use infer_unary::infer_unary_expr;
 
-use crate::db_index::{DbIndex, LuaOperator, LuaOperatorMetaMethod, LuaSignatureId, LuaType};
+use crate::{db_index::{DbIndex, LuaOperator, LuaOperatorMetaMethod, LuaSignatureId, LuaType}, InFiled};
 
 pub type InferResult = Option<LuaType>;
 
@@ -23,6 +23,14 @@ pub fn infer_expr(db: &DbIndex, config: &mut LuaInferConfig, expr: LuaExpr) -> I
     let syntax_id = expr.get_syntax_id();
     if let Some(result) = config.get_cache_expr_type(&syntax_id) {
         return Some(result.clone());
+    }
+
+    // for @as
+    let file_id = config.get_file_id();
+    let in_filed_syntax_id = InFiled::new(file_id, syntax_id);
+    if let Some(force_type) = db.get_type_index().get_as_force_type(&in_filed_syntax_id) {
+        config.cache_expr_type(syntax_id, force_type.clone());
+        return Some(force_type.clone());
     }
 
     let result_type = match expr {
