@@ -6,8 +6,9 @@ use lsp_types::request::{
     CodeActionRequest, CodeLensRequest, CodeLensResolve, ColorPresentationRequest, Completion,
     DocumentColor, DocumentHighlightRequest, DocumentLinkRequest, DocumentLinkResolve,
     DocumentSymbolRequest, ExecuteCommand, FoldingRangeRequest, GotoDefinition, HoverRequest,
-    InlayHintRequest, InlayHintResolveRequest, PrepareRenameRequest, References, Rename,
-    ResolveCompletionItem, SelectionRangeRequest, SemanticTokensFullRequest, SignatureHelpRequest,
+    InlayHintRequest, InlayHintResolveRequest, InlineValueRequest, PrepareRenameRequest,
+    References, Rename, ResolveCompletionItem, SelectionRangeRequest, SemanticTokensFullRequest,
+    SignatureHelpRequest,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use tokio_util::sync::CancellationToken;
@@ -29,6 +30,7 @@ use super::{
     fold_range::on_folding_range_handler,
     hover::on_hover,
     inlay_hint::{on_inlay_hint_handler, on_resolve_inlay_hint},
+    inline_values::on_inline_values_handler,
     references::on_references_handler,
     rename::{on_prepare_rename_handler, on_rename_handler},
     semantic_token::on_semantic_token_handler,
@@ -87,6 +89,8 @@ pub async fn on_req_handler(
         .on_parallel::<ExecuteCommand, _, _>(on_execute_command_handler)
         .await
         .on_parallel::<CodeActionRequest, _, _>(on_code_action_handler)
+        .await
+        .on_parallel::<InlineValueRequest, _, _>(on_inline_values_handler)
         .await
         .finish();
     Ok(())

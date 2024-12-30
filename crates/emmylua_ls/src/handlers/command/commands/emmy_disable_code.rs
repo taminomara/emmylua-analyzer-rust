@@ -1,6 +1,6 @@
-use std::{collections::HashMap, fs::{File, OpenOptions}, io::Write, sync::Arc, time::Duration};
+use std::{collections::HashMap, fs::OpenOptions, io::Write, sync::Arc, time::Duration};
 
-use code_analysis::{file_path_to_uri, load_configs, DiagnosticCode, FileId, SemanticModel};
+use code_analysis::{load_configs, DiagnosticCode, FileId, SemanticModel};
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaComment, LuaCommentOwner, LuaDocTag, LuaDocTagDiagnostic, LuaStat,
     LuaTokenKind,
@@ -44,7 +44,7 @@ pub async fn handle(context: ServerContextSnapshot, args: Vec<Value>) -> Option<
             add_disable_file_comment(client, semantic_model, code);
         }
         DisableAction::DisableProject => {
-            add_disable_project(client, context.config_manager, code).await;
+            add_disable_project(context.config_manager, code).await;
         }
         _ => {}
     }
@@ -319,7 +319,6 @@ pub fn make_disable_code_command(
 }
 
 async fn add_disable_project(
-    client: Arc<ClientProxy>,
     config_manager: Arc<RwLock<ConfigManager>>,
     code: DiagnosticCode,
 ) -> Option<()> {

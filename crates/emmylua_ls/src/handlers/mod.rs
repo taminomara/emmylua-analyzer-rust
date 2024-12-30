@@ -21,6 +21,7 @@ mod response_handler;
 mod semantic_token;
 mod signature_helper;
 mod text_document;
+mod inline_values;
 
 pub use initialized::initialized_handler;
 pub use initialized::{init_analysis, ClientConfig};
@@ -38,12 +39,11 @@ pub fn server_capabilities(client_capabilities: &ClientCapabilities) -> ServerCa
     }
 
     capabilities!(text_document);
-    capabilities!(hover);
     capabilities!(document_symbol);
-    capabilities!(fold_range);
     capabilities!(document_color);
     capabilities!(document_link);
     capabilities!(document_selection_range);
+    capabilities!(document_highlight);
     capabilities!(completion);
     capabilities!(inlay_hint);
     capabilities!(defination);
@@ -51,9 +51,11 @@ pub fn server_capabilities(client_capabilities: &ClientCapabilities) -> ServerCa
     capabilities!(rename);
     capabilities!(code_lens);
     capabilities!(signature_helper);
-    capabilities!(document_highlight);
+    capabilities!(hover);
+    capabilities!(fold_range);
     capabilities!(semantic_token);
     capabilities!(command);
     capabilities!(code_actions);
+    capabilities!(inline_values);
     server_capabilities
 }
