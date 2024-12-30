@@ -7,7 +7,7 @@ mod status_bar;
 pub use client::ClientProxy;
 use code_analysis::EmmyLuaAnalysis;
 pub use config_manager::load_emmy_config;
-use config_manager::ConfigManager;
+pub use config_manager::ConfigManager;
 pub use file_diagnostic::FileDiagnostic;
 use lsp_server::{Connection, ErrorCode, Message, RequestId, Response};
 pub use snapshot::ServerContextSnapshot;

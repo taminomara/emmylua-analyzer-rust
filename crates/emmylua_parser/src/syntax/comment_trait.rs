@@ -19,6 +19,14 @@ pub trait LuaCommentOwner: LuaAstNode {
 
         comments
     }
+
+    fn get_left_comment(&self) -> Option<LuaComment> {
+        if let Some(attached_comment) = find_attached_comment(self.syntax()) {
+            return Some(LuaComment::cast(attached_comment)?);
+        }
+
+        None
+    }
 }
 
 fn find_attached_comment(node: &LuaSyntaxNode) -> Option<LuaSyntaxNode> {

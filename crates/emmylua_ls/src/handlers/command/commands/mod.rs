@@ -17,9 +17,6 @@ pub fn get_commands_list() -> Vec<String> {
                 commands.push(command_str);
             )*
         };
-        () => {
-
-        };
     }
 
     command_from!(emmy_auto_require);
@@ -29,10 +26,30 @@ pub fn get_commands_list() -> Vec<String> {
     commands
 }
 
+macro_rules! command_dispatch {
+    ($cmd_name:expr, $context:expr, $args:expr, [ $( $module:ident ),+ ]) => {
+        match $cmd_name {
+            $(
+                $module::COMMAND => {
+                    $module::handle($context, $args).await;
+                }
+            )+
+            _ => {}
+        }
+    };
+}
+
 pub async fn dispatch_command(
     context: ServerContextSnapshot,
     command_name: &str,
     args: Vec<Value>,
 ) -> Option<()> {
+    command_dispatch!(
+        command_name,
+        context,
+        args,
+        [emmy_auto_require, emmy_disable_code, emmy_fix_format]
+    );
+
     Some(())
 }
