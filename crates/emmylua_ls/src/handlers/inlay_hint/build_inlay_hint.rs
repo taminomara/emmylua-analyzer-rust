@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use code_analysis::{LuaFunctionType, LuaSignatureId, LuaType, SemanticModel};
+use code_analysis::{LuaFunctionType, LuaPropertyOwnerId, LuaSignatureId, LuaType, SemanticModel};
 use emmylua_parser::{LuaAst, LuaAstNode, LuaCallExpr, LuaClosureExpr, LuaExpr, LuaLocalName};
 use lsp_types::{InlayHint, InlayHintKind, InlayHintLabel};
 use rowan::NodeOrToken;
@@ -16,7 +16,8 @@ pub fn build_inlay_hints(semantic_model: &mut SemanticModel) -> Option<Vec<Inlay
                 build_closure_hint(semantic_model, &mut result, closure);
             }
             LuaAst::LuaCallExpr(call_expr) => {
-                build_call_expr_hint(semantic_model, &mut result, call_expr);
+                build_call_expr_param_hint(semantic_model, &mut result, call_expr.clone());
+                build_call_expr_await_hint(semantic_model, &mut result, call_expr);
             }
             LuaAst::LuaLocalName(local_name) => {
                 build_local_name_hint(semantic_model, &mut result, local_name);
@@ -80,7 +81,7 @@ fn build_closure_hint(
     Some(())
 }
 
-fn build_call_expr_hint(
+fn build_call_expr_param_hint(
     semantic_model: &mut SemanticModel,
     result: &mut Vec<InlayHint>,
     call_expr: LuaCallExpr,
@@ -113,6 +114,62 @@ fn build_call_expr_hint(
                 colon_call,
                 signature_id,
             );
+        }
+        _ => {}
+    }
+    Some(())
+}
+
+fn build_call_expr_await_hint(
+    semantic_model: &mut SemanticModel,
+    result: &mut Vec<InlayHint>,
+    call_expr: LuaCallExpr,
+) -> Option<()> {
+    let prefix_expr = call_expr.get_prefix_expr()?;
+    let semantic_info =
+        semantic_model.get_semantic_info(NodeOrToken::Node(prefix_expr.syntax().clone()))?;
+
+    match semantic_info.typ {
+        LuaType::DocFunction(f) => {
+            if f.is_async() {
+                let range = call_expr.get_range();
+                let document = semantic_model.get_document();
+                let lsp_range = document.to_lsp_range(range)?;
+                let hint = InlayHint {
+                    kind: Some(InlayHintKind::TYPE),
+                    label: InlayHintLabel::String("await".to_string()),
+                    position: lsp_range.start,
+                    text_edits: None,
+                    tooltip: None,
+                    padding_left: None,
+                    padding_right: Some(true),
+                    data: None,
+                };
+                result.push(hint);
+            }
+        }
+        LuaType::Signature(signature_id) => {
+            let property_owner_id = LuaPropertyOwnerId::Signature(signature_id);
+            let property = semantic_model
+                .get_db()
+                .get_property_index()
+                .get_property(property_owner_id)?;
+            if property.is_async {
+                let range = call_expr.get_range();
+                let document = semantic_model.get_document();
+                let lsp_range = document.to_lsp_range(range)?;
+                let hint = InlayHint {
+                    kind: Some(InlayHintKind::TYPE),
+                    label: InlayHintLabel::String("await".to_string()),
+                    position: lsp_range.start,
+                    text_edits: None,
+                    tooltip: None,
+                    padding_left: None,
+                    padding_right: Some(true),
+                    data: None,
+                };
+                result.push(hint);
+            }
         }
         _ => {}
     }
