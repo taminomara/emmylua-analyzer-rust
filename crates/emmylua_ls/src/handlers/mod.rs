@@ -4,6 +4,7 @@ mod command;
 mod completion;
 mod defination;
 mod document_color;
+mod document_formatting;
 mod document_highlight;
 mod document_link;
 mod document_selection_range;
@@ -23,6 +24,7 @@ mod semantic_token;
 mod signature_helper;
 mod text_document;
 mod workspace_symbol;
+mod document_range_formatting;
 
 pub use initialized::initialized_handler;
 pub use initialized::{init_analysis, ClientConfig};
@@ -45,6 +47,8 @@ pub fn server_capabilities(client_capabilities: &ClientCapabilities) -> ServerCa
     capabilities!(document_link);
     capabilities!(document_selection_range);
     capabilities!(document_highlight);
+    capabilities!(document_formatting);
+    capabilities!(document_range_formatting);
     capabilities!(completion);
     capabilities!(inlay_hint);
     capabilities!(defination);
@@ -59,5 +63,6 @@ pub fn server_capabilities(client_capabilities: &ClientCapabilities) -> ServerCa
     capabilities!(code_actions);
     capabilities!(inline_values);
     capabilities!(workspace_symbol);
+
     server_capabilities
 }

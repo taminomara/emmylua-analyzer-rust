@@ -279,11 +279,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "60b1af1c220855b6ceac025d3f6ecdd2b7c4894bfe9cd9bda4fbb4bc7c0d4cf0"
 
 [[package]]
+name = "emmylua_codestyle"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ad932beecd157e17f64d9fd00987085f8a280caab09c26e924cda911e8de23a"
+dependencies = [
+ "cc",
+ "glob",
+ "libc",
+]
+
+[[package]]
 name = "emmylua_ls"
 version = "0.1.0"
 dependencies = [
  "chrono",
  "code_analysis",
+ "emmylua_codestyle",
  "emmylua_parser",
  "fern",
  "log",
@@ -296,6 +308,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tokio-util",
+ "walkdir",
 ]
 
 [[package]]

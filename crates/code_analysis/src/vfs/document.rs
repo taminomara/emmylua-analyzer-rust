@@ -100,4 +100,17 @@ impl<'a> LuaDocument<'a> {
         let end = self.get_offset(range.end.line as usize, range.end.character as usize)?;
         Some(TextRange::new(start, end))
     }
+
+    pub fn get_document_lsp_range(&self) -> lsp_types::Range {
+        lsp_types::Range {
+            start: lsp_types::Position {
+                line: 0,
+                character: 0,
+            },
+            end: lsp_types::Position {
+                line: self.get_line_count() as u32,
+                character: 0,
+            },
+        }
+    }
 }

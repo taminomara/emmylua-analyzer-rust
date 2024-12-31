@@ -5,10 +5,10 @@ use lsp_server::{Request, RequestId, Response};
 use lsp_types::request::{
     CodeActionRequest, CodeLensRequest, CodeLensResolve, ColorPresentationRequest, Completion,
     DocumentColor, DocumentHighlightRequest, DocumentLinkRequest, DocumentLinkResolve,
-    DocumentSymbolRequest, ExecuteCommand, FoldingRangeRequest, GotoDefinition, HoverRequest,
-    InlayHintRequest, InlayHintResolveRequest, InlineValueRequest, PrepareRenameRequest,
-    References, Rename, ResolveCompletionItem, SelectionRangeRequest, SemanticTokensFullRequest,
-    SignatureHelpRequest, WorkspaceSymbolRequest,
+    DocumentSymbolRequest, ExecuteCommand, FoldingRangeRequest, Formatting, GotoDefinition,
+    HoverRequest, InlayHintRequest, InlayHintResolveRequest, InlineValueRequest,
+    PrepareRenameRequest, RangeFormatting, References, Rename, ResolveCompletionItem,
+    SelectionRangeRequest, SemanticTokensFullRequest, SignatureHelpRequest, WorkspaceSymbolRequest,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use tokio_util::sync::CancellationToken;
@@ -22,8 +22,10 @@ use super::{
     completion::{on_completion_handler, on_completion_resolve_handler},
     defination::on_goto_defination_handler,
     document_color::{on_document_color, on_document_color_presentation},
+    document_formatting::on_formatting_handler,
     document_highlight::on_document_highlight_handler,
     document_link::{on_document_link_handler, on_document_link_resolve_handler},
+    document_range_formatting::on_range_formatting_handler,
     document_selection_range::on_document_selection_range_handle,
     document_symbol::on_document_symbol,
     emmy_annotator::{on_emmy_annotator_handler, EmmyAnnotatorRequest},
@@ -34,7 +36,8 @@ use super::{
     references::on_references_handler,
     rename::{on_prepare_rename_handler, on_rename_handler},
     semantic_token::on_semantic_token_handler,
-    signature_helper::on_signature_helper_handler, workspace_symbol::on_workspace_symbol_handler,
+    signature_helper::on_signature_helper_handler,
+    workspace_symbol::on_workspace_symbol_handler,
 };
 
 pub async fn on_req_handler(
@@ -93,6 +96,10 @@ pub async fn on_req_handler(
         .on_parallel::<InlineValueRequest, _, _>(on_inline_values_handler)
         .await
         .on_parallel::<WorkspaceSymbolRequest, _, _>(on_workspace_symbol_handler)
+        .await
+        .on_parallel::<Formatting, _, _>(on_formatting_handler)
+        .await
+        .on_parallel::<RangeFormatting, _, _>(on_range_formatting_handler)
         .await
         .finish();
     Ok(())

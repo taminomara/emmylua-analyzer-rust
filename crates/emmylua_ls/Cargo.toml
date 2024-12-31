@@ -19,3 +19,5 @@ chrono.workspace = true
 notify.workspace = true
 tokio-util.workspace = true
 rowan.workspace = true
+emmylua_codestyle.workspace = true
+walkdir.workspace = true

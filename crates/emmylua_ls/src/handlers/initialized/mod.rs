@@ -2,6 +2,7 @@ mod client_config;
 mod collect_files;
 mod locale;
 mod regsiter_file_watch;
+mod codestyle;
 
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
@@ -12,6 +13,7 @@ use crate::{
 use client_config::get_client_config;
 pub use client_config::ClientConfig;
 use code_analysis::{uri_to_file_path, EmmyLuaAnalysis, Emmyrc, FileId};
+use codestyle::load_editorconfig;
 use collect_files::collect_files;
 use log::info;
 use lsp_types::{ClientInfo, InitializeParams};
@@ -47,6 +49,7 @@ pub async fn initialized_handler(
     };
 
     let emmyrc = load_emmy_config(config_root, client_config.clone());
+    load_editorconfig(workspace_folders.clone());
 
     let mut config_manager = context.config_manager.write().await;
     config_manager.workspace_folders = workspace_folders.clone();

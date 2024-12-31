@@ -3,6 +3,7 @@ use std::{path::PathBuf, sync::Arc, time::Duration};
 use super::{ClientProxy, VsCodeStatusBar};
 use crate::handlers::{init_analysis, ClientConfig};
 use code_analysis::{load_configs, EmmyLuaAnalysis, Emmyrc};
+use emmylua_codestyle::update_code_style;
 use log::{debug, info};
 use tokio::{
     select,
@@ -68,7 +69,18 @@ impl ConfigManager {
         });
     }
 
-    pub fn update_editorconfig(&self, _: PathBuf) {}
+    pub fn update_editorconfig(&self, path: PathBuf) {
+        let parent_dir = path
+            .parent()
+            .unwrap()
+            .to_path_buf()
+            .to_string_lossy()
+            .to_string()
+            .replace("\\", "/");
+        let file_normalized = path.to_string_lossy().to_string().replace("\\", "/");
+        log::info!("update code style: {:?}", file_normalized);
+        update_code_style(&parent_dir, &file_normalized);
+    }
 }
 
 pub fn load_emmy_config(config_root: Option<PathBuf>, client_config: ClientConfig) -> Arc<Emmyrc> {
