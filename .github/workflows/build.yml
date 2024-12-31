@@ -43,11 +43,6 @@ jobs:
         run: |
           cargo install cross
           cross build --release --target ${{ matrix.target }} -p emmylua_ls
-      - name: Build - no_format
-        if: ${{ matrix.cross == 'no_format' }}
-        run: |
-          cargo install cross
-          cross build --release --target ${{ matrix.target }} --features no_format -p emmylua_ls
       - name: Build -zigbuild
         if: ${{ matrix.cross == 'zigbuild' }}
         run: |
@@ -65,7 +60,6 @@ jobs:
         if: ${{ matrix.os == 'windows-latest'  }}
         run: |
           python publish/workflow_copy_files.py . "${{ github.workspace }}/artifact"
-          New-Item -ItemType Directory -Path "${{ github.workspace }}/artifact/"
           Copy-Item -Path ${{ github.workspace }}\target\${{ matrix.target }}\release\emmylua_ls.exe -Destination ${{ github.workspace }}\artifact\
         shell: pwsh
       - name: Upload
