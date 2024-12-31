@@ -88,7 +88,7 @@ fn build_decl_hover(
     }
 
     let property_owner = LuaPropertyOwnerId::LuaDecl(decl_id);
-    add_description(db, &mut marked_strings, &typ, property_owner);
+    add_description(db, &mut marked_strings, property_owner);
 
     Some(Hover {
         contents: HoverContents::Array(marked_strings),
@@ -142,7 +142,6 @@ fn build_member_hover(
     add_description(
         db,
         &mut marked_strings,
-        &typ,
         LuaPropertyOwnerId::Member(member_id),
     );
 
@@ -155,21 +154,11 @@ fn build_member_hover(
 fn add_description(
     db: &DbIndex,
     marked_strings: &mut Vec<MarkedString>,
-    typ: &LuaType,
     property_owner: LuaPropertyOwnerId,
 ) {
     if let Some(property) = db.get_property_index().get_property(property_owner) {
         if let Some(detail) = &property.description {
             marked_strings.push(MarkedString::from_markdown(detail.to_string()));
-        }
-    }
-
-    if let LuaType::Signature(signature_id) = typ {
-        let property_owner = LuaPropertyOwnerId::Signature(signature_id.clone());
-        if let Some(property) = db.get_property_index().get_property(property_owner) {
-            if let Some(detail) = &property.description {
-                marked_strings.push(MarkedString::from_markdown(detail.to_string()));
-            }
         }
     }
 }
@@ -207,16 +196,16 @@ fn build_type_decl_hover(
                     .get_property(property_owner)
                     .and_then(|p| p.description.clone());
                 if let Some(description) = description {
-                    s.push_str(&format!("    | {}  --{}\n", type_humanize_text, description));
+                    s.push_str(&format!(
+                        "    | {}  --{}\n",
+                        type_humanize_text, description
+                    ));
                 } else {
                     s.push_str(&format!("    | {}\n", type_humanize_text));
                 }
             }
 
-            marked_strings.push(MarkedString::from_language_code(
-                "lua".to_string(),
-                s,
-            ));
+            marked_strings.push(MarkedString::from_language_code("lua".to_string(), s));
         }
     } else if type_decl.is_enum() {
         marked_strings.push(MarkedString::from_language_code(
@@ -231,7 +220,7 @@ fn build_type_decl_hover(
     }
 
     let property_owner = LuaPropertyOwnerId::TypeDecl(type_decl_id);
-    add_description(db, &mut marked_strings, &typ, property_owner);
+    add_description(db, &mut marked_strings, property_owner);
 
     Some(Hover {
         contents: HoverContents::Array(marked_strings),
