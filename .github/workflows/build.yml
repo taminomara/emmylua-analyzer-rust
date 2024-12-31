@@ -98,19 +98,19 @@ jobs:
           path: emmylua_ls-win32-arm64
       - name: tar unix
         run: |
-          chmod +x emmylua_ls-linux-x64/bin/emmylua_ls
+          chmod +x emmylua_ls-linux-x64/emmylua_ls
           tar -czf emmylua_ls-linux-x64.tar.gz -C emmylua_ls-linux-x64 .
-          chmod +x emmylua_ls-linux-x64-glibc.2.17/bin/emmylua_ls
+          chmod +x emmylua_ls-linux-x64-glibc.2.17/emmylua_ls
           tar -czf emmylua_ls-linux-x64-glibc.2.17.tar.gz -C emmylua_ls-linux-x64-glibc.2.17 .
-          chmod +x emmylua_ls-linux-arm64-glibc.2.17/bin/emmylua_ls
+          chmod +x emmylua_ls-linux-arm64-glibc.2.17/emmylua_ls
           tar -czf emmylua_ls-linux-aarch64-glibc.2.17.tar.gz -C emmylua_ls-linux-arm64-glibc.2.17 .
-          chmod +x emmylua_ls-linux-musl/bin/emmylua_ls
+          chmod +x emmylua_ls-linux-musl/emmylua_ls
           tar -czf emmylua_ls-linux-musl.tar.gz  -C emmylua_ls-linux-musl .
-          chmod +x emmylua_ls-linux-riscv64/bin/emmylua_ls
+          chmod +x emmylua_ls-linux-riscv64/emmylua_ls
           tar -czf emmylua_ls-linux-riscv64.tar.gz  -C emmylua_ls-linux-riscv64 .
-          chmod +x emmylua_ls-darwin-x64/bin/emmylua_ls
+          chmod +x emmylua_ls-darwin-x64/emmylua_ls
           tar -czf emmylua_ls-darwin-x64.tar.gz  -C emmylua_ls-darwin-x64 .
-          chmod +x emmylua_ls-darwin-arm64/bin/emmylua_ls
+          chmod +x emmylua_ls-darwin-arm64/emmylua_ls
           tar -czf emmylua_ls-darwin-arm64.tar.gz  -C emmylua_ls-darwin-arm64 .
       - name: Release
         uses: softprops/action-gh-release@v2
