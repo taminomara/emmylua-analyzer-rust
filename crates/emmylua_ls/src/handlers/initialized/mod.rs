@@ -65,7 +65,7 @@ pub async fn initialized_handler(
     )
     .await;
 
-    register_files_watch(context.client.clone(), &params.capabilities);
+    register_files_watch(context, &params.capabilities).await;
     Some(())
 }
 

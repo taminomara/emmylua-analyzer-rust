@@ -18,6 +18,7 @@ pub struct ConfigManager {
     pub client_config: ClientConfig,
     pub workspace_folders: Vec<PathBuf>,
     config_update_token: Arc<Mutex<Option<CancellationToken>>>,
+    pub watcher: Option<notify::RecommendedWatcher>,
 }
 
 impl ConfigManager {
@@ -33,6 +34,7 @@ impl ConfigManager {
             client_config: ClientConfig::default(),
             workspace_folders: Vec::new(),
             config_update_token: Arc::new(Mutex::new(None)),
+            watcher: None,
         }
     }
 
