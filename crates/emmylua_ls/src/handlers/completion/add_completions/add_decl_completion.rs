@@ -4,7 +4,8 @@ use lsp_types::CompletionItem;
 use crate::handlers::completion::completion_builder::CompletionBuilder;
 
 use super::{
-    check_visibility, get_completion_kind, get_description, get_detail, is_deprecated, CallDisplay, CompletionData,
+    check_visibility, get_completion_kind, get_description, get_detail, is_deprecated, CallDisplay,
+    CompletionData,
 };
 
 pub fn add_decl_completion(

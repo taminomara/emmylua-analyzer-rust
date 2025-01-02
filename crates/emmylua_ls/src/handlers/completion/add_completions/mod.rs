@@ -186,7 +186,7 @@ fn get_description(builder: &CompletionBuilder, typ: &LuaType) -> Option<String>
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CompletionData {
     PropertyOwnerId(LuaPropertyOwnerId),
-    Module(String)
+    Module(String),
 }
 
 #[allow(unused)]

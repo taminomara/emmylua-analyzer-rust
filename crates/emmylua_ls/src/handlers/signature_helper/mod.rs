@@ -60,7 +60,11 @@ pub async fn on_signature_helper_handler(
         token.kind().into(),
         LuaTokenKind::TkWhitespace | LuaTokenKind::TkEndOfLine
     ) {
-        param_context.active_signature_help
+        if token.parent()?.kind() == LuaSyntaxKind::CallArgList.into() {
+            param_context.active_signature_help
+        } else {
+            None
+        }
     } else {
         let node = token.parent_ancestors().find(|node| {
             matches!(

@@ -4,7 +4,8 @@ use lsp_types::CompletionItem;
 use crate::handlers::completion::completion_builder::CompletionBuilder;
 
 use super::{
-    check_visibility, get_completion_kind, get_description, get_detail, is_deprecated, CallDisplay, CompletionData,
+    check_visibility, get_completion_kind, get_description, get_detail, is_deprecated, CallDisplay,
+    CompletionData,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -58,6 +59,10 @@ pub fn add_member_completion(
     .unwrap_or(CallDisplay::None);
 
     let typ = member_info.typ;
+    if status == CompletionTriggerStatus::Colon && !typ.is_function() {
+        return None;
+    }
+
     let data = if let Some(id) = &property_owner {
         CompletionData::from_property_owner_id(id.clone().into())
     } else {
@@ -100,13 +105,20 @@ fn get_call_show(
     typ: &LuaType,
     status: CompletionTriggerStatus,
 ) -> Option<CallDisplay> {
-    let sig_id = match typ {
-        LuaType::Signature(sig_id) => sig_id,
+    let (colon_call, colon_define) = match typ {
+        LuaType::Signature(sig_id) => {
+            let signature = db.get_signature_index().get(sig_id)?;
+            let colon_define = signature.is_colon_define;
+            let colon_call = status == CompletionTriggerStatus::Colon;
+            (colon_call, colon_define)
+        }
+        LuaType::DocFunction(func) => {
+            let colon_define = func.is_colon_define();
+            let colon_call = status == CompletionTriggerStatus::Colon;
+            (colon_call, colon_define)
+        }
         _ => return None,
     };
-    let signature = db.get_signature_index().get(sig_id)?;
-    let colon_define = signature.is_colon_define;
-    let colon_call = status == CompletionTriggerStatus::Colon;
 
     match (colon_call, colon_define) {
         (false, true) => Some(CallDisplay::AddSelf),
