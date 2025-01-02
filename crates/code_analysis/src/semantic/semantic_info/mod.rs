@@ -42,10 +42,10 @@ pub fn infer_token_semantic_info(
             let decl = db.get_decl_index().get_decl(&decl_id)?;
             match decl {
                 LuaDecl::Param {
-                    name, signature_id, ..
+                    idx, signature_id, ..
                 } => {
                     let signature = db.get_signature_index().get(&signature_id)?;
-                    let param_info = signature.get_param_doc(&name)?;
+                    let param_info = signature.get_param_info_by_id(*idx)?;
                     let mut typ = param_info.type_ref.clone();
                     if param_info.nullable && !typ.is_nullable() {
                         typ = LuaType::Nullable(typ.into());

@@ -95,7 +95,7 @@ impl LuaReferenceIndex {
             .get(&LuaMemberKey::Name(ArcIntern::new(name.to_string())))?
             .iter()
             .filter_map(|(key_file_id, syntax_ids)| {
-                if *key_file_id != file_id {
+                if *key_file_id == file_id {
                     Some(syntax_ids.iter().map(|syntax_id| syntax_id.get_range()))
                 } else {
                     None

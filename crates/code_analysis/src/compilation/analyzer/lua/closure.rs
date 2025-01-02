@@ -13,7 +13,6 @@ pub fn analyze_closure(analyzer: &mut LuaAnalyzer, closure: LuaClosureExpr) -> O
     let signature_id = LuaSignatureId::new(analyzer.file_id, &closure);
 
     analyze_colon_define(analyzer, &signature_id, &closure);
-    analyze_params(analyzer, &signature_id, &closure);
     analyze_lambda_params(analyzer, &signature_id, &closure);
     analyze_return(analyzer, &signature_id, &closure);
     Some(())
@@ -34,31 +33,6 @@ fn analyze_colon_define(
     if let LuaVarExpr::IndexExpr(index_expr) = func_name {
         let index_token = index_expr.get_index_token()?;
         signature.is_colon_define = index_token.is_colon();
-    }
-
-    Some(())
-}
-
-fn analyze_params(
-    analyzer: &mut LuaAnalyzer,
-    signature_id: &LuaSignatureId,
-    closure: &LuaClosureExpr,
-) -> Option<()> {
-    let signature = analyzer
-        .db
-        .get_signature_index_mut()
-        .get_or_create(signature_id.clone());
-    let params = closure.get_params_list()?.get_params();
-    for param in params {
-        let name = if let Some(name_token) = param.get_name_token() {
-            name_token.get_name_text().to_string()
-        } else if param.is_dots() {
-            "...".to_string()
-        } else {
-            return None;
-        };
-
-        signature.params.push(name);
     }
 
     Some(())

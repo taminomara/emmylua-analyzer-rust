@@ -95,8 +95,7 @@ impl FileGenericIndex {
         for effect_id in self.root_node_ids.iter() {
             if self
                 .effect_nodes
-                .get(effect_id.id)
-                .unwrap()
+                .get(effect_id.id)?
                 .range
                 .contains(position)
             {

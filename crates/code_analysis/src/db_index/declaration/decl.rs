@@ -21,6 +21,7 @@ pub enum LuaDecl {
         name: String,
         file_id: FileId,
         range: TextRange,
+        idx: usize,
         signature_id: LuaSignatureId,
     },
     Global {

@@ -34,16 +34,19 @@ pub fn infer_name_expr(
         } else if decl.is_param() {
             match decl {
                 LuaDecl::Param {
-                    name, signature_id, ..
+                    idx, signature_id, ..
                 } => {
                     let signature = db.get_signature_index().get(&signature_id)?;
-                    let param_info = signature.get_param_doc(&name)?;
-                    let mut typ = param_info.type_ref.clone();
-                    if param_info.nullable && !typ.is_nullable() {
-                        typ = LuaType::Nullable(typ.into());
-                    }
+                    if let Some(param_info) = signature.get_param_info_by_id(*idx) {
+                        let mut typ = param_info.type_ref.clone();
+                        if param_info.nullable && !typ.is_nullable() {
+                            typ = LuaType::Nullable(typ.into());
+                        }
 
-                    typ
+                        typ
+                    } else {
+                        LuaType::Unknown
+                    }
                 }
                 _ => unreachable!(),
             }

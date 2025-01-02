@@ -79,7 +79,7 @@ pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) -
     let params = expr.get_params_list()?;
     let signature_id = LuaSignatureId::new(analyzer.get_file_id(), &expr);
 
-    for param in params.get_params() {
+    for (idx, param) in params.get_params().enumerate() {
         let name = param.get_name_token().map_or_else(
             || {
                 if param.is_dots() {
@@ -95,10 +95,38 @@ pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) -
             name,
             file_id: analyzer.get_file_id(),
             range: param.get_range(),
+            idx,
             signature_id,
         };
 
         analyzer.add_decl(decl);
+    }
+
+    analyze_closure_params(analyzer, &signature_id, &expr);
+
+    Some(())
+}
+
+fn analyze_closure_params(
+    analyzer: &mut DeclAnalyzer,
+    signature_id: &LuaSignatureId,
+    closure: &LuaClosureExpr,
+) -> Option<()> {
+    let signature = analyzer
+        .db
+        .get_signature_index_mut()
+        .get_or_create(signature_id.clone());
+    let params = closure.get_params_list()?.get_params();
+    for param in params {
+        let name = if let Some(name_token) = param.get_name_token() {
+            name_token.get_name_text().to_string()
+        } else if param.is_dots() {
+            "...".to_string()
+        } else {
+            return None;
+        };
+
+        signature.params.push(name);
     }
 
     Some(())

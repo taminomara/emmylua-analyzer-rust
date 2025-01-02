@@ -173,7 +173,7 @@ fn build_sig_id_signature_help(
                 );
             };
 
-            if let Some(desc) = signature.get_param_doc(&label) {
+            if let Some(desc) = signature.get_param_info_by_name(&label) {
                 if let Some(description) = &desc.description {
                     documentation_string.push_str(description);
                 }

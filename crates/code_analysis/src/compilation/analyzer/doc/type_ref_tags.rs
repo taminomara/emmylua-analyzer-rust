@@ -123,7 +123,10 @@ pub fn analyze_param(analyzer: &mut DocAnalyzer, tag: LuaDocTagParam) -> Option<
             nullable,
             description,
         };
-        signature.param_docs.insert(name.clone(), param_info);
+
+        let idx = signature.find_param_idx(&name)?;
+
+        signature.param_docs.insert(idx, param_info);
 
         let param_list = closure.get_params_list()?;
         for param in param_list.get_params() {

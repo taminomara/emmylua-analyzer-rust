@@ -15,7 +15,7 @@ use crate::{
 pub struct LuaSignature {
     pub generic_params: Vec<(String, Option<LuaType>)>,
     pub overloads: Vec<Arc<LuaFunctionType>>,
-    pub param_docs: HashMap<String, LuaDocParamInfo>,
+    pub param_docs: HashMap<usize, LuaDocParamInfo>,
     pub params: Vec<String>,
     pub return_docs: Vec<LuaDocReturnInfo>,
     pub(crate) resolve_return: bool,
@@ -45,8 +45,8 @@ impl LuaSignature {
 
     pub fn get_type_params(&self) -> Vec<(String, Option<LuaType>)> {
         let mut type_params = Vec::new();
-        for param_name in &self.params {
-            if let Some(param_info) = self.param_docs.get(param_name) {
+        for (idx, param_name) in self.params.iter().enumerate() {
+            if let Some(param_info) = self.param_docs.get(&idx) {
                 type_params.push((param_name.clone(), Some(param_info.type_ref.clone())));
             } else {
                 type_params.push((param_name.clone(), None));
@@ -56,8 +56,26 @@ impl LuaSignature {
         type_params
     }
 
-    pub fn get_param_doc(&self, param_name: &str) -> Option<&LuaDocParamInfo> {
-        self.param_docs.get(param_name)
+    pub fn find_param_idx(&self, param_name: &str) -> Option<usize> {
+        self.params.iter().position(|name| name == param_name)
+    }
+
+    pub fn get_param_info_by_name(&self, param_name: &str) -> Option<&LuaDocParamInfo> {
+        // fast enough
+        let idx = self.params.iter().position(|name| name == param_name)?;
+        self.param_docs.get(&idx)
+    }
+
+    pub fn get_param_info_by_id(&self, idx: usize) -> Option<&LuaDocParamInfo> {
+        if idx < self.params.len() {
+            return self.param_docs.get(&idx);
+        } else if let Some(name) = self.params.last() {
+            if name == "..." {
+                return self.param_docs.get(&(self.params.len() - 1));
+            }
+        }
+
+        None
     }
 }
 

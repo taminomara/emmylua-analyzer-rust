@@ -42,14 +42,15 @@ pub fn try_resolve_closure_params(
             return Some(true);
         };
 
+    
     let signature_params = &mut signature.param_docs;
-    for (name, type_ref) in expr_closure_params {
-        if signature_params.contains_key(name) {
+    for (idx, (name, type_ref)) in expr_closure_params.iter().enumerate() {
+        if signature_params.contains_key(&idx) {
             continue;
         }
 
         signature_params.insert(
-            name.clone(),
+            idx,
             LuaDocParamInfo {
                 name: name.clone(),
                 type_ref: type_ref.clone().unwrap_or(LuaType::Any),
