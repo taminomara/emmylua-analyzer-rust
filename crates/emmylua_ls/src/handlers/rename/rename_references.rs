@@ -61,15 +61,17 @@ fn rename_decl_references(
         let local_references = semantic_model
             .get_db()
             .get_reference_index()
-            .get_local_references(&decl_id.file_id, &decl_id)?;
+            .get_local_references(&decl_id.file_id, &decl_id);
         let document = semantic_model.get_document();
         let uri = document.get_uri();
-        for reference_range in local_references {
-            let range = document.to_lsp_range(reference_range.clone())?;
-            result
-                .entry(uri.clone())
-                .or_insert_with(HashSet::new)
-                .insert(range);
+        if let Some(local_references) = local_references {
+            for reference_range in local_references {
+                let range = document.to_lsp_range(reference_range.clone())?;
+                result
+                    .entry(uri.clone())
+                    .or_insert_with(HashSet::new)
+                    .insert(range);
+            }
         }
 
         let decl_range = get_decl_name_token_lsp_range(semantic_model, decl_id)?;
