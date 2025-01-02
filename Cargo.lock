@@ -166,6 +166,7 @@ dependencies = [
 name = "code_analysis"
 version = "0.1.0"
 dependencies = [
+ "diagnostic_macro",
  "dirs",
  "emmylua_parser",
  "encoding_rs",
@@ -243,6 +244,15 @@ dependencies = [
  "lock_api",
  "once_cell",
  "parking_lot_core",
+]
+
+[[package]]
+name = "diagnostic_macro"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

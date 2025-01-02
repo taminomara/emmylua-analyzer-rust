@@ -5,6 +5,7 @@ mod file_path_provider;
 mod keywords_provider;
 mod member_provider;
 mod module_path_provider;
+mod doc_name_token_provider;
 
 use super::completion_builder::CompletionBuilder;
 
@@ -16,6 +17,7 @@ pub fn add_completions(builder: &mut CompletionBuilder) -> Option<()> {
     member_provider::add_completion(builder);
     doc_tag_provider::add_completion(builder);
     doc_type_provider::add_completion(builder);
+    doc_name_token_provider::add_completion(builder);
 
     Some(())
 }
