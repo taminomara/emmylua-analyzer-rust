@@ -1,7 +1,9 @@
-use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaFuncStat, LuaVarExpr};
+use emmylua_parser::{
+    LuaAstNode, LuaCallArgList, LuaCallExpr, LuaClosureExpr, LuaFuncStat, LuaVarExpr,
+};
 
 use crate::{
-    compilation::analyzer::unresolve::UnResolveReturn,
+    compilation::analyzer::unresolve::{UnResolveClosureParams, UnResolveReturn},
     db_index::{LuaDocReturnInfo, LuaSignatureId},
 };
 
@@ -12,6 +14,7 @@ pub fn analyze_closure(analyzer: &mut LuaAnalyzer, closure: LuaClosureExpr) -> O
 
     analyze_colon_define(analyzer, &signature_id, &closure);
     analyze_params(analyzer, &signature_id, &closure);
+    analyze_lambda_params(analyzer, &signature_id, &closure);
     analyze_return(analyzer, &signature_id, &closure);
     Some(())
 }
@@ -57,6 +60,30 @@ fn analyze_params(
 
         signature.params.push(name);
     }
+
+    Some(())
+}
+
+fn analyze_lambda_params(
+    analyzer: &mut LuaAnalyzer,
+    signature_id: &LuaSignatureId,
+    closure: &LuaClosureExpr,
+) -> Option<()> {
+    let call_arg_list = closure.get_parent::<LuaCallArgList>()?;
+    let call_expr = call_arg_list.get_parent::<LuaCallExpr>()?;
+    let pos = closure.get_position();
+    let founded_idx = call_arg_list
+        .get_args()
+        .position(|arg| arg.get_position() == pos)?;
+
+    let unresolved = UnResolveClosureParams {
+        file_id: analyzer.file_id,
+        signature_id: signature_id.clone(),
+        call_expr,
+        param_idx: founded_idx,
+    };
+
+    analyzer.add_unresolved(unresolved.into());
 
     Some(())
 }

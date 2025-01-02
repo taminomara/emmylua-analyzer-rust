@@ -23,12 +23,13 @@ use semantic_info::{
 };
 
 use crate::{db_index::LuaTypeDeclId, Emmyrc, LuaDocument, LuaPropertyOwnerId};
-#[allow(unused_imports)]
 use crate::{
     db_index::{DbIndex, LuaType},
     FileId,
 };
-pub(crate) use infer::infer_expr;
+pub(crate) use infer::{infer_expr, instantiate_doc_function};
+pub(crate) use overload_resolve::resolve_signature;
+pub(crate) use instantiate::instantiate_type;
 
 #[derive(Debug)]
 pub struct SemanticModel<'a> {
@@ -135,18 +136,18 @@ impl<'a> SemanticModel<'a> {
 /// Guard to prevent infinite recursion
 /// Some type may reference itself, so we need to check if we have already infered this type
 #[derive(Debug)]
-struct InferGuard {
+pub struct InferGuard {
     guard: HashSet<LuaTypeDeclId>,
 }
 
 impl InferGuard {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             guard: HashSet::default(),
         }
     }
 
-    fn check(&mut self, type_id: &LuaTypeDeclId) -> Option<()> {
+    pub fn check(&mut self, type_id: &LuaTypeDeclId) -> Option<()> {
         if self.guard.contains(type_id) {
             return None;
         }

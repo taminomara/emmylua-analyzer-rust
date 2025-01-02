@@ -1,10 +1,10 @@
 use emmylua_parser::{
-    LuaAstNode, LuaAstToken, LuaClosureExpr, LuaIndexExpr, LuaIndexKey, LuaNameExpr, LuaTableExpr
+    LuaAstNode, LuaAstToken, LuaClosureExpr, LuaIndexExpr, LuaIndexKey, LuaNameExpr, LuaTableExpr,
 };
 
 use crate::{
     db_index::{LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner},
-    InFiled, LuaDeclId,
+    InFiled, LuaDeclId, LuaSignatureId,
 };
 
 use super::DeclAnalyzer;
@@ -77,6 +77,7 @@ pub fn analyze_index_expr(analyzer: &mut DeclAnalyzer, expr: LuaIndexExpr) -> Op
 
 pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) -> Option<()> {
     let params = expr.get_params_list()?;
+    let signature_id = LuaSignatureId::new(analyzer.get_file_id(), &expr);
 
     for param in params.get_params() {
         let name = param.get_name_token().map_or_else(
@@ -89,14 +90,12 @@ pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) -
             },
             |name_token| name_token.get_name_text().to_string(),
         );
-        
-        let decl = LuaDecl::Local {
+
+        let decl = LuaDecl::Param {
             name,
             file_id: analyzer.get_file_id(),
-            kind: param.syntax().kind().into(),
             range: param.get_range(),
-            attrib: None,
-            decl_type: None,
+            signature_id,
         };
 
         analyzer.add_decl(decl);

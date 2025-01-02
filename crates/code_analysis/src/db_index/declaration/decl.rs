@@ -1,5 +1,6 @@
 use std::fmt;
 
+use crate::LuaSignatureId;
 use crate::{db_index::LuaType, FileId};
 use emmylua_parser::{LuaKind, LuaSyntaxId, LuaSyntaxKind};
 use rowan::{TextRange, TextSize};
@@ -16,6 +17,12 @@ pub enum LuaDecl {
         attrib: Option<LocalAttribute>,
         decl_type: Option<LuaType>,
     },
+    Param {
+        name: String,
+        file_id: FileId,
+        range: TextRange,
+        signature_id: LuaSignatureId,
+    },
     Global {
         name: String,
         file_id: FileId,
@@ -28,6 +35,7 @@ impl LuaDecl {
     pub fn get_file_id(&self) -> FileId {
         match self {
             LuaDecl::Local { file_id, .. } => *file_id,
+            LuaDecl::Param { file_id, .. } => *file_id,
             LuaDecl::Global { file_id, .. } => *file_id,
         }
     }
@@ -35,6 +43,7 @@ impl LuaDecl {
     pub fn get_id(&self) -> LuaDeclId {
         match self {
             LuaDecl::Local { file_id, .. } => LuaDeclId::new(*file_id, self.get_position()),
+            LuaDecl::Param { file_id, .. } => LuaDeclId::new(*file_id, self.get_position()),
             LuaDecl::Global { file_id, .. } => LuaDeclId::new(*file_id, self.get_position()),
         }
     }
@@ -42,6 +51,7 @@ impl LuaDecl {
     pub fn get_name(&self) -> &str {
         match self {
             LuaDecl::Local { name, .. } => name,
+            LuaDecl::Param { name, .. } => name,
             LuaDecl::Global { name, .. } => name,
         }
     }
@@ -49,6 +59,7 @@ impl LuaDecl {
     pub fn get_position(&self) -> TextSize {
         match self {
             LuaDecl::Local { range, .. } => range.start(),
+            LuaDecl::Param { range, .. } => range.start(),
             LuaDecl::Global { range, .. } => range.start(),
         }
     }
@@ -56,6 +67,7 @@ impl LuaDecl {
     pub fn get_range(&self) -> TextRange {
         match self {
             LuaDecl::Local { range, .. } => *range,
+            LuaDecl::Param { range, .. } => *range,
             LuaDecl::Global { range, .. } => *range,
         }
     }
@@ -64,6 +76,7 @@ impl LuaDecl {
         match self {
             LuaDecl::Local { decl_type, .. } => decl_type.as_ref(),
             LuaDecl::Global { decl_type, .. } => decl_type.as_ref(),
+            LuaDecl::Param { .. } => None,
         }
     }
 
@@ -71,12 +84,16 @@ impl LuaDecl {
         match self {
             LuaDecl::Local { decl_type: dt, .. } => *dt = Some(decl_type),
             LuaDecl::Global { decl_type: dt, .. } => *dt = Some(decl_type),
+            LuaDecl::Param { .. } => {}
         }
     }
 
     pub fn get_syntax_id(&self) -> LuaSyntaxId {
         match self {
             LuaDecl::Local { kind, range, .. } => LuaSyntaxId::new(*kind, *range),
+            LuaDecl::Param { range, .. } => {
+                LuaSyntaxId::new(LuaSyntaxKind::ParamName.into(), *range)
+            }
             LuaDecl::Global { range, .. } => {
                 LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), *range)
             }
@@ -84,7 +101,11 @@ impl LuaDecl {
     }
 
     pub fn is_local(&self) -> bool {
-        matches!(self, LuaDecl::Local { .. })
+        matches!(self, LuaDecl::Local { .. } | LuaDecl::Param { .. })
+    }
+
+    pub fn is_param(&self) -> bool {
+        matches!(self, LuaDecl::Param { .. })
     }
 
     pub fn is_global(&self) -> bool {

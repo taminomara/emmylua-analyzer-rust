@@ -5,7 +5,8 @@ use crate::{
 };
 
 use super::{
-    merge_decl_expr_type, merge_member_type, UnResolveDecl, UnResolveIterVar, UnResolveMember, UnResolveModule, UnResolveReturn
+    merge_decl_expr_type, merge_member_type, UnResolveDecl, UnResolveIterVar, UnResolveMember,
+    UnResolveModule, UnResolveReturn,
 };
 
 pub fn try_resolve_decl(
@@ -157,7 +158,10 @@ pub fn try_resolve_iter_var(
         _ => return Some(true),
     };
 
-    let iter_type = func.get_ret().get(iter_var.ret_idx).unwrap_or(&LuaType::Nil);
+    let iter_type = func
+        .get_ret()
+        .get(iter_var.ret_idx)
+        .unwrap_or(&LuaType::Nil);
     let decl_id = iter_var.decl_id;
     merge_decl_expr_type(db, decl_id, iter_type.clone());
     Some(true)

@@ -183,7 +183,7 @@ fn infer_call_by_signature(
     }
 }
 
-fn instantiate_doc_function(
+pub fn instantiate_doc_function(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     func: &LuaFunctionType,

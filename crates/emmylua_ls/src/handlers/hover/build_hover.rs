@@ -26,7 +26,7 @@ pub fn build_semantic_info_hover(
             build_member_hover(db, document, token, typ, member_id)
         }
         LuaPropertyOwnerId::TypeDecl(type_decl_id) => {
-            build_type_decl_hover(db, document, token, typ, type_decl_id)
+            build_type_decl_hover(db, document, token, type_decl_id)
         }
         _ => None,
     }
@@ -167,7 +167,6 @@ fn build_type_decl_hover(
     db: &DbIndex,
     document: &LuaDocument,
     token: LuaSyntaxToken,
-    typ: LuaType,
     type_decl_id: LuaTypeDeclId,
 ) -> Option<Hover> {
     let mut marked_strings = Vec::new();

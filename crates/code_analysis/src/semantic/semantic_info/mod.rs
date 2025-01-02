@@ -6,7 +6,7 @@ use emmylua_parser::{
 };
 use infer_expr_property_owner::infer_expr_property_owner;
 
-use crate::{DbIndex, LuaDeclId, LuaMemberId, LuaPropertyOwnerId, LuaType};
+use crate::{DbIndex, LuaDecl, LuaDeclId, LuaMemberId, LuaPropertyOwnerId, LuaType};
 
 use super::{infer_expr, LuaInferConfig};
 
@@ -26,7 +26,7 @@ pub fn infer_token_semantic_info(
         LuaSyntaxKind::ForStat
         | LuaSyntaxKind::ForRangeStat
         | LuaSyntaxKind::LocalName
-        | LuaSyntaxKind::ParamName => {
+         => {
             let file_id = infer_config.get_file_id();
             let decl_id = LuaDeclId::new(file_id, token.text_range().start());
             let decl = db.get_decl_index().get_decl(&decl_id)?;
@@ -35,6 +35,29 @@ pub fn infer_token_semantic_info(
                 typ,
                 property_owner: Some(LuaPropertyOwnerId::LuaDecl(decl_id)),
             })
+        }
+        LuaSyntaxKind::ParamName => {
+            let file_id = infer_config.get_file_id();
+            let decl_id = LuaDeclId::new(file_id, token.text_range().start());
+            let decl = db.get_decl_index().get_decl(&decl_id)?;
+            match decl {
+                LuaDecl::Param {
+                    name, signature_id, ..
+                } => {
+                    let signature = db.get_signature_index().get(&signature_id)?;
+                    let param_info = signature.get_param_doc(&name)?;
+                    let mut typ = param_info.type_ref.clone();
+                    if param_info.nullable && !typ.is_nullable() {
+                        typ = LuaType::Nullable(typ.into());
+                    }
+
+                    Some(SemanticInfo {
+                        typ,
+                        property_owner: Some(LuaPropertyOwnerId::LuaDecl(decl_id)),
+                    })
+                }
+                _ => None,
+            }
         }
         _ => infer_node_semantic_info(db, infer_config, parent),
     }

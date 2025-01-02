@@ -1,6 +1,9 @@
 use emmylua_parser::{LuaAstNode, LuaNameExpr};
 
-use crate::db_index::{DbIndex, LuaDeclOrMemberId, LuaMemberKey};
+use crate::{
+    db_index::{DbIndex, LuaDeclOrMemberId, LuaMemberKey},
+    LuaDecl, LuaType,
+};
 
 use super::{InferResult, LuaInferConfig};
 
@@ -26,8 +29,26 @@ pub fn infer_name_expr(
             db.get_decl_index()
                 .get_global_decl_type(&LuaMemberKey::Name(name.into()))?
                 .clone()
+        } else if let Some(typ) = decl.get_type() {
+            typ.clone()
+        } else if decl.is_param() {
+            match decl {
+                LuaDecl::Param {
+                    name, signature_id, ..
+                } => {
+                    let signature = db.get_signature_index().get(&signature_id)?;
+                    let param_info = signature.get_param_doc(&name)?;
+                    let mut typ = param_info.type_ref.clone();
+                    if param_info.nullable && !typ.is_nullable() {
+                        typ = LuaType::Nullable(typ.into());
+                    }
+
+                    typ
+                }
+                _ => unreachable!(),
+            }
         } else {
-            decl.get_type()?.clone()
+            LuaType::Unknown
         };
         let flow_chain = db.get_flow_index().get_flow_chain(file_id, decl_id);
         if let Some(flow_chain) = flow_chain {

@@ -1,21 +1,25 @@
 mod infer_binary;
+mod infer_call;
 mod infer_config;
 mod infer_index;
 mod infer_name;
 mod infer_table;
 mod infer_unary;
-mod infer_call;
 
 use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLiteralToken};
 use infer_binary::infer_binary_expr;
 use infer_call::infer_call_expr;
+pub use infer_call::instantiate_doc_function;
 pub use infer_config::LuaInferConfig;
 use infer_index::infer_index_expr;
 use infer_name::infer_name_expr;
 use infer_table::infer_table_expr;
 use infer_unary::infer_unary_expr;
 
-use crate::{db_index::{DbIndex, LuaOperator, LuaOperatorMetaMethod, LuaSignatureId, LuaType}, InFiled};
+use crate::{
+    db_index::{DbIndex, LuaOperator, LuaOperatorMetaMethod, LuaSignatureId, LuaType},
+    InFiled,
+};
 
 pub type InferResult = Option<LuaType>;
 
@@ -66,7 +70,10 @@ fn infer_literal_expr(expr: LuaLiteralExpr) -> InferResult {
 }
 
 fn infer_closure_expr(config: &LuaInferConfig, closure: LuaClosureExpr) -> InferResult {
-    Some(LuaType::Signature(LuaSignatureId::new(config.get_file_id(), &closure)))
+    Some(LuaType::Signature(LuaSignatureId::new(
+        config.get_file_id(),
+        &closure,
+    )))
 }
 
 fn get_custom_type_operator(
