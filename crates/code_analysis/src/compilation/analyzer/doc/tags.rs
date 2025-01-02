@@ -14,7 +14,8 @@ use super::{
     },
     type_def_tags::{analyze_alias, analyze_class, analyze_enum, analyze_func_generic},
     type_ref_tags::{
-        analyze_as, analyze_module, analyze_overload, analyze_param, analyze_return, analyze_type
+        analyze_as, analyze_cast, analyze_module, analyze_overload, analyze_param, analyze_return,
+        analyze_type,
     },
     DocAnalyzer,
 };
@@ -84,12 +85,14 @@ pub fn analyze_tag(analyzer: &mut DocAnalyzer, tag: LuaDocTag) -> Option<()> {
         LuaDocTag::Diagnostic(diagnostic) => {
             analyze_diagnostic(analyzer, diagnostic)?;
         }
-
-        // cast type
-        // LuaDocTag::Cast(lua_doc_tag_cast) => todo!(),
+        // as type
         LuaDocTag::As(lua_doc_tag_as) => {
             analyze_as(analyzer, lua_doc_tag_as)?;
-        },
+        }
+        // cast type
+        LuaDocTag::Cast(lua_doc_tag_cast) => {
+            analyze_cast(analyzer, lua_doc_tag_cast)?;
+        }
         _ => {}
     }
 

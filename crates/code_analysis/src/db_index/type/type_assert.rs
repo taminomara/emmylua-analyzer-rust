@@ -9,6 +9,9 @@ pub enum TypeAssertion {
     Exist,
     IsNativeLuaType(LuaType),
     FieldExist(Arc<LuaMemberKey>),
+    Add(LuaType),
+    Remove(LuaType),
+    Force(LuaType),
 }
 
 #[allow(unused)]
@@ -16,10 +19,13 @@ impl TypeAssertion {
     pub fn tighten_type(&self, source: LuaType) -> LuaType {
         match self {
             TypeAssertion::Exist => remove_nil_and_not_false(source),
-            TypeAssertion::IsNativeLuaType(t) => force_type(t.clone(), source),
+            TypeAssertion::IsNativeLuaType(t) => force_type(source, t.clone()),
             TypeAssertion::FieldExist(key) => {
                 LuaType::ExistField(LuaExistFieldType::new((**key).clone(), source).into())
             }
+            TypeAssertion::Add(lua_type) => add_type(source, lua_type.clone()),
+            TypeAssertion::Remove(lua_type) => remove_type(source, lua_type.clone()),
+            TypeAssertion::Force(lua_type) => force_type(source, lua_type.clone()),
         }
     }
 }
@@ -46,7 +52,7 @@ fn remove_nil_and_not_false(t: LuaType) -> LuaType {
     }
 }
 
-fn force_type(target: LuaType, source: LuaType) -> LuaType {
+fn force_type(source: LuaType, target: LuaType) -> LuaType {
     match &source {
         LuaType::Union(union) => {
             let mut types = union.get_types().to_vec();
@@ -126,5 +132,47 @@ fn force_type(target: LuaType, source: LuaType) -> LuaType {
             }
         }
         _ => target,
+    }
+}
+
+fn add_type(source: LuaType, addded_typ: LuaType) -> LuaType {
+    if addded_typ.is_nil() {
+        return LuaType::Nullable(source.into());
+    }
+
+    match source {
+        LuaType::Union(union) => {
+            let mut types = union.get_types().to_vec();
+            types.push(addded_typ);
+            LuaType::Union(LuaUnionType::new(types).into())
+        }
+        LuaType::Nullable(inner) => {
+            let inner = add_type((*inner).clone(), addded_typ);
+            LuaType::Nullable(inner.into())
+        }
+        _ => LuaType::Union(LuaUnionType::new(vec![source, addded_typ]).into()),
+    }
+}
+
+fn remove_type(source: LuaType, removed_type: LuaType) -> LuaType {
+    if removed_type.is_nil() {
+        return remove_nil_and_not_false(source);
+    }
+
+    match source {
+        LuaType::Union(union) => {
+            let mut types = union.get_types().to_vec();
+            types.retain(|t| t != &removed_type);
+            if types.len() == 1 {
+                types.pop().unwrap()
+            } else {
+                LuaType::Union(LuaUnionType::new(types).into())
+            }
+        }
+        LuaType::Nullable(inner) => {
+            let inner = remove_type((*inner).clone(), removed_type);
+            LuaType::Nullable(inner.into())
+        }
+        _ => source,
     }
 }

@@ -35,6 +35,10 @@ pub async fn on_completion_handler(
         document.get_offset(position.line as usize, position.character as usize)?
     };
 
+    if position_offset > root.syntax().text_range().end() {
+        return None;
+    }
+
     let token = match root.syntax().token_at_offset(position_offset) {
         TokenAtOffset::Single(token) => token,
         TokenAtOffset::Between(left, _) => left,

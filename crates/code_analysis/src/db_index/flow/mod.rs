@@ -34,6 +34,14 @@ impl LuaFlowIndex {
             .get(&file_id)
             .and_then(|map| map.get(&decl_id))
     }
+
+    pub fn get_or_create_flow_chain(&mut self, file_id: FileId, decl_id: LuaDeclId) -> &mut LuaFlowChain {
+        self.chains_map
+            .entry(file_id)
+            .or_insert_with(HashMap::new)
+            .entry(decl_id)
+            .or_insert_with(|| LuaFlowChain::new(decl_id))
+    }
 }
 
 impl LuaIndex for LuaFlowIndex {

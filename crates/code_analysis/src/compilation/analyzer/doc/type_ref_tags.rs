@@ -1,7 +1,7 @@
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaDocDescriptionOwner, LuaDocTagAs, LuaDocTagModule,
-    LuaDocTagOverload, LuaDocTagParam, LuaDocTagReturn, LuaDocTagType, LuaExpr, LuaLocalName,
-    LuaVarExpr,
+    BinaryOperator, LuaAst, LuaAstNode, LuaAstToken, LuaBlock, LuaDocDescriptionOwner, LuaDocTagAs,
+    LuaDocTagCast, LuaDocTagModule, LuaDocTagOverload, LuaDocTagParam, LuaDocTagReturn,
+    LuaDocTagType, LuaExpr, LuaLocalName, LuaNameToken, LuaVarExpr,
 };
 
 use crate::{
@@ -9,7 +9,7 @@ use crate::{
         LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaPropertyOwnerId,
         LuaSignatureId, LuaType,
     },
-    InFiled,
+    InFiled, TypeAssertion,
 };
 
 use super::{
@@ -235,6 +235,85 @@ pub fn analyze_as(analyzer: &mut DocAnalyzer, tag: LuaDocTagAs) -> Option<()> {
         .db
         .get_type_index_mut()
         .add_as_force_type(in_filed_syntax_id, type_ref);
+
+    Some(())
+}
+
+pub fn analyze_cast(analyzer: &mut DocAnalyzer, tag: LuaDocTagCast) -> Option<()> {
+    let name_token = tag.get_name_token();
+    if let Some(name_token) = name_token {
+        analyze_cast_with_name_token(analyzer, name_token, tag);
+    }
+
+    Some(())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CastAction {
+    Force,
+    Add,
+    Remove,
+}
+
+fn analyze_cast_with_name_token(
+    analyzer: &mut DocAnalyzer,
+    name_token: LuaNameToken,
+    tag: LuaDocTagCast,
+) -> Option<()> {
+    let name = name_token.get_name_text();
+    let decl_index = analyzer.db.get_decl_index();
+    let decl_tree = decl_index.get_decl_tree(&analyzer.file_id)?;
+    let decl = decl_tree.find_local_decl(name, tag.get_position())?;
+    let decl_id = decl.get_id();
+
+    let effect_range = tag.ancestors::<LuaBlock>().next()?.get_range();
+
+    for cast_op_type in tag.get_op_types() {
+        let action = match cast_op_type.get_op() {
+            Some(op) => {
+                if op.get_op() == BinaryOperator::OpAdd {
+                    CastAction::Add
+                } else {
+                    CastAction::Remove
+                }
+            }
+            None => CastAction::Force,
+        };
+
+        if cast_op_type.is_nullable() {
+            let flow_chain = analyzer
+                .db
+                .get_flow_index_mut()
+                .get_or_create_flow_chain(analyzer.file_id, decl_id);
+            match action {
+                CastAction::Add => {
+                    flow_chain.add_type_assert(TypeAssertion::Add(LuaType::Nil), effect_range);
+                }
+                CastAction::Remove => {
+                    flow_chain.add_type_assert(TypeAssertion::Remove(LuaType::Nil), effect_range);
+                }
+                _ => {}
+            }
+        } else if let Some(typ) = cast_op_type.get_type() {
+            let typ = infer_type(analyzer, typ);
+            let flow_chain = analyzer
+                .db
+                .get_flow_index_mut()
+                .get_or_create_flow_chain(analyzer.file_id, decl_id);
+
+            match action {
+                CastAction::Add => {
+                    flow_chain.add_type_assert(TypeAssertion::Add(typ), effect_range);
+                }
+                CastAction::Remove => {
+                    flow_chain.add_type_assert(TypeAssertion::Remove(typ), effect_range);
+                }
+                CastAction::Force => {
+                    flow_chain.add_type_assert(TypeAssertion::Force(typ), effect_range);
+                }
+            }
+        }
+    }
 
     Some(())
 }

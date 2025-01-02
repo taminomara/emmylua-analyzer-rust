@@ -1,11 +1,14 @@
-mod keyword_hover;
 mod build_hover;
 mod hover_humanize;
+mod keyword_hover;
 
 use build_hover::build_semantic_info_hover;
 use emmylua_parser::LuaAstNode;
 use keyword_hover::{hover_keyword, is_keyword};
-use lsp_types::{ClientCapabilities, Hover, HoverContents, HoverParams, HoverProviderCapability, MarkupContent, ServerCapabilities};
+use lsp_types::{
+    ClientCapabilities, Hover, HoverContents, HoverParams, HoverProviderCapability, MarkupContent,
+    ServerCapabilities,
+};
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
 
@@ -28,6 +31,10 @@ pub async fn on_hover(
         let document = semantic_model.get_document();
         document.get_offset(position.line as usize, position.character as usize)?
     };
+
+    if position_offset > root.syntax().text_range().end() {
+        return None;
+    }
 
     let token = match root.syntax().token_at_offset(position_offset) {
         TokenAtOffset::Single(token) => token,

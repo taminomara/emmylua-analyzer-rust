@@ -27,6 +27,10 @@ pub async fn on_rename_handler(
         document.get_offset(position.line as usize, position.character as usize)?
     };
 
+    if position_offset > root.syntax().text_range().end() {
+        return None;
+    }
+
     let token = match root.syntax().token_at_offset(position_offset) {
         TokenAtOffset::Single(token) => token,
         TokenAtOffset::Between(left, right) => {
@@ -64,6 +68,10 @@ pub async fn on_prepare_rename_handler(
         let document = semantic_model.get_document();
         document.get_offset(position.line as usize, position.character as usize)?
     };
+
+    if position_offset > root.syntax().text_range().end() {
+        return None;
+    }
 
     let token = match root.syntax().token_at_offset(position_offset) {
         TokenAtOffset::Single(token) => token,

@@ -1033,6 +1033,10 @@ impl LuaDocTagCast {
     pub fn get_op_types(&self) -> LuaAstChildren<LuaDocOpType> {
         self.children()
     }
+
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
+        self.token()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
