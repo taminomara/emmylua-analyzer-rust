@@ -2,7 +2,7 @@ use std::{collections::HashSet, path::PathBuf};
 
 use serde_json::Value;
 
-use super::Emmyrc;
+use super::{flatten_config::FlattenConfigObject, Emmyrc};
 
 pub fn load_configs(config_files: Vec<PathBuf>) -> Emmyrc {
     let mut config_jsons = Vec::new();
@@ -38,7 +38,9 @@ pub fn load_configs(config_files: Vec<PathBuf>) -> Emmyrc {
         Emmyrc::default()
     } else if config_jsons.len() == 1 {
         let first_config = config_jsons.into_iter().next().unwrap();
-        let emmyrc: Emmyrc = match serde_json::from_value(first_config.clone()) {
+        let flatten_config = FlattenConfigObject::parse(first_config);
+        let emmyrc_json_value = flatten_config.to_emmyrc();
+        let emmyrc: Emmyrc = match serde_json::from_value(emmyrc_json_value) {
             Ok(config) => config,
             Err(err) => {
                 log::error!("Failed to parse config, error: {:?}", err);
@@ -54,7 +56,9 @@ pub fn load_configs(config_files: Vec<PathBuf>) -> Emmyrc {
                     merge_values(&mut acc, item);
                     acc
                 });
-        let emmyrc: Emmyrc = match serde_json::from_value(merge_config.clone()) {
+        let flatten_config = FlattenConfigObject::parse(merge_config.clone());
+        let emmyrc_json_value = flatten_config.to_emmyrc();
+        let emmyrc: Emmyrc = match serde_json::from_value(emmyrc_json_value) {
             Ok(config) => config,
             Err(err) => {
                 log::error!("Failed to parse config: error: {:?}", err);

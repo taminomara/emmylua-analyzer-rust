@@ -1,5 +1,6 @@
 mod config_loader;
 mod configs;
+mod flatten_config;
 
 use std::{collections::HashSet, path::PathBuf};
 
@@ -14,6 +15,7 @@ use emmylua_parser::{LuaLanguageLevel, ParserConfig};
 use rowan::NodeCache;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema, Default)]
 #[serde(rename_all = "camelCase")]
