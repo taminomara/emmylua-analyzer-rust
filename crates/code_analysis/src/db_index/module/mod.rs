@@ -3,7 +3,7 @@ mod module_node;
 mod test;
 
 use log::{error, info};
-use module_info::ModuleInfo;
+pub use module_info::ModuleInfo;
 use module_node::{ModuleNode, ModuleNodeId};
 use regex::Regex;
 
@@ -198,6 +198,10 @@ impl LuaModuleIndex {
 
     pub fn get_module_node(&self, module_id: &ModuleNodeId) -> Option<&ModuleNode> {
         self.module_nodes.get(module_id)
+    }
+
+    pub fn get_module_infos(&self) -> Vec<&ModuleInfo> {
+        self.file_module_map.values().collect()
     }
 
     fn extract_module_path(&self, path: &str) -> Option<String> {

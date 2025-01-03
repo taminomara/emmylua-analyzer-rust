@@ -45,7 +45,7 @@ fn default_postfix() -> String {
     "@".to_string()
 }
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema, Clone, Copy)]
 #[serde(rename_all = "kebab-case")]
 pub enum EmmyrcFilenameConvention {
     Keep,

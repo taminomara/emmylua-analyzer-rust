@@ -15,16 +15,13 @@ use std::sync::Arc;
 
 use crate::{Emmyrc, FileId, Vfs};
 pub use declaration::*;
-#[allow(unused_imports)]
-pub use diagnostic::{AnalyzeError, DiagnosticAction, DiagnosticIndex, DiagnosticActionKind};
+pub use diagnostic::{AnalyzeError, DiagnosticAction, DiagnosticActionKind, DiagnosticIndex};
 pub use flow::{LuaFlowChain, LuaFlowIndex};
-#[allow(unused_imports)]
 pub use member::{LuaMember, LuaMemberId, LuaMemberIndex, LuaMemberKey, LuaMemberOwner};
 use meta::MetaFile;
 use module::LuaModuleIndex;
-#[allow(unused_imports)]
+pub use module::ModuleInfo;
 pub use operators::{LuaOperator, LuaOperatorId, LuaOperatorIndex, LuaOperatorMetaMethod};
-#[allow(unused_imports)]
 pub use property::{
     LuaPropertyId, LuaPropertyIndex, LuaPropertyOwnerId, LuaVersionCond, LuaVersionCondOp,
 };

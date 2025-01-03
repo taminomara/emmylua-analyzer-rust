@@ -6,7 +6,7 @@ mod semantic;
 mod vfs;
 
 pub use compilation::*;
-pub use config::{load_configs, Emmyrc};
+pub use config::*;
 pub use db_index::*;
 pub use diagnostic::*;
 use log::{error, info};

@@ -6,6 +6,7 @@ use std::{collections::HashSet, path::PathBuf};
 
 use crate::{semantic::LuaInferConfig, FileId};
 pub use config_loader::load_configs;
+pub use configs::EmmyrcFilenameConvention;
 use configs::{
     EmmyrcCodeLen, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcInlayHint, EmmyrcLuaVersion,
     EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken, EmmyrcSignature, EmmyrcStrict,

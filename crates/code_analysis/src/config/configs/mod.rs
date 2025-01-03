@@ -10,7 +10,7 @@ mod strict;
 mod semantictoken;
 
 
-pub use completion::EmmyrcCompletion;
+pub use completion::{EmmyrcCompletion, EmmyrcFilenameConvention};
 pub use diagnostics::EmmyrcDiagnostic;
 pub use signature::EmmyrcSignature;
 pub use inlayhint::EmmyrcInlayHint;

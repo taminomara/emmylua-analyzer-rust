@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use code_analysis::SemanticModel;
 use emmylua_parser::LuaSyntaxToken;
 use lsp_types::CompletionItem;
@@ -6,6 +8,7 @@ use tokio_util::sync::CancellationToken;
 pub struct CompletionBuilder<'a> {
     pub trigger_token: LuaSyntaxToken,
     pub semantic_model: SemanticModel<'a>,
+    pub env_duplicate_name: HashSet<String>,
     completion_items: Vec<CompletionItem>,
     cancel_token: CancellationToken,
     stopped: bool,
@@ -21,6 +24,7 @@ impl<'a> CompletionBuilder<'a> {
         Self {
             trigger_token,
             semantic_model,
+            env_duplicate_name: HashSet::new(),
             completion_items: Vec::new(),
             cancel_token,
             stopped: false,

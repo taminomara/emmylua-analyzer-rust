@@ -79,5 +79,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         add_decl_completion(builder, decl_id.clone(), &name, &typ);
     }
 
+    builder.env_duplicate_name.extend(duplicated_name);
+
     Some(())
 }
