@@ -19,6 +19,7 @@ pub fn try_resolve_closure_params(
         call_expr,
         call_expr_type,
         &mut InferGuard::new(),
+        None
     )?;
 
     let signature = db

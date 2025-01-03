@@ -1,5 +1,6 @@
 use code_analysis::{
-    InferGuard, LuaMemberId, LuaPropertyOwnerId, LuaType, LuaTypeDeclId, LuaUnionType,
+    InferGuard, LuaFunctionType, LuaMemberId, LuaPropertyOwnerId, LuaType, LuaTypeDeclId,
+    LuaUnionType,
 };
 use emmylua_parser::{
     LuaAstNode, LuaCallArgList, LuaCallExpr, LuaExpr, LuaSyntaxKind, LuaSyntaxToken, LuaTokenKind,
@@ -34,6 +35,9 @@ fn dispatch_type(
         }
         LuaType::Nullable(typ) => {
             dispatch_type(builder, (*typ).clone(), infer_guard);
+        }
+        LuaType::DocFunction(func) => {
+            add_lambda_completion(builder, &func);
         }
         _ => {}
     }
@@ -127,10 +131,10 @@ fn infer_call_arg_list(
     token: LuaSyntaxToken,
 ) -> Option<LuaType> {
     let call_expr = call_arg_list.get_parent::<LuaCallExpr>()?;
+    let param_idx = get_current_param_index(&call_expr, &token)?;
     let call_expr_func = builder
         .semantic_model
-        .infer_call_expr_func(call_expr.clone())?;
-    let param_idx = get_current_param_index(&call_expr, &token)?;
+        .infer_call_expr_func(call_expr.clone(), Some(param_idx + 1))?;
 
     let typ = call_expr_func.get_params().get(param_idx)?.1.clone()?;
     Some(typ)
@@ -193,4 +197,26 @@ fn to_enum_label(builder: &CompletionBuilder, str: &str) -> String {
     } else {
         format!("\"{}\"", str)
     }
+}
+
+fn add_lambda_completion(builder: &mut CompletionBuilder, func: &LuaFunctionType) -> Option<()> {
+    let params_str = func
+        .get_params()
+        .iter()
+        .map(|p| p.0.clone())
+        .collect::<Vec<_>>();
+    let label = format!("function ({}) end", params_str.join(", "));
+    let insert_text = format!("function ({})\n\t$0\nend", params_str.join(", "));
+
+    let completion_item = CompletionItem {
+        label,
+        kind: Some(lsp_types::CompletionItemKind::FUNCTION),
+        sort_text: Some("0".to_string()),
+        insert_text: Some(insert_text),
+        insert_text_format: Some(lsp_types::InsertTextFormat::SNIPPET),
+        ..Default::default()
+    };
+
+    builder.add_completion_item(completion_item);
+    Some(())
 }

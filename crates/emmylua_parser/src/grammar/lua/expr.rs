@@ -261,6 +261,13 @@ fn parse_args(p: &mut LuaParser) -> ParseResult {
                 parse_expr(p)?;
                 while p.current_token() == LuaTokenKind::TkComma {
                     p.bump();
+                    if p.current_token() == LuaTokenKind::TkRightParen {
+                        p.push_error(LuaParseError::from_source_range(
+                            &t!("expect expression"),
+                            p.current_token_range(),
+                        ));
+                        break;
+                    }
                     parse_expr(p)?;
                 }
             }

@@ -15,6 +15,7 @@ pub fn resolve_signature(
     call_expr: LuaCallExpr,
     colon_define: bool,
     is_generic: bool,
+    arg_count: Option<usize>,
 ) -> Option<Arc<LuaFunctionType>> {
     let args = call_expr.get_args_list()?;
     let mut expr_types = Vec::new();
@@ -44,9 +45,10 @@ pub fn resolve_signature(
             colon_define,
             call_expr,
             expr_types,
+            arg_count,
         );
     } else {
-        return resolve_signature_by_args(db, infer_config, overloads, expr_types);
+        return resolve_signature_by_args(db, infer_config, overloads, expr_types, arg_count);
     }
 }
 
@@ -57,8 +59,9 @@ fn resolve_signature_by_generic(
     colon_define: bool,
     call_expr: LuaCallExpr,
     expr_types: Vec<LuaType>,
+    arg_count: Option<usize>,
 ) -> Option<Arc<LuaFunctionType>> {
-    let mut max_match = 0;
+    let mut max_match = -1;
     let mut matched_func: Option<Arc<LuaFunctionType>> = None;
     let mut instantiate_funcs = Vec::new();
     for func in overloads {
@@ -91,13 +94,18 @@ fn resolve_signature_by_generic(
         instantiate_funcs.push(new_func);
     }
 
-    for func in instantiate_funcs {
+    for func in &instantiate_funcs {
         let params = func.get_params();
         let mut match_count = 0;
+        if params.len() < arg_count.unwrap_or(0) {
+            continue;
+        }
+
         for (i, param) in params.iter().enumerate() {
             if i >= expr_types.len() {
                 break;
             }
+
             let param_type = param.1.clone().unwrap_or(LuaType::Any);
             let expr_type = &expr_types[i];
             if param_type == LuaType::Any {
@@ -112,6 +120,10 @@ fn resolve_signature_by_generic(
         }
     }
 
+    if matched_func.is_none() && !instantiate_funcs.is_empty() {
+        matched_func = Some(instantiate_funcs[0].clone());
+    }
+
     matched_func
 }
 
@@ -120,16 +132,23 @@ fn resolve_signature_by_args(
     infer_config: &mut LuaInferConfig,
     overloads: Vec<Arc<LuaFunctionType>>,
     expr_types: Vec<LuaType>,
+    arg_count: Option<usize>,
 ) -> Option<Arc<LuaFunctionType>> {
     let mut max_match = -1;
     let mut matched_func: Option<Arc<LuaFunctionType>> = None;
-    for func in overloads {
+
+    for func in &overloads {
         let params = func.get_params();
         let mut match_count = 0;
+        if params.len() < arg_count.unwrap_or(0) {
+            continue;
+        }
+
         for (i, param) in params.iter().enumerate() {
             if i >= expr_types.len() {
                 break;
             }
+
             let param_type = param.1.clone().unwrap_or(LuaType::Any);
             let expr_type = &expr_types[i];
             if param_type == LuaType::Any {
@@ -142,6 +161,10 @@ fn resolve_signature_by_args(
             max_match = match_count;
             matched_func = Some(func.clone());
         }
+    }
+
+    if matched_func.is_none() && !overloads.is_empty() {
+        matched_func = Some(overloads[0].clone());
     }
 
     matched_func

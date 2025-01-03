@@ -86,6 +86,7 @@ impl<'a> SemanticModel<'a> {
     pub fn infer_call_expr_func(
         &mut self,
         call_expr: LuaCallExpr,
+        arg_count: Option<usize>,
     ) -> Option<Arc<LuaFunctionType>> {
         let prefix_expr = call_expr.get_prefix_expr()?;
         let call_expr_type = infer_expr(self.db, &mut self.infer_config, prefix_expr.into())?;
@@ -95,6 +96,7 @@ impl<'a> SemanticModel<'a> {
             call_expr,
             call_expr_type,
             &mut InferGuard::new(),
+            arg_count
         )
     }
 

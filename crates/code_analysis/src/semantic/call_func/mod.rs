@@ -17,18 +17,24 @@ pub fn infer_call_expr_func(
     call_expr: LuaCallExpr,
     call_expr_type: LuaType,
     infer_guard: &mut InferGuard,
+    args_count: Option<usize>,
 ) -> Option<Arc<LuaFunctionType>> {
     match call_expr_type {
         LuaType::DocFunction(func) => Some(func),
-        LuaType::Signature(signature_id) => {
-            infer_signature_doc_function(db, config, signature_id.clone(), call_expr.clone())
-        }
+        LuaType::Signature(signature_id) => infer_signature_doc_function(
+            db,
+            config,
+            signature_id.clone(),
+            call_expr.clone(),
+            args_count,
+        ),
         LuaType::Def(type_def_id) => infer_type_doc_function(
             db,
             config,
             type_def_id.clone(),
             call_expr.clone(),
             infer_guard,
+            args_count,
         ),
         LuaType::Ref(type_ref_id) => infer_type_doc_function(
             db,
@@ -36,10 +42,16 @@ pub fn infer_call_expr_func(
             type_ref_id.clone(),
             call_expr.clone(),
             infer_guard,
+            args_count,
         ),
-        LuaType::Generic(generic) => {
-            infer_generic_type_doc_function(db, config, &generic, call_expr.clone(), infer_guard)
-        }
+        LuaType::Generic(generic) => infer_generic_type_doc_function(
+            db,
+            config,
+            &generic,
+            call_expr.clone(),
+            infer_guard,
+            args_count,
+        ),
         _ => return None,
     }
 }
@@ -49,6 +61,7 @@ fn infer_signature_doc_function(
     config: &mut LuaInferConfig,
     signature_id: LuaSignatureId,
     call_expr: LuaCallExpr,
+    args_count: Option<usize>,
 ) -> Option<Arc<LuaFunctionType>> {
     let signature = db.get_signature_index().get(&signature_id)?;
     let overloads = &signature.overloads;
@@ -89,6 +102,7 @@ fn infer_signature_doc_function(
             call_expr.clone(),
             signature.is_colon_define,
             signature.is_generic(),
+            args_count,
         )?;
 
         Some(doc_func)
@@ -101,12 +115,20 @@ fn infer_type_doc_function(
     type_id: LuaTypeDeclId,
     call_expr: LuaCallExpr,
     infer_guard: &mut InferGuard,
+    args_count: Option<usize>,
 ) -> Option<Arc<LuaFunctionType>> {
     infer_guard.check(&type_id)?;
     let type_decl = db.get_type_index().get_type_decl(&type_id)?;
     if type_decl.is_alias() {
         let alias_type = type_decl.get_alias_origin()?;
-        return infer_call_expr_func(db, config, call_expr, alias_type.clone(), infer_guard);
+        return infer_call_expr_func(
+            db,
+            config,
+            call_expr,
+            alias_type.clone(),
+            infer_guard,
+            args_count,
+        );
     } else if type_decl.is_enum() {
         return None;
     }
@@ -126,7 +148,15 @@ fn infer_type_doc_function(
         }
     }
 
-    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, false)?;
+    let doc_func = resolve_signature(
+        db,
+        config,
+        overloads,
+        call_expr.clone(),
+        false,
+        false,
+        args_count,
+    )?;
     Some(doc_func)
 }
 
@@ -136,13 +166,21 @@ fn infer_generic_type_doc_function(
     generic: &LuaGenericType,
     call_expr: LuaCallExpr,
     infer_guard: &mut InferGuard,
+    args_count: Option<usize>,
 ) -> Option<Arc<LuaFunctionType>> {
     let type_id = generic.get_base_type_id();
     infer_guard.check(&type_id)?;
     let type_decl = db.get_type_index().get_type_decl(&type_id)?;
     if type_decl.is_alias() {
         let alias_type = type_decl.get_alias_origin()?;
-        return infer_call_expr_func(db, config, call_expr, alias_type.clone(), infer_guard);
+        return infer_call_expr_func(
+            db,
+            config,
+            call_expr,
+            alias_type.clone(),
+            infer_guard,
+            args_count,
+        );
     } else if type_decl.is_enum() {
         return None;
     }
@@ -164,6 +202,6 @@ fn infer_generic_type_doc_function(
         }
     }
 
-    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, false)?;
+    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, false, args_count)?;
     Some(doc_func)
 }

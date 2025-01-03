@@ -172,6 +172,7 @@ fn infer_call_by_signature(
             call_expr.clone(),
             signature.is_colon_define,
             signature.is_generic(),
+            None,
         )?;
         return infer_call_by_doc_function(
             db,
@@ -253,7 +254,7 @@ fn infer_call_by_custom_type(
         }
     }
 
-    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, false)?;
+    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, false, None)?;
     return infer_call_by_doc_function(db, config, &doc_func, call_expr, false);
 }
 
@@ -292,7 +293,7 @@ fn infer_call_by_custom_generic_type(
         }
     }
 
-    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, false)?;
+    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, false, None)?;
     return infer_call_by_doc_function(db, config, &doc_func, call_expr, false);
 }
 

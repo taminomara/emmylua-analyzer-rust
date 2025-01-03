@@ -1,4 +1,4 @@
-mod alias_or_enum_provider;
+mod type_special_provider;
 mod doc_name_token_provider;
 mod doc_tag_provider;
 mod doc_type_provider;
@@ -14,7 +14,7 @@ pub fn add_completions(builder: &mut CompletionBuilder) -> Option<()> {
     module_path_provider::add_completion(builder);
     file_path_provider::add_completion(builder);
     keywords_provider::add_completion(builder);
-    alias_or_enum_provider::add_completion(builder);
+    type_special_provider::add_completion(builder);
     env_provider::add_completion(builder);
     member_provider::add_completion(builder);
     doc_tag_provider::add_completion(builder);
