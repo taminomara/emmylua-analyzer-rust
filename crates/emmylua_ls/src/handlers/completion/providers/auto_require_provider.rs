@@ -1,11 +1,19 @@
 use code_analysis::{EmmyrcFilenameConvention, ModuleInfo};
 use emmylua_parser::{LuaAstNode, LuaNameExpr};
-use lsp_types::CompletionItem;
+use lsp_types::{CompletionItem, Position};
 
-use crate::handlers::completion::completion_builder::CompletionBuilder;
+use crate::{
+    handlers::{command::make_auto_require, completion::completion_builder::CompletionBuilder},
+    util::module_name_convert,
+};
 
 pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     if builder.is_cancelled() {
+        return None;
+    }
+
+    let enable = builder.semantic_model.get_emmyrc().completion.auto_require;
+    if !enable {
         return None;
     }
 
@@ -23,6 +31,9 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         .get_db()
         .get_module_index()
         .get_module_infos();
+    let range = builder.trigger_token.text_range();
+    let document = builder.semantic_model.get_document();
+    let lsp_position = document.to_lsp_range(range)?.start;
 
     let mut completions = Vec::new();
     for module_info in module_infos {
@@ -35,6 +46,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
                 &prefix,
                 &module_info,
                 file_convension,
+                lsp_position,
                 &mut completions,
             );
         }
@@ -52,6 +64,7 @@ fn add_module_completion_item(
     prefix: &str,
     module_info: &ModuleInfo,
     file_convension: EmmyrcFilenameConvention,
+    position: Position,
     completions: &mut Vec<CompletionItem>,
 ) -> Option<()> {
     let completion_name = module_name_convert(&module_info.name, file_convension);
@@ -70,76 +83,16 @@ fn add_module_completion_item(
             detail: Some(format!("    (in {})", module_info.full_module_name)),
             ..Default::default()
         }),
+        command: Some(make_auto_require(
+            "",
+            builder.semantic_model.get_file_id(),
+            module_info.file_id,
+            position
+        )),
         ..Default::default()
     };
 
     completions.push(completion_item);
 
     Some(())
-}
-
-fn module_name_convert(name: &str, file_convension: EmmyrcFilenameConvention) -> String {
-    let mut module_name = name.to_string();
-
-    match file_convension {
-        EmmyrcFilenameConvention::SnakeCase => {
-            module_name = to_snake_case(&module_name);
-        }
-        EmmyrcFilenameConvention::CamelCase => {
-            module_name = to_camel_case(&module_name);
-        }
-        EmmyrcFilenameConvention::PascalCase => {
-            module_name = to_pascal_case(&module_name);
-        }
-        EmmyrcFilenameConvention::Keep => {}
-    }
-
-    module_name
-}
-
-fn to_snake_case(s: &str) -> String {
-    let mut result = String::new();
-    for (i, ch) in s.chars().enumerate() {
-        if ch.is_uppercase() && i != 0 {
-            result.push('_');
-            result.push(ch.to_ascii_lowercase());
-        } else {
-            result.push(ch.to_ascii_lowercase());
-        }
-    }
-    result
-}
-
-fn to_camel_case(s: &str) -> String {
-    let mut result = String::new();
-    let mut next_uppercase = false;
-    for (i, ch) in s.chars().enumerate() {
-        if ch == '_' || ch == '-' || ch == '.' {
-            next_uppercase = true;
-        } else if next_uppercase {
-            result.push(ch.to_ascii_uppercase());
-            next_uppercase = false;
-        } else if i == 0 {
-            result.push(ch.to_ascii_lowercase());
-        } else {
-            result.push(ch);
-        }
-    }
-    result
-}
-
-fn to_pascal_case(s: &str) -> String {
-    let mut result = String::new();
-    let mut next_uppercase = true;
-    for ch in s.chars() {
-        if ch == '_' || ch == '-' || ch == '.' {
-            next_uppercase = true;
-        } else if next_uppercase {
-            result.push(ch.to_ascii_uppercase());
-            next_uppercase = false;
-        } else {
-            result.push(ch.to_ascii_lowercase());
-        }
-    }
-    result
 }

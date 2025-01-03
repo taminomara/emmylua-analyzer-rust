@@ -26,6 +26,10 @@ pub async fn on_semantic_token_handler(
     let file_id = analysis.get_file_id(&uri)?;
     let mut semantic_model = analysis.compilation.get_semantic_model(file_id)?;
 
+    if !semantic_model.get_emmyrc().semantic_tokens.enable {
+        return None;
+    }
+
     let result = build_semantic_tokens(
         &mut semantic_model,
         unsafe { SEMANTIC_MULTILINE_SUPPORT },
