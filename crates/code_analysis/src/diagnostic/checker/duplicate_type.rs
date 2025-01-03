@@ -3,9 +3,9 @@ use crate::DiagnosticCode;
 use super::{DiagnosticContext, LuaChecker};
 
 #[derive(Debug)]
-pub struct DuplicateTypeChecker();
+pub struct Checker();
 
-impl LuaChecker for DuplicateTypeChecker {
+impl LuaChecker for Checker {
     fn check(&self, context: &mut DiagnosticContext) -> Option<()> {
         let errors = {
             let db = context.get_db();
@@ -14,7 +14,7 @@ impl LuaChecker for DuplicateTypeChecker {
             let errors = diagnostic_index.get_diagnostics(file_id)?;
             let mut analyze_errs = Vec::new();
             for error in errors {
-                if error.kind == DiagnosticCode::DuplicateType {
+                if error.kind == self.get_code() {
                     analyze_errs.push((error.message.clone(), error.range.clone()));
                 }
             }

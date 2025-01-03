@@ -98,7 +98,6 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
         }
         _ => {} // LuaDocType::Conditional(lua_doc_conditional_type) => todo!(),
                 // LuaDocType::Variadic(lua_doc_variadic_type) => todo!(),
-                // LuaDocType::StrTpl(lua_doc_str_tpl_type) => todo!(),
     }
     LuaType::Unknown
 }

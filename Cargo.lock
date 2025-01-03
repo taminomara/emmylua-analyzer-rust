@@ -301,7 +301,7 @@ dependencies = [
 
 [[package]]
 name = "emmylua_ls"
-version = "0.1.0"
+version = "0.1.3"
 dependencies = [
  "chrono",
  "code_analysis",

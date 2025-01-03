@@ -16,11 +16,17 @@ pub trait LuaChecker: Debug + Send + Sync {
     fn get_code(&self) -> DiagnosticCode;
 }
 
+macro_rules! checker {
+    ($name:ident) => {
+        Box::new($name::Checker())
+    };
+}
+
 pub fn init_checkers() -> Vec<Box<dyn LuaChecker>> {
     vec![
-        Box::new(syntax_error::SyntaxErrorChecker()),
-        Box::new(type_not_found::TypeNotFoundChecker()),
-        Box::new(duplicate_type::DuplicateTypeChecker()),
+        checker!(syntax_error),
+        checker!(type_not_found),
+        checker!(duplicate_type),
     ]
 }
 

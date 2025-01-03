@@ -3,9 +3,9 @@ use crate::DiagnosticCode;
 use super::{DiagnosticContext, LuaChecker};
 
 #[derive(Debug)]
-pub struct TypeNotFoundChecker();
+pub struct Checker();
 
-impl LuaChecker for TypeNotFoundChecker {
+impl LuaChecker for Checker {
     fn check(&self, context: &mut DiagnosticContext) -> Option<()> {
         let errors = {
             let db = context.get_db();
