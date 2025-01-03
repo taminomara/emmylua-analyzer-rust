@@ -1,7 +1,7 @@
 use std::{collections::HashSet, sync::Arc};
 
 pub use super::checker::{DiagnosticContext, LuaChecker};
-use super::{checker::init_checkers, lua_diagnostic_code::is_code_default_enable, DiagnosticCode};
+use super::{checker::init_checkers, DiagnosticCode};
 use crate::{Emmyrc, FileId, LuaCompilation};
 use lsp_types::Diagnostic;
 use tokio_util::sync::CancellationToken;
@@ -10,8 +10,8 @@ use tokio_util::sync::CancellationToken;
 pub struct LuaDiagnostic {
     checkers: Vec<Box<dyn LuaChecker>>,
     enable: bool,
-    workspace_enabled: HashSet<DiagnosticCode>,
-    workspace_disabled: HashSet<DiagnosticCode>,
+    workspace_enabled: Arc<HashSet<DiagnosticCode>>,
+    workspace_disabled: Arc<HashSet<DiagnosticCode>>,
 }
 
 impl LuaDiagnostic {
@@ -19,8 +19,8 @@ impl LuaDiagnostic {
         Self {
             checkers: init_checkers(),
             enable: true,
-            workspace_enabled: HashSet::new(),
-            workspace_disabled: HashSet::new(),
+            workspace_enabled: HashSet::new().into(),
+            workspace_disabled: HashSet::new().into(),
         }
     }
 
@@ -30,8 +30,8 @@ impl LuaDiagnostic {
 
     pub fn update_config(&mut self, emmyrc: Arc<Emmyrc>) {
         self.enable = emmyrc.diagnostics.enable;
-        self.workspace_disabled = emmyrc.diagnostics.disable.iter().cloned().collect();
-        self.workspace_enabled = emmyrc.diagnostics.enables.iter().cloned().collect();
+        self.workspace_disabled = Arc::new(emmyrc.diagnostics.disable.iter().cloned().collect());
+        self.workspace_enabled = Arc::new(emmyrc.diagnostics.enables.iter().cloned().collect());
     }
 
     pub async fn diagnose_file(
@@ -45,56 +45,27 @@ impl LuaDiagnostic {
         }
 
         let model = compilation.get_semantic_model(file_id)?;
-        let mut context = DiagnosticContext::new(model);
+        let mut context = DiagnosticContext::new(
+            model,
+            self.workspace_enabled.clone(),
+            self.workspace_disabled.clone(),
+        );
         for checker in &self.checkers {
             if cancel_token.is_cancelled() {
                 return None;
             }
 
-            let code = checker.get_code();
-            if self.is_checker_enable_by_code(&context, &code) {
-                checker.check(&mut context);
+            let codes = checker.support_codes();
+            let can_check = codes
+                .iter()
+                .any(|code| context.is_checker_enable_by_code(code));
+            if !can_check {
+                continue;
             }
+
+            checker.check(&mut context);
         }
 
         Some(context.get_diagnostics())
-    }
-
-    fn is_checker_enable_by_code(
-        &self,
-        context: &DiagnosticContext,
-        code: &DiagnosticCode,
-    ) -> bool {
-        let file_id = context.get_file_id();
-        let db = context.get_db();
-        let diagnostic_index = db.get_diagnostic_index();
-        // force enable
-        if diagnostic_index.is_file_enabled(&file_id, &code) {
-            return true;
-        }
-
-        // workspace force disabled
-        if self.workspace_disabled.contains(&code) {
-            return false;
-        }
-
-        let meta_index = db.get_meta_file();
-        // ignore meta file diagnostic
-        if meta_index.is_meta_file(&file_id) {
-            return false;
-        }
-
-        // is file disabled this code
-        if diagnostic_index.is_file_disabled(&file_id, &code) {
-            return false;
-        }
-
-        // workspace force enabled
-        if self.workspace_enabled.contains(&code) {
-            return true;
-        }
-
-        // default setting
-        is_code_default_enable(&code)
     }
 }

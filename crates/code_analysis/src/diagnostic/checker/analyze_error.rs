@@ -2,6 +2,8 @@ use crate::DiagnosticCode;
 
 use super::{DiagnosticContext, LuaChecker};
 
+const CODES: &[DiagnosticCode] = &[DiagnosticCode::TypeNotFound, DiagnosticCode::DuplicateType];
+
 #[derive(Debug)]
 pub struct Checker();
 
@@ -14,7 +16,7 @@ impl LuaChecker for Checker {
             let errors = diagnostic_index.get_diagnostics(file_id)?;
             let mut analyze_errs = Vec::new();
             for error in errors {
-                if error.kind == self.get_code() {
+                if error.kind == DiagnosticCode::TypeNotFound {
                     analyze_errs.push((error.message.clone(), error.range.clone()));
                 }
             }
@@ -24,7 +26,7 @@ impl LuaChecker for Checker {
 
         for analyze_err in errors {
             context.add_diagnostic(
-                DiagnosticCode::DuplicateType,
+                DiagnosticCode::TypeNotFound,
                 analyze_err.1,
                 analyze_err.0,
                 None,
@@ -33,7 +35,7 @@ impl LuaChecker for Checker {
         Some(())
     }
 
-    fn get_code(&self) -> DiagnosticCode {
-        DiagnosticCode::DuplicateType
+    fn support_codes(&self) -> &[DiagnosticCode] {
+        CODES
     }
 }

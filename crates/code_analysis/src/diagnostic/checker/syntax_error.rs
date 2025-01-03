@@ -2,6 +2,8 @@ use crate::DiagnosticCode;
 
 use super::{DiagnosticContext, LuaChecker};
 
+const CODES: &[DiagnosticCode] = &[DiagnosticCode::SyntaxError];
+
 #[derive(Debug)]
 pub struct Checker();
 
@@ -22,7 +24,7 @@ impl LuaChecker for Checker {
         Some(())
     }
 
-    fn get_code(&self) -> DiagnosticCode {
-        DiagnosticCode::SyntaxError
+    fn support_codes(&self) -> &[DiagnosticCode] {
+        CODES
     }
 }

@@ -1,19 +1,18 @@
 mod syntax_error;
-mod type_not_found;
-mod duplicate_type;
+mod analyze_error;
 
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
-use std::fmt::Debug;
+use std::{collections::HashSet, fmt::Debug, sync::Arc};
 
 use crate::{db_index::DbIndex, semantic::SemanticModel, FileId};
 
-use super::{lua_diagnostic_code::get_default_severity, DiagnosticCode};
+use super::{lua_diagnostic_code::{get_default_severity, is_code_default_enable}, DiagnosticCode};
 
 pub trait LuaChecker: Debug + Send + Sync {
     fn check(&self, context: &mut DiagnosticContext) -> Option<()>;
 
-    fn get_code(&self) -> DiagnosticCode;
+    fn support_codes(&self) -> &[DiagnosticCode];
 }
 
 macro_rules! checker {
@@ -25,21 +24,28 @@ macro_rules! checker {
 pub fn init_checkers() -> Vec<Box<dyn LuaChecker>> {
     vec![
         checker!(syntax_error),
-        checker!(type_not_found),
-        checker!(duplicate_type),
+        checker!(analyze_error),
     ]
 }
 
 pub struct DiagnosticContext<'a> {
     semantic_model: SemanticModel<'a>,
     diagnostics: Vec<Diagnostic>,
+    workspace_enabled: Arc<HashSet<DiagnosticCode>>,
+    workspace_disabled: Arc<HashSet<DiagnosticCode>>,
 }
 
 impl<'a> DiagnosticContext<'a> {
-    pub fn new(semantic_model: SemanticModel<'a>) -> Self {
+    pub fn new(
+        semantic_model: SemanticModel<'a>,
+        workspace_enabled: Arc<HashSet<DiagnosticCode>>,
+        workspace_disabled: Arc<HashSet<DiagnosticCode>>,
+    ) -> Self {
         Self {
             semantic_model,
             diagnostics: Vec::new(),
+            workspace_disabled,
+            workspace_enabled
         }
     }
 
@@ -124,5 +130,42 @@ impl<'a> DiagnosticContext<'a> {
 
     pub fn get_diagnostics(self) -> Vec<Diagnostic> {
         self.diagnostics
+    }
+
+    pub fn is_checker_enable_by_code(
+        &self,
+        code: &DiagnosticCode,
+    ) -> bool {
+        let file_id = self.get_file_id();
+        let db = self.get_db();
+        let diagnostic_index = db.get_diagnostic_index();
+        // force enable
+        if diagnostic_index.is_file_enabled(&file_id, &code) {
+            return true;
+        }
+
+        // workspace force disabled
+        if self.workspace_disabled.contains(&code) {
+            return false;
+        }
+
+        let meta_index = db.get_meta_file();
+        // ignore meta file diagnostic
+        if meta_index.is_meta_file(&file_id) {
+            return false;
+        }
+
+        // is file disabled this code
+        if diagnostic_index.is_file_disabled(&file_id, &code) {
+            return false;
+        }
+
+        // workspace force enabled
+        if self.workspace_enabled.contains(&code) {
+            return true;
+        }
+
+        // default setting
+        is_code_default_enable(&code)
     }
 }
