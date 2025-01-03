@@ -1,18 +1,20 @@
+pub use lua_language_level::LuaLanguageLevel;
 pub use lua_operator_kind::{BinaryOperator, UnaryOperator, UNARY_PRIORITY};
 pub use lua_syntax_kind::LuaSyntaxKind;
 pub use lua_token_kind::LuaTokenKind;
-pub use lua_language_level::LuaLanguageLevel;
-pub use lua_type_operator_kind::{LuaTypeBinaryOperator, LuaTypeTernaryOperator, LuaTypeUnaryOperator};
-pub use lua_visibility_kind::VisibilityKind;
+pub use lua_type_operator_kind::{
+    LuaTypeBinaryOperator, LuaTypeTernaryOperator, LuaTypeUnaryOperator,
+};
 pub use lua_version::LuaVersionNumber;
+pub use lua_visibility_kind::VisibilityKind;
 
+mod lua_language_level;
 mod lua_operator_kind;
 mod lua_syntax_kind;
 mod lua_token_kind;
-mod lua_visibility_kind;
-mod lua_language_level;
 mod lua_type_operator_kind;
 mod lua_version;
+mod lua_visibility_kind;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u16)]
@@ -167,7 +169,7 @@ impl LuaOpKind {
         }
     }
 
-    pub fn to_type_binary_operator(kind: LuaTokenKind) -> LuaTypeBinaryOperator {
+    pub fn to_parse_binary_operator(kind: LuaTokenKind) -> LuaTypeBinaryOperator {
         match kind {
             LuaTokenKind::TkDocOr => LuaTypeBinaryOperator::Union,
             LuaTokenKind::TkDocAnd => LuaTypeBinaryOperator::Intersection,
@@ -176,5 +178,14 @@ impl LuaOpKind {
             _ => LuaTypeBinaryOperator::None,
         }
     }
-}
 
+    pub fn to_type_binary_operator(kind: LuaTokenKind) -> LuaTypeBinaryOperator {
+        match kind {
+            LuaTokenKind::TkDocOr | LuaTokenKind::TkDocContinueOr => LuaTypeBinaryOperator::Union,
+            LuaTokenKind::TkDocAnd => LuaTypeBinaryOperator::Intersection,
+            LuaTokenKind::TkIn => LuaTypeBinaryOperator::In,
+            LuaTokenKind::TkDocExtends => LuaTypeBinaryOperator::Extends,
+            _ => LuaTypeBinaryOperator::None,
+        }
+    }
+}

@@ -1,3 +1,4 @@
+mod call_func;
 mod infer;
 mod instantiate;
 mod member;
@@ -9,7 +10,7 @@ mod type_compact;
 
 use std::{collections::HashSet, sync::Arc};
 
-use emmylua_parser::{LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken};
+use emmylua_parser::{LuaCallExpr, LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken};
 use infer::InferResult;
 pub use infer::LuaInferConfig;
 use member::infer_members;
@@ -22,14 +23,16 @@ use semantic_info::{
     infer_token_semantic_info,
 };
 
+use crate::LuaFunctionType;
 use crate::{db_index::LuaTypeDeclId, Emmyrc, LuaDocument, LuaPropertyOwnerId};
 use crate::{
     db_index::{DbIndex, LuaType},
     FileId,
 };
+pub(crate) use call_func::infer_call_expr_func;
 pub(crate) use infer::{infer_expr, instantiate_doc_function};
-pub(crate) use overload_resolve::resolve_signature;
-pub(crate) use instantiate::instantiate_type;
+use instantiate::instantiate_type;
+use overload_resolve::resolve_signature;
 
 #[derive(Debug)]
 pub struct SemanticModel<'a> {
@@ -78,6 +81,21 @@ impl<'a> SemanticModel<'a> {
 
     pub fn infer_member_infos(&self, prefix_type: &LuaType) -> Option<Vec<LuaMemberInfo>> {
         infer_members(self.db, prefix_type)
+    }
+
+    pub fn infer_call_expr_func(
+        &mut self,
+        call_expr: LuaCallExpr,
+    ) -> Option<Arc<LuaFunctionType>> {
+        let prefix_expr = call_expr.get_prefix_expr()?;
+        let call_expr_type = infer_expr(self.db, &mut self.infer_config, prefix_expr.into())?;
+        infer_call_expr_func(
+            self.db,
+            &mut self.infer_config,
+            call_expr,
+            call_expr_type,
+            &mut InferGuard::new(),
+        )
     }
 
     pub fn get_semantic_info(

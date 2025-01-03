@@ -52,7 +52,6 @@ function assert(v, message) end
 --- **"isrunning"**: returns a boolean that tells whether the collector is
 --- running (i.e., not stopped).
 ---@alias collectgarbage_opt "collect"|"stop"|"restart"|"count"|"step"|"setpause"|"incremental"|"generational"|"isrunning"
----@overload fun():any
 ---@param opt? collectgarbage_opt
 ---@param arg? string
 ---@return any

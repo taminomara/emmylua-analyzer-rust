@@ -121,7 +121,7 @@ fn resolve_signature_by_args(
     overloads: Vec<Arc<LuaFunctionType>>,
     expr_types: Vec<LuaType>,
 ) -> Option<Arc<LuaFunctionType>> {
-    let mut max_match = 0;
+    let mut max_match = -1;
     let mut matched_func: Option<Arc<LuaFunctionType>> = None;
     for func in overloads {
         let params = func.get_params();

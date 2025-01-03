@@ -37,7 +37,7 @@ pub fn build_signature_helper(
     }
 }
 
-fn get_current_param_index(call_expr: &LuaCallExpr, token: &LuaSyntaxToken) -> Option<usize> {
+pub fn get_current_param_index(call_expr: &LuaCallExpr, token: &LuaSyntaxToken) -> Option<usize> {
     let arg_list = call_expr.get_args_list()?;
     let mut current_idx = 0;
     let token_position = token.text_range().start();

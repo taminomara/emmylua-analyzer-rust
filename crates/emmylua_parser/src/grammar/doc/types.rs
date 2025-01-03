@@ -53,7 +53,7 @@ fn parse_sub_type(p: &mut LuaDocParser, limit: i32) -> ParseResult {
         parse_simple_type(p)?
     };
 
-    let mut bop = LuaOpKind::to_type_binary_operator(p.current_token());
+    let mut bop = LuaOpKind::to_parse_binary_operator(p.current_token());
     while bop != LuaTypeBinaryOperator::None && bop.get_priority().left > limit {
         let range = p.current_token_range();
         let m = cm.precede(p, LuaSyntaxKind::TypeBinary);
@@ -71,7 +71,7 @@ fn parse_sub_type(p: &mut LuaDocParser, limit: i32) -> ParseResult {
         }
 
         cm = m.complete(p);
-        bop = LuaOpKind::to_type_binary_operator(p.current_token());
+        bop = LuaOpKind::to_parse_binary_operator(p.current_token());
     }
 
     Ok(cm)
