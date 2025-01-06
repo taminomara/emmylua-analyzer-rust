@@ -52,11 +52,11 @@ fn register_files_watch_use_lsp_client(client: Arc<ClientProxy>) {
                 kind: Some(WatchKind::Create | WatchKind::Change | WatchKind::Delete),
             },
             FileSystemWatcher {
-                glob_pattern: GlobPattern::String(".luarc.json".into()),
+                glob_pattern: GlobPattern::String("**/.luarc.json".into()),
                 kind: Some(WatchKind::Create | WatchKind::Change | WatchKind::Delete),
             },
             FileSystemWatcher {
-                glob_pattern: GlobPattern::String(".emmyrc.json".into()),
+                glob_pattern: GlobPattern::String("**/.emmyrc.json".into()),
                 kind: Some(WatchKind::Create | WatchKind::Change | WatchKind::Delete),
             },
         ],
