@@ -10,102 +10,147 @@
       ]
     },
     "codeLens": {
-      "anyOf": [
+      "default": {
+        "enable": true
+      },
+      "allOf": [
         {
           "$ref": "#/definitions/EmmyrcCodeLen"
-        },
-        {
-          "type": "null"
         }
       ]
     },
     "completion": {
-      "anyOf": [
+      "default": {
+        "autoRequire": true,
+        "autoRequireFunction": "require",
+        "autoRequireNamingConvention": "keep",
+        "callSnippet": false,
+        "enable": true,
+        "postfix": "@"
+      },
+      "allOf": [
         {
           "$ref": "#/definitions/EmmyrcCompletion"
-        },
-        {
-          "type": "null"
         }
       ]
     },
     "diagnostics": {
-      "anyOf": [
+      "default": {
+        "disable": [],
+        "enable": true,
+        "enables": [],
+        "globals": [],
+        "globalsRegex": [],
+        "severity": {}
+      },
+      "allOf": [
         {
           "$ref": "#/definitions/EmmyrcDiagnostic"
-        },
-        {
-          "type": "null"
         }
       ]
     },
     "hint": {
-      "anyOf": [
+      "default": {
+        "enable": true,
+        "indexHint": true,
+        "localHint": true,
+        "overrideHint": true,
+        "paramHint": true
+      },
+      "allOf": [
         {
           "$ref": "#/definitions/EmmyrcInlayHint"
-        },
+        }
+      ]
+    },
+    "hover": {
+      "default": {
+        "enable": true
+      },
+      "allOf": [
         {
-          "type": "null"
+          "$ref": "#/definitions/EmmyrcHover"
+        }
+      ]
+    },
+    "references": {
+      "default": {
+        "enable": true,
+        "fuzzySearch": true
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/EmmyrcReference"
         }
       ]
     },
     "resource": {
-      "anyOf": [
+      "default": {
+        "paths": []
+      },
+      "allOf": [
         {
           "$ref": "#/definitions/EmmyrcResource"
-        },
-        {
-          "type": "null"
         }
       ]
     },
     "runtime": {
-      "anyOf": [
+      "default": {
+        "extensions": [],
+        "frameworkVersions": [],
+        "requireLikeFunction": [],
+        "requirePattern": [],
+        "version": "LuaLatest"
+      },
+      "allOf": [
         {
           "$ref": "#/definitions/EmmyrcRuntime"
-        },
-        {
-          "type": "null"
         }
       ]
     },
     "semanticTokens": {
-      "anyOf": [
+      "default": {
+        "enable": true
+      },
+      "allOf": [
         {
           "$ref": "#/definitions/EmmyrcSemanticToken"
-        },
-        {
-          "type": "null"
         }
       ]
     },
     "signature": {
-      "anyOf": [
+      "default": {
+        "detailSignatureHelper": true
+      },
+      "allOf": [
         {
           "$ref": "#/definitions/EmmyrcSignature"
-        },
-        {
-          "type": "null"
         }
       ]
     },
     "strict": {
-      "anyOf": [
+      "default": {
+        "requirePath": true,
+        "typeCall": false
+      },
+      "allOf": [
         {
           "$ref": "#/definitions/EmmyrcStrict"
-        },
-        {
-          "type": "null"
         }
       ]
     },
     "workspace": {
-      "anyOf": [
+      "default": {
+        "encoding": "utf-8",
+        "ignoreDir": [],
+        "ignoreGlobs": [],
+        "library": [],
+        "preloadFileSize": 0,
+        "workspaceRoots": []
+      },
+      "allOf": [
         {
           "$ref": "#/definitions/EmmyrcWorkspace"
-        },
-        {
-          "type": "null"
         }
       ]
     }
@@ -139,112 +184,107 @@
     "DiagnosticSeveritySetting": {
       "type": "string",
       "enum": [
-        "Error",
-        "Warning",
-        "Information",
-        "Hint"
+        "error",
+        "warning",
+        "information",
+        "hint"
       ]
     },
     "EmmyrcCodeLen": {
       "type": "object",
       "properties": {
         "enable": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "description": "Whether to enable code lens.",
+          "default": true,
+          "type": "boolean"
         }
       }
     },
     "EmmyrcCompletion": {
+      "description": "Configuration for EmmyLua code completion.",
       "type": "object",
       "properties": {
         "autoRequire": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "description": "Whether to automatically require modules.",
+          "default": true,
+          "type": "boolean"
         },
         "autoRequireFunction": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "description": "The function used for auto-requiring modules.",
+          "default": "require",
+          "type": "string"
         },
         "autoRequireNamingConvention": {
-          "anyOf": [
+          "description": "The naming convention for auto-required filenames.",
+          "default": "keep",
+          "allOf": [
             {
               "$ref": "#/definitions/EmmyrcFilenameConvention"
-            },
-            {
-              "type": "null"
             }
           ]
         },
         "callSnippet": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "description": "Whether to use call snippets in completions.",
+          "default": false,
+          "type": "boolean"
+        },
+        "enable": {
+          "description": "Whether to enable code completion.",
+          "default": true,
+          "type": "boolean"
         },
         "postfix": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "description": "The postfix trigger used in completions.",
+          "default": "@",
+          "type": "string"
         }
       }
     },
     "EmmyrcDiagnostic": {
+      "description": "Represents the diagnostic configuration for Emmyrc.",
       "type": "object",
       "properties": {
         "disable": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "description": "A list of diagnostic codes that are disabled.",
+          "default": [],
+          "type": "array",
           "items": {
             "$ref": "#/definitions/DiagnosticCode"
           }
         },
         "enable": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "description": "A flag indicating whether diagnostics are enabled.",
+          "default": true,
+          "type": "boolean"
         },
         "enables": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "description": "A list of diagnostic codes that are enabled.",
+          "default": [],
+          "type": "array",
           "items": {
             "$ref": "#/definitions/DiagnosticCode"
           }
         },
         "globals": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "description": "A list of global variables.",
+          "default": [],
+          "type": "array",
           "items": {
             "type": "string"
           }
         },
         "globalsRegex": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "description": "A list of regular expressions for global variables.",
+          "default": [],
+          "type": "array",
           "items": {
             "type": "string"
           }
         },
         "severity": {
-          "type": [
-            "object",
-            "null"
-          ],
+          "description": "A map of diagnostic codes to their severity settings.",
+          "default": {},
+          "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/DiagnosticSeveritySetting"
           }
@@ -260,32 +300,37 @@
         "camel-case"
       ]
     },
+    "EmmyrcHover": {
+      "type": "object",
+      "properties": {
+        "enable": {
+          "default": true,
+          "type": "boolean"
+        }
+      }
+    },
     "EmmyrcInlayHint": {
       "type": "object",
       "properties": {
+        "enable": {
+          "default": true,
+          "type": "boolean"
+        },
         "indexHint": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "default": true,
+          "type": "boolean"
         },
         "localHint": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "default": true,
+          "type": "boolean"
         },
         "overrideHint": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "default": true,
+          "type": "boolean"
         },
         "paramHint": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "default": true,
+          "type": "boolean"
         }
       }
     },
@@ -300,14 +345,27 @@
         "LuaLatest"
       ]
     },
+    "EmmyrcReference": {
+      "type": "object",
+      "properties": {
+        "enable": {
+          "description": "Whether to enable reference search.",
+          "default": true,
+          "type": "boolean"
+        },
+        "fuzzySearch": {
+          "description": "Determines whether to enable fuzzy searching for fields where references cannot be found.",
+          "default": true,
+          "type": "boolean"
+        }
+      }
+    },
     "EmmyrcResource": {
       "type": "object",
       "properties": {
         "paths": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "default": [],
+          "type": "array",
           "items": {
             "type": "string"
           }
@@ -318,48 +376,38 @@
       "type": "object",
       "properties": {
         "extensions": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "default": [],
+          "type": "array",
           "items": {
             "type": "string"
           }
         },
         "frameworkVersions": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "default": [],
+          "type": "array",
           "items": {
             "type": "string"
           }
         },
         "requireLikeFunction": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "default": [],
+          "type": "array",
           "items": {
             "type": "string"
           }
         },
         "requirePattern": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "default": [],
+          "type": "array",
           "items": {
             "type": "string"
           }
         },
         "version": {
-          "anyOf": [
+          "default": "LuaLatest",
+          "allOf": [
             {
               "$ref": "#/definitions/EmmyrcLuaVersion"
-            },
-            {
-              "type": "null"
             }
           ]
         }
@@ -369,10 +417,9 @@
       "type": "object",
       "properties": {
         "enable": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "description": "Whether to enable semantic token.",
+          "default": true,
+          "type": "boolean"
         }
       }
     },
@@ -380,10 +427,9 @@
       "type": "object",
       "properties": {
         "detailSignatureHelper": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "description": "Whether to enable signature help.",
+          "default": true,
+          "type": "boolean"
         }
       }
     },
@@ -391,16 +437,13 @@
       "type": "object",
       "properties": {
         "requirePath": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "description": "Whether to enable strict mode require path.",
+          "default": true,
+          "type": "boolean"
         },
         "typeCall": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "default": false,
+          "type": "boolean"
         }
       }
     },
@@ -408,50 +451,38 @@
       "type": "object",
       "properties": {
         "encoding": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "default": "utf-8",
+          "type": "string"
         },
         "ignoreDir": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "default": [],
+          "type": "array",
           "items": {
             "type": "string"
           }
         },
         "ignoreGlobs": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "default": [],
+          "type": "array",
           "items": {
             "type": "string"
           }
         },
         "library": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "default": [],
+          "type": "array",
           "items": {
             "type": "string"
           }
         },
         "preloadFileSize": {
-          "type": [
-            "integer",
-            "null"
-          ],
+          "default": 0,
+          "type": "integer",
           "format": "int32"
         },
         "workspaceRoots": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "default": [],
+          "type": "array",
           "items": {
             "type": "string"
           }
