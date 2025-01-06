@@ -4,13 +4,11 @@ use std::collections::HashMap;
 
 use serde_json::Value;
 
-#[allow(unused)]
 #[derive(Debug, Clone)]
 pub struct FlattenConfigObject {
     config: HashMap<String, Value>
 }
 
-#[allow(unused)]
 impl FlattenConfigObject {
     pub fn parse(luals_json: Value) -> Self {
         let mut config = HashMap::new();

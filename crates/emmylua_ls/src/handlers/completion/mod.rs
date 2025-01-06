@@ -29,6 +29,10 @@ pub async fn on_completion_handler(
     let analysis = context.analysis.read().await;
     let file_id = analysis.get_file_id(&uri)?;
     let semantic_model = analysis.compilation.get_semantic_model(file_id)?;
+    if !semantic_model.get_emmyrc().completion.enable {
+        return None;
+    }
+
     let root = semantic_model.get_root();
     let position_offset = {
         let document = semantic_model.get_document();

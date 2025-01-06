@@ -4,6 +4,9 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 /// Configuration for EmmyLua code completion.
 pub struct EmmyrcCompletion {
+    /// Whether to enable code completion.
+    #[serde(default = "default_true")]
+    pub enable: bool,
     /// Whether to automatically require modules.
     #[serde(default = "default_true")]
     pub auto_require: bool,
@@ -24,6 +27,7 @@ pub struct EmmyrcCompletion {
 impl Default for EmmyrcCompletion {
     fn default() -> Self {
         Self {
+            enable: default_true(),
             auto_require: default_true(),
             auto_require_function: default_require_function(),
             auto_require_naming_convention: Default::default(),

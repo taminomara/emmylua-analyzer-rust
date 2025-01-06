@@ -14,17 +14,20 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
-#[allow(unused_variables)]
 pub async fn on_hover(
     context: ServerContextSnapshot,
     params: HoverParams,
-    cancel_token: CancellationToken,
+    _: CancellationToken,
 ) -> Option<Hover> {
     let uri = params.text_document_position_params.text_document.uri;
     let position = params.text_document_position_params.position;
     let analysis = context.analysis.read().await;
     let file_id = analysis.get_file_id(&uri)?;
     let mut semantic_model = analysis.compilation.get_semantic_model(file_id)?;
+
+    if !semantic_model.get_emmyrc().hover.enable {
+        return None;
+    }
 
     let root = semantic_model.get_root();
     let position_offset = {

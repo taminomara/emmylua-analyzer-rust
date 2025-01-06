@@ -8,6 +8,8 @@ mod resource;
 mod codelen;
 mod strict;
 mod semantictoken;
+mod references;
+mod hover;
 
 
 pub use completion::{EmmyrcCompletion, EmmyrcFilenameConvention};
@@ -20,3 +22,5 @@ pub use resource::EmmyrcResource;
 pub use codelen::EmmyrcCodeLen;
 pub use strict::EmmyrcStrict;
 pub use semantictoken::EmmyrcSemanticToken;
+pub use references::EmmyrcReference;
+pub use hover::EmmyrcHover;

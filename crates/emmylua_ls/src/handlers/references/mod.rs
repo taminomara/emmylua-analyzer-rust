@@ -18,6 +18,11 @@ pub async fn on_references_handler(
     let file_id = analysis.get_file_id(&uri)?;
     let position = params.text_document_position.position;
     let mut semantic_model = analysis.compilation.get_semantic_model(file_id)?;
+    if !semantic_model.get_emmyrc().references.enable {
+        return None;
+    }
+
+
     let root = semantic_model.get_root();
     let position_offset = {
         let document = semantic_model.get_document();
