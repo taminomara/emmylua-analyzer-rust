@@ -1,10 +1,10 @@
-use crate::DiagnosticCode;
+use crate::{DiagnosticCode, SemanticModel};
 
 use super::DiagnosticContext;
 
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::TypeNotFound, DiagnosticCode::DuplicateType];
 
-pub fn check(context: &mut DiagnosticContext) -> Option<()> {
+pub fn check(context: &mut DiagnosticContext, _: &SemanticModel) -> Option<()> {
     let db = context.get_db();
     let file_id = context.get_file_id();
     let diagnostic_index = db.get_diagnostic_index();

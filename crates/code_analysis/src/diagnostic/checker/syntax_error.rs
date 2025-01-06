@@ -1,11 +1,10 @@
-use crate::DiagnosticCode;
+use crate::{DiagnosticCode, SemanticModel};
 
 use super::DiagnosticContext;
 
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::SyntaxError];
 
-pub fn check(context: &mut DiagnosticContext) -> Option<()> {
-    let semantic_model = &context.semantic_model;
+pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
     if let Some(parse_errors) = semantic_model.get_file_parse_error() {
         for parse_error in parse_errors {
             context.add_diagnostic(

@@ -312,6 +312,10 @@ impl LuaDeclarationTree {
     pub fn get_scope(&self, scope_id: &LuaScopeId) -> Option<&LuaScope> {
         self.scopes.get(scope_id.id as usize)
     }
+
+    pub fn get_decls(&self) -> &HashMap<LuaDeclId, LuaDecl> {
+        &self.decls
+    }
 }
 
 #[derive(Debug)]

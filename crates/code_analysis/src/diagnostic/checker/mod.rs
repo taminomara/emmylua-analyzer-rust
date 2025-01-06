@@ -1,5 +1,7 @@
 mod analyze_error;
 mod syntax_error;
+mod unused;
+mod depreacated;
 
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
@@ -12,26 +14,28 @@ use super::{
     DiagnosticCode,
 };
 
-pub fn check_file(context: &mut DiagnosticContext) -> Option<()> {
+pub fn check_file(context: &mut DiagnosticContext, semantic_model:&mut SemanticModel) -> Option<()> {
     macro_rules! check {
         ($module:ident) => {
             if $module::CODES
                 .iter()
                 .any(|code| context.is_checker_enable_by_code(code))
             {
-                $module::check(context);
+                $module::check(context, semantic_model);
             }
         };
     }
 
     check!(syntax_error);
     check!(analyze_error);
+    check!(unused);
 
     Some(())
 }
 
 pub struct DiagnosticContext<'a> {
-    semantic_model: SemanticModel<'a>,
+    file_id: FileId,
+    db: &'a DbIndex,
     diagnostics: Vec<Diagnostic>,
     workspace_enabled: Arc<HashSet<DiagnosticCode>>,
     workspace_disabled: Arc<HashSet<DiagnosticCode>>,
@@ -39,12 +43,14 @@ pub struct DiagnosticContext<'a> {
 
 impl<'a> DiagnosticContext<'a> {
     pub fn new(
-        semantic_model: SemanticModel<'a>,
+        file_id: FileId,
+        db: &'a DbIndex,
         workspace_enabled: Arc<HashSet<DiagnosticCode>>,
         workspace_disabled: Arc<HashSet<DiagnosticCode>>,
     ) -> Self {
         Self {
-            semantic_model,
+            file_id,
+            db,
             diagnostics: Vec::new(),
             workspace_disabled,
             workspace_enabled,
@@ -52,11 +58,11 @@ impl<'a> DiagnosticContext<'a> {
     }
 
     pub fn get_db(&self) -> &DbIndex {
-        &self.semantic_model.get_db()
+        &self.db
     }
 
     pub fn get_file_id(&self) -> FileId {
-        self.semantic_model.get_file_id()
+        self.file_id
     }
 
     pub fn add_diagnostic(
@@ -118,7 +124,7 @@ impl<'a> DiagnosticContext<'a> {
     }
 
     fn translate_range(&self, range: TextRange) -> Option<lsp_types::Range> {
-        let document = self.semantic_model.get_document();
+        let document = self.db.get_vfs().get_document(&self.file_id)?;
         let (start_line, start_character) = document.get_line_col(range.start())?;
         let (end_line, end_character) = document.get_line_col(range.end())?;
 

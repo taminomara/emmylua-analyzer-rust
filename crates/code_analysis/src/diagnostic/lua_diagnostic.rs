@@ -42,14 +42,16 @@ impl LuaDiagnostic {
             return None;
         }
 
-        let model = compilation.get_semantic_model(file_id)?;
+        let db = compilation.get_db();
+        let mut semantic_model = compilation.get_semantic_model(file_id)?;
         let mut context = DiagnosticContext::new(
-            model,
+            file_id,
+            db,
             self.workspace_enabled.clone(),
             self.workspace_disabled.clone(),
         );
 
-        check_file(&mut context);
+        check_file(&mut context, &mut semantic_model);
 
         Some(context.get_diagnostics())
     }
