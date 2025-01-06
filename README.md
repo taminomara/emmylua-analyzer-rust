@@ -17,7 +17,8 @@ This project is in its early stages but already offers basic functionality. Futu
 
 ## Documentation
 
-Todo: add documentation.
+- [emmyrc config](./docs/config/emmyrc_json_EN.md)
+- [formatting config](https://github.com/CppCXY/EmmyLuaCodeStyle/blob/master/README_EN.md)
 
 ## Build
 
