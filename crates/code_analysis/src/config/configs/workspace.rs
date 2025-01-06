@@ -4,17 +4,22 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcWorkspace {
+    /// Ignore directories. 
     #[serde(default)]
     pub ignore_dir: Vec<String>,
+    /// Ignore globs. eg: ["**/*.lua"]
     #[serde(default)]
     pub ignore_globs: Vec<String>,
     #[serde(default)]
+    /// Library paths. eg: "/usr/local/share/lua/5.1"
     pub library: Vec<String>,
     #[serde(default)]
+    /// Workspace roots. eg: ["src", "test"]
     pub workspace_roots: Vec<String>,
     // unused
     #[serde(default)]
     pub preload_file_size: i32,
+    /// Encoding. eg: "utf-8"
     #[serde(default = "encoding_default")]
     pub encoding: String,
 }

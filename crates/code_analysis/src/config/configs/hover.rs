@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcHover {
+    /// Whether to enable hover.
     #[serde(default = "default_true")]
     pub enable: bool,
 }

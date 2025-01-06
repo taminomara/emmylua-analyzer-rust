@@ -8,7 +8,9 @@ use crate::{semantic::LuaInferConfig, FileId};
 pub use config_loader::load_configs;
 pub use configs::EmmyrcFilenameConvention;
 use configs::{
-    EmmyrcCodeLen, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcHover, EmmyrcInlayHint, EmmyrcLuaVersion, EmmyrcReference, EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken, EmmyrcSignature, EmmyrcStrict, EmmyrcWorkspace
+    EmmyrcCodeLen, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcHover, EmmyrcInlayHint,
+    EmmyrcLuaVersion, EmmyrcReference, EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken,
+    EmmyrcSignature, EmmyrcStrict, EmmyrcWorkspace,
 };
 use emmylua_parser::{LuaLanguageLevel, ParserConfig};
 use rowan::NodeCache;
@@ -44,7 +46,7 @@ pub struct Emmyrc {
     #[serde(default)]
     pub references: EmmyrcReference,
     #[serde(default)]
-    pub hover: EmmyrcHover
+    pub hover: EmmyrcHover,
 }
 
 impl Emmyrc {

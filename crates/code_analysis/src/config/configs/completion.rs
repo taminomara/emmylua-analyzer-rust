@@ -52,9 +52,13 @@ fn default_postfix() -> String {
 #[derive(Serialize, Deserialize, Debug, JsonSchema, Clone, Copy)]
 #[serde(rename_all = "kebab-case")]
 pub enum EmmyrcFilenameConvention {
+    /// Keep the original filename.
     Keep,
+    /// Convert the filename to snake_case.
     SnakeCase,
+    /// Convert the filename to PascalCase.
     PascalCase,
+    /// Convert the filename to camelCase.
     CamelCase,
 }
 

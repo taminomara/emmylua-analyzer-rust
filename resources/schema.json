@@ -182,12 +182,35 @@
       ]
     },
     "DiagnosticSeveritySetting": {
-      "type": "string",
-      "enum": [
-        "error",
-        "warning",
-        "information",
-        "hint"
+      "oneOf": [
+        {
+          "description": "Represents an error diagnostic severity.",
+          "type": "string",
+          "enum": [
+            "error"
+          ]
+        },
+        {
+          "description": "Represents a warning diagnostic severity.",
+          "type": "string",
+          "enum": [
+            "warning"
+          ]
+        },
+        {
+          "description": "Represents an information diagnostic severity.",
+          "type": "string",
+          "enum": [
+            "information"
+          ]
+        },
+        {
+          "description": "Represents a hint diagnostic severity.",
+          "type": "string",
+          "enum": [
+            "hint"
+          ]
+        }
       ]
     },
     "EmmyrcCodeLen": {
@@ -292,18 +315,42 @@
       }
     },
     "EmmyrcFilenameConvention": {
-      "type": "string",
-      "enum": [
-        "keep",
-        "snake-case",
-        "pascal-case",
-        "camel-case"
+      "oneOf": [
+        {
+          "description": "Keep the original filename.",
+          "type": "string",
+          "enum": [
+            "keep"
+          ]
+        },
+        {
+          "description": "Convert the filename to snake_case.",
+          "type": "string",
+          "enum": [
+            "snake-case"
+          ]
+        },
+        {
+          "description": "Convert the filename to PascalCase.",
+          "type": "string",
+          "enum": [
+            "pascal-case"
+          ]
+        },
+        {
+          "description": "Convert the filename to camelCase.",
+          "type": "string",
+          "enum": [
+            "camel-case"
+          ]
+        }
       ]
     },
     "EmmyrcHover": {
       "type": "object",
       "properties": {
         "enable": {
+          "description": "Whether to enable hover.",
           "default": true,
           "type": "boolean"
         }
@@ -313,36 +360,76 @@
       "type": "object",
       "properties": {
         "enable": {
+          "description": "Whether to enable inlay hints.",
           "default": true,
           "type": "boolean"
         },
         "indexHint": {
+          "description": "Whether to enable index hints.",
           "default": true,
           "type": "boolean"
         },
         "localHint": {
+          "description": "Whether to enable local hints. Whether to enable override hints.",
           "default": true,
           "type": "boolean"
         },
         "overrideHint": {
+          "description": "Whether to enable override hints.",
           "default": true,
           "type": "boolean"
         },
         "paramHint": {
+          "description": "Whether to enable parameter hints.",
           "default": true,
           "type": "boolean"
         }
       }
     },
     "EmmyrcLuaVersion": {
-      "type": "string",
-      "enum": [
-        "Lua5.1",
-        "LuaJIT",
-        "Lua5.2",
-        "Lua5.3",
-        "Lua5.4",
-        "LuaLatest"
+      "oneOf": [
+        {
+          "description": "Lua 5.1",
+          "type": "string",
+          "enum": [
+            "Lua5.1"
+          ]
+        },
+        {
+          "description": "LuaJIT",
+          "type": "string",
+          "enum": [
+            "LuaJIT"
+          ]
+        },
+        {
+          "description": "Lua 5.2",
+          "type": "string",
+          "enum": [
+            "Lua5.2"
+          ]
+        },
+        {
+          "description": "Lua 5.3",
+          "type": "string",
+          "enum": [
+            "Lua5.3"
+          ]
+        },
+        {
+          "description": "Lua 5.4",
+          "type": "string",
+          "enum": [
+            "Lua5.4"
+          ]
+        },
+        {
+          "description": "Lua 5.4",
+          "type": "string",
+          "enum": [
+            "LuaLatest"
+          ]
+        }
       ]
     },
     "EmmyrcReference": {
@@ -376,6 +463,7 @@
       "type": "object",
       "properties": {
         "extensions": {
+          "description": "file Extensions. eg: .lua, .lua.txt",
           "default": [],
           "type": "array",
           "items": {
@@ -383,6 +471,7 @@
           }
         },
         "frameworkVersions": {
+          "description": "Framework versions.",
           "default": [],
           "type": "array",
           "items": {
@@ -390,6 +479,7 @@
           }
         },
         "requireLikeFunction": {
+          "description": "Functions that like require.",
           "default": [],
           "type": "array",
           "items": {
@@ -397,6 +487,7 @@
           }
         },
         "requirePattern": {
+          "description": "Require pattern. eg. \"?.lua\", \"?/init.lua\"",
           "default": [],
           "type": "array",
           "items": {
@@ -404,6 +495,7 @@
           }
         },
         "version": {
+          "description": "Lua version.",
           "default": "LuaLatest",
           "allOf": [
             {
@@ -451,10 +543,12 @@
       "type": "object",
       "properties": {
         "encoding": {
+          "description": "Encoding. eg: \"utf-8\"",
           "default": "utf-8",
           "type": "string"
         },
         "ignoreDir": {
+          "description": "Ignore directories.",
           "default": [],
           "type": "array",
           "items": {
@@ -462,6 +556,7 @@
           }
         },
         "ignoreGlobs": {
+          "description": "Ignore globs. eg: [\"**/*.lua\"]",
           "default": [],
           "type": "array",
           "items": {
@@ -469,6 +564,7 @@
           }
         },
         "library": {
+          "description": "Library paths. eg: \"/usr/local/share/lua/5.1\"",
           "default": [],
           "type": "array",
           "items": {
@@ -481,6 +577,7 @@
           "format": "int32"
         },
         "workspaceRoots": {
+          "description": "Workspace roots. eg: [\"src\", \"test\"]",
           "default": [],
           "type": "array",
           "items": {
