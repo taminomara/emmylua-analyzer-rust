@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use code_analysis::{
     LuaCompilation, LuaDeclId, LuaMemberId, LuaMemberKey, LuaPropertyOwnerId, SemanticModel,
 };
-use emmylua_parser::{LuaAstNode, LuaAstToken, LuaStringToken, LuaSyntaxToken};
+use emmylua_parser::{LuaAstNode, LuaAstToken, LuaNameToken, LuaStringToken, LuaSyntaxToken};
 use lsp_types::Location;
 
 pub fn search_references(
@@ -12,8 +12,7 @@ pub fn search_references(
     token: LuaSyntaxToken,
 ) -> Option<Vec<Location>> {
     let mut result = Vec::new();
-    let semantic_info = semantic_model.get_semantic_info(token.clone().into());
-    if let Some(property_owner) = semantic_info?.property_owner {
+    if let Some(property_owner) = semantic_model.get_property_owner_id(token.clone().into()) {
         match property_owner {
             LuaPropertyOwnerId::LuaDecl(decl_id) => {
                 search_decl_references(semantic_model, decl_id, &mut result);
@@ -23,10 +22,10 @@ pub fn search_references(
             }
             _ => {}
         }
-    } else if let Some(token) = LuaStringToken::cast(token) {
+    } else if let Some(token) = LuaStringToken::cast(token.clone()) {
         search_string_references(semantic_model, token, &mut result);
     } else if semantic_model.get_emmyrc().references.fuzzy_search {
-        // todo!()
+        fuzzy_search_references(compilation, token, &mut result);
     }
 
     Some(result)
@@ -125,6 +124,38 @@ fn search_string_references(
     for in_filed_reference_range in string_refs {
         let document = semantic_model.get_document_by_file_id(in_filed_reference_range.file_id)?;
         let location = document.to_lsp_location(in_filed_reference_range.value)?;
+        result.push(location);
+    }
+
+    Some(())
+}
+
+fn fuzzy_search_references(
+    compilation: &LuaCompilation,
+    token: LuaSyntaxToken,
+    result: &mut Vec<Location>,
+) -> Option<()> {
+    let name = LuaNameToken::cast(token)?;
+    let name_text = name.get_name_text();
+    let fuzzy_references = compilation
+        .get_db()
+        .get_reference_index()
+        .get_index_references(&LuaMemberKey::Name(name_text.to_string().into()))?;
+
+    let mut semantic_cache = HashMap::new();
+    for in_filed_syntax_id in fuzzy_references {
+        let semantic_model =
+            if let Some(semantic_model) = semantic_cache.get_mut(&in_filed_syntax_id.file_id) {
+                semantic_model
+            } else {
+                let semantic_model = compilation.get_semantic_model(in_filed_syntax_id.file_id)?;
+                semantic_cache.insert(in_filed_syntax_id.file_id, semantic_model);
+                semantic_cache.get_mut(&in_filed_syntax_id.file_id)?
+            };
+
+        let document = semantic_model.get_document();
+        let range = in_filed_syntax_id.value.get_range();
+        let location = document.to_lsp_location(range)?;
         result.push(location);
     }
 
