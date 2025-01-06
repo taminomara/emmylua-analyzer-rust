@@ -1,31 +1,33 @@
-mod syntax_error;
 mod analyze_error;
+mod syntax_error;
 
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
-use std::{collections::HashSet, fmt::Debug, sync::Arc};
+use std::{collections::HashSet, sync::Arc};
 
 use crate::{db_index::DbIndex, semantic::SemanticModel, FileId};
 
-use super::{lua_diagnostic_code::{get_default_severity, is_code_default_enable}, DiagnosticCode};
+use super::{
+    lua_diagnostic_code::{get_default_severity, is_code_default_enable},
+    DiagnosticCode,
+};
 
-pub trait LuaChecker: Debug + Send + Sync {
-    fn check(&self, context: &mut DiagnosticContext) -> Option<()>;
+pub fn check_file(context: &mut DiagnosticContext) -> Option<()> {
+    macro_rules! check {
+        ($module:ident) => {
+            if $module::CODES
+                .iter()
+                .any(|code| context.is_checker_enable_by_code(code))
+            {
+                $module::check(context);
+            }
+        };
+    }
 
-    fn support_codes(&self) -> &[DiagnosticCode];
-}
+    check!(syntax_error);
+    check!(analyze_error);
 
-macro_rules! checker {
-    ($name:ident) => {
-        Box::new($name::Checker())
-    };
-}
-
-pub fn init_checkers() -> Vec<Box<dyn LuaChecker>> {
-    vec![
-        checker!(syntax_error),
-        checker!(analyze_error),
-    ]
+    Some(())
 }
 
 pub struct DiagnosticContext<'a> {
@@ -45,7 +47,7 @@ impl<'a> DiagnosticContext<'a> {
             semantic_model,
             diagnostics: Vec::new(),
             workspace_disabled,
-            workspace_enabled
+            workspace_enabled,
         }
     }
 
@@ -64,6 +66,10 @@ impl<'a> DiagnosticContext<'a> {
         message: String,
         data: Option<serde_json::Value>,
     ) {
+        if !self.is_checker_enable_by_code(&code) {
+            return;
+        }
+
         if !self.should_report_diagnostic(&code, &range) {
             return;
         }
@@ -132,10 +138,7 @@ impl<'a> DiagnosticContext<'a> {
         self.diagnostics
     }
 
-    pub fn is_checker_enable_by_code(
-        &self,
-        code: &DiagnosticCode,
-    ) -> bool {
+    pub fn is_checker_enable_by_code(&self, code: &DiagnosticCode) -> bool {
         let file_id = self.get_file_id();
         let db = self.get_db();
         let diagnostic_index = db.get_diagnostic_index();
