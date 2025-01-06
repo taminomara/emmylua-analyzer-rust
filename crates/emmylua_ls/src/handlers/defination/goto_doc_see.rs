@@ -1,22 +1,31 @@
 use code_analysis::{LuaMemberKey, LuaMemberOwner, SemanticModel};
-use emmylua_parser::LuaNameToken;
+use emmylua_parser::{LuaAstToken, LuaDocTagSee, LuaNameToken};
 use lsp_types::GotoDefinitionResponse;
 
 pub fn goto_doc_see(
     semantic_model: &SemanticModel,
+    doc_see: LuaDocTagSee,
     see_name: LuaNameToken,
 ) -> Option<GotoDefinitionResponse> {
-    let name_text = see_name.get_name_text();
-    let name_parts = name_text.split('#').collect::<Vec<_>>();
+    let name_tokens = doc_see.get_names();
+    let mut name_parts = Vec::new();
+    for name_token in name_tokens {
+        let name = name_token.get_name_text();
+        name_parts.push(name.to_string());
+        if name_token.get_position() == see_name.get_position() {
+            break;
+        }
+    }
+
     match name_parts.len() {
         1 => {
-            let name = name_parts[0];
-            return goto_type(semantic_model, name);
+            let name = &name_parts[0];
+            return goto_type(semantic_model, &name);
         }
         2 => {
-            let type_name = name_parts[0];
-            let member_name = name_parts[1];
-            return goto_type_member(semantic_model, type_name, member_name);
+            let type_name = &name_parts[0];
+            let member_name = &name_parts[1];
+            return goto_type_member(semantic_model, &type_name, &member_name);
         }
         _ => {}
     }
