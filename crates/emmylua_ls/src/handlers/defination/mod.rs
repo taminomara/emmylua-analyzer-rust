@@ -2,8 +2,11 @@ mod goto_def_defination;
 mod goto_doc_see;
 mod goto_module_file;
 
-use emmylua_parser::{LuaAstNode, LuaAstToken, LuaStringToken, LuaTokenKind};
+use emmylua_parser::{
+    LuaAstNode, LuaAstToken, LuaDocTagSee, LuaNameToken, LuaStringToken, LuaTokenKind,
+};
 use goto_def_defination::goto_def_defination;
+use goto_doc_see::goto_doc_see;
 use goto_module_file::goto_module_file;
 use lsp_types::{
     ClientCapabilities, GotoDefinitionParams, GotoDefinitionResponse, OneOf, ServerCapabilities,
@@ -48,12 +51,21 @@ pub async fn on_goto_defination_handler(
     };
 
     if let Some(property_owner) = semantic_model.get_property_owner_id(token.clone().into()) {
-        goto_def_defination(&semantic_model, property_owner);
-    } else if let Some(string_token) = LuaStringToken::cast(token) {
-        goto_module_file(&semantic_model, string_token);
+        return goto_def_defination(&semantic_model, property_owner);
+    } else if let Some(string_token) = LuaStringToken::cast(token.clone()) {
+        if let Some(module_response) = goto_module_file(&semantic_model, string_token) {
+            return Some(module_response);
+        }
+        let document = semantic_model.get_document();
+        let lsp_location = document.to_lsp_location(token.text_range())?;
+        return Some(GotoDefinitionResponse::Scalar(lsp_location));
+    } else if let Some(name_token) = LuaNameToken::cast(token.clone()) {
+        if name_token.get_parent::<LuaDocTagSee>().is_some() {
+            return goto_doc_see(&semantic_model, name_token);
+        }
     }
 
-    Some(GotoDefinitionResponse::Array(vec![]))
+    None
 }
 
 pub fn register_capabilities(

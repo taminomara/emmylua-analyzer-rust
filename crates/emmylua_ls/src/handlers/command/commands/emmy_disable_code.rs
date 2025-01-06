@@ -25,7 +25,6 @@ pub enum DisableAction {
     DisableProject,
 }
 
-#[allow(unused)]
 pub async fn handle(context: ServerContextSnapshot, args: Vec<Value>) -> Option<()> {
     let action: DisableAction = serde_json::from_value(args.get(0)?.clone()).ok()?;
     let file_id: FileId = serde_json::from_value(args.get(1)?.clone()).ok()?;
@@ -46,7 +45,6 @@ pub async fn handle(context: ServerContextSnapshot, args: Vec<Value>) -> Option<
         DisableAction::DisableProject => {
             add_disable_project(context.config_manager, code).await;
         }
-        _ => {}
     }
 
     Some(())
