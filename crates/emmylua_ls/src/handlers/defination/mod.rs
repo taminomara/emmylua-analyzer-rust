@@ -1,5 +1,10 @@
-use code_analysis::LuaPropertyOwnerId;
-use emmylua_parser::{LuaAstNode, LuaTokenKind};
+mod goto_def_defination;
+mod goto_doc_see;
+mod goto_module_file;
+
+use emmylua_parser::{LuaAstNode, LuaAstToken, LuaStringToken, LuaTokenKind};
+use goto_def_defination::goto_def_defination;
+use goto_module_file::goto_module_file;
 use lsp_types::{
     ClientCapabilities, GotoDefinitionParams, GotoDefinitionResponse, OneOf, ServerCapabilities,
 };
@@ -42,44 +47,13 @@ pub async fn on_goto_defination_handler(
         }
     };
 
-    let semantic_info = semantic_model.get_semantic_info(token.clone().into())?;
-    match semantic_info.property_owner? {
-        LuaPropertyOwnerId::LuaDecl(decl_id) => {
-            let decl = semantic_model
-                .get_db()
-                .get_decl_index()
-                .get_decl(&decl_id)?;
-            let document = semantic_model.get_document_by_file_id(decl_id.file_id)?;
-            let location = document.to_lsp_location(decl.get_range())?;
-            return Some(GotoDefinitionResponse::Scalar(location));
-        }
-        LuaPropertyOwnerId::Member(member_id) => {
-            let member = semantic_model
-                .get_db()
-                .get_member_index()
-                .get_member(&member_id)?;
-            let document = semantic_model.get_document_by_file_id(member_id.file_id)?;
-            let location = document.to_lsp_location(member.get_range())?;
-            return Some(GotoDefinitionResponse::Scalar(location));
-        }
-        LuaPropertyOwnerId::TypeDecl(type_decl_id) => {
-            let type_decl = semantic_model
-                .get_db()
-                .get_type_index()
-                .get_type_decl(&type_decl_id)?;
-            let mut locations = Vec::new();
-            for lua_location in type_decl.get_locations() {
-                let document = semantic_model.get_document_by_file_id(lua_location.file_id)?;
-                let location = document.to_lsp_location(lua_location.range)?;
-                locations.push(location);
-            }
-
-            return Some(GotoDefinitionResponse::Array(locations));
-        }
-        _ => {}
+    if let Some(property_owner) = semantic_model.get_property_owner_id(token.clone().into()) {
+        goto_def_defination(&semantic_model, property_owner);
+    } else if let Some(string_token) = LuaStringToken::cast(token) {
+        goto_module_file(&semantic_model, string_token);
     }
 
-    None
+    Some(GotoDefinitionResponse::Array(vec![]))
 }
 
 pub fn register_capabilities(

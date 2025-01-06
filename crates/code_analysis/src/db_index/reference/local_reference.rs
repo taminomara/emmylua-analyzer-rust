@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-
 use rowan::TextRange;
 
 use crate::db_index::LuaDeclId;
@@ -7,7 +6,7 @@ use crate::db_index::LuaDeclId;
 #[derive(Debug)]
 pub struct LocalReference {
     local_references: HashMap<LuaDeclId, Vec<TextRange>>,
-    references_to_decl: HashMap<TextRange, LuaDeclId>
+    references_to_decl: HashMap<TextRange, LuaDeclId>,
 }
 
 impl LocalReference {

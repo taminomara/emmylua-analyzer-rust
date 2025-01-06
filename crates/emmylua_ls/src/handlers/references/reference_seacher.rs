@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use code_analysis::{
     LuaCompilation, LuaDeclId, LuaMemberId, LuaMemberKey, LuaPropertyOwnerId, SemanticModel,
 };
-use emmylua_parser::{LuaAstNode, LuaSyntaxToken};
+use emmylua_parser::{LuaAstNode, LuaAstToken, LuaStringToken, LuaSyntaxToken};
 use lsp_types::Location;
 
 pub fn search_references(
@@ -12,15 +12,21 @@ pub fn search_references(
     token: LuaSyntaxToken,
 ) -> Option<Vec<Location>> {
     let mut result = Vec::new();
-    let semantic_info = semantic_model.get_semantic_info(token.into())?;
-    match semantic_info.property_owner? {
-        LuaPropertyOwnerId::LuaDecl(decl_id) => {
-            search_decl_references(semantic_model, decl_id, &mut result);
+    let semantic_info = semantic_model.get_semantic_info(token.clone().into());
+    if let Some(property_owner) = semantic_info?.property_owner {
+        match property_owner {
+            LuaPropertyOwnerId::LuaDecl(decl_id) => {
+                search_decl_references(semantic_model, decl_id, &mut result);
+            }
+            LuaPropertyOwnerId::Member(member_id) => {
+                search_member_references(semantic_model, compilation, member_id, &mut result);
+            }
+            _ => {}
         }
-        LuaPropertyOwnerId::Member(member_id) => {
-            search_member_references(semantic_model, compilation, member_id, &mut result);
-        }
-        _ => {}
+    } else if let Some(token) = LuaStringToken::cast(token) {
+        search_string_references(semantic_model, token, &mut result);
+    } else if semantic_model.get_emmyrc().references.fuzzy_search {
+        // todo!()
     }
 
     Some(result)
@@ -100,6 +106,26 @@ pub fn search_member_references(
             let location = document.to_lsp_location(range)?;
             result.push(location);
         }
+    }
+
+    Some(())
+}
+
+fn search_string_references(
+    semantic_model: &SemanticModel,
+    token: LuaStringToken,
+    result: &mut Vec<Location>,
+) -> Option<()> {
+    let string_token_text = token.get_value();
+    let string_refs = semantic_model
+        .get_db()
+        .get_reference_index()
+        .get_string_references(&string_token_text);
+
+    for in_filed_reference_range in string_refs {
+        let document = semantic_model.get_document_by_file_id(in_filed_reference_range.file_id)?;
+        let location = document.to_lsp_location(in_filed_reference_range.value)?;
+        result.push(location);
     }
 
     Some(())

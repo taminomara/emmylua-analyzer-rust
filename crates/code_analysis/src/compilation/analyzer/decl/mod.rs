@@ -72,6 +72,9 @@ fn walk_node_enter(analyzer: &mut DeclAnalyzer, node: LuaAst) {
         LuaAst::LuaTableExpr(expr) => {
             exprs::analyze_table_expr(analyzer, expr);
         }
+        LuaAst::LuaLiteralExpr(expr) => {
+            exprs::analyze_literal_expr(analyzer, expr);
+        }
         LuaAst::LuaDocTagClass(doc_tag) => {
             docs::analyze_doc_tag_class(analyzer, doc_tag);
         }

@@ -103,7 +103,7 @@ fn try_build_module_link(
     Some(())
 }
 
-fn is_require_path(token: LuaStringToken, emmyrc: &Emmyrc) -> Option<bool> {
+pub fn is_require_path(token: LuaStringToken, emmyrc: &Emmyrc) -> Option<bool> {
     let call_expr_prefix = token
         .get_parent::<LuaLiteralExpr>()?
         .get_parent::<LuaCallArgList>()?

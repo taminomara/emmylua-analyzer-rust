@@ -1,6 +1,8 @@
 use emmylua_parser::{
-    LuaAstNode, LuaAstToken, LuaClosureExpr, LuaIndexExpr, LuaIndexKey, LuaNameExpr, LuaTableExpr,
+    LuaAstNode, LuaAstToken, LuaClosureExpr, LuaIndexExpr, LuaIndexKey, LuaLiteralExpr,
+    LuaLiteralToken, LuaNameExpr, LuaTableExpr,
 };
+use internment::ArcIntern;
 
 use crate::{
     db_index::{LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner},
@@ -158,6 +160,23 @@ pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, expr: LuaTableExpr) -> Op
                 analyzer.db.get_member_index_mut().add_member(member);
             }
         }
+    }
+
+    Some(())
+}
+
+pub fn analyze_literal_expr(analyzer: &mut DeclAnalyzer, expr: LuaLiteralExpr) -> Option<()> {
+    if let LuaLiteralToken::String(string_token) = expr.get_literal()? {
+        let file_id = analyzer.get_file_id();
+        let value = string_token.get_value();
+        if value.len() > 64 {
+            return Some(());
+        }
+
+        analyzer
+            .db
+            .get_reference_index_mut()
+            .add_string_reference(file_id, ArcIntern::new(value), string_token.get_range());
     }
 
     Some(())
