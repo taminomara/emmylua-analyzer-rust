@@ -17,12 +17,11 @@ use crate::{
 };
 
 pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
-    let emmyrc = &context.config;
     for in_filed_tree in context.tree_list.iter() {
         db.get_reference_index_mut()
             .create_local_reference(in_filed_tree.file_id);
         let mut analyzer =
-            DeclAnalyzer::new(db, in_filed_tree.file_id, in_filed_tree.value.clone(), &emmyrc);
+            DeclAnalyzer::new(db, in_filed_tree.file_id, in_filed_tree.value.clone());
         analyzer.analyze();
         let decl_tree = analyzer.get_decl_tree();
         db.get_decl_index_mut().add_decl_tree(decl_tree);
@@ -128,22 +127,15 @@ pub struct DeclAnalyzer<'a> {
     root: LuaChunk,
     decl: LuaDeclarationTree,
     scopes: Vec<LuaScopeId>,
-    emmyrc: &'a Emmyrc,
 }
 
 impl<'a> DeclAnalyzer<'a> {
-    pub fn new(
-        db: &'a mut DbIndex,
-        file_id: FileId,
-        root: LuaChunk,
-        emmyrc: &'a Emmyrc,
-    ) -> DeclAnalyzer<'a> {
+    pub fn new(db: &'a mut DbIndex, file_id: FileId, root: LuaChunk) -> DeclAnalyzer<'a> {
         DeclAnalyzer {
             db,
             root,
             decl: LuaDeclarationTree::new(file_id),
             scopes: Vec::new(),
-            emmyrc,
         }
     }
 
