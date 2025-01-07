@@ -3,30 +3,58 @@ use lsp_types::DiagnosticSeverity;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema, LuaDiagnosticMacro)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema, LuaDiagnosticMacro,
+)]
 #[serde(rename_all = "kebab-case")]
 pub enum DiagnosticCode {
     None,
+    /// Syntax error
     SyntaxError,
+    /// Type not found
     TypeNotFound,
+    /// Missing return statement
     MissingReturn,
+    /// Type not match
     TypeNotMatch,
+    /// Missing parameter
     MissingParameter,
+    /// Inject field fail
     InjectFieldFail,
+    /// Unreachable code
     UnreachableCode,
+    /// Unused
     Unused,
+    /// Undefined global
     UndefinedGlobal,
+    /// Need import
     NeedImport,
+    /// Deprecated
     Deprecated,
-    AccessPrivateMember,
-    AccessProtectedMember,
-    AccessPackageMember,
-    NoDiscard,
+    /// Access invisible member
+    AccessInvisibleMember,
+    /// Discard return value
+    DiscardReturns,
+    /// Disable global define
     DisableGlobalDefine,
+    /// Undefined field
     UndefinedField,
+    /// Local const reassign
     LocalConstReassign,
+    /// Duplicate type
     DuplicateType,
-    // ... other variants
+    /// Redefined local
+    RedefinedLocal,
+    /// Redefined label
+    RedefinedLabel,
+    /// Name Style check
+    NameStyleCheck,
+    /// Code style check
+    CodeStyleCheck,
+    /// Need check nil
+    NeedCheckNil,
+    /// Await in sync
+    AwaitInSync,
 }
 
 // Update functions to match enum variants
@@ -43,10 +71,8 @@ pub fn get_default_severity(code: DiagnosticCode) -> DiagnosticSeverity {
         DiagnosticCode::UndefinedGlobal => DiagnosticSeverity::ERROR,
         DiagnosticCode::NeedImport => DiagnosticSeverity::WARNING,
         DiagnosticCode::Deprecated => DiagnosticSeverity::HINT,
-        DiagnosticCode::AccessPrivateMember => DiagnosticSeverity::WARNING,
-        DiagnosticCode::AccessProtectedMember => DiagnosticSeverity::WARNING,
-        DiagnosticCode::AccessPackageMember => DiagnosticSeverity::WARNING,
-        DiagnosticCode::NoDiscard => DiagnosticSeverity::WARNING,
+        DiagnosticCode::AccessInvisibleMember => DiagnosticSeverity::WARNING,
+        DiagnosticCode::DiscardReturns => DiagnosticSeverity::WARNING,
         DiagnosticCode::DisableGlobalDefine => DiagnosticSeverity::ERROR,
         DiagnosticCode::UndefinedField => DiagnosticSeverity::WARNING,
         DiagnosticCode::LocalConstReassign => DiagnosticSeverity::ERROR,
