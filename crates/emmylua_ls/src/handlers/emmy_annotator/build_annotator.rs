@@ -2,7 +2,8 @@ use std::collections::HashSet;
 
 use code_analysis::{DbIndex, LuaDeclId, LuaDocument, SemanticModel};
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaLocalFuncStat, LuaLocalStat, LuaNameExpr, LuaParamList
+    LuaAst, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaLocalFuncStat, LuaLocalStat,
+    LuaNameExpr, LuaParamList,
 };
 use rowan::TextRange;
 
@@ -76,7 +77,7 @@ fn build_local_stat_annotator(
     let locals = local_stat.get_local_name_list();
     for local_name in locals {
         let mut annotator = EmmyAnnotator {
-            typ: EmmyAnnotatorType::Local,
+            typ: EmmyAnnotatorType::ReadOnlyLocal,
             ranges: vec![],
         };
         let name_token = local_name.get_name_token()?;
@@ -87,12 +88,15 @@ fn build_local_stat_annotator(
             .push(document.to_lsp_range(name_token_range)?);
 
         let decl_id = LuaDeclId::new(file_id, local_name.get_position());
-        let ref_ranges = db
-            .get_reference_index()
-            .get_local_references(&file_id, &decl_id);
+        let reference_index = db.get_reference_index();
+        let ref_ranges = reference_index.get_local_references(&file_id, &decl_id);
         if let Some(ref_ranges) = ref_ranges {
             for range in ref_ranges {
                 use_range_set.insert(*range);
+                if reference_index.is_write_range(file_id, *range) {
+                    annotator.typ = EmmyAnnotatorType::MutLocal
+                }
+
                 annotator.ranges.push(document.to_lsp_range(*range)?);
             }
         }
@@ -113,7 +117,7 @@ fn build_params_annotator(
     let file_id = document.get_file_id();
     for param_name in param_list.get_params() {
         let mut annotator = EmmyAnnotator {
-            typ: EmmyAnnotatorType::Param,
+            typ: EmmyAnnotatorType::ReadonlyParam,
             ranges: vec![],
         };
         let name_token = param_name.get_name_token()?;
@@ -124,12 +128,15 @@ fn build_params_annotator(
             .push(document.to_lsp_range(name_token_range)?);
 
         let decl_id = LuaDeclId::new(file_id, param_name.get_position());
-        let ref_ranges = db
-            .get_reference_index()
-            .get_local_references(&file_id, &decl_id);
+        let reference_index = db.get_reference_index();
+        let ref_ranges = reference_index.get_local_references(&file_id, &decl_id);
         if let Some(ref_ranges) = ref_ranges {
             for range in ref_ranges {
                 use_range_set.insert(*range);
+                if reference_index.is_write_range(file_id, *range) {
+                    annotator.typ = EmmyAnnotatorType::MutParam
+                }
+
                 annotator.ranges.push(document.to_lsp_range(*range)?);
             }
         }
@@ -181,7 +188,7 @@ fn build_for_stat_annotator(
     let name_range = name_token.get_range();
 
     let mut annotator = EmmyAnnotator {
-        typ: EmmyAnnotatorType::Param,
+        typ: EmmyAnnotatorType::ReadonlyParam,
         ranges: vec![],
     };
 
@@ -216,7 +223,7 @@ fn build_for_range_annotator(
         let name_range = name_token.get_range();
 
         let mut annotator = EmmyAnnotator {
-            typ: EmmyAnnotatorType::Param,
+            typ: EmmyAnnotatorType::ReadonlyParam,
             ranges: vec![],
         };
 
@@ -252,7 +259,7 @@ fn build_local_func_stat_annotator(
     let name_range = name_token.get_range();
 
     let mut annotator = EmmyAnnotator {
-        typ: EmmyAnnotatorType::Local,
+        typ: EmmyAnnotatorType::ReadOnlyLocal,
         ranges: vec![],
     };
 
