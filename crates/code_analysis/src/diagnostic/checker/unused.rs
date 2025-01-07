@@ -21,10 +21,10 @@ pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) ->
             context.add_diagnostic(
                 DiagnosticCode::Unused,
                 decl.get_range(),
-                format!(
-                    "{0} is never used, if this is intentional, prefix it with an underscore: _{0}",
-                    name
-                ),
+                t!(
+                    "%{name} is never used, if this is intentional, prefix it with an underscore: _%{name}",
+                    name = name
+                ).to_string(),
                 None,
             );
         }

@@ -30,10 +30,12 @@ pub fn analyze_local_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalStat) -> Op
             None
         };
 
+        let file_id = analyzer.get_file_id();
+        let range = local_name.get_range();
         let decl = LuaDecl::Local {
             name,
-            file_id: analyzer.get_file_id(),
-            range: local_name.get_range(),
+            file_id,
+            range,
             kind: local_name.syntax().kind().into(),
             attrib,
             decl_type: None,
@@ -52,15 +54,22 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
                 let name_token = name.get_name_token()?;
                 let position = name_token.get_position();
                 let name = name_token.get_name_text().to_string();
+                let file_id = analyzer.get_file_id();
+                let range = name_token.get_range();
                 if analyzer.find_decl(&name, position).is_none() {
                     let decl = LuaDecl::Global {
                         name,
-                        file_id: analyzer.get_file_id(),
-                        range: name_token.get_range(),
+                        file_id,
+                        range,
                         decl_type: None,
                     };
 
                     analyzer.add_decl(decl);
+                } else {
+                    analyzer
+                        .db
+                        .get_reference_index_mut()
+                        .add_write_range(file_id, range);
                 }
             }
             LuaVarExpr::IndexExpr(index_expr) => {
@@ -69,26 +78,6 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
                 if key.is_none() {
                     continue;
                 }
-
-                // if let Some(LuaVarExpr::NameExpr(name_expr)) = index_expr.get_prefix_expr() {
-                //     let name_text = name_expr.get_name_text()?;
-                //     if name_text == "_G" || name_text == "_ENV" {
-                //         if analyzer
-                //             .find_decl(&name_text, index_expr.get_position())
-                //             .is_none()
-                //         {
-                //             let decl = LuaDecl::Global {
-                //                 name: name_text.to_string(),
-                //                 file_id: analyzer.get_file_id(),
-                //                 range: name_expr.get_range(),
-                //                 decl_type: None,
-                //             };
-
-                //             analyzer.add_decl(decl);
-                //         }
-                //         continue;
-                //     }
-                // }
 
                 let file_id = analyzer.get_file_id();
                 let member = LuaMember::new(
@@ -100,6 +89,10 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
                 );
 
                 analyzer.db.get_member_index_mut().add_member(member);
+                analyzer
+                    .db
+                    .get_reference_index_mut()
+                    .add_write_range(file_id, index_expr.get_range());
             }
         }
     }
@@ -111,18 +104,23 @@ pub fn analyze_for_stat(analyzer: &mut DeclAnalyzer, stat: LuaForStat) -> Option
     let it_var = stat.get_var_name()?;
     let name = it_var.get_name_text().to_string();
     let pos = it_var.get_position();
-
+    let file_id = analyzer.get_file_id();
+    let range = it_var.get_range();
     if analyzer.find_decl(&name, pos).is_none() {
         let decl = LuaDecl::Local {
             name,
-            file_id: analyzer.get_file_id(),
+            file_id,
             kind: it_var.syntax().kind(),
-            range: it_var.get_range(),
+            range,
             attrib: Some(LocalAttribute::IterConst),
             decl_type: Some(LuaType::Integer),
         };
 
         analyzer.add_decl(decl);
+        analyzer
+            .db
+            .get_reference_index_mut()
+            .add_write_range(file_id, range);
     }
 
     Some(())
@@ -130,14 +128,16 @@ pub fn analyze_for_stat(analyzer: &mut DeclAnalyzer, stat: LuaForStat) -> Option
 
 pub fn analyze_for_range_stat(analyzer: &mut DeclAnalyzer, stat: LuaForRangeStat) {
     let var_list = stat.get_var_name_list();
+    let file_id = analyzer.get_file_id();
     for var in var_list {
         let name = var.get_name_text().to_string();
+        let range = var.get_range();
 
         let decl = LuaDecl::Local {
             name,
-            file_id: analyzer.get_file_id(),
+            file_id,
             kind: var.syntax().kind().into(),
-            range: var.get_range(),
+            range,
             attrib: Some(LocalAttribute::IterConst),
             decl_type: None,
         };
@@ -185,6 +185,10 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
             );
 
             let member_id = analyzer.db.get_member_index_mut().add_member(member);
+            analyzer
+                .db
+                .get_reference_index_mut()
+                .add_write_range(file_id, index_name.get_range());
             LuaPropertyOwnerId::Member(member_id)
         }
     };
@@ -204,19 +208,19 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
 pub fn analyze_local_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalFuncStat) -> Option<()> {
     let local_name = stat.get_local_name()?;
     let name = local_name.get_name_token()?.get_name_text().to_string();
-
+    let range = local_name.get_range();
+    let file_id = analyzer.get_file_id();
     let decl = LuaDecl::Local {
         name,
-        file_id: analyzer.get_file_id(),
+        file_id,
         kind: local_name.syntax().kind().into(),
-        range: local_name.get_range(),
+        range,
         attrib: None,
         decl_type: None,
     };
 
     let decl_id = analyzer.add_decl(decl);
     let closure = stat.get_closure()?;
-    let file_id = analyzer.get_file_id();
     let closure_owner_id = LuaPropertyOwnerId::Signature(LuaSignatureId::new(file_id, &closure));
     let property_decl_id = LuaPropertyOwnerId::LuaDecl(decl_id);
     analyzer

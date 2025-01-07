@@ -187,6 +187,10 @@ impl<'a> DeclAnalyzer<'a> {
                 .add_global_reference(name, file_id, range);
         }
 
+        self.db
+            .get_reference_index_mut()
+            .add_write_range(file_id, range);
+
         id
     }
 

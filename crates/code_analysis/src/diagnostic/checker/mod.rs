@@ -1,7 +1,7 @@
 mod analyze_error;
 mod syntax_error;
 mod unused;
-mod depreacated;
+mod deprecated;
 
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
@@ -29,6 +29,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model:&mut SemanticM
     check!(syntax_error);
     check!(analyze_error);
     check!(unused);
+    check!(deprecated);
 
     Some(())
 }

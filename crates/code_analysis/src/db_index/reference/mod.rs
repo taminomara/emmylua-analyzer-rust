@@ -72,6 +72,13 @@ impl LuaReferenceIndex {
             .add_string_reference(string, range);
     }
 
+    pub fn add_write_range(&mut self, file_id: FileId, range: TextRange) {
+        self.local_references
+            .entry(file_id)
+            .or_insert_with(LocalReference::new)
+            .add_write_range(range);
+    }
+
     pub fn get_local_reference(&self, file_id: &FileId) -> Option<&LocalReference> {
         self.local_references.get(file_id)
     }
@@ -174,6 +181,14 @@ impl LuaReferenceIndex {
             .collect();
 
         results
+    }
+
+    pub fn is_write_range(&self, file_id: FileId, range: TextRange) -> bool {
+        self.local_references
+            .get(&file_id)
+            .map_or(false, |local_reference| {
+                local_reference.is_write_range(&range)
+            })
     }
 }
 
