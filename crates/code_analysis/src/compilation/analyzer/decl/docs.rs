@@ -1,5 +1,6 @@
 use emmylua_parser::{
-    LuaAstNode, LuaAstToken, LuaComment, LuaDocAttribute, LuaDocTag, LuaDocTagAlias, LuaDocTagClass, LuaDocTagEnum, LuaDocTagMeta, LuaDocTagNamespace, LuaDocTagUsing
+    LuaAstNode, LuaAstToken, LuaComment, LuaDocAttribute, LuaDocTag, LuaDocTagAlias,
+    LuaDocTagClass, LuaDocTagEnum, LuaDocTagMeta, LuaDocTagNamespace, LuaDocTagUsing,
 };
 use flagset::FlagSet;
 
@@ -36,9 +37,7 @@ pub fn analyze_doc_tag_class(analyzer: &mut DeclAnalyzer, class: LuaDocTagClass)
     Some(())
 }
 
-fn get_attrib_value(
-    attrib: Option<LuaDocAttribute>,
-) -> Option<FlagSet<LuaTypeAttribute>> {
+fn get_attrib_value(attrib: Option<LuaDocAttribute>) -> Option<FlagSet<LuaTypeAttribute>> {
     let mut attr: FlagSet<LuaTypeAttribute> = LuaTypeAttribute::None.into();
 
     for token in attrib?.get_attrib_tokens() {
@@ -165,22 +164,16 @@ pub fn analyze_doc_tag_meta(analyzer: &mut DeclAnalyzer, tag: LuaDocTagMeta) -> 
         }
     })?;
 
-    let mut visible = false;
-    let current_version = analyzer.emmyrc.runtime.version.to_lua_version_number();
+    let mut version_conds = Vec::new();
     for doc_version in version_tag.get_version_list() {
         let version_condition = doc_version.get_version_condition()?;
-        if version_condition.check(&current_version) {
-            visible = true;
-            break;
-        }
+        version_conds.push(version_condition);
     }
 
-    if !visible {
-        analyzer
-            .db
-            .get_module_index_mut()
-            .set_module_visibility(file_id, false);
-    }
+    analyzer
+        .db
+        .get_module_index_mut()
+        .set_module_version_conds(file_id, version_conds);
 
     Some(())
 }

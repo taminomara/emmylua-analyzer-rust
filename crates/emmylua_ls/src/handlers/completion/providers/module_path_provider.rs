@@ -29,6 +29,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         _ => return None,
     }
 
+    let version_number = emmyrc.runtime.version.to_lua_version_number();
     let prefix_content = string_token.get_value();
     let parts: Vec<&str> = prefix_content
         .split(|c| c == '.' || c == '/' || c == '\\')
@@ -54,7 +55,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         let child_module_node = db.get_module_index().get_module_node(module_id)?;
         if let Some(child_file_id) = child_module_node.file_ids.first() {
             let child_module_info = db.get_module_index().get_module(*child_file_id)?;
-            if  child_module_info.visible {
+            if  child_module_info.is_visible(&version_number) {
                 let uri = db.get_vfs().get_uri(child_file_id)?;
                 let filter_text = format!("{}{}", prefix, name);
                 let completion_item = CompletionItem {

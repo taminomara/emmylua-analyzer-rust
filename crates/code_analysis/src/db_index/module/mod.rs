@@ -2,6 +2,7 @@ mod module_info;
 mod module_node;
 mod test;
 
+use emmylua_parser::LuaVersionCondition;
 use log::{error, info};
 pub use module_info::ModuleInfo;
 use module_node::{ModuleNode, ModuleNodeId};
@@ -129,6 +130,7 @@ impl LuaModuleIndex {
             module_id: parent_node_id,
             visible: true,
             export_type: None,
+            version_conds: None,
         };
 
         self.file_module_map.insert(file_id, module_info);
@@ -147,6 +149,16 @@ impl LuaModuleIndex {
     pub fn set_module_visibility(&mut self, file_id: FileId, visible: bool) {
         if let Some(module_info) = self.file_module_map.get_mut(&file_id) {
             module_info.visible = visible;
+        }
+    }
+
+    pub fn set_module_version_conds(
+        &mut self,
+        file_id: FileId,
+        version_conds: Vec<LuaVersionCondition>,
+    ) {
+        if let Some(module_info) = self.file_module_map.get_mut(&file_id) {
+            module_info.version_conds = Some(Box::new(version_conds));
         }
     }
 

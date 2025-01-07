@@ -15,6 +15,7 @@ use super::completion_builder::CompletionBuilder;
 fn check_visibility(builder: &CompletionBuilder, id: LuaPropertyOwnerId) -> Option<()> {
     match id {
         LuaPropertyOwnerId::Member(_) => {}
+        LuaPropertyOwnerId::LuaDecl(_) => {}
         _ => return Some(()),
     }
 
@@ -26,10 +27,16 @@ fn check_visibility(builder: &CompletionBuilder, id: LuaPropertyOwnerId) -> Opti
     if property.is_none() {
         return Some(());
     }
-    // let decl = property.unwrap();
-    // if let Some(visib) = &decl.visibility {
-    // }
-    // todo check
+
+    let property = property.unwrap();
+    if let Some(version_conds) = &property.version_conds {
+        let emmyrc = builder.semantic_model.get_emmyrc();
+        let version_number = emmyrc.runtime.version.to_lua_version_number();
+        let visiable = version_conds.iter().any(|cond| cond.check(&version_number));
+        if !visiable {
+            return None;
+        }
+    }
 
     Some(())
 }

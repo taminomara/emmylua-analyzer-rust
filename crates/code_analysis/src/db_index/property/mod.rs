@@ -1,12 +1,9 @@
 mod property;
-mod version;
-
 use std::collections::{HashMap, HashSet};
 
-use emmylua_parser::VisibilityKind;
+use emmylua_parser::{LuaVersionCondition, VisibilityKind};
 use property::LuaProperty;
 pub use property::{LuaPropertyId, LuaPropertyOwnerId};
-pub use version::{LuaVersionCond, LuaVersionCondOp};
 
 use crate::FileId;
 
@@ -134,7 +131,7 @@ impl LuaPropertyIndex {
         &mut self,
         file_id: FileId,
         owner_id: LuaPropertyOwnerId,
-        version_conds: Vec<LuaVersionCond>,
+        version_conds: Vec<LuaVersionCondition>,
     ) {
         let property = self.get_or_create_property(owner_id.clone());
         property.version_conds = Some(Box::new(version_conds));

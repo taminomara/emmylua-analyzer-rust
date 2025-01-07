@@ -22,9 +22,7 @@ use meta::MetaFile;
 use module::LuaModuleIndex;
 pub use module::ModuleInfo;
 pub use operators::{LuaOperator, LuaOperatorId, LuaOperatorIndex, LuaOperatorMetaMethod};
-pub use property::{
-    LuaPropertyId, LuaPropertyIndex, LuaPropertyOwnerId, LuaVersionCond, LuaVersionCondOp,
-};
+pub use property::{LuaPropertyId, LuaPropertyIndex, LuaPropertyOwnerId};
 pub use r#type::*;
 pub use reference::LuaReferenceIndex;
 pub use signature::*;

@@ -20,11 +20,11 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     let name_expr = LuaNameExpr::cast(builder.trigger_token.parent()?)?;
     // optimize for large project
     let prefix = name_expr.get_name_text()?.to_lowercase();
-    let file_convension = builder
-        .semantic_model
-        .get_emmyrc()
+    let emmyrc = builder.semantic_model.get_emmyrc();
+    let file_convension = emmyrc
         .completion
         .auto_require_naming_convention;
+    let version_number = emmyrc.runtime.version.to_lua_version_number();
     let file_id = builder.semantic_model.get_file_id();
     let module_infos = builder
         .semantic_model
@@ -37,7 +37,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
 
     let mut completions = Vec::new();
     for module_info in module_infos {
-        if module_info.visible
+        if module_info.is_visible(&version_number)
             && module_info.file_id != file_id
             && module_info.export_type.is_some()
         {

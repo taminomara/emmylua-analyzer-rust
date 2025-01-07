@@ -1,11 +1,8 @@
+use super::{tags::get_owner_id, DocAnalyzer};
 use emmylua_parser::{
-    BinaryOperator, LuaDocDescriptionOwner, LuaDocTagDeprecated, LuaDocTagSource, LuaDocTagVersion,
+    LuaDocDescriptionOwner, LuaDocTagDeprecated, LuaDocTagSource, LuaDocTagVersion,
     LuaDocTagVisibility,
 };
-
-use crate::db_index::{LuaVersionCond, LuaVersionCondOp};
-
-use super::{tags::get_owner_id, DocAnalyzer};
 
 pub fn analyze_visibility(
     analyzer: &mut DocAnalyzer,
@@ -14,10 +11,11 @@ pub fn analyze_visibility(
     let visibility_kind = visibility.get_visibility_token()?.get_visibility();
     let owner_id = get_owner_id(analyzer)?;
 
-    analyzer
-        .db
-        .get_property_index_mut()
-        .add_visibility(analyzer.file_id, owner_id, visibility_kind);
+    analyzer.db.get_property_index_mut().add_visibility(
+        analyzer.file_id,
+        owner_id,
+        visibility_kind,
+    );
 
     Some(())
 }
@@ -66,24 +64,8 @@ pub fn analyze_version(analyzer: &mut DocAnalyzer, version: LuaDocTagVersion) ->
 
     let mut version_set = Vec::new();
     for version in version.get_version_list() {
-        let version_number = if let Some(version_number) = version.get_version() {
-            version_number.get_version_number()
-        } else {
-            continue;
-        };
-
-        let version_op = if let Some(version_op) = version.get_op() {
-            match version_op.get_op() {
-                BinaryOperator::OpGt => LuaVersionCondOp::Gt,
-                BinaryOperator::OpLt => LuaVersionCondOp::Lt,
-                _ => LuaVersionCondOp::Eq,
-            }
-        } else {
-            LuaVersionCondOp::Eq
-        };
-
-        if let Some(version_number) = version_number {
-            version_set.push(LuaVersionCond::new(version_number, version_op));
+        if let Some(version_condition) = version.get_version_condition() {
+            version_set.push(version_condition);
         }
     }
 

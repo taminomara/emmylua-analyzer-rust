@@ -1,9 +1,7 @@
-use emmylua_parser::VisibilityKind;
+use emmylua_parser::{LuaVersionCondition, VisibilityKind};
 use serde::{Deserialize, Serialize};
 
 use crate::db_index::{member::LuaMemberId, LuaDeclId, LuaSignatureId, LuaTypeDeclId};
-
-use super::version::LuaVersionCond;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct LuaProperty {
@@ -14,7 +12,7 @@ pub struct LuaProperty {
     pub is_nodiscard: bool,
     pub is_deprecated: bool,
     pub deprecated_message: Option<Box<String>>,
-    pub version_conds: Option<Box<Vec<LuaVersionCond>>>,
+    pub version_conds: Option<Box<Vec<LuaVersionCondition>>>,
     pub is_async: bool,
 }
 
