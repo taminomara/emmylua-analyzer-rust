@@ -2,10 +2,7 @@ mod docs;
 mod exprs;
 mod stats;
 
-use crate::{
-    db_index::{DbIndex, LuaScopeKind},
-    Emmyrc,
-};
+use crate::db_index::{DbIndex, LuaScopeKind};
 
 use super::AnalyzeContext;
 use emmylua_parser::{LuaAst, LuaAstNode, LuaChunk, LuaSyntaxKind};

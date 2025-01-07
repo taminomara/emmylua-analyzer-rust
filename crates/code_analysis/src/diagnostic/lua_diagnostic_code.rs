@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 )]
 #[serde(rename_all = "kebab-case")]
 pub enum DiagnosticCode {
-    None,
     /// Syntax error
     SyntaxError,
     /// Type not found
@@ -53,6 +52,9 @@ pub enum DiagnosticCode {
     NeedCheckNil,
     /// Await in sync
     AwaitInSync,
+
+    #[serde(other)]
+    None,
 }
 
 // Update functions to match enum variants
