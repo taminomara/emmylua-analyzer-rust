@@ -1,5 +1,6 @@
 --- Copy from Lua Sumneko Lua
 ---@meta string.buffer
+---@version JIT
 
 ---@version JIT
 --- The string buffer library allows high-performance manipulation of string-like data.

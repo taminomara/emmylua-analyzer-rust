@@ -7,10 +7,11 @@ use std::{collections::HashSet, path::PathBuf};
 use crate::{semantic::LuaInferConfig, FileId};
 pub use config_loader::load_configs;
 pub use configs::EmmyrcFilenameConvention;
+pub use configs::EmmyrcLuaVersion;
 use configs::{
     EmmyrcCodeLen, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcHover, EmmyrcInlayHint,
-    EmmyrcLuaVersion, EmmyrcReference, EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken,
-    EmmyrcSignature, EmmyrcStrict, EmmyrcWorkspace,
+    EmmyrcReference, EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken, EmmyrcSignature,
+    EmmyrcStrict, EmmyrcWorkspace,
 };
 use emmylua_parser::{LuaLanguageLevel, ParserConfig};
 use rowan::NodeCache;

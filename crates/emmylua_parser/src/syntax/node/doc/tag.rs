@@ -1,8 +1,8 @@
 use crate::{
-    kind::LuaSyntaxKind, syntax::traits::LuaAstNode, LuaAstChildren, LuaAstToken,
+    kind::LuaSyntaxKind, syntax::traits::LuaAstNode, BinaryOperator, LuaAstChildren, LuaAstToken,
     LuaAstTokenChildren, LuaBinaryOpToken, LuaDocVersionNumberToken, LuaDocVisibilityToken,
     LuaKind, LuaNameToken, LuaNumberToken, LuaPathToken, LuaStringToken, LuaSyntaxNode,
-    LuaTokenKind,
+    LuaTokenKind, LuaVersionCondition,
 };
 
 use super::{
@@ -995,6 +995,23 @@ impl LuaDocVersion {
 
     pub fn get_version(&self) -> Option<LuaDocVersionNumberToken> {
         self.token()
+    }
+
+    pub fn get_version_condition(&self) -> Option<LuaVersionCondition> {
+        let op = self.get_op();
+        let version_token = self.get_version()?;
+        let version_number = version_token.get_version_number()?;
+        if op.is_none() {
+            return Some(LuaVersionCondition::Eq(version_number));
+        }
+
+        let op = op.unwrap();
+        // You might find it strange, but that's the logic of luals.
+        match op.get_op() {
+            BinaryOperator::OpGt => Some(LuaVersionCondition::Gte(version_number)),
+            BinaryOperator::OpLt => Some(LuaVersionCondition::Lte(version_number)),
+            _ => None,
+        }
     }
 }
 

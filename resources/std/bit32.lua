@@ -1,6 +1,7 @@
 --- Copy from Lua Sumneko Lua
 
 ---@meta bit32
+---@version 5.2
 
 ---@version 5.2
 ---

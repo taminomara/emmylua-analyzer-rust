@@ -1,5 +1,6 @@
 --- Copy from Lua Sumneko Lua
 ---@meta jit.util
+---@version JIT
 
 ---@class Trace
 ---@class Proto

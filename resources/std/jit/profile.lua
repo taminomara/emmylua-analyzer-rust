@@ -1,5 +1,6 @@
 --- Copy from Lua Sumneko Lua
 ---@meta jit.profile
+---@version JIT
 
 local profile = {}
 

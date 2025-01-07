@@ -1,3 +1,4 @@
+use emmylua_parser::LuaVersionNumber;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -33,7 +34,7 @@ impl Default for EmmyrcRuntime {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema, Clone, Copy)]
 pub enum EmmyrcLuaVersion {
     /// Lua 5.1
     #[serde(rename = "Lua5.1")]
@@ -61,3 +62,15 @@ impl Default for EmmyrcLuaVersion {
     }
 }
 
+impl EmmyrcLuaVersion {
+    pub fn to_lua_version_number(&self) -> LuaVersionNumber {
+        match self {
+            EmmyrcLuaVersion::Lua51 => LuaVersionNumber::new(5, 1, 0),
+            EmmyrcLuaVersion::LuaJIT => LuaVersionNumber::LUA_JIT,
+            EmmyrcLuaVersion::Lua52 => LuaVersionNumber::new(5, 2, 0),
+            EmmyrcLuaVersion::Lua53 => LuaVersionNumber::new(5, 3, 0),
+            EmmyrcLuaVersion::Lua54 => LuaVersionNumber::new(5, 4, 0),
+            EmmyrcLuaVersion::LuaLatest => LuaVersionNumber::new(5, 4, 0),
+        }
+    }
+}

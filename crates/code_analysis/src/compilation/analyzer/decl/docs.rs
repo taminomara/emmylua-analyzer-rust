@@ -1,5 +1,5 @@
 use emmylua_parser::{
-    LuaAstToken, LuaDocAttribute, LuaDocTagAlias, LuaDocTagClass, LuaDocTagEnum, LuaDocTagMeta, LuaDocTagNamespace, LuaDocTagUsing
+    LuaAstNode, LuaAstToken, LuaComment, LuaDocAttribute, LuaDocTag, LuaDocTagAlias, LuaDocTagClass, LuaDocTagEnum, LuaDocTagMeta, LuaDocTagNamespace, LuaDocTagUsing
 };
 use flagset::FlagSet;
 
@@ -138,7 +138,7 @@ pub fn analyze_doc_tag_using(analyzer: &mut DeclAnalyzer, using: LuaDocTagUsing)
     Some(())
 }
 
-pub fn analyze_doc_tag_meta(analyzer: &mut DeclAnalyzer, tag: LuaDocTagMeta) {
+pub fn analyze_doc_tag_meta(analyzer: &mut DeclAnalyzer, tag: LuaDocTagMeta) -> Option<()> {
     let file_id = analyzer.get_file_id();
     analyzer.db.get_meta_file_mut().add_meta_file(file_id);
 
@@ -155,4 +155,32 @@ pub fn analyze_doc_tag_meta(analyzer: &mut DeclAnalyzer, tag: LuaDocTagMeta) {
                 .add_module_by_module_path(file_id, name_token.get_name_text().to_string());
         }
     }
+
+    let comment = tag.get_parent::<LuaComment>()?;
+    let version_tag = comment.get_doc_tags().find_map(|tag| {
+        if let LuaDocTag::Version(version) = tag {
+            Some(version)
+        } else {
+            None
+        }
+    })?;
+
+    let mut visible = false;
+    let current_version = analyzer.emmyrc.runtime.version.to_lua_version_number();
+    for doc_version in version_tag.get_version_list() {
+        let version_condition = doc_version.get_version_condition()?;
+        if version_condition.check(&current_version) {
+            visible = true;
+            break;
+        }
+    }
+
+    if !visible {
+        analyzer
+            .db
+            .get_module_index_mut()
+            .set_module_visibility(file_id, false);
+    }
+
+    Some(())
 }

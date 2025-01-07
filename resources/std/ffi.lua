@@ -1,6 +1,7 @@
 --- Copy from Lua Sumneko Lua
 
 ---@meta ffi
+---@version JIT
 
 ---@class ffi.namespace*: table
 ---@field [string] function

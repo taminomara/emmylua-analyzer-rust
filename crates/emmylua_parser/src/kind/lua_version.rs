@@ -53,3 +53,22 @@ impl Ord for LuaVersionNumber {
             .then_with(|| self.patch.cmp(&other.patch))
     }
 }
+
+#[allow(unused)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum LuaVersionCondition {
+    Eq(LuaVersionNumber),
+    Gte(LuaVersionNumber),
+    Lte(LuaVersionNumber),
+}
+
+#[allow(unused)]
+impl LuaVersionCondition {
+    pub fn check(&self, version: &LuaVersionNumber) -> bool {
+        match self {
+            LuaVersionCondition::Eq(v) => version == v,
+            LuaVersionCondition::Gte(v) => version >= v,
+            LuaVersionCondition::Lte(v) => version <= v,
+        }
+    }
+}

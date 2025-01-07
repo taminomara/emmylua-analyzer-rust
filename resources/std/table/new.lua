@@ -1,5 +1,6 @@
 --- Copy from Lua Sumneko Lua
 ---@meta table.new
+---@version JIT
 
 ---@version JIT
 ---

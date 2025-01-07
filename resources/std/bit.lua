@@ -1,5 +1,6 @@
 --- Copy from Lua Sumneko Lua
 ---@meta bit
+---@version JIT
 
 ---@version JIT
 ---@class bitlib

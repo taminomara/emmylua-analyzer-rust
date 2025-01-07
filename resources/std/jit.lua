@@ -1,5 +1,6 @@
 --- Copy from Lua Sumneko Lua
 ---@meta jit
+---@version JIT
 
 ---@version JIT
 ---@class jitlib

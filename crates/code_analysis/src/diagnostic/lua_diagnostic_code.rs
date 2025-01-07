@@ -27,8 +27,6 @@ pub enum DiagnosticCode {
     Unused,
     /// Undefined global
     UndefinedGlobal,
-    /// Need import
-    NeedImport,
     /// Deprecated
     Deprecated,
     /// Access invisible member
@@ -69,7 +67,6 @@ pub fn get_default_severity(code: DiagnosticCode) -> DiagnosticSeverity {
         DiagnosticCode::UnreachableCode => DiagnosticSeverity::HINT,
         DiagnosticCode::Unused => DiagnosticSeverity::HINT,
         DiagnosticCode::UndefinedGlobal => DiagnosticSeverity::ERROR,
-        DiagnosticCode::NeedImport => DiagnosticSeverity::WARNING,
         DiagnosticCode::Deprecated => DiagnosticSeverity::HINT,
         DiagnosticCode::AccessInvisibleMember => DiagnosticSeverity::WARNING,
         DiagnosticCode::DiscardReturns => DiagnosticSeverity::WARNING,
