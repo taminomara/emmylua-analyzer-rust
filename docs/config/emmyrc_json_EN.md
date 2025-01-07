@@ -79,9 +79,9 @@ To enable automatic completion and IntelliSense for this configuration file, you
 - `enable`: Whether or not to enable completion. Default is `true`.
 - `autoRequire`: Whether or not to auto-complete require statements. Default is `true`.
 - `autoRequireFunction`: The function name for auto-completing require statements. Default is `require`.
-- `autoRequireNamingConvention`: Naming convention for auto-completing require statements. Default is `camelCase`; possible values are `camelCase`, `snakeCase`, `pascalCase`.
+- `autoRequireNamingConvention`: Naming convention for auto-completing require statements. Default is `keep`; possible values are `keep`, `camel-case`, `snake-case`, `pascal-case`.
 - `callSnippet`: Whether to expand function calls with snippets. Default is `false`.
-- `postfix`: Postfix symbol for completion. Default is `@` (currently not used).
+- `postfix`: Postfix symbol for completion. Default is `@`.
 
 ## signature
 - `detailSignatureHelper`: Whether to display detailed function signatures. Default is `false`.

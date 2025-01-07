@@ -81,13 +81,13 @@
 - `enable`: 是否启用补全，默认为 `true`。
 - `autoRequire`: 是否自动补全 require 语句，默认为 `true`。
 - `autoRequireFunction`: 自动补全 require 语句时使用的函数名，默认为 `require`。
-- `autoRequireNamingConvention`: 自动补全 require 语句时使用的命名规范，默认为 `camelCase`, 可选值为 `camelCase`, `snakeCase`, `pascalCase`。
+- `autoRequireNamingConvention`: 自动补全 require 语句时使用的命名规范，默认为 `camelCase`, 可选值为 `keep`, `camel-case`, `snake-case`, `pascal-case`。
 - `callSnippet`: 是否使用代码片段补全函数调用，默认为 `false`。
-- `postfix`: 补全时的后缀，默认为 `@`。但是设置该选项暂时无用
+- `postfix`: 补全时的后缀，默认为 `@`
 
 ## signature
 
-- `detailSignatureHelper`: 是否显示详细的函数签名帮助，默认为 `false`。
+- `detailSignatureHelper`: 是否显示详细的函数签名帮助，默认为 `false`。该选项当前无用
 
 ## diagnostics
 
