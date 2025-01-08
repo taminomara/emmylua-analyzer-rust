@@ -1,7 +1,7 @@
 mod local_reference;
 mod string_reference;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use emmylua_parser::{LuaSyntaxId, LuaSyntaxKind};
 use internment::ArcIntern;
@@ -16,7 +16,7 @@ use super::{traits::LuaIndex, LuaDeclId, LuaMemberKey};
 #[derive(Debug)]
 pub struct LuaReferenceIndex {
     local_references: HashMap<FileId, LocalReference>,
-    index_reference: HashMap<LuaMemberKey, HashMap<FileId, Vec<LuaSyntaxId>>>,
+    index_reference: HashMap<LuaMemberKey, HashMap<FileId, HashSet<LuaSyntaxId>>>,
     string_references: HashMap<FileId, StringReference>,
 }
 
@@ -42,8 +42,8 @@ impl LuaReferenceIndex {
             .entry(LuaMemberKey::Name(key.clone()))
             .or_insert_with(HashMap::new)
             .entry(file_id)
-            .or_insert_with(Vec::new)
-            .push(LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), range));
+            .or_insert_with(HashSet::new)
+            .insert(LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), range));
     }
 
     pub fn add_index_reference(
@@ -56,8 +56,8 @@ impl LuaReferenceIndex {
             .entry(key)
             .or_insert_with(HashMap::new)
             .entry(file_id)
-            .or_insert_with(Vec::new)
-            .push(syntax_id);
+            .or_insert_with(HashSet::new)
+            .insert(syntax_id);
     }
 
     pub fn add_string_reference(
