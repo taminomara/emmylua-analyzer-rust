@@ -20,7 +20,7 @@
                 }
             },
             "args": [
-                "5007"
+                "--port", "5007"
             ],
             "cwd": "${workspaceFolder}"
         },

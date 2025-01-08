@@ -1,7 +1,10 @@
 use emmylua_parser::{LuaVersionCondition, VisibilityKind};
 use serde::{Deserialize, Serialize};
 
-use crate::db_index::{member::LuaMemberId, LuaDeclId, LuaSignatureId, LuaTypeDeclId};
+use crate::{
+    db_index::{member::LuaMemberId, LuaDeclId, LuaSignatureId, LuaTypeDeclId},
+    FileId,
+};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct LuaProperty {
@@ -72,5 +75,16 @@ impl From<LuaMemberId> for LuaPropertyOwnerId {
 impl From<LuaSignatureId> for LuaPropertyOwnerId {
     fn from(id: LuaSignatureId) -> Self {
         LuaPropertyOwnerId::Signature(id)
+    }
+}
+
+impl LuaPropertyOwnerId {
+    pub fn get_file_id(&self) -> Option<FileId> {
+        match self {
+            LuaPropertyOwnerId::TypeDecl(_) => None,
+            LuaPropertyOwnerId::Member(id) => Some(id.file_id),
+            LuaPropertyOwnerId::LuaDecl(id) => Some(id.file_id),
+            LuaPropertyOwnerId::Signature(id) => Some(id.get_file_id()),
+        }
     }
 }

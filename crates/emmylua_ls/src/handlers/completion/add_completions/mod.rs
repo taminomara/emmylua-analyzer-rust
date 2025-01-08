@@ -19,23 +19,11 @@ fn check_visibility(builder: &CompletionBuilder, id: LuaPropertyOwnerId) -> Opti
         _ => return Some(()),
     }
 
-    let property = builder
+    if !builder
         .semantic_model
-        .get_db()
-        .get_property_index()
-        .get_property(id);
-    if property.is_none() {
-        return Some(());
-    }
-
-    let property = property.unwrap();
-    if let Some(version_conds) = &property.version_conds {
-        let emmyrc = builder.semantic_model.get_emmyrc();
-        let version_number = emmyrc.runtime.version.to_lua_version_number();
-        let visiable = version_conds.iter().any(|cond| cond.check(&version_number));
-        if !visiable {
-            return None;
-        }
+        .is_property_visiable(builder.trigger_token.clone(), id)
+    {
+        return None;
     }
 
     Some(())

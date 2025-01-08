@@ -1,18 +1,21 @@
-use std::{env, fs};
+use std::{env, fs, path::PathBuf};
 
 use chrono::Local;
 use code_analysis::file_path_to_uri;
 use fern::Dispatch;
 use log::{info, LevelFilter};
 
+use crate::cmd_args::{CmdArgs, LogLevel};
+
 const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 const CRATE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub fn init_logger(root: Option<&str>) {
-    let level = if cfg!(debug_assertions) {
-        LevelFilter::Debug
-    } else {
-        LevelFilter::Info
+pub fn init_logger(root: Option<&str>, cmd_args: &CmdArgs) {
+    let level = match cmd_args.log_level {
+        LogLevel::Error => LevelFilter::Error,
+        LogLevel::Warn => LevelFilter::Warn,
+        LogLevel::Info => LevelFilter::Info,
+        LogLevel::Debug => LevelFilter::Debug,
     };
 
     if root.is_none() {
@@ -33,7 +36,11 @@ pub fn init_logger(root: Option<&str>) {
 
     let exe_path = env::current_exe().unwrap();
     let exe_dir = exe_path.parent().unwrap();
-    let log_dir = exe_dir.join("logs");
+    let log_dir = if cmd_args.log_path.is_empty() {
+        exe_dir.join("logs")
+    } else {
+        PathBuf::from(cmd_args.log_path.as_str())
+    };
     if !log_dir.exists() {
         fs::create_dir_all(&log_dir).unwrap();
     }

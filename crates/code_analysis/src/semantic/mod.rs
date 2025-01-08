@@ -7,6 +7,7 @@ mod reference;
 mod semantic_info;
 mod type_calc;
 mod type_compact;
+mod visibility;
 
 use std::{collections::HashSet, sync::Arc};
 
@@ -22,6 +23,7 @@ use semantic_info::{
     infer_node_property_owner, infer_node_semantic_info, infer_token_property_owner,
     infer_token_semantic_info,
 };
+use visibility::check_visibility;
 
 use crate::LuaFunctionType;
 use crate::{db_index::LuaTypeDeclId, Emmyrc, LuaDocument, LuaPropertyOwnerId};
@@ -96,7 +98,7 @@ impl<'a> SemanticModel<'a> {
             call_expr,
             call_expr_type,
             &mut InferGuard::new(),
-            arg_count
+            arg_count,
         )
     }
 
@@ -134,6 +136,14 @@ impl<'a> SemanticModel<'a> {
         property_owner: LuaPropertyOwnerId,
     ) -> bool {
         is_reference_to(self.db, &mut self.infer_config, node, property_owner).unwrap_or(false)
+    }
+
+    pub fn is_property_visiable(
+        &self,
+        token: LuaSyntaxToken,
+        property_owner: LuaPropertyOwnerId,
+    ) -> bool {
+        check_visibility(self.db, self.file_id, &self.emmyrc, token, property_owner).unwrap_or(true)
     }
 
     pub fn get_emmyrc(&self) -> &Emmyrc {

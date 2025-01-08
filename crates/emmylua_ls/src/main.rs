@@ -1,8 +1,10 @@
+mod cmd_args;
 mod context;
 mod handlers;
 mod logger;
 mod util;
 
+use cmd_args::CmdArgs;
 use handlers::{
     initialized_handler, on_notification_handler, on_req_handler, on_response_handler,
     server_capabilities,
@@ -10,19 +12,22 @@ use handlers::{
 use lsp_server::{Connection, Message};
 use lsp_types::InitializeParams;
 use std::error::Error;
+use structopt::StructOpt;
 
 const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 const CRATE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
-    let args: Vec<String> = std::env::args().collect();
-    let (connection, threads) = if args.len() > 1 {
-        let port = args[1].parse::<u16>().unwrap();
-        let addr = ("127.0.0.1", port);
-        Connection::listen(addr).unwrap()
-    } else {
-        Connection::stdio()
+    let cmd_args = CmdArgs::from_args();
+    let (connection, threads) = match cmd_args.communication {
+        cmd_args::Communication::Stdio => Connection::stdio(),
+        cmd_args::Communication::Tcp => {
+            let port = cmd_args.port;
+            let ip = cmd_args.ip.clone();
+            let addr = (ip.as_str(), port);
+            Connection::listen(addr).unwrap()
+        }
     };
 
     let (id, params) = connection.initialize_start()?;
@@ -38,7 +43,7 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
 
     connection.initialize_finish(id, initialize_data)?;
 
-    main_loop(&connection, initialization_params).await?;
+    main_loop(&connection, initialization_params, cmd_args).await?;
     threads.join()?;
 
     eprintln!("Server shutting down.");
@@ -48,6 +53,7 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
 async fn main_loop(
     connection: &Connection,
     params: InitializeParams,
+    cmd_args: CmdArgs,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
     let mut server_context = context::ServerContext::new(Connection {
         sender: connection.sender.clone(),
@@ -56,7 +62,7 @@ async fn main_loop(
 
     let server_context_snapshot = server_context.snapshot();
     tokio::spawn(async move {
-        initialized_handler(server_context_snapshot, params).await;
+        initialized_handler(server_context_snapshot, params, cmd_args).await;
     });
 
     for msg in &connection.receiver {

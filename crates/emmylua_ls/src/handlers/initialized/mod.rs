@@ -7,8 +7,7 @@ mod codestyle;
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
 use crate::{
-    context::{load_emmy_config, ClientProxy, ServerContextSnapshot, VsCodeStatusBar},
-    logger::init_logger,
+    cmd_args::CmdArgs, context::{load_emmy_config, ClientProxy, ServerContextSnapshot, VsCodeStatusBar}, logger::init_logger
 };
 use client_config::get_client_config;
 pub use client_config::ClientConfig;
@@ -24,6 +23,7 @@ use tokio_util::sync::CancellationToken;
 pub async fn initialized_handler(
     context: ServerContextSnapshot,
     params: InitializeParams,
+    cmd_args: CmdArgs,
 ) -> Option<()> {
     let client_id = get_client_id(&params.client_info);
     let client_config = get_client_config(&context, client_id).await;
@@ -36,7 +36,7 @@ pub async fn initialized_handler(
     locale::set_ls_locale(&params);
 
     // init logger
-    init_logger(main_root);
+    init_logger(main_root, &cmd_args);
     info!("client_id: {:?}", client_id);
     let params_json = serde_json::to_string_pretty(&params).unwrap();
     info!("initialization_params: {}", params_json);
