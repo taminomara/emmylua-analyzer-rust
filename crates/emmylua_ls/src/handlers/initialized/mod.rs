@@ -1,13 +1,15 @@
 mod client_config;
+mod codestyle;
 mod collect_files;
 mod locale;
 mod regsiter_file_watch;
-mod codestyle;
 
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
 use crate::{
-    cmd_args::CmdArgs, context::{load_emmy_config, ClientProxy, ServerContextSnapshot, VsCodeStatusBar}, logger::init_logger
+    cmd_args::CmdArgs,
+    context::{load_emmy_config, ClientProxy, ServerContextSnapshot, VsCodeStatusBar},
+    logger::init_logger,
 };
 use client_config::get_client_config;
 pub use client_config::ClientConfig;
@@ -62,6 +64,7 @@ pub async fn initialized_handler(
         &context.status_bar,
         workspace_folders,
         emmyrc,
+        client_id,
     )
     .await;
 
@@ -76,6 +79,7 @@ pub async fn init_analysis(
     status_bar: &VsCodeStatusBar,
     workspace_folders: Vec<PathBuf>,
     emmyrc: Arc<Emmyrc>,
+    client_id: ClientId,
     // todo add cancel token
 ) {
     let mut mut_analysis = analysis.write().await;
@@ -145,10 +149,13 @@ pub async fn init_analysis(
     let mut count = 0;
     while let Some(_) = rx.recv().await {
         count += 1;
-        status_bar.report_progress(
-            format!("diagnostic {}/{}", count, file_count).as_str(),
-            0.75,
-        );
+
+        if client_id.is_vscode() {
+            status_bar.report_progress(
+                format!("diagnostic {}/{}", count, file_count).as_str(),
+                0.75,
+            );
+        }
         if count == file_count {
             break;
         }
@@ -182,7 +189,7 @@ fn get_workspace_folders(params: &InitializeParams) -> Vec<PathBuf> {
     workspace_folders
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ClientId {
     VSCode,
     Intellij,

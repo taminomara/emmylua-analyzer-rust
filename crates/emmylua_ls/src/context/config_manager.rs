@@ -55,11 +55,12 @@ impl ConfigManager {
         let config_update_token = self.config_update_token.clone();
         let client_config = self.client_config.clone();
         let status_bar = self.status_bar.clone();
+        let client_id = client_config.client_id;
         tokio::spawn(async move {
             select! {
                 _ = tokio::time::sleep(Duration::from_secs(2)) => {
                     let emmyrc = load_emmy_config(Some(file_dir.clone()), client_config);
-                    init_analysis(analysis, client, &status_bar, workspace_folders, emmyrc).await;
+                    init_analysis(analysis, client, &status_bar, workspace_folders, emmyrc, client_id).await;
                     // After completion, remove from HashMap
                     let mut tokens = config_update_token.lock().await;
                     tokens.take();
