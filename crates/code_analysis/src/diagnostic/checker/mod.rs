@@ -5,6 +5,7 @@ mod deprecated;
 mod undefined_global;
 mod access_invisible;
 mod missing_parameter;
+mod local_const_reassign;
 
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
@@ -36,6 +37,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model:&mut SemanticM
     check!(undefined_global);
     check!(access_invisible);
     check!(missing_parameter);
+    check!(local_const_reassign);
 
     Some(())
 }
