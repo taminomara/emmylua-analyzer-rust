@@ -1849,7 +1849,50 @@ Syntax(Chunk)@0..74
     Token(TkEndOfLine)@65..66 "\n"
     Token(TkWhitespace)@66..74 "        "
         "#;
-        
+
+        assert_ast_eq!(code, result);
+    }
+
+    #[test]
+    fn test_visiblity() {
+        let code = r#"
+        ---@private
+        ---@public
+        ---@package
+        ---@protected
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..90
+  Syntax(Block)@0..90
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..81
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagVisibility)@13..29
+        Token(TkTagVisibility)@13..20 "private"
+        Token(TkEndOfLine)@20..21 "\n"
+        Token(TkWhitespace)@21..29 "        "
+        Syntax(DocDescription)@29..29
+      Token(TkDocStart)@29..33 "---@"
+      Syntax(DocTagVisibility)@33..48
+        Token(TkTagVisibility)@33..39 "public"
+        Token(TkEndOfLine)@39..40 "\n"
+        Token(TkWhitespace)@40..48 "        "
+        Syntax(DocDescription)@48..48
+      Token(TkDocStart)@48..52 "---@"
+      Syntax(DocTagVisibility)@52..68
+        Token(TkTagVisibility)@52..59 "package"
+        Token(TkEndOfLine)@59..60 "\n"
+        Token(TkWhitespace)@60..68 "        "
+        Syntax(DocDescription)@68..68
+      Token(TkDocStart)@68..72 "---@"
+      Syntax(DocTagVisibility)@72..81
+        Token(TkTagVisibility)@72..81 "protected"
+    Token(TkEndOfLine)@81..82 "\n"
+    Token(TkWhitespace)@82..90 "        "
+        "#;
+
         assert_ast_eq!(code, result);
     }
 }

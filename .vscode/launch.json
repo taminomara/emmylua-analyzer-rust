@@ -20,7 +20,12 @@
                 }
             },
             "args": [
-                "--port", "5007"
+                "-c",
+                "tcp",
+                "--port",
+                "5007",
+                "--log-level",
+                "debug"
             ],
             "cwd": "${workspaceFolder}"
         },

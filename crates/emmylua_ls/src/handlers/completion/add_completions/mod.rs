@@ -12,7 +12,7 @@ use crate::util::humanize_type;
 
 use super::completion_builder::CompletionBuilder;
 
-fn check_visibility(builder: &CompletionBuilder, id: LuaPropertyOwnerId) -> Option<()> {
+fn check_visibility(builder: &mut CompletionBuilder, id: LuaPropertyOwnerId) -> Option<()> {
     match id {
         LuaPropertyOwnerId::Member(_) => {}
         LuaPropertyOwnerId::LuaDecl(_) => {}

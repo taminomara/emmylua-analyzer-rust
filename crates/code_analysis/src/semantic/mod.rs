@@ -139,11 +139,19 @@ impl<'a> SemanticModel<'a> {
     }
 
     pub fn is_property_visiable(
-        &self,
+        &mut self,
         token: LuaSyntaxToken,
         property_owner: LuaPropertyOwnerId,
     ) -> bool {
-        check_visibility(self.db, self.file_id, &self.emmyrc, token, property_owner).unwrap_or(true)
+        check_visibility(
+            self.db,
+            self.file_id,
+            &self.emmyrc,
+            &mut self.infer_config,
+            token,
+            property_owner,
+        )
+        .unwrap_or(true)
     }
 
     pub fn get_emmyrc(&self) -> &Emmyrc {
