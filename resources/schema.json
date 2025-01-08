@@ -228,13 +228,6 @@
           ]
         },
         {
-          "description": "Need import",
-          "type": "string",
-          "enum": [
-            "need-import"
-          ]
-        },
-        {
           "description": "Deprecated",
           "type": "string",
           "enum": [
@@ -242,10 +235,10 @@
           ]
         },
         {
-          "description": "Access invisible member",
+          "description": "Access invisible",
           "type": "string",
           "enum": [
-            "access-invisible-member"
+            "access-invisible"
           ]
         },
         {
