@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaVersionNumber {
     pub major: u32,
@@ -54,6 +56,15 @@ impl Ord for LuaVersionNumber {
     }
 }
 
+impl fmt::Display for LuaVersionNumber {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            LuaVersionNumber::LUA_JIT => write!(f, "Lua JIT"),
+            LuaVersionNumber { major, minor, .. } => write!(f, "Lua {}.{}", major, minor),
+        }
+    }
+}
+
 #[allow(unused)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LuaVersionCondition {
@@ -69,6 +80,16 @@ impl LuaVersionCondition {
             LuaVersionCondition::Eq(v) => version == v,
             LuaVersionCondition::Gte(v) => version >= v,
             LuaVersionCondition::Lte(v) => version <= v,
+        }
+    }
+}
+
+impl fmt::Display for LuaVersionCondition {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LuaVersionCondition::Eq(v) => write!(f, "{}", v),
+            LuaVersionCondition::Gte(v) => write!(f, ">= {}", v),
+            LuaVersionCondition::Lte(v) => write!(f, "<= {}", v),
         }
     }
 }

@@ -28,8 +28,8 @@ pub enum DiagnosticCode {
     UndefinedGlobal,
     /// Deprecated
     Deprecated,
-    /// Access invisible member
-    AccessInvisibleMember,
+    /// Access invisible
+    AccessInvisible,
     /// Discard return value
     DiscardReturns,
     /// Disable global define
@@ -70,7 +70,7 @@ pub fn get_default_severity(code: DiagnosticCode) -> DiagnosticSeverity {
         DiagnosticCode::Unused => DiagnosticSeverity::HINT,
         DiagnosticCode::UndefinedGlobal => DiagnosticSeverity::ERROR,
         DiagnosticCode::Deprecated => DiagnosticSeverity::HINT,
-        DiagnosticCode::AccessInvisibleMember => DiagnosticSeverity::WARNING,
+        DiagnosticCode::AccessInvisible => DiagnosticSeverity::WARNING,
         DiagnosticCode::DiscardReturns => DiagnosticSeverity::WARNING,
         DiagnosticCode::DisableGlobalDefine => DiagnosticSeverity::ERROR,
         DiagnosticCode::UndefinedField => DiagnosticSeverity::WARNING,
