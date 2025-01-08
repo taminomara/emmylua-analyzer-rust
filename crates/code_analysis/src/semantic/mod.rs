@@ -23,6 +23,7 @@ use semantic_info::{
     infer_node_property_owner, infer_node_semantic_info, infer_token_property_owner,
     infer_token_semantic_info,
 };
+use type_compact::is_sub_type_of;
 use visibility::check_visibility;
 
 use crate::LuaFunctionType;
@@ -152,6 +153,14 @@ impl<'a> SemanticModel<'a> {
             property_owner,
         )
         .unwrap_or(true)
+    }
+
+    pub fn is_sub_type_of(
+        &mut self,
+        sub_type_ref_id: &LuaTypeDeclId,
+        super_type_ref_id: &LuaTypeDeclId,
+    ) -> bool {
+        is_sub_type_of(self.db, sub_type_ref_id, super_type_ref_id)
     }
 
     pub fn get_emmyrc(&self) -> &Emmyrc {

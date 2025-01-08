@@ -1,4 +1,5 @@
 mod func_type;
+mod sub_type;
 
 use func_type::infer_doc_func_type_compact;
 
@@ -8,6 +9,7 @@ use crate::db_index::{
 };
 
 use super::{InferGuard, LuaInferConfig};
+pub use sub_type::is_sub_type_of;
 
 #[allow(unused)]
 pub fn check_type_compact(
