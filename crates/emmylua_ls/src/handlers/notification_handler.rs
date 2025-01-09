@@ -44,7 +44,7 @@ impl<'a> NotificationDispatcher<'a> {
     pub fn new(
         notification: Notification,
         context: &'a mut ServerContext,
-    ) -> NotificationDispatcher {
+    ) -> Self {
         NotificationDispatcher {
             notification: Some(notification),
             context,
