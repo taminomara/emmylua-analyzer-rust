@@ -35,6 +35,34 @@ fn check_call_expr(
         }
 
         if param.0 == "..." {
+            if param.1.is_none() {
+                break;
+            }
+
+            let param_type = param.1.clone().unwrap();
+            for arg in args.iter().skip(idx) {
+                let mut expr_type = semantic_model
+                    .infer_expr(arg.clone())
+                    .unwrap_or(LuaType::Any);
+                // treat unknown type as any
+                if expr_type.is_unknown() {
+                    expr_type = LuaType::Any;
+                }
+
+                if !semantic_model.check_type_compact(&param_type, &expr_type) {
+                    let db = semantic_model.get_db();
+                    context.add_diagnostic(
+                        DiagnosticCode::ParamTypeNotMatch,
+                        arg.get_range(),
+                        format!(
+                            "expected {} but founded {}",
+                            humanize_type(db, &param_type),
+                            humanize_type(db, &expr_type)
+                        ),
+                        None,
+                    );
+                }
+            }
         } else {
             if param.1.is_none() {
                 continue;
@@ -42,9 +70,14 @@ fn check_call_expr(
 
             let param_type = param.1.clone().unwrap();
             let arg = &args[idx];
-            let expr_type = semantic_model
+            let mut expr_type = semantic_model
                 .infer_expr(arg.clone())
                 .unwrap_or(LuaType::Any);
+            // treat unknown type as any
+            if expr_type.is_unknown() {
+                expr_type = LuaType::Any;
+            }
+
             if !semantic_model.check_type_compact(&param_type, &expr_type) {
                 let db = semantic_model.get_db();
                 context.add_diagnostic(
