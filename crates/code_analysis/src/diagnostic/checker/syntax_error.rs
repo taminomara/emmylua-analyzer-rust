@@ -63,9 +63,7 @@ pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) ->
 }
 
 // this function is like string_token_value, but optimize for performance
-fn check_normal_string_error(
-    string_token: &LuaSyntaxToken,
-) -> Result<(), String> {
+fn check_normal_string_error(string_token: &LuaSyntaxToken) -> Result<(), String> {
     let text = string_token.text();
     if text.len() < 2 {
         return Ok(());
@@ -79,8 +77,9 @@ fn check_normal_string_error(
             '\\' => {
                 if let Some(next_char) = chars.next() {
                     match next_char {
-                        'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' | 'x' | '\\' | '\'' | '\"'
-                        | '\r' | '\n' => {
+                        'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' | '\\' | '\'' | '\"' | '\r'
+                        | '\n' => {}
+                        'x' => {
                             // Hexadecimal escape sequence
                             let hex = chars.by_ref().take(2).collect::<String>();
                             if hex.len() == 2 && hex.chars().all(|c| c.is_ascii_hexdigit()) {
