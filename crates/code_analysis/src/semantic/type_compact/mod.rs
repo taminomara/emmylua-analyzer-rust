@@ -41,6 +41,10 @@ fn infer_type_compact(
         compact_type.clone()
     };
 
+    if source == &compact_type {
+        return true;
+    }
+
     match (source, &compact_type) {
         // basic type
         (LuaType::Any, _) => true,
@@ -137,6 +141,9 @@ fn infer_type_compact(
         (LuaType::TableConst(_), _) => false,
         (LuaType::Extends(_), _) => false,
         (LuaType::MuliReturn(_), _) => false,
+        (_, LuaType::Instance(right)) => {
+            infer_type_compact(db, config, source, &right.get_base(), infer_guard)
+        },
         _ => false,
     }
 }
