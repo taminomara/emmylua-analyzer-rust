@@ -10,8 +10,7 @@ use flagset::FlagSet;
 use rowan::TextRange;
 use std::collections::HashMap;
 pub use type_assert::TypeAssertion;
-use type_decl::LuaDeclLocation;
-pub use type_decl::{LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId};
+pub use type_decl::{LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId, LuaDeclLocation};
 pub use types::*;
 
 #[derive(Debug)]
