@@ -1,3 +1,4 @@
+mod humanize_type;
 mod test;
 mod type_assert;
 mod type_decl;
@@ -10,8 +11,11 @@ use flagset::FlagSet;
 use rowan::TextRange;
 use std::collections::HashMap;
 pub use type_assert::TypeAssertion;
-pub use type_decl::{LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId, LuaDeclLocation};
+pub use type_decl::{
+    LuaDeclLocation, LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId,
+};
 pub use types::*;
+pub use humanize_type::humanize_type;
 
 #[derive(Debug)]
 pub struct LuaTypeIndex {

@@ -9,7 +9,7 @@ use lsp_types::{
 };
 use rowan::NodeOrToken;
 
-use crate::util::humanize_type;
+use code_analysis::humanize_type;
 
 pub fn build_signature_helper(
     semantic_model: &mut SemanticModel,

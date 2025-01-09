@@ -8,13 +8,10 @@ use emmylua_parser::{
 };
 use lsp_types::CompletionItem;
 
-use crate::{
-    handlers::{
-        completion::completion_builder::CompletionBuilder,
-        signature_helper::get_current_param_index,
-    },
-    util::humanize_type,
+use crate::handlers::{
+    completion::completion_builder::CompletionBuilder, signature_helper::get_current_param_index,
 };
+use code_analysis::humanize_type;
 
 pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     if builder.is_cancelled() {

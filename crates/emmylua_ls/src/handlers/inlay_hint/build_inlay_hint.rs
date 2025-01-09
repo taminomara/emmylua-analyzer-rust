@@ -11,7 +11,7 @@ use emmylua_parser::{
 use lsp_types::{InlayHint, InlayHintKind, InlayHintLabel, InlayHintLabelPart};
 use rowan::NodeOrToken;
 
-use crate::util::humanize_type;
+use code_analysis::humanize_type;
 
 pub fn build_inlay_hints(semantic_model: &mut SemanticModel) -> Option<Vec<InlayHint>> {
     let mut result = Vec::new();

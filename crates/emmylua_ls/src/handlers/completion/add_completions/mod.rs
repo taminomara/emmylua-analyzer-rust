@@ -8,7 +8,7 @@ use lsp_types::CompletionItemKind;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::util::humanize_type;
+use code_analysis::humanize_type;
 
 use super::completion_builder::CompletionBuilder;
 

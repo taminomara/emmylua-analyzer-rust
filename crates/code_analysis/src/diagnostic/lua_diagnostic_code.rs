@@ -14,8 +14,8 @@ pub enum DiagnosticCode {
     TypeNotFound,
     /// Missing return statement
     MissingReturn,
-    /// Type not match
-    TypeNotMatch,
+    /// Param Type not match
+    ParamTypeNotMatch,
     /// Missing parameter
     MissingParameter,
     /// Inject field fail
@@ -63,7 +63,7 @@ pub fn get_default_severity(code: DiagnosticCode) -> DiagnosticSeverity {
         DiagnosticCode::SyntaxError => DiagnosticSeverity::ERROR,
         DiagnosticCode::TypeNotFound => DiagnosticSeverity::WARNING,
         DiagnosticCode::MissingReturn => DiagnosticSeverity::WARNING,
-        DiagnosticCode::TypeNotMatch => DiagnosticSeverity::WARNING,
+        DiagnosticCode::ParamTypeNotMatch => DiagnosticSeverity::WARNING,
         DiagnosticCode::MissingParameter => DiagnosticSeverity::WARNING,
         DiagnosticCode::InjectFieldFail => DiagnosticSeverity::ERROR,
         DiagnosticCode::UnreachableCode => DiagnosticSeverity::HINT,
@@ -82,7 +82,6 @@ pub fn get_default_severity(code: DiagnosticCode) -> DiagnosticSeverity {
 
 pub fn is_code_default_enable(code: &DiagnosticCode) -> bool {
     match code {
-        DiagnosticCode::TypeNotFound => false,
         DiagnosticCode::InjectFieldFail => false,
         DiagnosticCode::DisableGlobalDefine => false,
         DiagnosticCode::UndefinedField => false,

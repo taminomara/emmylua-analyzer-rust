@@ -23,7 +23,7 @@ use semantic_info::{
     infer_node_property_owner, infer_node_semantic_info, infer_token_property_owner,
     infer_token_semantic_info,
 };
-use type_compact::is_sub_type_of;
+use type_compact::{check_type_compact, is_sub_type_of};
 use visibility::check_visibility;
 
 use crate::LuaFunctionType;
@@ -88,6 +88,10 @@ impl<'a> SemanticModel<'a> {
 
     pub fn infer_member_infos(&self, prefix_type: &LuaType) -> Option<Vec<LuaMemberInfo>> {
         infer_members(self.db, prefix_type)
+    }
+
+    pub fn check_type_compact(&mut self, source: &LuaType, compact_type: &LuaType) -> bool {
+        check_type_compact(self.db, &mut self.infer_config,source, compact_type)
     }
 
     pub fn infer_call_expr_func(

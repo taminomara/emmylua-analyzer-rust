@@ -8,6 +8,7 @@ mod missing_parameter;
 mod syntax_error;
 mod undefined_global;
 mod unused;
+mod param_type_check;
 
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
@@ -45,6 +46,7 @@ pub fn check_file(
     check!(local_const_reassign);
     check!(discard_returns);
     check!(await_in_sync);
+    check!(param_type_check);
 
     Some(())
 }
