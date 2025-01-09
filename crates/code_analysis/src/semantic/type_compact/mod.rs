@@ -50,7 +50,9 @@ fn infer_type_compact(
         (LuaType::Any, _) => true,
         (LuaType::SelfInfer, _) => true,
         (LuaType::Unknown, _) => true,
-        (LuaType::Nil, LuaType::Nil) => true,
+        (_, LuaType::Instance(right)) => {
+            infer_type_compact(db, config, source, &right.get_base(), infer_guard)
+        }
         (LuaType::BooleanConst(_), _) => compact_type.is_boolean(),
         (LuaType::IntegerConst(_), _) => compact_type.is_number(),
         (LuaType::StringConst(_), _) => compact_type.is_string(),
@@ -141,9 +143,6 @@ fn infer_type_compact(
         (LuaType::TableConst(_), _) => false,
         (LuaType::Extends(_), _) => false,
         (LuaType::MuliReturn(_), _) => false,
-        (_, LuaType::Instance(right)) => {
-            infer_type_compact(db, config, source, &right.get_base(), infer_guard)
-        },
         _ => false,
     }
 }
