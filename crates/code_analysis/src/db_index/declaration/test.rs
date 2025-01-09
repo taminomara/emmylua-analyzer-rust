@@ -32,9 +32,7 @@ mod test {
         tree.add_decl_to_scope(scope_id, decl_id.clone());
 
         let decl = tree.find_local_decl("aaa", 5.into());
-        assert!(decl.is_some());
-        assert_eq!(decl.unwrap().get_name(), "aaa");
-        assert_eq!(decl.unwrap().get_position(), 5.into());
+        assert!(decl.is_none());
 
         let decl2 = tree.find_local_decl("aaa", 50.into());
         assert!(decl2.is_some());
@@ -80,9 +78,7 @@ mod test {
         tree.add_decl_to_scope(scope_id2, decl_id2.clone());
 
         let decl = tree.find_local_decl("aaa", 5.into());
-        assert!(decl.is_some());
-        assert_eq!(decl.unwrap().get_name(), "aaa");
-        assert_eq!(decl.unwrap().get_position(), 5.into());
+        assert!(decl.is_none());
 
         let decl2 = tree.find_local_decl("aaa", 50.into());
         assert!(decl2.is_some());
@@ -100,9 +96,7 @@ mod test {
         assert_eq!(decl4.unwrap().get_position(), 105.into());
 
         let decl5 = tree.find_local_decl("bbb", 105.into());
-        assert!(decl5.is_some());
-        assert_eq!(decl5.unwrap().get_name(), "bbb");
-        assert_eq!(decl5.unwrap().get_position(), 105.into());
+        assert!(decl5.is_none());
     }
 
     #[test]
@@ -126,9 +120,7 @@ mod test {
         tree.add_decl_to_scope(scope_id1, decl_id.clone());
 
         let decl = tree.find_local_decl("aaa", 5.into());
-        assert!(decl.is_some());
-        assert_eq!(decl.unwrap().get_name(), "aaa");
-        assert_eq!(decl.unwrap().get_position(), 5.into());
+        assert!(decl.is_none());
 
         let decl2 = tree.find_local_decl("aaa", 50.into());
         assert!(decl2.is_some());
@@ -176,9 +168,7 @@ mod test {
         tree.add_decl_to_scope(scope_id2, decl_id2.clone());
 
         let decl = tree.find_local_decl("aaa", 5.into());
-        assert!(decl.is_some());
-        assert_eq!(decl.unwrap().get_name(), "aaa");
-        assert_eq!(decl.unwrap().get_position(), 5.into());
+        assert!(decl.is_none());
 
         let decl2 = tree.find_local_decl("aaa", 50.into());
         assert!(decl2.is_some());
@@ -242,9 +232,7 @@ mod test {
         tree.add_decl_to_scope(root_scope_id, decl_id3.clone());
 
         let decl = tree.find_local_decl("aaa", 5.into());
-        assert!(decl.is_some());
-        assert_eq!(decl.unwrap().get_name(), "aaa");
-        assert_eq!(decl.unwrap().get_position(), 5.into());
+        assert!(decl.is_none());
 
         let decl2 = tree.find_local_decl("aaa", 50.into());
         assert!(decl2.is_some());

@@ -82,6 +82,18 @@ mod tests {
         LuaTokenKind::TkLongString
     );
     test_token_value!(
+        test_string_token_value_long_multiline2,
+        "[===[\nhello]===]",
+        "hello",
+        LuaTokenKind::TkLongString
+    );
+    test_token_value!(
+        test_string_token_value_long_multiline3,
+        "[===[\r\n\r\nhello]===]",
+        "\r\nhello",
+        LuaTokenKind::TkLongString
+    );
+    test_token_value!(
         test_string_token_value_hex,
         "\"\\x68\\x65\\x6c\\x6c\\x6f\"",
         "hello",

@@ -60,6 +60,21 @@ fn long_string_value(token: &LuaSyntaxToken) -> Result<String, LuaParseError> {
         ));
     }
 
+    // lua special rule for long string
+    if let Some((_, first_content_char)) = chars.next() {
+        if first_content_char == '\r' {
+            if let Some((_, next_char)) = chars.next() {
+                if next_char == '\n' {
+                    i += 2;
+                } else {
+                    i += 1;
+                }
+            }
+        } else if first_content_char == '\n' {
+            i += 1;
+        }
+    }
+
     let content = &text[i..(text.len() - equal_num - 2)];
 
     Ok(content.to_string())
@@ -104,10 +119,8 @@ fn normal_string_value(token: &LuaSyntaxToken) -> Result<String, LuaParseError> 
                         'u' => {
                             // Unicode escape sequence
                             if let Some('{') = chars.next() {
-                                let unicode_hex = chars
-                                    .by_ref()
-                                    .take_while(|c| *c != '}')
-                                    .collect::<String>();
+                                let unicode_hex =
+                                    chars.by_ref().take_while(|c| *c != '}').collect::<String>();
                                 if let Ok(code_point) = u32::from_str_radix(&unicode_hex, 16) {
                                     if let Some(unicode_char) = std::char::from_u32(code_point) {
                                         result.push(unicode_char);
