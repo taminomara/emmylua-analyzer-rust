@@ -18,7 +18,7 @@ coroutine = {}
 ---
 --- Creates a new coroutine, with body `f`. `f` must be a Lua function. Returns
 --- this new coroutine, an object with type `"thread"`.
----@param f fun():thread
+---@param f async fun(...)
 ---@return thread
 function coroutine.create(f) end
 
@@ -62,7 +62,7 @@ function coroutine.resume(co, ...) end
 ---
 --- Returns the running coroutine plus a boolean, true when the running
 --- coroutine is the main one.
----@return thread|boolean, string
+---@return thread, string
 function coroutine.running() end
 
 ---
@@ -86,7 +86,7 @@ function coroutine.status(co) end
 --- passed to the function behave as the extra arguments to `resume`. Returns
 --- the same values returned by `resume`, except the first
 --- boolean. In case of error, propagates the error.
----@param f fun():thread
+---@param f async fun()
 ---@return fun():any
 function coroutine.wrap(f) end
 
