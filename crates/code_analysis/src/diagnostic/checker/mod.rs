@@ -1,12 +1,13 @@
-mod analyze_error;
-mod syntax_error;
-mod unused;
-mod deprecated;
-mod undefined_global;
 mod access_invisible;
-mod missing_parameter;
-mod local_const_reassign;
+mod analyze_error;
+mod await_in_sync;
+mod deprecated;
 mod discard_returns;
+mod local_const_reassign;
+mod missing_parameter;
+mod syntax_error;
+mod undefined_global;
+mod unused;
 
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
@@ -19,7 +20,10 @@ use super::{
     DiagnosticCode,
 };
 
-pub fn check_file(context: &mut DiagnosticContext, semantic_model:&mut SemanticModel) -> Option<()> {
+pub fn check_file(
+    context: &mut DiagnosticContext,
+    semantic_model: &mut SemanticModel,
+) -> Option<()> {
     macro_rules! check {
         ($module:ident) => {
             if $module::CODES
@@ -40,6 +44,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model:&mut SemanticM
     check!(missing_parameter);
     check!(local_const_reassign);
     check!(discard_returns);
+    check!(await_in_sync);
 
     Some(())
 }
