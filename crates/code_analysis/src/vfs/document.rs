@@ -95,6 +95,14 @@ impl<'a> LuaDocument<'a> {
         })
     }
 
+    pub fn to_lsp_position(&self, offset: TextSize) -> Option<lsp_types::Position> {
+        let line_col = self.get_line_col(offset)?;
+        Some(lsp_types::Position {
+            line: line_col.0 as u32,
+            character: line_col.1 as u32,
+        })
+    }
+
     pub fn to_rowan_range(&self, range: lsp_types::Range) -> Option<TextRange> {
         let start = self.get_offset(range.start.line as usize, range.start.character as usize)?;
         let end = self.get_offset(range.end.line as usize, range.end.character as usize)?;

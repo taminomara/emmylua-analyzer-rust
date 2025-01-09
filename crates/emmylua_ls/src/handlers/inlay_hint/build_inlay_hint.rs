@@ -1,8 +1,14 @@
 use std::collections::HashMap;
 
-use code_analysis::{LuaFunctionType, LuaPropertyOwnerId, LuaSignatureId, LuaType, SemanticModel};
-use emmylua_parser::{LuaAst, LuaAstNode, LuaCallExpr, LuaClosureExpr, LuaExpr, LuaLocalName};
-use lsp_types::{InlayHint, InlayHintKind, InlayHintLabel};
+use code_analysis::{
+    FileId, InferGuard, LuaFunctionType, LuaMemberId, LuaMemberKey, LuaMemberOwner,
+    LuaPropertyOwnerId, LuaSignatureId, LuaType, SemanticModel,
+};
+use emmylua_parser::{
+    LuaAst, LuaAstNode, LuaCallExpr, LuaClosureExpr, LuaExpr, LuaFuncStat, LuaIndexExpr,
+    LuaLocalName, LuaSyntaxId, LuaVarExpr,
+};
+use lsp_types::{InlayHint, InlayHintKind, InlayHintLabel, InlayHintLabelPart};
 use rowan::NodeOrToken;
 
 use crate::util::humanize_type;
@@ -21,6 +27,9 @@ pub fn build_inlay_hints(semantic_model: &mut SemanticModel) -> Option<Vec<Inlay
             }
             LuaAst::LuaLocalName(local_name) => {
                 build_local_name_hint(semantic_model, &mut result, local_name);
+            }
+            LuaAst::LuaFuncStat(func_stat) => {
+                build_func_stat_override_hint(semantic_model, &mut result, func_stat);
             }
             _ => {}
         }
@@ -359,4 +368,123 @@ fn build_local_name_hint(
     result.push(hint);
 
     Some(())
+}
+
+fn build_func_stat_override_hint(
+    semantic_model: &mut SemanticModel,
+    result: &mut Vec<InlayHint>,
+    func_stat: LuaFuncStat,
+) -> Option<()> {
+    if !semantic_model.get_emmyrc().hint.override_hint {
+        return Some(());
+    }
+
+    let func_name = func_stat.get_func_name()?;
+    if let LuaVarExpr::IndexExpr(index_expr) = func_name {
+        let prefix_expr = index_expr.get_prefix_expr()?;
+        let prefix_type = semantic_model.infer_expr(prefix_expr.into())?;
+        if let LuaType::Def(id) = prefix_type {
+            let supers = semantic_model
+                .get_db()
+                .get_type_index()
+                .get_super_types(&id)?;
+
+            let name = index_expr.get_index_key()?;
+            let member_key: LuaMemberKey = name.into();
+            let infer_guard = &mut InferGuard::new();
+            for super_type in supers {
+                if let Some(member_id) =
+                    get_super_member_id(semantic_model, super_type, &member_key, infer_guard)
+                {
+                    let member = semantic_model
+                        .get_db()
+                        .get_member_index()
+                        .get_member(&member_id)?;
+
+                    let document = semantic_model.get_document();
+                    let last_paren_pos = func_stat
+                        .get_closure()?
+                        .get_params_list()?
+                        .get_range()
+                        .end();
+                    let last_paren_lsp_pos = document.to_lsp_position(last_paren_pos)?;
+
+                    let file_id = member.get_file_id();
+                    let syntax_id = member.get_syntax_id();
+                    let lsp_location =
+                        get_override_lsp_location(semantic_model, file_id, syntax_id)?;
+                    let hint = InlayHint {
+                        kind: Some(InlayHintKind::TYPE),
+                        label: InlayHintLabel::LabelParts(vec![InlayHintLabelPart {
+                            value: "override".to_string(),
+                            location: Some(lsp_location),
+                            ..Default::default()
+                        }]),
+                        position: last_paren_lsp_pos,
+                        text_edits: None,
+                        tooltip: None,
+                        padding_left: Some(true),
+                        padding_right: None,
+                        data: None,
+                    };
+                    result.push(hint);
+                    break;
+                }
+            }
+        }
+    }
+
+    Some(())
+}
+
+fn get_super_member_id(
+    semantic_model: &mut SemanticModel,
+    super_type: LuaType,
+    member_key: &LuaMemberKey,
+    infer_guard: &mut InferGuard,
+) -> Option<LuaMemberId> {
+    if let LuaType::Ref(super_type_id) = &super_type {
+        infer_guard.check(super_type_id)?;
+        let member_owner = LuaMemberOwner::Type(super_type_id.clone());
+        let member_map = semantic_model
+            .get_db()
+            .get_member_index()
+            .get_member_map(member_owner)?;
+
+        if let Some(member_id) = member_map.get(&member_key) {
+            return Some(member_id.clone());
+        }
+
+        let super_types = semantic_model
+            .get_db()
+            .get_type_index()
+            .get_super_types(super_type_id)?;
+        for super_type in super_types {
+            if let Some(member_id) =
+                get_super_member_id(semantic_model, super_type, member_key, infer_guard)
+            {
+                return Some(member_id);
+            }
+        }
+    }
+
+    None
+}
+
+fn get_override_lsp_location(
+    semantic_model: &mut SemanticModel,
+    file_id: FileId,
+    syntax_id: LuaSyntaxId,
+) -> Option<lsp_types::Location> {
+    let document = semantic_model.get_document_by_file_id(file_id)?;
+    let root = semantic_model.get_root_by_file_id(file_id)?;
+    let node = syntax_id.to_node_from_root(root.syntax())?;
+    let range = if let Some(index_exor) = LuaIndexExpr::cast(node.clone()) {
+        index_exor.get_index_name_token()?.text_range()
+    } else {
+        node.text_range()
+    };
+
+    let lsp_range = document.to_lsp_location(range)?;
+    Some(lsp_range)
 }

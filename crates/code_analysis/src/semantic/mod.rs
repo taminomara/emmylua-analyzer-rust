@@ -74,6 +74,10 @@ impl<'a> SemanticModel<'a> {
         self.db.get_vfs().get_document(&file_id)
     }
 
+    pub fn get_root_by_file_id(&self, file_id: FileId) -> Option<LuaChunk> {
+        Some(self.db.get_vfs().get_syntax_tree(&file_id)?.get_chunk_node())
+    }
+
     pub fn get_file_parse_error(&self) -> Option<Vec<(String, TextRange)>> {
         self.db.get_vfs().get_file_parse_error(&self.file_id)
     }
