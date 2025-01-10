@@ -108,6 +108,7 @@ fn infer_member_by_member_key(
         }
         LuaType::Global => infer_global_field_member(db, config, member_key),
         LuaType::Instance(inst) => infer_instance_member(db, config, inst, member_key, infer_guard),
+        LuaType::Namespace(ns) => infer_namespace_member(db, config, ns, member_key),
         _ => None,
     }
 }
@@ -716,4 +717,24 @@ fn infer_global_field_member(
 
     let decl = db.get_decl_index().get_decl(&global_member)?;
     Some(decl.get_type()?.clone())
+}
+
+fn infer_namespace_member(
+    db: &DbIndex,
+    _: &LuaInferConfig,
+    ns: &str,
+    member_key: &LuaIndexKey,
+) -> InferResult {
+    let member_key = match member_key.into() {
+        LuaMemberKey::Name(name) => name,
+        _ => return None,
+    };
+
+    let namespace_or_type_id = format!("{}.{}", ns, member_key);
+    let type_id = LuaTypeDeclId::new(&namespace_or_type_id);
+    if  db.get_type_index().get_type_decl(&type_id).is_some() {
+        return Some(LuaType::Def(type_id));
+    }
+
+    return Some(LuaType::Namespace(namespace_or_type_id.into()));
 }

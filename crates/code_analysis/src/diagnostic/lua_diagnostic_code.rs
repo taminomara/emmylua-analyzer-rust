@@ -38,6 +38,8 @@ pub enum DiagnosticCode {
     UndefinedField,
     /// Local const reassign
     LocalConstReassign,
+    /// Iter variable reassign
+    IterVariableReassign,
     /// Duplicate type
     DuplicateType,
     /// Redefined local
@@ -85,7 +87,7 @@ pub fn is_code_default_enable(code: &DiagnosticCode) -> bool {
         DiagnosticCode::InjectFieldFail => false,
         DiagnosticCode::DisableGlobalDefine => false,
         DiagnosticCode::UndefinedField => false,
-
+        DiagnosticCode::IterVariableReassign => false,
         // ... handle other variants
         _ => true,
     }

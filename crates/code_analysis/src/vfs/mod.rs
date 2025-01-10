@@ -46,6 +46,8 @@ impl FileId {
     pub fn new() -> Self {
         FileId { id: 0 }
     }
+
+    pub const VIRTUAL: FileId = FileId { id: u32::MAX };
 }
 
 #[derive(Debug)]

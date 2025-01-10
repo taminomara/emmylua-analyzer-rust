@@ -36,6 +36,8 @@ fn get_completion_kind(typ: &LuaType) -> CompletionItemKind {
         return CompletionItemKind::CONSTANT;
     } else if typ.is_def() {
         return CompletionItemKind::CLASS;
+    } else if typ.is_namespace() {
+        return CompletionItemKind::MODULE;
     }
 
     CompletionItemKind::VARIABLE

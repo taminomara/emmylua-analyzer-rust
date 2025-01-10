@@ -54,6 +54,7 @@ pub enum LuaType {
     FuncTplRef(Arc<GenericTpl>),
     DocStringConst(ArcIntern<String>),
     DocIntergerConst(i64),
+    Namespace(ArcIntern<String>),
 }
 
 impl PartialEq for LuaType {
@@ -101,6 +102,7 @@ impl PartialEq for LuaType {
             (LuaType::FuncTplRef(a), LuaType::FuncTplRef(b)) => a == b,
             (LuaType::DocStringConst(a), LuaType::DocStringConst(b)) => a == b,
             (LuaType::DocIntergerConst(a), LuaType::DocIntergerConst(b)) => a == b,
+            (LuaType::Namespace(a), LuaType::Namespace(b)) => a == b,
             _ => false, // 不同变体之间不相等
         }
     }
@@ -174,6 +176,7 @@ impl Hash for LuaType {
             LuaType::FuncTplRef(a) => (39, a).hash(state),
             LuaType::DocStringConst(a) => (40, a).hash(state),
             LuaType::DocIntergerConst(a) => (41, a).hash(state),
+            LuaType::Namespace(a) => (42, a).hash(state),
         }
     }
 }
@@ -367,6 +370,10 @@ impl LuaType {
             LuaType::FuncTplRef(_) => true,
             _ => false,
         }
+    }
+
+    pub fn is_namespace(&self) -> bool {
+        matches!(self, LuaType::Namespace(_))
     }
 }
 

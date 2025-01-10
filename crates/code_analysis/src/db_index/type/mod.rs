@@ -8,6 +8,7 @@ use super::traits::LuaIndex;
 use crate::{FileId, InFiled};
 use emmylua_parser::LuaSyntaxId;
 use flagset::FlagSet;
+pub use humanize_type::humanize_type;
 use rowan::TextRange;
 use std::collections::HashMap;
 pub use type_assert::TypeAssertion;
@@ -15,7 +16,6 @@ pub use type_decl::{
     LuaDeclLocation, LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId,
 };
 pub use types::*;
-pub use humanize_type::humanize_type;
 
 #[derive(Debug)]
 pub struct LuaTypeIndex {

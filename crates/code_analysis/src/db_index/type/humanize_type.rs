@@ -56,6 +56,7 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType) -> String {
         LuaType::ExistField(exist_field) => humanize_exist_field_type(db, exist_field),
         LuaType::Instance(ins) => humanize_instance_type(db, ins),
         LuaType::Signature(signature_id) => humanize_signature_type(db, signature_id),
+        LuaType::Namespace(ns) => format!("{{ {} }}", ns),
         _ => "unknown".to_string(),
     }
 }

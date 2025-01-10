@@ -3,7 +3,7 @@ use crate::{DiagnosticCode, LocalAttribute, LuaDecl, LuaDeclId, SemanticModel};
 
 use super::DiagnosticContext;
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::LocalConstReassign];
+pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::LocalConstReassign, DiagnosticCode::IterVariableReassign];
 
 pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
     let file_id = semantic_model.get_file_id();
@@ -16,7 +16,7 @@ pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) ->
             LuaDecl::Local { attrib, .. } => {
                 if let Some(attrib) = attrib {
                     if matches!(attrib, LocalAttribute::Const | LocalAttribute::IterConst) {
-                        check_local_const_reassign(context, semantic_model, decl_id);
+                        check_local_const_reassign(context, semantic_model, decl_id, attrib);
                     }
                 }
             }
@@ -31,6 +31,7 @@ fn check_local_const_reassign(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
     decl_id: &LuaDeclId,
+    attrib: &LocalAttribute,
 ) -> Option<()> {
     let file_id = semantic_model.get_file_id();
     let refs_index = semantic_model.get_db().get_reference_index();
@@ -38,12 +39,25 @@ fn check_local_const_reassign(
     let ranges = local_refs.get_local_references(decl_id)?;
     for range in ranges {
         if refs_index.is_write_range(file_id, *range) {
-            context.add_diagnostic(
-                DiagnosticCode::LocalConstReassign,
-                *range,
-                t!("Cannot reassign to a constant variable").to_string(),
-                None,
-            );
+            match attrib {
+                LocalAttribute::Const => {
+                    context.add_diagnostic(
+                        DiagnosticCode::LocalConstReassign,
+                        *range,
+                        t!("Cannot reassign to a constant variable").to_string(),
+                        None,
+                    );
+                }
+                LocalAttribute::IterConst => {
+                    context.add_diagnostic(
+                        DiagnosticCode::IterVariableReassign,
+                        *range,
+                        t!("Should not reassign to iter variable").to_string(),
+                        None,
+                    );
+                }
+                _ => {}
+            }
         }
     }
 

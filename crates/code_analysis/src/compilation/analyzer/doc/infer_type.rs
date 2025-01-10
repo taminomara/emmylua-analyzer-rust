@@ -158,15 +158,8 @@ fn infer_buildin_or_ref_type(analyzer: &mut DocAnalyzer, name: &str, range: Text
 fn infer_generic_type(analyzer: &mut DocAnalyzer, generic_type: LuaDocGenericType) -> LuaType {
     if let Some(name_type) = generic_type.get_name_type() {
         if let Some(name) = name_type.get_name_text() {
-            if name == "table" {
-                let mut types = Vec::new();
-                if let Some(generic_decl_list) = generic_type.get_generic_types() {
-                    for param in generic_decl_list.get_types() {
-                        let param_type = infer_type(analyzer, param);
-                        types.push(param_type);
-                    }
-                }
-                return LuaType::TableGeneric(types.into());
+            if let Some(typ) = infer_special_generic_type(analyzer, &name, &generic_type) {
+                return typ;
             }
 
             let id = if let Some(name_type_decl) = analyzer
@@ -195,6 +188,35 @@ fn infer_generic_type(analyzer: &mut DocAnalyzer, generic_type: LuaDocGenericTyp
     }
 
     LuaType::Unknown
+}
+
+fn infer_special_generic_type(
+    analyzer: &mut DocAnalyzer,
+    name: &str,
+    generic_type: &LuaDocGenericType,
+) -> Option<LuaType> {
+    match name {
+        "table" => {
+            let mut types = Vec::new();
+            if let Some(generic_decl_list) = generic_type.get_generic_types() {
+                for param in generic_decl_list.get_types() {
+                    let param_type = infer_type(analyzer, param);
+                    types.push(param_type);
+                }
+            }
+            return Some(LuaType::TableGeneric(types.into()));
+        }
+        "namespace" => {
+            let first_doc_param_type = generic_type.get_generic_types()?.get_types().next()?;
+            let first_param = infer_type(analyzer, first_doc_param_type);
+            if let LuaType::DocStringConst(ns_str) = first_param {
+                return Some(LuaType::Namespace(ns_str));
+            }
+        }
+        _ => {}
+    }
+
+    None
 }
 
 fn infer_binary_type(analyzer: &mut DocAnalyzer, binary_type: LuaDocBinaryType) -> LuaType {

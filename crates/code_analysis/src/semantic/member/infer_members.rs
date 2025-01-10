@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use crate::{
     semantic::{instantiate::instantiate_type, InferGuard},
-    DbIndex, LuaExistFieldType, LuaGenericType, LuaInstanceType, LuaIntersectionType, LuaMemberKey,
-    LuaMemberOwner, LuaObjectType, LuaPropertyOwnerId, LuaTupleType, LuaType, LuaTypeDeclId,
-    LuaUnionType, TypeAssertion,
+    DbIndex, FileId, LuaExistFieldType, LuaGenericType, LuaInstanceType, LuaIntersectionType,
+    LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaPropertyOwnerId, LuaTupleType, LuaType,
+    LuaTypeDeclId, LuaUnionType, TypeAssertion,
 };
 
 use super::{get_buildin_type_map_type_id, InferMembersResult, LuaMemberInfo};
@@ -46,6 +46,7 @@ fn infer_members_guard(
         LuaType::ExistField(exist_field) => infer_exist_field_members(db, exist_field),
         LuaType::Global => infer_global_members(db),
         LuaType::Instance(inst) => infer_instance_members(db, inst, infer_guard),
+        LuaType::Namespace(ns) => infer_namespace_members(db, ns),
         _ => None,
     }
 }
@@ -275,6 +276,35 @@ fn infer_instance_members(
     let origin_type = inst.get_base();
     if let Some(origin_members) = infer_members_guard(db, origin_type, infer_guard) {
         members.extend(origin_members);
+    }
+
+    Some(members)
+}
+
+fn infer_namespace_members(db: &DbIndex, ns: &str) -> InferMembersResult {
+    let mut members = Vec::new();
+
+    let prefix = format!("{}.", ns);
+    let type_index = db.get_type_index();
+    let type_decl_id_map = type_index.find_type_decls(FileId::VIRTUAL, &prefix);
+    for (name, type_decl_id) in type_decl_id_map {
+        if let Some(type_decl_id) = type_decl_id {
+            let typ = LuaType::Def(type_decl_id.clone());
+            let property_owner_id = LuaPropertyOwnerId::TypeDecl(type_decl_id);
+            members.push(LuaMemberInfo {
+                property_owner_id: Some(property_owner_id),
+                key: LuaMemberKey::Name(name.into()),
+                typ,
+                origin_typ: None,
+            });
+        } else {
+            members.push(LuaMemberInfo {
+                property_owner_id: None,
+                key: LuaMemberKey::Name(name.clone().into()),
+                typ: LuaType::Namespace(format!("{}.{}", ns, &name).into()),
+                origin_typ: None,
+            });
+        }
     }
 
     Some(members)
