@@ -53,6 +53,9 @@ fn infer_type_compact(
         (_, LuaType::Instance(right)) => {
             infer_type_compact(db, config, source, &right.get_base(), infer_guard)
         }
+        (_, LuaType::ExistField(right)) => {
+            infer_type_compact(db, config, source, &right.get_origin(), infer_guard)
+        }
         (LuaType::BooleanConst(_), _) => compact_type.is_boolean(),
         (LuaType::IntegerConst(_), _) => compact_type.is_number(),
         (LuaType::StringConst(_), _) => compact_type.is_string(),
@@ -205,10 +208,17 @@ fn infer_custom_type_compact(
                 return Some(true);
             }
         } else {
-            if let Some(member_id) = member_map.get(&const_value) {
+            let compact_type = match const_value {
+                LuaMemberKey::Name(name) => LuaType::StringConst(name),
+                LuaMemberKey::Integer(i) => LuaType::IntegerConst(i),
+                LuaMemberKey::None => return None,
+            };
+
+            for (_, member_id) in member_map {
                 let member = db.get_member_index().get_member(member_id)?;
                 let member_type = member.get_decl_type();
-                if infer_type_compact(db, config, member_type, compact_type, infer_guard) {
+
+                if member_type == &compact_type {
                     return Some(true);
                 }
             }
@@ -286,7 +296,7 @@ fn infer_custom_type_compact_table(
         }
     }
 
-    Some(false)
+    Some(true)
 }
 
 fn escape_alias(db: &DbIndex, type_id: &LuaTypeDeclId) -> Option<LuaType> {
