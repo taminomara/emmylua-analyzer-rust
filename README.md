@@ -1,6 +1,6 @@
 # EmmyLuaAnalyzer-Rust
 
-This project is in its early stages but already offers basic functionality. Future development will focus on expanding features, improving stability, and refining its overall usability. Your feedback and contributions are welcome to help shape its direction.
+We welcome your feedback and contributions. Please feel free to submit pull requests (PRs) and report issues to help shape the project's direction.
 
 ## crates
 
@@ -17,8 +17,9 @@ This project is in its early stages but already offers basic functionality. Futu
 
 ## Documentation
 
-- [emmyrc config](./docs/config/emmyrc_json_EN.md)
-- [formatting config](https://github.com/CppCXY/EmmyLuaCodeStyle/blob/master/README_EN.md)
+- [Features](./docs/features/features_EN.md)
+- [Emmyrc Config](./docs/config/emmyrc_json_EN.md)
+- [Formatting Config](https://github.com/CppCXY/EmmyLuaCodeStyle/blob/master/README_EN.md)
 
 ## Build
 

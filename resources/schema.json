@@ -186,10 +186,10 @@
           ]
         },
         {
-          "description": "Type not match",
+          "description": "Param Type not match",
           "type": "string",
           "enum": [
-            "type-not-match"
+            "param-type-not-match"
           ]
         },
         {
@@ -267,6 +267,13 @@
           "type": "string",
           "enum": [
             "local-const-reassign"
+          ]
+        },
+        {
+          "description": "Iter variable reassign",
+          "type": "string",
+          "enum": [
+            "iter-variable-reassign"
           ]
         },
         {
