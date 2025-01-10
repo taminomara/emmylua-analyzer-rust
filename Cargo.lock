@@ -335,6 +335,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "emmylua_doc_cli"
+version = "0.1.0"
+dependencies = [
+ "code_analysis",
+ "emmylua_parser",
+ "lsp-types",
+ "rowan",
+ "serde",
+ "serde_json",
+ "structopt",
+ "walkdir",
+]
+
+[[package]]
 name = "emmylua_ls"
 version = "0.2.0"
 dependencies = [
