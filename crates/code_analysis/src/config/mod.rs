@@ -14,6 +14,7 @@ use configs::{
     EmmyrcStrict, EmmyrcWorkspace,
 };
 use emmylua_parser::{LuaLanguageLevel, ParserConfig};
+use regex::Regex;
 use rowan::NodeCache;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -118,6 +119,22 @@ fn pre_process_path(path: &str, workspace: &PathBuf) -> String {
             .to_string();
     }
 
-    path = path.replace("${workspaceFolder}", &workspace.to_string_lossy());
+    path = path.replace("$", "");
+    path = replace_placeholders(&path, workspace.to_str().unwrap());
     path
+}
+
+fn replace_placeholders(input: &str, workspace_folder: &str) -> String {
+    let re = Regex::new(r"\{([^}]+)\}").unwrap();
+    re.replace_all(input, |caps: &regex::Captures| {
+        let key = &caps[1];
+        if key == "workspaceFolder" {
+            workspace_folder.to_string()
+        } else if let Some(env_name) = key.strip_prefix("env:") {
+            std::env::var(env_name).unwrap_or_default()
+        } else {
+            caps[0].to_string()
+        }
+    })
+    .to_string()
 }
