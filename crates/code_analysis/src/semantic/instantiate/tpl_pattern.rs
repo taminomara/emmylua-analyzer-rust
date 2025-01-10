@@ -5,7 +5,7 @@ use internment::ArcIntern;
 
 use crate::{
     db_index::{DbIndex, LuaGenericType, LuaType},
-    semantic::{infer_expr, LuaInferConfig},
+    semantic::{infer_expr, LuaInferConfig}, LuaUnionType,
 };
 
 #[allow(unused)]
@@ -44,6 +44,9 @@ pub fn tpl_pattern_match(
         }
         LuaType::Generic(generic) => {
             generic_tpl_pattern_match(db, config, root, generic, target, result);
+        }
+        LuaType::Union(union) => {
+            union_tpl_pattern_match(db, config, root, union, target, result);
         }
         _ => {}
     }
@@ -142,6 +145,21 @@ fn generic_tpl_pattern_match(
             }
         }
         _ => {}
+    }
+
+    Some(())
+}
+
+fn union_tpl_pattern_match(
+    db: &DbIndex,
+    config: &mut LuaInferConfig,
+    root: &LuaSyntaxNode,
+    union: &LuaUnionType,
+    target: &LuaType,
+    result: &mut HashMap<usize, LuaType>,
+) -> Option<()> {
+    for u in union.get_types() {
+        tpl_pattern_match(db, config, root, u, target, result);
     }
 
     Some(())
