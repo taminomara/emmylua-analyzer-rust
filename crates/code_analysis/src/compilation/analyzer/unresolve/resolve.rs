@@ -32,9 +32,9 @@ pub fn try_resolve_decl(
 pub fn try_resolve_member(
     db: &mut DbIndex,
     config: &mut LuaInferConfig,
-    member: &mut UnResolveMember,
+    unresolve_member: &mut UnResolveMember,
 ) -> Option<bool> {
-    if let Some(prefix_expr) = &member.prefix {
+    if let Some(prefix_expr) = &unresolve_member.prefix {
         let prefix_type = infer_expr(db, config, prefix_expr.clone())?;
         let member_owner = match prefix_type {
             LuaType::TableConst(in_file_range) => LuaMemberOwner::Element(in_file_range),
@@ -52,23 +52,23 @@ pub fn try_resolve_member(
                 return None;
             }
         };
-        let member_id = member.member_id.clone();
+        let member_id = unresolve_member.member_id.clone();
         db.get_member_index_mut()
             .add_member_owner(member_owner, member_id);
-        member.prefix = None;
+        unresolve_member.prefix = None;
     }
 
-    let expr = member.expr.clone();
+    let expr = unresolve_member.expr.clone();
     let expr_type = infer_expr(db, config, expr)?;
     let expr_type = match &expr_type {
         LuaType::MuliReturn(multi) => multi
-            .get_type(member.ret_idx)
+            .get_type(unresolve_member.ret_idx)
             .cloned()
             .unwrap_or(LuaType::Unknown),
         _ => expr_type,
     };
 
-    let member_id = member.member_id;
+    let member_id = unresolve_member.member_id;
     merge_member_type(db, member_id, expr_type);
     Some(true)
 }

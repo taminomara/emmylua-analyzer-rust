@@ -50,7 +50,7 @@ impl LuaMemberIndex {
         self.owner_members
             .entry(owner)
             .or_insert_with(HashMap::new)
-            .insert(key, id);
+            .entry(key).or_insert(id);
 
         Some(())
     }
