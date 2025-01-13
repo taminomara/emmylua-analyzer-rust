@@ -50,8 +50,14 @@ impl EmmyLuaAnalysis {
                 let std_lib_dir = resource_dir.join("std");
                 self.add_workspace_root(std_lib_dir.clone());
                 let match_pattern = vec!["**/*.lua".to_string()];
-                let files =
-                    load_workspace_files(&std_lib_dir, &match_pattern, &Vec::new(), None).ok()?;
+                let files = load_workspace_files(
+                    &std_lib_dir,
+                    &match_pattern,
+                    &Vec::new(),
+                    &Vec::new(),
+                    None,
+                )
+                .ok()?;
 
                 let files = files.into_iter().map(|file| file.into_tuple()).collect();
                 self.update_files_by_path(files);
@@ -89,10 +95,7 @@ impl EmmyLuaAnalysis {
     }
 
     pub fn get_uri(&self, file_id: FileId) -> Option<Uri> {
-        self.compilation
-            .get_db()
-            .get_vfs()
-            .get_uri(&file_id)
+        self.compilation.get_db().get_vfs().get_uri(&file_id)
     }
 
     pub fn add_workspace_root(&mut self, root: PathBuf) {
@@ -139,7 +142,8 @@ impl EmmyLuaAnalysis {
             }
         }
 
-        self.compilation.remove_index(removed_files.into_iter().collect());
+        self.compilation
+            .remove_index(removed_files.into_iter().collect());
         let updated_files: Vec<FileId> = updated_files.into_iter().collect();
         self.compilation.update_index(updated_files.clone());
         updated_files

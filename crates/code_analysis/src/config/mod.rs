@@ -125,7 +125,6 @@ fn pre_process_path(path: &str, workspace: &PathBuf) -> String {
 
     path = path.replace("$", "");
     path = replace_placeholders(&path, workspace.to_str().unwrap());
-    path = normalize_path(&path).unwrap_or(path.clone());
     path
 }
 
@@ -142,14 +141,4 @@ fn replace_placeholders(input: &str, workspace_folder: &str) -> String {
         }
     })
     .to_string()
-}
-
-fn normalize_path(path: &str) -> Option<String> {
-    let path = PathBuf::from(path).canonicalize().ok()?;
-
-    // for windows long path
-    #[cfg(windows)]
-    let path = path.strip_prefix("\\\\?\\").unwrap_or(&path);
-    let path = path.to_str().map(|s| s.to_string())?;
-    Some(path.replace("\\", "/"))
 }

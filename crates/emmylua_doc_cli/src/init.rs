@@ -12,12 +12,18 @@ pub fn load_workspace(workspace_folders: Vec<&str>) -> Option<EmmyLuaAnalysis> {
         .map(|s| PathBuf::from(s))
         .collect::<Vec<_>>();
     let main_path = paths.get(0)?.clone();
-    let config_files = vec![main_path.join(".luarc.json"), main_path.join(".emmyrc.json")];
+    let config_files = vec![
+        main_path.join(".luarc.json"),
+        main_path.join(".emmyrc.json"),
+    ];
     let emmyrc = Arc::new(load_configs(config_files));
     analysis.update_config(emmyrc);
 
     let file_infos = collect_files(&paths, &analysis.emmyrc);
-    let files = file_infos.into_iter().map(|file| file.into_tuple()).collect();
+    let files = file_infos
+        .into_iter()
+        .map(|file| file.into_tuple())
+        .collect();
     analysis.update_files_by_path(files);
 
     Some(analysis)
@@ -25,7 +31,7 @@ pub fn load_workspace(workspace_folders: Vec<&str>) -> Option<EmmyLuaAnalysis> {
 
 pub fn collect_files(workspaces: &Vec<PathBuf>, emmyrc: &Emmyrc) -> Vec<LuaFileInfo> {
     let mut files = Vec::new();
-    let (match_pattern, exclude) = calculate_include_and_exclude(emmyrc);
+    let (match_pattern, exclude, exclude_dir) = calculate_include_and_exclude(emmyrc);
 
     let encoding = &emmyrc.workspace.encoding;
 
@@ -34,25 +40,31 @@ pub fn collect_files(workspaces: &Vec<PathBuf>, emmyrc: &Emmyrc) -> Vec<LuaFileI
         workspaces, match_pattern, exclude
     );
     for workspace in workspaces {
-        let loaded =
-            load_workspace_files(&workspace, &match_pattern, &exclude, Some(encoding)).ok();
+        let loaded = load_workspace_files(
+            &workspace,
+            &match_pattern,
+            &exclude,
+            &exclude_dir,
+            Some(encoding),
+        )
+        .ok();
         if let Some(loaded) = loaded {
             files.extend(loaded);
         }
     }
 
     println!("load files from workspace count: {:?}", files.len());
-    if cfg!(debug_assertions) {
-        for file in &files {
-            println!("loaded file: {:?}", file.path);
-        }
+
+    for file in &files {
+        println!("loaded file: {:?}", file.path);
     }
     files
 }
 
-pub fn calculate_include_and_exclude(emmyrc: &Emmyrc) -> (Vec<String>, Vec<String>) {
+pub fn calculate_include_and_exclude(emmyrc: &Emmyrc) -> (Vec<String>, Vec<String>, Vec<PathBuf>) {
     let mut include = vec!["**/*.lua".to_string()];
     let mut exclude = Vec::new();
+    let mut exclude_dirs = Vec::new();
 
     for extension in &emmyrc.runtime.extensions {
         if extension.starts_with(".") {
@@ -69,7 +81,7 @@ pub fn calculate_include_and_exclude(emmyrc: &Emmyrc) -> (Vec<String>, Vec<Strin
     }
 
     for dir in &emmyrc.workspace.ignore_dir {
-        exclude.push(format!("{}/**", dir));
+        exclude_dirs.push(PathBuf::from(dir));
     }
 
     // remove duplicate
@@ -80,5 +92,5 @@ pub fn calculate_include_and_exclude(emmyrc: &Emmyrc) -> (Vec<String>, Vec<Strin
     exclude.sort();
     exclude.dedup();
 
-    (include, exclude)
+    (include, exclude, exclude_dirs)
 }

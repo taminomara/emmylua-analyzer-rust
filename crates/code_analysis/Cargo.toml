@@ -4,13 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-url = "2.5.2"
 emmylua_parser = { path = "../emmylua_parser" }
 diagnostic_macro = { path = "../diagnostic_macro" }
-globset = "0.4.15"
-percent-encoding = "2.3"
-flagset = "0.4.6"
-encoding_rs = "0.8"
 
 serde.workspace = true
 serde_json.workspace = true
@@ -24,6 +19,11 @@ tokio-util.workspace = true
 rust-i18n.workspace = true
 walkdir.workspace = true
 dirs.workspace = true
+wax.workspace = true
+percent-encoding.workspace = true
+flagset.workspace = true
+encoding_rs.workspace = true
+url.workspace = true
 
 [package.metadata.i18n]
 available-locales = ["en", "zh_CN", "zh_HK", "zh_TW"]
