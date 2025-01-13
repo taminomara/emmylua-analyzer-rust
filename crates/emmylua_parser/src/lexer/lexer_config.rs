@@ -37,6 +37,13 @@ impl LexerConfig {
             LuaLanguageLevel::Lua53 | LuaLanguageLevel::Lua54
         )
     }
+
+    pub fn support_pow_operator(&self) -> bool {
+        matches!(
+            self.language_level,
+            LuaLanguageLevel::Lua53 | LuaLanguageLevel::Lua54 | LuaLanguageLevel::LuaJIT
+        )
+    }
 }
 
 impl Default for LexerConfig {
