@@ -2,7 +2,10 @@ mod docs;
 mod exprs;
 mod stats;
 
-use crate::db_index::{DbIndex, LuaScopeKind};
+use crate::{
+    db_index::{DbIndex, LuaScopeKind},
+    profile::Profile,
+};
 
 use super::AnalyzeContext;
 use emmylua_parser::{LuaAst, LuaAstNode, LuaChunk, LuaSyntaxKind};
@@ -14,6 +17,7 @@ use crate::{
 };
 
 pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
+    let _p = Profile::cond_new("decl analyze", context.tree_list.len() > 1);
     for in_filed_tree in context.tree_list.iter() {
         db.get_reference_index_mut()
             .create_local_reference(in_filed_tree.file_id);

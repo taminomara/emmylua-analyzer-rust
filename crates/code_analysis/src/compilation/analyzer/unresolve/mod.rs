@@ -4,8 +4,7 @@ mod resolve;
 mod resolve_closure_param;
 
 use crate::{
-    db_index::{DbIndex, LuaDeclId, LuaMemberId, LuaSignatureId},
-    FileId,
+    db_index::{DbIndex, LuaDeclId, LuaMemberId, LuaSignatureId}, profile::Profile, FileId
 };
 use emmylua_parser::{LuaCallExpr, LuaExpr};
 use infer_manager::InferManager;
@@ -19,6 +18,7 @@ use resolve_closure_param::try_resolve_closure_params;
 use super::{lua::LuaReturnPoint, AnalyzeContext};
 
 pub fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
+    let _p = Profile::cond_new("resolve analyze", context.tree_list.len() > 1);
     let mut unresolves = std::mem::take(&mut context.unresolves);
     let mut infer_manager = InferManager::new(context.config.clone());
     while try_resolve(db, &mut infer_manager, &mut unresolves) {

@@ -4,6 +4,7 @@ mod db_index;
 mod diagnostic;
 mod semantic;
 mod vfs;
+mod profile;
 
 pub use compilation::*;
 pub use config::*;
@@ -15,6 +16,7 @@ pub use semantic::*;
 use std::{collections::HashSet, env, path::PathBuf, sync::Arc};
 use tokio_util::sync::CancellationToken;
 pub use vfs::*;
+pub use profile::Profile;
 
 #[macro_use]
 extern crate rust_i18n;

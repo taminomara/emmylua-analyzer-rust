@@ -13,14 +13,13 @@ use stats::{
 };
 
 use crate::{
-    db_index::{DbIndex, LuaType},
-    semantic::{infer_expr, LuaInferConfig},
-    FileId,
+    db_index::{DbIndex, LuaType}, profile::Profile, semantic::{infer_expr, LuaInferConfig}, FileId
 };
 
 use super::{unresolve::UnResolve, AnalyzeContext};
 
 pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
+    let _p = Profile::cond_new("lua analyze", context.tree_list.len() > 1);
     let tree_list = context.tree_list.clone();
     for in_filed_tree in &tree_list {
         let root = &in_filed_tree.value;

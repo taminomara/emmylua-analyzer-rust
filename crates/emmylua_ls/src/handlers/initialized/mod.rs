@@ -13,7 +13,7 @@ use crate::{
 };
 use client_config::get_client_config;
 pub use client_config::ClientConfig;
-use code_analysis::{uri_to_file_path, EmmyLuaAnalysis, Emmyrc, FileId};
+use code_analysis::{uri_to_file_path, EmmyLuaAnalysis, Emmyrc, FileId, Profile};
 use codestyle::load_editorconfig;
 use collect_files::collect_files;
 use log::info;
@@ -147,17 +147,21 @@ pub async fn init_analysis(
     }
 
     let mut count = 0;
-    while let Some(_) = rx.recv().await {
-        count += 1;
+    if file_count != 0 {
+        let text= format!("diagnose {} files", file_count);
+        let _p = Profile::new(text.as_str());
+        while let Some(_) = rx.recv().await {
+            count += 1;
 
-        if client_id.is_vscode() {
-            status_bar.report_progress(
-                format!("diagnostic {}/{}", count, file_count).as_str(),
-                0.75,
-            );
-        }
-        if count == file_count {
-            break;
+            if client_id.is_vscode() {
+                status_bar.report_progress(
+                    format!("diagnostic {}/{}", count, file_count).as_str(),
+                    0.75,
+                );
+            }
+            if count == file_count {
+                break;
+            }
         }
     }
 
