@@ -2,7 +2,6 @@ use emmylua_parser::{
     LuaAstNode, LuaAstToken, LuaClosureExpr, LuaIndexExpr, LuaIndexKey, LuaLiteralExpr,
     LuaLiteralToken, LuaNameExpr, LuaTableExpr,
 };
-use internment::ArcIntern;
 
 use crate::{
     db_index::{LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner},
@@ -175,7 +174,7 @@ pub fn analyze_literal_expr(analyzer: &mut DeclAnalyzer, expr: LuaLiteralExpr) -
 
         analyzer.db.get_reference_index_mut().add_string_reference(
             file_id,
-            ArcIntern::new(value),
+            &value,
             string_token.get_range(),
         );
     }

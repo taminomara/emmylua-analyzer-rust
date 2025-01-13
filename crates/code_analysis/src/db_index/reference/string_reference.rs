@@ -1,10 +1,10 @@
-use internment::ArcIntern;
 use rowan::TextRange;
+use smol_str::SmolStr;
 use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct StringReference {
-    string_references: HashMap<ArcIntern<String>, Vec<TextRange>>,
+    string_references: HashMap<SmolStr, Vec<TextRange>>,
 }
 
 impl StringReference {
@@ -14,14 +14,14 @@ impl StringReference {
         }
     }
 
-    pub fn add_string_reference(&mut self, string: ArcIntern<String>, range: TextRange) {
+    pub fn add_string_reference(&mut self, string: &str, range: TextRange) {
         self.string_references
-            .entry(string)
+            .entry(SmolStr::new(string))
             .or_insert_with(Vec::new)
             .push(range);
     }
 
-    pub fn get_string_references(&self, string: &ArcIntern<String>) -> Vec<TextRange> {
+    pub fn get_string_references(&self, string: &str) -> Vec<TextRange> {
         self.string_references
             .get(string)
             .cloned()
