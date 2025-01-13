@@ -12,7 +12,7 @@ pub use diagnostic::*;
 use log::{error, info};
 use lsp_types::Uri;
 pub use semantic::*;
-use std::{env, path::PathBuf, sync::Arc};
+use std::{collections::HashSet, env, path::PathBuf, sync::Arc};
 use tokio_util::sync::CancellationToken;
 pub use vfs::*;
 
@@ -124,8 +124,8 @@ impl EmmyLuaAnalysis {
     }
 
     pub fn update_files_by_uri(&mut self, files: Vec<(Uri, Option<String>)>) -> Vec<FileId> {
-        let mut removed_files = Vec::new();
-        let mut updated_files = Vec::new();
+        let mut removed_files = HashSet::new();
+        let mut updated_files = HashSet::new();
         for (uri, text) in files {
             let is_new_text = text.is_some();
             let file_id = self
@@ -133,13 +133,14 @@ impl EmmyLuaAnalysis {
                 .get_db_mut()
                 .get_vfs_mut()
                 .set_file_content(&uri, text);
-            removed_files.push(file_id);
+            removed_files.insert(file_id);
             if is_new_text {
-                updated_files.push(file_id);
+                updated_files.insert(file_id);
             }
         }
 
-        self.compilation.remove_index(removed_files);
+        self.compilation.remove_index(removed_files.into_iter().collect());
+        let updated_files: Vec<FileId> = updated_files.into_iter().collect();
         self.compilation.update_index(updated_files.clone());
         updated_files
     }

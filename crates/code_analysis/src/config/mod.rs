@@ -117,6 +117,10 @@ fn pre_process_path(path: &str, workspace: &PathBuf) -> String {
             .join(path.trim_start_matches('/'))
             .to_string_lossy()
             .to_string();
+    } else if PathBuf::from(&path).is_absolute() {
+        path = path.to_string();
+    } else {
+        path = workspace.join(&path).to_string_lossy().to_string();
     }
 
     path = path.replace("$", "");
