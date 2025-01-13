@@ -22,7 +22,7 @@ mod tests {
         let id_another = vfs.get_file_id(&uri).unwrap();
         assert_eq!(id_another, id);
         let uri2 = Uri::from_str("file:///C:/Users/username/Documents/test2.lua").unwrap();
-        
+
         let id2 = vfs.file_id(&uri2);
         assert_eq!(id2.id, 1);
         assert!(id2 != id);
@@ -73,7 +73,9 @@ mod tests {
             let windows_path = Path::new("C:\\Users\\username\\Documents\\test.lua");
             assert_eq!(path2, windows_path);
 
-            let uri = Uri::from_str("file:///c%3A/Users//username/Desktop/learn/test%20main/test.lua").unwrap();
+            let uri =
+                Uri::from_str("file:///c%3A/Users//username/Desktop/learn/test%20main/test.lua")
+                    .unwrap();
             let path = uri_to_file_path(&uri).unwrap();
             let path2 = Path::new("C:/Users//username/Desktop/learn/test main/test.lua");
             assert_eq!(path, path2);
@@ -82,13 +84,16 @@ mod tests {
 
     #[test]
     fn test_relative_path() {
-        let worksapce = Path::new("C:/Users\\username/Documents");
-        let uri = Uri::from_str("file:///C:/Users/username/Documents/test.lua").unwrap();
-        let file_path = uri_to_file_path(&uri).unwrap();
-        let relative_path = file_path.strip_prefix(worksapce).unwrap();
-        assert_eq!(relative_path, Path::new("test.lua"));
-        let file_path2 = Path::new("C:\\Users\\username/Documents\\test.lua");
-        let relative_path2 = file_path2.strip_prefix(worksapce).unwrap();
-        assert_eq!(relative_path2, Path::new("test.lua"));
+        #[cfg(windows)]
+        {
+            let worksapce = Path::new("C:/Users\\username/Documents");
+            let uri = Uri::from_str("file:///C:/Users/username/Documents/test.lua").unwrap();
+            let file_path = uri_to_file_path(&uri).unwrap();
+            let relative_path = file_path.strip_prefix(worksapce).unwrap();
+            assert_eq!(relative_path, Path::new("test.lua"));
+            let file_path2 = Path::new("C:\\Users\\username/Documents\\test.lua");
+            let relative_path2 = file_path2.strip_prefix(worksapce).unwrap();
+            assert_eq!(relative_path2, Path::new("test.lua"));
+        }
     }
 }
