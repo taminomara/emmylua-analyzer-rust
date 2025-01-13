@@ -7,6 +7,7 @@ use emmylua_parser::{LuaSyntaxId, LuaSyntaxKind};
 use internment::ArcIntern;
 use local_reference::LocalReference;
 use rowan::TextRange;
+use smol_str::SmolStr;
 use string_reference::StringReference;
 
 use crate::{FileId, InFiled};
@@ -36,10 +37,10 @@ impl LuaReferenceIndex {
             .add_local_reference(decl_id, range);
     }
 
-    pub fn add_global_reference(&mut self, name: String, file_id: FileId, range: TextRange) {
-        let key = ArcIntern::new(name);
+    pub fn add_global_reference(&mut self, name: &str, file_id: FileId, range: TextRange) {
+        let key = SmolStr::new(name);
         self.index_reference
-            .entry(LuaMemberKey::Name(key.clone()))
+            .entry(LuaMemberKey::Name(key))
             .or_insert_with(HashMap::new)
             .entry(file_id)
             .or_insert_with(HashSet::new)
@@ -113,9 +114,10 @@ impl LuaReferenceIndex {
         name: &str,
         file_id: FileId,
     ) -> Option<Vec<TextRange>> {
+        let key = SmolStr::new(name);
         let results = self
             .index_reference
-            .get(&LuaMemberKey::Name(ArcIntern::new(name.to_string())))?
+            .get(&LuaMemberKey::Name(key))?
             .iter()
             .filter_map(|(key_file_id, syntax_ids)| {
                 if *key_file_id == file_id {

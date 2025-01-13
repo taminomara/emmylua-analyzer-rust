@@ -2,6 +2,7 @@ use std::{collections::HashMap, hash::Hash, sync::Arc};
 
 use internment::ArcIntern;
 use rowan::TextRange;
+use smol_str::SmolStr;
 
 use crate::{
     db_index::{LuaMemberKey, LuaSignatureId},
@@ -27,13 +28,13 @@ pub enum LuaType {
     SelfInfer,
     Global,
     BooleanConst(bool),
-    StringConst(ArcIntern<String>),
+    StringConst(ArcIntern<SmolStr>),
     IntegerConst(i64),
     FloatConst(f64),
     TableConst(InFiled<TextRange>),
     Ref(LuaTypeDeclId),
     Def(LuaTypeDeclId),
-    Module(ArcIntern<String>),
+    Module(ArcIntern<SmolStr>),
     Array(Arc<LuaType>),
     KeyOf(Arc<LuaType>),
     Nullable(Arc<LuaType>),
@@ -52,9 +53,9 @@ pub enum LuaType {
     Signature(LuaSignatureId),
     Instance(Arc<LuaInstanceType>),
     FuncTplRef(Arc<GenericTpl>),
-    DocStringConst(ArcIntern<String>),
+    DocStringConst(ArcIntern<SmolStr>),
     DocIntergerConst(i64),
-    Namespace(ArcIntern<String>),
+    Namespace(ArcIntern<SmolStr>),
 }
 
 impl PartialEq for LuaType {
@@ -467,7 +468,7 @@ impl From<LuaFunctionType> for LuaType {
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum LuaIndexAccessKey {
     Integer(i64),
-    String(ArcIntern<String>),
+    String(SmolStr),
     Type(LuaType),
 }
 
@@ -735,8 +736,8 @@ impl LuaExistFieldType {
     }
 }
 
-impl From<ArcIntern<String>> for LuaType {
-    fn from(s: ArcIntern<String>) -> Self {
+impl From<SmolStr> for LuaType {
+    fn from(s: SmolStr) -> Self {
         let str: &str = s.as_ref();
         match str {
             "nil" => LuaType::Nil,
@@ -751,7 +752,7 @@ impl From<ArcIntern<String>> for LuaType {
             "io" => LuaType::Io,
             "global" => LuaType::Global,
             "self" => LuaType::SelfInfer,
-            _ => LuaType::Ref(LuaTypeDeclId::new_by_id(s)),
+            _ => LuaType::Ref(LuaTypeDeclId::new_by_id(s.into())),
         }
     }
 }

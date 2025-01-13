@@ -13,7 +13,7 @@ use super::DeclAnalyzer;
 
 pub fn analyze_name_expr(analyzer: &mut DeclAnalyzer, expr: LuaNameExpr) -> Option<()> {
     let name_token = expr.get_name_token()?;
-    let name = name_token.get_name_text().to_string();
+    let name = name_token.get_name_text();
     // donot analyze self here
     if name == "self" {
         return Some(());

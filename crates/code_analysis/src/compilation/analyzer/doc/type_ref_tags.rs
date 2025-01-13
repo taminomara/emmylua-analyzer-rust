@@ -3,6 +3,7 @@ use emmylua_parser::{
     LuaDocTagCast, LuaDocTagModule, LuaDocTagOverload, LuaDocTagParam, LuaDocTagReturn,
     LuaDocTagType, LuaExpr, LuaLocalName, LuaNameToken, LuaVarExpr,
 };
+use smol_str::SmolStr;
 
 use crate::{
     db_index::{
@@ -210,8 +211,8 @@ pub fn analyze_overload(analyzer: &mut DocAnalyzer, tag: LuaDocTagOverload) -> O
 }
 
 pub fn analyze_module(analyzer: &mut DocAnalyzer, tag: LuaDocTagModule) -> Option<()> {
-    let module_path = tag.get_string_token()?.get_value().to_string();
-    let decl_type = LuaType::Module(module_path.into());
+    let module_path = tag.get_string_token()?.get_value();
+    let decl_type = LuaType::Module(SmolStr::new(module_path).into());
     if let Some(owner) = get_owner_id(analyzer) {
         match owner {
             LuaPropertyOwnerId::LuaDecl(decl_id) => {

@@ -184,11 +184,11 @@ impl<'a> DeclAnalyzer<'a> {
         if is_global {
             self.db
                 .get_decl_index_mut()
-                .add_global_decl(name.clone(), id);
+                .add_global_decl(&name, id);
 
             self.db
                 .get_reference_index_mut()
-                .add_global_reference(name, file_id, range);
+                .add_global_reference(&name, file_id, range);
         }
 
         self.db

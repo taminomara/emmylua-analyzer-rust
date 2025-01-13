@@ -1,7 +1,7 @@
 use emmylua_parser::{LuaDocFieldKey, LuaIndexKey, LuaSyntaxId};
-use internment::ArcIntern;
 use rowan::TextRange;
 use serde::{Deserialize, Serialize};
+use smol_str::SmolStr;
 
 use crate::{
     db_index::{LuaType, LuaTypeDeclId},
@@ -120,7 +120,7 @@ impl LuaMemberOwner {
 pub enum LuaMemberKey {
     None,
     Integer(i64),
-    Name(ArcIntern<String>),
+    Name(SmolStr),
 }
 
 impl LuaMemberKey {
@@ -154,7 +154,7 @@ impl LuaMemberKey {
 impl From<LuaIndexKey> for LuaMemberKey {
     fn from(key: LuaIndexKey) -> Self {
         match key {
-            LuaIndexKey::Name(name) => LuaMemberKey::Name(name.get_name_text().to_string().into()),
+            LuaIndexKey::Name(name) => LuaMemberKey::Name(name.get_name_text().into()),
             LuaIndexKey::String(str) => LuaMemberKey::Name(str.get_value().into()),
             LuaIndexKey::Integer(i) => LuaMemberKey::Integer(i.get_int_value()),
             _ => LuaMemberKey::None,

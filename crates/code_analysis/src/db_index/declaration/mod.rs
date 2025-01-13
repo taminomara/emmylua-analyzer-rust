@@ -3,13 +3,12 @@ mod decl_tree;
 mod scope;
 mod test;
 
-
-use std::collections::HashMap;
+pub use decl::LuaDeclExtra;
 pub use decl::{LocalAttribute, LuaDecl, LuaDeclId};
 pub use decl_tree::{LuaDeclOrMemberId, LuaDeclarationTree};
-pub use decl::LuaDeclExtra;
-use internment::ArcIntern;
 pub use scope::{LuaScope, LuaScopeId, LuaScopeKind, ScopeOrDeclId};
+use smol_str::SmolStr;
+use std::collections::HashMap;
 
 use crate::FileId;
 
@@ -29,10 +28,10 @@ impl LuaDeclIndex {
         }
     }
 
-    pub fn add_global_decl(&mut self, name: String, decl_id: LuaDeclId) {
-        let key = ArcIntern::new(name);
+    pub fn add_global_decl(&mut self, name: &str, decl_id: LuaDeclId) {
+        let key = SmolStr::new(name);
         self.global_decl
-            .entry(LuaMemberKey::Name(key.clone()))
+            .entry(LuaMemberKey::Name(key))
             .or_insert_with(Vec::new)
             .push(decl_id);
     }
@@ -116,7 +115,6 @@ impl LuaDeclIndex {
 
         decls
     }
-
 }
 
 impl LuaIndex for LuaDeclIndex {

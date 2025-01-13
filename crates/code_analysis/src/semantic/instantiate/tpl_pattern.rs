@@ -1,7 +1,7 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Deref};
 
 use emmylua_parser::{LuaAstNode, LuaSyntaxId, LuaSyntaxNode, LuaTableExpr};
-use internment::ArcIntern;
+use smol_str::SmolStr;
 
 use crate::{
     db_index::{DbIndex, LuaGenericType, LuaType},
@@ -25,9 +25,9 @@ pub fn tpl_pattern_match(
             LuaType::StringConst(s) => {
                 let prefix = str_tpl.get_prefix();
                 let type_name = if prefix.is_empty() {
-                    s.clone()
+                    s.deref().clone()
                 } else {
-                    ArcIntern::new(format!("{}{}", prefix, s))
+                    SmolStr::new(format!("{}{}", prefix, s))
                 };
                 result.insert(str_tpl.get_usize(), type_name.into());
             }

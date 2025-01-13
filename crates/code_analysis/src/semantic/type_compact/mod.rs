@@ -1,6 +1,8 @@
 mod func_type;
 mod sub_type;
 
+use std::ops::Deref;
+
 use func_type::infer_doc_func_type_compact;
 
 use crate::db_index::{
@@ -194,7 +196,7 @@ fn infer_custom_type_compact(
 
                 return None;
             }
-            LuaType::StringConst(s) => LuaMemberKey::Name(s.clone()),
+            LuaType::StringConst(s) => LuaMemberKey::Name(s.deref().clone()),
             LuaType::IntegerConst(i) => LuaMemberKey::Integer(*i),
             _ => return None,
         };
@@ -209,7 +211,7 @@ fn infer_custom_type_compact(
             }
         } else {
             let compact_type = match const_value {
-                LuaMemberKey::Name(name) => LuaType::StringConst(name),
+                LuaMemberKey::Name(name) => LuaType::StringConst(name.into()),
                 LuaMemberKey::Integer(i) => LuaType::IntegerConst(i),
                 LuaMemberKey::None => return None,
             };

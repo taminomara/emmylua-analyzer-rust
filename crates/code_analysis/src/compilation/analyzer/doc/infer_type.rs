@@ -6,6 +6,7 @@ use emmylua_parser::{
     LuaTypeBinaryOperator, LuaTypeUnaryOperator, LuaVarExpr,
 };
 use rowan::TextRange;
+use smol_str::SmolStr;
 
 use crate::{
     db_index::{
@@ -51,7 +52,7 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
             if let Some(literal_token) = literal.get_literal() {
                 match literal_token {
                     LuaLiteralToken::String(str_token) => {
-                        return LuaType::DocStringConst(str_token.get_value().into())
+                        return LuaType::DocStringConst(SmolStr::new(str_token.get_value()).into())
                     }
                     LuaLiteralToken::Number(number_token) => {
                         if number_token.is_int() {

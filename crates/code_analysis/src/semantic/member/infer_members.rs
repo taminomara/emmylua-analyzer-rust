@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use smol_str::SmolStr;
+
 use crate::{
     semantic::{instantiate::instantiate_type, InferGuard},
     DbIndex, FileId, LuaExistFieldType, LuaGenericType, LuaInstanceType, LuaIntersectionType,
@@ -301,7 +303,7 @@ fn infer_namespace_members(db: &DbIndex, ns: &str) -> InferMembersResult {
             members.push(LuaMemberInfo {
                 property_owner_id: None,
                 key: LuaMemberKey::Name(name.clone().into()),
-                typ: LuaType::Namespace(format!("{}.{}", ns, &name).into()),
+                typ: LuaType::Namespace(SmolStr::new(format!("{}.{}", ns, &name)).into()),
                 origin_typ: None,
             });
         }

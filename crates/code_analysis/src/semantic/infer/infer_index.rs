@@ -3,6 +3,7 @@ use emmylua_parser::{
     LuaTableExpr, LuaVarExpr,
 };
 use rowan::TextRange;
+use smol_str::SmolStr;
 
 use crate::{
     db_index::{
@@ -736,5 +737,5 @@ fn infer_namespace_member(
         return Some(LuaType::Def(type_id));
     }
 
-    return Some(LuaType::Namespace(namespace_or_type_id.into()));
+    return Some(LuaType::Namespace(SmolStr::new(namespace_or_type_id).into()));
 }

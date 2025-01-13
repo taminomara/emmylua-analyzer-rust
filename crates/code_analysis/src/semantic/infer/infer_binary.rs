@@ -1,4 +1,5 @@
 use emmylua_parser::{BinaryOperator, LuaBinaryExpr};
+use smol_str::SmolStr;
 
 use crate::db_index::{DbIndex, LuaOperatorMetaMethod, LuaType, TypeAssertion};
 
@@ -320,13 +321,19 @@ fn infer_binary_expr_concat(db: &DbIndex, left: LuaType, right: LuaType) -> Infe
     if left.is_number() || left.is_string() || right.is_number() || right.is_string() {
         match (&left, &right) {
             (LuaType::StringConst(s1), LuaType::StringConst(s2)) => {
-                return Some(LuaType::StringConst(format!("{}{}", *s1, *s2).into()));
+                return Some(LuaType::StringConst(
+                    SmolStr::new(format!("{}{}", s1.as_str(), s2.as_str())).into(),
+                ));
             }
             (LuaType::StringConst(s1), LuaType::IntegerConst(i)) => {
-                return Some(LuaType::StringConst(format!("{}{}", *s1, i).into()));
+                return Some(LuaType::StringConst(
+                    SmolStr::new(format!("{}{}", s1.as_str(), i)).into(),
+                ));
             }
             (LuaType::IntegerConst(i), LuaType::StringConst(s2)) => {
-                return Some(LuaType::StringConst(format!("{}{}", i, *s2).into()));
+                return Some(LuaType::StringConst(
+                    SmolStr::new(format!("{}{}", i, s2.as_str())).into(),
+                ));
             }
             _ => return Some(LuaType::String),
         }

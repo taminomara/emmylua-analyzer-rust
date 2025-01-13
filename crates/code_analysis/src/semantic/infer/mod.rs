@@ -16,6 +16,7 @@ use infer_index::infer_index_expr;
 use infer_name::infer_name_expr;
 use infer_table::infer_table_expr;
 use infer_unary::infer_unary_expr;
+use smol_str::SmolStr;
 
 use crate::{
     db_index::{DbIndex, LuaOperator, LuaOperatorMetaMethod, LuaSignatureId, LuaType},
@@ -69,7 +70,7 @@ fn infer_literal_expr(expr: LuaLiteralExpr) -> InferResult {
                 Some(LuaType::Number)
             }
         }
-        LuaLiteralToken::String(str) => Some(LuaType::StringConst(str.get_value().into())),
+        LuaLiteralToken::String(str) => Some(LuaType::StringConst(SmolStr::new(str.get_value()).into())),
     }
 }
 

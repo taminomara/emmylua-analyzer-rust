@@ -2,6 +2,7 @@ use flagset::{flags, FlagSet};
 use internment::ArcIntern;
 use rowan::TextRange;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use smol_str::SmolStr;
 
 use crate::{db_index::LuaMemberId, FileId};
 
@@ -196,18 +197,18 @@ impl LuaTypeDecl {
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
 pub struct LuaTypeDeclId {
-    id: ArcIntern<String>,
+    id: ArcIntern<SmolStr>,
 }
 
 impl LuaTypeDeclId {
     #[allow(unused)]
-    pub fn new_by_id(id: ArcIntern<String>) -> Self {
+    pub fn new_by_id(id: ArcIntern<SmolStr>) -> Self {
         Self { id }
     }
 
     pub fn new(str: &str) -> Self {
         Self {
-            id: ArcIntern::new(str.to_string()),
+            id: ArcIntern::new(SmolStr::new(str)),
         }
     }
 
@@ -232,7 +233,7 @@ impl<'de> Deserialize<'de> for LuaTypeDeclId {
     {
         let s = String::deserialize(deserializer)?;
         Ok(LuaTypeDeclId {
-            id: ArcIntern::new(s),
+            id: ArcIntern::new(SmolStr::new(s)),
         })
     }
 }

@@ -6,7 +6,7 @@ use emmylua_parser::{
 };
 use infer_expr_property_owner::infer_expr_property_owner;
 
-use crate::{DbIndex, LuaDecl, LuaDeclExtra, LuaDeclId, LuaMemberId, LuaPropertyOwnerId, LuaType};
+use crate::{DbIndex, LuaDeclExtra, LuaDeclId, LuaMemberId, LuaPropertyOwnerId, LuaType};
 
 use super::{infer_expr, LuaInferConfig};
 
@@ -38,9 +38,7 @@ pub fn infer_token_semantic_info(
             let decl_id = LuaDeclId::new(file_id, token.text_range().start());
             let decl = db.get_decl_index().get_decl(&decl_id)?;
             match &decl.extra {
-                LuaDeclExtra::Param {
-                    idx, signature_id
-                } => {
+                LuaDeclExtra::Param { idx, signature_id } => {
                     let signature = db.get_signature_index().get(&signature_id)?;
                     let param_info = signature.get_param_info_by_id(*idx)?;
                     let mut typ = param_info.type_ref.clone();
