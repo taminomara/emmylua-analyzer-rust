@@ -8,7 +8,13 @@ use crate::{db_index::LuaType, FileId};
 pub struct LuaInferConfig {
     require_function: HashSet<String>,
     file_id: FileId,
-    expr_type_cache: HashMap<LuaSyntaxId, LuaType>,
+    expr_type_cache: HashMap<LuaSyntaxId, ExprCache>,
+}
+
+#[derive(Debug)]
+pub enum ExprCache {
+    ReadyCache,
+    Cache(LuaType),
 }
 
 impl LuaInferConfig {
@@ -32,11 +38,15 @@ impl LuaInferConfig {
         self.file_id
     }
 
-    pub fn cache_expr_type(&mut self, syntax_id: LuaSyntaxId, ty: LuaType) {
-        self.expr_type_cache.insert(syntax_id, ty);
+    pub fn mark_ready_cache(&mut self, syntax_id: LuaSyntaxId) {
+        self.expr_type_cache.insert(syntax_id, ExprCache::ReadyCache);
     }
 
-    pub fn get_cache_expr_type(&self, syntax_id: &LuaSyntaxId) -> Option<&LuaType> {
+    pub fn cache_expr_type(&mut self, syntax_id: LuaSyntaxId, ty: LuaType) {
+        self.expr_type_cache.insert(syntax_id, ExprCache::Cache(ty));
+    }
+
+    pub fn get_cache_expr_type(&self, syntax_id: &LuaSyntaxId) -> Option<&ExprCache> {
         self.expr_type_cache.get(syntax_id)
     }
 }

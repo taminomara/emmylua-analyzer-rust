@@ -10,6 +10,7 @@ use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLit
 use infer_binary::infer_binary_expr;
 use infer_call::infer_call_expr;
 pub use infer_call::instantiate_doc_function;
+use infer_config::ExprCache;
 pub use infer_config::LuaInferConfig;
 use infer_index::infer_index_expr;
 use infer_name::infer_name_expr;
@@ -25,8 +26,10 @@ pub type InferResult = Option<LuaType>;
 
 pub fn infer_expr(db: &DbIndex, config: &mut LuaInferConfig, expr: LuaExpr) -> InferResult {
     let syntax_id = expr.get_syntax_id();
-    if let Some(result) = config.get_cache_expr_type(&syntax_id) {
-        return Some(result.clone());
+    match config.get_cache_expr_type(&syntax_id) {
+        Some(ExprCache::Cache(ty)) => return Some(ty.clone()),
+        Some(ExprCache::ReadyCache) => return Some(LuaType::Unknown),
+        None => {}
     }
 
     // for @as
@@ -37,6 +40,7 @@ pub fn infer_expr(db: &DbIndex, config: &mut LuaInferConfig, expr: LuaExpr) -> I
         return Some(force_type.clone());
     }
 
+    config.mark_ready_cache(syntax_id);
     let result_type = match expr {
         LuaExpr::CallExpr(call_expr) => infer_call_expr(db, config, call_expr)?,
         LuaExpr::TableExpr(table_expr) => infer_table_expr(db, config, table_expr)?,
