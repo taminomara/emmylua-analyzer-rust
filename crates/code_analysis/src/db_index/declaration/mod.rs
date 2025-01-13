@@ -3,10 +3,11 @@ mod decl_tree;
 mod scope;
 mod test;
 
-use std::collections::HashMap;
 
+use std::collections::HashMap;
 pub use decl::{LocalAttribute, LuaDecl, LuaDeclId};
 pub use decl_tree::{LuaDeclOrMemberId, LuaDeclarationTree};
+pub use decl::LuaDeclExtra;
 use internment::ArcIntern;
 pub use scope::{LuaScope, LuaScopeId, LuaScopeKind, ScopeOrDeclId};
 

@@ -6,7 +6,7 @@ use emmylua_parser::{
 };
 use infer_expr_property_owner::infer_expr_property_owner;
 
-use crate::{DbIndex, LuaDecl, LuaDeclId, LuaMemberId, LuaPropertyOwnerId, LuaType};
+use crate::{DbIndex, LuaDecl, LuaDeclExtra, LuaDeclId, LuaMemberId, LuaPropertyOwnerId, LuaType};
 
 use super::{infer_expr, LuaInferConfig};
 
@@ -23,10 +23,7 @@ pub fn infer_token_semantic_info(
 ) -> Option<SemanticInfo> {
     let parent = token.parent()?;
     match parent.kind().into() {
-        LuaSyntaxKind::ForStat
-        | LuaSyntaxKind::ForRangeStat
-        | LuaSyntaxKind::LocalName
-         => {
+        LuaSyntaxKind::ForStat | LuaSyntaxKind::ForRangeStat | LuaSyntaxKind::LocalName => {
             let file_id = infer_config.get_file_id();
             let decl_id = LuaDeclId::new(file_id, token.text_range().start());
             let decl = db.get_decl_index().get_decl(&decl_id)?;
@@ -40,9 +37,9 @@ pub fn infer_token_semantic_info(
             let file_id = infer_config.get_file_id();
             let decl_id = LuaDeclId::new(file_id, token.text_range().start());
             let decl = db.get_decl_index().get_decl(&decl_id)?;
-            match decl {
-                LuaDecl::Param {
-                    idx, signature_id, ..
+            match &decl.extra {
+                LuaDeclExtra::Param {
+                    idx, signature_id
                 } => {
                     let signature = db.get_signature_index().get(&signature_id)?;
                     let param_info = signature.get_param_info_by_id(*idx)?;
@@ -73,7 +70,10 @@ pub fn infer_node_semantic_info(
             let expr = LuaExpr::cast(expr_node)?;
             let typ = infer_expr(db, infer_config, expr.clone()).unwrap_or(LuaType::Unknown);
             let property_owner = infer_expr_property_owner(db, infer_config, expr);
-            Some(SemanticInfo { typ, property_owner })
+            Some(SemanticInfo {
+                typ,
+                property_owner,
+            })
         }
         table_field_node if LuaTableField::can_cast(table_field_node.kind().into()) => {
             let table_field = LuaTableField::cast(table_field_node)?;
@@ -186,15 +186,21 @@ pub fn infer_node_property_owner(
         tags if LuaDocTag::can_cast(tags.kind().into()) => {
             let tag = LuaDocTag::cast(tags)?;
             match tag {
-                LuaDocTag::Alias(alias) => {
-                    type_def_tag_property_owner(alias.get_name_token()?.get_name_text(), db, infer_config)
-                }
-                LuaDocTag::Class(class) => {
-                    type_def_tag_property_owner(class.get_name_token()?.get_name_text(), db, infer_config)
-                }
-                LuaDocTag::Enum(enum_) => {
-                    type_def_tag_property_owner(enum_.get_name_token()?.get_name_text(), db, infer_config)
-                }
+                LuaDocTag::Alias(alias) => type_def_tag_property_owner(
+                    alias.get_name_token()?.get_name_text(),
+                    db,
+                    infer_config,
+                ),
+                LuaDocTag::Class(class) => type_def_tag_property_owner(
+                    class.get_name_token()?.get_name_text(),
+                    db,
+                    infer_config,
+                ),
+                LuaDocTag::Enum(enum_) => type_def_tag_property_owner(
+                    enum_.get_name_token()?.get_name_text(),
+                    db,
+                    infer_config,
+                ),
                 LuaDocTag::Field(field) => {
                     let member_id =
                         LuaMemberId::new(field.get_syntax_id(), infer_config.get_file_id());

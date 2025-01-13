@@ -2,7 +2,7 @@ use emmylua_parser::{LuaAstNode, LuaNameExpr};
 
 use crate::{
     db_index::{DbIndex, LuaDeclOrMemberId, LuaMemberKey},
-    LuaDecl, LuaType,
+    LuaDeclExtra, LuaType,
 };
 
 use super::{InferResult, LuaInferConfig};
@@ -32,10 +32,8 @@ pub fn infer_name_expr(
         } else if let Some(typ) = decl.get_type() {
             typ.clone()
         } else if decl.is_param() {
-            match decl {
-                LuaDecl::Param {
-                    idx, signature_id, ..
-                } => {
+            match &decl.extra {
+                LuaDeclExtra::Param { idx, signature_id } => {
                     let signature = db.get_signature_index().get(&signature_id)?;
                     if let Some(param_info) = signature.get_param_info_by_id(*idx) {
                         let mut typ = param_info.type_ref.clone();

@@ -24,6 +24,7 @@ percent-encoding.workspace = true
 flagset.workspace = true
 encoding_rs.workspace = true
 url.workspace = true
+smol_str.workspace = true
 
 [package.metadata.i18n]
 available-locales = ["en", "zh_CN", "zh_HK", "zh_TW"]

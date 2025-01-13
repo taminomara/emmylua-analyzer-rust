@@ -6,7 +6,7 @@ use internment::ArcIntern;
 
 use crate::{
     db_index::{LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner},
-    InFiled, LuaDeclId, LuaSignatureId,
+    InFiled, LuaDeclExtra, LuaDeclId, LuaSignatureId,
 };
 
 use super::DeclAnalyzer;
@@ -80,7 +80,7 @@ pub fn analyze_index_expr(analyzer: &mut DeclAnalyzer, expr: LuaIndexExpr) -> Op
 pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) -> Option<()> {
     let params = expr.get_params_list()?;
     let signature_id = LuaSignatureId::new(analyzer.get_file_id(), &expr);
-
+    let file_id = analyzer.get_file_id();
     for (idx, param) in params.get_params().enumerate() {
         let name = param.get_name_token().map_or_else(
             || {
@@ -92,14 +92,14 @@ pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) -
             },
             |name_token| name_token.get_name_text().to_string(),
         );
+        let range = param.get_range();
 
-        let decl = LuaDecl::Param {
-            name,
-            file_id: analyzer.get_file_id(),
-            range: param.get_range(),
-            idx,
-            signature_id,
-        };
+        let decl = LuaDecl::new(
+            &name,
+            file_id,
+            range,
+            LuaDeclExtra::Param { idx, signature_id },
+        );
 
         analyzer.add_decl(decl);
     }
@@ -173,10 +173,11 @@ pub fn analyze_literal_expr(analyzer: &mut DeclAnalyzer, expr: LuaLiteralExpr) -
             return Some(());
         }
 
-        analyzer
-            .db
-            .get_reference_index_mut()
-            .add_string_reference(file_id, ArcIntern::new(value), string_token.get_range());
+        analyzer.db.get_reference_index_mut().add_string_reference(
+            file_id,
+            ArcIntern::new(value),
+            string_token.get_range(),
+        );
     }
 
     Some(())
