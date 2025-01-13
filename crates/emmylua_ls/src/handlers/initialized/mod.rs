@@ -148,7 +148,7 @@ pub async fn init_analysis(
 
     let mut count = 0;
     if file_count != 0 {
-        let text= format!("diagnose {} files", file_count);
+        let text = format!("diagnose {} files", file_count);
         let _p = Profile::new(text.as_str());
         while let Some(_) = rx.recv().await {
             count += 1;

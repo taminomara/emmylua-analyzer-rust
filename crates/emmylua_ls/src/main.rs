@@ -11,7 +11,7 @@ use handlers::{
 };
 use lsp_server::{Connection, Message};
 use lsp_types::InitializeParams;
-use std::error::Error;
+use std::{env, error::Error};
 use structopt::StructOpt;
 
 const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
@@ -19,6 +19,7 @@ const CRATE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
+    env::set_var("RUST_BACKTRACE", "full");
     let cmd_args = CmdArgs::from_args();
     let (connection, threads) = match cmd_args.communication {
         cmd_args::Communication::Stdio => Connection::stdio(),
