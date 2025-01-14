@@ -22,8 +22,10 @@ pub struct LuaModuleIndex {
     module_root_id: ModuleNodeId,
     module_nodes: HashMap<ModuleNodeId, ModuleNode>,
     file_module_map: HashMap<FileId, ModuleInfo>,
+    module_name_to_file_ids: HashMap<String, Vec<FileId>>,
     workspace_root: Vec<PathBuf>,
     id_counter: u32,
+    fuzzy_search: bool,
 }
 
 impl LuaModuleIndex {
@@ -33,8 +35,10 @@ impl LuaModuleIndex {
             module_root_id: ModuleNodeId { id: 0 },
             module_nodes: HashMap::new(),
             file_module_map: HashMap::new(),
+            module_name_to_file_ids: HashMap::new(),
             workspace_root: Vec::new(),
             id_counter: 1,
+            fuzzy_search: false,
         };
 
         let root_node = ModuleNode::default();
@@ -122,11 +126,11 @@ impl LuaModuleIndex {
 
         let node = self.module_nodes.get_mut(&parent_node_id).unwrap();
         node.file_ids.push(file_id);
-
+        let module_name = module_parts.last().unwrap().to_string();
         let module_info = ModuleInfo {
             file_id,
             full_module_name: module_parts.join("."),
-            name: module_parts.last().unwrap().to_string(),
+            name: module_name.clone(),
             module_id: parent_node_id,
             visible: true,
             export_type: None,
@@ -134,6 +138,12 @@ impl LuaModuleIndex {
         };
 
         self.file_module_map.insert(file_id, module_info);
+        if self.fuzzy_search {
+            self.module_name_to_file_ids
+                .entry(module_name)
+                .or_insert(Vec::new())
+                .push(file_id);
+        }
 
         Some(())
     }
@@ -169,10 +179,23 @@ impl LuaModuleIndex {
             return None;
         }
 
+        let result = self.exact_find_module(&module_parts);
+        if result.is_some() {
+            return result;
+        }
+
+        if self.fuzzy_search {
+            return self.fuzzy_find_module(&module_path, module_parts.last().unwrap());
+        }
+
+        None
+    }
+
+    fn exact_find_module(&self, module_parts: &Vec<&str>) -> Option<&ModuleInfo> {
         let mut parent_node_id = self.module_root_id;
         for part in module_parts {
             let parent_node = self.module_nodes.get(&parent_node_id)?;
-            let child_id = match parent_node.children.get(part) {
+            let child_id = match parent_node.children.get(*part) {
                 Some(id) => *id,
                 None => return None,
             };
@@ -182,6 +205,23 @@ impl LuaModuleIndex {
         let node = self.module_nodes.get(&parent_node_id)?;
         let file_id = node.file_ids.first()?;
         self.file_module_map.get(file_id)
+    }
+
+    fn fuzzy_find_module(&self, module_path: &str, last_name: &str) -> Option<&ModuleInfo> {
+        let file_ids = self.module_name_to_file_ids.get(last_name)?;
+        if file_ids.len() == 1 {
+            return self.file_module_map.get(&file_ids[0]);
+        }
+
+        // find the first matched module
+        for file_id in file_ids {
+            let module_info = self.file_module_map.get(file_id)?;
+            if module_info.full_module_name.ends_with(module_path) {
+                return Some(module_info);
+            }
+        }
+
+        None
     }
 
     /// Find a module node by module path.
@@ -281,6 +321,8 @@ impl LuaModuleIndex {
         }
 
         self.set_module_patterns(patterns);
+
+        self.fuzzy_search = !config.strict.require_path;
     }
 }
 
@@ -320,6 +362,24 @@ impl LuaIndex for LuaModuleIndex {
                 self.module_nodes.remove(&id);
             } else {
                 break;
+            }
+        }
+
+        if !self.module_name_to_file_ids.is_empty() {
+            let mut module_name = String::new();
+            for (name, file_ids) in &self.module_name_to_file_ids {
+                if file_ids.contains(&file_id) {
+                    module_name = name.clone();
+                    break;
+                }
+            }
+
+            if !module_name.is_empty() {
+                let file_ids = self.module_name_to_file_ids.get_mut(&module_name).unwrap();
+                file_ids.retain(|id| *id != file_id);
+                if file_ids.is_empty() {
+                    self.module_name_to_file_ids.remove(&module_name);
+                }
             }
         }
     }
