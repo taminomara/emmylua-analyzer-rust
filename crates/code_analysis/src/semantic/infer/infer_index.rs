@@ -63,7 +63,7 @@ pub fn infer_index_expr(
 
 fn infer_member_by_member_key(
     db: &DbIndex,
-    config: &LuaInferConfig,
+    config: &mut LuaInferConfig,
     prefix_type: &LuaType,
     member_key: &LuaIndexKey,
     infer_guard: &mut InferGuard,
@@ -96,7 +96,7 @@ fn infer_member_by_member_key(
             infer_member_by_member_key(db, config, &inner_type, member_key, infer_guard)
         }
         LuaType::Tuple(tuple_type) => infer_tuple_member(tuple_type, member_key),
-        LuaType::Object(object_type) => infer_object_member(object_type, member_key),
+        LuaType::Object(object_type) => infer_object_member(db, config, object_type, member_key),
         LuaType::Union(union_type) => infer_union_member(db, config, union_type, member_key),
         LuaType::Intersection(intersection_type) => {
             infer_intersection_member(db, config, intersection_type, member_key)
@@ -129,7 +129,7 @@ fn infer_table_member(
 
 fn infer_custom_type_member(
     db: &DbIndex,
-    config: &LuaInferConfig,
+    config: &mut LuaInferConfig,
     prefix_type_id: LuaTypeDeclId,
     member_key: &LuaIndexKey,
     infer_guard: &mut InferGuard,
@@ -188,14 +188,52 @@ fn infer_tuple_member(tuple_type: &LuaTupleType, member_key: &LuaIndexKey) -> In
     None
 }
 
-fn infer_object_member(object_type: &LuaObjectType, member_key: &LuaIndexKey) -> InferResult {
-    let member_type = object_type.get_field(&member_key.into())?;
-    Some(member_type.clone())
+fn infer_object_member(
+    db: &DbIndex,
+    config: &mut LuaInferConfig,
+    object_type: &LuaObjectType,
+    member_key: &LuaIndexKey,
+) -> InferResult {
+    if let Some(member_type) = object_type.get_field(&member_key.into()) {
+        return Some(member_type.clone());
+    }
+
+    let index_accesses = object_type.get_index_access();
+    for (key, value) in index_accesses {
+        if key.is_string() {
+            if member_key.is_string() || member_key.is_name() {
+                return Some(value.clone());
+            } else if member_key.is_expr() {
+                let expr = member_key.get_expr()?;
+                let expr_type = infer_expr(db, config, expr.clone())?;
+                if expr_type.is_string() {
+                    return Some(value.clone());
+                }
+            }
+        } else if key.is_number() {
+            if member_key.is_integer() {
+                return Some(value.clone());
+            } else if member_key.is_expr() {
+                let expr = member_key.get_expr()?;
+                let expr_type = infer_expr(db, config, expr.clone())?;
+                if expr_type.is_number() {
+                    return Some(value.clone());
+                }
+            }
+        } else if let Some(expr) = member_key.get_expr() {
+            let expr_type = infer_expr(db, config, expr.clone())?;
+            if expr_type == *key {
+                return Some(value.clone());
+            }
+        }
+    }
+
+    None
 }
 
 fn infer_union_member(
     db: &DbIndex,
-    config: &LuaInferConfig,
+    config: &mut LuaInferConfig,
     union_type: &LuaUnionType,
     member_key: &LuaIndexKey,
 ) -> InferResult {
@@ -221,7 +259,7 @@ fn infer_union_member(
 
 fn infer_intersection_member(
     db: &DbIndex,
-    config: &LuaInferConfig,
+    config: &mut LuaInferConfig,
     intersection_type: &LuaIntersectionType,
     member_key: &LuaIndexKey,
 ) -> InferResult {
@@ -241,7 +279,7 @@ fn infer_intersection_member(
 
 fn infer_generic_member(
     db: &DbIndex,
-    config: &LuaInferConfig,
+    config: &mut LuaInferConfig,
     generic_type: &LuaGenericType,
     member_key: &LuaIndexKey,
 ) -> InferResult {
@@ -255,7 +293,7 @@ fn infer_generic_member(
 
 fn infer_exit_field_member(
     db: &DbIndex,
-    config: &LuaInferConfig,
+    config: &mut LuaInferConfig,
     exist_field: &LuaExistFieldType,
     member_key: &LuaIndexKey,
 ) -> InferResult {
@@ -277,7 +315,7 @@ fn infer_exit_field_member(
 
 fn infer_instance_member(
     db: &DbIndex,
-    config: &LuaInferConfig,
+    config: &mut LuaInferConfig,
     inst: &LuaInstanceType,
     member_key: &LuaIndexKey,
     infer_guard: &mut InferGuard,
@@ -733,9 +771,11 @@ fn infer_namespace_member(
 
     let namespace_or_type_id = format!("{}.{}", ns, member_key);
     let type_id = LuaTypeDeclId::new(&namespace_or_type_id);
-    if  db.get_type_index().get_type_decl(&type_id).is_some() {
+    if db.get_type_index().get_type_decl(&type_id).is_some() {
         return Some(LuaType::Def(type_id));
     }
 
-    return Some(LuaType::Namespace(SmolStr::new(namespace_or_type_id).into()));
+    return Some(LuaType::Namespace(
+        SmolStr::new(namespace_or_type_id).into(),
+    ));
 }

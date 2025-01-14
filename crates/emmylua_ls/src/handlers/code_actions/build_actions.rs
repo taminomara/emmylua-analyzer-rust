@@ -23,9 +23,15 @@ pub fn build_actions(
 
         if let Some(code) = diagnostic.code {
             if let NumberOrString::String(action_string) = code {
-                let diagnostic_code = DiagnosticCode::from_str(&action_string).ok()?;
-                add_fix_code_action(&mut actions, diagnostic_code, file_id, diagnostic.range);
-                add_disable_code_action(&mut actions, diagnostic_code, file_id, diagnostic.range);
+                if let Some(diagnostic_code) = DiagnosticCode::from_str(&action_string).ok() {
+                    add_fix_code_action(&mut actions, diagnostic_code, file_id, diagnostic.range);
+                    add_disable_code_action(
+                        &mut actions,
+                        diagnostic_code,
+                        file_id,
+                        diagnostic.range,
+                    );
+                }
             }
         }
     }

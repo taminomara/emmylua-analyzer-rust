@@ -94,8 +94,6 @@
 --- values and therefore denote different table entries.)
 ---@class table
 
----
---- Any of the above Built-in Types.
 ---@class any
 
 ---@class void
@@ -105,3 +103,5 @@
 ---@alias int integer
 
 ---@class namespace<T: string>
+
+---@class function

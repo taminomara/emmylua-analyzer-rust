@@ -21,7 +21,7 @@ pub fn analyze(db: &mut DbIndex, context: AnalyzeContext) {
 }
 
 fn module_analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
-    let _p = Profile::cond_new("module_analyze", context.tree_list.len() > 1);
+    let _p = Profile::cond_new("module analyze", context.tree_list.len() > 1);
     for in_filed_tree in &context.tree_list {
         let file_id = in_filed_tree.file_id;
         if let Some(path) = db.get_vfs().get_file_path(&file_id).cloned() {
