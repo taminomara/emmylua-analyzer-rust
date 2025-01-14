@@ -98,8 +98,14 @@ impl<'a> DocumentSymbolBuilder<'a> {
         for child in &symbol.children {
             let child_symbol = self.document_symbols.get(child)?;
             let lsp_range = self.document.to_lsp_range(child_symbol.range)?;
+            let child_symbol_name = if child_symbol.name.is_empty() {
+                "(empty)".to_string()
+            } else {
+                child_symbol.name.clone()
+            };
+
             let mut lsp_document_symbol = DocumentSymbol {
-                name: child_symbol.name.clone(),
+                name: child_symbol_name,
                 detail: child_symbol.detail.clone(),
                 kind: child_symbol.kind,
                 range: lsp_range.clone(),
