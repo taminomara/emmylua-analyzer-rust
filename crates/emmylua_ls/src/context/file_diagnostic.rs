@@ -44,6 +44,8 @@ impl FileDiagnostic {
         drop(tokens); // free the lock
 
         let analysis = self.analysis.clone();
+        let emmyrc = analysis.read().await.get_emmyrc();
+        let interval = emmyrc.diagnostics.diagnostic_interval.unwrap_or(500);
         let client = self.client.clone();
         let diagnostic_tokens = self.diagnostic_tokens.clone();
         let file_id_clone = file_id.clone();
@@ -51,7 +53,7 @@ impl FileDiagnostic {
         // Spawn a new task to perform diagnostic
         tokio::spawn(async move {
             tokio::select! {
-                _ = tokio::time::sleep(Duration::from_millis(500)) => {
+                _ = tokio::time::sleep(Duration::from_millis(interval)) => {
                     let analysis = analysis.read().await;
                     if let Some(uri) = analysis.get_uri(file_id_clone) {
                         let diagnostics = analysis.diagnose_file(file_id_clone, cancel_token).await;

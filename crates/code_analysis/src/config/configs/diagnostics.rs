@@ -28,6 +28,8 @@ pub struct EmmyrcDiagnostic {
     /// A list of diagnostic codes that are enabled.
     #[serde(default)]
     pub enables: Vec<DiagnosticCode>,
+    /// The interval in milliseconds to perform diagnostics.
+    pub diagnostic_interval: Option<u64>,
 }
 
 impl Default for EmmyrcDiagnostic {
@@ -39,6 +41,7 @@ impl Default for EmmyrcDiagnostic {
             globals_regex: Vec::new(),
             severity: HashMap::new(),
             enables: Vec::new(),
+            diagnostic_interval: Some(500),
         }
     }
 }
