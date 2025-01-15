@@ -57,11 +57,11 @@ pub fn search_decl_references(
         let global_references = semantic_model
             .get_db()
             .get_reference_index()
-            .get_global_references(&LuaMemberKey::Name(name.to_string().into()))?;
-        for in_filed_reference_range in global_references {
+            .get_global_references(name)?;
+        for in_filed_syntax_id in global_references {
             let document =
-                semantic_model.get_document_by_file_id(in_filed_reference_range.file_id)?;
-            let location = document.to_lsp_location(in_filed_reference_range.value.clone())?;
+                semantic_model.get_document_by_file_id(in_filed_syntax_id.file_id)?;
+            let location = document.to_lsp_location(in_filed_syntax_id.value.get_range())?;
             result.push(location);
         }
     }

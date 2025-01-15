@@ -28,6 +28,7 @@ pub enum LuaDeclExtra {
         signature_id: LuaSignatureId,
     },
     Global {
+        kind: LuaKind,
         decl_type: Option<LuaType>,
     },
 }
@@ -84,8 +85,8 @@ impl LuaDecl {
             LuaDeclExtra::Param { .. } => {
                 LuaSyntaxId::new(LuaSyntaxKind::ParamName.into(), self.range)
             }
-            LuaDeclExtra::Global { .. } => {
-                LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), self.range)
+            LuaDeclExtra::Global { kind, .. } => {
+                LuaSyntaxId::new(kind, self.range)
             }
         }
     }

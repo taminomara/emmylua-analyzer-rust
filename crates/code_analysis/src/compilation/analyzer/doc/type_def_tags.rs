@@ -325,12 +325,11 @@ fn get_global_reference_ranges(
     let name = name_token.get_name_text().to_string();
     let mut ranges = Vec::new();
 
-    let refs = analyzer
+    let ref_syntax_ids = analyzer
         .db
         .get_reference_index_mut()
         .get_global_file_references(&name, file_id)?;
-    for reference_range in refs {
-        let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), reference_range.clone());
+    for syntax_id in ref_syntax_ids {
         let name_node = syntax_id.to_node_from_root(&analyzer.root)?;
         if let Some(parent1) = name_node.parent() {
             if parent1.kind() == LuaSyntaxKind::IndexExpr.into() {
@@ -344,7 +343,7 @@ fn get_global_reference_ranges(
                     } else if parent2.kind() == LuaSyntaxKind::AssignStat.into() {
                         let stat = LuaAssignStat::cast(parent2)?;
                         if let Some(assign_token) = stat.token_by_kind(LuaTokenKind::TkAssign) {
-                            if assign_token.get_position() > reference_range.start() {
+                            if assign_token.get_position() > syntax_id.get_range().start() {
                                 ranges.push(stat.get_range());
                                 for comment in stat.get_comments() {
                                     ranges.push(comment.get_range());

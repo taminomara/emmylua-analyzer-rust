@@ -1,6 +1,6 @@
 use emmylua_parser::{
     LuaAstNode, LuaAstToken, LuaClosureExpr, LuaIndexExpr, LuaIndexKey, LuaLiteralExpr,
-    LuaLiteralToken, LuaNameExpr, LuaTableExpr,
+    LuaLiteralToken, LuaNameExpr, LuaTableExpr, LuaVarExpr,
 };
 
 use crate::{
@@ -46,14 +46,14 @@ pub fn analyze_name_expr(analyzer: &mut DeclAnalyzer, expr: LuaNameExpr) -> Opti
     }
 
     if !is_local {
-        reference_index.add_global_reference(name, file_id, range);
+        reference_index.add_global_reference(name, file_id, expr.get_syntax_id());
     }
 
     Some(())
 }
 
-pub fn analyze_index_expr(analyzer: &mut DeclAnalyzer, expr: LuaIndexExpr) -> Option<()> {
-    let index_key = expr.get_index_key()?;
+pub fn analyze_index_expr(analyzer: &mut DeclAnalyzer, index_expr: LuaIndexExpr) -> Option<()> {
+    let index_key = index_expr.get_index_key()?;
     let key = match index_key {
         LuaIndexKey::Name(name) => LuaMemberKey::Name(name.get_name_text().to_string().into()),
         LuaIndexKey::Integer(int) => {
@@ -68,11 +68,28 @@ pub fn analyze_index_expr(analyzer: &mut DeclAnalyzer, expr: LuaIndexExpr) -> Op
     };
 
     let file_id = analyzer.get_file_id();
-    let syntax_id = expr.get_syntax_id();
+    let syntax_id = index_expr.get_syntax_id();
+    let prefix = index_expr.get_prefix_expr()?;
+    if let LuaVarExpr::NameExpr(name_expr) = prefix {
+        let name_token = name_expr.get_name_token()?;
+        let name_token_text = name_token.get_name_text();
+        if name_token_text == "_G" || name_token_text == "_ENV" {
+            if let LuaMemberKey::Name(name) = &key {
+                analyzer
+                    .db
+                    .get_reference_index_mut()
+                    .add_global_reference(name, file_id, syntax_id);
+            }
+
+            return Some(());
+        }
+    }
+
     analyzer
         .db
         .get_reference_index_mut()
         .add_index_reference(key, file_id, syntax_id);
+
     Some(())
 }
 

@@ -1,6 +1,6 @@
 use emmylua_parser::{
-    LuaAssignStat, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaFuncStat,
-    LuaLocalFuncStat, LuaLocalStat, LuaVarExpr,
+    LuaAssignStat, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaFuncStat, LuaIndexExpr,
+    LuaLocalFuncStat, LuaLocalStat, LuaSyntaxKind, LuaVarExpr,
 };
 
 use crate::{
@@ -63,7 +63,10 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
                         name,
                         file_id,
                         range,
-                        LuaDeclExtra::Global { decl_type: None },
+                        LuaDeclExtra::Global {
+                            kind: LuaSyntaxKind::NameExpr.into(),
+                            decl_type: None,
+                        },
                     );
 
                     analyzer.add_decl(decl);
@@ -84,7 +87,7 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
                 let file_id = analyzer.get_file_id();
                 let member = LuaMember::new(
                     LuaMemberOwner::None,
-                    key,
+                    key.clone(),
                     file_id,
                     index_expr.get_syntax_id(),
                     None,
@@ -95,6 +98,49 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
                     .db
                     .get_reference_index_mut()
                     .add_write_range(file_id, index_expr.get_range());
+
+                if let LuaMemberKey::Name(name) = &key {
+                    analyze_maybe_global_index_expr(analyzer, index_expr, &name, None);
+                }
+            }
+        }
+    }
+
+    Some(())
+}
+
+fn analyze_maybe_global_index_expr(
+    analyzer: &mut DeclAnalyzer,
+    index_expr: &LuaIndexExpr,
+    index_name: &str,
+    typ: Option<LuaType>,
+) -> Option<()> {
+    let file_id = analyzer.get_file_id();
+    let prefix = index_expr.get_prefix_expr()?;
+    if let LuaVarExpr::NameExpr(name_expr) = prefix {
+        let name_token = name_expr.get_name_token()?;
+        let name_token_text = name_token.get_name_text();
+        if name_token_text == "_G" || name_token_text == "_ENV" {
+            let position = index_expr.get_position();
+            let name = name_token.get_name_text();
+            let range = index_expr.get_range();
+            if analyzer.find_decl(&name, position).is_none() {
+                let decl = LuaDecl::new(
+                    index_name,
+                    file_id,
+                    range,
+                    LuaDeclExtra::Global {
+                        kind: LuaSyntaxKind::IndexExpr.into(),
+                        decl_type: typ,
+                    },
+                );
+
+                analyzer.add_decl(decl);
+            } else {
+                analyzer
+                    .db
+                    .get_reference_index_mut()
+                    .add_write_range(file_id, range);
             }
         }
     }
@@ -167,7 +213,10 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
                     name,
                     file_id,
                     range,
-                    LuaDeclExtra::Global { decl_type: None },
+                    LuaDeclExtra::Global {
+                        kind: LuaSyntaxKind::NameExpr.into(),
+                        decl_type: None,
+                    },
                 );
 
                 let decl_id = analyzer.add_decl(decl);
@@ -176,8 +225,8 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
                 return Some(());
             }
         }
-        LuaVarExpr::IndexExpr(index_name) => {
-            let index_key = index_name.get_index_key()?;
+        LuaVarExpr::IndexExpr(index_expr) => {
+            let index_key = index_expr.get_index_key()?;
             let key: LuaMemberKey = index_key.into();
             if key.is_none() {
                 return None;
@@ -186,9 +235,9 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
             let file_id = analyzer.get_file_id();
             let member = LuaMember::new(
                 LuaMemberOwner::None,
-                key,
+                key.clone(),
                 file_id,
-                index_name.get_syntax_id(),
+                index_expr.get_syntax_id(),
                 None,
             );
 
@@ -196,7 +245,11 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
             analyzer
                 .db
                 .get_reference_index_mut()
-                .add_write_range(file_id, index_name.get_range());
+                .add_write_range(file_id, index_expr.get_range());
+
+            if let LuaMemberKey::Name(name) = &key {
+                analyze_maybe_global_index_expr(analyzer, &index_expr, &name, None);
+            }
             LuaPropertyOwnerId::Member(member_id)
         }
     };

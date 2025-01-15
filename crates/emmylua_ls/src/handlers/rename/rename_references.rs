@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use code_analysis::{
-    LuaCompilation, LuaDeclId, LuaMemberId, LuaMemberKey, LuaPropertyOwnerId, SemanticModel,
+    LuaCompilation, LuaDeclId, LuaMemberId, LuaPropertyOwnerId, SemanticModel,
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaNameToken, LuaSyntaxNode, LuaSyntaxToken,
@@ -86,23 +86,23 @@ fn rename_decl_references(
         let global_references = semantic_model
             .get_db()
             .get_reference_index()
-            .get_global_references(&LuaMemberKey::Name(name.to_string().into()))?;
+            .get_global_references(name)?;
 
         let mut semantic_cache = HashMap::new();
-        for in_filed_reference_range in global_references {
+        for in_filed_syntax_id in global_references {
             let semantic_model = if let Some(semantic_model) =
-                semantic_cache.get_mut(&in_filed_reference_range.file_id)
+                semantic_cache.get_mut(&in_filed_syntax_id.file_id)
             {
                 semantic_model
             } else {
                 let semantic_model =
-                    compilation.get_semantic_model(in_filed_reference_range.file_id)?;
-                semantic_cache.insert(in_filed_reference_range.file_id, semantic_model);
-                semantic_cache.get_mut(&in_filed_reference_range.file_id)?
+                    compilation.get_semantic_model(in_filed_syntax_id.file_id)?;
+                semantic_cache.insert(in_filed_syntax_id.file_id, semantic_model);
+                semantic_cache.get_mut(&in_filed_syntax_id.file_id)?
             };
             let document = semantic_model.get_document();
             let uri = document.get_uri();
-            let range = document.to_lsp_range(in_filed_reference_range.value.clone())?;
+            let range = document.to_lsp_range(in_filed_syntax_id.value.get_range())?;
             result.entry(uri).or_insert_with(HashSet::new).insert(range);
         }
     }

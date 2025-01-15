@@ -19,6 +19,7 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType) -> String {
         LuaType::IntegerConst(i) => i.to_string(),
         LuaType::FloatConst(f) => f.to_string(),
         LuaType::TableConst(_) => "table".to_string(),
+        LuaType::Global => "global".to_string(),
         LuaType::Def(id) => humanize_def_type(db, id),
         LuaType::Union(union) => humanize_union_type(db, union),
         LuaType::Tuple(tuple) => humanize_tuple_type(db, tuple),

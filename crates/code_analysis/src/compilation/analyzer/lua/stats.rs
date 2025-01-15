@@ -155,7 +155,13 @@ fn get_var_type_owner(
                             }
                             LuaMemberOwner::Type(def_id)
                         }
-                        LuaType::Instance(instance) => LuaMemberOwner::Element(instance.get_range().clone()),
+                        LuaType::Instance(instance) => {
+                            LuaMemberOwner::Element(instance.get_range().clone())
+                        }
+                        LuaType::Global => {
+                            let decl_id = LuaDeclId::new(file_id, prefix_expr.get_position());
+                            return Some(TypeOwner::Decl(decl_id));
+                        }
                         // is ref need extend field?
                         _ => {
                             return None;

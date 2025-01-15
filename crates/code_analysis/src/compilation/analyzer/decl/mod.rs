@@ -178,17 +178,16 @@ impl<'a> DeclAnalyzer<'a> {
         let range = decl.get_range();
         let file_id = decl.get_file_id();
         let name = decl.get_name().to_string();
+        let syntax_id = decl.get_syntax_id();
         let id = self.decl.add_decl(decl);
         self.add_decl_to_current_scope(id);
 
         if is_global {
-            self.db
-                .get_decl_index_mut()
-                .add_global_decl(&name, id);
+            self.db.get_decl_index_mut().add_global_decl(&name, id);
 
             self.db
                 .get_reference_index_mut()
-                .add_global_reference(&name, file_id, range);
+                .add_global_reference(&name, file_id, syntax_id);
         }
 
         self.db

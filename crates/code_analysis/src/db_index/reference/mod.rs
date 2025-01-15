@@ -3,7 +3,7 @@ mod string_reference;
 
 use std::collections::{HashMap, HashSet};
 
-use emmylua_parser::{LuaSyntaxId, LuaSyntaxKind};
+use emmylua_parser::LuaSyntaxId;
 use local_reference::LocalReference;
 use rowan::TextRange;
 use smol_str::SmolStr;
@@ -17,6 +17,7 @@ use super::{traits::LuaIndex, LuaDeclId, LuaMemberKey};
 pub struct LuaReferenceIndex {
     local_references: HashMap<FileId, LocalReference>,
     index_reference: HashMap<LuaMemberKey, HashMap<FileId, HashSet<LuaSyntaxId>>>,
+    global_references: HashMap<SmolStr, HashMap<FileId, HashSet<LuaSyntaxId>>>,
     string_references: HashMap<FileId, StringReference>,
 }
 
@@ -25,6 +26,7 @@ impl LuaReferenceIndex {
         Self {
             local_references: HashMap::new(),
             index_reference: HashMap::new(),
+            global_references: HashMap::new(),
             string_references: HashMap::new(),
         }
     }
@@ -36,14 +38,14 @@ impl LuaReferenceIndex {
             .add_local_reference(decl_id, range);
     }
 
-    pub fn add_global_reference(&mut self, name: &str, file_id: FileId, range: TextRange) {
+    pub fn add_global_reference(&mut self, name: &str, file_id: FileId, syntax_id: LuaSyntaxId) {
         let key = SmolStr::new(name);
-        self.index_reference
-            .entry(LuaMemberKey::Name(key))
+        self.global_references
+            .entry(key)
             .or_insert_with(HashMap::new)
             .entry(file_id)
             .or_insert_with(HashSet::new)
-            .insert(LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), range));
+            .insert(syntax_id);
     }
 
     pub fn add_index_reference(
@@ -107,38 +109,32 @@ impl LuaReferenceIndex {
         &self,
         name: &str,
         file_id: FileId,
-    ) -> Option<Vec<TextRange>> {
-        let key = SmolStr::new(name);
+    ) -> Option<Vec<LuaSyntaxId>> {
         let results = self
-            .index_reference
-            .get(&LuaMemberKey::Name(key))?
+            .global_references
+            .get(name)?
             .iter()
-            .filter_map(|(key_file_id, syntax_ids)| {
-                if *key_file_id == file_id {
-                    Some(syntax_ids.iter().map(|syntax_id| syntax_id.get_range()))
+            .filter_map(|(source_file_id, syntax_ids)| {
+                if file_id == *source_file_id {
+                    Some(syntax_ids.iter())
                 } else {
                     None
                 }
             })
             .flatten()
+            .copied()
             .collect();
 
         Some(results)
     }
 
-    pub fn get_global_references(&self, key: &LuaMemberKey) -> Option<Vec<InFiled<TextRange>>> {
+    pub fn get_global_references(&self, name: &str) -> Option<Vec<InFiled<LuaSyntaxId>>> {
         let results = self
-            .index_reference
-            .get(&key)?
+            .global_references
+            .get(name)?
             .iter()
             .map(|(file_id, syntax_ids)| {
-                syntax_ids.iter().filter_map(|syntax_id| {
-                    if syntax_id.get_kind() == LuaSyntaxKind::NameExpr {
-                        Some(InFiled::new(*file_id, syntax_id.get_range()))
-                    } else {
-                        None
-                    }
-                })
+                syntax_ids.iter().map(|syntax_id| InFiled::new(*file_id, *syntax_id))
             })
             .flatten()
             .collect();
@@ -201,6 +197,18 @@ impl LuaIndex for LuaReferenceIndex {
 
         for key in to_be_remove {
             self.index_reference.remove(&key);
+        }
+
+        let mut to_be_remove = Vec::new();
+        for (key, references) in self.global_references.iter_mut() {
+            references.remove(&file_id);
+            if references.is_empty() {
+                to_be_remove.push(key.clone());
+            }
+        }
+
+        for key in to_be_remove {
+            self.global_references.remove(&key);
         }
     }
 }
