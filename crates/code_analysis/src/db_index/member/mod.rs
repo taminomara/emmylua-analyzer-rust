@@ -88,4 +88,10 @@ impl LuaIndex for LuaMemberIndex {
             }
         }
     }
+
+    fn fill_snapshot_info(&self, info: &mut HashMap<String, String>) {
+        info.insert("member.members".to_string(), self.members.len().to_string());
+        info.insert("member.in_field_members".to_string(), self.in_field_members.len().to_string());
+        info.insert("member.owner_members".to_string(), self.owner_members.len().to_string());
+    }
 }

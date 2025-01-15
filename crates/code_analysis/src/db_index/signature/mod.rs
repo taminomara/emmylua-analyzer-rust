@@ -44,4 +44,8 @@ impl LuaIndex for LuaSignatureIndex {
             }
         }
     }
+
+    fn fill_snapshot_info(&self, info: &mut HashMap<String, String>) {
+        info.insert("signature_count".to_string(), self.signatures.len().to_string());
+    }
 }

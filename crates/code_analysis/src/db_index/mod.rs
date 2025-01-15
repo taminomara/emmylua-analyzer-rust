@@ -11,7 +11,7 @@ mod signature;
 mod traits;
 mod r#type;
 
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{Emmyrc, FileId, Vfs};
 pub use declaration::*;
@@ -169,6 +169,12 @@ impl DbIndex {
         self.vfs.update_config(config.clone());
         self.modules_index.update_config(config.clone());
     }
+
+    pub fn get_snapshot_info(&self) -> HashMap<String, String> {
+        let mut info = HashMap::new();
+        self.fill_snapshot_info(&mut info);
+        info
+    }
 }
 
 impl LuaIndex for DbIndex {
@@ -184,5 +190,19 @@ impl LuaIndex for DbIndex {
         self.diagnostic_index.remove(file_id);
         self.operator_index.remove(file_id);
         self.flow_index.remove(file_id);
+    }
+
+    fn fill_snapshot_info(&self, info: &mut HashMap<String, String>) {
+        self.decl_index.fill_snapshot_info(info);
+        self.references_index.fill_snapshot_info(info);
+        self.types_index.fill_snapshot_info(info);
+        self.modules_index.fill_snapshot_info(info);
+        self.meta_files_index.fill_snapshot_info(info);
+        self.members_index.fill_snapshot_info(info);
+        self.property_index.fill_snapshot_info(info);
+        self.signature_index.fill_snapshot_info(info);
+        self.diagnostic_index.fill_snapshot_info(info);
+        self.operator_index.fill_snapshot_info(info);
+        self.flow_index.fill_snapshot_info(info);
     }
 }

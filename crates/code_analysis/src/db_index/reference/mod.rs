@@ -211,4 +211,23 @@ impl LuaIndex for LuaReferenceIndex {
             self.global_references.remove(&key);
         }
     }
+
+    fn fill_snapshot_info(&self, info: &mut HashMap<String, String>) {
+        info.insert(
+            "reference.local_references".to_string(),
+            self.local_references.len().to_string(),
+        );
+        info.insert(
+            "reference.index_reference".to_string(),
+            self.index_reference.len().to_string(),
+        );
+        info.insert(
+            "reference.global_references".to_string(),
+            self.global_references.len().to_string(),
+        );
+        info.insert(
+            "reference.string_references".to_string(),
+            self.string_references.len().to_string(),
+        );
+    }
 }

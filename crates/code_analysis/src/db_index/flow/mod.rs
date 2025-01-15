@@ -48,4 +48,8 @@ impl LuaIndex for LuaFlowIndex {
     fn remove(&mut self, file_id: crate::FileId) {
         self.chains_map.remove(&file_id);
     }
+
+    fn fill_snapshot_info(&self, info: &mut HashMap<String, String>) {
+        info.insert("flow_chain_count".to_string(), self.chains_map.len().to_string());
+    }
 }

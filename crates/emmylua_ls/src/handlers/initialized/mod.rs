@@ -4,7 +4,7 @@ mod collect_files;
 mod locale;
 mod regsiter_file_watch;
 
-use std::{path::PathBuf, str::FromStr, sync::Arc};
+use std::{collections::HashMap, path::PathBuf, str::FromStr, sync::Arc};
 
 use crate::{
     cmd_args::CmdArgs,
@@ -69,6 +69,18 @@ pub async fn initialized_handler(
     .await;
 
     register_files_watch(context, &params.capabilities).await;
+    // if cfg!(debug_assertions) {
+    //     tokio::spawn(async move {
+    //         loop {
+    //             tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+    //             let analysis = context.analysis.read().await;
+    //             let db = analysis.compilation.get_db();
+    //             let info = db.get_snapshot_info();
+    //             let info_json = serde_json::to_string_pretty(&info).unwrap();
+    //             info!("snapshot_info: {}", info_json);
+    //         }
+    //     });
+    // }
     Some(())
 }
 
