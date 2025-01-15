@@ -30,7 +30,7 @@ impl FileDiagnostic {
     }
 
     #[allow(unused)]
-    pub async fn add_diagnostic_task(&self, file_id: FileId) {
+    pub async fn add_diagnostic_task(&self, file_id: FileId, interval: u64) {
         let mut tokens = self.diagnostic_tokens.lock().await;
 
         if let Some(token) = tokens.get(&file_id) {
@@ -44,8 +44,6 @@ impl FileDiagnostic {
         drop(tokens); // free the lock
 
         let analysis = self.analysis.clone();
-        let emmyrc = analysis.read().await.get_emmyrc();
-        let interval = emmyrc.diagnostics.diagnostic_interval.unwrap_or(500);
         let client = self.client.clone();
         let diagnostic_tokens = self.diagnostic_tokens.clone();
         let file_id_clone = file_id.clone();
@@ -80,9 +78,9 @@ impl FileDiagnostic {
     }
 
     // todo add message show
-    pub async fn add_files_diagnostic_task(&self, file_ids: Vec<FileId>) {
+    pub async fn add_files_diagnostic_task(&self, file_ids: Vec<FileId>, interval: u64) {
         for file_id in file_ids {
-            self.add_diagnostic_task(file_id).await;
+            self.add_diagnostic_task(file_id, interval).await;
         }
     }
 

@@ -10,6 +10,7 @@ pub async fn on_did_change_watched_files(
     let mut analysis = context.analysis.write().await;
     let emmyrc = analysis.get_emmyrc();
     let encoding = &emmyrc.workspace.encoding;
+    let interval = emmyrc.diagnostics.diagnostic_interval.unwrap_or(500);
     let mut watched_lua_files: Vec<(Uri, Option<String>)> = Vec::new();
     // let
     for file_event in params.changes.into_iter() {
@@ -54,7 +55,7 @@ pub async fn on_did_change_watched_files(
     let file_ids = analysis.update_files_by_uri(watched_lua_files);
     context
         .file_diagnostic
-        .add_files_diagnostic_task(file_ids)
+        .add_files_diagnostic_task(file_ids, interval)
         .await;
 
     Some(())

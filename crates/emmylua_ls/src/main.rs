@@ -19,7 +19,6 @@ const CRATE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
-    env::set_var("RUST_BACKTRACE", "full");
     let cmd_args = CmdArgs::from_args();
     let (connection, threads) = match cmd_args.communication {
         cmd_args::Communication::Stdio => Connection::stdio(),
