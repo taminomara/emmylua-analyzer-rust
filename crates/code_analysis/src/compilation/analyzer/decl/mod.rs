@@ -38,10 +38,11 @@ fn walk_node_enter(analyzer: &mut DeclAnalyzer, node: LuaAst) {
             analyzer.create_scope(block.get_range(), LuaScopeKind::Normal);
         }
         LuaAst::LuaLocalStat(stat) => {
-            analyzer.create_scope(stat.get_range(), LuaScopeKind::LocalStat);
+            analyzer.create_scope(stat.get_range(), LuaScopeKind::LocalOrAssignStat);
             stats::analyze_local_stat(analyzer, stat);
         }
         LuaAst::LuaAssignStat(stat) => {
+            analyzer.create_scope(stat.get_range(), LuaScopeKind::LocalOrAssignStat);
             stats::analyze_assign_stat(analyzer, stat);
         }
         LuaAst::LuaForStat(stat) => {
@@ -117,7 +118,8 @@ fn is_scope_owner(node: &LuaAst) -> bool {
         | LuaSyntaxKind::ForStat
         | LuaSyntaxKind::LocalStat
         | LuaSyntaxKind::FuncStat
-        | LuaSyntaxKind::LocalFuncStat => true,
+        | LuaSyntaxKind::LocalFuncStat
+        | LuaSyntaxKind::AssignStat => true,
         _ => false,
     }
 }

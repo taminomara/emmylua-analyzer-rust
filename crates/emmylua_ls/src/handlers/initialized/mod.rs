@@ -4,7 +4,7 @@ mod collect_files;
 mod locale;
 mod regsiter_file_watch;
 
-use std::{collections::HashMap, path::PathBuf, str::FromStr, sync::Arc};
+use std::{path::PathBuf, str::FromStr, sync::Arc};
 
 use crate::{
     cmd_args::CmdArgs,

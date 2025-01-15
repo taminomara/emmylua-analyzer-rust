@@ -8,7 +8,7 @@ use super::decl::LuaDeclId;
 pub enum LuaScopeKind {
     Normal,
     Repeat,
-    LocalStat,
+    LocalOrAssignStat,
     ForRange,
     FuncStat
 }

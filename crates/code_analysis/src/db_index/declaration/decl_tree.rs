@@ -136,7 +136,7 @@ impl LuaDeclarationTree {
         F: FnMut(ScopeOrDeclId) -> bool,
     {
         match scope.get_kind() {
-            LuaScopeKind::LocalStat => {
+            LuaScopeKind::LocalOrAssignStat => {
                 let parent = scope.get_parent();
                 if let Some(parent) = parent {
                     let parent_scope = self.scopes.get(parent.id as usize).unwrap();
@@ -176,7 +176,7 @@ impl LuaDeclarationTree {
         F: FnMut(ScopeOrDeclId) -> bool,
     {
         match scope.get_kind() {
-            LuaScopeKind::LocalStat | LuaScopeKind::FuncStat => {
+            LuaScopeKind::LocalOrAssignStat | LuaScopeKind::FuncStat => {
                 for child in scope.get_children() {
                     if let ScopeOrDeclId::Decl(decl_id) = child {
                         if f(decl_id.into()) {
