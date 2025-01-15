@@ -1,4 +1,4 @@
-use lsp_types::{DidChangeTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams};
+use lsp_types::{DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams};
 
 use crate::context::ServerContextSnapshot;
 
@@ -43,6 +43,14 @@ pub async fn on_did_change_text_document(
     if let Some(file_id) = file_id {
         context.file_diagnostic.add_diagnostic_task(file_id).await;
     }
+
+    Some(())
+}
+
+pub async fn on_did_close_document(
+    _: ServerContextSnapshot,
+    _: DidCloseTextDocumentParams,
+) -> Option<()> {
 
     Some(())
 }

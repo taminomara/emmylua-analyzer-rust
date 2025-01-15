@@ -4,8 +4,8 @@ use log::error;
 use lsp_server::Notification;
 use lsp_types::{
     notification::{
-        Cancel, DidChangeTextDocument, DidChangeWatchedFiles, DidOpenTextDocument,
-        DidSaveTextDocument, Notification as lsp_notification,
+        Cancel, DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument,
+        DidOpenTextDocument, DidSaveTextDocument, Notification as lsp_notification, SetTrace,
     },
     CancelParams, NumberOrString,
 };
@@ -14,8 +14,8 @@ use serde::de::DeserializeOwned;
 use crate::context::{ServerContext, ServerContextSnapshot};
 
 use super::text_document::{
-    on_did_change_text_document, on_did_change_watched_files, on_did_open_text_document,
-    on_did_save_text_document,
+    on_did_change_text_document, on_did_change_watched_files, on_did_close_document,
+    on_did_open_text_document, on_did_save_text_document, on_set_trace,
 };
 
 pub async fn on_notification_handler(
@@ -29,7 +29,9 @@ pub async fn on_notification_handler(
         .await
         .on_parallel::<DidOpenTextDocument, _, _>(on_did_open_text_document)
         .on_parallel::<DidSaveTextDocument, _, _>(on_did_save_text_document)
+        .on_parallel::<DidCloseTextDocument, _, _>(on_did_close_document)
         .on_parallel::<DidChangeWatchedFiles, _, _>(on_did_change_watched_files)
+        .on_parallel::<SetTrace, _, _>(on_set_trace)
         .finish();
 
     Ok(())
@@ -41,10 +43,7 @@ pub struct NotificationDispatcher<'a> {
 }
 
 impl<'a> NotificationDispatcher<'a> {
-    pub fn new(
-        notification: Notification,
-        context: &'a mut ServerContext,
-    ) -> Self {
+    pub fn new(notification: Notification, context: &'a mut ServerContext) -> Self {
         NotificationDispatcher {
             notification: Some(notification),
             context,
