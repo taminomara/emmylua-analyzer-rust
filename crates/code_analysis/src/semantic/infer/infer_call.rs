@@ -319,7 +319,7 @@ fn unwrapp_return_type(
             if let Some(parent) = parent {
                 match parent.kind().into() {
                     LuaSyntaxKind::AssignStat
-                    | LuaSyntaxKind::LocalName
+                    | LuaSyntaxKind::LocalStat
                     | LuaSyntaxKind::ReturnStat
                     | LuaSyntaxKind::TableArrayExpr
                     | LuaSyntaxKind::CallArgList => {
