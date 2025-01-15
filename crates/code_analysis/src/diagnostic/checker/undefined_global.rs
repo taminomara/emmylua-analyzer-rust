@@ -58,8 +58,20 @@ fn check_name_expr(
         return Some(());
     }
 
-    let emmyrc = semantic_model.get_emmyrc();
-    if emmyrc.diagnostics.globals.contains(&name_text) {
+    if context
+        .config
+        .global_disable_set
+        .contains(name_text.as_str())
+    {
+        return Some(());
+    }
+
+    if context
+        .config
+        .global_disable_glob
+        .iter()
+        .any(|re| re.is_match(&name_text))
+    {
         return Some(());
     }
 

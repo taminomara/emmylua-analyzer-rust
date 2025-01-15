@@ -66,11 +66,16 @@ fn infer_literal_expr(expr: LuaLiteralExpr) -> InferResult {
         LuaLiteralToken::Number(num) => {
             if num.is_int() {
                 Some(LuaType::IntegerConst(num.get_int_value()))
+            } else if num.is_float() {
+                Some(LuaType::FloatConst(num.get_float_value()))
             } else {
                 Some(LuaType::Number)
             }
         }
-        LuaLiteralToken::String(str) => Some(LuaType::StringConst(SmolStr::new(str.get_value()).into())),
+        LuaLiteralToken::String(str) => {
+            Some(LuaType::StringConst(SmolStr::new(str.get_value()).into()))
+        }
+        LuaLiteralToken::Dots(_) => Some(LuaType::Any),
     }
 }
 

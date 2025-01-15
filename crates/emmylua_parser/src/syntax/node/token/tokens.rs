@@ -363,6 +363,7 @@ pub enum LuaLiteralToken {
     Number(LuaNumberToken),
     Bool(LuaBoolToken),
     Nil(LuaNilToken),
+    Dots(LuaGeneralToken),
 }
 
 impl LuaAstToken for LuaLiteralToken {
@@ -372,6 +373,7 @@ impl LuaAstToken for LuaLiteralToken {
             LuaLiteralToken::Number(token) => token.syntax(),
             LuaLiteralToken::Bool(token) => token.syntax(),
             LuaLiteralToken::Nil(token) => token.syntax(),
+            LuaLiteralToken::Dots(token) => token.syntax(),
         }
     }
 
@@ -380,13 +382,15 @@ impl LuaAstToken for LuaLiteralToken {
         Self: Sized,
     {
         match kind {
-            LuaTokenKind::TkString
-            | LuaTokenKind::TkLongString
+            LuaTokenKind::TkInt
             | LuaTokenKind::TkFloat
-            | LuaTokenKind::TkInt
+            | LuaTokenKind::TkComplex
+            | LuaTokenKind::TkNil
             | LuaTokenKind::TkTrue
             | LuaTokenKind::TkFalse
-            | LuaTokenKind::TkNil => true,
+            | LuaTokenKind::TkDots
+            | LuaTokenKind::TkString
+            | LuaTokenKind::TkLongString => true,
             _ => false,
         }
     }
@@ -399,13 +403,14 @@ impl LuaAstToken for LuaLiteralToken {
             LuaTokenKind::TkString | LuaTokenKind::TkLongString => {
                 LuaStringToken::cast(syntax).map(LuaLiteralToken::String)
             }
-            LuaTokenKind::TkFloat | LuaTokenKind::TkInt => {
+            LuaTokenKind::TkFloat | LuaTokenKind::TkInt | LuaTokenKind::TkComplex => {
                 LuaNumberToken::cast(syntax).map(LuaLiteralToken::Number)
             }
             LuaTokenKind::TkTrue | LuaTokenKind::TkFalse => {
                 LuaBoolToken::cast(syntax).map(LuaLiteralToken::Bool)
             }
             LuaTokenKind::TkNil => LuaNilToken::cast(syntax).map(LuaLiteralToken::Nil),
+            LuaTokenKind::TkDots => LuaGeneralToken::cast(syntax).map(LuaLiteralToken::Dots),
             _ => None,
         }
     }

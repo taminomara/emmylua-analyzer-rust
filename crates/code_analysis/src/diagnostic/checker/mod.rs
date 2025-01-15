@@ -5,19 +5,20 @@ mod deprecated;
 mod discard_returns;
 mod local_const_reassign;
 mod missing_parameter;
+mod param_type_check;
 mod syntax_error;
 mod undefined_global;
 mod unused;
-mod param_type_check;
 
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
-use std::{collections::HashSet, sync::Arc};
+use std::sync::Arc;
 
 use crate::{db_index::DbIndex, semantic::SemanticModel, FileId};
 
 use super::{
     lua_diagnostic_code::{get_default_severity, is_code_default_enable},
+    lua_diagnostic_config::LuaDiagnosticConfig,
     DiagnosticCode,
 };
 
@@ -55,23 +56,16 @@ pub struct DiagnosticContext<'a> {
     file_id: FileId,
     db: &'a DbIndex,
     diagnostics: Vec<Diagnostic>,
-    workspace_enabled: Arc<HashSet<DiagnosticCode>>,
-    workspace_disabled: Arc<HashSet<DiagnosticCode>>,
+    pub config: Arc<LuaDiagnosticConfig>,
 }
 
 impl<'a> DiagnosticContext<'a> {
-    pub fn new(
-        file_id: FileId,
-        db: &'a DbIndex,
-        workspace_enabled: Arc<HashSet<DiagnosticCode>>,
-        workspace_disabled: Arc<HashSet<DiagnosticCode>>,
-    ) -> Self {
+    pub fn new(file_id: FileId, db: &'a DbIndex, config: Arc<LuaDiagnosticConfig>) -> Self {
         Self {
             file_id,
             db,
             diagnostics: Vec::new(),
-            workspace_disabled,
-            workspace_enabled,
+            config,
         }
     }
 
@@ -172,7 +166,7 @@ impl<'a> DiagnosticContext<'a> {
         }
 
         // workspace force disabled
-        if self.workspace_disabled.contains(&code) {
+        if self.config.workspace_disabled.contains(&code) {
             return false;
         }
 
@@ -188,7 +182,7 @@ impl<'a> DiagnosticContext<'a> {
         }
 
         // workspace force enabled
-        if self.workspace_enabled.contains(&code) {
+        if self.config.workspace_enabled.contains(&code) {
             return true;
         }
 

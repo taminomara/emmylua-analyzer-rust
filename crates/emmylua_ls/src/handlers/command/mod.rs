@@ -18,7 +18,7 @@ pub async fn on_execute_command_handler(
     let args = params.arguments;
     let command_name = params.command.as_str();
     commands::dispatch_command(context, command_name, args).await;
-    None
+    Some(Value::Null)
 }
 
 pub fn register_capabilities(

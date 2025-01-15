@@ -1,6 +1,7 @@
+mod checker;
 mod lua_diagnostic;
 mod lua_diagnostic_code;
-mod checker;
+mod lua_diagnostic_config;
 
-pub use lua_diagnostic_code::DiagnosticCode;
 pub use lua_diagnostic::LuaDiagnostic;
+pub use lua_diagnostic_code::DiagnosticCode;
