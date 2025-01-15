@@ -1,6 +1,5 @@
 use emmylua_parser::{
-    LuaAstNode, LuaExpr, LuaIndexExpr, LuaIndexKey, LuaSyntaxId, LuaSyntaxKind, LuaSyntaxNode,
-    LuaTableExpr, LuaVarExpr,
+    LuaAstNode, LuaIndexExpr, LuaIndexKey, LuaSyntaxId, LuaSyntaxKind, LuaSyntaxNode, LuaTableExpr,
 };
 use rowan::TextRange;
 use smol_str::SmolStr;
@@ -27,15 +26,7 @@ pub fn infer_index_expr(
     index_expr: LuaIndexExpr,
 ) -> InferResult {
     let prefix_expr = index_expr.get_prefix_expr()?;
-    let prefix_type = match prefix_expr {
-        LuaVarExpr::IndexExpr(prefix_index) => {
-            infer_expr(db, config, LuaExpr::IndexExpr(prefix_index))?
-        }
-        LuaVarExpr::NameExpr(prefix_name) => {
-            infer_expr(db, config, LuaExpr::NameExpr(prefix_name))?
-        }
-    };
-
+    let prefix_type = infer_expr(db, config, prefix_expr)?;
     let member_key = index_expr.get_index_key()?;
     if let Some(member_type) = infer_member_by_member_key(
         db,

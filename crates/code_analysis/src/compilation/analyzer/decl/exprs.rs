@@ -1,6 +1,6 @@
 use emmylua_parser::{
-    LuaAstNode, LuaAstToken, LuaClosureExpr, LuaIndexExpr, LuaIndexKey, LuaLiteralExpr,
-    LuaLiteralToken, LuaNameExpr, LuaTableExpr, LuaVarExpr,
+    LuaAstNode, LuaAstToken, LuaClosureExpr, LuaExpr, LuaIndexExpr, LuaIndexKey, LuaLiteralExpr,
+    LuaLiteralToken, LuaNameExpr, LuaTableExpr,
 };
 
 use crate::{
@@ -70,7 +70,7 @@ pub fn analyze_index_expr(analyzer: &mut DeclAnalyzer, index_expr: LuaIndexExpr)
     let file_id = analyzer.get_file_id();
     let syntax_id = index_expr.get_syntax_id();
     let prefix = index_expr.get_prefix_expr()?;
-    if let LuaVarExpr::NameExpr(name_expr) = prefix {
+    if let LuaExpr::NameExpr(name_expr) = prefix {
         let name_token = name_expr.get_name_token()?;
         let name_token_text = name_token.get_name_text();
         if name_token_text == "_G" || name_token_text == "_ENV" {

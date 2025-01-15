@@ -1,8 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        parser::ParserConfig, syntax::traits::LuaAstNode, LuaAst, LuaDocDescription, LuaLocalStat,
-        LuaParser, LuaVarExpr,
+        parser::ParserConfig, syntax::traits::LuaAstNode, LuaAst, LuaDocDescription, LuaExpr, LuaLocalStat, LuaParser, LuaVarExpr
     };
 
     #[allow(unused)]
@@ -211,7 +210,7 @@ mod tests {
                         }
                         LuaVarExpr::IndexExpr(field_exp) => {
                             match field_exp.get_prefix_expr().unwrap() {
-                                LuaVarExpr::NameExpr(name) => {
+                                LuaExpr::NameExpr(name) => {
                                     assert_eq!(name.get_name_token().unwrap().get_name_text(), "t");
                                 }
                                 _ => {}

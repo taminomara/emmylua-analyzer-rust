@@ -1,6 +1,6 @@
 use emmylua_parser::{
-    LuaAssignStat, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaFuncStat, LuaIndexExpr,
-    LuaLocalFuncStat, LuaLocalStat, LuaSyntaxKind, LuaVarExpr,
+    LuaAssignStat, LuaAstNode, LuaAstToken, LuaExpr, LuaForRangeStat, LuaForStat, LuaFuncStat,
+    LuaIndexExpr, LuaLocalFuncStat, LuaLocalStat, LuaSyntaxKind, LuaVarExpr,
 };
 
 use crate::{
@@ -117,7 +117,7 @@ fn analyze_maybe_global_index_expr(
 ) -> Option<()> {
     let file_id = analyzer.get_file_id();
     let prefix = index_expr.get_prefix_expr()?;
-    if let LuaVarExpr::NameExpr(name_expr) = prefix {
+    if let LuaExpr::NameExpr(name_expr) = prefix {
         let name_token = name_expr.get_name_token()?;
         let name_token_text = name_token.get_name_text();
         if name_token_text == "_G" || name_token_text == "_ENV" {

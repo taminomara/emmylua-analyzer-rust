@@ -1,4 +1,4 @@
-use emmylua_parser::{LuaAstNode, LuaExpr, LuaIndexExpr, LuaNameExpr, LuaVarExpr};
+use emmylua_parser::{LuaAstNode, LuaExpr, LuaIndexExpr, LuaNameExpr};
 
 use crate::{
     semantic::{
@@ -97,14 +97,7 @@ fn infer_index_expr_property_owner(
     index_expr: LuaIndexExpr,
 ) -> Option<LuaPropertyOwnerId> {
     let prefix_expr = index_expr.get_prefix_expr()?;
-    let prefix_type = match prefix_expr {
-        LuaVarExpr::IndexExpr(prefix_index) => {
-            infer_expr(db, infer_config, LuaExpr::IndexExpr(prefix_index))?
-        }
-        LuaVarExpr::NameExpr(prefix_name) => {
-            infer_expr(db, infer_config, LuaExpr::NameExpr(prefix_name))?
-        }
-    };
+    let prefix_type = infer_expr(db, infer_config, prefix_expr.into())?;
 
     let member_key = index_expr.get_index_key()?.into();
     if let Some(member_info) = infer_member_property_owner_by_member_key(

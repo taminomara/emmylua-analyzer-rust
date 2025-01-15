@@ -257,7 +257,7 @@ impl LuaAstNode for LuaIndexExpr {
 }
 
 impl LuaIndexExpr {
-    pub fn get_prefix_expr(&self) -> Option<LuaVarExpr> {
+    pub fn get_prefix_expr(&self) -> Option<LuaExpr> {
         self.child()
     }
 

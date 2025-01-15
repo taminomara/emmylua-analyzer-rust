@@ -7,7 +7,7 @@ use crate::{
 };
 use decl::{LuaDecl, LuaDeclId};
 use emmylua_parser::{
-    LuaAstNode, LuaChunk, LuaFuncStat, LuaNameExpr, LuaSyntaxId, LuaSyntaxKind, LuaVarExpr,
+    LuaAstNode, LuaChunk, LuaExpr, LuaFuncStat, LuaNameExpr, LuaSyntaxId, LuaSyntaxKind, LuaVarExpr,
 };
 use rowan::{TextRange, TextSize};
 use scope::{LuaScope, LuaScopeId, LuaScopeKind, ScopeOrDeclId};
@@ -283,7 +283,7 @@ impl LuaDeclarationTree {
         if let LuaVarExpr::IndexExpr(index_name) = func_name {
             let prefix = index_name.get_prefix_expr()?;
             match prefix {
-                LuaVarExpr::NameExpr(prefix_name) => {
+                LuaExpr::NameExpr(prefix_name) => {
                     let name = prefix_name.get_name_text()?;
                     let decl = self.find_local_decl(&name, prefix_name.get_position());
                     if let Some(decl) = decl {
@@ -295,10 +295,11 @@ impl LuaDeclarationTree {
                         .get_global_decl_id(&LuaMemberKey::Name(name.into()))?;
                     return Some(LuaDeclOrMemberId::Decl(id));
                 }
-                LuaVarExpr::IndexExpr(prefx_index) => {
+                LuaExpr::IndexExpr(prefx_index) => {
                     let member_id = LuaMemberId::new(prefx_index.get_syntax_id(), self.file_id);
                     return Some(LuaDeclOrMemberId::Member(member_id));
                 }
+                _ => return None,
             }
         }
 

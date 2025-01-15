@@ -1094,4 +1094,24 @@ Syntax(Chunk)@0..205
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_error_for_completion() {
+        let code = "a():";
+        let result = r#"
+Syntax(Chunk)@0..4
+  Syntax(Block)@0..4
+    Syntax(AssignStat)@0..4
+      Syntax(IndexExpr)@0..4
+        Syntax(CallExpr)@0..3
+          Syntax(NameExpr)@0..1
+            Token(TkName)@0..1 "a"
+          Syntax(CallArgList)@1..3
+            Token(TkLeftParen)@1..2 "("
+            Token(TkRightParen)@2..3 ")"
+        Token(TkColon)@3..4 ":"
+        "#;
+        
+        assert_ast_eq!(code, result);
+    }
 }
