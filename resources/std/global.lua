@@ -149,7 +149,7 @@ function load(chunk, chunkname, mode, env) end
 ---Loads a chunk from the given string.
 ---
 ---
----@version 5.1
+---@version 5.1, JIT
 ---@param text       string
 ---@param chunkname? string
 ---@return function?
@@ -166,12 +166,12 @@ function loadstring(text, chunkname) end
 ---@param env? any
 function loadfile(filename, mode, env) end
 
----@version 5.1
+---@version 5.1, JIT
 ---@param proxy boolean|table|userdata
 ---@return userdata
 function newproxy(proxy) end
 
----@version 5.1
+---@version 5.1, JIT
 ---
 ---Creates a module.
 ---

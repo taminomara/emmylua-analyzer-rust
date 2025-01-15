@@ -91,7 +91,7 @@ package.path = ""
 --- variable do not change the table used by `require`.
 package.preload = {}
 
----@version 5.1
+---@version 5.1, JIT
 package.loaders = {}
 
 ---@version > 5.2
@@ -168,7 +168,7 @@ function package.searchpath(name, path, sep, rep) end
 ---
 ---Sets a metatable for `module` with its `__index` field referring to the global environment, so that this module inherits values from the global environment. To be used as an option to function `module` .
 ---
----@version 5.1
+---@version 5.1, JIT
 ---@param module table
 function package.seeall(module) end
 
