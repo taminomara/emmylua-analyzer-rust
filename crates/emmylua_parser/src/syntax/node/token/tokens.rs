@@ -683,18 +683,22 @@ impl LuaAstToken for LuaPathToken {
         &self.token
     }
 
-    fn can_cast(_: LuaTokenKind) -> bool
+    fn can_cast(kind: LuaTokenKind) -> bool
     where
         Self: Sized,
     {
-        true
+        kind == LuaTokenKind::TKDocPath
     }
 
     fn cast(syntax: LuaSyntaxToken) -> Option<Self>
     where
         Self: Sized,
     {
-        Some(LuaPathToken { token: syntax })
+        if Self::can_cast(syntax.kind().into()) {
+            Some(LuaPathToken { token: syntax })
+        } else {
+            None
+        }
     }
 }
 
