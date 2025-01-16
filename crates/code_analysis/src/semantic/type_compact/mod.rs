@@ -5,9 +5,12 @@ use std::ops::Deref;
 
 use func_type::infer_doc_func_type_compact;
 
-use crate::db_index::{
-    DbIndex, LuaGenericType, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaTupleType, LuaType,
-    LuaTypeDeclId,
+use crate::{
+    db_index::{
+        DbIndex, LuaGenericType, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaTupleType,
+        LuaType, LuaTypeDeclId,
+    },
+    LuaUnionType,
 };
 
 use super::{InferGuard, LuaInferConfig};
@@ -115,6 +118,9 @@ fn infer_type_compact(
         }
         // TODO implement the check for table
         (LuaType::Tuple(_), _) => compact_type.is_table(),
+        (LuaType::Union(a), LuaType::Union(b)) => {
+            infer_union_union_type_compact(db, config, a, b, infer_guard).unwrap_or(false)
+        }
         (LuaType::Union(a), _) => a
             .get_types()
             .iter()
@@ -408,4 +414,36 @@ fn infer_generic_type_compact(
     }
 
     Some(true)
+}
+
+// a diffcult compare
+fn infer_union_union_type_compact(
+    db: &DbIndex,
+    config: &mut LuaInferConfig,
+    source: &LuaUnionType,
+    compact_type: &LuaUnionType,
+    infer_guard: &mut InferGuard,
+) -> Option<bool> {
+    let a_types = source.get_types();
+    let b_types = compact_type.get_types();
+
+    for a_type in a_types {
+        if !b_types
+            .iter()
+            .any(|b_type| infer_type_compact(db, config, a_type, b_type, infer_guard))
+        {
+            return Some(false);
+        }
+    }
+
+    for b_type in b_types {
+        if !a_types
+            .iter()
+            .any(|a_type| infer_type_compact(db, config, a_type, b_type, infer_guard))
+        {
+            return Some(false);
+        }
+    }
+
+    Some(false)
 }

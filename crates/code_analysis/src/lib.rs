@@ -2,9 +2,9 @@ mod compilation;
 mod config;
 mod db_index;
 mod diagnostic;
+mod profile;
 mod semantic;
 mod vfs;
-mod profile;
 
 pub use compilation::*;
 pub use config::*;
@@ -12,11 +12,11 @@ pub use db_index::*;
 pub use diagnostic::*;
 use log::{error, info};
 use lsp_types::Uri;
+pub use profile::Profile;
 pub use semantic::*;
 use std::{collections::HashSet, env, path::PathBuf, sync::Arc};
 use tokio_util::sync::CancellationToken;
 pub use vfs::*;
-pub use profile::Profile;
 
 #[macro_use]
 extern crate rust_i18n;
@@ -131,25 +131,43 @@ impl EmmyLuaAnalysis {
     pub fn update_files_by_uri(&mut self, files: Vec<(Uri, Option<String>)>) -> Vec<FileId> {
         let mut removed_files = HashSet::new();
         let mut updated_files = HashSet::new();
-        for (uri, text) in files {
-            let is_new_text = text.is_some();
-            let file_id = self
-                .compilation
-                .get_db_mut()
-                .get_vfs_mut()
-                .set_file_content(&uri, text);
-            removed_files.insert(file_id);
-            if is_new_text {
-                updated_files.insert(file_id);
+        {
+            let _p = Profile::new("update files");
+            for (uri, text) in files {
+                let is_new_text = text.is_some();
+                let file_id = self
+                    .compilation
+                    .get_db_mut()
+                    .get_vfs_mut()
+                    .set_file_content(&uri, text);
+                removed_files.insert(file_id);
+                if is_new_text {
+                    updated_files.insert(file_id);
+                }
             }
         }
-
         self.compilation
             .remove_index(removed_files.into_iter().collect());
         let updated_files: Vec<FileId> = updated_files.into_iter().collect();
         self.compilation.update_index(updated_files.clone());
         updated_files
     }
+
+    // pub fn parrallel_update_files_by_uri(
+    //     &mut self,
+    //     files: Vec<(Uri, Option<String>)>,
+    // ) -> Vec<FileId> {
+    //     let mut removed_files = HashSet::new();
+    //     let mut updated_files = HashSet::new();
+    //     {
+    //         let _p = Profile::new("parrallel update files");
+    //     }
+    //     self.compilation
+    //         .remove_index(removed_files.into_iter().collect());
+    //     let updated_files: Vec<FileId> = updated_files.into_iter().collect();
+    //     self.compilation.update_index(updated_files.clone());
+    //     updated_files
+    // }
 
     pub fn update_files_by_path(&mut self, files: Vec<(PathBuf, Option<String>)>) -> Vec<FileId> {
         let files = files
