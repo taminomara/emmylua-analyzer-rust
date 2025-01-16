@@ -502,6 +502,8 @@ pub fn analyze_table_field(analyzer: &mut LuaAnalyzer, field: LuaTableField) -> 
     let decl_type = member.get_decl_type();
     if decl_type.is_unknown() {
         member.decl_type = value_type;
+    } else if decl_type.is_def() {
+        merge_member_type(analyzer.db, member_id, value_type);
     }
 
     Some(())
