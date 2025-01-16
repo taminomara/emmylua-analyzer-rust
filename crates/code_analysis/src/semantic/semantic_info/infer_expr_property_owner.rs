@@ -179,6 +179,9 @@ fn infer_member_property_owner_by_member_key(
         LuaType::Instance(inst) => {
             infer_instance_member_property_by_member_key(db, config, inst, member_key, infer_guard)
         }
+        LuaType::Global => {
+            infer_globla_member_property_by_member_key(db, config, member_key, infer_guard)
+        }
         _ => None,
     }
 }
@@ -297,4 +300,19 @@ fn infer_instance_member_property_by_member_key(
     }
 
     None
+}
+
+fn infer_globla_member_property_by_member_key(
+    db: &DbIndex,
+    _: &LuaInferConfig,
+    member_key: &LuaMemberKey,
+    _: &mut InferGuard,
+) -> Option<LuaPropertyOwnerId> {
+    let decl_id = db.get_decl_index().get_global_decl_id(member_key);
+
+    if decl_id.is_some() {
+        Some(LuaPropertyOwnerId::LuaDecl(decl_id.unwrap()))
+    } else {
+        None
+    }
 }
