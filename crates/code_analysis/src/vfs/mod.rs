@@ -103,9 +103,7 @@ impl Vfs {
 
     pub fn set_file_content(&mut self, uri: &Uri, data: Option<String>) -> FileId {
         let fid = self.file_id(uri);
-        if cfg!(debug_assertions) {
-            log::debug!("file_id: {:?}, uri: {}", fid, uri.as_str());
-        }
+        log::debug!("file_id: {:?}, uri: {}", fid, uri.as_str());
 
         if let Some(data) = &data {
             let line_index = LineIndex::parse(&data);

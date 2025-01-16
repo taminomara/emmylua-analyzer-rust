@@ -148,6 +148,7 @@ fn infer_type_compact(
         (LuaType::TableConst(_), _) => false,
         (LuaType::Extends(_), _) => false,
         (LuaType::MuliReturn(_), _) => false,
+        (LuaType::Namespace(a), LuaType::Namespace(b)) => a == b,
         _ => false,
     }
 }

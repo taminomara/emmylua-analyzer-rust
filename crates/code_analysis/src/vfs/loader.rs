@@ -88,18 +88,11 @@ pub fn read_file_with_encoding(path: &Path, encoding: &str) -> Option<String> {
     let content = fs::read(path).ok()?;
     let encoding = Encoding::for_label(encoding.as_bytes()).unwrap_or(UTF_8);
 
-    let (content, _, has_error) = encoding.decode(&content);
+    let (content, has_error) = encoding.decode_with_bom_removal(&content);
     if has_error {
         error!("Error decoding file: {:?}", path);
         return None;
     }
 
-    // Remove BOM
-    let content_str = if encoding == UTF_8 && content.starts_with("\u{FEFF}") {
-        &content[3..]
-    } else {
-        &content
-    };
-
-    Some(content_str.to_string())
+    Some(content.to_string())
 }
