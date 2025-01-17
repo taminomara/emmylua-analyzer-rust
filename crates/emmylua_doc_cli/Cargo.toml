@@ -12,3 +12,4 @@ lsp-types.workspace = true
 rowan.workspace = true
 walkdir.workspace = true
 structopt.workspace = true
+tera.workspace = true
