@@ -1,4 +1,6 @@
-use emmylua_parser::{LuaAstNode, LuaAstToken, LuaCallExpr, LuaGeneralToken, LuaLiteralExpr, LuaLiteralToken};
+use emmylua_parser::{
+    LuaAstNode, LuaAstToken, LuaCallExpr, LuaGeneralToken, LuaLiteralExpr, LuaLiteralToken,
+};
 
 use crate::{DiagnosticCode, SemanticModel};
 
@@ -22,18 +24,32 @@ fn check_call_expr(
 ) -> Option<()> {
     let func = semantic_model.infer_call_expr_func(call_expr.clone(), None)?;
     let params = func.get_params();
-    let args_count = call_expr.get_args_list()?.get_args().count();
+    let mut args_count = call_expr.get_args_list()?.get_args().count();
+    let colon_call = call_expr.is_colon_call();
+    let colon_define = func.is_colon_define();
+    match (colon_call, colon_define) {
+        (true, true) | (false, false) => {}
+        (false, true) => {
+            if args_count > 0 {
+                args_count -= 1;
+            }
+        }
+        (true, false) => {
+            args_count += 1;
+        }
+    }
+
     if args_count < params.len() {
         // fix last arg is `...`
         if args_count != 0 {
-            let last_arg = call_expr.get_args_list()?.child::<LuaLiteralExpr>()?;
-            if let Some(literal_token) = last_arg.get_literal() {
-                if let LuaLiteralToken::Dots(_) = literal_token {
-                    return Some(());
+            if let Some(last_arg) = call_expr.get_args_list()?.child::<LuaLiteralExpr>() {
+                if let Some(literal_token) = last_arg.get_literal() {
+                    if let LuaLiteralToken::Dots(_) = literal_token {
+                        return Some(());
+                    }
                 }
             }
         }
-
 
         let mut miss_parameter_info = Vec::new();
         for i in args_count..params.len() {
@@ -61,7 +77,8 @@ fn check_call_expr(
                     num = params.len(),
                     found_num = args_count,
                     infos = miss_parameter_info.join("\n")
-                ).to_string(),
+                )
+                .to_string(),
                 None,
             );
         }
