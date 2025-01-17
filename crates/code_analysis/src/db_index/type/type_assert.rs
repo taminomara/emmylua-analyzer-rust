@@ -7,11 +7,11 @@ use super::{LuaExistFieldType, LuaType, LuaUnionType};
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum TypeAssertion {
     Exist,
-    IsNativeLuaType(LuaType),
+    NotExist,
+    Force(LuaType),
     FieldExist(Arc<LuaMemberKey>),
     Add(LuaType),
     Remove(LuaType),
-    Force(LuaType),
 }
 
 #[allow(unused)]
@@ -19,13 +19,23 @@ impl TypeAssertion {
     pub fn tighten_type(&self, source: LuaType) -> LuaType {
         match self {
             TypeAssertion::Exist => remove_nil_and_not_false(source),
-            TypeAssertion::IsNativeLuaType(t) => force_type(source, t.clone()),
+            TypeAssertion::NotExist => force_nil_or_false(source),
+            TypeAssertion::Force(t) => force_type(source, t.clone()),
             TypeAssertion::FieldExist(key) => {
                 LuaType::ExistField(LuaExistFieldType::new((**key).clone(), source).into())
             }
             TypeAssertion::Add(lua_type) => add_type(source, lua_type.clone()),
             TypeAssertion::Remove(lua_type) => remove_type(source, lua_type.clone()),
-            TypeAssertion::Force(lua_type) => force_type(source, lua_type.clone()),
+            _ => source,
+        }
+    }
+
+    pub fn get_negation(&self) -> Option<TypeAssertion> {
+        match self {
+            TypeAssertion::Exist => Some(TypeAssertion::NotExist),
+            TypeAssertion::NotExist => Some(TypeAssertion::Exist),
+            TypeAssertion::Force(t) => Some(TypeAssertion::Remove(t.clone())),
+            _ => None,
         }
     }
 }
@@ -50,6 +60,14 @@ fn remove_nil_and_not_false(t: LuaType) -> LuaType {
         LuaType::Nullable(t) => remove_nil_and_not_false((*t).clone()),
         t => t,
     }
+}
+
+fn force_nil_or_false(t: LuaType) -> LuaType {
+    if t.is_boolean() {
+        return LuaType::BooleanConst(false);
+    }
+
+    return LuaType::Nil;
 }
 
 fn force_type(source: LuaType, target: LuaType) -> LuaType {

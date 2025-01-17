@@ -1,6 +1,7 @@
 use emmylua_parser::{
-    BinaryOperator, LuaAst, LuaAstNode, LuaBinaryExpr, LuaCallArgList, LuaCallExpr, LuaExpr,
-    LuaIndexKey, LuaLiteralToken, LuaNameExpr, LuaSyntaxId, LuaSyntaxKind,
+    BinaryOperator, LuaAst, LuaAstNode, LuaBinaryExpr, LuaBlock, LuaCallArgList, LuaCallExpr,
+    LuaExpr, LuaIndexKey, LuaLiteralToken, LuaNameExpr, LuaStat, LuaSyntaxId, LuaSyntaxKind,
+    UnaryOperator,
 };
 use rowan::TextRange;
 
@@ -20,8 +21,9 @@ pub fn analyze(analyzer: &mut FlowAnalyzer) -> Option<()> {
         let mut flow_chains = LuaFlowChain::new(decl_id);
         for range in ranges {
             let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), range.clone());
-            let node = LuaNameExpr::cast(syntax_id.to_node_from_root(root)?)?;
-            infer_name_expr(analyzer, &mut flow_chains, node);
+            if let Some(node) = LuaNameExpr::cast(syntax_id.to_node_from_root(root)?) {
+                infer_name_expr(analyzer, &mut flow_chains, node);
+            }
         }
         analyzer
             .db
@@ -32,84 +34,63 @@ pub fn analyze(analyzer: &mut FlowAnalyzer) -> Option<()> {
     Some(())
 }
 
-fn get_effect_range(check_expr: LuaExpr) -> Option<TextRange> {
-    let parent = check_expr.get_parent::<LuaAst>()?;
-    match parent {
-        LuaAst::LuaIfStat(if_stat) => {
-            let range = if_stat.get_block()?.get_range();
-            Some(range)
-        }
-        LuaAst::LuaWhileStat(while_stat) => {
-            let range = while_stat.get_block()?.get_range();
-            Some(range)
-        }
-        LuaAst::LuaElseIfClauseStat(else_if_clause_stat) => {
-            let range = else_if_clause_stat.get_block()?.get_range();
-            Some(range)
-        }
-        LuaAst::LuaParenExpr(paren_expr) => get_effect_range(LuaExpr::ParenExpr(paren_expr)),
-        LuaAst::LuaBinaryExpr(binary_expr) => {
-            let op = binary_expr.get_op_token()?;
-            let basic_range = match op.get_op() {
-                BinaryOperator::OpAnd => {
-                    let range = binary_expr.get_range();
-                    let check_range = check_expr.get_range();
-                    if check_range.start() == range.start() {
-                        let start = check_range.end();
-                        let end = range.end();
-                        if start < end {
-                            Some(TextRange::new(start, end))
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    }
-                }
-                _ => return None,
-            };
-
-            let parent_effect_range = get_effect_range(LuaExpr::BinaryExpr(binary_expr));
-            match (basic_range, parent_effect_range) {
-                (Some(basic_range), Some(parent_effect_range)) => {
-                    let start = basic_range.start().min(parent_effect_range.start());
-                    let end = basic_range.end().max(parent_effect_range.end());
-                    Some(TextRange::new(start, end))
-                }
-                (Some(basic_range), None) => Some(basic_range),
-                (None, Some(parent_effect_range)) => Some(parent_effect_range),
-                _ => None,
-            }
-        }
-        _ => None,
-    }
-}
-
 fn infer_name_expr(
     analyzer: &FlowAnalyzer,
     flow_chains: &mut LuaFlowChain,
     name_expr: LuaNameExpr,
 ) -> Option<()> {
     let parent = name_expr.get_parent::<LuaAst>()?;
+    broadcast_up(
+        analyzer,
+        flow_chains,
+        parent,
+        LuaAst::LuaNameExpr(name_expr),
+        TypeAssertion::Exist,
+    );
+    Some(())
+}
+
+fn broadcast_up(
+    analyzer: &FlowAnalyzer,
+    flow_chains: &mut LuaFlowChain,
+    parent: LuaAst,
+    origin: LuaAst,
+    type_assert: TypeAssertion,
+) -> Option<()> {
     match parent {
         LuaAst::LuaIfStat(if_stat) => {
             // this mean the name_expr is a condition and the name_expr is not nil and is not false
-            let block = if_stat.get_block()?;
-            flow_chains.add_type_assert(TypeAssertion::Exist, block.get_range());
+            if let Some(block) = if_stat.get_block() {
+                flow_chains.add_type_assert(type_assert.clone(), block.get_range());
+            }
+
+            if let Some(ne_type_assert) = type_assert.get_negation() {
+                if let Some(else_stat) = if_stat.get_else_clause() {
+                    let range = else_stat.get_range();
+                    flow_chains.add_type_assert(ne_type_assert, range);
+                } else if is_block_has_return(if_stat.get_block()?).unwrap_or(false) {
+                    let parent_block = if_stat.get_parent::<LuaBlock>()?;
+                    let parent_range = parent_block.get_range();
+                    let if_range = if_stat.get_range();
+                    if if_range.end() < parent_range.end() {
+                        let range = TextRange::new(if_range.end(), parent_range.end());
+                        flow_chains.add_type_assert(ne_type_assert, range);
+                    }
+                }
+            }
         }
         LuaAst::LuaWhileStat(while_stat) => {
             // this mean the name_expr is a condition and the name_expr is not nil and is not false
             let block = while_stat.get_block()?;
-            flow_chains.add_type_assert(TypeAssertion::Exist, block.get_range());
+            flow_chains.add_type_assert(type_assert, block.get_range());
         }
         LuaAst::LuaElseIfClauseStat(else_if_clause_stat) => {
             // this mean the name_expr is a condition and the name_expr is not nil and is not false
             let block = else_if_clause_stat.get_block()?;
-            flow_chains.add_type_assert(TypeAssertion::Exist, block.get_range());
+            flow_chains.add_type_assert(type_assert, block.get_range());
         }
         LuaAst::LuaIndexExpr(index_expr) => {
             let key = index_expr.get_index_key()?;
-            let range = get_effect_range(LuaExpr::IndexExpr(index_expr))?;
             let reference_key = match key {
                 LuaIndexKey::Integer(i) => {
                     if i.is_int() {
@@ -125,24 +106,59 @@ fn infer_name_expr(
                 _ => return None,
             };
 
-            flow_chains.add_type_assert(TypeAssertion::FieldExist(reference_key.into()), range);
+            let type_assert = TypeAssertion::FieldExist(reference_key.into());
+            broadcast_up(
+                analyzer,
+                flow_chains,
+                index_expr.get_parent::<LuaAst>()?,
+                LuaAst::LuaIndexExpr(index_expr),
+                type_assert,
+            );
         }
         LuaAst::LuaBinaryExpr(binary_expr) => {
             let op = binary_expr.get_op_token()?;
             match op.get_op() {
                 BinaryOperator::OpAnd => {
-                    let range = get_effect_range(LuaExpr::NameExpr(name_expr))?;
-                    flow_chains.add_type_assert(TypeAssertion::Exist, range);
+                    let (left, right) = binary_expr.get_exprs()?;
+                    if left.get_position() == origin.get_position() {
+                        flow_chains.add_type_assert(type_assert.clone(), right.get_range());
+                    }
+
+                    broadcast_up(
+                        analyzer,
+                        flow_chains,
+                        binary_expr.get_parent::<LuaAst>()?,
+                        LuaAst::LuaBinaryExpr(binary_expr),
+                        type_assert,
+                    );
                 }
                 _ => {}
             }
         }
         LuaAst::LuaCallArgList(call_args_list) => {
-            infer_call_arg_list(analyzer, flow_chains, call_args_list)?;
+            if type_assert == TypeAssertion::Exist {
+                infer_call_arg_list(analyzer, flow_chains, call_args_list)?;
+            }
+        }
+        LuaAst::LuaUnaryExpr(unary_expr) => {
+            let op = unary_expr.get_op_token()?;
+            match op.get_op() {
+                UnaryOperator::OpNot => {
+                    if let Some(ne_type_assert) = type_assert.get_negation() {
+                        broadcast_up(
+                            analyzer,
+                            flow_chains,
+                            unary_expr.get_parent::<LuaAst>()?,
+                            LuaAst::LuaUnaryExpr(unary_expr),
+                            ne_type_assert,
+                        );
+                    }
+                }
+                _ => {}
+            }
         }
         _ => {}
     }
-
     Some(())
 }
 
@@ -168,18 +184,18 @@ fn infer_call_arg_list(
 }
 
 fn infer_lua_type_assert(
-    _: &FlowAnalyzer,
+    analyzer: &FlowAnalyzer,
     flow_chains: &mut LuaFlowChain,
     call_expr: LuaCallExpr,
 ) -> Option<()> {
-    let parent = call_expr.get_parent::<LuaBinaryExpr>()?;
-    let op = parent.get_op_token()?;
+    let binary_expr = call_expr.get_parent::<LuaBinaryExpr>()?;
+    let op = binary_expr.get_op_token()?;
     match op.get_op() {
         BinaryOperator::OpEq => {}
         _ => return None,
     };
 
-    let operands = parent.get_exprs()?;
+    let operands = binary_expr.get_exprs()?;
     let literal_expr = if let LuaExpr::LiteralExpr(literal) = operands.0 {
         literal
     } else if let LuaExpr::LiteralExpr(literal) = operands.1 {
@@ -194,21 +210,42 @@ fn infer_lua_type_assert(
     };
 
     let type_assert = match type_literal.as_str() {
-        "number" => TypeAssertion::IsNativeLuaType(LuaType::Number),
-        "string" => TypeAssertion::IsNativeLuaType(LuaType::String),
-        "boolean" => TypeAssertion::IsNativeLuaType(LuaType::Boolean),
-        "table" => TypeAssertion::IsNativeLuaType(LuaType::Table),
-        "function" => TypeAssertion::IsNativeLuaType(LuaType::Function),
-        "thread" => TypeAssertion::IsNativeLuaType(LuaType::Thread),
-        "userdata" => TypeAssertion::IsNativeLuaType(LuaType::Userdata),
-        "nil" => TypeAssertion::IsNativeLuaType(LuaType::Nil),
+        "number" => TypeAssertion::Force(LuaType::Number),
+        "string" => TypeAssertion::Force(LuaType::String),
+        "boolean" => TypeAssertion::Force(LuaType::Boolean),
+        "table" => TypeAssertion::Force(LuaType::Table),
+        "function" => TypeAssertion::Force(LuaType::Function),
+        "thread" => TypeAssertion::Force(LuaType::Thread),
+        "userdata" => TypeAssertion::Force(LuaType::Userdata),
+        "nil" => TypeAssertion::Force(LuaType::Nil),
         _ => {
             return None;
         }
     };
 
-    let range = get_effect_range(LuaExpr::BinaryExpr(parent))?;
-    flow_chains.add_type_assert(type_assert, range);
+    broadcast_up(
+        analyzer,
+        flow_chains,
+        binary_expr.get_parent::<LuaAst>()?,
+        LuaAst::LuaBinaryExpr(binary_expr),
+        type_assert,
+    );
 
     Some(())
+}
+
+fn is_block_has_return(block: LuaBlock) -> Option<bool> {
+    for stat in block.get_stats() {
+        match stat {
+            LuaStat::ReturnStat(_) => return Some(true),
+            LuaStat::DoStat(do_stat) => {
+                if is_block_has_return(do_stat.get_block()?).unwrap_or(false) {
+                    return Some(true);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    Some(false)
 }
