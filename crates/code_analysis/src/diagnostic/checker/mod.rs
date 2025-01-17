@@ -5,6 +5,7 @@ mod deprecated;
 mod discard_returns;
 mod local_const_reassign;
 mod missing_parameter;
+mod need_check_nil;
 mod param_type_check;
 mod syntax_error;
 mod undefined_global;
@@ -48,6 +49,7 @@ pub fn check_file(
     check!(discard_returns);
     check!(await_in_sync);
     check!(param_type_check);
+    check!(need_check_nil);
 
     Some(())
 }
