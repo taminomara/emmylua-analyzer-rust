@@ -68,9 +68,9 @@ fn infer_type_compact(
         (LuaType::Integer, _) => compact_type.is_integer(),
         (LuaType::String, _) => compact_type.is_string(),
         (LuaType::Boolean, _) => compact_type.is_boolean(),
-        (LuaType::DocIntergerConst(i), _) => match compact_type {
+        (LuaType::DocIntegerConst(i), _) => match compact_type {
             LuaType::IntegerConst(j) => *i == j,
-            LuaType::DocIntergerConst(j) => *i == j,
+            LuaType::DocIntegerConst(j) => *i == j,
             _ => false,
         },
         (LuaType::DocStringConst(s), _) => match compact_type {

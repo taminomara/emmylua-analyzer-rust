@@ -4,7 +4,7 @@ pub fn render_const_type(db: &DbIndex, typ: &LuaType) -> String {
     let const_value = humanize_type(db, typ);
 
     match typ {
-        LuaType::IntegerConst(_) | LuaType::DocIntergerConst(_) => {
+        LuaType::IntegerConst(_) | LuaType::DocIntegerConst(_) => {
             format!("integer = {}", const_value)
         }
         LuaType::FloatConst(_) => format!("number = {}", const_value),

@@ -24,13 +24,13 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType) -> String {
         LuaType::Union(union) => humanize_union_type(db, union),
         LuaType::Tuple(tuple) => humanize_tuple_type(db, tuple),
         LuaType::Unknown => "unknown".to_string(),
-        LuaType::Integer => "interger".to_string(),
+        LuaType::Integer => "integer".to_string(),
         LuaType::Io => "io".to_string(),
         LuaType::SelfInfer => "self".to_string(),
         LuaType::BooleanConst(b) => b.to_string(),
         LuaType::StringConst(s) => format!("\"{}\"", s),
         LuaType::DocStringConst(s) => format!("\"{}\"", s),
-        LuaType::DocIntergerConst(i) => i.to_string(),
+        LuaType::DocIntegerConst(i) => i.to_string(),
         LuaType::Ref(id) => {
             if let Some(type_decl) = db.get_type_index().get_type_decl(id) {
                 type_decl.get_name().to_string()

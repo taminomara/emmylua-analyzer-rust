@@ -56,7 +56,7 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
                     }
                     LuaLiteralToken::Number(number_token) => {
                         if number_token.is_int() {
-                            return LuaType::DocIntergerConst(number_token.get_int_value());
+                            return LuaType::DocIntegerConst(number_token.get_int_value());
                         } else {
                             return LuaType::Number;
                         }

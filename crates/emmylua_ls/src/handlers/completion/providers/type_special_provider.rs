@@ -121,7 +121,7 @@ fn add_union_member_completion(
     for union_sub_typ in union_typ.get_types() {
         let name = match union_sub_typ {
             LuaType::DocStringConst(s) => to_enum_label(builder, s),
-            LuaType::DocIntergerConst(i) => i.to_string(),
+            LuaType::DocIntegerConst(i) => i.to_string(),
             _ => {
                 dispatch_type(builder, union_sub_typ.clone(), infer_guard);
                 continue;
@@ -188,7 +188,7 @@ fn add_alias_member_completion(
     let typ = member.get_decl_type();
     let name = match typ {
         LuaType::DocStringConst(s) => to_enum_label(builder, s),
-        LuaType::DocIntergerConst(i) => i.to_string(),
+        LuaType::DocIntegerConst(i) => i.to_string(),
         _ => return None,
     };
 

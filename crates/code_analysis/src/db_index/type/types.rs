@@ -54,7 +54,7 @@ pub enum LuaType {
     Instance(Arc<LuaInstanceType>),
     FuncTplRef(Arc<GenericTpl>),
     DocStringConst(ArcIntern<SmolStr>),
-    DocIntergerConst(i64),
+    DocIntegerConst(i64),
     Namespace(ArcIntern<SmolStr>),
 }
 
@@ -102,7 +102,7 @@ impl PartialEq for LuaType {
             (LuaType::Instance(a), LuaType::Instance(b)) => a == b,
             (LuaType::FuncTplRef(a), LuaType::FuncTplRef(b)) => a == b,
             (LuaType::DocStringConst(a), LuaType::DocStringConst(b)) => a == b,
-            (LuaType::DocIntergerConst(a), LuaType::DocIntergerConst(b)) => a == b,
+            (LuaType::DocIntegerConst(a), LuaType::DocIntegerConst(b)) => a == b,
             (LuaType::Namespace(a), LuaType::Namespace(b)) => a == b,
             _ => false, // 不同变体之间不相等
         }
@@ -176,7 +176,7 @@ impl Hash for LuaType {
             LuaType::Instance(a) => (38, a).hash(state),
             LuaType::FuncTplRef(a) => (39, a).hash(state),
             LuaType::DocStringConst(a) => (40, a).hash(state),
-            LuaType::DocIntergerConst(a) => (41, a).hash(state),
+            LuaType::DocIntegerConst(a) => (41, a).hash(state),
             LuaType::Namespace(a) => (42, a).hash(state),
         }
     }
@@ -221,7 +221,7 @@ impl LuaType {
     pub fn is_integer(&self) -> bool {
         matches!(
             self,
-            LuaType::IntegerConst(_) | LuaType::Integer | LuaType::DocIntergerConst(_)
+            LuaType::IntegerConst(_) | LuaType::Integer | LuaType::DocIntegerConst(_)
         )
     }
 
@@ -331,7 +331,7 @@ impl LuaType {
                 | LuaType::FloatConst(_)
                 | LuaType::TableConst(_)
                 | LuaType::DocStringConst(_)
-                | LuaType::DocIntergerConst(_)
+                | LuaType::DocIntegerConst(_)
         )
     }
 
