@@ -3,7 +3,7 @@ use emmylua_parser::{LuaAstNode, LuaSyntaxToken, LuaTokenKind};
 use lsp_types::{SemanticToken, SemanticTokenType};
 use rowan::NodeOrToken;
 
-use crate::handlers::initialized::ClientId;
+use crate::context::ClientId;
 
 use super::{
     semantic_token_builder::SemanticBuilder, SEMANTIC_TOKEN_MODIFIERS, SEMANTIC_TOKEN_TYPES,

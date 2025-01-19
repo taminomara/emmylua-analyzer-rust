@@ -1,9 +1,9 @@
 use code_analysis::LuaCompilation;
 use lsp_types::{CodeLens, Command, Location, Range, Uri};
 
-use crate::handlers::{
-    initialized::ClientId,
-    references::{search_decl_references, search_member_references},
+use crate::{
+    context::ClientId,
+    handlers::references::{search_decl_references, search_member_references},
 };
 
 use super::CodeLensData;

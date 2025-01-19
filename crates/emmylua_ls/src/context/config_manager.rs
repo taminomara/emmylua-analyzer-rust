@@ -1,6 +1,6 @@
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
-use super::{ClientProxy, VsCodeStatusBar};
+use super::{ClientProxy, StatusBar};
 use crate::handlers::{init_analysis, ClientConfig};
 use code_analysis::{load_configs, EmmyLuaAnalysis, Emmyrc};
 use emmylua_codestyle::update_code_style;
@@ -14,7 +14,7 @@ use tokio_util::sync::CancellationToken;
 pub struct ConfigManager {
     analysis: Arc<RwLock<EmmyLuaAnalysis>>,
     client: Arc<ClientProxy>,
-    status_bar: Arc<VsCodeStatusBar>,
+    status_bar: Arc<StatusBar>,
     pub client_config: ClientConfig,
     pub workspace_folders: Vec<PathBuf>,
     config_update_token: Arc<Mutex<Option<CancellationToken>>>,
@@ -25,7 +25,7 @@ impl ConfigManager {
     pub fn new(
         analysis: Arc<RwLock<EmmyLuaAnalysis>>,
         client: Arc<ClientProxy>,
-        status_bar: Arc<VsCodeStatusBar>,
+        status_bar: Arc<StatusBar>,
     ) -> Self {
         Self {
             analysis,

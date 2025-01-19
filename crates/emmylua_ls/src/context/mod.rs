@@ -1,18 +1,20 @@
 mod client;
+mod client_id;
 mod config_manager;
 mod file_diagnostic;
 mod snapshot;
 mod status_bar;
 
 pub use client::ClientProxy;
+pub use client_id::{get_client_id, ClientId};
 use code_analysis::EmmyLuaAnalysis;
 pub use config_manager::load_emmy_config;
 pub use config_manager::ConfigManager;
 pub use file_diagnostic::FileDiagnostic;
 use lsp_server::{Connection, ErrorCode, Message, RequestId, Response};
 pub use snapshot::ServerContextSnapshot;
-pub use status_bar::VsCodeStatusBar;
-pub use status_bar::Task;
+pub use status_bar::StatusBar;
+pub use status_bar::ProgressTask;
 use std::{collections::HashMap, future::Future, sync::Arc};
 use tokio::sync::{Mutex, RwLock};
 use tokio_util::sync::CancellationToken;
@@ -25,7 +27,7 @@ pub struct ServerContext {
     cancllations: Arc<Mutex<HashMap<RequestId, CancellationToken>>>,
     file_diagnostic: Arc<FileDiagnostic>,
     config_manager: Arc<RwLock<ConfigManager>>,
-    status_bar: Arc<VsCodeStatusBar>,
+    status_bar: Arc<StatusBar>,
 }
 
 impl ServerContext {
@@ -39,7 +41,7 @@ impl ServerContext {
         analysis.init_std_lib();
 
         let analysis = Arc::new(RwLock::new(analysis));
-        let status_bar = Arc::new(VsCodeStatusBar::new(client.clone()));
+        let status_bar = Arc::new(StatusBar::new(client.clone()));
         let file_diagnostic = Arc::new(FileDiagnostic::new(
             analysis.clone(),
             client.clone(),
