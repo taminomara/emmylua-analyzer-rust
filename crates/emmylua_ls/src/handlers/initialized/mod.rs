@@ -8,7 +8,7 @@ use std::{path::PathBuf, str::FromStr, sync::Arc};
 
 use crate::{
     cmd_args::CmdArgs,
-    context::{load_emmy_config, ClientProxy, ServerContextSnapshot, VsCodeStatusBar},
+    context::{load_emmy_config, ClientProxy, ServerContextSnapshot, Task, VsCodeStatusBar},
     logger::init_logger,
 };
 use client_config::get_client_config;
@@ -103,7 +103,13 @@ pub async fn init_analysis(
     info!("current config : {}", emmyrc_json);
 
     status_bar.set_server_status("ok", true, "Load workspace");
+    status_bar.start_task(Task::LoadWorkspace);
     status_bar.report_progress("Load workspace", 0.0);
+    status_bar.update_task(
+        Task::LoadWorkspace,
+        None,
+        Some("Loading workspace files".to_string()),
+    );
 
     let mut workspace_folders = workspace_folders;
     for workspace_root in &workspace_folders {
@@ -123,6 +129,11 @@ pub async fn init_analysis(
     }
 
     status_bar.report_progress("Collect files", 0.1);
+    status_bar.update_task(
+        Task::LoadWorkspace,
+        None,
+        Some(String::from("Collecting files")),
+    );
     // load files
     let files = collect_files(&workspace_folders, &emmyrc);
     let files: Vec<(PathBuf, Option<String>)> =
@@ -130,7 +141,16 @@ pub async fn init_analysis(
 
     let file_count = files.len();
     status_bar.report_progress(format!("Index {} files", file_count).as_str(), 0.5);
+    status_bar.update_task(
+        Task::LoadWorkspace,
+        None,
+        Some(format!("Indexing {} files", file_count)),
+    );
     let file_ids = mut_analysis.update_files_by_path(files);
+    status_bar.finish_task(
+        Task::LoadWorkspace,
+        Some(String::from("Finished loading workspace files")),
+    );
 
     drop(mut_analysis);
 
@@ -162,16 +182,22 @@ pub async fn init_analysis(
     if file_count != 0 {
         let text = format!("diagnose {} files", file_count);
         let _p = Profile::new(text.as_str());
+        status_bar.start_task(Task::DiagnoseWorkspace);
         while let Some(_) = rx.recv().await {
             count += 1;
 
+            let message = format!("diagnostic {}/{}", count, file_count);
             if client_id.is_vscode() {
-                status_bar.report_progress(
-                    format!("diagnostic {}/{}", count, file_count).as_str(),
-                    0.75,
-                );
+                status_bar.report_progress(message.as_str(), 0.75);
             }
+            let percentage_done = count as u32 / file_count as u32;
+            status_bar.update_task(
+                Task::DiagnoseWorkspace,
+                Some(percentage_done),
+                Some(message),
+            );
             if count == file_count {
+                status_bar.finish_task(Task::DiagnoseWorkspace, None);
                 break;
             }
         }
