@@ -137,11 +137,11 @@ function ipairs(t) end
 ---
 --- Lua does not check the consistency of binary chunks. Maliciously crafted
 --- binary chunks can crash the interpreter.
----@overload fun(chunk:fun():string):any
----@param chunk fun():string
+---@param chunk (fun():string) | string
 ---@param chunkname? string
 ---@param mode? string
 ---@param env? any
+---@return fun():any
 function load(chunk, chunkname, mode, env) end
 
 
@@ -344,10 +344,10 @@ function setmetatable(table, metatable) end
 --- represents 10, 'B' represents 11, and so forth, with 'Z' representing 35. If
 --- the string `e` is not a valid numeral in the given base, the function
 --- returns **nil**.
----@overload fun(e:string|number):number?
+---@overload fun(e:string|number):number
 ---@param e string|number
----@param base int
----@return number?
+---@param base? int
+---@return number
 function tonumber(e, base) end
 
 ---

@@ -102,6 +102,7 @@ function math.log(x, base) end
 --- Returns the argument with the maximum value, according to the Lua operator
 --- `<`. (integer/float)
 ---@param x number
+---@param ... number
 ---@return number
 function math.max(x, ...) end
 
@@ -114,6 +115,7 @@ math.maxinteger = nil
 --- Returns the argument with the minimum value, according to the Lua operator
 --- `<`. (integer/float)
 ---@param x number
+---@param ... number
 ---@return number
 function math.min(x, ...) end
 
