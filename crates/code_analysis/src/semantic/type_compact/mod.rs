@@ -281,16 +281,22 @@ fn infer_custom_type_compact_table(
     infer_guard: &mut InferGuard,
 ) -> Option<bool> {
     let member_index = db.get_member_index();
-    let members = member_index.get_member_map(table_owner.clone())?;
+    let table_members = member_index.get_member_map(table_owner.clone())?;
     let type_member_owner = LuaMemberOwner::Type(type_id.clone());
     let type_members = member_index.get_member_map(type_member_owner)?;
     for (key, type_member_id) in type_members {
-        let table_member_id = members.get(key)?;
-        let table_member = member_index.get_member(table_member_id)?;
         let type_member = member_index.get_member(type_member_id)?;
         let type_member_type = type_member.get_decl_type();
-        let table_member_type = table_member.get_decl_type();
-        if !infer_type_compact(db, config, type_member_type, table_member_type, infer_guard) {
+
+        if let Some(table_member_id) = table_members.get(key) {
+            let table_member = member_index.get_member(table_member_id)?;
+            let table_member_type = table_member.get_decl_type();
+            if !infer_type_compact(db, config, type_member_type, table_member_type, infer_guard) {
+                return Some(false);
+            }
+        } else if type_member_type.is_optional() {
+            continue;
+        } else {
             return Some(false);
         }
     }

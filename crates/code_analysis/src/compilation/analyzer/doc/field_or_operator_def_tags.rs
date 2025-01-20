@@ -26,7 +26,7 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
         LuaType::Unknown
     };
 
-    if nullable && type_ref.is_nullable() {
+    if nullable && !type_ref.is_nullable() {
         type_ref = LuaType::Nullable(type_ref.into());
     }
 
