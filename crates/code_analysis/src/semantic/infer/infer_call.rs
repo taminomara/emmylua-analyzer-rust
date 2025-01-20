@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{ops::Deref, sync::Arc};
 
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr, LuaSyntaxKind};
 
@@ -333,6 +333,9 @@ fn unwrapp_return_type(
             }
 
             return multi.get_type(0).cloned();
+        }
+        LuaType::Variadic(inner) => {
+            return Some(inner.deref().clone());
         }
         LuaType::SelfInfer => {
             let prefix_expr = call_expr.get_prefix_expr();

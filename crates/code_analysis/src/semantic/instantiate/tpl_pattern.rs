@@ -4,8 +4,7 @@ use emmylua_parser::{LuaAstNode, LuaSyntaxId, LuaSyntaxNode, LuaTableExpr};
 use smol_str::SmolStr;
 
 use crate::{
-    db_index::{DbIndex, LuaGenericType, LuaType},
-    semantic::{infer_expr, LuaInferConfig}, LuaUnionType,
+    db_index::{DbIndex, LuaGenericType, LuaType}, semantic::{infer_expr, LuaInferConfig}, LuaFunctionType, LuaUnionType
 };
 
 #[allow(unused)]
@@ -47,6 +46,9 @@ pub fn tpl_pattern_match(
         }
         LuaType::Union(union) => {
             union_tpl_pattern_match(db, config, root, union, target, result);
+        }
+        LuaType::DocFunction(doc_func) => {
+            func_tpl_pattern_match(db, config, root, doc_func, target, result);
         }
         _ => {}
     }
@@ -160,6 +162,28 @@ fn union_tpl_pattern_match(
 ) -> Option<()> {
     for u in union.get_types() {
         tpl_pattern_match(db, config, root, u, target, result);
+    }
+
+    Some(())
+}
+
+#[allow(unused)]
+fn func_tpl_pattern_match(
+    db: &DbIndex,
+    config: &mut LuaInferConfig,
+    root: &LuaSyntaxNode,
+    doc_func: &LuaFunctionType,
+    target: &LuaType,
+    result: &mut HashMap<usize, LuaType>,
+) -> Option<()> {
+    match target {
+        LuaType::DocFunction(target_doc_func) => {
+            // todo
+        }
+        LuaType::Signature(signature_id) => {
+            // todo
+        }
+        _ => {}
     }
 
     Some(())

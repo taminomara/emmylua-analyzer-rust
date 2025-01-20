@@ -58,6 +58,7 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType) -> String {
         LuaType::Instance(ins) => humanize_instance_type(db, ins),
         LuaType::Signature(signature_id) => humanize_signature_type(db, signature_id),
         LuaType::Namespace(ns) => format!("{{ {} }}", ns),
+        LuaType::Variadic(inner) => format!("{}...", humanize_type(db, inner)),
         _ => "unknown".to_string(),
     }
 }

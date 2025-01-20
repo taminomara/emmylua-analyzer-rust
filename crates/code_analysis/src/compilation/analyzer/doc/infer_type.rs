@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaDocBinaryType, LuaDocFuncType, LuaDocGenericType, LuaDocObjectFieldKey,
-    LuaDocObjectType, LuaDocStrTplType, LuaDocType, LuaDocUnaryType, LuaLiteralToken,
-    LuaTypeBinaryOperator, LuaTypeUnaryOperator, LuaVarExpr,
+    LuaDocObjectType, LuaDocStrTplType, LuaDocType, LuaDocUnaryType, LuaDocVariadicType,
+    LuaLiteralToken, LuaTypeBinaryOperator, LuaTypeUnaryOperator, LuaVarExpr,
 };
 use rowan::TextRange;
 use smol_str::SmolStr;
@@ -99,8 +99,10 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
         LuaDocType::StrTpl(str_tpl) => {
             return infer_str_tpl(analyzer, str_tpl);
         }
+        LuaDocType::Variadic(variadic_type) => {
+            return infer_variadic_type(analyzer, variadic_type).unwrap_or(LuaType::Unknown);
+        }
         _ => {} // LuaDocType::Conditional(lua_doc_conditional_type) => todo!(),
-                // LuaDocType::Variadic(lua_doc_variadic_type) => todo!(),
     }
     LuaType::Unknown
 }
@@ -412,4 +414,12 @@ fn infer_str_tpl(analyzer: &mut DocAnalyzer, str_tpl: LuaDocStrTplType) -> LuaTy
         return LuaType::StrTplRef(str_tpl_type.into());
     }
     LuaType::Unknown
+}
+
+fn infer_variadic_type(analyzer: &mut DocAnalyzer, variadic_type: LuaDocVariadicType) -> Option<LuaType> {
+    let name_type = variadic_type.get_name_type()?;
+    let name = name_type.get_name_text()?;
+    let base = infer_buildin_or_ref_type(analyzer, &name, name_type.get_range());
+
+    Some(LuaType::Variadic(base.into()))
 }

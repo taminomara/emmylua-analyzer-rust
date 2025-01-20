@@ -56,6 +56,7 @@ pub enum LuaType {
     DocStringConst(ArcIntern<SmolStr>),
     DocIntegerConst(i64),
     Namespace(ArcIntern<SmolStr>),
+    Variadic(Arc<LuaType>),
 }
 
 impl PartialEq for LuaType {
@@ -104,6 +105,7 @@ impl PartialEq for LuaType {
             (LuaType::DocStringConst(a), LuaType::DocStringConst(b)) => a == b,
             (LuaType::DocIntegerConst(a), LuaType::DocIntegerConst(b)) => a == b,
             (LuaType::Namespace(a), LuaType::Namespace(b)) => a == b,
+            (LuaType::Variadic(a), LuaType::Variadic(b)) => a == b,
             _ => false, // 不同变体之间不相等
         }
     }
@@ -178,6 +180,7 @@ impl Hash for LuaType {
             LuaType::DocStringConst(a) => (40, a).hash(state),
             LuaType::DocIntegerConst(a) => (41, a).hash(state),
             LuaType::Namespace(a) => (42, a).hash(state),
+            LuaType::Variadic(a) => (43, a).hash(state),
         }
     }
 }
@@ -366,6 +369,7 @@ impl LuaType {
             LuaType::MuliReturn(multi) => multi.contain_tpl(),
             LuaType::ExistField(field) => field.contain_tpl(),
             LuaType::TableGeneric(params) => params.iter().any(|p| p.contain_tpl()),
+            LuaType::Variadic(inner) => inner.contain_tpl(),
             LuaType::TplRef(_) => true,
             LuaType::StrTplRef(_) => true,
             LuaType::FuncTplRef(_) => true,
@@ -375,6 +379,10 @@ impl LuaType {
 
     pub fn is_namespace(&self) -> bool {
         matches!(self, LuaType::Namespace(_))
+    }
+
+    pub fn is_variadic(&self) -> bool {
+        matches!(self, LuaType::Variadic(_))
     }
 }
 
@@ -701,6 +709,13 @@ impl LuaMultiReturn {
         match self {
             LuaMultiReturn::Multi(types) => types.get(idx),
             LuaMultiReturn::Base(t) => Some(t),
+        }
+    }
+
+    pub fn get_len(&self) -> usize {
+        match self {
+            LuaMultiReturn::Multi(types) => types.len(),
+            LuaMultiReturn::Base(_) => 1,
         }
     }
 
