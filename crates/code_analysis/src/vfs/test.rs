@@ -96,4 +96,15 @@ mod tests {
             assert_eq!(relative_path2, Path::new("test.lua"));
         }
     }
+
+    #[test]
+    fn test_chinese_path() {
+        #[cfg(windows)]
+        {
+            let uri = Uri::from_str("file:///c%3a/%E6%96%B0%E5%BB%BA%E6%96%87%E4%BB%B6%E5%A4%B9").unwrap();
+            let path = uri_to_file_path(&uri).unwrap();
+            let result_path = Path::new("c:/新建文件夹");
+            assert_eq!(path, result_path);
+        }
+    }
 }

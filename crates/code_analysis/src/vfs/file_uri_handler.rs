@@ -24,12 +24,7 @@ pub fn uri_to_file_path(uri: &Uri) -> Option<PathBuf> {
     let decoded_path = if cfg!(windows)
     {
         let mut windows_decoded_path = decoded_path.trim_start_matches('/').replace('\\', "/");
-        // 解码并处理驱动器字母
-        if windows_decoded_path.len() >= 4 && &windows_decoded_path[1..4].to_lowercase() == "%3a" {
-            let drive = windows_decoded_path.chars().next()?.to_ascii_uppercase();
-            let rest = &windows_decoded_path[4..];
-            windows_decoded_path = format!("{}:{}", drive, rest);
-        } else if windows_decoded_path.len() >= 2 && windows_decoded_path.chars().nth(1) == Some(':') {
+        if windows_decoded_path.len() >= 2 && windows_decoded_path.chars().nth(1) == Some(':') {
             let drive = windows_decoded_path.chars().next()?.to_ascii_uppercase();
             windows_decoded_path.replace_range(..2, &format!("{}:", drive));
         }
