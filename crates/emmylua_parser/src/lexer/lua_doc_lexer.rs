@@ -123,7 +123,7 @@ impl LuaDocLexer<'_> {
                     }
                     _ => {
                         reader.eat_while(|_| true);
-                        LuaTokenKind::TkDocTrivia
+                        LuaTokenKind::TKDocTriviaStart
                     }
                 }
             }

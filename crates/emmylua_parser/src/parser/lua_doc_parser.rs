@@ -98,6 +98,14 @@ impl LuaDocParser<'_, '_> {
                     self.eat_current_and_lex_next();
                 }
             }
+            LuaDocLexerState::Init => {
+                while matches!(
+                    self.current_token,
+                    LuaTokenKind::TkEndOfLine | LuaTokenKind::TkWhitespace
+                ) {
+                    self.eat_current_and_lex_next();
+                }
+            }
             _ => {}
         }
     }

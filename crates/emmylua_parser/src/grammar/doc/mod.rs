@@ -57,6 +57,9 @@ fn parse_docs(p: &mut LuaDocParser) {
                 p.bump();
                 parse_continue_or(p);
             }
+            LuaTokenKind::TKDocTriviaStart => {
+                p.bump();
+            }
             _ => {
                 p.bump();
             }
@@ -64,8 +67,10 @@ fn parse_docs(p: &mut LuaDocParser) {
 
         if let Some(reader) = &p.lexer.reader {
             if !reader.is_eof()
-                && p.current_token() != LuaTokenKind::TkDocStart
-                && p.current_token() != LuaTokenKind::TkDocLongStart
+                && !matches!(
+                    p.current_token(),
+                    LuaTokenKind::TkDocStart | LuaTokenKind::TkDocLongStart
+                )
             {
                 p.bump_to_end();
                 continue;

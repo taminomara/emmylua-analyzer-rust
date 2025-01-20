@@ -82,6 +82,7 @@ pub enum LuaTokenKind {
     TkLongCommentStart, // --[[
     TkDocLongStart,     // --[[@
     TkDocStart,         // ---@
+    TKDocTriviaStart,   // --------------
     TkDocTrivia,        // other can not parsed
     TkLongCommentEnd,   // ]] or ]===]
 

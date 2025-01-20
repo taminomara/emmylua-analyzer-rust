@@ -1895,4 +1895,40 @@ Syntax(Chunk)@0..90
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_region_with_comment() {
+        let code = r#"
+        -----------
+        --region hhhh
+        --comment
+        --endregion
+        "#;
+
+        let result = r#"
+Syntax(Chunk)@0..89
+  Syntax(Block)@0..89
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..80
+      Token(TKDocTriviaStart)@9..20 "-----------"
+      Token(TkEndOfLine)@20..21 "\n"
+      Token(TkWhitespace)@21..29 "        "
+      Token(TkDocTrivia)@29..31 "--"
+      Token(TkDocTrivia)@31..42 "region hhhh"
+      Token(TkEndOfLine)@42..43 "\n"
+      Token(TkWhitespace)@43..51 "        "
+      Token(TkNormalStart)@51..53 "--"
+      Syntax(DocDescription)@53..71
+        Token(TkDocDetail)@53..60 "comment"
+        Token(TkEndOfLine)@60..61 "\n"
+        Token(TkWhitespace)@61..69 "        "
+        Token(TkNormalStart)@69..71 "--"
+      Token(TkDocEndRegion)@71..80 "endregion"
+    Token(TkEndOfLine)@80..81 "\n"
+    Token(TkWhitespace)@81..89 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
 }
