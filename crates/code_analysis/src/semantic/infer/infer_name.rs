@@ -76,14 +76,38 @@ fn infer_self(db: &DbIndex, config: &LuaInferConfig, name_expr: LuaNameExpr) -> 
         LuaDeclOrMemberId::Decl(decl_id) => {
             let decl = db.get_decl_index().get_decl(&decl_id)?;
             let name = decl.get_name();
-            if decl.is_global() {
-                return Some(
-                    db.get_decl_index()
-                        .get_global_decl_type(&name.into())?
-                        .clone(),
-                );
+            let mut decl_type = if decl.is_global() {
+                db.get_decl_index()
+                    .get_global_decl_type(&LuaMemberKey::Name(name.into()))?
+                    .clone()
+            } else if let Some(typ) = decl.get_type() {
+                typ.clone()
+            } else if decl.is_param() {
+                match &decl.extra {
+                    LuaDeclExtra::Param { idx, signature_id } => {
+                        let signature = db.get_signature_index().get(&signature_id)?;
+                        if let Some(param_info) = signature.get_param_info_by_id(*idx) {
+                            let mut typ = param_info.type_ref.clone();
+                            if param_info.nullable && !typ.is_nullable() {
+                                typ = LuaType::Nullable(typ.into());
+                            }
+
+                            typ
+                        } else {
+                            LuaType::Unknown
+                        }
+                    }
+                    _ => unreachable!(),
+                }
+            } else {
+                LuaType::Unknown
+            };
+
+            if let LuaType::Ref(id) = decl_type {
+                decl_type = LuaType::Def(id);
             }
-            Some(decl.get_type()?.clone())
+
+            Some(decl_type)
         }
         LuaDeclOrMemberId::Member(member_id) => {
             let member = db.get_member_index().get_member(&member_id)?;
