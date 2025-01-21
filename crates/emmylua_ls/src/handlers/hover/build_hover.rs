@@ -1,6 +1,6 @@
 use code_analysis::{
     DbIndex, LuaDeclId, LuaDocument, LuaMemberId, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId,
-    LuaType, LuaTypeDeclId, SemanticInfo,
+    LuaSignatureId, LuaType, LuaTypeDeclId, SemanticInfo,
 };
 use emmylua_parser::LuaSyntaxToken;
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
@@ -90,6 +90,10 @@ fn build_decl_hover(
     let property_owner = LuaPropertyOwnerId::LuaDecl(decl_id);
     add_description(db, &mut marked_strings, property_owner);
 
+    if let LuaType::Signature(signature_id) = typ {
+        add_signature_description(db, &mut marked_strings, signature_id);
+    }
+
     Some(Hover {
         contents: HoverContents::Array(marked_strings),
         range: document.to_lsp_range(token.text_range()),
@@ -145,6 +149,10 @@ fn build_member_hover(
         LuaPropertyOwnerId::Member(member_id),
     );
 
+    if let LuaType::Signature(signature_id) = typ {
+        add_signature_description(db, &mut marked_strings, signature_id);
+    }
+
     Some(Hover {
         contents: HoverContents::Array(marked_strings),
         range: document.to_lsp_range(token.text_range()),
@@ -156,11 +164,49 @@ fn add_description(
     marked_strings: &mut Vec<MarkedString>,
     property_owner: LuaPropertyOwnerId,
 ) {
-    if let Some(property) = db.get_property_index().get_property(property_owner) {
+    if let Some(property) = db.get_property_index().get_property(property_owner.clone()) {
         if let Some(detail) = &property.description {
             marked_strings.push(MarkedString::from_markdown(detail.to_string()));
         }
     }
+}
+
+fn add_signature_description(
+    db: &DbIndex,
+    marked_strings: &mut Vec<MarkedString>,
+    signature_id: LuaSignatureId,
+) -> Option<()> {
+    let signature = db.get_signature_index().get(&signature_id)?;
+    let param_count = signature.params.len();
+    let mut s = String::new();
+    for i in 0..param_count {
+        let param_info = match signature.get_param_info_by_id(i) {
+            Some(info) => info,
+            None => continue,
+        };
+
+        s.push_str(&format!("@param `{}`", param_info.name));
+        if let Some(description) = &param_info.description {
+            s.push_str(&format!(" - {}", description));
+        }
+        s.push_str("\n");
+    }
+
+    for return_info in &signature.return_docs {
+        s.push_str("@return ");
+        if let Some(name) = &return_info.name {
+            s.push_str(&format!("`{}`", name));
+        }
+        if let Some(description) = &return_info.description {
+            s.push_str(&format!(" - {}", description));
+        }
+        s.push_str("\n");
+    }
+
+    if !s.is_empty() {
+        marked_strings.push(MarkedString::from_markdown(s));
+    }
+    Some(())
 }
 
 fn build_type_decl_hover(
