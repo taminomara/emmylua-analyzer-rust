@@ -164,12 +164,28 @@ impl LuaGreenNodeBuilder<'_> {
     #[inline]
     pub fn finish(mut self, text: &str) -> GreenNode {
         if let Some(root_pos) = self.children.get(0) {
+            let is_chunk_root = matches!(
+                self.elements[*root_pos],
+                LuaGreenElement::Node {
+                    kind: LuaSyntaxKind::Chunk,
+                    ..
+                }
+            );
+            if !is_chunk_root {
+                self.builder.start_node(LuaSyntaxKind::Chunk.into());
+            }
+
             self.build_rowan_green(*root_pos, text);
-        } else {
-            self.builder.start_node(LuaSyntaxKind::Chunk.into());
-            self.builder.finish_node();
+
+            if !is_chunk_root {
+                self.builder.finish_node();
+            }
+
+            return self.builder.finish();
         }
 
+        self.builder.start_node(LuaSyntaxKind::Chunk.into());
+        self.builder.finish_node();
         self.builder.finish()
     }
 }

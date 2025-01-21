@@ -1,4 +1,4 @@
-use code_analysis::{Emmyrc, LuaDocument};
+use code_analysis::LuaDocument;
 use emmylua_parser::LuaChunk;
 use lsp_types::{FoldingRange, FoldingRangeKind};
 use rowan::TextRange;
