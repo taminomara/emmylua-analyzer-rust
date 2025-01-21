@@ -1,8 +1,7 @@
-use code_analysis::LuaDocument;
+use code_analysis::{Emmyrc, LuaDocument};
 use emmylua_parser::LuaChunk;
 use lsp_types::{FoldingRange, FoldingRangeKind};
 use rowan::TextRange;
-
 
 #[derive(Debug)]
 pub struct FoldingRangeBuilder<'a> {

@@ -2,11 +2,14 @@ mod builder;
 mod comment;
 mod expr;
 mod stats;
+mod imports;
 
 use builder::FoldingRangeBuilder;
+use code_analysis::Emmyrc;
 use comment::build_comment_fold_range;
 use emmylua_parser::{LuaAst, LuaAstNode};
 use expr::{build_closure_expr_fold_range, build_string_fold_range, build_table_expr_fold_range};
+use imports::build_imports_fold_range;
 use lsp_types::{
     ClientCapabilities, FoldingRange, FoldingRangeParams, FoldingRangeProviderCapability,
     ServerCapabilities,
@@ -31,13 +34,13 @@ pub async fn on_folding_range_handler(
     let semantic_model = analysis.compilation.get_semantic_model(file_id)?;
     let document = semantic_model.get_document();
     let root = semantic_model.get_root();
-
+    let emmyrc = semantic_model.get_emmyrc();
     let mut builder = FoldingRangeBuilder::new(&document, root.clone());
-    build_folding_ranges(&mut builder);
+    build_folding_ranges(&mut builder, emmyrc);
     Some(builder.build())
 }
 
-fn build_folding_ranges(builder: &mut FoldingRangeBuilder) {
+fn build_folding_ranges(builder: &mut FoldingRangeBuilder, emmyrc: &Emmyrc) {
     let root = builder.get_root().clone();
     for child in root.descendants::<LuaAst>() {
         match child {
@@ -80,6 +83,8 @@ fn build_folding_ranges(builder: &mut FoldingRangeBuilder) {
             _ => {}
         }
     }
+
+    build_imports_fold_range(builder, root, emmyrc);
 }
 
 pub fn register_capabilities(
