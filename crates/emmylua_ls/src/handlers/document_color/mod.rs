@@ -29,6 +29,10 @@ pub async fn on_document_color(
             return vec![];
         };
 
+    if !semantic_model.get_emmyrc().document_color.enable {
+        return vec![];
+    }
+
     let document = semantic_model.get_document();
     let root = semantic_model.get_root();
     build_colors(root.syntax().clone(), &document)

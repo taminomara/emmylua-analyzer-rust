@@ -10,6 +10,7 @@ mod strict;
 mod semantictoken;
 mod references;
 mod hover;
+mod document_color;
 
 
 pub use completion::{EmmyrcCompletion, EmmyrcFilenameConvention};
@@ -24,3 +25,4 @@ pub use strict::EmmyrcStrict;
 pub use semantictoken::EmmyrcSemanticToken;
 pub use references::EmmyrcReference;
 pub use hover::EmmyrcHover;
+pub use document_color::EmmyrcDocumentColor;

@@ -32,6 +32,16 @@ fn try_build_color_information(
     let mut i = 0;
     while i + 6 <= len {
         if bytes[i].is_ascii_hexdigit() {
+            let is_start_boundary = if i == 0 {
+                true
+            } else {
+                !bytes[i - 1].is_ascii_alphanumeric()
+            };
+            if !is_start_boundary {
+                i += 1;
+                continue;
+            }
+
             let mut j = i + 1;
             while j < len && bytes[j].is_ascii_hexdigit() {
                 j += 1;

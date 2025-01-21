@@ -6,6 +6,7 @@ use std::{collections::HashSet, path::PathBuf};
 
 use crate::{semantic::LuaInferConfig, FileId};
 pub use config_loader::load_configs;
+use configs::EmmyrcDocumentColor;
 pub use configs::EmmyrcFilenameConvention;
 pub use configs::EmmyrcLuaVersion;
 use configs::{
@@ -49,6 +50,8 @@ pub struct Emmyrc {
     pub references: EmmyrcReference,
     #[serde(default)]
     pub hover: EmmyrcHover,
+    #[serde(default)]
+    pub document_color: EmmyrcDocumentColor,
 }
 
 impl Emmyrc {
