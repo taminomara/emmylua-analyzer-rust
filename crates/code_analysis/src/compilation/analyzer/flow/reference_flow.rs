@@ -132,6 +132,46 @@ fn broadcast_up(
                         type_assert,
                     );
                 }
+                BinaryOperator::OpEq => {
+                    if origin.syntax().kind() != LuaSyntaxKind::NameExpr.into() {
+                        return None;
+                    }
+
+                    let (left, right) = binary_expr.get_exprs()?;
+                    let expr = if left.get_position() == origin.get_position() {
+                        right
+                    } else {
+                        left
+                    };
+
+                    if let LuaExpr::LiteralExpr(literal) = expr {
+                        let type_assert = match literal.get_literal()? {
+                            LuaLiteralToken::Nil(_) => TypeAssertion::NotExist,
+                            LuaLiteralToken::Bool(b) => {
+                                if b.is_true() {
+                                    TypeAssertion::Exist
+                                } else {
+                                    TypeAssertion::NotExist
+                                }
+                            }
+                            LuaLiteralToken::Number(_) => {
+                                TypeAssertion::Force(LuaType::Number)
+                            }
+                            LuaLiteralToken::String(_) => {
+                                TypeAssertion::Force(LuaType::String)
+                            }
+                            _ => return None,
+                        };
+
+                        broadcast_up(
+                            analyzer,
+                            flow_chains,
+                            binary_expr.get_parent::<LuaAst>()?,
+                            LuaAst::LuaBinaryExpr(binary_expr),
+                            type_assert,
+                        );
+                    }
+                }
                 _ => {}
             }
         }
