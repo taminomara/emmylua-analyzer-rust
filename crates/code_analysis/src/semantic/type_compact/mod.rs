@@ -262,11 +262,8 @@ fn infer_custom_type_compact(
             _ => return Some(false),
         };
 
-        let supers = db.get_type_index().get_super_types(compact_id)?;
-        for compact_super in supers {
-            if infer_custom_type_compact(db, config, type_id, &compact_super, infer_guard)? {
-                return Some(true);
-            }
+        if is_sub_type_of(db, compact_id, type_id) {
+            return Some(true);
         }
     }
 
