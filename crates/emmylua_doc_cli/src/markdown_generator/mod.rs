@@ -59,7 +59,7 @@ pub fn generate_markdown(
         mod_gen::generate_module_markdown(db, &tl, module, &input, &module_out, &mut mkdocs_index);
     }
 
-    index_gen::generate_index(&tl, &mkdocs_index, output);
+    index_gen::generate_index(&tl, &mut mkdocs_index, output);
     Some(())
 }
 
