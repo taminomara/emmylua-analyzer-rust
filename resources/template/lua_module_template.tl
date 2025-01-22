@@ -1,11 +1,4 @@
-# {{ type_name }}
-
-{% if super_types %}
-- supers: {{ super_types }}
-{% endif %}
-{% if namespace %}
-- namespace: {{ namespace }}
-{% endif %}
+# {{ module_name }}
 
 {% if description %}
 {{ description }}

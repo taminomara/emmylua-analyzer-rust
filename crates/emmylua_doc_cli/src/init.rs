@@ -11,6 +11,10 @@ pub fn load_workspace(workspace_folders: Vec<&str>) -> Option<EmmyLuaAnalysis> {
         .iter()
         .map(|s| PathBuf::from(s))
         .collect::<Vec<_>>();
+    for path in &paths {
+        analysis.add_workspace_root(path.clone());
+    }
+
     let main_path = paths.get(0)?.clone();
     let config_files = vec![
         main_path.join(".luarc.json"),

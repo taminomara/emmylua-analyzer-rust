@@ -16,7 +16,7 @@ pub struct CmdArgs {
         default_value = "./output",
         long = "output",
         short = "o",
-        help = "The output path of the markdown file"
+        help = "The output path of the docs file"
     )]
     pub output: std::path::PathBuf,
 }

@@ -215,6 +215,17 @@ impl LuaTypeDeclId {
     pub fn get_name(&self) -> &str {
         &self.id
     }
+
+    pub fn get_simple_name(&self) -> &str {
+        let basic_name = self.get_name();
+        let just_name = if let Some(i) = basic_name.rfind('.') {
+            &basic_name[i + 1..]
+        } else {
+            &basic_name
+        };
+
+        &just_name
+    }
 }
 
 impl Serialize for LuaTypeDeclId {

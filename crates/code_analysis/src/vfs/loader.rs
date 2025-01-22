@@ -6,7 +6,7 @@ use std::{
 };
 use wax::Pattern;
 
-use log::error;
+use log::{error, info};
 use walkdir::WalkDir;
 
 #[derive(Debug)]
@@ -85,13 +85,23 @@ pub fn load_workspace_files(
 }
 
 pub fn read_file_with_encoding(path: &Path, encoding: &str) -> Option<String> {
-    let content = fs::read(path).ok()?;
+    let origin_content = fs::read(path).ok()?;
     let encoding = Encoding::for_label(encoding.as_bytes()).unwrap_or(UTF_8);
-
-    let (content, has_error) = encoding.decode_with_bom_removal(&content);
+    let (content, has_error) = encoding.decode_with_bom_removal(&origin_content);
     if has_error {
         error!("Error decoding file: {:?}", path);
-        return None;
+        if encoding == UTF_8 {
+            return None;
+        }
+
+        info!("Try utf-8 encoding");
+        let (content, _, hash_error) = UTF_8.decode(&origin_content);
+        if hash_error {
+            error!("Try utf8 fail, error decoding file: {:?}", path);
+            return None;
+        }
+
+        return Some(content.to_string());
     }
 
     Some(content.to_string())
