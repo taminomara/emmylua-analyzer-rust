@@ -89,6 +89,13 @@ impl EmmyLuaAnalysis {
             }
         }
 
+        let env_emmylua_resources = env::var("EMMYLUA_LS_RESOURCES").ok()?;
+        let path = PathBuf::from(env_emmylua_resources);
+
+        if path.is_dir() {
+            return Some(path);
+        }
+
         None
     }
 
