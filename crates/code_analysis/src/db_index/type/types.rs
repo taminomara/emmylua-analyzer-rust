@@ -264,7 +264,7 @@ impl LuaType {
     }
 
     pub fn is_optional(&self) -> bool {
-        matches!(self, LuaType::Nil | LuaType::Nullable(_) | LuaType::Any)
+        matches!(self, LuaType::Nil | LuaType::Nullable(_))
     }
 
     pub fn is_tuple(&self) -> bool {

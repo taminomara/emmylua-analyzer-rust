@@ -191,18 +191,7 @@ fn add_signature_description(
         }
         s.push_str("\n");
     }
-
-    for return_info in &signature.return_docs {
-        s.push_str("@return ");
-        if let Some(name) = &return_info.name {
-            s.push_str(&format!("`{}`", name));
-        }
-        if let Some(description) = &return_info.description {
-            s.push_str(&format!(" - {}", description));
-        }
-        s.push_str("\n");
-    }
-
+    
     if !s.is_empty() {
         marked_strings.push(MarkedString::from_markdown(s));
     }

@@ -59,8 +59,13 @@ fn check_call_expr(
             }
 
             let typ = param_info.1.clone();
-            if typ.is_none() || !typ.unwrap().is_optional() {
+            if typ.is_none() {
                 miss_parameter_info.push(t!("missing parameter: %{name}", name = param_info.0));
+            } else if let Some(typ) = typ {
+                if !typ.is_any() && !typ.is_optional() {
+                    miss_parameter_info
+                        .push(t!("missing parameter: %{name}", name = param_info.0,));
+                }
             }
         }
 

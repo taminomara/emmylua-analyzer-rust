@@ -27,7 +27,11 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
         let expr = expr.unwrap();
         let expr_type = analyzer.infer_expr(expr);
         match expr_type {
-            Some(expr_type) => {
+            Some(mut expr_type) => {
+                if let LuaType::MuliReturn(multi) = expr_type {
+                    expr_type = multi.get_type(0)?.clone();
+                }
+
                 let decl_id = LuaDeclId::new(analyzer.file_id, position);
                 merge_decl_expr_type(analyzer.db, decl_id, expr_type);
             }

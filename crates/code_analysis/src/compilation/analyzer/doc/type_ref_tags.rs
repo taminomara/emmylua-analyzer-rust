@@ -167,7 +167,9 @@ pub fn analyze_return(analyzer: &mut DocAnalyzer, tag: LuaDocTagReturn) -> Optio
     } else {
         None
     };
+
     if let Some(closure) = find_owner_closure(analyzer) {
+        let signature_id = LuaSignatureId::new(analyzer.file_id, &closure);
         let returns = tag.get_type_and_name_list();
         for (doc_type, name_token) in returns {
             let name = if let Some(name) = name_token {
@@ -182,8 +184,11 @@ pub fn analyze_return(analyzer: &mut DocAnalyzer, tag: LuaDocTagReturn) -> Optio
                 type_ref,
                 description: description.clone(),
             };
-            let id = LuaSignatureId::new(analyzer.file_id, &closure);
-            let signature = analyzer.db.get_signature_index_mut().get_or_create(id);
+
+            let signature = analyzer
+                .db
+                .get_signature_index_mut()
+                .get_or_create(signature_id);
             signature.return_docs.push(return_info);
         }
     }
