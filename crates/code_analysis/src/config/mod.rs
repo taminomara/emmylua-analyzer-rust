@@ -81,29 +81,24 @@ impl Emmyrc {
     }
 
     pub fn pre_process_emmyrc(&mut self, workspace_root: &PathBuf) {
-        let new_workspace_roots = self
-            .workspace
-            .workspace_roots
-            .iter()
-            .map(|root| pre_process_path(root, workspace_root))
-            .collect::<Vec<String>>();
-        self.workspace.workspace_roots = new_workspace_roots;
+        fn process_and_dedup<'a>(
+            iter: impl Iterator<Item = &'a String>,
+            workspace_root: &PathBuf,
+        ) -> Vec<String> {
+            let mut seen = HashSet::new();
+            iter.map(|root| pre_process_path(root, workspace_root))
+                .filter(|path| seen.insert(path.clone()))
+                .collect()
+        }
+        self.workspace.workspace_roots =
+            process_and_dedup(self.workspace.workspace_roots.iter(), workspace_root);
 
-        let new_ignore_dir = self
-            .workspace
-            .ignore_dir
-            .iter()
-            .map(|dir| pre_process_path(dir, workspace_root))
-            .collect::<Vec<String>>();
-        self.workspace.ignore_dir = new_ignore_dir;
+        self.workspace.library = process_and_dedup(self.workspace.library.iter(), workspace_root);
 
-        let new_paths = self
-            .resource
-            .paths
-            .iter()
-            .map(|path| pre_process_path(path, workspace_root))
-            .collect::<Vec<String>>();
-        self.resource.paths = new_paths;
+        self.workspace.ignore_dir =
+            process_and_dedup(self.workspace.ignore_dir.iter(), workspace_root);
+
+        self.resource.paths = process_and_dedup(self.resource.paths.iter(), workspace_root);
     }
 }
 

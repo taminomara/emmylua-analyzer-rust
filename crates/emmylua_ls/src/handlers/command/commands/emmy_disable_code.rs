@@ -323,7 +323,7 @@ async fn add_disable_project(
     let config_manager = config_manager.read().await;
     let main_workspace = config_manager.workspace_folders.get(0)?;
     let emmyrc_path = main_workspace.join(".emmyrc.json");
-    let mut emmyrc = load_configs(vec![emmyrc_path.clone()]);
+    let mut emmyrc = load_configs(vec![emmyrc_path.clone()], None);
     emmyrc.diagnostics.disable.push(code);
     drop(config_manager);
 

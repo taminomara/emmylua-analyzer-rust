@@ -1,5 +1,8 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DefaultOnError};
+
+#[serde_as]
 #[derive(Serialize, Deserialize, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 /// Configuration for EmmyLua code completion.
@@ -18,6 +21,7 @@ pub struct EmmyrcCompletion {
     pub auto_require_naming_convention: EmmyrcFilenameConvention,
     /// Whether to use call snippets in completions.
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     pub call_snippet: bool,
     /// The postfix trigger used in completions.
     #[serde(default = "default_postfix")]
@@ -67,4 +71,3 @@ impl Default for EmmyrcFilenameConvention {
         EmmyrcFilenameConvention::Keep
     }
 }
-

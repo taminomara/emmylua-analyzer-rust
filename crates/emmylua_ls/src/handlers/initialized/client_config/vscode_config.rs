@@ -2,39 +2,18 @@ use std::{collections::HashMap, time::Duration};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    context::{ClientId, ServerContextSnapshot},
-    util::time_cancel_token,
-};
+use crate::{context::ServerContextSnapshot, util::time_cancel_token};
 
-#[allow(unused)]
-#[derive(Debug, Clone, Default)]
-pub struct ClientConfig {
-    pub client_id: ClientId,
-    pub exclude: Vec<String>,
-    pub extensions: Vec<String>,
-    pub encoding: String,
+use super::ClientConfig;
+
+#[derive(Debug, Deserialize, Serialize)]
+struct VscodeFilesConfig {
+    exclude: Option<HashMap<String, bool>>,
+    associations: Option<HashMap<String, String>>,
+    encoding: Option<String>,
 }
 
-pub async fn get_client_config(
-    context: &ServerContextSnapshot,
-    client_id: ClientId,
-) -> ClientConfig {
-    let mut config = ClientConfig {
-        client_id,
-        exclude: Vec::new(),
-        extensions: Vec::new(),
-        encoding: "utf-8".to_string(),
-    };
-    match client_id {
-        ClientId::VSCode => get_client_config_vscode(context, &mut config).await,
-        _ => Some(()),
-    };
-
-    config
-}
-
-async fn get_client_config_vscode(
+pub async fn get_client_config_vscode(
     context: &ServerContextSnapshot,
     config: &mut ClientConfig,
 ) -> Option<()> {
@@ -66,11 +45,4 @@ async fn get_client_config_vscode(
     }
 
     Some(())
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-struct VscodeFilesConfig {
-    exclude: Option<HashMap<String, bool>>,
-    associations: Option<HashMap<String, String>>,
-    encoding: Option<String>,
 }

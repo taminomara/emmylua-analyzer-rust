@@ -4,7 +4,7 @@ use serde_json::Value;
 
 use super::{flatten_config::FlattenConfigObject, Emmyrc};
 
-pub fn load_configs(config_files: Vec<PathBuf>) -> Emmyrc {
+pub fn load_configs(config_files: Vec<PathBuf>, partial_emmyrcs: Option<Vec<Value>>) -> Emmyrc {
     let mut config_jsons = Vec::new();
     for config_file in config_files {
         let config_json_str = match std::fs::read_to_string(&config_file) {
@@ -31,6 +31,12 @@ pub fn load_configs(config_files: Vec<PathBuf>) -> Emmyrc {
         };
 
         config_jsons.push(config_json);
+    }
+
+    if let Some(partial_emmyrcs) = partial_emmyrcs {
+        for partial_emmyrc in partial_emmyrcs {
+            config_jsons.push(partial_emmyrc);
+        }
     }
 
     if config_jsons.is_empty() {

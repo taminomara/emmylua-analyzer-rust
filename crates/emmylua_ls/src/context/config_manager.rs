@@ -101,7 +101,7 @@ pub fn load_emmy_config(config_root: Option<PathBuf>, client_config: ClientConfi
         }
     }
 
-    let mut emmyrc = load_configs(config_files);
+    let mut emmyrc = load_configs(config_files, client_config.partial_emmyrcs.clone());
     merge_client_config(client_config, &mut emmyrc);
     if let Some(workspace_root) = &config_root {
         emmyrc.pre_process_emmyrc(workspace_root);

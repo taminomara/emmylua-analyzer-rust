@@ -4,8 +4,9 @@ use log::error;
 use lsp_server::Notification;
 use lsp_types::{
     notification::{
-        Cancel, DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument,
-        DidOpenTextDocument, DidSaveTextDocument, Notification as lsp_notification, SetTrace,
+        Cancel, DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles,
+        DidCloseTextDocument, DidOpenTextDocument, DidSaveTextDocument,
+        Notification as lsp_notification, SetTrace,
     },
     CancelParams, NumberOrString,
 };
@@ -13,9 +14,12 @@ use serde::de::DeserializeOwned;
 
 use crate::context::{ServerContext, ServerContextSnapshot};
 
-use super::text_document::{
-    on_did_change_text_document, on_did_change_watched_files, on_did_close_document,
-    on_did_open_text_document, on_did_save_text_document, on_set_trace,
+use super::{
+    configuration::on_did_change_configuration,
+    text_document::{
+        on_did_change_text_document, on_did_change_watched_files, on_did_close_document,
+        on_did_open_text_document, on_did_save_text_document, on_set_trace,
+    },
 };
 
 pub async fn on_notification_handler(
@@ -32,6 +36,7 @@ pub async fn on_notification_handler(
         .on_parallel::<DidCloseTextDocument, _, _>(on_did_close_document)
         .on_parallel::<DidChangeWatchedFiles, _, _>(on_did_change_watched_files)
         .on_parallel::<SetTrace, _, _>(on_set_trace)
+        .on_parallel::<DidChangeConfiguration, _, _>(on_did_change_configuration)
         .finish();
 
     Ok(())

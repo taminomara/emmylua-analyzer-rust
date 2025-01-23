@@ -20,7 +20,7 @@ pub fn load_workspace(workspace_folders: Vec<&str>) -> Option<EmmyLuaAnalysis> {
         main_path.join(".luarc.json"),
         main_path.join(".emmyrc.json"),
     ];
-    let emmyrc = Arc::new(load_configs(config_files));
+    let emmyrc = Arc::new(load_configs(config_files, None));
     analysis.update_config(emmyrc);
 
     let file_infos = collect_files(&paths, &analysis.emmyrc);

@@ -2,7 +2,6 @@ mod client_config;
 mod codestyle;
 mod collect_files;
 mod locale;
-mod regsiter_file_watch;
 
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
@@ -12,6 +11,7 @@ use crate::{
         get_client_id, load_emmy_config, ClientId, ClientProxy, ProgressTask,
         ServerContextSnapshot, StatusBar,
     },
+    handlers::text_document::register_files_watch,
     logger::init_logger,
 };
 use client_config::get_client_config;
@@ -21,7 +21,6 @@ use codestyle::load_editorconfig;
 use collect_files::collect_files;
 use log::info;
 use lsp_types::InitializeParams;
-use regsiter_file_watch::register_files_watch;
 use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
 
@@ -71,7 +70,7 @@ pub async fn initialized_handler(
     )
     .await;
 
-    register_files_watch(context, &params.capabilities).await;
+    register_files_watch(context.clone(), &params.capabilities).await;
     Some(())
 }
 
@@ -116,7 +115,7 @@ pub async fn init_analysis(
         mut_analysis.add_workspace_root(PathBuf::from_str(lib).unwrap());
         workspace_folders.push(PathBuf::from_str(lib).unwrap());
     }
-    
+
     status_bar.update_progress_task(
         client_id,
         ProgressTask::LoadWorkspace,

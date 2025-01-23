@@ -25,6 +25,7 @@ mod signature_helper;
 mod text_document;
 mod workspace_symbol;
 mod document_range_formatting;
+mod configuration;
 
 pub use initialized::initialized_handler;
 pub use initialized::{init_analysis, ClientConfig};
@@ -63,6 +64,7 @@ pub fn server_capabilities(client_capabilities: &ClientCapabilities) -> ServerCa
     capabilities!(code_actions);
     capabilities!(inline_values);
     capabilities!(workspace_symbol);
+    capabilities!(configuration);
 
     server_capabilities
 }
