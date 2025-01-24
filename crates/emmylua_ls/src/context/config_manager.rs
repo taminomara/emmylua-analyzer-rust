@@ -84,6 +84,31 @@ impl ConfigManager {
         log::info!("update code style: {:?}", file_normalized);
         update_code_style(&parent_dir, &file_normalized);
     }
+
+    pub async fn reload_workspace(&self) -> Option<()> {
+        let config_root: Option<PathBuf> = match self.workspace_folders.first() {
+            Some(root) => Some(PathBuf::from(root)),
+            None => None,
+        };
+
+        let emmyrc = load_emmy_config(config_root, self.client_config.clone());
+        let analysis = self.analysis.clone();
+        let client = self.client.clone();
+        let workspace_folders = self.workspace_folders.clone();
+        let status_bar = self.status_bar.clone();
+        let client_id = self.client_config.client_id;
+        init_analysis(
+            analysis,
+            client,
+            &status_bar,
+            workspace_folders,
+            emmyrc,
+            client_id,
+        )
+        .await;
+
+        Some(())
+    }
 }
 
 pub fn load_emmy_config(config_root: Option<PathBuf>, client_config: ClientConfig) -> Arc<Emmyrc> {

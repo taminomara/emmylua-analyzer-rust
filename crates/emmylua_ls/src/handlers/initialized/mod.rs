@@ -14,8 +14,7 @@ use crate::{
     handlers::text_document::register_files_watch,
     logger::init_logger,
 };
-use client_config::get_client_config;
-pub use client_config::ClientConfig;
+pub use client_config::{get_client_config, ClientConfig};
 use code_analysis::{uri_to_file_path, EmmyLuaAnalysis, Emmyrc, FileId, Profile};
 use codestyle::load_editorconfig;
 use collect_files::collect_files;
