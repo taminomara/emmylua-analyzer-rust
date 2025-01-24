@@ -2,6 +2,8 @@
 
 # 0.3.3 (unreleased)
 
+`NEW` Add Develop Guide
+
 `NEW` support `workspace/didChangeConfiguration` notification for neovim
 
 # 0.3.2
