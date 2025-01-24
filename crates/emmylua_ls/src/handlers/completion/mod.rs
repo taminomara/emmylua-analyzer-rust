@@ -56,11 +56,10 @@ pub async fn on_completion_handler(
     Some(CompletionResponse::Array(builder.get_completion_items()))
 }
 
-#[allow(unused_variables)]
 pub async fn on_completion_resolve_handler(
     context: ServerContextSnapshot,
     params: CompletionItem,
-    cancel_token: CancellationToken,
+    _: CancellationToken,
 ) -> CompletionItem {
     let analysis = context.analysis.read().await;
     let db = analysis.compilation.get_db();

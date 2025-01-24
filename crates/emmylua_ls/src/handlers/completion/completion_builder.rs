@@ -14,7 +14,6 @@ pub struct CompletionBuilder<'a> {
     stopped: bool,
 }
 
-#[allow(unused)]
 impl<'a> CompletionBuilder<'a> {
     pub fn new(
         trigger_token: LuaSyntaxToken,
