@@ -1,5 +1,23 @@
 # CHANGELOG
 
+# 0.3.3 (unreleased)
+
+`NEW` support `workspace/didChangeConfiguration` notification for neovim
+
+# 0.3.2
+
+`FIX` Fixed some multiple return value inference errors
+
+`FIX` Removed redundant `@return` in hover
+
+`NEW` Language server supports locating resource files through the `$EMMYLUA_LS_RESOURCES` variable
+
+# 0.3.1
+
+`FIX` Fixed a potential issue where indexing could not be completed
+
+`FIX` Fixed an issue where type checking failed when passing subclass parameters to a parent class
+
 # 0.3.0
 
 `NEW` Add progress notifications for non-VSCode platforms
