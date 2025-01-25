@@ -1,4 +1,6 @@
-use code_analysis::{humanize_type, DbIndex, LuaPropertyOwnerId, LuaSignatureId, LuaType};
+use code_analysis::{
+    humanize_type, DbIndex, LuaFunctionType, LuaPropertyOwnerId, LuaSignatureId, LuaType,
+};
 
 pub fn render_const_type(db: &DbIndex, typ: &LuaType) -> String {
     let const_value = humanize_type(db, typ);
@@ -13,69 +15,22 @@ pub fn render_const_type(db: &DbIndex, typ: &LuaType) -> String {
     }
 }
 
-pub fn render_function_type(db: &DbIndex, typ: &LuaType, func_name: &str, is_local: bool) -> String {
+pub fn render_function_type(
+    db: &DbIndex,
+    typ: &LuaType,
+    func_name: &str,
+    is_local: bool,
+) -> String {
     match typ {
         LuaType::Function => {
             format!(
-                "{}function {}()",
+                "```lua\n{}function {}()\n```\n",
                 if is_local { "local " } else { "" },
                 func_name
             )
         }
         LuaType::DocFunction(lua_func) => {
-            let async_prev = if lua_func.is_async() { "async " } else { "" };
-            let local_prev = if is_local { "local " } else { "" };
-            let params = lua_func
-                .get_params()
-                .iter()
-                .map(|param| {
-                    let name = param.0.clone();
-                    if let Some(ty) = &param.1 {
-                        format!("{}: {}", name, humanize_type(db, ty))
-                    } else {
-                        name.to_string()
-                    }
-                })
-                .collect::<Vec<_>>();
-
-            let rets = lua_func.get_ret();
-
-            let ret_strs = rets
-                .iter()
-                .map(|ty| humanize_type(db, ty))
-                .collect::<Vec<_>>()
-                .join(",");
-
-            let mut result = String::new();
-            result.push_str(async_prev);
-            result.push_str(local_prev);
-            result.push_str("function ");
-            result.push_str(func_name);
-            result.push_str("(");
-            if params.len() > 1 {
-                result.push_str("\n");
-                for param in &params {
-                    result.push_str("  ");
-                    result.push_str(param);
-                    result.push_str(",\n");
-                }
-                result.pop(); // Remove the last comma
-                result.pop(); // Remove the last newline
-                result.push_str("\n");
-            } else {
-                result.push_str(&params.join(", "));
-            }
-            result.push_str(")");
-            if ret_strs.len() > 15 {
-                result.push_str("\n");
-            }
-
-            if !ret_strs.is_empty() {
-                result.push_str("-> ");
-                result.push_str(&ret_strs);
-            }
-
-            result
+            render_doc_function_type(db, lua_func, func_name, is_local)
         }
         LuaType::Signature(signature_id) => {
             render_signature_type(db, signature_id.clone(), func_name, is_local).unwrap_or(format!(
@@ -85,11 +40,74 @@ pub fn render_function_type(db: &DbIndex, typ: &LuaType, func_name: &str, is_loc
             ))
         }
         _ => format!(
-            "{}function {}",
+            "```lua\n{}function {}\n```\n",
             if is_local { "local " } else { "" },
             func_name
         ),
     }
+}
+
+fn render_doc_function_type(
+    db: &DbIndex,
+    lua_func: &LuaFunctionType,
+    func_name: &str,
+    is_local: bool,
+) -> String {
+    let async_prev = if lua_func.is_async() { "async " } else { "" };
+    let local_prev = if is_local { "local " } else { "" };
+    let params = lua_func
+        .get_params()
+        .iter()
+        .map(|param| {
+            let name = param.0.clone();
+            if let Some(ty) = &param.1 {
+                format!("{}: {}", name, humanize_type(db, ty))
+            } else {
+                name.to_string()
+            }
+        })
+        .collect::<Vec<_>>();
+
+    let rets = lua_func.get_ret();
+
+    let ret_strs = rets
+        .iter()
+        .map(|ty| humanize_type(db, ty))
+        .collect::<Vec<_>>()
+        .join(",");
+
+    let mut result = String::new();
+    result.push_str("```lua\n");
+    result.push_str(async_prev);
+    result.push_str(local_prev);
+    result.push_str("function ");
+    result.push_str(func_name);
+    result.push_str("(");
+    if params.len() > 1 {
+        result.push_str("\n");
+        for param in &params {
+            result.push_str("  ");
+            result.push_str(param);
+            result.push_str(",\n");
+        }
+        result.pop(); // Remove the last comma
+        result.pop(); // Remove the last newline
+        result.push_str("\n");
+    } else {
+        result.push_str(&params.join(", "));
+    }
+    result.push_str(")");
+    if ret_strs.len() > 15 {
+        result.push_str("\n");
+    }
+
+    if !ret_strs.is_empty() {
+        result.push_str("-> ");
+        result.push_str(&ret_strs);
+    }
+    result.push_str("\n```\n");
+
+    result
 }
 
 fn render_signature_type(
@@ -124,6 +142,7 @@ fn render_signature_type(
     let rets = &signature.return_docs;
 
     let mut result = String::new();
+    result.push_str("```lua\n");
     result.push_str(async_prev);
     result.push_str(local_prev);
     result.push_str("function ");
@@ -170,6 +189,22 @@ fn render_signature_type(
             }
         }
     }
+
+    result.push_str("\n```\n");
+    let param_count = signature.params.len();
+    for i in 0..param_count {
+        let param_info = match signature.get_param_info_by_id(i) {
+            Some(info) => info,
+            None => continue,
+        };
+
+        if let Some(description) = &param_info.description {
+            result.push_str(&format!("@param `{}`", param_info.name));
+            result.push_str(&format!(" - {}", description));
+            result.push_str("\n\n");
+        }
+    }
+    result.push_str("\n");
 
     Some(result)
 }

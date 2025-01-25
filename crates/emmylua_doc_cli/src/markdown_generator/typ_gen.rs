@@ -91,17 +91,17 @@ pub fn generate_type_markdown(
                     description,
                 });
             } else if member_typ.is_const() {
-                let display = render_const_type(db, &member_typ);
+                let const_type_display = render_const_type(db, &member_typ);
                 field_members.push(MemberDisplay {
                     name: title_name,
-                    display: format!("{}.{}: {}", typ_name, name, display),
+                    display: format!("```lua\n{}.{}: {}\n```\n", typ_name, name, const_type_display),
                     description,
                 });
             } else {
                 let typ_display = humanize_type(db, &member_typ);
                 field_members.push(MemberDisplay {
                     name: title_name,
-                    display: format!("{}.{} : {}", typ_name, name, typ_display),
+                    display: format!("```lua\n{}.{} : {}\n```\n", typ_name, name, typ_display),
                     description,
                 });
             }

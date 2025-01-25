@@ -185,13 +185,13 @@ fn add_signature_description(
             None => continue,
         };
 
-        s.push_str(&format!("@param `{}`", param_info.name));
         if let Some(description) = &param_info.description {
+            s.push_str(&format!("@param `{}`", param_info.name));
             s.push_str(&format!(" - {}", description));
+            s.push_str("\n");
         }
-        s.push_str("\n");
     }
-    
+
     if !s.is_empty() {
         marked_strings.push(MarkedString::from_markdown(s));
     }

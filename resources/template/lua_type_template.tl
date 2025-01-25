@@ -17,9 +17,7 @@
 {% for method in methods %}
 ### {{ method.name }}
 ---
-```lua
 {{ method.display }}
-```
 
 {% if method.description %}
 {{ method.description }}
@@ -33,9 +31,7 @@
 {% for field in fields %}
 ### {{ field.name }}
 ---
-```lua
 {{ field.display }}
-```
 
 {% if field.description %}
 {{ field.description }}

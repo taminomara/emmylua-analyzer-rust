@@ -129,14 +129,14 @@ fn generate_member_owner_module(
                 let display = render_const_type(db, &member_typ);
                 field_members.push(MemberDisplay {
                     name: title_name,
-                    display: format!("{}.{}: {}", owner_name, name, display),
+                    display: format!("```lua\n{}.{}: {}\n```\n", owner_name, name, display),
                     description,
                 });
             } else {
                 let typ_display = humanize_type(db, &member_typ);
                 field_members.push(MemberDisplay {
                     name: title_name,
-                    display: format!("{}.{} : {}", owner_name, name, typ_display),
+                    display: format!("```lua\n{}.{} : {}\n```\n", owner_name, name, typ_display),
                     description,
                 });
             }
