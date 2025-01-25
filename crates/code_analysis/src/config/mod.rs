@@ -2,7 +2,7 @@ mod config_loader;
 mod configs;
 mod flatten_config;
 
-use std::{collections::HashSet, path::PathBuf};
+use std::{collections::HashSet, path::{Path, PathBuf}};
 
 use crate::{semantic::LuaInferConfig, FileId};
 pub use config_loader::load_configs;
@@ -80,10 +80,10 @@ impl Emmyrc {
         ParserConfig::new(lua_language_level, Some(node_cache))
     }
 
-    pub fn pre_process_emmyrc(&mut self, workspace_root: &PathBuf) {
+    pub fn pre_process_emmyrc(&mut self, workspace_root: &Path) {
         fn process_and_dedup<'a>(
             iter: impl Iterator<Item = &'a String>,
-            workspace_root: &PathBuf,
+            workspace_root: &Path,
         ) -> Vec<String> {
             let mut seen = HashSet::new();
             iter.map(|root| pre_process_path(root, workspace_root))
@@ -102,7 +102,7 @@ impl Emmyrc {
     }
 }
 
-fn pre_process_path(path: &str, workspace: &PathBuf) -> String {
+fn pre_process_path(path: &str, workspace: &Path) -> String {
     let mut path = path.to_string();
 
     if path.starts_with('~') {
@@ -110,11 +110,6 @@ fn pre_process_path(path: &str, workspace: &PathBuf) -> String {
         path = home_dir.join(&path[1..]).to_string_lossy().to_string();
     } else if path.starts_with("./") {
         path = workspace.join(&path[2..]).to_string_lossy().to_string();
-    } else if path.starts_with('/') {
-        path = workspace
-            .join(path.trim_start_matches('/'))
-            .to_string_lossy()
-            .to_string();
     } else if PathBuf::from(&path).is_absolute() {
         path = path.to_string();
     } else {
