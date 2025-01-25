@@ -229,6 +229,12 @@ fn generate_enum_type_markdown(
             };
 
             let typ_display = humanize_type(db, &member_typ);
+            let description = if !description.is_empty() {
+                format!("-- {}", &description)
+            } else {
+                "".to_string()
+            };
+
             field_members.push(EnumMember {
                 name: name.to_string(),
                 value: typ_display,
@@ -241,7 +247,7 @@ fn generate_enum_type_markdown(
         context.insert("fields", &field_members);
     }
 
-    let render_text = match tl.render("lua_enum_type_template.tl", &context) {
+    let render_text = match tl.render("lua_enum_template.tl", &context) {
         Ok(text) => text,
         Err(e) => {
             eprintln!("Failed to render template: {}", e);
