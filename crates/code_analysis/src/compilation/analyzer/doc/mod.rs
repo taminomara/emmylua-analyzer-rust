@@ -9,7 +9,9 @@ mod type_ref_tags;
 
 use super::AnalyzeContext;
 use crate::{
-    db_index::{DbIndex, LuaTypeDeclId}, profile::Profile, FileId
+    db_index::{DbIndex, LuaTypeDeclId},
+    profile::Profile,
+    FileId,
 };
 use emmylua_parser::{LuaAstNode, LuaComment, LuaDocDescriptionOwner, LuaSyntaxNode};
 use file_generic_index::FileGenericIndex;
@@ -41,7 +43,7 @@ fn analyze_comment(analyzer: &mut DocAnalyzer) -> Option<()> {
     }
 
     let owenr = get_owner_id(analyzer)?;
-    let comment_description = comment.get_description()?.get_description_text();
+    let comment_description = preprocess_description(&comment.get_description()?.get_description_text());
     analyzer.db.get_property_index_mut().add_description(
         analyzer.file_id,
         owenr,
@@ -78,4 +80,40 @@ impl<'a> DocAnalyzer<'a> {
             root,
         }
     }
+}
+
+pub fn preprocess_description(description: &str) -> String {
+    let mut result = String::new();
+    let lines = description.lines();
+    let mut in_code_block = false;
+    let mut indent = 0;
+    for line in lines {
+        let trimmed_line = line.trim_start();
+        if trimmed_line.starts_with("```") {
+            in_code_block = !in_code_block;
+            result.push_str(trimmed_line);
+            result.push('\n');
+            if in_code_block {
+                indent = trimmed_line.len() - trimmed_line.trim_start().len();
+            }
+            continue;
+        }
+
+        if in_code_block {
+            if indent > 0 && line.len() >= indent {
+                let actual_indent = line
+                    .chars()
+                    .take(indent)
+                    .filter(|c| c.is_whitespace())
+                    .count();
+                result.push_str(&line[actual_indent..]);
+            } else {
+                result.push_str(line);
+            }
+        } else {
+            result.push_str(trimmed_line);
+        }
+        result.push('\n');
+    }
+    result
 }

@@ -13,7 +13,7 @@ use crate::db_index::{
     LuaPropertyOwnerId, LuaSignatureId, LuaType,
 };
 
-use super::{infer_type::infer_type, tags::find_owner_closure, DocAnalyzer};
+use super::{infer_type::infer_type, preprocess_description, tags::find_owner_closure, DocAnalyzer};
 
 pub fn analyze_class(analyzer: &mut DocAnalyzer, tag: LuaDocTagClass) -> Option<()> {
     let file_id = analyzer.file_id;
@@ -62,7 +62,7 @@ pub fn analyze_class(analyzer: &mut DocAnalyzer, tag: LuaDocTagClass) -> Option<
     }
 
     if let Some(description) = tag.get_description() {
-        let description_text = description.get_description_text();
+        let description_text = preprocess_description(&description.get_description_text());
         if !description_text.is_empty() {
             analyzer.db.get_property_index_mut().add_description(
                 file_id,
@@ -107,7 +107,7 @@ pub fn analyze_enum(analyzer: &mut DocAnalyzer, tag: LuaDocTagEnum) -> Option<()
     }
 
     if let Some(description) = tag.get_description() {
-        let description_text = description.get_description_text();
+        let description_text = preprocess_description(&description.get_description_text());
         if !description_text.is_empty() {
             analyzer.db.get_property_index_mut().add_description(
                 file_id,
@@ -193,7 +193,7 @@ pub fn analyze_alias(analyzer: &mut DocAnalyzer, tag: LuaDocTagAlias) -> Option<
                 if description_text.is_empty() {
                     continue;
                 }
-
+                let description_text = preprocess_description(&description_text);
                 analyzer.db.get_property_index_mut().add_description(
                     file_id,
                     LuaPropertyOwnerId::Member(member_id),
@@ -213,6 +213,7 @@ pub fn analyze_alias(analyzer: &mut DocAnalyzer, tag: LuaDocTagAlias) -> Option<
     if description_text.is_empty() {
         return None;
     }
+    let description_text = preprocess_description(&description_text);
     analyzer.db.get_property_index_mut().add_description(
         file_id,
         LuaPropertyOwnerId::TypeDecl(alias_decl_id.clone()),

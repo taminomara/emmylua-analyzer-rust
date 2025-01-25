@@ -14,9 +14,7 @@ use crate::{
 };
 
 use super::{
-    infer_type::infer_type,
-    tags::{find_owner_closure, get_owner_id},
-    DocAnalyzer,
+    infer_type::infer_type, preprocess_description, tags::{find_owner_closure, get_owner_id}, DocAnalyzer
 };
 
 pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()> {
@@ -109,7 +107,7 @@ pub fn analyze_param(analyzer: &mut DocAnalyzer, tag: LuaDocTagParam) -> Option<
     }
 
     let description = if let Some(des) = tag.get_description() {
-        Some(des.get_description_text().to_string())
+        Some(preprocess_description(&des.get_description_text()))
     } else {
         None
     };
@@ -163,7 +161,7 @@ pub fn analyze_param(analyzer: &mut DocAnalyzer, tag: LuaDocTagParam) -> Option<
 
 pub fn analyze_return(analyzer: &mut DocAnalyzer, tag: LuaDocTagReturn) -> Option<()> {
     let description = if let Some(des) = tag.get_description() {
-        Some(des.get_description_text().to_string())
+        Some(preprocess_description(&des.get_description_text()))
     } else {
         None
     };

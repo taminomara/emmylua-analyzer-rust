@@ -85,7 +85,7 @@ struct IndexStruct {
 fn escape_type_name(name: &str) -> String {
     name.chars()
         .map(|c| {
-            // Windows 无效文件名字符
+            // Windows Invalid Characters
             if "<>:\"/\\|?*".contains(c) {
                 '_'
             } else {

@@ -61,7 +61,7 @@ fn render_doc_function_type(
         .map(|param| {
             let name = param.0.clone();
             if let Some(ty) = &param.1 {
-                format!("{}: {}", name, humanize_type(db, ty))
+                format!("{}: {}", name, render_typ(db, ty))
             } else {
                 name.to_string()
             }
@@ -72,7 +72,7 @@ fn render_doc_function_type(
 
     let ret_strs = rets
         .iter()
-        .map(|ty| humanize_type(db, ty))
+        .map(|ty| render_typ(db, ty))
         .collect::<Vec<_>>()
         .join(",");
 
@@ -132,7 +132,7 @@ fn render_signature_type(
         .map(|param| {
             let name = param.0.clone();
             if let Some(ty) = &param.1 {
-                format!("{}: {}", name, humanize_type(db, ty))
+                format!("{}: {}", name, render_typ(db, ty))
             } else {
                 name.to_string()
             }
@@ -166,26 +166,16 @@ fn render_signature_type(
         0 => {}
         1 => {
             result.push_str(" -> ");
-            let type_text = humanize_type(db, &rets[0].type_ref);
+            let type_text = render_typ(db, &rets[0].type_ref);
             let name = rets[0].name.clone().unwrap_or("".to_string());
-            let detail = if rets[0].description.is_some() {
-                format!(" -- {}", rets[0].description.as_ref().unwrap())
-            } else {
-                "".to_string()
-            };
-            result.push_str(format!("{}{}{}", name, type_text, detail).as_str());
+            result.push_str(format!("{} {}", name, type_text).as_str());
         }
         _ => {
             result.push_str("\n");
             for ret in rets {
-                let type_text = humanize_type(db, &ret.type_ref);
+                let type_text = render_typ(db, &ret.type_ref);
                 let name = ret.name.clone().unwrap_or("".to_string());
-                let detail = if ret.description.is_some() {
-                    format!(" -- {}", ret.description.as_ref().unwrap())
-                } else {
-                    "".to_string()
-                };
-                result.push_str(format!(" -> {}{}{}\n", name, type_text, detail).as_str());
+                result.push_str(format!(" -> {} {}\n", name, type_text).as_str());
             }
         }
     }
@@ -205,6 +195,28 @@ fn render_signature_type(
         }
     }
     result.push_str("\n");
+    for ret in rets {
+        if let Some(description) = &ret.description {
+            result.push_str(&format!(
+                "@return `{}`",
+                ret.name.clone().unwrap_or("".to_string())
+            ));
+            result.push_str(&format!(" - {}", description));
+            result.push_str("\n\n");
+        }
+    }
+
+    result.push_str("\n");
 
     Some(result)
+}
+
+fn render_typ(db: &DbIndex, typ: &LuaType) -> String {
+    match typ {
+        LuaType::IntegerConst(_) => "integer".to_string(),
+        LuaType::FloatConst(_) => "number".to_string(),
+        LuaType::StringConst(_) => "string".to_string(),
+        LuaType::BooleanConst(_) => "boolean".to_string(),
+        _ => humanize_type(db, typ),
+    }
 }

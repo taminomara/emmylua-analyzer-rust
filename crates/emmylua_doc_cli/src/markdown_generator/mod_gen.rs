@@ -25,7 +25,7 @@ pub fn generate_module_markdown(
     check_filter(db, module.file_id, input)?;
 
     let mut context = tera::Context::new();
-    context.insert("module_name", &module.name);
+    context.insert("module_name", &module.full_module_name);
 
     let export_typ = module.export_type.clone()?;
     match &export_typ {

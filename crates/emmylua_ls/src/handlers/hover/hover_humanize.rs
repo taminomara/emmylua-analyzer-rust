@@ -155,7 +155,7 @@ fn hover_signature_type(
             } else {
                 "".to_string()
             };
-            result.push_str(format!("{}{}{}", name, type_text, detail).as_str());
+            result.push_str(format!("{} {}{}", name, type_text, detail).as_str());
         }
         _ => {
             result.push_str("\n");
@@ -167,7 +167,7 @@ fn hover_signature_type(
                 } else {
                     "".to_string()
                 };
-                result.push_str(format!(" -> {}{}{}\n", name, type_text, detail).as_str());
+                result.push_str(format!(" -> {} {}{}\n", name, type_text, detail).as_str());
             }
         }
     }

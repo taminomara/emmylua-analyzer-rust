@@ -1,4 +1,4 @@
-# {{ type_name }}
+# class {{ type_name }}
 
 {% if super_types %}
 - supers: {{ super_types }}
