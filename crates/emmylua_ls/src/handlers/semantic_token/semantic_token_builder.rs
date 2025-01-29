@@ -40,12 +40,18 @@ pub const SEMANTIC_TOKEN_MODIFIERS: &[SemanticTokenModifier] = &[
 ];
 
 #[derive(Debug)]
-struct SemanticTokenData {
+struct BasicSemanticTokenData {
     line: u32,
     col: u32,
     length: u32,
     typ: u32,
     modifiers: u32,
+}
+
+#[derive(Debug)]
+enum SemanticTokenData {
+    Basic(BasicSemanticTokenData),
+    MultiLine(Vec<BasicSemanticTokenData>),
 }
 
 #[allow(unused)]
@@ -55,7 +61,7 @@ pub struct SemanticBuilder<'a> {
     multi_line_support: bool,
     type_to_id: HashMap<SemanticTokenType, u32>,
     modifier_to_id: HashMap<SemanticTokenModifier, u32>,
-    data: Vec<SemanticTokenData>,
+    data: HashMap<LuaSyntaxToken, SemanticTokenData>,
 }
 
 #[allow(unused)]
@@ -80,11 +86,15 @@ impl<'a> SemanticBuilder<'a> {
             multi_line_support,
             type_to_id,
             modifier_to_id,
-            data: Vec::new(),
+            data: HashMap::new(),
         }
     }
 
     fn push_data(&mut self, token: LuaSyntaxToken, typ: u32, modifiers: u32) -> Option<()> {
+        if self.data.contains_key(&token) {
+            return Some(());
+        }
+
         let range = token.text_range();
         let lsp_range = self.document.to_lsp_range(range)?;
         let start_line = lsp_range.start.line;
@@ -92,7 +102,8 @@ impl<'a> SemanticBuilder<'a> {
         let end_line = lsp_range.end.line;
 
         if (!self.multi_line_support && start_line != end_line) {
-            self.data.push(SemanticTokenData {
+            let mut muliti_line_data = vec![];
+            muliti_line_data.push(BasicSemanticTokenData {
                 line: start_line,
                 col: start_col,
                 length: 9999,
@@ -101,7 +112,7 @@ impl<'a> SemanticBuilder<'a> {
             });
 
             for i in start_line + 1..end_line - 1 {
-                self.data.push(SemanticTokenData {
+                muliti_line_data.push(BasicSemanticTokenData {
                     line: i,
                     col: 0,
                     length: 9999,
@@ -110,21 +121,24 @@ impl<'a> SemanticBuilder<'a> {
                 });
             }
 
-            self.data.push(SemanticTokenData {
+            muliti_line_data.push(BasicSemanticTokenData {
                 line: end_line,
                 col: 0,
                 length: lsp_range.end.character,
                 typ,
                 modifiers,
             });
+
+            self.data.insert(token, SemanticTokenData::MultiLine(muliti_line_data));
         } else {
-            self.data.push(SemanticTokenData {
+            let length = token.text().chars().count() as u32;
+            self.data.insert(token, SemanticTokenData::Basic(BasicSemanticTokenData {
                 line: start_line as u32,
                 col: start_col as u32,
-                length: token.text().chars().count() as u32,
+                length,
                 typ,
                 modifiers,
-            });
+            }));
         }
 
         Some(())
@@ -164,7 +178,20 @@ impl<'a> SemanticBuilder<'a> {
     }
 
     pub fn build(self) -> Vec<SemanticToken> {
-        let mut data = self.data;
+        let mut data: Vec<BasicSemanticTokenData> = vec![];
+        for (_, token_data) in self.data {
+            match token_data {
+                SemanticTokenData::Basic(basic_data) => {
+                    data.push(basic_data);
+                }
+                SemanticTokenData::MultiLine(multi_data) => {
+                    for basic_data in multi_data {
+                        data.push(basic_data);
+                    }
+                }
+            }
+        }
+
         data.sort_by(|a, b| {
             let line1 = a.line;
             let line2 = b.line;
