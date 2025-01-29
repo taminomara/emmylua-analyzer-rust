@@ -6,6 +6,8 @@
 
 `NEW` support `workspace/didChangeConfiguration` notification for neovim
 
+`CHG` refactor `semantic token`
+
 # 0.3.2
 
 `FIX` Fixed some multiple return value inference errors
