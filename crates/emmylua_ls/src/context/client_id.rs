@@ -36,14 +36,11 @@ impl ClientId {
 pub fn get_client_id(client_info: &Option<ClientInfo>) -> ClientId {
     match client_info {
         Some(info) => {
-            if info.name == "Visual Studio Code" {
-                ClientId::VSCode
-            } else if info.name == "IntelliJ" {
-                ClientId::Intellij
-            } else if info.name == "Neovim" {
-                ClientId::Neovim
-            } else {
-                ClientId::Other
+            match info.name.as_str() {
+                "Visual Studio Code" => ClientId::VSCode,
+                "IntelliJ" => ClientId::Intellij,
+                "Neovim" => ClientId::Neovim,
+                _ => ClientId::Other,
             }
         }
         None => ClientId::Other,
