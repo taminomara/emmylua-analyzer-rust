@@ -64,13 +64,13 @@ jobs:
         shell: pwsh
       - name: Upload
         if: ${{ matrix.cross != 'zigbuild'  }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with: 
           name: emmylua_ls-${{ matrix.platform }}
           path: ${{ github.workspace }}/artifact/
       - name: Upload zigbuild
         if: ${{ matrix.cross == 'zigbuild'  }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with: 
           name: emmylua_ls-${{ matrix.platform }}-glibc.${{ matrix.glibc }}
           path: ${{ github.workspace }}/artifact/
@@ -122,14 +122,14 @@ jobs:
           shell: pwsh
         - name: Upload
           if: ${{ matrix.cross != 'zigbuild'  }}
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with: 
             name: emmylua_doc_cli-${{ matrix.platform }}
             path: ${{ github.workspace }}/artifact/
         - name: Upload zigbuild
           if: ${{ matrix.cross == 'zigbuild'  }}
-          uses: actions/upload-artifact@v3
-          with: 
+          uses: actions/upload-artifact@v4
+          with:
             name: emmylua_doc_cli-${{ matrix.platform }}-glibc.${{ matrix.glibc }}
             path: ${{ github.workspace }}/artifact/
   release:
@@ -138,7 +138,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Download
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
       - name: zip windows package win32-x64
         uses: TheDoctor0/zip-release@v0.2.1
         with:
