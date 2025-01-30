@@ -8,6 +8,8 @@
 
 `CHG` refactor `semantic token`
 
+`NEW` support simple generic type instantiation based on the passed functions
+
 # 0.3.2
 
 `FIX` Fixed some multiple return value inference errors
