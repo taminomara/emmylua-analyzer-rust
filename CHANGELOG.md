@@ -1,6 +1,10 @@
 # CHANGELOG
 
-# 0.3.3 (unreleased)
+# 0.3.4 (unreleased)
+
+TODO
+
+# 0.3.3 
 
 `NEW` Add Develop Guide
 
@@ -9,6 +13,8 @@
 `CHG` refactor `semantic token`
 
 `NEW` support simple generic type instantiation based on the passed functions
+
+`FIX` Fix find generic class template parameter issue
 
 # 0.3.2
 
