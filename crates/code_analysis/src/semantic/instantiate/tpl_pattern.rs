@@ -178,10 +178,32 @@ fn func_tpl_pattern_match(
 ) -> Option<()> {
     match target {
         LuaType::DocFunction(target_doc_func) => {
-            // todo
+            for i in 0..doc_func.get_params().len() {
+                let param_type = &doc_func.get_params()[i].clone().1?;
+                let target_param_type = &target_doc_func.get_params().get(i)?.clone().1?;
+                tpl_pattern_match(db, config, root, param_type, target_param_type, result);
+            }
+
+            for i in 0..doc_func.get_ret().len() {
+                let ret_type = &doc_func.get_ret()[i];
+                let target_ret_type = &target_doc_func.get_ret().get(i)?;
+                tpl_pattern_match(db, config, root, ret_type, target_ret_type, result);
+            }
         }
         LuaType::Signature(signature_id) => {
-            // todo
+            let signature = db.get_signature_index().get(&signature_id)?;
+
+            for i in 0..doc_func.get_params().len() {
+                let param_type = &doc_func.get_params()[i].clone().1?;
+                let target_param_type = &signature.param_docs.get(&i)?.type_ref;
+                tpl_pattern_match(db, config, root, param_type, target_param_type, result);
+            }
+
+            for i in 0..doc_func.get_ret().len() {
+                let ret_type = &doc_func.get_ret()[i];
+                let target_ret_type = &signature.return_docs.get(i)?.type_ref;
+                tpl_pattern_match(db, config, root, ret_type, target_ret_type, result);
+            }
         }
         _ => {}
     }
