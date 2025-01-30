@@ -22,10 +22,6 @@ We welcome your feedback and contributions. Please feel free to submit pull requ
 - [Emmyrc Config](./docs/config/emmyrc_json_EN.md)
 - [Formatting Config](https://github.com/CppCXY/EmmyLuaCodeStyle/blob/master/README_EN.md)
 
-## Install
-
-TODO
-
 ## Build
 
 ```shell

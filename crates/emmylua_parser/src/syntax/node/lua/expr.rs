@@ -8,7 +8,7 @@ use crate::{
     LuaAstToken, LuaIndexToken, LuaLiteralToken, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind,
 };
 
-use super::{LuaBlock, LuaCallArgList, LuaIndexKey, LuaParamList, LuaTableField};
+use super::{path_trait::PathTrait, LuaBlock, LuaCallArgList, LuaIndexKey, LuaParamList, LuaTableField};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LuaExpr {
@@ -221,6 +221,8 @@ impl LuaNameExpr {
     }
 }
 
+impl PathTrait for LuaNameExpr {}
+
 impl From<LuaNameExpr> for LuaVarExpr {
     fn from(expr: LuaNameExpr) -> Self {
         LuaVarExpr::NameExpr(expr)
@@ -312,6 +314,8 @@ impl LuaIndexExpr {
     }
 }
 
+impl PathTrait for LuaIndexExpr {}
+
 impl From<LuaIndexExpr> for LuaVarExpr {
     fn from(expr: LuaIndexExpr) -> Self {
         LuaVarExpr::IndexExpr(expr)
@@ -369,6 +373,8 @@ impl LuaCallExpr {
         return false;
     }
 }
+
+impl PathTrait for LuaCallExpr {}
 
 impl From<LuaCallExpr> for LuaExpr {
     fn from(expr: LuaCallExpr) -> Self {

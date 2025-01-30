@@ -58,7 +58,7 @@ pub trait LuaAstNode {
             WalkEvent::Leave(node) => N::cast(node).map(WalkEvent::Leave),
         })
     }
-    
+
     fn ancestors<N: LuaAstNode>(&self) -> impl Iterator<Item = N> {
         self.syntax().ancestors().filter_map(N::cast)
     }
@@ -89,8 +89,8 @@ pub trait LuaAstNode {
         LuaSyntaxId::from_node(self.syntax())
     }
 
-    fn dump(&self) {
-        println!("{:#?}", self.syntax());
+    fn dump(&self) -> String {
+        format!("{:#?}", self.syntax())
     }
 }
 
@@ -158,8 +158,8 @@ pub trait LuaAstToken {
         self.syntax().parent_ancestors().filter_map(N::cast)
     }
 
-    fn dump(&self) {
-        println!("{:#?}", self.syntax());
+    fn dump(&self) -> String {
+        format!("{:#?}", self.syntax())
     }
 }
 

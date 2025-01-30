@@ -1,5 +1,7 @@
 mod expr;
 mod stat;
+mod path_trait;
+mod test;
 
 use crate::{
     kind::{LuaSyntaxKind, LuaTokenKind},
@@ -9,6 +11,7 @@ use crate::{
 
 pub use expr::*;
 pub use stat::*;
+pub use path_trait::*;
 
 use super::{LuaLiteralToken, LuaNameToken, LuaNumberToken, LuaStringToken};
 
