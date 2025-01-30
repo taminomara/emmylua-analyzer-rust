@@ -1,6 +1,10 @@
 # CHANGELOG
 
-# 0.3.3 (unreleased)
+# 0.3.4 (unreleased)
+
+# 0.3.3
+
+`NEW` Support release to crates.io
 
 `NEW` Add Develop Guide
 

@@ -1,3 +1,15 @@
 # EmmyLua Doc Cli
 
-this project is currently unavailable. Please check back later for updates.
+This is a command line tool for generating EmmyLua doc from Lua source code.
+
+## Install
+
+```shell
+cargo install emmylua_doc_cli
+```
+
+## Usage
+
+```shell
+emmylua_doc_cli --input ./tests/lua --output ./tests/doc
+```

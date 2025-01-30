@@ -8,6 +8,7 @@ We welcome your feedback and contributions. Please feel free to submit pull requ
 - [`code_analysis`](./crates/code_analysis): lua code analysis base on emmylua_parser.
 - [`emmylua_ls`](./crates/emmylua_ls): language server for Lua.
 - [`meta_text`](./crates/meta_text): A library for manipulating text with meta information.
+- [`emmylua_doc_cli`](./crates/emmylua_doc_cli/): A command-line tool for generating Lua API documentation.
 
 ## Features
 
@@ -20,6 +21,10 @@ We welcome your feedback and contributions. Please feel free to submit pull requ
 - [Features](./docs/features/features_EN.md)
 - [Emmyrc Config](./docs/config/emmyrc_json_EN.md)
 - [Formatting Config](https://github.com/CppCXY/EmmyLuaCodeStyle/blob/master/README_EN.md)
+
+## Install
+
+TODO
 
 ## Build
 
