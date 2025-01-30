@@ -18,9 +18,15 @@ impl FileGenericIndex {
         }
     }
 
-    pub fn add_generic_scope(&mut self, ranges: Vec<TextRange>, params: HashMap<String, usize>, is_func: bool) {
+    pub fn add_generic_scope(
+        &mut self,
+        ranges: Vec<TextRange>,
+        params: HashMap<String, usize>,
+        is_func: bool,
+    ) {
         let params_id = self.generic_params.len();
-        self.generic_params.push(GenericParams::new(params, is_func));
+        self.generic_params
+            .push(GenericParams::new(params, is_func));
         let params_id = GenericParamId::new(params_id);
         let root_node_ids: Vec<_> = self.root_node_ids.clone();
         for range in ranges {
@@ -80,18 +86,20 @@ impl FileGenericIndex {
     }
 
     pub fn find_generic(&self, position: TextSize, name: &str) -> Option<(usize, bool)> {
-        let params_id = self.find_generic_params(position)?;
+        let params_ids = self.find_generic_params(position)?;
 
-        if let Some(params) = self.generic_params.get(params_id) {
-            if let Some(id) = params.params.get(name) {
-                return Some((*id, params.is_func));
+        for params_id in params_ids.iter().rev() {
+            if let Some(params) = self.generic_params.get(*params_id) {
+                if let Some(id) = params.params.get(name) {
+                    return Some((*id, params.is_func));
+                }
             }
         }
 
         None
     }
 
-    fn find_generic_params(&self, position: TextSize) -> Option<usize> {
+    fn find_generic_params(&self, position: TextSize) -> Option<Vec<usize>> {
         for effect_id in self.root_node_ids.iter() {
             if self
                 .effect_nodes
@@ -99,7 +107,9 @@ impl FileGenericIndex {
                 .range
                 .contains(position)
             {
-                return self.try_find_generic_params(position, *effect_id);
+                let mut result = Vec::new();
+                self.try_find_generic_params(position, *effect_id, &mut result);
+                return Some(result);
             }
         }
 
@@ -110,16 +120,18 @@ impl FileGenericIndex {
         &self,
         position: TextSize,
         effect_id: GenericEffectId,
-    ) -> Option<usize> {
-        let effect_node = self.effect_nodes.get(effect_id.id).unwrap();
+        result: &mut Vec<usize>,
+    ) -> Option<()> {
+        let effect_node = self.effect_nodes.get(effect_id.id)?;
+        result.push(effect_node.params_id.id);
         for child_effect_id in effect_node.children.iter() {
-            let child_effect_node = self.effect_nodes.get(child_effect_id.id).unwrap();
+            let child_effect_node = self.effect_nodes.get(child_effect_id.id)?;
             if child_effect_node.range.contains(position) {
-                return self.try_find_generic_params(position, *child_effect_id)
+                self.try_find_generic_params(position, *child_effect_id, result);
             }
         }
 
-        Some(effect_node.params_id.id)
+        Some(())
     }
 }
 
@@ -155,14 +167,11 @@ impl GenericEffectId {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GenericParams {
     params: HashMap<String, usize>,
-    is_func: bool
+    is_func: bool,
 }
 
 impl GenericParams {
     pub fn new(params: HashMap<String, usize>, is_func: bool) -> Self {
-        Self {
-            params,
-            is_func
-        }
+        Self { params, is_func }
     }
 }
