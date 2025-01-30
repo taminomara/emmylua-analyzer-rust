@@ -169,7 +169,6 @@ fn union_tpl_pattern_match(
     Some(())
 }
 
-#[allow(unused)]
 fn func_tpl_pattern_match(
     db: &DbIndex,
     config: &mut LuaInferConfig,
@@ -183,11 +182,19 @@ fn func_tpl_pattern_match(
             let params = doc_func.get_params();
             let target_params = target_doc_func.get_params();
             for (i, param_tuple) in params.iter().enumerate() {
-                let target_param_tuple = target_params.get(i)?;
-                if param_tuple.1.is_some() && target_param_tuple.1.is_some() {
-                    let param_type = param_tuple.1.clone()?;
-                    let target_param_type = target_param_tuple.1.clone()?;
-                    tpl_pattern_match(db, config, root, &param_type, &target_param_type, result);
+                if let Some(target_param_tuple) = target_params.get(i) {
+                    if param_tuple.1.is_some() && target_param_tuple.1.is_some() {
+                        let param_type = param_tuple.1.clone()?;
+                        let target_param_type = target_param_tuple.1.clone()?;
+                        tpl_pattern_match(
+                            db,
+                            config,
+                            root,
+                            &param_type,
+                            &target_param_type,
+                            result,
+                        );
+                    }
                 }
             }
 
@@ -214,7 +221,14 @@ fn func_tpl_pattern_match(
             let rets = doc_func.get_ret();
             for (i, ret_type) in rets.iter().enumerate() {
                 if let Some(signature_ret_info) = &signature.return_docs.get(i) {
-                    tpl_pattern_match(db, config, root, ret_type, &signature_ret_info.type_ref, result);
+                    tpl_pattern_match(
+                        db,
+                        config,
+                        root,
+                        ret_type,
+                        &signature_ret_info.type_ref,
+                        result,
+                    );
                 }
             }
         }
