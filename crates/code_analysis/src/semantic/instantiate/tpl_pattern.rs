@@ -4,7 +4,9 @@ use emmylua_parser::{LuaAstNode, LuaSyntaxId, LuaSyntaxNode, LuaTableExpr};
 use smol_str::SmolStr;
 
 use crate::{
-    db_index::{DbIndex, LuaGenericType, LuaType}, semantic::{infer_expr, LuaInferConfig}, LuaFunctionType, LuaUnionType
+    db_index::{DbIndex, LuaGenericType, LuaType},
+    semantic::{infer_expr, LuaInferConfig},
+    LuaFunctionType, LuaUnionType,
 };
 
 #[allow(unused)]
@@ -178,31 +180,42 @@ fn func_tpl_pattern_match(
 ) -> Option<()> {
     match target {
         LuaType::DocFunction(target_doc_func) => {
-            for i in 0..doc_func.get_params().len() {
-                let param_type = &doc_func.get_params()[i].clone().1?;
-                let target_param_type = &target_doc_func.get_params().get(i)?.clone().1?;
-                tpl_pattern_match(db, config, root, param_type, target_param_type, result);
+            let params = doc_func.get_params();
+            let target_params = target_doc_func.get_params();
+            for (i, param_tuple) in params.iter().enumerate() {
+                let target_param_tuple = target_params.get(i)?;
+                if param_tuple.1.is_some() && target_param_tuple.1.is_some() {
+                    let param_type = param_tuple.1.clone()?;
+                    let target_param_type = target_param_tuple.1.clone()?;
+                    tpl_pattern_match(db, config, root, &param_type, &target_param_type, result);
+                }
             }
 
-            for i in 0..doc_func.get_ret().len() {
-                let ret_type = &doc_func.get_ret()[i];
-                let target_ret_type = &target_doc_func.get_ret().get(i)?;
-                tpl_pattern_match(db, config, root, ret_type, target_ret_type, result);
+            let rets = doc_func.get_ret();
+            for (i, ret_type) in rets.iter().enumerate() {
+                if let Some(target_ret_type) = &target_doc_func.get_ret().get(i) {
+                    tpl_pattern_match(db, config, root, ret_type, target_ret_type, result);
+                }
             }
         }
         LuaType::Signature(signature_id) => {
+            let params = doc_func.get_params();
             let signature = db.get_signature_index().get(&signature_id)?;
 
-            for i in 0..doc_func.get_params().len() {
-                let param_type = &doc_func.get_params()[i].clone().1?;
-                let target_param_type = &signature.param_docs.get(&i)?.type_ref;
-                tpl_pattern_match(db, config, root, param_type, target_param_type, result);
+            for (i, param_tuple) in params.iter().enumerate() {
+                let signature_param_info = signature.get_param_info_by_id(i);
+                if param_tuple.1.is_some() && signature_param_info.is_some() {
+                    let param_type = param_tuple.1.clone()?;
+                    let target_param_type = &signature_param_info.unwrap().type_ref;
+                    tpl_pattern_match(db, config, root, &param_type, target_param_type, result);
+                }
             }
 
-            for i in 0..doc_func.get_ret().len() {
-                let ret_type = &doc_func.get_ret()[i];
-                let target_ret_type = &signature.return_docs.get(i)?.type_ref;
-                tpl_pattern_match(db, config, root, ret_type, target_ret_type, result);
+            let rets = doc_func.get_ret();
+            for (i, ret_type) in rets.iter().enumerate() {
+                if let Some(signature_ret_info) = &signature.return_docs.get(i) {
+                    tpl_pattern_match(db, config, root, ret_type, &signature_ret_info.type_ref, result);
+                }
             }
         }
         _ => {}
