@@ -1,6 +1,6 @@
 use crate::{
     DbIndex, GenericTpl, LuaExistFieldType, LuaExtendedType, LuaFunctionType, LuaGenericType,
-    LuaInstanceType, LuaIntersectionType, LuaMemberKey, LuaMultiReturn, LuaObjectType,
+    LuaInstanceType, LuaIntersectionType, LuaMemberKey, LuaMemberOwner, LuaMultiReturn, LuaObjectType,
     LuaSignatureId, LuaStringTplType, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType,
 };
 
@@ -18,7 +18,10 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType) -> String {
         LuaType::Userdata => "userdata".to_string(),
         LuaType::IntegerConst(i) => i.to_string(),
         LuaType::FloatConst(f) => f.to_string(),
-        LuaType::TableConst(_) => "table".to_string(),
+        LuaType::TableConst(v) => {
+            let member_owner = LuaMemberOwner::Element(v.clone());
+            humanize_table_const_type(db, member_owner)
+        },
         LuaType::Global => "global".to_string(),
         LuaType::Def(id) => humanize_def_type(db, id),
         LuaType::Union(union) => humanize_union_type(db, union),
@@ -243,6 +246,43 @@ fn humanize_generic_type(db: &DbIndex, generic: &LuaGenericType) -> String {
         .join(",");
 
     format!("{}<{}>", simple_name, generic_params)
+}
+
+fn humanize_table_const_type_extended(db: &DbIndex, member_owned: LuaMemberOwner) -> Option<String> {
+    let member_index = db.get_member_index();
+    let member_map = member_index.get_member_map(member_owned)?;
+
+    let members_string =  member_map.into_iter().fold(Some("".to_string()), |acc, member| {
+        let prev_member_string = acc?;
+        let (member_key, member_id) = member;
+        let member_value = member_index.get_member(member_id)?;
+        let member_value_string = humanize_type(db, member_value.get_decl_type());
+
+        let member_string = match member_key {
+            LuaMemberKey::Name(name) => format!("{} = {}", name, member_value_string),
+            LuaMemberKey::Integer(i) => format!("[{}] = {}", i, member_value_string),
+            LuaMemberKey::None => format!("{}", member_value_string)
+        };
+
+        let prev_member_string_len = prev_member_string.chars().count();
+
+        // Maximum typename length is 36 symbols.
+        if prev_member_string_len + member_string.chars().count() <= 32 {
+            if prev_member_string_len > 0 {
+                Some(format!("{}, {}", prev_member_string, member_string))
+            } else {
+                Some(format!("{}", member_string))
+            }
+        } else {
+            None
+        }
+    })?;
+
+    Some(format!("{{ {} }}", members_string))
+}
+
+fn humanize_table_const_type(db: &DbIndex, member_owned: LuaMemberOwner) -> String {
+    humanize_table_const_type_extended(db, member_owned).unwrap_or("table".to_string())
 }
 
 fn humanize_table_generic_type(db: &DbIndex, table_generic_params: &Vec<LuaType>) -> String {
