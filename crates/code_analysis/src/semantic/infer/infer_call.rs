@@ -46,7 +46,7 @@ fn infer_call_result(
 ) -> Option<LuaType> {
     let return_type = match prefix_type {
         LuaType::DocFunction(func) => {
-            infer_call_by_doc_function(db, config, &func, call_expr.clone(), false)?
+            infer_call_by_doc_function(db, config, &func, call_expr.clone(), func.is_colon_define())?
         }
         LuaType::Signature(signature_id) => {
             infer_call_by_signature(db, config, signature_id.clone(), call_expr.clone())?

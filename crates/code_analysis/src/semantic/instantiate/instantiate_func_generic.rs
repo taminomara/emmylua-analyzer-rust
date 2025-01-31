@@ -81,16 +81,6 @@ fn instantiate_func_by_args(
         );
     }
 
-    // let max = *substitutor.keys().max()?;
-    // let mut generic_params = Vec::new();
-    // for i in 0..=max {
-    //     if let Some(generic_param) = substitutor.get(&i) {
-    //         generic_params.push(generic_param.clone());
-    //     } else {
-    //         generic_params.push(LuaType::Unknown);
-    //     }
-    // }
-
     for i in 0..func_param_types.len() {
         let func_param_type = &mut func_param_types[i];
         let new_func_param_type = instantiate_type(db, &func_param_type, &substitutor);

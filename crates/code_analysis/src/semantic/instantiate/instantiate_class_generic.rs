@@ -190,7 +190,7 @@ fn instantiate_tpl_ref(_: &DbIndex, tpl: &GenericTpl, substitutor: &TypeSubstitu
     if let Some(ty) = substitutor.get(tpl.get_tpl_id()) {
         ty.clone()
     } else {
-        LuaType::Unknown
+        LuaType::TplRef(tpl.clone().into())
     }
 }
 

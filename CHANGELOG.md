@@ -2,7 +2,7 @@
 
 # 0.3.4 (unreleased)
 
-TODO
+`CHG` refactor `template system`, optimize the generic infer
 
 # 0.3.3 
 
