@@ -125,18 +125,11 @@ fn infer_buildin_or_ref_type(analyzer: &mut DocAnalyzer, name: &str, range: Text
         "global" => LuaType::Global,
         "function" => LuaType::Function,
         _ => {
-            if let Some((size, is_func)) = analyzer.generic_index.find_generic(position, name) {
-                if is_func {
-                    return LuaType::FuncTplRef(Arc::new(GenericTpl::new(
-                        size,
-                        name.to_string().into(),
-                    )));
-                } else {
-                    return LuaType::TplRef(Arc::new(GenericTpl::new(
-                        size,
-                        name.to_string().into(),
-                    )));
-                };
+            if let Some(tpl_id) = analyzer.generic_index.find_generic(position, name) {
+                return LuaType::TplRef(Arc::new(GenericTpl::new(
+                    tpl_id,
+                    SmolStr::new(name).into(),
+                )));
             }
 
             if let Some(name_type_decl) = analyzer
@@ -408,15 +401,21 @@ fn infer_str_tpl(analyzer: &mut DocAnalyzer, str_tpl: LuaDocStrTplType) -> LuaTy
         None => return LuaType::Unknown,
     };
 
-    let tp = infer_buildin_or_ref_type(analyzer, &name, str_tpl.get_range());
-    if let LuaType::FuncTplRef(tpl) = tp {
-        let str_tpl_type = LuaStringTplType::new(&prefix, &tpl.get_name(), tpl.get_tpl_id());
-        return LuaType::StrTplRef(str_tpl_type.into());
+    let typ = infer_buildin_or_ref_type(analyzer, &name, str_tpl.get_range());
+    if let LuaType::TplRef(tpl) = typ {
+        let tpl_id = tpl.get_tpl_id();
+        if tpl_id.is_func() {
+            let str_tpl_type = LuaStringTplType::new(&prefix, &tpl.get_name(), tpl_id);
+            return LuaType::StrTplRef(str_tpl_type.into());
+        }
     }
     LuaType::Unknown
 }
 
-fn infer_variadic_type(analyzer: &mut DocAnalyzer, variadic_type: LuaDocVariadicType) -> Option<LuaType> {
+fn infer_variadic_type(
+    analyzer: &mut DocAnalyzer,
+    variadic_type: LuaDocVariadicType,
+) -> Option<LuaType> {
     let name_type = variadic_type.get_name_type()?;
     let name = name_type.get_name_text()?;
     let base = infer_buildin_or_ref_type(analyzer, &name, name_type.get_range());

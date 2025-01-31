@@ -52,7 +52,6 @@ pub enum LuaType {
     ExistField(Arc<LuaExistFieldType>),
     Signature(LuaSignatureId),
     Instance(Arc<LuaInstanceType>),
-    FuncTplRef(Arc<GenericTpl>),
     DocStringConst(ArcIntern<SmolStr>),
     DocIntegerConst(i64),
     Namespace(ArcIntern<SmolStr>),
@@ -101,7 +100,6 @@ impl PartialEq for LuaType {
             (LuaType::ExistField(a), LuaType::ExistField(b)) => a == b,
             (LuaType::Signature(a), LuaType::Signature(b)) => a == b,
             (LuaType::Instance(a), LuaType::Instance(b)) => a == b,
-            (LuaType::FuncTplRef(a), LuaType::FuncTplRef(b)) => a == b,
             (LuaType::DocStringConst(a), LuaType::DocStringConst(b)) => a == b,
             (LuaType::DocIntegerConst(a), LuaType::DocIntegerConst(b)) => a == b,
             (LuaType::Namespace(a), LuaType::Namespace(b)) => a == b,
@@ -176,11 +174,10 @@ impl Hash for LuaType {
             LuaType::ExistField(a) => (36, a).hash(state),
             LuaType::Signature(a) => (37, a).hash(state),
             LuaType::Instance(a) => (38, a).hash(state),
-            LuaType::FuncTplRef(a) => (39, a).hash(state),
-            LuaType::DocStringConst(a) => (40, a).hash(state),
-            LuaType::DocIntegerConst(a) => (41, a).hash(state),
-            LuaType::Namespace(a) => (42, a).hash(state),
-            LuaType::Variadic(a) => (43, a).hash(state),
+            LuaType::DocStringConst(a) => (39, a).hash(state),
+            LuaType::DocIntegerConst(a) => (40, a).hash(state),
+            LuaType::Namespace(a) => (41, a).hash(state),
+            LuaType::Variadic(a) => (42, a).hash(state),
         }
     }
 }
@@ -311,10 +308,7 @@ impl LuaType {
     }
 
     pub fn is_tpl(&self) -> bool {
-        matches!(
-            self,
-            LuaType::TplRef(_) | LuaType::StrTplRef(_) | LuaType::FuncTplRef(_)
-        )
+        matches!(self, LuaType::TplRef(_) | LuaType::StrTplRef(_))
     }
 
     pub fn is_self_infer(&self) -> bool {
@@ -372,7 +366,6 @@ impl LuaType {
             LuaType::Variadic(inner) => inner.contain_tpl(),
             LuaType::TplRef(_) => true,
             LuaType::StrTplRef(_) => true,
-            LuaType::FuncTplRef(_) => true,
             _ => false,
         }
     }
@@ -670,35 +663,6 @@ impl From<LuaGenericType> for LuaType {
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub struct LuaStringTplType {
-    prefix: ArcIntern<String>,
-    tpl_id: usize,
-    name: ArcIntern<String>,
-}
-
-impl LuaStringTplType {
-    pub fn new(prefix: &str, name: &str, usize: usize) -> Self {
-        Self {
-            prefix: ArcIntern::new(prefix.to_string()),
-            tpl_id: usize,
-            name: ArcIntern::new(name.to_string()),
-        }
-    }
-
-    pub fn get_prefix(&self) -> &str {
-        &self.prefix
-    }
-
-    pub fn get_usize(&self) -> usize {
-        self.tpl_id
-    }
-
-    pub fn get_name(&self) -> &str {
-        &self.name
-    }
-}
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum LuaMultiReturn {
     Multi(Vec<LuaType>),
     Base(LuaType),
@@ -792,18 +756,70 @@ impl LuaInstanceType {
     }
 }
 
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub enum GenericTplId {
+    Type(u32),
+    Func(u32),
+}
+
+impl GenericTplId {
+    pub fn get_idx(&self) -> usize {
+        match self {
+            GenericTplId::Type(idx) => *idx as usize,
+            GenericTplId::Func(idx) => *idx as usize,
+        }
+    }
+
+    pub fn is_func(&self) -> bool {
+        matches!(self, GenericTplId::Func(_))
+    }
+
+    pub fn is_type(&self) -> bool {
+        matches!(self, GenericTplId::Type(_))
+    }
+}
+
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct GenericTpl {
-    tpl_id: usize,
-    name: ArcIntern<String>,
+    tpl_id: GenericTplId,
+    name: ArcIntern<SmolStr>,
 }
 
 impl GenericTpl {
-    pub fn new(tpl_id: usize, name: ArcIntern<String>) -> Self {
+    pub fn new(tpl_id: GenericTplId, name: ArcIntern<SmolStr>) -> Self {
         Self { tpl_id, name }
     }
 
-    pub fn get_tpl_id(&self) -> usize {
+    pub fn get_tpl_id(&self) -> GenericTplId {
+        self.tpl_id
+    }
+
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct LuaStringTplType {
+    prefix: ArcIntern<String>,
+    tpl_id: GenericTplId,
+    name: ArcIntern<String>,
+}
+
+impl LuaStringTplType {
+    pub fn new(prefix: &str, name: &str, tpl_id: GenericTplId) -> Self {
+        Self {
+            prefix: ArcIntern::new(prefix.to_string()),
+            tpl_id,
+            name: ArcIntern::new(name.to_string()),
+        }
+    }
+
+    pub fn get_prefix(&self) -> &str {
+        &self.prefix
+    }
+
+    pub fn get_tpl_id(&self) -> GenericTplId {
         self.tpl_id
     }
 

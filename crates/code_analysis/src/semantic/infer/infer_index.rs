@@ -11,7 +11,7 @@ use crate::{
         LuaUnionType, TypeAssertion,
     },
     semantic::{
-        instantiate::instantiate_type,
+        instantiate::{instantiate_type, TypeSubstitutor},
         member::{get_buildin_type_map_type_id, without_index_operator, without_members},
         InferGuard,
     },
@@ -279,7 +279,8 @@ fn infer_generic_member(
         infer_member_by_member_key(db, config, &base_type, member_key, &mut InferGuard::new())?;
 
     let generic_params = generic_type.get_params();
-    Some(instantiate_type(db, &member_type, generic_params))
+    let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
+    Some(instantiate_type(db, &member_type, &substitutor))
 }
 
 fn infer_exit_field_member(
@@ -573,6 +574,7 @@ fn infer_member_by_index_generic(
         return None;
     };
     let generic_params = generic.get_params();
+    let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
     let type_index = db.get_type_index();
     let type_decl = type_index.get_type_decl(&type_decl_id)?;
     if type_decl.is_alias() {
@@ -580,7 +582,7 @@ fn infer_member_by_index_generic(
             return infer_member_by_operator(
                 db,
                 config,
-                &instantiate_type(db, origin_type, generic_params),
+                &instantiate_type(db, origin_type, &substitutor),
                 member_key,
                 root,
                 &mut InferGuard::new(),
@@ -595,13 +597,13 @@ fn infer_member_by_index_generic(
     for index_operator_id in index_operator_ids {
         let index_operator = operator_index.get_operator(index_operator_id)?;
         let operand_type = index_operator.get_operands().first()?;
-        let instianted_operand_type = instantiate_type(db, &operand_type, generic_params);
+        let instianted_operand_type = instantiate_type(db, &operand_type, &substitutor);
         if instianted_operand_type.is_string() {
             if member_key.is_string() || member_key.is_name() {
                 return Some(instantiate_type(
                     db,
                     index_operator.get_result(),
-                    generic_params,
+                    &substitutor,
                 ));
             } else if member_key.is_expr() {
                 let expr = member_key.get_expr()?;
@@ -610,7 +612,7 @@ fn infer_member_by_index_generic(
                     return Some(instantiate_type(
                         db,
                         index_operator.get_result(),
-                        generic_params,
+                        &substitutor,
                     ));
                 }
             }
@@ -619,7 +621,7 @@ fn infer_member_by_index_generic(
                 return Some(instantiate_type(
                     db,
                     index_operator.get_result(),
-                    generic_params,
+                    &substitutor,
                 ));
             } else if member_key.is_expr() {
                 let expr = member_key.get_expr()?;
@@ -628,7 +630,7 @@ fn infer_member_by_index_generic(
                     return Some(instantiate_type(
                         db,
                         index_operator.get_result(),
-                        generic_params,
+                        &substitutor,
                     ));
                 }
             }
@@ -638,7 +640,7 @@ fn infer_member_by_index_generic(
                 return Some(instantiate_type(
                     db,
                     index_operator.get_result(),
-                    generic_params,
+                    &substitutor,
                 ));
             }
         }
@@ -650,7 +652,7 @@ fn infer_member_by_index_generic(
         let member_type = infer_member_by_operator(
             db,
             config,
-            &instantiate_type(db, &super_type, generic_params),
+            &instantiate_type(db, &super_type, &substitutor),
             member_key,
             root,
             &mut InferGuard::new(),

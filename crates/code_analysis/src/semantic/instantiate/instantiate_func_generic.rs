@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxNode};
 
 use crate::{
@@ -7,7 +5,7 @@ use crate::{
     semantic::{infer_expr, LuaInferConfig},
 };
 
-use super::{instantiate_type, tpl_pattern::tpl_pattern_match};
+use super::{instantiate_type, tpl_pattern::tpl_pattern_match, type_substitutor::TypeSubstitutor};
 
 pub fn instantiate_func(
     db: &DbIndex,
@@ -65,9 +63,8 @@ fn instantiate_func_by_args(
     arg_types: &Vec<LuaType>,
     root: &LuaSyntaxNode,
 ) -> Option<()> {
-    let mut result = HashMap::new();
-    for i in 0..func_param_types.len() {
-        let func_param_type = &mut func_param_types[i];
+    let mut substitutor = TypeSubstitutor::new();
+    for (i, func_param_type) in func_param_types.iter().enumerate() {
         let arg_type = if i < arg_types.len() {
             &arg_types[i]
         } else {
@@ -80,29 +77,29 @@ fn instantiate_func_by_args(
             root,
             func_param_type,
             arg_type,
-            &mut result,
+            &mut substitutor,
         );
     }
 
-    let max = *result.keys().max()?;
-    let mut generic_params = Vec::new();
-    for i in 0..=max {
-        if let Some(generic_param) = result.get(&i) {
-            generic_params.push(generic_param.clone());
-        } else {
-            generic_params.push(LuaType::Unknown);
-        }
-    }
+    // let max = *substitutor.keys().max()?;
+    // let mut generic_params = Vec::new();
+    // for i in 0..=max {
+    //     if let Some(generic_param) = substitutor.get(&i) {
+    //         generic_params.push(generic_param.clone());
+    //     } else {
+    //         generic_params.push(LuaType::Unknown);
+    //     }
+    // }
 
     for i in 0..func_param_types.len() {
         let func_param_type = &mut func_param_types[i];
-        let new_func_param_type = instantiate_type(db, &func_param_type, &generic_params);
+        let new_func_param_type = instantiate_type(db, &func_param_type, &substitutor);
         *func_param_type = new_func_param_type;
     }
 
     for i in 0..func_return_types.len() {
         let func_return_type = &mut func_return_types[i];
-        let new_func_return_type = instantiate_type(db, &func_return_type, &generic_params);
+        let new_func_return_type = instantiate_type(db, &func_return_type, &substitutor);
         *func_return_type = new_func_return_type;
     }
 

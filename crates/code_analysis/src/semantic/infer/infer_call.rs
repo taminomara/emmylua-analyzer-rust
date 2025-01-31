@@ -8,7 +8,7 @@ use crate::{
         LuaOperatorMetaMethod, LuaSignatureId, LuaType, LuaTypeDeclId,
     },
     semantic::{
-        instantiate::{instantiate_func, instantiate_type},
+        instantiate::{instantiate_func, instantiate_type, TypeSubstitutor},
         overload_resolve::resolve_signature,
         InferGuard,
     },
@@ -277,6 +277,7 @@ fn infer_call_by_custom_generic_type(
     }
 
     let generic_params = generic.get_params();
+    let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
     let operator_index = db.get_operator_index();
     let operator_map = operator_index.get_operators_by_type(&type_id)?;
     let operator_ids = operator_map.get(&LuaOperatorMetaMethod::Call)?;
@@ -284,7 +285,7 @@ fn infer_call_by_custom_generic_type(
     for overload_id in operator_ids {
         let operator = operator_index.get_operator(overload_id)?;
         let func = operator.get_call_operator_type()?;
-        let new_f = instantiate_type(db, func, generic_params);
+        let new_f = instantiate_type(db, func, &substitutor);
         match new_f {
             LuaType::DocFunction(f) => {
                 overloads.push(f.clone());

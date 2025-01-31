@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use rowan::{TextRange, TextSize};
 
+use crate::GenericTplId;
+
 #[derive(Debug, Clone)]
 pub struct FileGenericIndex {
     generic_params: Vec<GenericParams>,
@@ -85,13 +87,17 @@ impl FileGenericIndex {
         false
     }
 
-    pub fn find_generic(&self, position: TextSize, name: &str) -> Option<(usize, bool)> {
+    pub fn find_generic(&self, position: TextSize, name: &str) -> Option<GenericTplId> {
         let params_ids = self.find_generic_params(position)?;
 
         for params_id in params_ids.iter().rev() {
             if let Some(params) = self.generic_params.get(*params_id) {
                 if let Some(id) = params.params.get(name) {
-                    return Some((*id, params.is_func));
+                    if params.is_func {
+                        return Some(GenericTplId::Func(*id as u32));
+                    } else {
+                        return Some(GenericTplId::Type(*id as u32));
+                    }
                 }
             }
         }

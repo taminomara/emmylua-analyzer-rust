@@ -52,7 +52,6 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType) -> String {
         }
         LuaType::TplRef(tpl) => humanize_tpl_ref_type(tpl),
         LuaType::StrTplRef(str_tpl) => humanize_str_tpl_ref_type(str_tpl),
-        LuaType::FuncTplRef(tpl) => humanize_tpl_ref_type(tpl),
         LuaType::MuliReturn(multi) => humanize_multi_return_type(db, multi),
         LuaType::ExistField(exist_field) => humanize_exist_field_type(db, exist_field),
         LuaType::Instance(ins) => humanize_instance_type(db, ins),

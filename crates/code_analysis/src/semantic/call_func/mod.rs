@@ -8,7 +8,7 @@ use crate::{
 };
 
 use super::{
-    instantiate_doc_function, instantiate_type, resolve_signature, InferGuard, LuaInferConfig,
+    instantiate::TypeSubstitutor, instantiate_doc_function, instantiate_type, resolve_signature, InferGuard, LuaInferConfig
 };
 
 pub fn infer_call_expr_func(
@@ -186,6 +186,7 @@ fn infer_generic_type_doc_function(
     }
 
     let generic_params = generic.get_params();
+    let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
     let operator_index = db.get_operator_index();
     let operator_map = operator_index.get_operators_by_type(&type_id)?;
     let operator_ids = operator_map.get(&LuaOperatorMetaMethod::Call)?;
@@ -193,7 +194,7 @@ fn infer_generic_type_doc_function(
     for overload_id in operator_ids {
         let operator = operator_index.get_operator(overload_id)?;
         let func = operator.get_call_operator_type()?;
-        let new_f = instantiate_type(db, func, generic_params);
+        let new_f = instantiate_type(db, func, &substitutor);
         match new_f {
             LuaType::DocFunction(f) => {
                 overloads.push(f.clone());

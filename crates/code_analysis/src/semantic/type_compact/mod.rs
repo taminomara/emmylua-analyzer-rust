@@ -147,7 +147,6 @@ fn infer_type_compact(
             LuaType::DocStringConst(_) => true,
             _ => false,
         },
-        (LuaType::FuncTplRef(_), _) => true,
         // trivia
         (LuaType::Module(_), _) => false,
         (LuaType::Signature(_), _) => false,

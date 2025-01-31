@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use smol_str::SmolStr;
 
 use crate::{
-    semantic::{instantiate::instantiate_type, InferGuard},
+    semantic::{instantiate::{instantiate_type, TypeSubstitutor}, InferGuard},
     DbIndex, FileId, LuaExistFieldType, LuaGenericType, LuaInstanceType, LuaIntersectionType,
     LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaPropertyOwnerId, LuaTupleType, LuaType,
     LuaTypeDeclId, LuaUnionType, TypeAssertion,
@@ -208,9 +208,10 @@ fn infer_generic_members(
     let mut members = infer_members_guard(db, &base_type, infer_guard)?;
 
     let generic_params = generic_type.get_params();
+    let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
     for info in members.iter_mut() {
         let origin_typ = info.typ.clone();
-        info.typ = instantiate_type(db, &info.typ, generic_params);
+        info.typ = instantiate_type(db, &info.typ, &substitutor);
         info.origin_typ = Some(origin_typ);
     }
 
