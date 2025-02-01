@@ -21,7 +21,10 @@ pub async fn get_client_config_neovim(
     let cancel_token = time_cancel_token(Duration::from_secs(5));
     let configs = client
         .get_configuration::<Value>(params, cancel_token)
-        .await?;
+        .await?
+        .into_iter()
+        .filter(|config| !config.is_null())
+        .collect();
 
     if let Some(pretty_json) = serde_json::to_string_pretty(&configs).ok() {
         info!("load neovim client config: {}", pretty_json);

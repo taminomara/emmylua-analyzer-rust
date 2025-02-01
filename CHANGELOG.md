@@ -4,6 +4,10 @@
 
 `CHG` refactor `template system`, optimize the generic infer
 
+`FIX` now configurations are loaded properly in NeoVim in cases when no extra LSP configuration parameters are provided
+
+`CHG` extended humanization of small constant table types
+
 # 0.3.3 
 
 `NEW` Add Develop Guide
