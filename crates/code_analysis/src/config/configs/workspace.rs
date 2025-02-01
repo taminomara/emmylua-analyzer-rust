@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -22,6 +24,13 @@ pub struct EmmyrcWorkspace {
     /// Encoding. eg: "utf-8"
     #[serde(default = "encoding_default")]
     pub encoding: String,
+    /// Module map. key is regex, value is new module regex
+    /// eg: {
+    ///     "^(.*)$": "module_$1"
+    ///     "^lib(.*)$": "script$1"
+    /// }
+    #[serde(default)]
+    pub module_map: Vec<EmmyrcWorkspaceModuleMap>,
 }
 
 impl Default for EmmyrcWorkspace {
@@ -33,8 +42,15 @@ impl Default for EmmyrcWorkspace {
             workspace_roots: Vec::new(),
             preload_file_size: 0,
             encoding: encoding_default(),
+            module_map: Vec::new(),
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, JsonSchema)]
+pub struct EmmyrcWorkspaceModuleMap {
+    pub pattern: String,
+    pub replace: String,
 }
 
 fn encoding_default() -> String {

@@ -50,7 +50,8 @@
     ],
     "library": [],
     "workspaceRoots": [],
-    "encoding": ""
+    "encoding": "",
+    "moduleMap": []
   },
   "resource": {
     "paths": [
@@ -125,6 +126,15 @@
 - `workspaceRoots`: 工作区根目录列表, 用于指定工作区的根目录, 例如: `["Assets/script/Lua"]`. 该功能主要是为了让require正常工作, 如果必须要打开lua主目录的上级目录, 需要在这里添加当前打开的目录相对于lua主目录的相对路径.
 - `preloadFileSize`: 预加载文件大小, 默认为 `1048576` 字节, 用于控制预加载文件的大小.
 - `encoding`: 文件编码, 默认为 `utf-8`, 用于读取文件时的编码.
+- `moduleMap`: 模块映射列表, 用于指定模块映射, 例如: 
+```json
+{ 
+  "pattern" : "^lib(.*)$", 
+  "replace" : "script$1"
+}
+```
+
+该功能主要是为了让require正常工作, 如果需要将以lib为起始的模块, 映射到以script为起始, 需要在这里添加映射关系.
 
 ## resource
 

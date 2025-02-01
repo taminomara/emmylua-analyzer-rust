@@ -8,6 +8,23 @@
 
 `CHG` extended humanization of small constant table types
 
+`NEW` Add configuration option `workspace.moduleMap` to map old module names to new ones. The `moduleMap` is a list of mappings, for example:
+
+```json
+{
+    "workspace": {
+        "moduleMap": [
+            {
+                "pattern": "^lib(.*)$",
+                "replace": "script$1"
+            }
+        ]
+    }
+}
+```
+
+This feature ensures that `require` works correctly. If you need to translate module names starting with `lib` to use `script`, add the appropriate mapping here.
+
 # 0.3.3 
 
 `NEW` Add Develop Guide

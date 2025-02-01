@@ -26,6 +26,7 @@ pub struct LuaModuleIndex {
     workspace_root: Vec<PathBuf>,
     id_counter: u32,
     fuzzy_search: bool,
+    module_replace_vec: Vec<(Regex, String)>,
 }
 
 impl LuaModuleIndex {
@@ -39,6 +40,7 @@ impl LuaModuleIndex {
             workspace_root: Vec::new(),
             id_counter: 1,
             fuzzy_search: false,
+            module_replace_vec: Vec::new(),
         };
 
         let root_node = ModuleNode::default();
@@ -48,7 +50,7 @@ impl LuaModuleIndex {
     }
 
     // patterns like "?.lua" and "?/init.lua"
-    pub fn set_module_patterns(&mut self, patterns: Vec<String>) {
+    pub fn set_module_extract_patterns(&mut self, patterns: Vec<String>) {
         let mut patterns = patterns;
         patterns.sort_by(|a, b| b.len().cmp(&a.len()));
         self.module_patterns.clear();
@@ -69,13 +71,37 @@ impl LuaModuleIndex {
         info!("update module pattern: {:?}", self.module_patterns);
     }
 
+    pub fn set_module_replace_patterns(&mut self, patterns: HashMap<String, String>) {
+        self.module_replace_vec.clear();
+        for (key, value) in patterns {
+            let key_pattern = match Regex::new(&key) {
+                Ok(re) => re,
+                Err(e) => {
+                    error!("Invalid module replace pattern: {}, error: {}", key, e);
+                    return;
+                }
+            };
+
+            self.module_replace_vec.push((key_pattern, value));
+        }
+
+        info!(
+            "update module replace pattern: {:?}",
+            self.module_replace_vec
+        );
+    }
+
     pub fn add_module_by_path(&mut self, file_id: FileId, path: &str) -> Option<()> {
         if self.file_module_map.contains_key(&file_id) {
             self.remove(file_id);
         }
 
         let module_path = self.extract_module_path(&path)?;
-        let module_path = module_path.replace(['\\', '/'], ".");
+        let mut module_path = module_path.replace(['\\', '/'], ".");
+        if !self.module_replace_vec.is_empty() {
+            module_path = self.replace_module_path(&module_path);
+        }
+
         self.add_module_by_module_path(file_id, module_path)
     }
 
@@ -276,6 +302,14 @@ impl LuaModuleIndex {
         matched_module_path
     }
 
+    fn replace_module_path(&self, module_path: &str) -> String {
+        for (key, value) in &self.module_replace_vec {
+            return key.replace_all(&module_path, value).to_string();
+        }
+
+        module_path.to_string()
+    }
+
     fn match_pattern(&self, path: &str) -> Option<String> {
         for pattern in &self.module_patterns {
             if let Some(captures) = pattern.captures(path) {
@@ -320,7 +354,15 @@ impl LuaModuleIndex {
             patterns.push(format!("?/init.{}", extension));
         }
 
-        self.set_module_patterns(patterns);
+        self.set_module_extract_patterns(patterns);
+        self.set_module_replace_patterns(
+            config
+                .workspace
+                .module_map
+                .iter()
+                .map(|m| (m.pattern.clone(), m.replace.clone()))
+                .collect(),
+        );
 
         self.fuzzy_search = !config.strict.require_path;
     }
@@ -385,8 +427,14 @@ impl LuaIndex for LuaModuleIndex {
     }
 
     fn fill_snapshot_info(&self, info: &mut HashMap<String, String>) {
-        info.insert("module_nodes".to_string(), self.module_nodes.len().to_string());
-        info.insert("file_module_map".to_string(), self.file_module_map.len().to_string());
+        info.insert(
+            "module_nodes".to_string(),
+            self.module_nodes.len().to_string(),
+        );
+        info.insert(
+            "file_module_map".to_string(),
+            self.file_module_map.len().to_string(),
+        );
         info.insert(
             "module_name_to_file_ids".to_string(),
             self.module_name_to_file_ids.len().to_string(),

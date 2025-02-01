@@ -6,7 +6,7 @@ mod tests {
 
     fn create_module() -> LuaModuleIndex {
         let mut m = LuaModuleIndex::new();
-        m.set_module_patterns(["?.lua".to_string(), "?/init.lua".to_string()].to_vec());
+        m.set_module_extract_patterns(["?.lua".to_string(), "?/init.lua".to_string()].to_vec());
         m
     }
 

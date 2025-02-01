@@ -156,6 +156,7 @@
         "ignoreDir": [],
         "ignoreGlobs": [],
         "library": [],
+        "moduleMap": [],
         "preloadFileSize": 0,
         "workspaceRoots": []
       },
@@ -747,6 +748,14 @@
             "type": "string"
           }
         },
+        "moduleMap": {
+          "description": "Module map. key is regex, value is new module regex eg: { \"^(.*)$\": \"module_$1\" \"^lib(.*)$\": \"script$1\" }",
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EmmyrcWorkspaceModuleMap"
+          }
+        },
         "preloadFileSize": {
           "default": 0,
           "type": "integer",
@@ -759,6 +768,21 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "EmmyrcWorkspaceModuleMap": {
+      "type": "object",
+      "required": [
+        "pattern",
+        "replace"
+      ],
+      "properties": {
+        "pattern": {
+          "type": "string"
+        },
+        "replace": {
+          "type": "string"
         }
       }
     }

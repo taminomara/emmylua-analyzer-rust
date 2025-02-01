@@ -50,7 +50,8 @@ It primarily follows this format:
     ],
     "library": [],
     "workspaceRoots": [],
-    "encoding": ""
+    "encoding": "",
+    "moduleMap": []
   },
   "resource": {
     "paths": [
@@ -115,6 +116,15 @@ To enable automatic completion and IntelliSense for this configuration file, you
 - `workspaceRoots`: A list of workspace root directories (e.g., `["Assets/script/Lua"]`).
 - `preloadFileSize`: Maximum file size for preloading, default `1048576` bytes.
 - `encoding`: File encoding for reads, default is `utf-8`.
+- `moduleMap`: Module mapping list used to specify module mappings, for example:
+```json
+{ 
+  "pattern" : "^lib(.*)$", 
+  "replace" : "script$1"
+}
+```
+
+This feature is mainly to make `require` work correctly. If you need to map modules starting with `lib` to those starting with `script`, you need to add the mapping relationship here.
 
 ## resource
 - `paths`: Resource directories to load (e.g., `["Assets/settings"]`). By default, the current workspace directory is used, and emmylua can provide completion and jump-to-definition for file paths within strings.
