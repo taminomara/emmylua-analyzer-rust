@@ -310,6 +310,10 @@ fn build_node_semantic_token(
                 _ => {}
             }
         }
+        LuaAst::LuaDocNameType(doc_name_type) => {
+            let name = doc_name_type.get_name_token()?;
+            builder.push(name.syntax().clone(), SemanticTokenType::TYPE);
+        }
         _ => {}
     }
 
