@@ -151,6 +151,27 @@ impl LuaMemberKey {
     }
 }
 
+impl PartialOrd for LuaMemberKey {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for LuaMemberKey {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        use LuaMemberKey::*;
+        match (self, other) {
+            (None, None) => std::cmp::Ordering::Equal,
+            (None, _) => std::cmp::Ordering::Less,
+            (_, None) => std::cmp::Ordering::Greater,
+            (Integer(a), Integer(b)) => a.cmp(b),
+            (Integer(_), _) => std::cmp::Ordering::Less,
+            (_, Integer(_)) => std::cmp::Ordering::Greater,
+            (Name(a), Name(b)) => a.cmp(b),
+        }
+    }
+}
+
 impl From<LuaIndexKey> for LuaMemberKey {
     fn from(key: LuaIndexKey) -> Self {
         match key {

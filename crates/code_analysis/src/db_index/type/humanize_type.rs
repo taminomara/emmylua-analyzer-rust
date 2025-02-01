@@ -1,7 +1,8 @@
 use crate::{
     DbIndex, GenericTpl, LuaExistFieldType, LuaExtendedType, LuaFunctionType, LuaGenericType,
-    LuaInstanceType, LuaIntersectionType, LuaMemberKey, LuaMemberOwner, LuaMultiReturn, LuaObjectType,
-    LuaSignatureId, LuaStringTplType, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType,
+    LuaInstanceType, LuaIntersectionType, LuaMemberKey, LuaMemberOwner, LuaMultiReturn,
+    LuaObjectType, LuaSignatureId, LuaStringTplType, LuaTupleType, LuaType, LuaTypeDeclId,
+    LuaUnionType,
 };
 
 #[allow(unused)]
@@ -21,7 +22,7 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType) -> String {
         LuaType::TableConst(v) => {
             let member_owner = LuaMemberOwner::Element(v.clone());
             humanize_table_const_type(db, member_owner)
-        },
+        }
         LuaType::Global => "global".to_string(),
         LuaType::Def(id) => humanize_def_type(db, id),
         LuaType::Union(union) => humanize_union_type(db, union),
@@ -248,35 +249,49 @@ fn humanize_generic_type(db: &DbIndex, generic: &LuaGenericType) -> String {
     format!("{}<{}>", simple_name, generic_params)
 }
 
-fn humanize_table_const_type_extended(db: &DbIndex, member_owned: LuaMemberOwner) -> Option<String> {
+fn humanize_table_const_type_extended(
+    db: &DbIndex,
+    member_owned: LuaMemberOwner,
+) -> Option<String> {
     let member_index = db.get_member_index();
     let member_map = member_index.get_member_map(member_owned)?;
 
-    let members_string =  member_map.into_iter().fold(Some("".to_string()), |acc, member| {
-        let prev_member_string = acc?;
-        let (member_key, member_id) = member;
-        let member_value = member_index.get_member(member_id)?;
-        let member_value_string = humanize_type(db, member_value.get_decl_type());
+    // sort by key
+    let mut member_vec = member_map
+        .into_iter()
+        .collect::<Vec<_>>();
+    member_vec.sort_by(|a, b| a.0.cmp(&b.0));
 
+    let mut total_length = 0;
+    let mut members_string = String::new();
+    for (member_key, member_id) in member_vec {
+        let member_value = match member_index.get_member(member_id) {
+            Some(value) => value,
+            None => continue,
+        };
+        let member_value_string = humanize_type(db, member_value.get_decl_type());
+    
         let member_string = match member_key {
             LuaMemberKey::Name(name) => format!("{} = {}", name, member_value_string),
             LuaMemberKey::Integer(i) => format!("[{}] = {}", i, member_value_string),
-            LuaMemberKey::None => format!("{}", member_value_string)
+            LuaMemberKey::None => format!("{}", member_value_string),
         };
-
-        let prev_member_string_len = prev_member_string.chars().count();
-
-        // Maximum typename length is 36 symbols.
-        if prev_member_string_len + member_string.chars().count() <= 32 {
-            if prev_member_string_len > 0 {
-                Some(format!("{}, {}", prev_member_string, member_string))
-            } else {
-                Some(format!("{}", member_string))
-            }
-        } else {
-            None
+    
+        let member_string_len = member_string.chars().count();
+    
+        if total_length + member_string_len > 54 {
+            members_string.push_str(", ...");
+            break;
         }
-    })?;
+    
+        if !members_string.is_empty() {
+            members_string.push_str(", ");
+            total_length += 2; // account for ", "
+        }
+    
+        members_string.push_str(&member_string);
+        total_length += member_string_len;
+    }
 
     Some(format!("{{ {} }}", members_string))
 }
