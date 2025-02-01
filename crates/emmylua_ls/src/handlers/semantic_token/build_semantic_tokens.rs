@@ -1,7 +1,6 @@
 use code_analysis::SemanticModel;
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaExpr, LuaSyntaxNode, LuaSyntaxToken,
-    LuaTokenKind, LuaVarExpr,
+    LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind, LuaVarExpr
 };
 use lsp_types::{SemanticToken, SemanticTokenType};
 use rowan::NodeOrToken;
@@ -94,7 +93,11 @@ fn build_tokens_semantic_token(
         | LuaTokenKind::TkLen
         | LuaTokenKind::TkBitAnd
         | LuaTokenKind::TkBitOr
-        | LuaTokenKind::TkBitXor => {
+        | LuaTokenKind::TkBitXor
+        | LuaTokenKind::TkLeftBrace
+        | LuaTokenKind::TkRightBrace
+        | LuaTokenKind::TkLeftBracket
+        | LuaTokenKind::TkRightBracket => {
             builder.push(token, SemanticTokenType::OPERATOR);
         }
         LuaTokenKind::TkComplex | LuaTokenKind::TkInt | LuaTokenKind::TkFloat => {
@@ -313,6 +316,19 @@ fn build_node_semantic_token(
         LuaAst::LuaDocNameType(doc_name_type) => {
             let name = doc_name_type.get_name_token()?;
             builder.push(name.syntax().clone(), SemanticTokenType::TYPE);
+        }
+        LuaAst::LuaDocObjectType(doc_object_type) => {
+            let fields = doc_object_type.get_fields();
+            for field in fields {
+                if let Some(field_key) = field.get_field_key() {
+                    match &field_key {
+                        LuaDocObjectFieldKey::Name(name) => {
+                            builder.push(name.syntax().clone(), SemanticTokenType::PROPERTY);
+                        }
+                        _ => {}
+                    }
+                }
+            }
         }
         _ => {}
     }
