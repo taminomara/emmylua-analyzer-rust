@@ -2,6 +2,12 @@
 
 This is a command line tool for generating EmmyLua doc from Lua source code.
 
+## Installation
+
+```shell
+cargo install emmylua_doc_cli
+```
+
 ## Usage
 
 ```shell

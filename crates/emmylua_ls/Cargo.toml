@@ -2,6 +2,13 @@
 name = "emmylua_ls"
 version = "0.4.0"
 edition = "2021"
+authors = ["CppCXY"]
+description = "A language server for emmylua."
+license = "MIT"
+repository = "https://github.com/CppCXY/emmylua-analyzer-rust"
+readme = "README.md"
+keywords = ["emmylua", "doc", "lua", "language server"]
+categories = ["development-tools"]
 
 [dependencies]
 # local
