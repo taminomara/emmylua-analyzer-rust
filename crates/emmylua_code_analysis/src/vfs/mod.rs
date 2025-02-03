@@ -160,4 +160,18 @@ impl Vfs {
             Some(errors)
         }
     }
+
+    pub fn get_all_file_ids(&self) -> Vec<FileId> {
+        self.file_data
+            .iter()
+            .enumerate()
+            .filter_map(|(id, _)| {
+                if id == FileId::VIRTUAL.id as usize {
+                    None
+                } else {
+                    Some(FileId { id: id as u32 })
+                }
+            })
+            .collect()
+    }
 }
