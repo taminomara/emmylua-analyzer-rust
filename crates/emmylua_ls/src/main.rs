@@ -12,13 +12,12 @@ use handlers::{
 };
 use lsp_server::{Connection, Message};
 use lsp_types::InitializeParams;
-use meta_text::I18nBackend;
 use std::{env, error::Error};
 use structopt::StructOpt;
 
 #[macro_use]
 extern crate rust_i18n;
-rust_i18n::i18n!("./locales", fallback = "en", backend = I18nBackend::new());
+rust_i18n::i18n!("./locales", fallback = "en");
 
 const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 const CRATE_VERSION: &str = env!("CARGO_PKG_VERSION");

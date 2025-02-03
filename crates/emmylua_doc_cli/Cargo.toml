@@ -9,6 +9,11 @@ repository = "https://github.com/CppCXY/emmylua-analyzer-rust"
 readme = "README.md"
 keywords = ["emmylua", "doc", "lua", "cli"]
 categories = ["development-tools", "documentation"]
+include = [
+    "Cargo.toml",
+    "src/**",
+    "template/**",
+]
 
 [dependencies]
 # local
@@ -23,3 +28,4 @@ rowan.workspace = true
 walkdir.workspace = true
 structopt.workspace = true
 tera.workspace = true
+include_dir.workspace = true

@@ -1,4 +1,5 @@
 mod index_gen;
+mod init_tl;
 mod mod_gen;
 mod render;
 mod typ_gen;
@@ -7,7 +8,6 @@ use std::path::PathBuf;
 
 use emmylua_code_analysis::EmmyLuaAnalysis;
 use serde::{Deserialize, Serialize};
-use tera::Tera;
 
 #[allow(unused)]
 pub fn generate_markdown(
@@ -36,16 +36,8 @@ pub fn generate_markdown(
         std::fs::create_dir_all(&module_out).ok()?;
     }
 
+    let tl = init_tl::init_tl()?;
     let mut mkdocs_index = MkdocsIndex::default();
-    let resources = analysis.get_resource_dir()?;
-    let tl_template = resources.join("template/**/*.tl");
-    let tl = match Tera::new(tl_template.to_string_lossy().as_ref()) {
-        Ok(tl) => tl,
-        Err(e) => {
-            eprintln!("Failed to load template: {}", e);
-            return None;
-        }
-    };
     let db = analysis.compilation.get_db();
     let type_index = db.get_type_index();
     let types = type_index.get_all_types();
