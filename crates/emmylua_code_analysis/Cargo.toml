@@ -12,7 +12,7 @@ categories = ["development-tools"]
 include = [
     "Cargo.toml",
     "src/**",
-    "../../resources/**",
+    "../resources/**",
 ]
 
 [dependencies]
