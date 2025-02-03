@@ -1,4 +1,4 @@
-use code_analysis::{LuaDeclId, LuaSignatureId, LuaType};
+use emmylua_code_analysis::{LuaDeclId, LuaSignatureId, LuaType};
 use emmylua_parser::{
     LuaAssignStat, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaFuncStat, LuaIfClauseStat, LuaIfStat, LuaLocalFuncStat, LuaLocalStat
 };

@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use code_analysis::{DiagnosticCode, FileId, SemanticModel};
+use emmylua_code_analysis::{DiagnosticCode, FileId, SemanticModel};
 use lsp_types::{CodeActionOrCommand, CodeActionResponse, Diagnostic, NumberOrString, Range};
 
 use crate::handlers::command::{make_disable_code_command, DisableAction};

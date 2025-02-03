@@ -1,4 +1,4 @@
-use code_analysis::{EmmyrcFilenameConvention, ModuleInfo};
+use emmylua_code_analysis::{EmmyrcFilenameConvention, ModuleInfo};
 use emmylua_parser::{LuaAstNode, LuaNameExpr};
 use lsp_types::{CompletionItem, Position};
 

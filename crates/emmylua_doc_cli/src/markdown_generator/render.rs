@@ -1,4 +1,4 @@
-use code_analysis::{
+use emmylua_code_analysis::{
     humanize_type, DbIndex, LuaFunctionType, LuaPropertyOwnerId, LuaSignatureId, LuaType,
 };
 

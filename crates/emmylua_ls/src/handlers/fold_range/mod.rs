@@ -5,7 +5,7 @@ mod stats;
 mod imports;
 
 use builder::FoldingRangeBuilder;
-use code_analysis::Emmyrc;
+use emmylua_code_analysis::Emmyrc;
 use comment::build_comment_fold_range;
 use emmylua_parser::{LuaAst, LuaAstNode};
 use expr::{build_closure_expr_fold_range, build_string_fold_range, build_table_expr_fold_range};

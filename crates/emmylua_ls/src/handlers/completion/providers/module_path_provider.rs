@@ -1,4 +1,4 @@
-use code_analysis::Emmyrc;
+use emmylua_code_analysis::Emmyrc;
 use emmylua_parser::{
     LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaExpr, LuaLiteralExpr, LuaStringToken,
 };

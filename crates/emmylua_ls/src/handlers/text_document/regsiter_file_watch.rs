@@ -1,4 +1,4 @@
-use code_analysis::file_path_to_uri;
+use emmylua_code_analysis::file_path_to_uri;
 use log::{info, warn};
 use lsp_types::{
     ClientCapabilities, DidChangeWatchedFilesParams, DidChangeWatchedFilesRegistrationOptions,

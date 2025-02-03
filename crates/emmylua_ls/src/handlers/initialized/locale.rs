@@ -14,7 +14,7 @@ pub fn set_ls_locale(params: &InitializeParams) -> Option<()> {
 
     info!("set locale: {}", locale);
     emmylua_parser::set_locale(&locale);
-    code_analysis::set_locale(&locale);
+    emmylua_code_analysis::set_locale(&locale);
     rust_i18n::set_locale(&locale);
     Some(())
 }

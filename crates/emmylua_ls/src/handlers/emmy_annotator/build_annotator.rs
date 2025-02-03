@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use code_analysis::{DbIndex, LuaDeclId, LuaDocument, SemanticModel};
+use emmylua_code_analysis::{DbIndex, LuaDeclId, LuaDocument, SemanticModel};
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaLocalFuncStat, LuaLocalStat,
     LuaNameExpr, LuaParamList,

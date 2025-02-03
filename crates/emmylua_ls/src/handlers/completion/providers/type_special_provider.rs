@@ -1,4 +1,4 @@
-use code_analysis::{
+use emmylua_code_analysis::{
     InferGuard, LuaDeclLocation, LuaFunctionType, LuaMemberId, LuaMemberKey, LuaMemberOwner,
     LuaPropertyOwnerId, LuaType, LuaTypeDeclId, LuaUnionType,
 };
@@ -11,7 +11,7 @@ use lsp_types::CompletionItem;
 use crate::handlers::{
     completion::completion_builder::CompletionBuilder, signature_helper::get_current_param_index,
 };
-use code_analysis::humanize_type;
+use emmylua_code_analysis::humanize_type;
 
 pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     if builder.is_cancelled() {

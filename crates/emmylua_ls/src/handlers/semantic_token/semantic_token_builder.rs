@@ -1,4 +1,4 @@
-use code_analysis::LuaDocument;
+use emmylua_code_analysis::LuaDocument;
 use emmylua_parser::LuaSyntaxToken;
 use lsp_types::{SemanticToken, SemanticTokenModifier, SemanticTokenType};
 use std::{collections::HashMap, vec::Vec};

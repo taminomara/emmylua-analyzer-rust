@@ -1,6 +1,6 @@
 use std::{collections::HashMap, time::Duration};
 
-use code_analysis::FileId;
+use emmylua_code_analysis::FileId;
 use emmylua_parser::{LuaAstNode, LuaExpr, LuaStat};
 use lsp_types::{ApplyWorkspaceEditParams, Command, Position, TextEdit, WorkspaceEdit};
 use serde_json::Value;

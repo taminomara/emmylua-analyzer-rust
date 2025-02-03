@@ -1,7 +1,7 @@
 use std::{env, fs, path::PathBuf};
 
 use chrono::Local;
-use code_analysis::file_path_to_uri;
+use emmylua_code_analysis::file_path_to_uri;
 use fern::Dispatch;
 use log::{info, LevelFilter};
 

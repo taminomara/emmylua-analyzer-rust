@@ -1,4 +1,4 @@
-use code_analysis::SemanticModel;
+use emmylua_code_analysis::SemanticModel;
 use emmylua_parser::LuaStringToken;
 use lsp_types::{GotoDefinitionResponse, Location};
 

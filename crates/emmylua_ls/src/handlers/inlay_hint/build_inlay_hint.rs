@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use code_analysis::{
+use emmylua_code_analysis::{
     FileId, InferGuard, LuaFunctionType, LuaMemberId, LuaMemberKey, LuaMemberOwner,
     LuaPropertyOwnerId, LuaSignatureId, LuaType, SemanticModel,
 };
@@ -11,7 +11,7 @@ use emmylua_parser::{
 use lsp_types::{InlayHint, InlayHintKind, InlayHintLabel, InlayHintLabelPart};
 use rowan::NodeOrToken;
 
-use code_analysis::humanize_type;
+use emmylua_code_analysis::humanize_type;
 
 pub fn build_inlay_hints(semantic_model: &mut SemanticModel) -> Option<Vec<InlayHint>> {
     let mut result = Vec::new();

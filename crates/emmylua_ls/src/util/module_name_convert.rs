@@ -1,4 +1,4 @@
-use code_analysis::EmmyrcFilenameConvention;
+use emmylua_code_analysis::EmmyrcFilenameConvention;
 
 pub fn module_name_convert(name: &str, file_convension: EmmyrcFilenameConvention) -> String {
     let mut module_name = name.to_string();

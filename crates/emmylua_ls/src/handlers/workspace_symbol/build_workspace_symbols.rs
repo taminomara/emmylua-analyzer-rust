@@ -1,4 +1,4 @@
-use code_analysis::{DbIndex, LuaCompilation, LuaPropertyOwnerId, LuaType};
+use emmylua_code_analysis::{DbIndex, LuaCompilation, LuaPropertyOwnerId, LuaType};
 use lsp_types::{OneOf, SymbolKind, SymbolTag, WorkspaceSymbol, WorkspaceSymbolResponse};
 use tokio_util::sync::CancellationToken;
 

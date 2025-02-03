@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use code_analysis::EmmyLuaAnalysis;
+use emmylua_code_analysis::EmmyLuaAnalysis;
 
 use super::{
     client::ClientProxy, config_manager::ConfigManager, file_diagnostic::FileDiagnostic,

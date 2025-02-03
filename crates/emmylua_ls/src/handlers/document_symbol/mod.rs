@@ -3,7 +3,7 @@ mod expr;
 mod stats;
 
 use builder::{DocumentSymbolBuilder, LuaSymbol};
-use code_analysis::SemanticModel;
+use emmylua_code_analysis::SemanticModel;
 use emmylua_parser::{LuaAst, LuaAstNode, LuaChunk};
 use expr::{build_closure_expr_symbol, build_table_symbol};
 use lsp_types::{

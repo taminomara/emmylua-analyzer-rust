@@ -1,4 +1,4 @@
-use code_analysis::{
+use emmylua_code_analysis::{
     LuaFunctionType, LuaOperatorMetaMethod, LuaPropertyOwnerId, LuaSignatureId, LuaType,
     LuaTypeDeclId, SemanticModel,
 };
@@ -9,7 +9,7 @@ use lsp_types::{
 };
 use rowan::NodeOrToken;
 
-use code_analysis::humanize_type;
+use emmylua_code_analysis::humanize_type;
 
 pub fn build_signature_helper(
     semantic_model: &mut SemanticModel,

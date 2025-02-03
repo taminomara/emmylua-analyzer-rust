@@ -5,7 +5,7 @@ mod typ_gen;
 
 use std::path::PathBuf;
 
-use code_analysis::EmmyLuaAnalysis;
+use emmylua_code_analysis::EmmyLuaAnalysis;
 use serde::{Deserialize, Serialize};
 use tera::Tera;
 

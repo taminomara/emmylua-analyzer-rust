@@ -1,7 +1,19 @@
 [package]
-name = "code_analysis"
-version = "0.1.0"
+name = "emmylua_code_analysis"
+version = "0.4.0"
 edition = "2021"
+authors = ["CppCXY"]
+description = "A library for analyzing lua code."
+license = "MIT"
+repository = "https://github.com/CppCXY/emmylua-analyzer-rust"
+readme = "README.md"
+keywords = ["emmylua", "doc", "lua", "code_analysis"]
+categories = ["development-tools"]
+include = [
+    "Cargo.toml",
+    "src/**",
+    "../../resources/**",
+]
 
 [dependencies]
 # local

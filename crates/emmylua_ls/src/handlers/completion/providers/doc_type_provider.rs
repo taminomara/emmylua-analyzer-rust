@@ -1,4 +1,4 @@
-use code_analysis::LuaTypeDeclId;
+use emmylua_code_analysis::LuaTypeDeclId;
 use emmylua_parser::{LuaAstNode, LuaDocNameType};
 use lsp_types::CompletionItem;
 

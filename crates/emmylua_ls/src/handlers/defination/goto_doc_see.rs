@@ -1,4 +1,4 @@
-use code_analysis::{LuaMemberKey, LuaMemberOwner, SemanticModel};
+use emmylua_code_analysis::{LuaMemberKey, LuaMemberOwner, SemanticModel};
 use emmylua_parser::{LuaAstToken, LuaDocTagSee, LuaNameToken};
 use lsp_types::GotoDefinitionResponse;
 

@@ -1,4 +1,4 @@
-use code_analysis::{LuaDeclId, LuaPropertyOwnerId, LuaType};
+use emmylua_code_analysis::{LuaDeclId, LuaPropertyOwnerId, LuaType};
 use lsp_types::CompletionItem;
 
 use crate::handlers::completion::completion_builder::CompletionBuilder;

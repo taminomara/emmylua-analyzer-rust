@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
-use code_analysis::{EmmyLuaAnalysis, FileId};
+use emmylua_code_analysis::{EmmyLuaAnalysis, FileId};
 use log::{debug, info};
 use tokio::sync::{Mutex, RwLock};
 use tokio_util::sync::CancellationToken;

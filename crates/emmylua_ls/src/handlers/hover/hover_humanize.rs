@@ -1,6 +1,6 @@
-use code_analysis::{DbIndex, LuaPropertyOwnerId, LuaSignatureId, LuaType};
+use emmylua_code_analysis::{DbIndex, LuaPropertyOwnerId, LuaSignatureId, LuaType};
 
-use code_analysis::humanize_type;
+use emmylua_code_analysis::humanize_type;
 pub fn hover_const_type(db: &DbIndex, typ: &LuaType) -> String {
     let const_value = humanize_type(db, typ);
 

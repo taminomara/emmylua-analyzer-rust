@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs::OpenOptions, io::Write, sync::Arc, time::Duration};
 
-use code_analysis::{load_configs, DiagnosticCode, FileId, SemanticModel};
+use emmylua_code_analysis::{load_configs, DiagnosticCode, FileId, SemanticModel};
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaComment, LuaCommentOwner, LuaDocTag, LuaDocTagDiagnostic, LuaStat,
     LuaTokenKind,

@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use code_analysis::{
+use emmylua_code_analysis::{
     humanize_type, DbIndex, FileId, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId, LuaType,
     ModuleInfo,
 };

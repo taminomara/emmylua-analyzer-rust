@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use code_analysis::file_path_to_uri;
+use emmylua_code_analysis::file_path_to_uri;
 use emmylua_parser::{LuaAstToken, LuaStringToken};
 use lsp_types::CompletionItem;
 

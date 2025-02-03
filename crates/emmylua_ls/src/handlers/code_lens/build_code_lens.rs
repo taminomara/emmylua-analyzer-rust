@@ -1,4 +1,4 @@
-use code_analysis::{LuaDeclId, LuaMemberId, SemanticModel};
+use emmylua_code_analysis::{LuaDeclId, LuaMemberId, SemanticModel};
 use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaFuncStat, LuaLocalFuncStat, LuaVarExpr};
 use lsp_types::CodeLens;
 

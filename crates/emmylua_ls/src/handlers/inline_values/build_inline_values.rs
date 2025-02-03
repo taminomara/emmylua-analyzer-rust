@@ -1,4 +1,4 @@
-use code_analysis::SemanticModel;
+use emmylua_code_analysis::SemanticModel;
 use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaSyntaxKind};
 use lsp_types::{InlineValue, InlineValueVariableLookup, Position};
 use rowan::TokenAtOffset;

@@ -1,6 +1,6 @@
 use std::{path::PathBuf, sync::Arc};
 
-use code_analysis::{load_configs, load_workspace_files, EmmyLuaAnalysis, Emmyrc, LuaFileInfo};
+use emmylua_code_analysis::{load_configs, load_workspace_files, EmmyLuaAnalysis, Emmyrc, LuaFileInfo};
 
 #[allow(unused)]
 pub fn load_workspace(workspace_folders: Vec<&str>) -> Option<EmmyLuaAnalysis> {

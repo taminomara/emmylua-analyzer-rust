@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use code_analysis::LuaType;
+use emmylua_code_analysis::LuaType;
 use emmylua_parser::{LuaAstNode, LuaNameExpr};
 
 use crate::handlers::completion::{

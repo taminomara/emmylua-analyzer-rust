@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use code_analysis::{
+use emmylua_code_analysis::{
     DbIndex, FileId, LuaDecl, LuaDeclId, LuaDeclarationTree, LuaDocument, LuaType,
 };
 use emmylua_parser::{LuaAstNode, LuaChunk, LuaSyntaxId, LuaSyntaxNode, LuaSyntaxToken};

@@ -1,4 +1,4 @@
-use code_analysis::SemanticModel;
+use emmylua_code_analysis::SemanticModel;
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind, LuaVarExpr
 };

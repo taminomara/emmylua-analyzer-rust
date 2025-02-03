@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use code_analysis::DiagnosticCode;
+use emmylua_code_analysis::DiagnosticCode;
 use emmylua_parser::{
     LuaAstNode, LuaClosureExpr, LuaComment, LuaDocTagParam, LuaSyntaxKind,
     LuaTokenKind,

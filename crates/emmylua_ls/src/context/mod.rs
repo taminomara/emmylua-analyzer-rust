@@ -7,7 +7,7 @@ mod status_bar;
 
 pub use client::ClientProxy;
 pub use client_id::{get_client_id, ClientId};
-use code_analysis::EmmyLuaAnalysis;
+use emmylua_code_analysis::EmmyLuaAnalysis;
 pub use config_manager::load_emmy_config;
 pub use config_manager::ConfigManager;
 pub use file_diagnostic::FileDiagnostic;

@@ -15,7 +15,7 @@ use crate::{
     logger::init_logger,
 };
 pub use client_config::{get_client_config, ClientConfig};
-use code_analysis::{uri_to_file_path, EmmyLuaAnalysis, Emmyrc, FileId, Profile};
+use emmylua_code_analysis::{uri_to_file_path, EmmyLuaAnalysis, Emmyrc, FileId, Profile};
 use codestyle::load_editorconfig;
 use collect_files::collect_files;
 use log::info;

@@ -1,4 +1,4 @@
-use code_analysis::DbIndex;
+use emmylua_code_analysis::DbIndex;
 use lsp_types::{CompletionItem, Documentation, MarkupContent};
 
 use super::add_completions::CompletionData;

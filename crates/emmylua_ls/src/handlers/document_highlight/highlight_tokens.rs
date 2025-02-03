@@ -1,4 +1,4 @@
-use code_analysis::{LuaDeclId, LuaDocument, LuaPropertyOwnerId, SemanticModel};
+use emmylua_code_analysis::{LuaDeclId, LuaDocument, LuaPropertyOwnerId, SemanticModel};
 use emmylua_parser::{LuaAstNode, LuaSyntaxKind, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind};
 use lsp_types::{DocumentHighlight, DocumentHighlightKind};
 use rowan::NodeOrToken;

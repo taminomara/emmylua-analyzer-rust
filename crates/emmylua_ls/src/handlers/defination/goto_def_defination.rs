@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use code_analysis::{LuaPropertyOwnerId, SemanticModel};
+use emmylua_code_analysis::{LuaPropertyOwnerId, SemanticModel};
 use lsp_types::{GotoDefinitionResponse, Location, Position, Range, Uri};
 
 pub fn goto_def_defination(

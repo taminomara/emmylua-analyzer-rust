@@ -1,4 +1,4 @@
-use code_analysis::LuaDocument;
+use emmylua_code_analysis::LuaDocument;
 use emmylua_parser::{LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind};
 use lsp_types::{Color, ColorInformation};
 use rowan::{TextRange, TextSize};

@@ -2,7 +2,7 @@ mod build_code_lens;
 mod resolve_code_lens;
 
 use build_code_lens::build_code_lens;
-use code_analysis::{LuaDeclId, LuaMemberId};
+use emmylua_code_analysis::{LuaDeclId, LuaMemberId};
 use lsp_types::{
     ClientCapabilities, CodeLens, CodeLensOptions, CodeLensParams, ServerCapabilities,
 };

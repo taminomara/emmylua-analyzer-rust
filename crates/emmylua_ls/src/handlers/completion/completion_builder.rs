@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use code_analysis::SemanticModel;
+use emmylua_code_analysis::SemanticModel;
 use emmylua_parser::LuaSyntaxToken;
 use lsp_types::CompletionItem;
 use tokio_util::sync::CancellationToken;

@@ -1,4 +1,4 @@
-use code_analysis::{DbIndex, LuaMemberInfo, LuaMemberKey, LuaType};
+use emmylua_code_analysis::{DbIndex, LuaMemberInfo, LuaMemberKey, LuaType};
 use lsp_types::CompletionItem;
 
 use crate::handlers::completion::completion_builder::CompletionBuilder;

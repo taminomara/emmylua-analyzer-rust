@@ -1,6 +1,6 @@
 [package]
 name = "emmylua_doc_cli"
-version = "0.1.0"
+version = "0.4.0"
 edition = "2021"
 authors = ["CppCXY"]
 description = "A command-line tool for generating lua documentation."
@@ -9,11 +9,10 @@ repository = "https://github.com/CppCXY/emmylua-analyzer-rust"
 readme = "README.md"
 keywords = ["emmylua", "doc", "lua", "cli"]
 categories = ["development-tools", "documentation"]
-include = ["resources/**"]
 
 [dependencies]
 # local
-code_analysis.workspace = true
+emmylua_code_analysis.workspace = true
 emmylua_parser.workspace = true
 
 # external

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use code_analysis::{file_path_to_uri, DbIndex, Emmyrc, LuaDocument};
+use emmylua_code_analysis::{file_path_to_uri, DbIndex, Emmyrc, LuaDocument};
 use emmylua_parser::{
     LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaExpr, LuaLiteralExpr, LuaStringToken,
     LuaSyntaxNode,

@@ -5,7 +5,7 @@ We welcome your feedback and contributions. Please feel free to submit pull requ
 ## crates
 
 - [`emmylua_parser`](./crates/emmylua_parser): A Lua parser written in Rust, designed to provide efficient and accurate parsing of Lua scripts. This crate serves as the foundation for other tools in the project, enabling robust code analysis and language server functionalities.
-- [`code_analysis`](./crates/code_analysis): lua code analysis base on emmylua_parser.
+- [`emmylua_code_analysis`](./crates/emmylua_code_analysis): lua code analysis base on emmylua_parser.
 - [`emmylua_ls`](./crates/emmylua_ls): language server for Lua.
 - [`emmylua_doc_cli`](./crates/emmylua_doc_cli/): A command-line tool for generating Lua API documentation.
 

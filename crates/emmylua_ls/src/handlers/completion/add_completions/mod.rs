@@ -3,12 +3,12 @@ mod add_member_completion;
 
 pub use add_decl_completion::add_decl_completion;
 pub use add_member_completion::{add_member_completion, CompletionTriggerStatus};
-use code_analysis::{LuaPropertyOwnerId, LuaType};
+use emmylua_code_analysis::{LuaPropertyOwnerId, LuaType};
 use lsp_types::CompletionItemKind;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use code_analysis::humanize_type;
+use emmylua_code_analysis::humanize_type;
 
 use super::completion_builder::CompletionBuilder;
 

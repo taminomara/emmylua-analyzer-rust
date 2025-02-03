@@ -1,4 +1,4 @@
-use code_analysis::LuaCompilation;
+use emmylua_code_analysis::LuaCompilation;
 use lsp_types::{CodeLens, Command, Location, Range, Uri};
 
 use crate::{

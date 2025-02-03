@@ -4,7 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-code_analysis = { path = "../code_analysis" }
+# local
+emmylua_code_analysis.workspace = true
+
+# external
 schemars.workspace = true
 serde.workspace = true
 serde_json.workspace = true
