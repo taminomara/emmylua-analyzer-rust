@@ -38,11 +38,18 @@ pub fn generate_type_markdown(
 }
 
 fn check_filter(db: &DbIndex, typ: &LuaTypeDecl, workspace: &Path) -> Option<()> {
+    // if workspace is relative path, convert it to absolute path
+    let workspace = if workspace.is_relative() {
+        std::env::current_dir().ok()?.join(workspace)
+    } else {
+        workspace.to_path_buf()
+    };
+
     let location = typ.get_locations();
     for loc in location {
         let file_id = loc.file_id;
         let file_path = db.get_vfs().get_file_path(&file_id)?;
-        if !file_path.starts_with(workspace) {
+        if !file_path.starts_with(&workspace) {
             return None;
         }
     }
