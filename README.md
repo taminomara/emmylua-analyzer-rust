@@ -43,9 +43,6 @@ emmylua_ls -c tcp --port 5007 --log-level debug
 emmylua_ls
 ```
 
-However, having only the executable is not enough. It needs to load some resource files, which are located in the project's `resources` directory. By default, it will first look for the `resources` directory in the current directory or its parent directories. Alternatively, you can specify the path to the resources directory through the `EMMYLUA_LS_RESOURCES` environment variable.
-
-
 ## License
 
 [MIT](./LICENSE)

@@ -1,6 +1,8 @@
 # CHANGELOG
 
-# 0.3.4 (unreleased)
+# 0.4.1 (unreleased)
+
+# 0.4.0 
 
 `CHG` refactor `template system`, optimize the generic infer
 
@@ -24,6 +26,8 @@
 ```
 
 This feature ensures that `require` works correctly. If you need to translate module names starting with `lib` to use `script`, add the appropriate mapping here.
+
+`CHG` Refactor project structure, move all resources into executable binary
 
 # 0.3.3 
 
