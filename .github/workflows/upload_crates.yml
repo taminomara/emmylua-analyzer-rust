@@ -22,10 +22,10 @@ jobs:
       - name: Publish
         run: |
           cd crates/emmylua_code_analysis
-          cargo publish
+          cargo publish --allow-dirty
           cd ../emmylua_ls
-          cargo publish
+          cargo publish --allow-dirty
           cd ../emmylua_doc_cli
-          cargo publish
+          cargo publish --allow-dirty
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_TOKEN }}
