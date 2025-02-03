@@ -1,0 +1,31 @@
+name: Upload Crates
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set version
+        run: |
+          echo "current ref ${{ github.ref }}""
+          cargo run -p edit_version -- ${{ github.ref }}
+      - name: Publish
+        run: |
+          cd crates/emmylua_code_analysis
+          cargo publish
+          cd ../emmylua_ls
+          cargo publish
+          cd ../emmylua_doc_cli
+          cargo publish
+        env:
+          CARGO_TOKEN: ${{ secrets.CARGO_TOKEN }}

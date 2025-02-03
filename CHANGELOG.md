@@ -1,6 +1,14 @@
 # CHANGELOG
 
-# 0.4.1 (unreleased)
+# 0.4.2(unreleased)
+
+# 0.4.1 
+
+`NEW` all the crates release to crates.io. now you can get `emmylua_parser`, `emmylua_code_analysis`, `emmylua_ls`, `emmylua_doc_cli` from crates.io.
+```shell
+cargo install emmylua_ls
+cargo install emmylua_doc_cli
+```
 
 # 0.4.0 
 
