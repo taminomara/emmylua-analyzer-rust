@@ -8,7 +8,11 @@ const CARGOS: &[&str] = &[
 ];
 
 fn main() {
-    let version = std::env::args().nth(1).expect("Please provide a version");
+    let mut version = std::env::args().nth(1).expect("Please provide a version");
+    if version.starts_with("refs/tags/") {
+        version = version.replace("refs/tags/", "");
+    }
+
     let current_dir = std::env::current_dir().unwrap();
     // 向上查找到有crates的目录
     let workspace_dir = current_dir
