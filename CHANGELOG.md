@@ -2,6 +2,8 @@
 
 # 0.4.2(unreleased)
 
+`FIX` Fix `self` parameter regard as unuseful issue
+
 # 0.4.1 
 
 `NEW` all the crates release to crates.io. now you can get `emmylua_parser`, `emmylua_code_analysis`, `emmylua_ls`, `emmylua_doc_cli` from crates.io.
