@@ -5,7 +5,7 @@ use emmylua_code_analysis::{load_configs, load_workspace_files, EmmyLuaAnalysis,
 #[allow(unused)]
 pub fn load_workspace(workspace_folders: Vec<&str>) -> Option<EmmyLuaAnalysis> {
     let mut analysis = EmmyLuaAnalysis::new();
-    analysis.init_std_lib();
+    analysis.init_std_lib(false);
 
     let paths = workspace_folders
         .iter()

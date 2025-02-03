@@ -3,6 +3,7 @@ mod config;
 mod db_index;
 mod diagnostic;
 mod profile;
+mod resources;
 mod semantic;
 mod vfs;
 
@@ -10,11 +11,11 @@ pub use compilation::*;
 pub use config::*;
 pub use db_index::*;
 pub use diagnostic::*;
-use log::{error, info};
 use lsp_types::Uri;
 pub use profile::Profile;
+use resources::load_resource_std;
 pub use semantic::*;
-use std::{collections::HashSet, env, path::PathBuf, sync::Arc};
+use std::{collections::HashSet, path::PathBuf, sync::Arc};
 use tokio_util::sync::CancellationToken;
 pub use vfs::*;
 
@@ -44,59 +45,19 @@ impl EmmyLuaAnalysis {
         }
     }
 
-    pub fn init_std_lib(&mut self) -> Option<()> {
-        let resource_dir = self.get_resource_dir();
-        match resource_dir {
-            Some(resource_dir) => {
-                info!("resource dir: {:?}, loading ...", resource_dir);
-                let std_lib_dir = resource_dir.join("std");
-                self.add_workspace_root(std_lib_dir.clone());
-                let match_pattern = vec!["**/*.lua".to_string()];
-                let files = load_workspace_files(
-                    &std_lib_dir,
-                    &match_pattern,
-                    &Vec::new(),
-                    &Vec::new(),
-                    None,
-                )
-                .ok()?;
-
-                let files = files.into_iter().map(|file| file.into_tuple()).collect();
-                self.update_files_by_path(files);
-            }
-            None => {
-                error!("Failed to find resource directory, std lib will not be loaded.");
-            }
-        }
-
-        Some(())
-    }
-
-    pub fn get_resource_dir(&self) -> Option<PathBuf> {
-        let exe_path = env::current_exe().ok()?;
-        let mut current_dir = exe_path.parent()?.to_path_buf();
-
-        loop {
-            let potential = current_dir.join("resources");
-            info!("try location resource dir: {:?} ...", potential);
-            if potential.is_dir() {
-                return Some(potential);
-            }
-
-            match current_dir.parent() {
-                Some(parent) => current_dir = parent.to_path_buf(),
-                None => break,
-            }
-        }
-
-        let env_emmylua_resources = env::var("EMMYLUA_LS_RESOURCES").ok()?;
-        let path = PathBuf::from(env_emmylua_resources);
-
-        if path.is_dir() {
-            return Some(path);
-        }
-
-        None
+    pub fn init_std_lib(&mut self, allow_create_resources_dir: bool) {
+        let files = load_resource_std(allow_create_resources_dir);
+        let files = files
+            .into_iter()
+            .filter_map(|file| {
+                if file.path.ends_with(".lua") {
+                    Some((PathBuf::from(file.path), Some(file.content)))
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+        self.update_files_by_path(files);
     }
 
     pub fn get_file_id(&self, uri: &Uri) -> Option<FileId> {

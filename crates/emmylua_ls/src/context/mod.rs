@@ -38,7 +38,7 @@ impl ServerContext {
         }));
 
         let mut analysis = EmmyLuaAnalysis::new();
-        analysis.init_std_lib();
+        analysis.init_std_lib(true);
 
         let analysis = Arc::new(RwLock::new(analysis));
         let status_bar = Arc::new(StatusBar::new(client.clone()));

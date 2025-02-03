@@ -21,7 +21,6 @@ impl LuaFileInfo {
     }
 }
 
-#[allow(unused)]
 pub fn load_workspace_files(
     root: &Path,
     include_pattern: &Vec<String>,
