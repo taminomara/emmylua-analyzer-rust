@@ -8,7 +8,7 @@ license = "MIT"
 repository = "https://github.com/CppCXY/emmylua-analyzer-rust"
 readme = "README.md"
 keywords = ["emmylua", "doc", "lua", "cli"]
-categories = ["development-tools", "documentation"]
+categories = ["development-tools"]
 include = [
     "Cargo.toml",
     "src/**",
