@@ -28,4 +28,4 @@ jobs:
           cd ../emmylua_doc_cli
           cargo publish
         env:
-          CARGO_TOKEN: ${{ secrets.CARGO_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_TOKEN }}
