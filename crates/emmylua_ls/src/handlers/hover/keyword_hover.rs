@@ -1,5 +1,6 @@
 use emmylua_parser::{LuaSyntaxToken, LuaTokenKind};
-use meta_text::meta_keyword;
+use crate::meta_text::meta_keyword;
+
 
 pub fn is_keyword(token: LuaSyntaxToken) -> bool {
     match token.kind().into() {

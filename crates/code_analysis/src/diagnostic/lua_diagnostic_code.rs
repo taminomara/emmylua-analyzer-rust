@@ -1,4 +1,4 @@
-use diagnostic_macro::LuaDiagnosticMacro;
+use emmylua_diagnostic_macro::LuaDiagnosticMacro;
 use lsp_types::DiagnosticSeverity;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

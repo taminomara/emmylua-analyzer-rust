@@ -71,9 +71,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.94"
+version = "1.0.95"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1fd03a028ef38ba2276dce7e33fcd6369c158a1bca17946c4b1b701891c1ff7"
+checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
 
 [[package]]
 name = "arc-swap"
@@ -260,8 +260,8 @@ dependencies = [
 name = "code_analysis"
 version = "0.1.0"
 dependencies = [
- "diagnostic_macro",
  "dirs",
+ "emmylua_diagnostic_macro",
  "emmylua_parser",
  "encoding_rs",
  "flagset",
@@ -433,15 +433,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "339544cc9e2c4dc3fc7149fd630c5f22263a4fdf18a98afd0075784968b5cf00"
 
 [[package]]
-name = "diagnostic_macro"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.87",
-]
-
-[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -496,6 +487,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "emmylua_diagnostic_macro"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.87",
+]
+
+[[package]]
 name = "emmylua_doc_cli"
 version = "0.1.0"
 dependencies = [
@@ -519,14 +519,16 @@ dependencies = [
  "emmylua_codestyle",
  "emmylua_parser",
  "fern",
+ "glob",
  "log",
  "lsp-server",
  "lsp-types",
- "meta_text",
  "notify",
  "rowan",
+ "rust-i18n",
  "serde",
  "serde_json",
+ "serde_yml 0.0.12",
  "structopt",
  "tokio",
  "tokio-util",
@@ -1032,16 +1034,6 @@ name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
-
-[[package]]
-name = "meta_text"
-version = "0.1.0"
-dependencies = [
- "glob",
- "log",
- "rust-i18n",
- "serde_yml 0.0.12",
-]
 
 [[package]]
 name = "minimal-lexical"

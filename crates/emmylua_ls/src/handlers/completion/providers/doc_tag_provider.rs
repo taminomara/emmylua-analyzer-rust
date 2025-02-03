@@ -1,6 +1,6 @@
 use emmylua_parser::LuaTokenKind;
 use lsp_types::{CompletionItem, MarkupContent};
-use meta_text::meta_doc_tag;
+use crate::meta_text::meta_doc_tag;
 
 use crate::handlers::completion::{completion_builder::CompletionBuilder, data::DOC_TAGS};
 
