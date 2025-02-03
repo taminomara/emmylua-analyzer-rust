@@ -24,9 +24,9 @@ jobs:
           - { os: ubuntu-20.04,   target: x86_64-unknown-linux-musl,   platform: linux-musl,   cross: cross }
           - { os: macos-latest,   target: x86_64-apple-darwin,         platform: darwin-x64,   cross: general }
           - { os: macos-latest,   target: aarch64-apple-darwin,        platform: darwin-arm64, cross: general }
-          - { os: windows-latest, target: x86_64-pc-windows-msvc,      platform: win32-x64,    cross: general, exe: .exe }
-          - { os: windows-latest, target: i686-pc-windows-msvc,        platform: win32-ia32,   cross: general, exe: .exe }
-          - { os: windows-latest, target: aarch64-pc-windows-msvc,     platform: win32-arm64,  cross: general, exe: .exe }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc,      platform: win32-x64,    cross: general }
+          - { os: windows-latest, target: i686-pc-windows-msvc,        platform: win32-ia32,   cross: general }
+          - { os: windows-latest, target: aarch64-pc-windows-msvc,     platform: win32-arm64,  cross: general }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -51,22 +51,23 @@ jobs:
           cargo install --locked cargo-zigbuild
           pip3 install ziglang
           cargo zigbuild --release --target ${{ matrix.target }}.${{ matrix.glibc }} -p emmylua_ls
-      - name: package-uninx
+      - name: copy-binary
         if: ${{ matrix.os != 'windows-latest'  }}
         run: |
           mkdir -p ${{ github.workspace }}/artifact/
           cp ${{ github.workspace }}/target/${{ matrix.target }}/release/emmylua_ls ${{ github.workspace }}/artifact/
-      - name: package-windows
+      - name: copy-binary-windows
         if: ${{ matrix.os == 'windows-latest'  }}
         run: |
-          Copy-Item -Path ${{ github.workspace }}\target\${{ matrix.target }}\release\emmylua_ls.exe -Destination ${{ github.workspace }}\artifact\
+          mkdir -p ${{ github.workspace }}/artifact/
+          cp ${{ github.workspace }}/target/${{ matrix.target }}/release/emmylua_ls.exe ${{ github.workspace }}/artifact/
         shell: pwsh
       - name: Upload
         if: ${{ matrix.cross != 'zigbuild'  }}
         uses: actions/upload-artifact@v4
         with: 
           name: emmylua_ls-${{ matrix.platform }}
-          path: ${{ github.workspace }}/artifact/emmylua_ls${{ matrix.exe }}
+          path: ${{ github.workspace }}/artifact/emmylua_ls
       - name: Upload zigbuild
         if: ${{ matrix.cross == 'zigbuild'  }}
         uses: actions/upload-artifact@v4
