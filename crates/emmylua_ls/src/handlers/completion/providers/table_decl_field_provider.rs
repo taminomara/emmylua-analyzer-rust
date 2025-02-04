@@ -1,7 +1,10 @@
 use std::collections::HashSet;
 
-use emmylua_parser::{LuaAst, LuaAstToken, LuaAstNode, LuaTableExpr, LuaNameExpr, LuaTableField, LuaNameToken, LuaCallExpr, LuaCallArgList};
 use emmylua_code_analysis::LuaType;
+use emmylua_parser::{
+    LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaNameExpr, LuaNameToken,
+    LuaTableExpr, LuaTableField,
+};
 
 use crate::handlers::completion::{
     add_completions::{add_member_completion, CompletionTriggerStatus},
@@ -17,8 +20,10 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     // todo non-function completion (e.g. in other tables)
     // todo support parents which types are inferred implicitly
     let table_type = match table_expr.get_parent()? {
-        | LuaAst::LuaCallArgList(call_arg_list) => get_table_type_by_calleee(builder, call_arg_list, LuaAst::LuaTableExpr(table_expr)),
-        | _ => { None },
+        LuaAst::LuaCallArgList(call_arg_list) => {
+            get_table_type_by_calleee(builder, call_arg_list, LuaAst::LuaTableExpr(table_expr))
+        }
+        _ => None,
     }?;
 
     let mut duplicated_set = HashSet::new();
@@ -35,13 +40,23 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     Some(())
 }
 
-fn get_table_type_by_calleee(builder: &mut CompletionBuilder, call_arg_list: LuaCallArgList, table_expr: LuaAst) -> Option<LuaType> {
+fn get_table_type_by_calleee(
+    builder: &mut CompletionBuilder,
+    call_arg_list: LuaCallArgList,
+    table_expr: LuaAst,
+) -> Option<LuaType> {
     let call_expr = call_arg_list.get_parent::<LuaCallExpr>()?;
-    let func_type = builder.semantic_model.infer_call_expr_func(call_expr.clone(), None)?;
+    let func_type = builder
+        .semantic_model
+        .infer_call_expr_func(call_expr.clone(), None)?;
     let param_types = func_type.get_params();
-    let call_arg_number = call_arg_list.children::<LuaAst>().into_iter().enumerate().find(|(_, arg)| *arg == table_expr)?.0;
+    let call_arg_number = call_arg_list
+        .children::<LuaAst>()
+        .into_iter()
+        .enumerate()
+        .find(|(_, arg)| *arg == table_expr)?
+        .0;
     let table_type = param_types.get(call_arg_number)?.1.clone();
 
     return table_type;
 }
-
