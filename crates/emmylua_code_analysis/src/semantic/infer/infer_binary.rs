@@ -240,7 +240,11 @@ fn infer_binary_expr_pow(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
     if left.is_number() && right.is_number() {
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
-                Some(LuaType::IntegerConst(int1.pow(*int2 as u32)))
+                if let Some(int3) = int1.checked_pow(*int2 as u32) {
+                    Some(LuaType::IntegerConst(int3))
+                } else {
+                    Some(LuaType::Number)
+                }
             }
             (LuaType::FloatConst(num1), LuaType::IntegerConst(num2)) => {
                 Some(LuaType::FloatConst(num1.powf(*num2 as f64).into()))

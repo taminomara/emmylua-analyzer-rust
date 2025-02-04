@@ -8,6 +8,8 @@
 
 `NEW` Basic table declaration field names autocompletion.
 
+`FIX` Fix possible panic due to integer overflow when calculating pows.
+
 # 0.4.3
 
 `FIX` Fix std resource loaded for cli tools
