@@ -1,4 +1,4 @@
-use emmylua_codestyle::reformat_code;
+use emmylua_code_analysis::reformat_code;
 use lsp_types::{
     ClientCapabilities, DocumentFormattingParams, OneOf, ServerCapabilities, TextEdit,
 };

@@ -3,7 +3,7 @@ use std::{path::PathBuf, sync::Arc, time::Duration};
 use super::{ClientProxy, StatusBar};
 use crate::handlers::{init_analysis, ClientConfig};
 use emmylua_code_analysis::{load_configs, EmmyLuaAnalysis, Emmyrc};
-use emmylua_codestyle::update_code_style;
+use emmylua_code_analysis::update_code_style;
 use log::{debug, info};
 use tokio::{
     select,

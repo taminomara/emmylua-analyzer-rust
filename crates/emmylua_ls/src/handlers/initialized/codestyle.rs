@@ -1,4 +1,4 @@
-use emmylua_codestyle::update_code_style;
+use emmylua_code_analysis::update_code_style;
 use std::path::PathBuf;
 use walkdir::{DirEntry, WalkDir};
 

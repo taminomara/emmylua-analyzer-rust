@@ -1,4 +1,4 @@
-use emmylua_codestyle::range_format_code;
+use emmylua_code_analysis::range_format_code;
 use lsp_types::{
     ClientCapabilities, DocumentRangeFormattingParams, OneOf, Position, Range, ServerCapabilities,
     TextEdit,

@@ -10,6 +10,7 @@ mod param_type_check;
 mod syntax_error;
 mod undefined_global;
 mod unused;
+mod code_style_check;
 
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
@@ -50,6 +51,7 @@ pub fn check_file(
     check!(await_in_sync);
     check!(param_type_check);
     check!(need_check_nil);
+    check!(code_style_check);
 
     Some(())
 }

@@ -18,6 +18,7 @@ pub use semantic::*;
 use std::{collections::HashSet, path::PathBuf, sync::Arc};
 use tokio_util::sync::CancellationToken;
 pub use vfs::*;
+pub use emmylua_codestyle::*;
 
 #[macro_use]
 extern crate rust_i18n;

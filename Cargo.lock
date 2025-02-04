@@ -508,6 +508,7 @@ name = "emmylua_code_analysis"
 version = "0.4.0"
 dependencies = [
  "dirs",
+ "emmylua_codestyle",
  "emmylua_diagnostic_macro",
  "emmylua_parser",
  "encoding_rs",
@@ -533,9 +534,9 @@ dependencies = [
 
 [[package]]
 name = "emmylua_codestyle"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ad932beecd157e17f64d9fd00987085f8a280caab09c26e924cda911e8de23a"
+checksum = "f00d05f3299931129b095084dfc33ee67d29e488ee30664ea6f043c644b9061f"
 dependencies = [
  "cc",
  "glob",
@@ -573,7 +574,6 @@ version = "0.4.0"
 dependencies = [
  "chrono",
  "emmylua_code_analysis",
- "emmylua_codestyle",
  "emmylua_parser",
  "fern",
  "glob",
@@ -982,7 +982,7 @@ checksum = "e19b23d53f35ce9f56aebc7d1bb4e6ac1e9c0db7ac85c8d1760c04379edced37"
 dependencies = [
  "hermit-abi 0.4.0",
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
