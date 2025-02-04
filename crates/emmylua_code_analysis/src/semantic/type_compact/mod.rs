@@ -35,7 +35,6 @@ fn infer_type_compact(
     if compact_type.is_any() || compact_type.is_tpl() {
         return true;
     }
-    eprintln!("source: {:?}, compact_type: {:?}", source, compact_type);
 
     let compact_type = if let LuaType::Ref(type_id) = compact_type {
         if let Some(escaped) = escape_alias(db, &type_id) {
