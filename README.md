@@ -10,6 +10,7 @@ We welcome your feedback and contributions. Please feel free to submit pull requ
 | [emmylua_code_analysis](./crates/emmylua_code_analysis) | [![emmylua_code_analysis](https://img.shields.io/crates/v/emmylua_code_analysis.svg)](https://crates.io/crates/emmylua_code_analysis) | Provides Lua code analysis by leveraging emmylua_parser. |
 | [emmylua_ls](./crates/emmylua_ls) | [![emmylua_ls](https://img.shields.io/crates/v/emmylua_ls.svg)](https://crates.io/crates/emmylua_ls) | The language server for Lua, offering extensive features for different Lua versions. |
 | [emmylua_doc_cli](./crates/emmylua_doc_cli/) | [![emmylua_doc_cli](https://img.shields.io/crates/v/emmylua_doc_cli.svg)](https://crates.io/crates/emmylua_doc_cli) | A command-line tool to effortlessly generate Lua API documentation. |
+| [emmylua_check](./crates/emmylua_check) | [![emmylua_check](https://img.shields.io/crates/v/emmylua_check.svg)](https://crates.io/crates/emmylua_check) | A tool to perform static analysis and validate Lua code quality. |
 
 ## Features
 
@@ -50,6 +51,15 @@ If you have installed emmylua_doc_cli using cargo install, you can simply run em
 ```shell
 emmylua_doc_cli --input ./tests/lua --output ./tests/doc
 ```
+
+### emmylua_check
+
+If you have installed emmylua_check using cargo install, you can simply run emmylua_check to check Lua code.
+
+```shell
+emmylua_check <workspace>
+```
+
 
 ## Build
 
