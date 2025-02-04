@@ -1,6 +1,9 @@
 # CHANGELOG
 
-# 0.4.4(unreleased)
+# 0.4.5(unreleased)
+
+
+# 0.4.4
 
 `NEW` support generic alias fold
 
