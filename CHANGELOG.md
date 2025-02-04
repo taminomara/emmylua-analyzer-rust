@@ -6,6 +6,8 @@
 
 `NEW` support `code style check`, which powered by `emmyluacodestyle`
 
+`NEW` Basic table declaration field names autocompletion.
+
 # 0.4.3
 
 `FIX` Fix std resource loaded for cli tools
