@@ -31,6 +31,8 @@ if you want to install emmylua_ls and emmylua_doc_cli, you can use the following
 cargo install emmylua_ls
 # install emmylua_doc_cli
 cargo install emmylua_doc_cli
+# install emmylua_check
+cargo install emmylua_check
 ```
 
 if you are using vscode, you can install the vscode extension [EmmyLua](https://marketplace.visualstudio.com/items?itemName=tangzx.emmylua) to get a better experience.

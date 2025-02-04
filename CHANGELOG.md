@@ -1,8 +1,12 @@
 # CHANGELOG
 
-# 0.4.2(unreleased)
+# 0.4.3(unreleased)
+
+# 0.4.2
 
 `FIX` Fix `self` parameter regard as unuseful issue
+
+`NEW` Add `emmylua_check` cli tool, you can use it to check lua code. you can install it by `cargo install emmylua_check`
 
 # 0.4.1 
 

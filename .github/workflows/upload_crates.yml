@@ -27,5 +27,7 @@ jobs:
           cargo publish --allow-dirty
           cd ../emmylua_doc_cli
           cargo publish --allow-dirty
+          cd ../emmylua_check
+          cargo publish --allow-dirty
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_TOKEN }}
