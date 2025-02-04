@@ -1,7 +1,7 @@
 use std::{path::PathBuf, sync::Arc};
 
 use emmylua_code_analysis::{
-    load_configs, load_workspace_files, EmmyLuaAnalysis, Emmyrc, LuaFileInfo,
+    load_configs, load_workspace_files, update_code_style, EmmyLuaAnalysis, Emmyrc, LuaFileInfo,
 };
 
 #[allow(unused)]
@@ -34,7 +34,23 @@ pub fn load_workspace(
     let file_infos = collect_files(&workspace_folders, &analysis.emmyrc, ignore);
     let files = file_infos
         .into_iter()
-        .map(|file| file.into_tuple())
+        .filter_map(|file| {
+            if file.path.ends_with(".editorconfig") {
+                let file_path = PathBuf::from(file.path);
+                let parent_dir = file_path
+                    .parent()
+                    .unwrap()
+                    .to_path_buf()
+                    .to_string_lossy()
+                    .to_string()
+                    .replace("\\", "/");
+                let file_normalized = file_path.to_string_lossy().to_string().replace("\\", "/");
+                update_code_style(&parent_dir, &file_normalized);
+                None
+            } else {
+                Some(file.into_tuple())
+            }
+        })
         .collect();
     analysis.update_files_by_path(files);
 
@@ -72,7 +88,7 @@ pub fn calculate_include_and_exclude(
     emmyrc: &Emmyrc,
     ignore: Option<Vec<String>>,
 ) -> (Vec<String>, Vec<String>, Vec<PathBuf>) {
-    let mut include = vec!["**/*.lua".to_string()];
+    let mut include = vec!["**/*.lua".to_string(), "**/.editorconfig".to_string()];
     let mut exclude = Vec::new();
     let mut exclude_dirs = Vec::new();
 
