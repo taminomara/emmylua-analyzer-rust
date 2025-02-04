@@ -9,6 +9,7 @@ mod member_provider;
 mod module_path_provider;
 mod auto_require_provider;
 mod postfix_provider;
+mod table_decl_field_provider;
 
 use super::completion_builder::CompletionBuilder;
 
@@ -16,6 +17,7 @@ pub fn add_completions(builder: &mut CompletionBuilder) -> Option<()> {
     module_path_provider::add_completion(builder);
     file_path_provider::add_completion(builder);
     keywords_provider::add_completion(builder);
+    table_decl_field_provider::add_completion(builder);
     type_special_provider::add_completion(builder);
     env_provider::add_completion(builder);
     member_provider::add_completion(builder);
