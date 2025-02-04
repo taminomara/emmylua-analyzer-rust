@@ -31,6 +31,10 @@ pub fn load_workspace(
     let mut emmyrc = load_configs(config_files, None);
     emmyrc.pre_process_emmyrc(&main_path);
 
+    for root in &emmyrc.workspace.workspace_roots {
+        analysis.add_workspace_root(PathBuf::from_str(root).unwrap());
+    }
+
     for lib in &emmyrc.workspace.library {
         analysis.add_workspace_root(PathBuf::from_str(lib).unwrap());
         workspace_folders.push(PathBuf::from_str(lib).unwrap());

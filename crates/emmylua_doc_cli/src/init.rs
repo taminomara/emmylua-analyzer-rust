@@ -1,29 +1,43 @@
-use std::{path::PathBuf, sync::Arc};
+use std::{path::PathBuf, str::FromStr, sync::Arc};
 
-use emmylua_code_analysis::{load_configs, load_workspace_files, EmmyLuaAnalysis, Emmyrc, LuaFileInfo};
+use emmylua_code_analysis::{
+    load_configs, load_workspace_files, EmmyLuaAnalysis, Emmyrc, LuaFileInfo,
+};
 
 #[allow(unused)]
 pub fn load_workspace(workspace_folders: Vec<&str>) -> Option<EmmyLuaAnalysis> {
     let mut analysis = EmmyLuaAnalysis::new();
     analysis.init_std_lib(false);
 
-    let paths = workspace_folders
+    let mut workspace_folders = workspace_folders
         .iter()
         .map(|s| PathBuf::from(s))
         .collect::<Vec<_>>();
-    for path in &paths {
+    for path in &workspace_folders {
         analysis.add_workspace_root(path.clone());
     }
 
-    let main_path = paths.get(0)?.clone();
+    let main_path = workspace_folders.get(0)?.clone();
     let config_files = vec![
         main_path.join(".luarc.json"),
         main_path.join(".emmyrc.json"),
     ];
-    let emmyrc = Arc::new(load_configs(config_files, None));
+    let mut emmyrc = load_configs(config_files, None);
+    emmyrc.pre_process_emmyrc(&main_path);
+    let emmyrc = Arc::new(emmyrc);
+
+    for root in &emmyrc.workspace.workspace_roots {
+        analysis.add_workspace_root(PathBuf::from_str(root).unwrap());
+    }
+
+    for lib in &emmyrc.workspace.library {
+        analysis.add_workspace_root(PathBuf::from_str(lib).unwrap());
+        workspace_folders.push(PathBuf::from_str(lib).unwrap());
+    }
+
     analysis.update_config(emmyrc);
 
-    let file_infos = collect_files(&paths, &analysis.emmyrc);
+    let file_infos = collect_files(&workspace_folders, &analysis.emmyrc);
     let files = file_infos
         .into_iter()
         .map(|file| file.into_tuple())
