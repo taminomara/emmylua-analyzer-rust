@@ -12,6 +12,8 @@
 
 `NEW` Support compile by winodws mingw
 
+`NEW` `emmylua_check` now supports `workspace.library`
+
 # 0.4.3
 
 `FIX` Fix std resource loaded for cli tools

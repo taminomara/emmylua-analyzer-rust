@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::Arc};
+use std::{path::PathBuf, sync::Arc, str::FromStr};
 
 use emmylua_code_analysis::{
     load_configs, load_workspace_files, update_code_style, EmmyLuaAnalysis, Emmyrc, LuaFileInfo,
@@ -13,7 +13,7 @@ pub fn load_workspace(
     let mut analysis = EmmyLuaAnalysis::new();
     analysis.init_std_lib(false);
 
-    let workspace_folders = vec![workspace_folder];
+    let mut workspace_folders = vec![workspace_folder];
     for path in &workspace_folders {
         analysis.add_workspace_root(path.clone());
     }
@@ -28,8 +28,15 @@ pub fn load_workspace(
         ]
     };
 
-    let emmyrc = Arc::new(load_configs(config_files, None));
-    analysis.update_config(emmyrc);
+    let mut emmyrc = load_configs(config_files, None);
+    emmyrc.pre_process_emmyrc(&main_path);
+
+    for lib in &emmyrc.workspace.library {
+        analysis.add_workspace_root(PathBuf::from_str(lib).unwrap());
+        workspace_folders.push(PathBuf::from_str(lib).unwrap());
+    }
+
+    analysis.update_config(Arc::new(emmyrc));
 
     let file_infos = collect_files(&workspace_folders, &analysis.emmyrc, ignore);
     let files = file_infos
