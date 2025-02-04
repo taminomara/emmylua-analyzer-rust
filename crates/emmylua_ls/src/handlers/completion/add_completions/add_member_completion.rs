@@ -12,7 +12,6 @@ use super::{
 pub enum CompletionTriggerStatus {
     Dot,
     Colon,
-    InTable,
     InString,
     LeftBracket,
 }
@@ -42,10 +41,6 @@ pub fn add_member_completion(
             _ => return None,
         },
         CompletionTriggerStatus::InString => match member_key {
-            LuaMemberKey::Name(name) => name.to_string(),
-            _ => return None,
-        },
-        CompletionTriggerStatus::InTable => match member_key {
             LuaMemberKey::Name(name) => name.to_string(),
             _ => return None,
         },

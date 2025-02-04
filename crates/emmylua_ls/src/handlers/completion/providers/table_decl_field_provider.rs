@@ -1,15 +1,13 @@
 use std::collections::HashSet;
 
-use emmylua_code_analysis::LuaType;
+use emmylua_code_analysis::{LuaMemberInfo, LuaMemberKey, LuaType};
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaNameExpr, LuaNameToken,
     LuaTableExpr, LuaTableField,
 };
+use lsp_types::CompletionItem;
 
-use crate::handlers::completion::{
-    add_completions::{add_member_completion, CompletionTriggerStatus},
-    completion_builder::CompletionBuilder,
-};
+use crate::handlers::completion::completion_builder::CompletionBuilder;
 
 pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     let table_expr = LuaNameToken::cast(builder.trigger_token.clone())?
@@ -34,7 +32,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         }
 
         duplicated_set.insert(member_info.key.clone());
-        add_member_completion(builder, member_info, CompletionTriggerStatus::InTable);
+        add_table_field_completion(builder, member_info);
     }
 
     Some(())
@@ -59,4 +57,32 @@ fn get_table_type_by_calleee(
     let table_type = param_types.get(call_arg_number)?.1.clone();
 
     return table_type;
+}
+
+fn add_table_field_completion(
+    builder: &mut CompletionBuilder,
+    member_info: LuaMemberInfo,
+) -> Option<()> {
+    let env_completion = &builder.env_duplicate_name;
+    let name = match member_info.key {
+        LuaMemberKey::Name(name) => name.to_string(),
+        LuaMemberKey::Integer(index) => format!("[{}]", index),
+        _ => return None,
+    };
+
+    let label = if env_completion.contains(&name) {
+        format!("{0} = {0},", name)
+    } else {
+        format!("{} = ", name)
+    };
+
+    let completion_item = CompletionItem {
+        label,
+        sort_text: Some("".to_string()),
+        kind: Some(lsp_types::CompletionItemKind::FIELD),
+        ..CompletionItem::default()
+    };
+
+    builder.add_completion_item(completion_item);
+    Some(())
 }
