@@ -207,7 +207,7 @@ fn build_type_decl_hover(
     let mut marked_strings = Vec::new();
     let type_decl = db.get_type_index().get_type_decl(&type_decl_id)?;
     if type_decl.is_alias() {
-        if let Some(origin) = type_decl.get_alias_origin() {
+        if let Some(origin) = type_decl.get_alias_origin(db, None) {
             let origin_type = humanize_type(db, &origin);
             marked_strings.push(MarkedString::from_language_code(
                 "lua".to_string(),

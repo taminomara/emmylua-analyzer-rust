@@ -13,7 +13,7 @@ use crate::{
     LuaUnionType,
 };
 
-use super::{InferGuard, LuaInferConfig};
+use super::{InferGuard, LuaInferConfig, TypeSubstitutor};
 pub use sub_type::is_sub_type_of;
 
 pub fn check_type_compact(
@@ -35,6 +35,7 @@ fn infer_type_compact(
     if compact_type.is_any() || compact_type.is_tpl() {
         return true;
     }
+    eprintln!("source: {:?}, compact_type: {:?}", source, compact_type);
 
     let compact_type = if let LuaType::Ref(type_id) = compact_type {
         if let Some(escaped) = escape_alias(db, &type_id) {
@@ -140,6 +141,10 @@ fn infer_type_compact(
             infer_generic_type_compact(db, config, source_generic, compact_generic, infer_guard)
                 .unwrap_or(false)
         }
+        (LuaType::Generic(source_generic), _) => {
+            infer_generic_type_compact_other(db, config, source_generic, &compact_type, infer_guard)
+                .unwrap_or(false)
+        }
         // template
         (LuaType::TplRef(_), _) => true,
         (LuaType::StrTplRef(_), _) => match compact_type {
@@ -168,11 +173,11 @@ fn infer_custom_type_compact(
     infer_guard.check(type_id)?;
     let type_decl = db.get_type_index().get_type_decl(&type_id.clone())?;
     if type_decl.is_alias() {
-        if let Some(origin_type) = type_decl.get_alias_origin() {
+        if let Some(origin_type) = type_decl.get_alias_origin(db, None) {
             return Some(infer_type_compact(
                 db,
                 config,
-                origin_type,
+                &origin_type,
                 compact_type,
                 infer_guard,
             ));
@@ -313,7 +318,7 @@ fn infer_custom_type_compact_table(
 fn escape_alias(db: &DbIndex, type_id: &LuaTypeDeclId) -> Option<LuaType> {
     let type_decl = db.get_type_index().get_type_decl(type_id)?;
     if type_decl.is_alias() {
-        if let Some(origin_type) = type_decl.get_alias_origin() {
+        if let Some(origin_type) = type_decl.get_alias_origin(db, None) {
             return Some(origin_type.clone());
         }
     }
@@ -416,6 +421,33 @@ fn infer_generic_type_compact(
     }
 
     Some(true)
+}
+
+fn infer_generic_type_compact_other(
+    db: &DbIndex,
+    config: &mut LuaInferConfig,
+    source_generic: &LuaGenericType,
+    compact_type: &LuaType,
+    infer_guard: &mut InferGuard,
+) -> Option<bool> {
+    let source_base_id = source_generic.get_base_type_id();
+    infer_guard.check(&source_base_id)?;
+    let generic_params = source_generic.get_params();
+    let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
+    let type_decl = db.get_type_index().get_type_decl(&source_base_id)?;
+    if type_decl.is_alias() {
+        if let Some(origin_type) = type_decl.get_alias_origin(db, Some(&substitutor)) {
+            return Some(infer_type_compact(
+                db,
+                config,
+                &origin_type,
+                compact_type,
+                infer_guard,
+            ));
+        }
+    }
+
+    Some(false)
 }
 
 // a diffcult compare

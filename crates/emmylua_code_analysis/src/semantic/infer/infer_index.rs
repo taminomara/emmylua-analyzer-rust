@@ -129,8 +129,8 @@ fn infer_custom_type_member(
     let type_index = db.get_type_index();
     let type_decl = type_index.get_type_decl(&prefix_type_id)?;
     if type_decl.is_alias() {
-        if let Some(origin_type) = type_decl.get_alias_origin() {
-            return infer_member_by_member_key(db, config, origin_type, member_key, infer_guard);
+        if let Some(origin_type) = type_decl.get_alias_origin(db, None) {
+            return infer_member_by_member_key(db, config, &origin_type, member_key, infer_guard);
         } else {
             return infer_member_by_member_key(
                 db,
@@ -406,11 +406,11 @@ fn infer_member_by_index_custom_type(
     let type_index = db.get_type_index();
     let type_decl = type_index.get_type_decl(&prefix_type_id)?;
     if type_decl.is_alias() {
-        if let Some(origin_type) = type_decl.get_alias_origin() {
+        if let Some(origin_type) = type_decl.get_alias_origin(db, None) {
             return infer_member_by_operator(
                 db,
                 config,
-                origin_type,
+                &origin_type,
                 member_key,
                 root,
                 infer_guard,
@@ -578,11 +578,11 @@ fn infer_member_by_index_generic(
     let type_index = db.get_type_index();
     let type_decl = type_index.get_type_decl(&type_decl_id)?;
     if type_decl.is_alias() {
-        if let Some(origin_type) = type_decl.get_alias_origin() {
+        if let Some(origin_type) = type_decl.get_alias_origin(db, Some(&substitutor)) {
             return infer_member_by_operator(
                 db,
                 config,
-                &instantiate_type(db, origin_type, &substitutor),
+                &instantiate_type(db, &origin_type, &substitutor),
                 member_key,
                 root,
                 &mut InferGuard::new(),

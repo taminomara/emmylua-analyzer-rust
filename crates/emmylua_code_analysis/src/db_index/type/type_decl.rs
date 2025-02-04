@@ -4,7 +4,7 @@ use rowan::TextRange;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
 
-use crate::{db_index::LuaMemberId, FileId};
+use crate::{db_index::LuaMemberId, instantiate_type, DbIndex, FileId, TypeSubstitutor};
 
 use super::LuaType;
 
@@ -148,12 +148,24 @@ impl LuaTypeDecl {
         )
     }
 
-    pub fn get_alias_origin(&self) -> Option<&LuaType> {
+    pub fn get_alias_origin(&self, db: &DbIndex, substitutor: Option<&TypeSubstitutor>) -> Option<LuaType> {
         match &*self.extra {
             LuaTypeExtra::Alias {
                 origin: Some(origin),
                 ..
-            } => Some(origin),
+            } => {
+                if substitutor.is_none() {
+                    return Some(origin.clone());
+                }
+
+                let type_decl_id = self.get_id();
+                if db.get_type_index().get_generic_params(&type_decl_id).is_none() {
+                    return Some(origin.clone());
+                }
+
+                let substitutor = substitutor.unwrap();
+                Some(instantiate_type(db, origin, substitutor))
+            },
             _ => None,
         }
     }

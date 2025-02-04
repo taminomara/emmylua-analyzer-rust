@@ -60,7 +60,8 @@ fn add_type_ref_completion(
         .get_type_index()
         .get_type_decl(&type_ref_id)?;
     if type_decl.is_alias() {
-        if let Some(origin) = type_decl.get_alias_origin() {
+        let db = builder.semantic_model.get_db();
+        if let Some(origin) = type_decl.get_alias_origin(db, None) {
             return dispatch_type(builder, origin.clone(), infer_guard);
         }
         let member_ids = type_decl.get_alias_union_members()?.to_vec();

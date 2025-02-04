@@ -3,7 +3,10 @@ use std::collections::HashMap;
 use smol_str::SmolStr;
 
 use crate::{
-    semantic::{instantiate::{instantiate_type, TypeSubstitutor}, InferGuard},
+    semantic::{
+        instantiate::{instantiate_type, TypeSubstitutor},
+        InferGuard,
+    },
     DbIndex, FileId, LuaExistFieldType, LuaGenericType, LuaInstanceType, LuaIntersectionType,
     LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaPropertyOwnerId, LuaTupleType, LuaType,
     LuaTypeDeclId, LuaUnionType, TypeAssertion,
@@ -79,8 +82,8 @@ fn infer_custom_type_members(
     let type_index = db.get_type_index();
     let type_decl = type_index.get_type_decl(&type_decl_id)?;
     if type_decl.is_alias() {
-        if let Some(origin) = type_decl.get_alias_origin() {
-            return infer_members_guard(db, origin, infer_guard);
+        if let Some(origin) = type_decl.get_alias_origin(db, None) {
+            return infer_members_guard(db, &origin, infer_guard);
         } else {
             return infer_members_guard(db, &LuaType::String, infer_guard);
         }

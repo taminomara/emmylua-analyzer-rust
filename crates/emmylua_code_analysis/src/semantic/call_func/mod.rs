@@ -8,7 +8,8 @@ use crate::{
 };
 
 use super::{
-    instantiate::TypeSubstitutor, instantiate_doc_function, instantiate_type, resolve_signature, InferGuard, LuaInferConfig
+    instantiate::TypeSubstitutor, instantiate_doc_function, instantiate_type, resolve_signature,
+    InferGuard, LuaInferConfig,
 };
 
 pub fn infer_call_expr_func(
@@ -120,12 +121,12 @@ fn infer_type_doc_function(
     infer_guard.check(&type_id)?;
     let type_decl = db.get_type_index().get_type_decl(&type_id)?;
     if type_decl.is_alias() {
-        let alias_type = type_decl.get_alias_origin()?;
+        let origin_type = type_decl.get_alias_origin(db, None)?;
         return infer_call_expr_func(
             db,
             config,
             call_expr,
-            alias_type.clone(),
+            origin_type.clone(),
             infer_guard,
             args_count,
         );
@@ -170,14 +171,17 @@ fn infer_generic_type_doc_function(
 ) -> Option<Arc<LuaFunctionType>> {
     let type_id = generic.get_base_type_id();
     infer_guard.check(&type_id)?;
+    let generic_params = generic.get_params();
+    let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
+
     let type_decl = db.get_type_index().get_type_decl(&type_id)?;
     if type_decl.is_alias() {
-        let alias_type = type_decl.get_alias_origin()?;
+        let origin_type = type_decl.get_alias_origin(db, Some(&substitutor))?;
         return infer_call_expr_func(
             db,
             config,
             call_expr,
-            alias_type.clone(),
+            origin_type.clone(),
             infer_guard,
             args_count,
         );
@@ -185,8 +189,7 @@ fn infer_generic_type_doc_function(
         return None;
     }
 
-    let generic_params = generic.get_params();
-    let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
+
     let operator_index = db.get_operator_index();
     let operator_map = operator_index.get_operators_by_type(&type_id)?;
     let operator_ids = operator_map.get(&LuaOperatorMetaMethod::Call)?;
@@ -203,6 +206,14 @@ fn infer_generic_type_doc_function(
         }
     }
 
-    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, false, args_count)?;
+    let doc_func = resolve_signature(
+        db,
+        config,
+        overloads,
+        call_expr.clone(),
+        false,
+        false,
+        args_count,
+    )?;
     Some(doc_func)
 }

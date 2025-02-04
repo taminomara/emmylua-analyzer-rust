@@ -45,9 +45,13 @@ fn infer_call_result(
     infer_guard: &mut InferGuard,
 ) -> Option<LuaType> {
     let return_type = match prefix_type {
-        LuaType::DocFunction(func) => {
-            infer_call_by_doc_function(db, config, &func, call_expr.clone(), func.is_colon_define())?
-        }
+        LuaType::DocFunction(func) => infer_call_by_doc_function(
+            db,
+            config,
+            &func,
+            call_expr.clone(),
+            func.is_colon_define(),
+        )?,
         LuaType::Signature(signature_id) => {
             infer_call_by_signature(db, config, signature_id.clone(), call_expr.clone())?
         }
@@ -233,8 +237,8 @@ fn infer_call_by_custom_type(
     infer_guard.check(&type_id)?;
     let type_decl = db.get_type_index().get_type_decl(&type_id)?;
     if type_decl.is_alias() {
-        let alias_type = type_decl.get_alias_origin()?;
-        return infer_call_result(db, config, alias_type.clone(), call_expr, infer_guard);
+        let origin_type = type_decl.get_alias_origin(db, None)?;
+        return infer_call_result(db, config, origin_type.clone(), call_expr, infer_guard);
     } else if type_decl.is_enum() {
         return Some(LuaType::Unknown);
     }
@@ -267,17 +271,16 @@ fn infer_call_by_custom_generic_type(
 ) -> Option<LuaType> {
     let type_id = generic.get_base_type_id();
     infer_guard.check(&type_id)?;
+    let generic_params = generic.get_params();
+    let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
     let type_decl = db.get_type_index().get_type_decl(&type_id)?;
     if type_decl.is_alias() {
-        // todo: add generic deal
-        let alias_type = type_decl.get_alias_origin()?;
+        let alias_type = type_decl.get_alias_origin(db, Some(&substitutor))?;
         return infer_call_result(db, config, alias_type.clone(), call_expr, infer_guard);
     } else if type_decl.is_enum() {
         return Some(LuaType::Unknown);
     }
 
-    let generic_params = generic.get_params();
-    let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
     let operator_index = db.get_operator_index();
     let operator_map = operator_index.get_operators_by_type(&type_id)?;
     let operator_ids = operator_map.get(&LuaOperatorMetaMethod::Call)?;

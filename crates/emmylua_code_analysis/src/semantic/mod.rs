@@ -34,7 +34,7 @@ use crate::{
 };
 pub(crate) use call_func::infer_call_expr_func;
 pub(crate) use infer::{infer_expr, instantiate_doc_function};
-use instantiate::instantiate_type;
+pub use instantiate::{instantiate_type, TypeSubstitutor};
 use overload_resolve::resolve_signature;
 
 #[derive(Debug)]
@@ -75,7 +75,12 @@ impl<'a> SemanticModel<'a> {
     }
 
     pub fn get_root_by_file_id(&self, file_id: FileId) -> Option<LuaChunk> {
-        Some(self.db.get_vfs().get_syntax_tree(&file_id)?.get_chunk_node())
+        Some(
+            self.db
+                .get_vfs()
+                .get_syntax_tree(&file_id)?
+                .get_chunk_node(),
+        )
     }
 
     pub fn get_file_parse_error(&self) -> Option<Vec<(String, TextRange)>> {
@@ -91,7 +96,7 @@ impl<'a> SemanticModel<'a> {
     }
 
     pub fn check_type_compact(&mut self, source: &LuaType, compact_type: &LuaType) -> bool {
-        check_type_compact(self.db, &mut self.infer_config,source, compact_type)
+        check_type_compact(self.db, &mut self.infer_config, source, compact_type)
     }
 
     pub fn infer_call_expr_func(

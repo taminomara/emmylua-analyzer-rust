@@ -209,11 +209,11 @@ fn infer_custom_type_member_property_owner(
     let type_index = db.get_type_index();
     let type_decl = type_index.get_type_decl(&prefix_type_id)?;
     if type_decl.is_alias() {
-        if let Some(origin_type) = type_decl.get_alias_origin() {
+        if let Some(origin_type) = type_decl.get_alias_origin(db, None) {
             return infer_member_property_owner_by_member_key(
                 db,
                 config,
-                origin_type,
+                &origin_type,
                 member_key,
                 infer_guard,
             );

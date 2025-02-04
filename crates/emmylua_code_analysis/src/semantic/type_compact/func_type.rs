@@ -197,12 +197,12 @@ fn infer_doc_func_type_compact_for_custom_type(
 
     let decl_type = db.get_type_index().get_type_decl(custom_type_id)?;
     if decl_type.is_alias() {
-        let alias_type = decl_type.get_alias_origin()?;
+        let alias_type = decl_type.get_alias_origin(db, None)?;
         return Some(infer_doc_func_type_compact(
             db,
             config,
             source_func,
-            alias_type,
+            &alias_type,
             infer_guard,
         ));
     }
