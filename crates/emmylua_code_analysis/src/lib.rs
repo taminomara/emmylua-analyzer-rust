@@ -46,7 +46,8 @@ impl EmmyLuaAnalysis {
     }
 
     pub fn init_std_lib(&mut self, allow_create_resources_dir: bool) {
-        let files = load_resource_std(allow_create_resources_dir);
+        let (std_root, files) = load_resource_std(allow_create_resources_dir);
+        self.add_workspace_root(std_root);
         let files = files
             .into_iter()
             .filter_map(|file| {
@@ -120,22 +121,6 @@ impl EmmyLuaAnalysis {
         self.compilation.update_index(updated_files.clone());
         updated_files
     }
-
-    // pub fn parrallel_update_files_by_uri(
-    //     &mut self,
-    //     files: Vec<(Uri, Option<String>)>,
-    // ) -> Vec<FileId> {
-    //     let mut removed_files = HashSet::new();
-    //     let mut updated_files = HashSet::new();
-    //     {
-    //         let _p = Profile::new("parrallel update files");
-    //     }
-    //     self.compilation
-    //         .remove_index(removed_files.into_iter().collect());
-    //     let updated_files: Vec<FileId> = updated_files.into_iter().collect();
-    //     self.compilation.update_index(updated_files.clone());
-    //     updated_files
-    // }
 
     pub fn update_files_by_path(&mut self, files: Vec<(PathBuf, Option<String>)>) -> Vec<FileId> {
         let files = files

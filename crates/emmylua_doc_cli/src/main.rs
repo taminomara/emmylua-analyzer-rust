@@ -7,8 +7,13 @@ mod markdown_generator;
 
 fn main() {
     let args = CmdArgs::from_args();
-    let analysis = init::load_workspace(vec![args.input.to_str().unwrap()]);
+    let mut input = args.input;
+    if input.is_relative() {
+        input = std::env::current_dir().ok().unwrap().join(&input);
+    }
+
+    let analysis = init::load_workspace(vec![input.to_str().unwrap()]);
     if let Some(mut analysis) = analysis {
-        markdown_generator::generate_markdown(&mut analysis, &args.input, &args.output);
+        markdown_generator::generate_markdown(&mut analysis, &input, &args.output);
     }
 }

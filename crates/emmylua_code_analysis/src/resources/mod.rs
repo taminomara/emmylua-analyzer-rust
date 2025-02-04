@@ -1,29 +1,42 @@
+use std::path::PathBuf;
+
 use include_dir::{include_dir, Dir, DirEntry};
 
 use crate::{load_workspace_files, LuaFileInfo};
 
 static RESOURCE_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/resources");
 
-pub fn load_resource_std(allow_create_resources_dir: bool) -> Vec<LuaFileInfo> {
+pub fn load_resource_std(allow_create_resources_dir: bool) -> (PathBuf, Vec<LuaFileInfo>) {
+    let exe_path = std::env::current_exe().unwrap();
+    let exe_dir = exe_path.parent().unwrap();
+    let resoucres_dir = exe_dir.join("resources");
+    let std_dir = resoucres_dir.join("std");
+
     if allow_create_resources_dir {
         let result = load_resource_from_file_system();
         match result {
-            Some(files) => return files,
+            Some(files) => return (std_dir, files),
             None => {}
         }
     }
 
     let files = load_resource_from_include_dir();
-    return files
+    let files = files
         .into_iter()
         .filter_map(|file| {
             if file.path.ends_with(".lua") {
-                Some(file)
+                let path = std_dir.join(&file.path).to_str().unwrap().to_string();
+                Some(LuaFileInfo {
+                    path,
+                    content: file.content,
+                })
             } else {
                 None
             }
         })
         .collect::<_>();
+
+    (std_dir, files)
 }
 
 fn load_resource_from_file_system() -> Option<Vec<LuaFileInfo>> {
@@ -83,7 +96,7 @@ fn walk_resource_dir(dir: &Dir, files: &mut Vec<LuaFileInfo>) {
             DirEntry::File(file) => {
                 let path = file.path();
                 let content = file.contents_utf8().unwrap();
-        
+
                 files.push(LuaFileInfo {
                     path: path.to_str().unwrap().to_string(),
                     content: content.to_string(),

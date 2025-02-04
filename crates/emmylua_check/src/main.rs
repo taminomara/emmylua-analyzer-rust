@@ -12,19 +12,18 @@ use tokio_util::sync::CancellationToken;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     let cmd_args = CmdArgs::from_args();
-    let analysis =
-        match init::load_workspace(cmd_args.workspace.clone(), cmd_args.config, cmd_args.ignore) {
-            Some(analysis) => analysis,
-            None => {
-                eprintln!("Failed to load workspace");
-                return Err("Failed to load workspace".into());
-            }
-        };
-
     let mut workspace = cmd_args.workspace;
     if !workspace.is_absolute() {
         workspace = std::env::current_dir()?.join(workspace);
     }
+
+    let analysis = match init::load_workspace(workspace.clone(), cmd_args.config, cmd_args.ignore) {
+        Some(analysis) => analysis,
+        None => {
+            eprintln!("Failed to load workspace");
+            return Err("Failed to load workspace".into());
+        }
+    };
 
     let files = analysis.compilation.get_db().get_vfs().get_all_file_ids();
     let db = analysis.compilation.get_db();
@@ -50,13 +49,13 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
         receiver,
         cmd_args.output_format,
         cmd_args.output,
-        cmd_args.warnings_as_errors
+        cmd_args.warnings_as_errors,
     )
     .await;
 
     if exit_code != 0 {
         return Err(format!("exit code: {}", exit_code).into());
-    } 
+    }
 
     eprintln!("Check finished");
     Ok(())

@@ -1,6 +1,10 @@
 # CHANGELOG
 
-# 0.4.3(unreleased)
+# 0.4.4(unreleased)
+
+# 0.4.3
+
+`FIX` Fix std resource loaded for cli tools
 
 # 0.4.2
 
