@@ -46,9 +46,11 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     let exit_code = output_result(
         need_check_files.len(),
         db,
+        workspace,
         receiver,
         cmd_args.output_format,
         cmd_args.output,
+        cmd_args.warnings_as_errors
     )
     .await;
 

@@ -1,94 +1,100 @@
-use std::{fs::File, io::Write};
+use std::path::PathBuf;
 
 use emmylua_code_analysis::{DbIndex, FileId};
 use lsp_types::Diagnostic;
 
-use crate::cmd_args::OutputDestination;
-
 use super::OutputWritter;
+use ariadne::{Color, Label, Report, ReportKind, Source};
 
 #[derive(Debug)]
 pub struct TextOutputWritter {
-    output: Option<File>,
+    workspace: PathBuf,
 }
 
 impl TextOutputWritter {
-    pub fn new(output: OutputDestination) -> Self {
-        let output = match output {
-            OutputDestination::Stdout => None,
-            OutputDestination::File(path) => {
-                if let Some(parent) = path.parent() {
-                    if !parent.exists() {
-                        std::fs::create_dir_all(parent).unwrap();
-                    }
-                }
-
-                Some(std::fs::File::create(path).unwrap())
-            }
-        };
-
-        TextOutputWritter { output }
+    pub fn new(workspace: PathBuf) -> Self {
+        TextOutputWritter { workspace }
     }
 }
 
 impl OutputWritter for TextOutputWritter {
     fn write(&mut self, db: &DbIndex, file_id: FileId, diagnostics: Vec<Diagnostic>) {
-        let file_path = db.get_vfs().get_file_path(&file_id).unwrap();
+        if diagnostics.is_empty() {
+            return;
+        }
+
+        let mut file_path = db.get_vfs().get_file_path(&file_id).unwrap().clone();
+        if let Ok(new_file_path) = file_path.strip_prefix(&self.workspace) {
+            file_path = new_file_path.to_path_buf();
+        }
+
         let file_path = file_path.to_str().unwrap();
         let mut out_string = String::new();
         out_string.push_str(format!("file: {} ", file_path).as_str());
         let mut error_count = 0;
         let mut warning_count = 0;
+        let mut advice_count = 0;
         for diagnostic in &diagnostics {
             match diagnostic.severity {
                 Some(severity) => match severity {
                     lsp_types::DiagnosticSeverity::ERROR => {
                         error_count += 1;
                     }
-                    lsp_types::DiagnosticSeverity::WARNING
-                    | lsp_types::DiagnosticSeverity::HINT
-                    | lsp_types::DiagnosticSeverity::INFORMATION => {
+                    lsp_types::DiagnosticSeverity::WARNING => {
                         warning_count += 1;
                     }
-                    _ => {}
+                    _ => {
+                        advice_count += 1;
+                    }
                 },
                 _ => {}
             }
         }
 
         if error_count > 0 {
-            out_string.push_str(format!("{} error", error_count).as_str());
+            out_string.push_str(format!(" {} error", error_count).as_str());
         }
         if warning_count > 0 {
-            out_string.push_str(format!("{} warning", warning_count).as_str());
+            out_string.push_str(format!(" {} warning", warning_count).as_str());
+        }
+        if advice_count > 0 {
+            out_string.push_str(format!(" {} advice", advice_count).as_str());
         }
 
-        out_string.push('\n');
+        println!("{}:", &out_string);
+        let out = Color::Fixed(81);
+        let document = db.get_vfs().get_document(&file_id).unwrap();
+        let text = document.get_text();
         for diagnostic in diagnostics {
-            out_string.push_str(format!("line: {} \n", diagnostic.range.start.line).as_str());
-            out_string
-                .push_str(format!("column: {} \n", diagnostic.range.start.character).as_str());
-            if let Some(serverity) = diagnostic.severity {
-                out_string.push_str(format!("severity: {:?} \n", serverity).as_str());
-            }
-            if let Some(code) = diagnostic.code {
-                match code {
-                    lsp_types::NumberOrString::Number(code) => {
-                        out_string.push_str(format!("code: {} \n", code).as_str());
-                    }
-                    lsp_types::NumberOrString::String(code) => {
-                        out_string.push_str(format!("code: {} \n", code).as_str());
-                    }
-                }
-            }
-            out_string.push_str(format!("message: {} \n", diagnostic.message).as_str());
-            out_string.push('\n');
-        }
+            let range = diagnostic.range;
+            let span = document.get_range_span(range).unwrap();
+            let kind = match diagnostic.severity {
+                Some(severity) => match severity {
+                    lsp_types::DiagnosticSeverity::ERROR => ReportKind::Error,
+                    lsp_types::DiagnosticSeverity::WARNING => ReportKind::Warning,
+                    _ => ReportKind::Advice,
+                },
+                _ => ReportKind::Error,
+            };
 
-        if let Some(output) = self.output.as_mut() {
-            output.write_all(out_string.as_bytes()).unwrap();
-        } else {
-            println!("{}", out_string);
+            let code = match diagnostic.code {
+                Some(code) => match code {
+                    lsp_types::NumberOrString::Number(code) => code.to_string(),
+                    lsp_types::NumberOrString::String(code) => code,
+                },
+                _ => "".to_string(),
+            };
+
+            Report::build(kind, (file_path, span.0..span.1))
+                .with_code(code)
+                .with_label(
+                    Label::new((file_path, span.0..span.1))
+                        .with_message(diagnostic.message)
+                        .with_color(out),
+                )
+                .finish()
+                .print((file_path, Source::from(text)))
+                .unwrap();
         }
     }
 

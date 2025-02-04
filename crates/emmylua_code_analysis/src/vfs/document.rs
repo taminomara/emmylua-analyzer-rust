@@ -121,4 +121,10 @@ impl<'a> LuaDocument<'a> {
             },
         }
     }
+
+    pub fn get_range_span(&self, range: lsp_types::Range) -> Option<(usize, usize)> {
+        let start = self.get_offset(range.start.line as usize, range.start.character as usize)?;
+        let end = self.get_offset(range.end.line as usize, range.end.character as usize)?;
+        Some((start.into(), end.into()))
+    }
 }
