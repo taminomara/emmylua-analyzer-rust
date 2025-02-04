@@ -2,6 +2,10 @@
 
 # 0.4.4(unreleased)
 
+`NEW` support generic alias fold
+
+`NEW` support `code style check`, which powered by `emmyluacodestyle`
+
 # 0.4.3
 
 `FIX` Fix std resource loaded for cli tools
