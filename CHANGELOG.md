@@ -10,6 +10,8 @@
 
 `FIX` Fix possible panic due to integer overflow when calculating pows.
 
+`NEW` Support compile by winodws mingw
+
 # 0.4.3
 
 `FIX` Fix std resource loaded for cli tools
