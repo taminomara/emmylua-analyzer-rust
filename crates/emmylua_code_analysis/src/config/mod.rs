@@ -116,9 +116,24 @@ fn pre_process_path(path: &str, workspace: &Path) -> String {
         path = workspace.join(&path).to_string_lossy().to_string();
     }
 
+    path = replace_env_var(&path);
+    // ${workspaceFolder}  == {workspaceFolder}
     path = path.replace("$", "");
     path = replace_placeholders(&path, workspace.to_str().unwrap());
     path
+}
+
+// compact luals
+fn replace_env_var(path: &str) -> String {
+    let re = Regex::new(r"\$(\w+)").unwrap();
+    re.replace_all(path, |caps: &regex::Captures| {
+        let key = &caps[1];
+        std::env::var(key).unwrap_or_else(|_| {
+            log::error!("Warning: Environment variable {} is not set", key);
+            String::new()
+        })
+    })
+    .to_string()
 }
 
 fn replace_placeholders(input: &str, workspace_folder: &str) -> String {
