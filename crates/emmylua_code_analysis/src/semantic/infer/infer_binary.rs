@@ -1,7 +1,7 @@
 use emmylua_parser::{BinaryOperator, LuaBinaryExpr};
 use smol_str::SmolStr;
 
-use crate::db_index::{DbIndex, LuaOperatorMetaMethod, LuaType, TypeAssertion};
+use crate::db_index::{DbIndex, LuaOperatorMetaMethod, LuaType};
 
 use super::{get_custom_type_operator, infer_config::LuaInferConfig, infer_expr, InferResult};
 
@@ -11,9 +11,30 @@ pub fn infer_binary_expr(
     expr: LuaBinaryExpr,
 ) -> InferResult {
     let op = expr.get_op_token()?.get_op();
+    // fast binary infer
+    match op {
+        BinaryOperator::OpLt
+        | BinaryOperator::OpLe
+        | BinaryOperator::OpGt
+        | BinaryOperator::OpGe
+        | BinaryOperator::OpEq
+        | BinaryOperator::OpNe => return Some(LuaType::Boolean),
+        _ => {}
+    }
+
     let (left, right) = expr.get_exprs()?;
-    let left_type = infer_expr(db, config, left)?;
-    let right_type = infer_expr(db, config, right)?;
+    let left_type = infer_expr(db, config, left);
+    let right_type = infer_expr(db, config, right);
+
+    // fast infer
+    match op {
+        BinaryOperator::OpAnd => return right_type,
+        BinaryOperator::OpOr => return infer_binary_expr_or(left_type, right_type),
+        _ => {}
+    }
+
+    let left_type = left_type?;
+    let right_type = right_type?;
 
     match op {
         BinaryOperator::OpAdd => infer_binary_expr_add(db, left_type, right_type),
@@ -29,15 +50,7 @@ pub fn infer_binary_expr(
         BinaryOperator::OpShl => infer_binary_expr_shl(db, left_type, right_type),
         BinaryOperator::OpShr => infer_binary_expr_shr(db, left_type, right_type),
         BinaryOperator::OpConcat => infer_binary_expr_concat(db, left_type, right_type),
-        BinaryOperator::OpLt
-        | BinaryOperator::OpLe
-        | BinaryOperator::OpGt
-        | BinaryOperator::OpGe
-        | BinaryOperator::OpEq
-        | BinaryOperator::OpNe => Some(LuaType::Boolean),
-        BinaryOperator::OpAnd => Some(right_type),
-        BinaryOperator::OpOr => infer_binary_expr_or(left_type, right_type),
-        BinaryOperator::OpNop => Some(left_type),
+        _ => Some(left_type),
     }
 }
 
@@ -346,12 +359,11 @@ fn infer_binary_expr_concat(db: &DbIndex, left: LuaType, right: LuaType) -> Infe
     infer_binary_custom_operator(db, &left, &right, LuaOperatorMetaMethod::Concat)
 }
 
-fn infer_binary_expr_or(left: LuaType, right: LuaType) -> InferResult {
-    if !right.is_boolean() {
-        if left.is_unknown() {
-            return Some(right);
-        }
-        return Some(TypeAssertion::Exist.tighten_type(left));
+fn infer_binary_expr_or(left: Option<LuaType>, right: Option<LuaType>) -> InferResult {
+    if left.is_none() || right.is_some() {
+        return right;
+    } else if left.is_some() {
+        return left;
     }
 
     Some(LuaType::Boolean)
