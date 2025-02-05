@@ -2,12 +2,13 @@
 
 # 0.4.5(unreleased)
 
+`FIX` Fix generic table infer issue
 
 # 0.4.4
 
-`NEW` support generic alias fold
+`NEW` Support generic alias fold
 
-`NEW` support `code style check`, which powered by `emmyluacodestyle`
+`NEW` Support `code style check`, which powered by `emmyluacodestyle`
 
 `NEW` Basic table declaration field names autocompletion.
 
