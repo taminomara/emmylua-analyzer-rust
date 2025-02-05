@@ -1931,4 +1931,31 @@ Syntax(Chunk)@0..89
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_tuple_type() {
+      let code = r#"
+      ---@type [string]
+      "#;
+      let result = r#"
+Syntax(Chunk)@0..31
+  Syntax(Block)@0..31
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..7 "      "
+    Syntax(Comment)@7..24
+      Token(TkDocStart)@7..11 "---@"
+      Syntax(DocTagType)@11..24
+        Token(TkTagType)@11..15 "type"
+        Token(TkWhitespace)@15..16 " "
+        Syntax(TypeTuple)@16..24
+          Token(TkLeftBracket)@16..17 "["
+          Syntax(TypeName)@17..23
+            Token(TkName)@17..23 "string"
+          Token(TkRightBracket)@23..24 "]"
+    Token(TkEndOfLine)@24..25 "\n"
+    Token(TkWhitespace)@25..31 "      "
+      "#;
+
+      assert_ast_eq!(code, result);
+    }
 }

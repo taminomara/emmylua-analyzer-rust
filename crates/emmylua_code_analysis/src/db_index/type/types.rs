@@ -393,9 +393,8 @@ impl LuaTupleType {
         &self.types
     }
 
-    // lua tuple start from 1
     pub fn get_type(&self, idx: usize) -> Option<&LuaType> {
-        self.types.get(idx + 1)
+        self.types.get(idx)
     }
 
     pub fn len(&self) -> usize {

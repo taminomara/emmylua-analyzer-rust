@@ -175,7 +175,11 @@ fn parse_tuple_type(p: &mut LuaDocParser) -> ParseResult {
     let m = p.mark(LuaSyntaxKind::TypeTuple);
     p.bump();
     if p.current_token() != LuaTokenKind::TkRightBracket {
-        parse_type_list(p)?;
+        parse_type(p)?;
+        while p.current_token() == LuaTokenKind::TkComma {
+            p.bump();
+            parse_type(p)?;
+        }
     }
 
     expect_token(p, LuaTokenKind::TkRightBracket)?;

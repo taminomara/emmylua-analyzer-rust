@@ -4,6 +4,10 @@
 
 `FIX` Fix generic table infer issue
 
+`FIX` Fix tuple infer issue
+
+`NEW` Compact luals env variable start with `$`
+
 # 0.4.4
 
 `NEW` Support generic alias fold

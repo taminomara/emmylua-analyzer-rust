@@ -173,8 +173,8 @@ fn infer_custom_type_member(
 fn infer_tuple_member(tuple_type: &LuaTupleType, member_key: &LuaIndexKey) -> InferResult {
     let key = member_key.into();
     if let LuaMemberKey::Integer(i) = key {
-        let index = i as usize;
-        return Some(tuple_type.get_type(index)?.clone());
+        let index = if i > 0 { i - 1 } else { 0 };
+        return Some(tuple_type.get_type(index as usize)?.clone());
     }
 
     None
