@@ -13,6 +13,7 @@ use crate::{
     semantic::{
         instantiate::{instantiate_type, TypeSubstitutor},
         member::{get_buildin_type_map_type_id, without_index_operator, without_members},
+        type_compact::check_type_compact,
         InferGuard,
     },
     InFiled, LuaInstanceType,
@@ -698,9 +699,14 @@ fn infer_member_by_index_table_generic(
             }
         }
     } else {
-        let expr = member_key.get_expr()?;
-        let expr_type = infer_expr(db, config, expr.clone())?;
-        if expr_type == *key_type {
+        let expr_type = match member_key {
+            LuaIndexKey::Expr(expr) => infer_expr(db, config, expr.clone())?,
+            LuaIndexKey::Integer(i) => LuaType::IntegerConst(i.get_int_value()),
+            LuaIndexKey::String(s) => LuaType::StringConst(SmolStr::new(&s.get_value()).into()),
+            _ => return None,
+        };
+
+        if check_type_compact(db, config, key_type, &expr_type) {
             return Some(value_type.clone());
         }
     }
