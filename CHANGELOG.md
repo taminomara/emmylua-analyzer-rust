@@ -12,6 +12,8 @@
 
 `Fix` Fix a documentation cli tool render issue
 
+`FIX` Fix diagnostic progress issue
+
 # 0.4.4
 
 `NEW` Support generic alias fold

@@ -15,9 +15,9 @@ use crate::{
     logger::init_logger,
 };
 pub use client_config::{get_client_config, ClientConfig};
-use emmylua_code_analysis::{uri_to_file_path, EmmyLuaAnalysis, Emmyrc, FileId, Profile};
 use codestyle::load_editorconfig;
 use collect_files::collect_files;
+use emmylua_code_analysis::{uri_to_file_path, EmmyLuaAnalysis, Emmyrc, FileId, Profile};
 use log::info;
 use lsp_types::InitializeParams;
 use tokio::sync::RwLock;
@@ -128,7 +128,6 @@ pub async fn init_analysis(
         files.into_iter().map(|file| file.into_tuple()).collect();
 
     let file_count = files.len();
-
     status_bar.update_progress_task(
         client_id,
         ProgressTask::LoadWorkspace,
@@ -147,6 +146,7 @@ pub async fn init_analysis(
     let cancle_token = CancellationToken::new();
     // diagnostic files
     let (tx, mut rx) = tokio::sync::mpsc::channel::<FileId>(100);
+    let valid_file_count = file_ids.len();
     for file_id in file_ids {
         let analysis = analysis.clone();
         let token = cancle_token.clone();
@@ -169,15 +169,15 @@ pub async fn init_analysis(
     }
 
     let mut count = 0;
-    if file_count != 0 {
-        let text = format!("diagnose {} files", file_count);
+    if valid_file_count != 0 {
+        let text = format!("diagnose {} files", valid_file_count);
         let _p = Profile::new(text.as_str());
         status_bar.create_progress_task(client_id, ProgressTask::DiagnoseWorkspace);
         while let Some(_) = rx.recv().await {
             count += 1;
 
-            let message = format!("diagnostic {}/{}", count, file_count);
-            let percentage_done = ((count as f32 / file_count as f32) * 100.0) as u32;
+            let message = format!("diagnostic {}/{}", count, valid_file_count);
+            let percentage_done = ((count as f32 / valid_file_count as f32) * 100.0) as u32;
             status_bar.update_progress_task(
                 client_id,
                 ProgressTask::DiagnoseWorkspace,
@@ -185,7 +185,7 @@ pub async fn init_analysis(
                 Some(message),
             );
 
-            if count == file_count {
+            if count == valid_file_count {
                 status_bar.finish_progress_task(client_id, ProgressTask::DiagnoseWorkspace, None);
                 break;
             }
