@@ -82,7 +82,11 @@ impl<'a> DocAnalyzer<'a> {
     }
 }
 
-pub fn preprocess_description(description: &str) -> String {
+pub fn preprocess_description(mut description: &str) -> String {
+    if description.starts_with(['#', '@']) {
+        description = description.trim_start_matches(|c| c == '#' || c == '@');
+    }
+
     let mut result = String::new();
     let lines = description.lines();
     let mut in_code_block = false;

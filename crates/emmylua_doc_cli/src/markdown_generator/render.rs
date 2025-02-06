@@ -197,10 +197,11 @@ fn render_signature_type(
     result.push_str("\n");
     for ret in rets {
         if let Some(description) = &ret.description {
-            result.push_str(&format!(
-                "@return `{}`",
-                ret.name.clone().unwrap_or("".to_string())
-            ));
+            let name = match ret.name {
+                Some(ref name) => format!("`{}`", name),
+                None => "".to_string(),
+            };
+            result.push_str(&format!("@return {}", name));
             result.push_str(&format!(" - {}", description));
             result.push_str("\n\n");
         }
