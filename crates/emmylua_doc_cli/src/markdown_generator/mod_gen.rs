@@ -2,7 +2,7 @@ use std::path::Path;
 
 use emmylua_code_analysis::{
     humanize_type, DbIndex, FileId, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId, LuaType,
-    ModuleInfo,
+    ModuleInfo, RenderLevel,
 };
 use emmylua_parser::VisibilityKind;
 use tera::{Context, Tera};
@@ -137,7 +137,7 @@ fn generate_member_owner_module(
                     description,
                 });
             } else {
-                let typ_display = humanize_type(db, &member_typ);
+                let typ_display = humanize_type(db, &member_typ, RenderLevel::Detailed);
                 field_members.push(MemberDisplay {
                     name: title_name,
                     display: format!("```lua\n{}.{} : {}\n```\n", owner_name, name, typ_display),

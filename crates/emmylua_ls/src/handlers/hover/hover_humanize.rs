@@ -1,8 +1,8 @@
-use emmylua_code_analysis::{DbIndex, LuaPropertyOwnerId, LuaSignatureId, LuaType};
+use emmylua_code_analysis::{DbIndex, LuaPropertyOwnerId, LuaSignatureId, LuaType, RenderLevel};
 
 use emmylua_code_analysis::humanize_type;
 pub fn hover_const_type(db: &DbIndex, typ: &LuaType) -> String {
-    let const_value = humanize_type(db, typ);
+    let const_value = humanize_type(db, typ, RenderLevel::Detailed);
 
     match typ {
         LuaType::IntegerConst(_) | LuaType::DocIntegerConst(_) => {
@@ -32,7 +32,7 @@ pub fn hover_function_type(db: &DbIndex, typ: &LuaType, func_name: &str, is_loca
                 .map(|param| {
                     let name = param.0.clone();
                     if let Some(ty) = &param.1 {
-                        format!("{}: {}", name, humanize_type(db, ty))
+                        format!("{}: {}", name, humanize_type(db, ty, RenderLevel::Simple))
                     } else {
                         name.to_string()
                     }
@@ -43,7 +43,7 @@ pub fn hover_function_type(db: &DbIndex, typ: &LuaType, func_name: &str, is_loca
 
             let ret_strs = rets
                 .iter()
-                .map(|ty| humanize_type(db, ty))
+                .map(|ty| humanize_type(db, ty, RenderLevel::Simple))
                 .collect::<Vec<_>>()
                 .join(",");
 
@@ -115,7 +115,7 @@ fn hover_signature_type(
         .map(|param| {
             let name = param.0.clone();
             if let Some(ty) = &param.1 {
-                format!("{}: {}", name, humanize_type(db, ty))
+                format!("{}: {}", name, humanize_type(db, ty, RenderLevel::Simple))
             } else {
                 name.to_string()
             }
@@ -148,7 +148,7 @@ fn hover_signature_type(
         0 => {}
         1 => {
             result.push_str(" -> ");
-            let type_text = humanize_type(db, &rets[0].type_ref);
+            let type_text = humanize_type(db, &rets[0].type_ref, RenderLevel::Simple);
             let name = rets[0].name.clone().unwrap_or("".to_string());
             let detail = if rets[0].description.is_some() {
                 format!(" -- {}", rets[0].description.as_ref().unwrap())
@@ -160,7 +160,7 @@ fn hover_signature_type(
         _ => {
             result.push_str("\n");
             for ret in rets {
-                let type_text = humanize_type(db, &ret.type_ref);
+                let type_text = humanize_type(db, &ret.type_ref, RenderLevel::Simple);
                 let name = ret.name.clone().unwrap_or("".to_string());
                 let detail = if ret.description.is_some() {
                     format!(" -- {}", ret.description.as_ref().unwrap())

@@ -3,7 +3,7 @@ mod add_member_completion;
 
 pub use add_decl_completion::add_decl_completion;
 pub use add_member_completion::{add_member_completion, CompletionTriggerStatus};
-use emmylua_code_analysis::{LuaPropertyOwnerId, LuaType};
+use emmylua_code_analysis::{LuaPropertyOwnerId, LuaType, RenderLevel};
 use lsp_types::CompletionItemKind;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -154,10 +154,18 @@ fn get_description(builder: &CompletionBuilder, typ: &LuaType) -> Option<String>
                 .get(&signature_id)?;
             let rets = &signature.return_docs;
             if rets.len() == 1 {
-                let detail = humanize_type(builder.semantic_model.get_db(), &rets[0].type_ref);
+                let detail = humanize_type(
+                    builder.semantic_model.get_db(),
+                    &rets[0].type_ref,
+                    RenderLevel::Minimal,
+                );
                 Some(detail)
             } else if rets.len() > 1 {
-                let detail = humanize_type(builder.semantic_model.get_db(), &rets[0].type_ref);
+                let detail = humanize_type(
+                    builder.semantic_model.get_db(),
+                    &rets[0].type_ref,
+                    RenderLevel::Minimal,
+                );
                 Some(format!("{} ...", detail))
             } else {
                 None
@@ -166,17 +174,29 @@ fn get_description(builder: &CompletionBuilder, typ: &LuaType) -> Option<String>
         LuaType::DocFunction(f) => {
             let rets = f.get_ret();
             if rets.len() == 1 {
-                let detail = humanize_type(builder.semantic_model.get_db(), &rets[0]);
+                let detail = humanize_type(
+                    builder.semantic_model.get_db(),
+                    &rets[0],
+                    RenderLevel::Minimal,
+                );
                 Some(detail)
             } else if rets.len() > 1 {
-                let detail = humanize_type(builder.semantic_model.get_db(), &rets[0]);
+                let detail = humanize_type(
+                    builder.semantic_model.get_db(),
+                    &rets[0],
+                    RenderLevel::Minimal,
+                );
                 Some(format!("{} ...", detail))
             } else {
                 None
             }
         }
         _ if typ.is_unknown() => None,
-        _ => Some(humanize_type(builder.semantic_model.get_db(), typ)),
+        _ => Some(humanize_type(
+            builder.semantic_model.get_db(),
+            typ,
+            RenderLevel::Minimal,
+        )),
     }
 }
 

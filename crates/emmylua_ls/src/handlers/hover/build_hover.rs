@@ -1,6 +1,6 @@
 use emmylua_code_analysis::{
     DbIndex, LuaDeclId, LuaDocument, LuaMemberId, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId,
-    LuaSignatureId, LuaType, LuaTypeDeclId, SemanticInfo,
+    LuaSignatureId, LuaType, LuaTypeDeclId, RenderLevel, SemanticInfo,
 };
 use emmylua_parser::LuaSyntaxToken;
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
@@ -38,7 +38,7 @@ fn build_hover_without_property(
     token: LuaSyntaxToken,
     typ: LuaType,
 ) -> Option<Hover> {
-    let hover = humanize_type(db, &typ);
+    let hover = humanize_type(db, &typ, RenderLevel::Detailed);
     Some(Hover {
         contents: HoverContents::Markup(MarkupContent {
             kind: lsp_types::MarkupKind::Markdown,
@@ -75,7 +75,7 @@ fn build_decl_hover(
             format!("{}{}: {}", prefix, decl.get_name(), const_value),
         ));
     } else {
-        let type_humanize_text = humanize_type(db, &typ);
+        let type_humanize_text = humanize_type(db, &typ, RenderLevel::Detailed);
         let prefix = if decl.is_local() {
             "local "
         } else {
@@ -136,7 +136,7 @@ fn build_member_hover(
             format!("(field) {}: {}", member_name, const_value),
         ));
     } else {
-        let type_humanize_text = humanize_type(db, &typ);
+        let type_humanize_text = humanize_type(db, &typ, RenderLevel::Simple);
         marked_strings.push(MarkedString::from_language_code(
             "lua".to_string(),
             format!("(field) {}: {}", member_name, type_humanize_text),
@@ -208,7 +208,7 @@ fn build_type_decl_hover(
     let type_decl = db.get_type_index().get_type_decl(&type_decl_id)?;
     if type_decl.is_alias() {
         if let Some(origin) = type_decl.get_alias_origin(db, None) {
-            let origin_type = humanize_type(db, &origin);
+            let origin_type = humanize_type(db, &origin, RenderLevel::Detailed);
             marked_strings.push(MarkedString::from_language_code(
                 "lua".to_string(),
                 format!("(type alias) {} = {}", type_decl.get_name(), origin_type),
@@ -223,7 +223,8 @@ fn build_type_decl_hover(
             let member_ids = type_decl.get_alias_union_members()?;
             for member_id in member_ids {
                 let member = db.get_member_index().get_member(&member_id)?;
-                let type_humanize_text = humanize_type(db, &member.get_decl_type());
+                let type_humanize_text =
+                    humanize_type(db, &member.get_decl_type(), RenderLevel::Minimal);
                 let property_owner = LuaPropertyOwnerId::Member(member_id.clone());
                 let description = db
                     .get_property_index()

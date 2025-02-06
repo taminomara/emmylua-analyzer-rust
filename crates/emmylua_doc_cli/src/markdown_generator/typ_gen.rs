@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use emmylua_code_analysis::{
-    humanize_type, DbIndex, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId, LuaTypeDecl,
+    humanize_type, DbIndex, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId, LuaTypeDecl, RenderLevel,
 };
 use emmylua_parser::VisibilityKind;
 use serde::{Deserialize, Serialize};
@@ -75,7 +75,7 @@ fn generate_class_type_markdown(
     if let Some(supers) = supers {
         let mut super_type_texts = Vec::new();
         for super_typ in supers {
-            let super_type_text = humanize_type(db, &super_typ);
+            let super_type_text = humanize_type(db, &super_typ, RenderLevel::Detailed);
             super_type_texts.push(super_type_text);
         }
         context.insert("super_types", &super_type_texts.join(", "));
@@ -136,7 +136,7 @@ fn generate_class_type_markdown(
                     description,
                 });
             } else {
-                let typ_display = humanize_type(db, &member_typ);
+                let typ_display = humanize_type(db, &member_typ, RenderLevel::Detailed);
                 field_members.push(MemberDisplay {
                     name: title_name,
                     display: format!("```lua\n{}.{} : {}\n```\n", typ_name, name, typ_display),
@@ -233,7 +233,7 @@ fn generate_enum_type_markdown(
                 _ => continue,
             };
 
-            let typ_display = humanize_type(db, &member_typ);
+            let typ_display = humanize_type(db, &member_typ, RenderLevel::Simple);
             let description = if !description.is_empty() {
                 format!("-- {}", &description)
             } else {

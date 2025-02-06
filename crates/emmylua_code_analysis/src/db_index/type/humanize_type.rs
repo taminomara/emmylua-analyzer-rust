@@ -5,8 +5,25 @@ use crate::{
     LuaUnionType,
 };
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RenderLevel {
+    Detailed,
+    Simple,
+    Minimal,
+}
+
+impl RenderLevel {
+    pub fn next_level(self) -> RenderLevel {
+        match self {
+            RenderLevel::Detailed => RenderLevel::Simple,
+            RenderLevel::Simple => RenderLevel::Minimal,
+            RenderLevel::Minimal => RenderLevel::Minimal,
+        }
+    }
+}
+
 #[allow(unused)]
-pub fn humanize_type(db: &DbIndex, ty: &LuaType) -> String {
+pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
     match ty {
         LuaType::Any => "any".to_string(),
         LuaType::Nil => "nil".to_string(),
@@ -21,12 +38,12 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType) -> String {
         LuaType::FloatConst(f) => f.to_string(),
         LuaType::TableConst(v) => {
             let member_owner = LuaMemberOwner::Element(v.clone());
-            humanize_table_const_type(db, member_owner)
+            humanize_table_const_type(db, member_owner, level)
         }
         LuaType::Global => "global".to_string(),
         LuaType::Def(id) => humanize_def_type(db, id),
-        LuaType::Union(union) => humanize_union_type(db, union),
-        LuaType::Tuple(tuple) => humanize_tuple_type(db, tuple),
+        LuaType::Union(union) => humanize_union_type(db, union, level),
+        LuaType::Tuple(tuple) => humanize_tuple_type(db, tuple, level),
         LuaType::Unknown => "unknown".to_string(),
         LuaType::Integer => "integer".to_string(),
         LuaType::Io => "io".to_string(),
@@ -42,26 +59,26 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType) -> String {
                 id.get_name().to_string()
             }
         }
-        LuaType::Module(module_path) => humanize_module_type(db, module_path),
-        LuaType::Array(arr_inner) => humanize_array_type(db, arr_inner),
-        LuaType::KeyOf(base_type) => humanize_key_of_type(db, base_type),
-        LuaType::Nullable(inner) => humanize_nullable_type(db, inner),
-        LuaType::DocFunction(lua_func) => humanize_doc_function_type(db, lua_func),
-        LuaType::Object(object) => humanize_object_type(db, object),
-        LuaType::Intersection(inter) => humanize_intersect_type(db, inter),
-        LuaType::Extends(ext) => humanize_extend_type(db, ext),
-        LuaType::Generic(generic) => humanize_generic_type(db, generic),
+        LuaType::Module(module_path) => humanize_module_type(db, module_path, level),
+        LuaType::Array(arr_inner) => humanize_array_type(db, arr_inner, level),
+        LuaType::KeyOf(base_type) => humanize_key_of_type(db, base_type, level),
+        LuaType::Nullable(inner) => humanize_nullable_type(db, inner, level),
+        LuaType::DocFunction(lua_func) => humanize_doc_function_type(db, lua_func, level),
+        LuaType::Object(object) => humanize_object_type(db, object, level),
+        LuaType::Intersection(inter) => humanize_intersect_type(db, inter, level),
+        LuaType::Extends(ext) => humanize_extend_type(db, ext, level),
+        LuaType::Generic(generic) => humanize_generic_type(db, generic, level),
         LuaType::TableGeneric(table_generic_params) => {
-            humanize_table_generic_type(db, table_generic_params)
+            humanize_table_generic_type(db, table_generic_params, level)
         }
         LuaType::TplRef(tpl) => humanize_tpl_ref_type(tpl),
         LuaType::StrTplRef(str_tpl) => humanize_str_tpl_ref_type(str_tpl),
-        LuaType::MuliReturn(multi) => humanize_multi_return_type(db, multi),
-        LuaType::ExistField(exist_field) => humanize_exist_field_type(db, exist_field),
-        LuaType::Instance(ins) => humanize_instance_type(db, ins),
-        LuaType::Signature(signature_id) => humanize_signature_type(db, signature_id),
+        LuaType::MuliReturn(multi) => humanize_multi_return_type(db, multi, level),
+        LuaType::ExistField(exist_field) => humanize_exist_field_type(db, exist_field, level),
+        LuaType::Instance(ins) => humanize_instance_type(db, ins, level),
+        LuaType::Signature(signature_id) => humanize_signature_type(db, signature_id, level),
         LuaType::Namespace(ns) => format!("{{ {} }}", ns),
-        LuaType::Variadic(inner) => format!("{}...", humanize_type(db, inner)),
+        LuaType::Variadic(inner) => format!("{}...", humanize_type(db, inner, level.next_level())),
         _ => "unknown".to_string(),
     }
 }
@@ -88,33 +105,33 @@ fn humanize_def_type(db: &DbIndex, id: &LuaTypeDeclId) -> String {
     format!("{}<{}>", simple_name, generic_names)
 }
 
-fn humanize_union_type(db: &DbIndex, union: &LuaUnionType) -> String {
+fn humanize_union_type(db: &DbIndex, union: &LuaUnionType, level: RenderLevel) -> String {
     let types = union.get_types();
     let dots = if types.len() > 10 { "..." } else { "" };
 
     let type_str = types
         .iter()
         .take(10)
-        .map(|ty| humanize_type(db, ty))
+        .map(|ty| humanize_type(db, ty, level.next_level()))
         .collect::<Vec<_>>()
         .join("|");
     format!("({}{})", type_str, dots)
 }
 
-fn humanize_tuple_type(db: &DbIndex, tuple: &LuaTupleType) -> String {
+fn humanize_tuple_type(db: &DbIndex, tuple: &LuaTupleType, level: RenderLevel) -> String {
     let types = tuple.get_types();
     let dots = if types.len() > 10 { "..." } else { "" };
 
     let type_str = types
         .iter()
         .take(10)
-        .map(|ty| humanize_type(db, ty))
+        .map(|ty| humanize_type(db, ty, level.next_level()))
         .collect::<Vec<_>>()
         .join(",");
     format!("({}{})", type_str, dots)
 }
 
-fn humanize_module_type(db: &DbIndex, module_path: &str) -> String {
+fn humanize_module_type(db: &DbIndex, module_path: &str, level: RenderLevel) -> String {
     let module = db.get_module_index().find_module(module_path);
     if module.is_none() {
         return format!("module({})", module_path);
@@ -125,25 +142,32 @@ fn humanize_module_type(db: &DbIndex, module_path: &str) -> String {
         return format!("module({})", module_path);
     }
 
-    humanize_type(db, &module.export_type.clone().unwrap())
+    humanize_type(db, &module.export_type.clone().unwrap(), level)
 }
 
-fn humanize_array_type(db: &DbIndex, inner: &LuaType) -> String {
-    let element_type = humanize_type(db, inner);
+fn humanize_array_type(db: &DbIndex, inner: &LuaType, level: RenderLevel) -> String {
+    let element_type = humanize_type(db, inner, level.next_level());
     format!("{}[]", element_type)
 }
 
-fn humanize_key_of_type(db: &DbIndex, inner: &LuaType) -> String {
-    let element_type = humanize_type(db, inner);
+fn humanize_key_of_type(db: &DbIndex, inner: &LuaType, level: RenderLevel) -> String {
+    if level == RenderLevel::Minimal {
+        return "(keyof)".to_string();
+    }
+    let element_type = humanize_type(db, inner, level.next_level());
     format!("keyof {}", element_type)
 }
 
-fn humanize_nullable_type(db: &DbIndex, inner: &LuaType) -> String {
-    let element_type = humanize_type(db, inner);
+fn humanize_nullable_type(db: &DbIndex, inner: &LuaType, level: RenderLevel) -> String {
+    let element_type = humanize_type(db, inner, level.next_level());
     format!("{}?", element_type)
 }
 
-fn humanize_doc_function_type(db: &DbIndex, lua_func: &LuaFunctionType) -> String {
+fn humanize_doc_function_type(
+    db: &DbIndex,
+    lua_func: &LuaFunctionType,
+    level: RenderLevel,
+) -> String {
     let prev = if lua_func.is_async() { "async " } else { "" };
     let params = lua_func
         .get_params()
@@ -151,7 +175,7 @@ fn humanize_doc_function_type(db: &DbIndex, lua_func: &LuaFunctionType) -> Strin
         .map(|param| {
             let name = param.0.clone();
             if let Some(ty) = &param.1 {
-                format!("{}: {}", name, humanize_type(db, ty))
+                format!("{}: {}", name, humanize_type(db, ty, level.next_level()))
             } else {
                 name.to_string()
             }
@@ -167,7 +191,7 @@ fn humanize_doc_function_type(db: &DbIndex, lua_func: &LuaFunctionType) -> Strin
 
     let ret_strs = rets
         .iter()
-        .map(|ty| humanize_type(db, ty))
+        .map(|ty| humanize_type(db, ty, level.next_level()))
         .collect::<Vec<_>>()
         .join(",");
 
@@ -177,13 +201,17 @@ fn humanize_doc_function_type(db: &DbIndex, lua_func: &LuaFunctionType) -> Strin
     format!("{}({}) => {}", prev, params, ret_strs)
 }
 
-fn humanize_object_type(db: &DbIndex, object: &LuaObjectType) -> String {
+fn humanize_object_type(db: &DbIndex, object: &LuaObjectType, level: RenderLevel) -> String {
+    if level == RenderLevel::Minimal {
+        return "{...}".to_string();
+    }
+
     let fields = object
         .get_fields()
         .iter()
         .map(|field| {
             let name = field.0.clone();
-            let ty_str = humanize_type(db, field.1);
+            let ty_str = humanize_type(db, field.1, level.next_level());
             match name {
                 LuaMemberKey::Integer(i) => format!("[{}]: {}", i, ty_str),
                 LuaMemberKey::Name(s) => format!("{}: {}", s, ty_str),
@@ -197,8 +225,8 @@ fn humanize_object_type(db: &DbIndex, object: &LuaObjectType) -> String {
         .get_index_access()
         .iter()
         .map(|(key, value)| {
-            let key_str = humanize_type(db, key);
-            let value_str = humanize_type(db, value);
+            let key_str = humanize_type(db, key, level.next_level());
+            let value_str = humanize_type(db, value, level.next_level());
             format!("[{}]: {}", key_str, value_str)
         })
         .collect::<Vec<_>>()
@@ -210,27 +238,35 @@ fn humanize_object_type(db: &DbIndex, object: &LuaObjectType) -> String {
     format!("{{ {}, {} }}", fields, access)
 }
 
-fn humanize_intersect_type(db: &DbIndex, inter: &LuaIntersectionType) -> String {
+fn humanize_intersect_type(
+    db: &DbIndex,
+    inter: &LuaIntersectionType,
+    level: RenderLevel,
+) -> String {
+    if level == RenderLevel::Minimal {
+        return "(...)".to_string();
+    }
+
     let types = inter.get_types();
     let dots = if types.len() > 10 { "..." } else { "" };
 
     let type_str = types
         .iter()
         .take(10)
-        .map(|ty| humanize_type(db, ty))
+        .map(|ty| humanize_type(db, ty, level.next_level()))
         .collect::<Vec<_>>()
         .join("&");
     format!("({}{})", type_str, dots)
 }
 
-fn humanize_extend_type(db: &DbIndex, ext: &LuaExtendedType) -> String {
-    let base = humanize_type(db, ext.get_base());
-    let extends = humanize_type(db, ext.get_ext());
+fn humanize_extend_type(db: &DbIndex, ext: &LuaExtendedType, level: RenderLevel) -> String {
+    let base = humanize_type(db, ext.get_base(), level.next_level());
+    let extends = humanize_type(db, ext.get_ext(), level.next_level());
 
     format!("{} extends {}", base, extends)
 }
 
-fn humanize_generic_type(db: &DbIndex, generic: &LuaGenericType) -> String {
+fn humanize_generic_type(db: &DbIndex, generic: &LuaGenericType, level: RenderLevel) -> String {
     let base_id = generic.get_base_type_id();
     let type_decl = db.get_type_index().get_type_decl(&base_id);
     if type_decl.is_none() {
@@ -238,72 +274,110 @@ fn humanize_generic_type(db: &DbIndex, generic: &LuaGenericType) -> String {
     }
 
     let simple_name = type_decl.unwrap().get_name();
+    if level.next_level() == RenderLevel::Minimal {
+        return format!("{}<...>", simple_name);
+    }
 
     let generic_params = generic
         .get_params()
         .iter()
-        .map(|ty| humanize_type(db, ty))
+        .map(|ty| humanize_type(db, ty, level.next_level()))
         .collect::<Vec<_>>()
         .join(",");
 
     format!("{}<{}>", simple_name, generic_params)
 }
 
-fn humanize_table_const_type_extended(
+fn humanize_table_const_type_detail_and_simple(
     db: &DbIndex,
     member_owned: LuaMemberOwner,
+    level: RenderLevel,
 ) -> Option<String> {
     let member_index = db.get_member_index();
     let member_map = member_index.get_member_map(member_owned)?;
 
     // sort by key
-    let mut member_vec = member_map
-        .into_iter()
-        .collect::<Vec<_>>();
+    let mut member_vec = member_map.into_iter().collect::<Vec<_>>();
     member_vec.sort_by(|a, b| a.0.cmp(&b.0));
 
     let mut total_length = 0;
+    let mut total_line = 0;
     let mut members_string = String::new();
     for (member_key, member_id) in member_vec {
         let member_value = match member_index.get_member(member_id) {
             Some(value) => value,
             None => continue,
         };
-        let member_value_string = humanize_type(db, member_value.get_decl_type());
-    
+        let member_value_string =
+            humanize_type(db, member_value.get_decl_type(), level.next_level());
+
         let member_string = match member_key {
             LuaMemberKey::Name(name) => format!("{} = {}", name, member_value_string),
             LuaMemberKey::Integer(i) => format!("[{}] = {}", i, member_value_string),
             LuaMemberKey::None => format!("{}", member_value_string),
         };
-    
-        let member_string_len = member_string.chars().count();
-    
-        if total_length + member_string_len > 54 {
-            members_string.push_str(", ...");
-            break;
+
+        match level {
+            RenderLevel::Detailed => {
+                total_line += 1;
+                members_string.push_str(&format!("    {},\n", member_string));
+                if total_line >= 12 {
+                    members_string.push_str("    ...\n");
+                    break;
+                }
+            }
+            RenderLevel::Simple => {
+                let member_string_len = member_string.chars().count();
+
+                if total_length + member_string_len > 54 {
+                    members_string.push_str(", ...");
+                    break;
+                }
+
+                if !members_string.is_empty() {
+                    members_string.push_str(", ");
+                    total_length += 2; // account for ", "
+                }
+                total_length += member_string_len;
+                members_string.push_str(&member_string);
+            }
+            _ => return None,
         }
-    
-        if !members_string.is_empty() {
-            members_string.push_str(", ");
-            total_length += 2; // account for ", "
-        }
-    
-        members_string.push_str(&member_string);
-        total_length += member_string_len;
     }
 
-    Some(format!("{{ {} }}", members_string))
+    match level {
+        RenderLevel::Detailed => Some(format!("{{\n{}}}", members_string)),
+        RenderLevel::Simple => Some(format!("{{ {} }}", members_string)),
+        _ => None,
+    }
 }
 
-fn humanize_table_const_type(db: &DbIndex, member_owned: LuaMemberOwner) -> String {
-    humanize_table_const_type_extended(db, member_owned).unwrap_or("table".to_string())
+fn humanize_table_const_type(
+    db: &DbIndex,
+    member_owned: LuaMemberOwner,
+    level: RenderLevel,
+) -> String {
+    match level {
+        RenderLevel::Detailed | RenderLevel::Simple => {
+            humanize_table_const_type_detail_and_simple(db, member_owned, level)
+                .unwrap_or("table".to_string())
+        }
+        RenderLevel::Minimal => "table".to_string(),
+    }
 }
 
-fn humanize_table_generic_type(db: &DbIndex, table_generic_params: &Vec<LuaType>) -> String {
+fn humanize_table_generic_type(
+    db: &DbIndex,
+    table_generic_params: &Vec<LuaType>,
+    level: RenderLevel,
+) -> String {
+    if level == RenderLevel::Minimal {
+        return "table<...>".to_string();
+    }
+
     let generic_params = table_generic_params
         .iter()
-        .map(|ty| humanize_type(db, ty))
+        .map(|ty| humanize_type(db, ty, level.next_level()))
         .collect::<Vec<_>>()
         .join(",");
 
@@ -323,16 +397,16 @@ fn humanize_str_tpl_ref_type(str_tpl: &LuaStringTplType) -> String {
     }
 }
 
-fn humanize_multi_return_type(db: &DbIndex, multi: &LuaMultiReturn) -> String {
+fn humanize_multi_return_type(db: &DbIndex, multi: &LuaMultiReturn, level: RenderLevel) -> String {
     match multi {
         LuaMultiReturn::Base(base) => {
-            let base_str = humanize_type(db, base);
+            let base_str = humanize_type(db, base, level);
             format!("{} ...", base_str)
         }
         LuaMultiReturn::Multi(types) => {
             let type_str = types
                 .iter()
-                .map(|ty| humanize_type(db, ty))
+                .map(|ty| humanize_type(db, ty, level))
                 .collect::<Vec<_>>()
                 .join(",");
             format!("({})", type_str)
@@ -341,15 +415,27 @@ fn humanize_multi_return_type(db: &DbIndex, multi: &LuaMultiReturn) -> String {
 }
 
 // optimize
-fn humanize_exist_field_type(db: &DbIndex, exist_field: &LuaExistFieldType) -> String {
-    humanize_type(db, exist_field.get_origin())
+fn humanize_exist_field_type(
+    db: &DbIndex,
+    exist_field: &LuaExistFieldType,
+    level: RenderLevel,
+) -> String {
+    humanize_type(db, exist_field.get_origin(), level)
 }
 
-fn humanize_instance_type(db: &DbIndex, ins: &LuaInstanceType) -> String {
-    humanize_type(db, ins.get_base())
+fn humanize_instance_type(db: &DbIndex, ins: &LuaInstanceType, level: RenderLevel) -> String {
+    humanize_type(db, ins.get_base(), level)
 }
 
-fn humanize_signature_type(db: &DbIndex, signature_id: &LuaSignatureId) -> String {
+fn humanize_signature_type(
+    db: &DbIndex,
+    signature_id: &LuaSignatureId,
+    level: RenderLevel,
+) -> String {
+    if level == RenderLevel::Minimal {
+        return "fun(...) => ...".to_string();
+    }
+
     let signature = db.get_signature_index().get(signature_id);
     if signature.is_none() {
         return "unknown".to_string();
@@ -362,7 +448,7 @@ fn humanize_signature_type(db: &DbIndex, signature_id: &LuaSignatureId) -> Strin
         .map(|param| {
             let name = param.0.clone();
             if let Some(ty) = &param.1 {
-                format!("{}: {}", name, humanize_type(db, ty))
+                format!("{}: {}", name, humanize_type(db, ty, level.next_level()))
             } else {
                 name.to_string()
             }
@@ -380,7 +466,7 @@ fn humanize_signature_type(db: &DbIndex, signature_id: &LuaSignatureId) -> Strin
     let rets = signature
         .return_docs
         .iter()
-        .map(|ret| humanize_type(db, &ret.type_ref))
+        .map(|ret| humanize_type(db, &ret.type_ref, level.next_level()))
         .collect::<Vec<_>>();
 
     let generic_str = if generics.is_empty() {

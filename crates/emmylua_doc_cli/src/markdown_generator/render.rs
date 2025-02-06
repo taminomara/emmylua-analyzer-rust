@@ -1,9 +1,10 @@
 use emmylua_code_analysis::{
     humanize_type, DbIndex, LuaFunctionType, LuaPropertyOwnerId, LuaSignatureId, LuaType,
+    RenderLevel,
 };
 
 pub fn render_const_type(db: &DbIndex, typ: &LuaType) -> String {
-    let const_value = humanize_type(db, typ);
+    let const_value = humanize_type(db, typ, RenderLevel::Detailed);
 
     match typ {
         LuaType::IntegerConst(_) | LuaType::DocIntegerConst(_) => {
@@ -218,6 +219,6 @@ fn render_typ(db: &DbIndex, typ: &LuaType) -> String {
         LuaType::FloatConst(_) => "number".to_string(),
         LuaType::StringConst(_) => "string".to_string(),
         LuaType::BooleanConst(_) => "boolean".to_string(),
-        _ => humanize_type(db, typ),
+        _ => humanize_type(db, typ, RenderLevel::Detailed),
     }
 }

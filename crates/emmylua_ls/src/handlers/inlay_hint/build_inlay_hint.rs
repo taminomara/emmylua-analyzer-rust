@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use emmylua_code_analysis::{
     FileId, InferGuard, LuaFunctionType, LuaMemberId, LuaMemberKey, LuaMemberOwner,
-    LuaPropertyOwnerId, LuaSignatureId, LuaType, SemanticModel,
+    LuaPropertyOwnerId, LuaSignatureId, LuaType, RenderLevel, SemanticModel,
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaCallExpr, LuaClosureExpr, LuaExpr, LuaFuncStat, LuaIndexExpr,
@@ -71,7 +71,7 @@ fn build_closure_hint(
         if let Some(typ) = typ {
             if let Some(lua_param) = lua_params_map.get(signature_param_name) {
                 let lsp_range = document.to_lsp_range(lua_param.get_range())?;
-                let typ_desc = format!(": {}", humanize_type(db, &typ));
+                let typ_desc = format!(": {}", humanize_type(db, &typ, RenderLevel::Simple));
                 let hint = InlayHint {
                     kind: Some(InlayHintKind::PARAMETER),
                     label: InlayHintLabel::String(typ_desc),
@@ -354,7 +354,7 @@ fn build_local_name_hint(
     let range = local_name.get_range();
     let lsp_range = document.to_lsp_range(range)?;
 
-    let typ_desc = humanize_type(db, &typ);
+    let typ_desc = humanize_type(db, &typ, RenderLevel::Simple);
     let hint = InlayHint {
         kind: Some(InlayHintKind::TYPE),
         label: InlayHintLabel::String(format!(": {}", typ_desc)),

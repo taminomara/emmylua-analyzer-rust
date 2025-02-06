@@ -8,7 +8,7 @@ use super::traits::LuaIndex;
 use crate::{FileId, InFiled};
 use emmylua_parser::LuaSyntaxId;
 use flagset::FlagSet;
-pub use humanize_type::humanize_type;
+pub use humanize_type::{humanize_type, RenderLevel};
 use rowan::TextRange;
 use std::collections::HashMap;
 pub use type_assert::TypeAssertion;

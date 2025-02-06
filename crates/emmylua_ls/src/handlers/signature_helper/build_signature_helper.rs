@@ -1,6 +1,6 @@
 use emmylua_code_analysis::{
     LuaFunctionType, LuaOperatorMetaMethod, LuaPropertyOwnerId, LuaSignatureId, LuaType,
-    LuaTypeDeclId, SemanticModel,
+    LuaTypeDeclId, RenderLevel, SemanticModel,
 };
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxToken, LuaTokenKind};
 use lsp_types::{
@@ -96,7 +96,11 @@ fn build_doc_function_signature_help(
             let label = param.0.clone();
             let typ = param.1.clone();
             let documentation = if let Some(typ) = typ {
-                Some(Documentation::String(humanize_type(db, &typ)))
+                Some(Documentation::String(humanize_type(
+                    db,
+                    &typ,
+                    RenderLevel::Simple,
+                )))
             } else {
                 None
             };
@@ -167,7 +171,7 @@ fn build_sig_id_signature_help(
                     format!(
                         "```lua\n(parameter) {}: {}\n```\n\n",
                         label,
-                        humanize_type(db, &typ)
+                        humanize_type(db, &typ, RenderLevel::Simple)
                     )
                     .as_str(),
                 );

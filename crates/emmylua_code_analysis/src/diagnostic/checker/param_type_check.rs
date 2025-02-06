@@ -1,6 +1,6 @@
 use emmylua_parser::{LuaAst, LuaAstNode, LuaCallExpr};
 
-use crate::{humanize_type, DiagnosticCode, LuaType, SemanticModel};
+use crate::{humanize_type, DiagnosticCode, LuaType, RenderLevel, SemanticModel};
 
 use super::DiagnosticContext;
 
@@ -81,8 +81,8 @@ fn check_call_expr(
                             arg.get_range(),
                             format!(
                                 "expected {} but founded {}",
-                                humanize_type(db, &param_type),
-                                humanize_type(db, &expr_type)
+                                humanize_type(db, &param_type, RenderLevel::Simple),
+                                humanize_type(db, &expr_type, RenderLevel::Simple)
                             ),
                             None,
                         );
@@ -110,8 +110,8 @@ fn check_call_expr(
                     arg.get_range(),
                     format!(
                         "expected {} but founded {}",
-                        humanize_type(db, &param_type),
-                        humanize_type(db, &expr_type)
+                        humanize_type(db, &param_type, RenderLevel::Simple),
+                        humanize_type(db, &expr_type, RenderLevel::Simple)
                     ),
                     None,
                 );
