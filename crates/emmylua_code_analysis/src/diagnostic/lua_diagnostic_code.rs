@@ -88,6 +88,7 @@ pub fn is_code_default_enable(code: &DiagnosticCode) -> bool {
         DiagnosticCode::DisableGlobalDefine => false,
         DiagnosticCode::UndefinedField => false,
         DiagnosticCode::IterVariableReassign => false,
+        DiagnosticCode::CodeStyleCheck => false,
         // ... handle other variants
         _ => true,
     }
