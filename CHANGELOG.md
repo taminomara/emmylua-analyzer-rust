@@ -8,6 +8,10 @@
 
 `NEW` Compact luals env variable start with `$`
 
+`FIX` Refactor `humanize type` for stack overflow issue
+
+`Fix` Fix a documentation cli tool render issue
+
 # 0.4.4
 
 `NEW` Support generic alias fold
