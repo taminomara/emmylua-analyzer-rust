@@ -58,7 +58,13 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
                 let name = name_token.get_name_text();
                 let file_id = analyzer.get_file_id();
                 let range = name_token.get_range();
-                if analyzer.find_decl(&name, position).is_none() {
+                if let Some(decl) = analyzer.find_decl(&name, position) {
+                    let decl_id = decl.get_id();
+                    analyzer
+                        .db
+                        .get_reference_index_mut()
+                        .add_decl_reference(decl_id, file_id, range, true);
+                } else {
                     let decl = LuaDecl::new(
                         name,
                         file_id,
@@ -70,11 +76,6 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
                     );
 
                     analyzer.add_decl(decl);
-                } else {
-                    analyzer
-                        .db
-                        .get_reference_index_mut()
-                        .add_write_range(file_id, range);
                 }
             }
             LuaVarExpr::IndexExpr(index_expr) => {
@@ -94,10 +95,10 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
                 );
 
                 analyzer.db.get_member_index_mut().add_member(member);
-                analyzer
-                    .db
-                    .get_reference_index_mut()
-                    .add_write_range(file_id, index_expr.get_range());
+                // analyzer
+                //     .db
+                //     .get_reference_index_mut()
+                //     .add_write_range(file_id, index_expr.get_range());
 
                 if let LuaMemberKey::Name(name) = &key {
                     analyze_maybe_global_index_expr(analyzer, index_expr, &name, None);
@@ -124,7 +125,13 @@ fn analyze_maybe_global_index_expr(
             let position = index_expr.get_position();
             let name = name_token.get_name_text();
             let range = index_expr.get_range();
-            if analyzer.find_decl(&name, position).is_none() {
+            if let Some(decl) = analyzer.find_decl(&name, position) {
+                let decl_id = decl.get_id();
+                analyzer
+                    .db
+                    .get_reference_index_mut()
+                    .add_decl_reference(decl_id, file_id, range, true);
+            } else {
                 let decl = LuaDecl::new(
                     index_name,
                     file_id,
@@ -136,11 +143,6 @@ fn analyze_maybe_global_index_expr(
                 );
 
                 analyzer.add_decl(decl);
-            } else {
-                analyzer
-                    .db
-                    .get_reference_index_mut()
-                    .add_write_range(file_id, range);
             }
         }
     }
@@ -167,10 +169,6 @@ pub fn analyze_for_stat(analyzer: &mut DeclAnalyzer, stat: LuaForStat) -> Option
         );
 
         analyzer.add_decl(decl);
-        analyzer
-            .db
-            .get_reference_index_mut()
-            .add_write_range(file_id, range);
     }
 
     Some(())
@@ -189,7 +187,6 @@ pub fn analyze_for_range_stat(analyzer: &mut DeclAnalyzer, stat: LuaForRangeStat
             range,
             LuaDeclExtra::Local {
                 kind: var.syntax().kind().into(),
-
                 attrib: Some(LocalAttribute::IterConst),
                 decl_type: None,
             },
@@ -242,10 +239,6 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
             );
 
             let member_id = analyzer.db.get_member_index_mut().add_member(member);
-            analyzer
-                .db
-                .get_reference_index_mut()
-                .add_write_range(file_id, index_expr.get_range());
 
             if let LuaMemberKey::Name(name) = &key {
                 analyze_maybe_global_index_expr(analyzer, &index_expr, &name, None);

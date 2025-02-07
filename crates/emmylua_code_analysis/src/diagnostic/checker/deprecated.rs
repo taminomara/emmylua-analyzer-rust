@@ -12,23 +12,9 @@ pub fn check(context: &mut DiagnosticContext, semantic_model: &mut SemanticModel
     for node in root.descendants::<LuaAst>() {
         match node {
             LuaAst::LuaNameExpr(name_expr) => {
-                if semantic_model
-                    .get_db()
-                    .get_reference_index()
-                    .is_write_range(file_id, name_expr.get_range())
-                {
-                    continue;
-                }
                 check_name_expr(context, semantic_model, name_expr);
             }
             LuaAst::LuaIndexExpr(index_expr) => {
-                if semantic_model
-                    .get_db()
-                    .get_reference_index()
-                    .is_write_range(file_id, index_expr.get_range())
-                {
-                    continue;
-                }
                 check_index_expr(context, semantic_model, index_expr);
             }
             _ => {}

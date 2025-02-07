@@ -61,12 +61,12 @@ fn rename_decl_references(
         let local_references = semantic_model
             .get_db()
             .get_reference_index()
-            .get_local_references(&decl_id.file_id, &decl_id);
+            .get_decl_references(&decl_id.file_id, &decl_id);
         let document = semantic_model.get_document();
         let uri = document.get_uri();
-        if let Some(local_references) = local_references {
-            for reference_range in local_references {
-                let range = document.to_lsp_range(reference_range.clone())?;
+        if let Some(decl_refs) = local_references {
+            for decl_ref in decl_refs {
+                let range = document.to_lsp_range(decl_ref.range.clone())?;
                 result
                     .entry(uri.clone())
                     .or_insert_with(HashSet::new)

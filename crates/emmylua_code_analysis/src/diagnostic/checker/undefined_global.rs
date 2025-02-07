@@ -27,9 +27,9 @@ fn calc_name_expr_ref(
     let file_id = semantic_model.get_file_id();
     let db = semantic_model.get_db();
     let refs_index = db.get_reference_index().get_local_reference(&file_id)?;
-    for (_, ranges) in refs_index.get_local_references_map() {
-        for range in ranges {
-            use_range_set.insert(range.clone());
+    for (_, decl_refs) in refs_index.get_decl_references_map() {
+        for decl_ref in decl_refs {
+            use_range_set.insert(decl_ref.range.clone());
         }
     }
 

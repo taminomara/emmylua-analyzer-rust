@@ -12,15 +12,16 @@ use super::FlowAnalyzer;
 pub fn analyze(analyzer: &mut FlowAnalyzer) -> Option<()> {
     let references_index = analyzer.db.get_reference_index();
     let refs_map = references_index
-        .get_local_references_map(&analyzer.file_id)?
+        .get_decl_references_map(&analyzer.file_id)?
         .clone();
     let root = analyzer.root.syntax();
     let file_id = analyzer.file_id;
 
-    for (decl_id, ranges) in refs_map {
+    for (decl_id, decl_refs) in refs_map {
         let mut flow_chains = LuaFlowChain::new(decl_id);
-        for range in ranges {
-            let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), range.clone());
+        for decl_ref in decl_refs {
+            let syntax_id =
+                LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), decl_ref.range.clone());
             if let Some(node) = LuaNameExpr::cast(syntax_id.to_node_from_root(root)?) {
                 infer_name_expr(analyzer, &mut flow_chains, node);
             }
@@ -154,12 +155,8 @@ fn broadcast_up(
                                     TypeAssertion::NotExist
                                 }
                             }
-                            LuaLiteralToken::Number(_) => {
-                                TypeAssertion::Force(LuaType::Number)
-                            }
-                            LuaLiteralToken::String(_) => {
-                                TypeAssertion::Force(LuaType::String)
-                            }
+                            LuaLiteralToken::Number(_) => TypeAssertion::Force(LuaType::Number),
+                            LuaLiteralToken::String(_) => TypeAssertion::Force(LuaType::String),
                             _ => return None,
                         };
 

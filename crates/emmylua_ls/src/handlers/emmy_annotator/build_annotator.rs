@@ -89,15 +89,17 @@ fn build_local_stat_annotator(
 
         let decl_id = LuaDeclId::new(file_id, local_name.get_position());
         let reference_index = db.get_reference_index();
-        let ref_ranges = reference_index.get_local_references(&file_id, &decl_id);
-        if let Some(ref_ranges) = ref_ranges {
-            for range in ref_ranges {
-                use_range_set.insert(*range);
-                if reference_index.is_write_range(file_id, *range) {
+        let ref_ranges = reference_index.get_decl_references(&file_id, &decl_id);
+        if let Some(decl_refs) = ref_ranges {
+            for decl_ref in decl_refs {
+                use_range_set.insert(decl_ref.range.clone());
+                if decl_ref.is_write {
                     annotator.typ = EmmyAnnotatorType::MutLocal
                 }
 
-                annotator.ranges.push(document.to_lsp_range(*range)?);
+                annotator
+                    .ranges
+                    .push(document.to_lsp_range(decl_ref.range)?);
             }
         }
 
@@ -129,15 +131,17 @@ fn build_params_annotator(
 
         let decl_id = LuaDeclId::new(file_id, param_name.get_position());
         let reference_index = db.get_reference_index();
-        let ref_ranges = reference_index.get_local_references(&file_id, &decl_id);
-        if let Some(ref_ranges) = ref_ranges {
-            for range in ref_ranges {
-                use_range_set.insert(*range);
-                if reference_index.is_write_range(file_id, *range) {
+        let ref_ranges = reference_index.get_decl_references(&file_id, &decl_id);
+        if let Some(decl_refs) = ref_ranges {
+            for decl_ref in decl_refs {
+                use_range_set.insert(decl_ref.range.clone());
+                if decl_ref.is_write {
                     annotator.typ = EmmyAnnotatorType::MutParam
                 }
 
-                annotator.ranges.push(document.to_lsp_range(*range)?);
+                annotator
+                    .ranges
+                    .push(document.to_lsp_range(decl_ref.range)?);
             }
         }
 
@@ -198,11 +202,13 @@ fn build_for_stat_annotator(
     let decl_id = LuaDeclId::new(file_id, name_token.get_position());
     let ref_ranges = db
         .get_reference_index()
-        .get_local_references(&file_id, &decl_id);
-    if let Some(ref_ranges) = ref_ranges {
-        for range in ref_ranges {
-            use_range_set.insert(*range);
-            annotator.ranges.push(document.to_lsp_range(*range)?);
+        .get_decl_references(&file_id, &decl_id);
+    if let Some(decl_refs) = ref_ranges {
+        for decl_ref in decl_refs {
+            use_range_set.insert(decl_ref.range.clone());
+            annotator
+                .ranges
+                .push(document.to_lsp_range(decl_ref.range.clone())?);
         }
     }
 
@@ -233,11 +239,13 @@ fn build_for_range_annotator(
         let decl_id = LuaDeclId::new(file_id, name_token.get_position());
         let ref_ranges = db
             .get_reference_index()
-            .get_local_references(&file_id, &decl_id);
-        if let Some(ref_ranges) = ref_ranges {
-            for range in ref_ranges {
-                use_range_set.insert(*range);
-                annotator.ranges.push(document.to_lsp_range(*range)?);
+            .get_decl_references(&file_id, &decl_id);
+        if let Some(decl_refs) = ref_ranges {
+            for decl_ref in decl_refs {
+                use_range_set.insert(decl_ref.range.clone());
+                annotator
+                    .ranges
+                    .push(document.to_lsp_range(decl_ref.range.clone())?);
             }
         }
 
@@ -269,11 +277,13 @@ fn build_local_func_stat_annotator(
     let decl_id = LuaDeclId::new(file_id, name_token.get_position());
     let ref_ranges = db
         .get_reference_index()
-        .get_local_references(&file_id, &decl_id);
-    if let Some(ref_ranges) = ref_ranges {
-        for range in ref_ranges {
-            use_range_set.insert(*range);
-            annotator.ranges.push(document.to_lsp_range(*range)?);
+        .get_decl_references(&file_id, &decl_id);
+    if let Some(decl_refs) = ref_ranges {
+        for decl_ref in decl_refs {
+            use_range_set.insert(decl_ref.range.clone());
+            annotator
+                .ranges
+                .push(document.to_lsp_range(decl_ref.range.clone())?);
         }
     }
 

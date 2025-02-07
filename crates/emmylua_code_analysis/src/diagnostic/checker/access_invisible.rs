@@ -1,35 +1,20 @@
 use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaIndexExpr, LuaNameExpr, VisibilityKind};
 use rowan::TextRange;
 
-use crate::{DiagnosticCode, Emmyrc, LuaPropertyOwnerId, SemanticModel};
+use crate::{DiagnosticCode, Emmyrc, LuaDeclId, LuaPropertyOwnerId, SemanticModel};
 
 use super::DiagnosticContext;
 
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::AccessInvisible];
 
 pub fn check(context: &mut DiagnosticContext, semantic_model: &mut SemanticModel) -> Option<()> {
-    let file_id = semantic_model.get_file_id();
     let root = semantic_model.get_root().clone();
     for node in root.descendants::<LuaAst>() {
         match node {
             LuaAst::LuaNameExpr(name_expr) => {
-                if semantic_model
-                    .get_db()
-                    .get_reference_index()
-                    .is_write_range(file_id, name_expr.get_range())
-                {
-                    continue;
-                }
                 check_name_expr(context, semantic_model, name_expr);
             }
             LuaAst::LuaIndexExpr(index_expr) => {
-                if semantic_model
-                    .get_db()
-                    .get_reference_index()
-                    .is_write_range(file_id, index_expr.get_range())
-                {
-                    continue;
-                }
                 check_index_expr(context, semantic_model, index_expr);
             }
             _ => {}
@@ -44,6 +29,16 @@ fn check_name_expr(
     semantic_model: &mut SemanticModel,
     name_expr: LuaNameExpr,
 ) -> Option<()> {
+    let decl_id = LuaDeclId::new(semantic_model.get_file_id(), name_expr.get_position());
+    if semantic_model
+        .get_db()
+        .get_decl_index()
+        .get_decl(&decl_id)
+        .is_some()
+    {
+        return Some(());
+    }
+
     let property_owner = semantic_model
         .get_property_owner_id(rowan::NodeOrToken::Node(name_expr.syntax().clone()))?;
 

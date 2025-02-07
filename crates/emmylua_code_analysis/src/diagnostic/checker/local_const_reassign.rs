@@ -38,14 +38,14 @@ fn check_local_const_reassign(
     let file_id = semantic_model.get_file_id();
     let refs_index = semantic_model.get_db().get_reference_index();
     let local_refs = refs_index.get_local_reference(&file_id)?;
-    let ranges = local_refs.get_local_references(decl_id)?;
-    for range in ranges {
-        if refs_index.is_write_range(file_id, *range) {
+    let decl_refs = local_refs.get_decl_references(decl_id)?;
+    for decl_ref in decl_refs {
+        if decl_ref.is_write {
             match attrib {
                 LocalAttribute::Const => {
                     context.add_diagnostic(
                         DiagnosticCode::LocalConstReassign,
-                        *range,
+                        decl_ref.range.clone(),
                         t!("Cannot reassign to a constant variable").to_string(),
                         None,
                     );
@@ -53,7 +53,7 @@ fn check_local_const_reassign(
                 LocalAttribute::IterConst => {
                     context.add_diagnostic(
                         DiagnosticCode::IterVariableReassign,
-                        *range,
+                        decl_ref.range.clone(),
                         t!("Should not reassign to iter variable").to_string(),
                         None,
                     );

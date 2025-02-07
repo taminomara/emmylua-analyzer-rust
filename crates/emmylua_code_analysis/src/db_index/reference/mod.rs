@@ -1,10 +1,10 @@
-mod local_reference;
+mod file_reference;
 mod string_reference;
 
 use std::collections::{HashMap, HashSet};
 
 use emmylua_parser::LuaSyntaxId;
-use local_reference::LocalReference;
+use file_reference::{DeclReference, FileReference};
 use rowan::TextRange;
 use smol_str::SmolStr;
 use string_reference::StringReference;
@@ -15,7 +15,7 @@ use super::{traits::LuaIndex, LuaDeclId, LuaMemberKey};
 
 #[derive(Debug)]
 pub struct LuaReferenceIndex {
-    local_references: HashMap<FileId, LocalReference>,
+    file_references: HashMap<FileId, FileReference>,
     index_reference: HashMap<LuaMemberKey, HashMap<FileId, HashSet<LuaSyntaxId>>>,
     global_references: HashMap<SmolStr, HashMap<FileId, HashSet<LuaSyntaxId>>>,
     string_references: HashMap<FileId, StringReference>,
@@ -24,18 +24,24 @@ pub struct LuaReferenceIndex {
 impl LuaReferenceIndex {
     pub fn new() -> Self {
         Self {
-            local_references: HashMap::new(),
+            file_references: HashMap::new(),
             index_reference: HashMap::new(),
             global_references: HashMap::new(),
             string_references: HashMap::new(),
         }
     }
 
-    pub fn add_local_reference(&mut self, decl_id: LuaDeclId, file_id: FileId, range: TextRange) {
-        self.local_references
+    pub fn add_decl_reference(
+        &mut self,
+        decl_id: LuaDeclId,
+        file_id: FileId,
+        range: TextRange,
+        is_write: bool,
+    ) {
+        self.file_references
             .entry(file_id)
-            .or_insert_with(LocalReference::new)
-            .add_local_reference(decl_id, range);
+            .or_insert_with(FileReference::new)
+            .add_decl_reference(decl_id, range, is_write);
     }
 
     pub fn add_global_reference(&mut self, name: &str, file_id: FileId, syntax_id: LuaSyntaxId) {
@@ -69,40 +75,33 @@ impl LuaReferenceIndex {
             .add_string_reference(string, range);
     }
 
-    pub fn add_write_range(&mut self, file_id: FileId, range: TextRange) {
-        self.local_references
-            .entry(file_id)
-            .or_insert_with(LocalReference::new)
-            .add_write_range(range);
-    }
-
-    pub fn get_local_reference(&self, file_id: &FileId) -> Option<&LocalReference> {
-        self.local_references.get(file_id)
+    pub fn get_local_reference(&self, file_id: &FileId) -> Option<&FileReference> {
+        self.file_references.get(file_id)
     }
 
     pub fn create_local_reference(&mut self, file_id: FileId) {
-        self.local_references
+        self.file_references
             .entry(file_id)
-            .or_insert_with(LocalReference::new);
+            .or_insert_with(FileReference::new);
     }
 
-    pub fn get_local_references(
+    pub fn get_decl_references(
         &self,
         file_id: &FileId,
         decl_id: &LuaDeclId,
-    ) -> Option<&Vec<TextRange>> {
-        self.local_references
+    ) -> Option<&HashSet<DeclReference>> {
+        self.file_references
             .get(file_id)?
-            .get_local_references(decl_id)
+            .get_decl_references(decl_id)
     }
 
-    pub fn get_local_references_map(
+    pub fn get_decl_references_map(
         &self,
         file_id: &FileId,
-    ) -> Option<&HashMap<LuaDeclId, Vec<TextRange>>> {
-        self.local_references
+    ) -> Option<&HashMap<LuaDeclId, HashSet<DeclReference>>> {
+        self.file_references
             .get(file_id)
-            .map(|local_reference| local_reference.get_local_references_map())
+            .map(|file_reference| file_reference.get_decl_references_map())
     }
 
     pub fn get_global_file_references(
@@ -134,7 +133,9 @@ impl LuaReferenceIndex {
             .get(name)?
             .iter()
             .map(|(file_id, syntax_ids)| {
-                syntax_ids.iter().map(|syntax_id| InFiled::new(*file_id, *syntax_id))
+                syntax_ids
+                    .iter()
+                    .map(|syntax_id| InFiled::new(*file_id, *syntax_id))
             })
             .flatten()
             .collect();
@@ -173,19 +174,11 @@ impl LuaReferenceIndex {
 
         results
     }
-
-    pub fn is_write_range(&self, file_id: FileId, range: TextRange) -> bool {
-        self.local_references
-            .get(&file_id)
-            .map_or(false, |local_reference| {
-                local_reference.is_write_range(&range)
-            })
-    }
 }
 
 impl LuaIndex for LuaReferenceIndex {
     fn remove(&mut self, file_id: FileId) {
-        self.local_references.remove(&file_id);
+        self.file_references.remove(&file_id);
         self.string_references.remove(&file_id);
         let mut to_be_remove = Vec::new();
         for (key, references) in self.index_reference.iter_mut() {
@@ -215,7 +208,7 @@ impl LuaIndex for LuaReferenceIndex {
     fn fill_snapshot_info(&self, info: &mut HashMap<String, String>) {
         info.insert(
             "reference.local_references".to_string(),
-            self.local_references.len().to_string(),
+            self.file_references.len().to_string(),
         );
         info.insert(
             "reference.index_reference".to_string(),

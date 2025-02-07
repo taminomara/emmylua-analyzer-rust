@@ -13,7 +13,9 @@ use crate::db_index::{
     LuaPropertyOwnerId, LuaSignatureId, LuaType,
 };
 
-use super::{infer_type::infer_type, preprocess_description, tags::find_owner_closure, DocAnalyzer};
+use super::{
+    infer_type::infer_type, preprocess_description, tags::find_owner_closure, DocAnalyzer,
+};
 
 pub fn analyze_class(analyzer: &mut DocAnalyzer, tag: LuaDocTagClass) -> Option<()> {
     let file_id = analyzer.file_id;
@@ -285,9 +287,9 @@ fn get_local_stat_reference_ranges(
     let refs = analyzer
         .db
         .get_reference_index_mut()
-        .get_local_references(&file_id, &decl_id)?;
-    for reference_range in refs {
-        let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), reference_range.clone());
+        .get_decl_references(&file_id, &decl_id)?;
+    for decl_ref in refs {
+        let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), decl_ref.range.clone());
         let name_node = syntax_id.to_node_from_root(&analyzer.root)?;
         if let Some(parent1) = name_node.parent() {
             if parent1.kind() == LuaSyntaxKind::IndexExpr.into() {
@@ -301,7 +303,7 @@ fn get_local_stat_reference_ranges(
                     } else if parent2.kind() == LuaSyntaxKind::AssignStat.into() {
                         let stat = LuaAssignStat::cast(parent2)?;
                         if let Some(assign_token) = stat.token_by_kind(LuaTokenKind::TkAssign) {
-                            if assign_token.get_position() > reference_range.start() {
+                            if assign_token.get_position() > decl_ref.range.start() {
                                 ranges.push(stat.get_range());
                                 for comment in stat.get_comments() {
                                     ranges.push(comment.get_range());

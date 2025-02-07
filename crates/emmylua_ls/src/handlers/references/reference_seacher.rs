@@ -41,13 +41,13 @@ pub fn search_decl_references(
         .get_decl_index()
         .get_decl(&decl_id)?;
     if decl.is_local() {
-        let local_references = semantic_model
+        let decl_refs = semantic_model
             .get_db()
             .get_reference_index()
-            .get_local_references(&decl_id.file_id, &decl_id)?;
+            .get_decl_references(&decl_id.file_id, &decl_id)?;
         let document = semantic_model.get_document();
-        for reference_range in local_references {
-            let location = document.to_lsp_location(reference_range.clone())?;
+        for decl_ref in decl_refs {
+            let location = document.to_lsp_location(decl_ref.range.clone())?;
             result.push(location);
         }
 

@@ -42,7 +42,7 @@ pub fn analyze_name_expr(analyzer: &mut DeclAnalyzer, expr: LuaNameExpr) -> Opti
     let reference_index = analyzer.db.get_reference_index_mut();
 
     if let Some(id) = decl_id {
-        reference_index.add_local_reference(id, file_id, range);
+        reference_index.add_decl_reference(id, file_id, range, false);
     }
 
     if !is_local {

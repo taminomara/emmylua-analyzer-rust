@@ -42,14 +42,19 @@ fn highlight_decl_references(
         .get_decl(&decl_id)?;
     let document = semantic_model.get_document();
     if decl.is_local() {
-        let local_references = semantic_model
+        let decl_refs = semantic_model
             .get_db()
             .get_reference_index()
-            .get_local_references(&decl_id.file_id, &decl_id)?;
+            .get_decl_references(&decl_id.file_id, &decl_id)?;
 
-        for reference_range in local_references {
-            let range: lsp_types::Range = document.to_lsp_range(reference_range.clone())?;
-            result.push(DocumentHighlight { range, kind: None });
+        for decl_ref in decl_refs {
+            let range: lsp_types::Range = document.to_lsp_range(decl_ref.range.clone())?;
+            let kind = if decl_ref.is_write {
+                Some(DocumentHighlightKind::WRITE)
+            } else {
+                Some(DocumentHighlightKind::READ)
+            };
+            result.push(DocumentHighlight { range, kind });
         }
 
         let range = document.to_lsp_range(decl.get_range())?;

@@ -44,7 +44,7 @@ fn is_decl_used(decl: &LuaDecl, local_refs: &LuaReferenceIndex) -> bool {
     }
 
     let file_id = decl.get_file_id();
-    if let Some(refs) = local_refs.get_local_references(&file_id, &decl.get_id()) {
+    if let Some(refs) = local_refs.get_decl_references(&file_id, &decl.get_id()) {
         return !refs.is_empty();
     }
 
