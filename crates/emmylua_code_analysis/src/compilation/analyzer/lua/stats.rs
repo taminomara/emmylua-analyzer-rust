@@ -1,6 +1,6 @@
 use emmylua_parser::{
-    LuaAssignStat, LuaAstNode, LuaAstToken, LuaExpr, LuaForRangeStat, LuaFuncStat,
-    LuaLocalFuncStat, LuaLocalStat, LuaTableField, LuaVarExpr,
+    BinaryOperator, LuaAssignStat, LuaAstNode, LuaAstToken, LuaExpr, LuaForRangeStat, LuaFuncStat,
+    LuaLocalFuncStat, LuaLocalStat, LuaTableField, LuaVarExpr, PathTrait,
 };
 
 use crate::{
@@ -102,7 +102,7 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
     Some(())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum TypeOwner {
     Decl(LuaDeclId),
     Member(LuaMemberId),
@@ -196,7 +196,7 @@ fn get_var_type_owner(
     None
 }
 
-// assign stat is too complex
+// assign stat is toooooooooo complex
 pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignStat) -> Option<()> {
     let (var_list, expr_list) = assign_stat.get_var_and_expr_list();
     let expr_count = expr_list.len();
@@ -214,6 +214,13 @@ pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignSta
                 continue;
             }
         };
+
+        match special_assign_pattern(analyzer, type_owner.clone(), var.clone(), expr.clone()) {
+            Some(_) => {
+                continue;
+            }
+            None => {}
+        }
 
         let expr_type = match analyzer.infer_expr(expr) {
             Some(expr_type) => match expr_type {
@@ -510,5 +517,34 @@ pub fn analyze_table_field(analyzer: &mut LuaAnalyzer, field: LuaTableField) -> 
         merge_member_type(analyzer.db, member_id, value_type);
     }
 
+    Some(())
+}
+
+fn special_assign_pattern(
+    analyzer: &mut LuaAnalyzer,
+    type_owner: TypeOwner,
+    var: LuaVarExpr,
+    expr: LuaExpr,
+) -> Option<()> {
+    let access_path = var.get_access_path()?;
+    let binary_expr = if let LuaExpr::BinaryExpr(binary_expr) = expr {
+        binary_expr
+    } else {
+        return None;
+    };
+
+    if binary_expr.get_op_token()?.get_op() != BinaryOperator::OpOr {
+        return None;
+    }
+
+    let (left, right) = binary_expr.get_exprs()?;
+    let left_var = LuaVarExpr::cast(left.syntax().clone())?;
+    let left_access_path = left_var.get_access_path()?;
+    if access_path != left_access_path {
+        return None;
+    }
+
+    let right_expr_type = analyzer.infer_expr(&right)?;
+    merge_type_owner_and_expr_type(analyzer, type_owner, &right_expr_type, 0);
     Some(())
 }

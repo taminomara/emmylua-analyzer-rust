@@ -125,6 +125,8 @@ impl From<LuaVarExpr> for LuaExpr {
     }
 }
 
+impl PathTrait for LuaVarExpr {}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LuaSingleArgExpr {
     TableExpr(LuaTableExpr),

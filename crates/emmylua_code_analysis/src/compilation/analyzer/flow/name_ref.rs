@@ -1,7 +1,6 @@
 use emmylua_parser::{
     BinaryOperator, LuaAst, LuaAstNode, LuaBinaryExpr, LuaBlock, LuaCallArgList, LuaCallExpr,
-    LuaExpr, LuaIndexKey, LuaLiteralToken, LuaNameExpr, LuaStat, LuaSyntaxId, LuaSyntaxKind,
-    UnaryOperator,
+    LuaExpr, LuaIndexKey, LuaLiteralToken, LuaNameExpr, LuaStat, LuaSyntaxKind, UnaryOperator,
 };
 use rowan::TextRange;
 
@@ -9,33 +8,7 @@ use crate::db_index::{LuaFlowChain, LuaMemberKey, LuaType, TypeAssertion};
 
 use super::FlowAnalyzer;
 
-pub fn analyze(analyzer: &mut FlowAnalyzer) -> Option<()> {
-    let references_index = analyzer.db.get_reference_index();
-    let refs_map = references_index
-        .get_decl_references_map(&analyzer.file_id)?
-        .clone();
-    let root = analyzer.root.syntax();
-    let file_id = analyzer.file_id;
-
-    for (decl_id, decl_refs) in refs_map {
-        let mut flow_chains = LuaFlowChain::new(decl_id);
-        for decl_ref in decl_refs {
-            let syntax_id =
-                LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), decl_ref.range.clone());
-            if let Some(node) = LuaNameExpr::cast(syntax_id.to_node_from_root(root)?) {
-                infer_name_expr(analyzer, &mut flow_chains, node);
-            }
-        }
-        analyzer
-            .db
-            .get_flow_index_mut()
-            .add_flow_chain(file_id, flow_chains);
-    }
-
-    Some(())
-}
-
-fn infer_name_expr(
+pub fn infer_name_expr(
     analyzer: &FlowAnalyzer,
     flow_chains: &mut LuaFlowChain,
     name_expr: LuaNameExpr,

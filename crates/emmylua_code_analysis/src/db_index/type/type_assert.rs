@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use emmylua_parser::LuaSyntaxId;
+
 use crate::db_index::LuaMemberKey;
 
 use super::{LuaExistFieldType, LuaType, LuaUnionType};
@@ -12,6 +14,7 @@ pub enum TypeAssertion {
     FieldExist(Arc<LuaMemberKey>),
     Add(LuaType),
     Remove(LuaType),
+    Reassign(LuaSyntaxId),
 }
 
 #[allow(unused)]

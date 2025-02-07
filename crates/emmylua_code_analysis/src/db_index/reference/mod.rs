@@ -4,7 +4,7 @@ mod string_reference;
 use std::collections::{HashMap, HashSet};
 
 use emmylua_parser::LuaSyntaxId;
-use file_reference::{DeclReference, FileReference};
+pub use file_reference::{DeclReference, FileReference};
 use rowan::TextRange;
 use smol_str::SmolStr;
 use string_reference::StringReference;

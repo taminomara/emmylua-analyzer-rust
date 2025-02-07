@@ -177,7 +177,6 @@ impl<'a> DeclAnalyzer<'a> {
 
     pub fn add_decl(&mut self, decl: LuaDecl) -> LuaDeclId {
         let is_global = decl.is_global();
-        let range = decl.get_range();
         let file_id = decl.get_file_id();
         let name = decl.get_name().to_string();
         let syntax_id = decl.get_syntax_id();
