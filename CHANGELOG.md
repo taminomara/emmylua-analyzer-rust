@@ -1,6 +1,12 @@
 # CHANGELOG
 
-# 0.4.5(unreleased)
+# 0.4.7(unreleased)
+
+# 0.4.6
+
+`FIX` Fix issue with executable file directory hierarchy being too deep.
+
+# 0.4.5
 
 `FIX` Fix generic table infer issue
 
