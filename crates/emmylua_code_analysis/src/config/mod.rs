@@ -2,7 +2,10 @@ mod config_loader;
 mod configs;
 mod flatten_config;
 
-use std::{collections::HashSet, path::{Path, PathBuf}};
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+};
 
 use crate::{semantic::LuaInferConfig, FileId};
 pub use config_loader::load_configs;
@@ -104,6 +107,10 @@ impl Emmyrc {
 
 fn pre_process_path(path: &str, workspace: &Path) -> String {
     let mut path = path.to_string();
+    path = replace_env_var(&path);
+    // ${workspaceFolder}  == {workspaceFolder}
+    path = path.replace("$", "");
+    path = replace_placeholders(&path, workspace.to_str().unwrap());
 
     if path.starts_with('~') {
         let home_dir = dirs::home_dir().unwrap();
@@ -116,10 +123,6 @@ fn pre_process_path(path: &str, workspace: &Path) -> String {
         path = workspace.join(&path).to_string_lossy().to_string();
     }
 
-    path = replace_env_var(&path);
-    // ${workspaceFolder}  == {workspaceFolder}
-    path = path.replace("$", "");
-    path = replace_placeholders(&path, workspace.to_str().unwrap());
     path
 }
 
