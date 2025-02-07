@@ -19,4 +19,18 @@ pub struct CmdArgs {
         help = "The output path of the docs file"
     )]
     pub output: std::path::PathBuf,
+
+    #[structopt(
+        parse(from_os_str),
+        long = "override-template",
+        help = "The path of the override template"
+    )]
+    pub override_template: Option<std::path::PathBuf>,
+
+    #[structopt(
+        parse(from_os_str),
+        long = "mixin",
+        help = "The path of the mixin md file"
+    )]
+    pub mixin: Option<std::path::PathBuf>,
 }

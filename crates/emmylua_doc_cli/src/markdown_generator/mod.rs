@@ -3,6 +3,7 @@ mod init_tl;
 mod mod_gen;
 mod render;
 mod typ_gen;
+mod mixin_copy;
 
 use std::path::PathBuf;
 
@@ -12,8 +13,10 @@ use serde::{Deserialize, Serialize};
 #[allow(unused)]
 pub fn generate_markdown(
     analysis: &mut EmmyLuaAnalysis,
-    input: &PathBuf,
-    output: &PathBuf,
+    input: PathBuf,
+    output: PathBuf,
+    override_template: Option<PathBuf>,
+    mixin: Option<PathBuf>,
 ) -> Option<()> {
     let docs_dir = output.join("docs");
     let types_out = docs_dir.join("types");
@@ -36,7 +39,7 @@ pub fn generate_markdown(
         std::fs::create_dir_all(&module_out).ok()?;
     }
 
-    let tl = init_tl::init_tl()?;
+    let tl = init_tl::init_tl(override_template)?;
     let mut mkdocs_index = MkdocsIndex::default();
     let db = analysis.compilation.get_db();
     let type_index = db.get_type_index();
@@ -51,7 +54,12 @@ pub fn generate_markdown(
         mod_gen::generate_module_markdown(db, &tl, module, &input, &module_out, &mut mkdocs_index);
     }
 
-    index_gen::generate_index(&tl, &mut mkdocs_index, output);
+    index_gen::generate_index(&tl, &mut mkdocs_index, &output);
+
+    if let Some(mixin) = mixin {
+        mixin_copy::mixin_copy(&output, mixin);
+    }
+
     Some(())
 }
 

@@ -14,6 +14,12 @@ fn main() {
 
     let analysis = init::load_workspace(vec![input.to_str().unwrap()]);
     if let Some(mut analysis) = analysis {
-        markdown_generator::generate_markdown(&mut analysis, &input, &args.output);
+        markdown_generator::generate_markdown(
+            &mut analysis,
+            input,
+            args.output,
+            args.override_template,
+            args.mixin,
+        );
     }
 }
