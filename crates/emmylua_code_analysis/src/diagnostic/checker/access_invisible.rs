@@ -1,7 +1,7 @@
 use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaIndexExpr, LuaNameExpr, VisibilityKind};
 use rowan::TextRange;
 
-use crate::{DiagnosticCode, Emmyrc, LuaDeclId, LuaPropertyOwnerId, SemanticModel};
+use crate::{DiagnosticCode, Emmyrc, LuaDeclId, LuaMemberId, LuaPropertyOwnerId, SemanticModel};
 
 use super::DiagnosticContext;
 
@@ -29,18 +29,15 @@ fn check_name_expr(
     semantic_model: &mut SemanticModel,
     name_expr: LuaNameExpr,
 ) -> Option<()> {
-    let decl_id = LuaDeclId::new(semantic_model.get_file_id(), name_expr.get_position());
-    if semantic_model
-        .get_db()
-        .get_decl_index()
-        .get_decl(&decl_id)
-        .is_some()
-    {
-        return Some(());
-    }
-
     let property_owner = semantic_model
         .get_property_owner_id(rowan::NodeOrToken::Node(name_expr.syntax().clone()))?;
+
+    let decl_id = LuaDeclId::new(semantic_model.get_file_id(), name_expr.get_position());
+    if let LuaPropertyOwnerId::LuaDecl(id) = &property_owner {
+        if *id == decl_id {
+            return Some(());
+        }
+    }
 
     let name_token = name_expr.get_name_token()?;
     if !semantic_model.is_property_visiable(name_token.syntax().clone(), property_owner.clone()) {
@@ -57,6 +54,12 @@ fn check_index_expr(
 ) -> Option<()> {
     let property_owner = semantic_model
         .get_property_owner_id(rowan::NodeOrToken::Node(index_expr.syntax().clone()))?;
+    let member_id = LuaMemberId::new(index_expr.get_syntax_id(), semantic_model.get_file_id());
+    if let LuaPropertyOwnerId::Member(id) = &property_owner {
+        if *id == member_id {
+            return Some(());
+        }
+    }
 
     let index_token = index_expr.get_index_name_token()?;
     if !semantic_model.is_property_visiable(index_token.clone(), property_owner.clone()) {

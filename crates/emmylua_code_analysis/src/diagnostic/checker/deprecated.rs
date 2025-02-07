@@ -1,13 +1,12 @@
 use emmylua_parser::{LuaAst, LuaAstNode, LuaIndexExpr, LuaNameExpr};
 
-use crate::{DiagnosticCode, SemanticModel};
+use crate::{DiagnosticCode, LuaDeclId, LuaMemberId, LuaPropertyOwnerId, SemanticModel};
 
 use super::DiagnosticContext;
 
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::Unused];
 
 pub fn check(context: &mut DiagnosticContext, semantic_model: &mut SemanticModel) -> Option<()> {
-    let file_id = semantic_model.get_file_id();
     let root = semantic_model.get_root().clone();
     for node in root.descendants::<LuaAst>() {
         match node {
@@ -31,6 +30,14 @@ fn check_name_expr(
 ) -> Option<()> {
     let property_owner = semantic_model
         .get_property_owner_id(rowan::NodeOrToken::Node(name_expr.syntax().clone()))?;
+
+    let decl_id = LuaDeclId::new(semantic_model.get_file_id(), name_expr.get_position());
+    if let LuaPropertyOwnerId::LuaDecl(id) = &property_owner {
+        if *id == decl_id {
+            return Some(());
+        }
+    }
+
     let property = semantic_model
         .get_db()
         .get_property_index()
@@ -59,6 +66,12 @@ fn check_index_expr(
 ) -> Option<()> {
     let property_owner = semantic_model
         .get_property_owner_id(rowan::NodeOrToken::Node(index_expr.syntax().clone()))?;
+    let member_id = LuaMemberId::new(index_expr.get_syntax_id(), semantic_model.get_file_id());
+    if let LuaPropertyOwnerId::Member(id) = &property_owner {
+        if *id == member_id {
+            return Some(());
+        }
+    }
     let property = semantic_model
         .get_db()
         .get_property_index()
