@@ -105,9 +105,12 @@ jobs:
           tar -zcvf emmylua_ls-darwin-arm64.tar.gz -C emmylua_ls-darwin-arm64 emmylua_ls
       - name: windows compress
         run: |
-          7z a emmylua_ls-win32-x64.zip -wemmylua_ls-win32-x64 emmylua_ls.exe
-          7z a emmylua_ls-win32-ia32.zip -wemmylua_ls-win32-ia32 emmylua_ls.exe
-          7z a emmylua_ls-win32-arm64.zip -wemmylua_ls-win32-arm64 emmylua_ls.exe
+          cd emmylua_ls-win32-x64
+          7z a emmylua_ls-win32-x64.zip emmylua_ls.exe
+          cd ../emmylua_ls-win32-ia32
+          7z a emmylua_ls-win32-ia32.zip emmylua_ls.exe
+          cd ../emmylua_ls-win32-arm64
+          7z a emmylua_ls-win32-arm64.zip emmylua_ls.exe
       - name: Release
         uses: softprops/action-gh-release@v2
         with: 
@@ -115,9 +118,9 @@ jobs:
           draft: false
           generate_release_notes: true
           files: |
-            emmylua_ls-win32-x64.zip
-            emmylua_ls-win32-ia32.zip
-            emmylua_ls-win32-arm64.zip
+            emmylua_ls-win32-x64/emmylua_ls-win32-x64.zip
+            emmylua_ls-win32-ia32/emmylua_ls-win32-ia32.zip
+            emmylua_ls-win32-arm64/emmylua_ls-win32-arm64.zip
             emmylua_ls-linux-x64.tar.gz
             emmylua_ls-linux-x64-glibc.2.17.tar.gz
             emmylua_ls-linux-aarch64-glibc.2.17.tar.gz
