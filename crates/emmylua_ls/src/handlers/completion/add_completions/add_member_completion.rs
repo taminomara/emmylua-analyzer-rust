@@ -1,4 +1,5 @@
 use emmylua_code_analysis::{DbIndex, LuaMemberInfo, LuaMemberKey, LuaType};
+use emmylua_parser::LuaTokenKind;
 use lsp_types::CompletionItem;
 
 use crate::handlers::completion::completion_builder::CompletionBuilder;
@@ -33,7 +34,7 @@ pub fn add_member_completion(
     let label = match status {
         CompletionTriggerStatus::Dot => match member_key {
             LuaMemberKey::Name(name) => name.to_string(),
-            LuaMemberKey::Integer(index) => index.to_string(),
+            LuaMemberKey::Integer(index) => format!("[{}]", index),
             _ => return None,
         },
         CompletionTriggerStatus::Colon => match member_key {
@@ -83,7 +84,7 @@ pub fn add_member_completion(
         None
     };
 
-    let completion_item = CompletionItem {
+    let mut completion_item = CompletionItem {
         label,
         kind: Some(get_completion_kind(&typ)),
         data,
@@ -94,6 +95,19 @@ pub fn add_member_completion(
         deprecated,
         ..Default::default()
     };
+
+    if status == CompletionTriggerStatus::Dot
+        && member_key.is_integer()
+        && builder.trigger_token.kind() == LuaTokenKind::TkDot.into()
+    {
+        let document = builder.semantic_model.get_document();
+        let remove_range = builder.trigger_token.text_range();
+        let lsp_remove_range = document.to_lsp_range(remove_range)?;
+        completion_item.additional_text_edits = Some(vec![lsp_types::TextEdit {
+            range: lsp_remove_range,
+            new_text: "".to_string(),
+        }]);
+    }
 
     builder.add_completion_item(completion_item)?;
 
