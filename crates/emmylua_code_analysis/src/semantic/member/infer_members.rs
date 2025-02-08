@@ -7,9 +7,9 @@ use crate::{
         instantiate::{instantiate_type, TypeSubstitutor},
         InferGuard,
     },
-    DbIndex, FileId, LuaExistFieldType, LuaGenericType, LuaInstanceType, LuaIntersectionType,
-    LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaPropertyOwnerId, LuaTupleType, LuaType,
-    LuaTypeDeclId, LuaUnionType, TypeAssertion,
+    DbIndex, FileId, LuaGenericType, LuaInstanceType, LuaIntersectionType, LuaMemberKey,
+    LuaMemberOwner, LuaMemberPathExistType, LuaObjectType, LuaPropertyOwnerId, LuaTupleType,
+    LuaType, LuaTypeDeclId, LuaUnionType, TypeAssertion,
 };
 
 use super::{get_buildin_type_map_type_id, InferMembersResult, LuaMemberInfo};
@@ -48,7 +48,7 @@ fn infer_members_guard(
             infer_intersection_members(db, intersection_type, infer_guard)
         }
         LuaType::Generic(generic_type) => infer_generic_members(db, generic_type, infer_guard),
-        LuaType::ExistField(exist_field) => infer_exist_field_members(db, exist_field),
+        LuaType::MemberPathExist(exist_field) => infer_exist_field_members(db, exist_field),
         LuaType::Global => infer_global_members(db),
         LuaType::Instance(inst) => infer_instance_members(db, inst, infer_guard),
         LuaType::Namespace(ns) => infer_namespace_members(db, ns),
@@ -221,14 +221,17 @@ fn infer_generic_members(
     Some(members)
 }
 
-fn infer_exist_field_members(db: &DbIndex, exist_field: &LuaExistFieldType) -> InferMembersResult {
+fn infer_exist_field_members(
+    db: &DbIndex,
+    exist_field: &LuaMemberPathExistType,
+) -> InferMembersResult {
     let base = exist_field.get_origin();
-    let field = exist_field.get_field();
+    let path = exist_field.get_current_path();
     let mut field_founded = false;
     let mut members =
         if let Some(mut members) = infer_members_guard(db, base, &mut InferGuard::new()) {
             for info in members.iter_mut() {
-                if info.key == *field {
+                if info.key.to_path() == path {
                     info.typ = TypeAssertion::Exist.tighten_type(info.typ.clone());
                     field_founded = true;
                 }
@@ -241,7 +244,7 @@ fn infer_exist_field_members(db: &DbIndex, exist_field: &LuaExistFieldType) -> I
     if !field_founded {
         members.push(LuaMemberInfo {
             property_owner_id: None,
-            key: field.clone(),
+            key: path.to_string().into(),
             typ: LuaType::Any,
             origin_typ: None,
         });

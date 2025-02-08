@@ -58,7 +58,7 @@ fn infer_type_compact(
         (_, LuaType::Instance(right)) => {
             infer_type_compact(db, config, source, &right.get_base(), infer_guard)
         }
-        (_, LuaType::ExistField(right)) => {
+        (_, LuaType::MemberPathExist(right)) => {
             infer_type_compact(db, config, source, &right.get_origin(), infer_guard)
         }
         (LuaType::BooleanConst(_), _) => compact_type.is_boolean(),

@@ -1,14 +1,14 @@
 use emmylua_parser::{
-    LuaAstNode, LuaIndexExpr, LuaIndexKey, LuaSyntaxId, LuaSyntaxKind, LuaSyntaxNode, LuaTableExpr,
+    LuaAstNode, LuaIndexExpr, LuaIndexKey, LuaSyntaxId, LuaSyntaxKind, LuaTableExpr,
 };
 use rowan::TextRange;
 use smol_str::SmolStr;
 
 use crate::{
     db_index::{
-        DbIndex, LuaExistFieldType, LuaGenericType, LuaIntersectionType, LuaMemberKey,
-        LuaMemberOwner, LuaObjectType, LuaOperatorMetaMethod, LuaTupleType, LuaType, LuaTypeDeclId,
-        LuaUnionType, TypeAssertion,
+        DbIndex, LuaGenericType, LuaIntersectionType, LuaMemberKey, LuaMemberOwner,
+        LuaMemberPathExistType, LuaObjectType, LuaOperatorMetaMethod, LuaTupleType, LuaType,
+        LuaTypeDeclId, LuaUnionType, TypeAssertion,
     },
     semantic::{
         instantiate::{instantiate_type, TypeSubstitutor},
@@ -28,25 +28,19 @@ pub fn infer_index_expr(
 ) -> InferResult {
     let prefix_expr = index_expr.get_prefix_expr()?;
     let prefix_type = infer_expr(db, config, prefix_expr)?;
-    let member_key = index_expr.get_index_key()?;
     if let Some(member_type) = infer_member_by_member_key(
         db,
         config,
         &prefix_type,
-        &member_key,
+        index_expr.clone(),
         &mut InferGuard::new(),
     ) {
         return Some(member_type);
     }
 
-    if let Some(member_type) = infer_member_by_operator(
-        db,
-        config,
-        &prefix_type,
-        &member_key,
-        &index_expr.get_root(),
-        &mut InferGuard::new(),
-    ) {
+    if let Some(member_type) =
+        infer_member_by_operator(db, config, &prefix_type, index_expr, &mut InferGuard::new())
+    {
         return Some(member_type);
     }
 
@@ -57,7 +51,7 @@ fn infer_member_by_member_key(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     prefix_type: &LuaType,
-    member_key: &LuaIndexKey,
+    index_expr: LuaIndexExpr,
     infer_guard: &mut InferGuard,
 ) -> InferResult {
     if without_members(prefix_type) {
@@ -67,41 +61,41 @@ fn infer_member_by_member_key(
     match &prefix_type {
         LuaType::TableConst(id) => {
             let member_owner = LuaMemberOwner::Element(id.clone());
-            infer_table_member(db, member_owner, member_key)
+            infer_table_member(db, member_owner, index_expr)
         }
         LuaType::String | LuaType::Io | LuaType::StringConst(_) => {
             let decl_id = get_buildin_type_map_type_id(&prefix_type)?;
-            infer_custom_type_member(db, config, decl_id, member_key, infer_guard)
+            infer_custom_type_member(db, config, decl_id, index_expr, infer_guard)
         }
         LuaType::Ref(decl_id) => {
-            infer_custom_type_member(db, config, decl_id.clone(), member_key, infer_guard)
+            infer_custom_type_member(db, config, decl_id.clone(), index_expr, infer_guard)
         }
         LuaType::Def(decl_id) => {
-            infer_custom_type_member(db, config, decl_id.clone(), member_key, infer_guard)
+            infer_custom_type_member(db, config, decl_id.clone(), index_expr, infer_guard)
         }
         // LuaType::Module(_) => todo!(),
         LuaType::KeyOf(_) => {
             let decl_id = LuaTypeDeclId::new("string");
-            infer_custom_type_member(db, config, decl_id, member_key, infer_guard)
+            infer_custom_type_member(db, config, decl_id, index_expr, infer_guard)
         }
         LuaType::Nullable(inner_type) => {
-            infer_member_by_member_key(db, config, &inner_type, member_key, infer_guard)
+            infer_member_by_member_key(db, config, &inner_type, index_expr, infer_guard)
         }
-        LuaType::Tuple(tuple_type) => infer_tuple_member(tuple_type, member_key),
-        LuaType::Object(object_type) => infer_object_member(db, config, object_type, member_key),
-        LuaType::Union(union_type) => infer_union_member(db, config, union_type, member_key),
+        LuaType::Tuple(tuple_type) => infer_tuple_member(tuple_type, index_expr),
+        LuaType::Object(object_type) => infer_object_member(db, config, object_type, index_expr),
+        LuaType::Union(union_type) => infer_union_member(db, config, union_type, index_expr),
         LuaType::Intersection(intersection_type) => {
-            infer_intersection_member(db, config, intersection_type, member_key)
+            infer_intersection_member(db, config, intersection_type, index_expr)
         }
         LuaType::Generic(generic_type) => {
-            infer_generic_member(db, config, generic_type, member_key)
+            infer_generic_member(db, config, generic_type, index_expr)
         }
-        LuaType::ExistField(exist_field) => {
-            infer_exit_field_member(db, config, exist_field, member_key)
+        LuaType::MemberPathExist(exist_field) => {
+            infer_exist_path_member(db, config, exist_field, index_expr)
         }
-        LuaType::Global => infer_global_field_member(db, config, member_key),
-        LuaType::Instance(inst) => infer_instance_member(db, config, inst, member_key, infer_guard),
-        LuaType::Namespace(ns) => infer_namespace_member(db, config, ns, member_key),
+        LuaType::Global => infer_global_field_member(db, config, index_expr),
+        LuaType::Instance(inst) => infer_instance_member(db, config, inst, index_expr, infer_guard),
+        LuaType::Namespace(ns) => infer_namespace_member(db, config, ns, index_expr),
         _ => None,
     }
 }
@@ -109,11 +103,11 @@ fn infer_member_by_member_key(
 fn infer_table_member(
     db: &DbIndex,
     table_owner: LuaMemberOwner,
-    member_key: &LuaIndexKey,
+    index_expr: LuaIndexExpr,
 ) -> InferResult {
     let member_index = db.get_member_index();
     let member_map = member_index.get_member_map(table_owner)?;
-    let key: LuaMemberKey = member_key.into();
+    let key: LuaMemberKey = index_expr.get_index_key()?.into();
     let member_id = member_map.get(&key)?;
     let member = member_index.get_member(&member_id)?;
     Some(member.get_decl_type().clone())
@@ -123,7 +117,7 @@ fn infer_custom_type_member(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     prefix_type_id: LuaTypeDeclId,
-    member_key: &LuaIndexKey,
+    index_expr: LuaIndexExpr,
     infer_guard: &mut InferGuard,
 ) -> InferResult {
     infer_guard.check(&prefix_type_id)?;
@@ -131,19 +125,19 @@ fn infer_custom_type_member(
     let type_decl = type_index.get_type_decl(&prefix_type_id)?;
     if type_decl.is_alias() {
         if let Some(origin_type) = type_decl.get_alias_origin(db, None) {
-            return infer_member_by_member_key(db, config, &origin_type, member_key, infer_guard);
+            return infer_member_by_member_key(db, config, &origin_type, index_expr, infer_guard);
         } else {
             return infer_member_by_member_key(
                 db,
                 config,
                 &LuaType::String,
-                member_key,
+                index_expr,
                 infer_guard,
             );
         }
     }
 
-    let key: LuaMemberKey = member_key.into();
+    let key: LuaMemberKey = index_expr.get_index_key()?.into();
     let member_owner = LuaMemberOwner::Type(prefix_type_id.clone());
     let member_index = db.get_member_index();
     // find member by key in self
@@ -158,8 +152,13 @@ fn infer_custom_type_member(
     if type_decl.is_class() {
         if let Some(super_types) = type_index.get_super_types(&prefix_type_id) {
             for super_type in super_types {
-                let member_type =
-                    infer_member_by_member_key(db, config, &super_type, member_key, infer_guard);
+                let member_type = infer_member_by_member_key(
+                    db,
+                    config,
+                    &super_type,
+                    index_expr.clone(),
+                    infer_guard,
+                );
                 if member_type.is_some() {
                     return member_type;
                 }
@@ -170,8 +169,8 @@ fn infer_custom_type_member(
     None
 }
 
-fn infer_tuple_member(tuple_type: &LuaTupleType, member_key: &LuaIndexKey) -> InferResult {
-    let key = member_key.into();
+fn infer_tuple_member(tuple_type: &LuaTupleType, index_expr: LuaIndexExpr) -> InferResult {
+    let key = index_expr.get_index_key()?.into();
     if let LuaMemberKey::Integer(i) = key {
         let index = if i > 0 { i - 1 } else { 0 };
         return Some(tuple_type.get_type(index as usize)?.clone());
@@ -184,9 +183,10 @@ fn infer_object_member(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     object_type: &LuaObjectType,
-    member_key: &LuaIndexKey,
+    index_expr: LuaIndexExpr,
 ) -> InferResult {
-    if let Some(member_type) = object_type.get_field(&member_key.into()) {
+    let member_key = index_expr.get_index_key()?;
+    if let Some(member_type) = object_type.get_field(&member_key.clone().into()) {
         return Some(member_type.clone());
     }
 
@@ -227,12 +227,17 @@ fn infer_union_member(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     union_type: &LuaUnionType,
-    member_key: &LuaIndexKey,
+    index_expr: LuaIndexExpr,
 ) -> InferResult {
     let mut member_types = Vec::new();
     for member in union_type.get_types() {
-        let member_type =
-            infer_member_by_member_key(db, config, member, member_key, &mut InferGuard::new());
+        let member_type = infer_member_by_member_key(
+            db,
+            config,
+            member,
+            index_expr.clone(),
+            &mut InferGuard::new(),
+        );
         if let Some(member_type) = member_type {
             member_types.push(member_type);
         }
@@ -253,12 +258,17 @@ fn infer_intersection_member(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     intersection_type: &LuaIntersectionType,
-    member_key: &LuaIndexKey,
+    index_expr: LuaIndexExpr,
 ) -> InferResult {
     let mut member_type = LuaType::Unknown;
     for member in intersection_type.get_types() {
-        let sub_member_type =
-            infer_member_by_member_key(db, config, member, member_key, &mut InferGuard::new())?;
+        let sub_member_type = infer_member_by_member_key(
+            db,
+            config,
+            member,
+            index_expr.clone(),
+            &mut InferGuard::new(),
+        )?;
         if member_type.is_unknown() {
             member_type = sub_member_type;
         } else if member_type != sub_member_type {
@@ -273,57 +283,72 @@ fn infer_generic_member(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     generic_type: &LuaGenericType,
-    member_key: &LuaIndexKey,
+    index_expr: LuaIndexExpr,
 ) -> InferResult {
     let base_type = generic_type.get_base_type();
     let member_type =
-        infer_member_by_member_key(db, config, &base_type, member_key, &mut InferGuard::new())?;
+        infer_member_by_member_key(db, config, &base_type, index_expr, &mut InferGuard::new())?;
 
     let generic_params = generic_type.get_params();
     let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
     Some(instantiate_type(db, &member_type, &substitutor))
 }
 
-fn infer_exit_field_member(
+fn infer_exist_path_member(
     db: &DbIndex,
     config: &mut LuaInferConfig,
-    exist_field: &LuaExistFieldType,
-    member_key: &LuaIndexKey,
+    exist_field_type: &LuaMemberPathExistType,
+    index_expr: LuaIndexExpr,
 ) -> InferResult {
-    let base_type = exist_field.get_origin();
-    let member_type =
-        infer_member_by_member_key(db, config, &base_type, member_key, &mut InferGuard::new());
+    let base_type = exist_field_type.get_origin();
+    let mut member_type = infer_member_by_member_key(
+        db,
+        config,
+        &base_type,
+        index_expr.clone(),
+        &mut InferGuard::new(),
+    );
 
-    let access_key: LuaMemberKey = member_key.into();
-    let exit_field = exist_field.get_field();
-    if access_key == *exit_field {
-        match member_type {
+    let need_current_path = exist_field_type.get_current_path();
+    let index_key = index_expr.get_index_key()?;
+    let current_path = index_key.get_path_part();
+
+    if &current_path == need_current_path {
+        member_type = match member_type {
             Some(member_type) => Some(TypeAssertion::Exist.tighten_type(member_type)),
             None => Some(LuaType::Any),
+        };
+
+        if !exist_field_type.is_final_path() {
+            let path = exist_field_type.get_path();
+            let idx = exist_field_type.get_current_path_idx() + 1;
+            let next_exist_field =
+                LuaMemberPathExistType::new(path, member_type.unwrap_or(LuaType::Any), idx);
+            return Some(LuaType::MemberPathExist(next_exist_field.into()));
         }
-    } else {
-        member_type
     }
+
+    member_type
 }
 
 fn infer_instance_member(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     inst: &LuaInstanceType,
-    member_key: &LuaIndexKey,
+    index_expr: LuaIndexExpr,
     infer_guard: &mut InferGuard,
 ) -> InferResult {
     let range = inst.get_range();
 
     let orign_type = inst.get_base();
     if let Some(result) =
-        infer_member_by_member_key(db, config, &orign_type, member_key, infer_guard)
+        infer_member_by_member_key(db, config, &orign_type, index_expr.clone(), infer_guard)
     {
         return Some(result);
     }
 
     let member_owner = LuaMemberOwner::Element(range.clone());
-    if let Some(result) = infer_table_member(db, member_owner, member_key) {
+    if let Some(result) = infer_table_member(db, member_owner, index_expr.clone()) {
         return Some(result);
     }
 
@@ -334,8 +359,7 @@ fn infer_member_by_operator(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     prefix_type: &LuaType,
-    member_key: &LuaIndexKey,
-    root: &LuaSyntaxNode,
+    index_expr: LuaIndexExpr,
     infer_guard: &mut InferGuard,
 ) -> InferResult {
     if without_index_operator(prefix_type) {
@@ -344,32 +368,30 @@ fn infer_member_by_operator(
 
     match &prefix_type {
         LuaType::TableConst(in_filed) => {
-            infer_member_by_index_table(db, config, in_filed, root, member_key)
+            infer_member_by_index_table(db, config, in_filed, index_expr)
         }
         LuaType::Ref(decl_id) => {
-            infer_member_by_index_custom_type(db, config, decl_id, member_key, root, infer_guard)
+            infer_member_by_index_custom_type(db, config, decl_id, index_expr, infer_guard)
         }
         LuaType::Def(decl_id) => {
-            infer_member_by_index_custom_type(db, config, decl_id, member_key, root, infer_guard)
+            infer_member_by_index_custom_type(db, config, decl_id, index_expr, infer_guard)
         }
         // LuaType::Module(arc) => todo!(),
-        LuaType::Array(base) => infer_member_by_index_array(db, config, base, member_key),
+        LuaType::Array(base) => infer_member_by_index_array(db, config, base, index_expr),
         LuaType::Nullable(base) => {
-            infer_member_by_operator(db, config, base, member_key, root, infer_guard)
+            infer_member_by_operator(db, config, base, index_expr, infer_guard)
         }
-        LuaType::Object(object) => infer_member_by_index_object(db, config, object, member_key),
-        LuaType::Union(union) => infer_member_by_index_union(db, config, union, member_key, root),
+        LuaType::Object(object) => infer_member_by_index_object(db, config, object, index_expr),
+        LuaType::Union(union) => infer_member_by_index_union(db, config, union, index_expr),
         LuaType::Intersection(intersection) => {
-            infer_member_by_index_intersection(db, config, intersection, member_key, root)
+            infer_member_by_index_intersection(db, config, intersection, index_expr)
         }
-        LuaType::Generic(generic) => {
-            infer_member_by_index_generic(db, config, generic, member_key, root)
-        }
+        LuaType::Generic(generic) => infer_member_by_index_generic(db, config, generic, index_expr),
         LuaType::TableGeneric(table_generic) => {
-            infer_member_by_index_table_generic(db, config, table_generic, member_key)
+            infer_member_by_index_table_generic(db, config, table_generic, index_expr)
         }
-        LuaType::ExistField(exist_field) => {
-            infer_member_by_index_exist_field(db, config, exist_field, member_key, root)
+        LuaType::MemberPathExist(exist_field) => {
+            infer_member_by_index_exist_field(db, config, exist_field, index_expr)
         }
         _ => None,
     }
@@ -379,11 +401,12 @@ fn infer_member_by_index_table(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     table_range: &InFiled<TextRange>,
-    root: &LuaSyntaxNode,
-    member_key: &LuaIndexKey,
+    index_expr: LuaIndexExpr,
 ) -> InferResult {
     let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::TableArrayExpr.into(), table_range.value);
-    let table_array_expr = LuaTableExpr::cast(syntax_id.to_node_from_root(root)?)?;
+    let root = index_expr.get_root();
+    let table_array_expr = LuaTableExpr::cast(syntax_id.to_node_from_root(&root)?)?;
+    let member_key = index_expr.get_index_key()?;
     match member_key {
         LuaIndexKey::Integer(_) | LuaIndexKey::Expr(_) => {
             let first_field = table_array_expr.get_fields().next()?;
@@ -399,8 +422,7 @@ fn infer_member_by_index_custom_type(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     prefix_type_id: &LuaTypeDeclId,
-    member_key: &LuaIndexKey,
-    root: &LuaSyntaxNode,
+    index_expr: LuaIndexExpr,
     infer_guard: &mut InferGuard,
 ) -> InferResult {
     infer_guard.check(&prefix_type_id)?;
@@ -408,18 +430,12 @@ fn infer_member_by_index_custom_type(
     let type_decl = type_index.get_type_decl(&prefix_type_id)?;
     if type_decl.is_alias() {
         if let Some(origin_type) = type_decl.get_alias_origin(db, None) {
-            return infer_member_by_operator(
-                db,
-                config,
-                &origin_type,
-                member_key,
-                root,
-                infer_guard,
-            );
+            return infer_member_by_operator(db, config, &origin_type, index_expr, infer_guard);
         }
         return None;
     }
 
+    let member_key = index_expr.get_index_key()?;
     // find member by key in self
     if let Some(operators_map) = db
         .get_operator_index()
@@ -464,7 +480,7 @@ fn infer_member_by_index_custom_type(
         let super_types = type_index.get_super_types(&prefix_type_id)?;
         for super_type in super_types {
             let member_type =
-                infer_member_by_operator(db, config, &super_type, member_key, root, infer_guard);
+                infer_member_by_operator(db, config, &super_type, index_expr.clone(), infer_guard);
             if member_type.is_some() {
                 return member_type;
             }
@@ -478,8 +494,9 @@ fn infer_member_by_index_array(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     base: &LuaType,
-    member_key: &LuaIndexKey,
+    index_expr: LuaIndexExpr,
 ) -> InferResult {
+    let member_key = index_expr.get_index_key()?;
     if member_key.is_integer() {
         return Some(base.clone());
     } else if member_key.is_expr() {
@@ -497,8 +514,9 @@ fn infer_member_by_index_object(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     object: &LuaObjectType,
-    member_key: &LuaIndexKey,
+    index_expr: LuaIndexExpr,
 ) -> InferResult {
+    let member_key = index_expr.get_index_key()?;
     let access_member_type = object.get_index_access();
     if member_key.is_expr() {
         let expr = member_key.get_expr()?;
@@ -517,13 +535,17 @@ fn infer_member_by_index_union(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     union: &LuaUnionType,
-    member_key: &LuaIndexKey,
-    root: &LuaSyntaxNode,
+    index_expr: LuaIndexExpr,
 ) -> InferResult {
     let mut member_types = Vec::new();
     for member in union.get_types() {
-        let member_type =
-            infer_member_by_operator(db, config, member, member_key, root, &mut InferGuard::new());
+        let member_type = infer_member_by_operator(
+            db,
+            config,
+            member,
+            index_expr.clone(),
+            &mut InferGuard::new(),
+        );
         if let Some(member_type) = member_type {
             member_types.push(member_type);
         }
@@ -544,13 +566,17 @@ fn infer_member_by_index_intersection(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     intersection: &LuaIntersectionType,
-    member_key: &LuaIndexKey,
-    root: &LuaSyntaxNode,
+    index_expr: LuaIndexExpr,
 ) -> InferResult {
     let mut member_type = LuaType::Unknown;
     for member in intersection.get_types() {
-        let sub_member_type =
-            infer_member_by_operator(db, config, member, member_key, root, &mut InferGuard::new())?;
+        let sub_member_type = infer_member_by_operator(
+            db,
+            config,
+            member,
+            index_expr.clone(),
+            &mut InferGuard::new(),
+        )?;
         if member_type.is_unknown() {
             member_type = sub_member_type;
         } else if member_type != sub_member_type {
@@ -565,8 +591,7 @@ fn infer_member_by_index_generic(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     generic: &LuaGenericType,
-    member_key: &LuaIndexKey,
-    root: &LuaSyntaxNode,
+    index_expr: LuaIndexExpr,
 ) -> InferResult {
     let base_type = generic.get_base_type();
     let type_decl_id = if let LuaType::Ref(id) = base_type {
@@ -584,14 +609,14 @@ fn infer_member_by_index_generic(
                 db,
                 config,
                 &instantiate_type(db, &origin_type, &substitutor),
-                member_key,
-                root,
+                index_expr.clone(),
                 &mut InferGuard::new(),
             );
         }
         return None;
     }
 
+    let member_key = index_expr.get_index_key()?;
     let operator_index = db.get_operator_index();
     let operator_maps = operator_index.get_operators_by_type(&type_decl_id)?;
     let index_operator_ids = operator_maps.get(&LuaOperatorMetaMethod::Index)?;
@@ -654,8 +679,7 @@ fn infer_member_by_index_generic(
             db,
             config,
             &instantiate_type(db, &super_type, &substitutor),
-            member_key,
-            root,
+            index_expr.clone(),
             &mut InferGuard::new(),
         );
         if member_type.is_some() {
@@ -670,12 +694,13 @@ fn infer_member_by_index_table_generic(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     table_params: &Vec<LuaType>,
-    member_key: &LuaIndexKey,
+    index_expr: LuaIndexExpr,
 ) -> InferResult {
     if table_params.len() != 2 {
         return None;
     }
 
+    let member_key = index_expr.get_index_key()?;
     let key_type = &table_params[0];
     let value_type = &table_params[1];
     if key_type.is_string() {
@@ -717,37 +742,46 @@ fn infer_member_by_index_table_generic(
 fn infer_member_by_index_exist_field(
     db: &DbIndex,
     config: &mut LuaInferConfig,
-    exist_field: &LuaExistFieldType,
-    member_key: &LuaIndexKey,
-    root: &LuaSyntaxNode,
+    exist_field_type: &LuaMemberPathExistType,
+    index_expr: LuaIndexExpr,
 ) -> InferResult {
-    let base_type = exist_field.get_origin();
-    let member_type = infer_member_by_operator(
+    let base_type = exist_field_type.get_origin();
+    let mut member_type = infer_member_by_operator(
         db,
         config,
         &base_type,
-        member_key,
-        root,
+        index_expr.clone(),
         &mut InferGuard::new(),
     );
 
-    let access_key: LuaMemberKey = member_key.into();
-    let exit_field = exist_field.get_field();
-    if access_key == *exit_field {
-        match member_type {
+    let need_current_path = exist_field_type.get_current_path();
+    let index_key = index_expr.get_index_key()?;
+    let current_path = index_key.get_path_part();
+
+    if &current_path == need_current_path {
+        member_type = match member_type {
             Some(member_type) => Some(TypeAssertion::Exist.tighten_type(member_type)),
             None => Some(LuaType::Any),
+        };
+
+        if !exist_field_type.is_final_path() {
+            let path = exist_field_type.get_path();
+            let idx = exist_field_type.get_current_path_idx() + 1;
+            let next_exist_field =
+                LuaMemberPathExistType::new(path, member_type.unwrap_or(LuaType::Any), idx);
+            return Some(LuaType::MemberPathExist(next_exist_field.into()));
         }
-    } else {
-        member_type
     }
+
+    member_type
 }
 
 fn infer_global_field_member(
     db: &DbIndex,
     _: &LuaInferConfig,
-    member_key: &LuaIndexKey,
+    index_expr: LuaIndexExpr,
 ) -> InferResult {
+    let member_key = index_expr.get_index_key()?;
     let name = member_key.get_name()?.get_name_text();
     let global_member = db
         .get_decl_index()
@@ -761,8 +795,9 @@ fn infer_namespace_member(
     db: &DbIndex,
     _: &LuaInferConfig,
     ns: &str,
-    member_key: &LuaIndexKey,
+    index_expr: LuaIndexExpr,
 ) -> InferResult {
+    let member_key = index_expr.get_index_key()?;
     let member_key = match member_key.into() {
         LuaMemberKey::Name(name) => name,
         _ => return None,

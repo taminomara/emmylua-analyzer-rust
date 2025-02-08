@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     db_index::{
-        LuaExistFieldType, LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIntersectionType,
+        LuaMemberPathExistType, LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIntersectionType,
         LuaMultiReturn, LuaObjectType, LuaTupleType, LuaType, LuaUnionType,
     },
     DbIndex, GenericTpl, LuaPropertyOwnerId, LuaSignatureId,
@@ -29,7 +29,7 @@ pub fn instantiate_type(db: &DbIndex, ty: &LuaType, substitutor: &TypeSubstituto
         }
         LuaType::TplRef(tpl) => instantiate_tpl_ref(db, tpl, substitutor),
         LuaType::MuliReturn(multi) => instantiate_multi_return(db, multi, substitutor),
-        LuaType::ExistField(exit_field) => instantiate_exist_field(db, exit_field, substitutor),
+        LuaType::MemberPathExist(exit_field) => instantiate_exist_field(db, exit_field, substitutor),
         LuaType::Signature(sig_id) => instantiate_signature(db, sig_id, substitutor),
         _ => ty.clone(),
     }
@@ -217,12 +217,13 @@ fn instantiate_multi_return(
 
 fn instantiate_exist_field(
     db: &DbIndex,
-    exit_field: &LuaExistFieldType,
+    exit_field: &LuaMemberPathExistType,
     substitutor: &TypeSubstitutor,
 ) -> LuaType {
     let base = instantiate_type(db, &exit_field.get_origin(), substitutor);
-    let field = exit_field.get_field();
-    LuaType::ExistField(LuaExistFieldType::new(field.clone(), base).into())
+    let path = exit_field.get_path();
+    let idx = exit_field.get_current_path_idx();
+    LuaType::MemberPathExist(LuaMemberPathExistType::new(path, base, idx).into())
 }
 
 fn instantiate_signature(

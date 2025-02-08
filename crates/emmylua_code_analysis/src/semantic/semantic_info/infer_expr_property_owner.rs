@@ -169,7 +169,7 @@ fn infer_member_property_owner_by_member_key(
             member_key,
             infer_guard,
         ),
-        LuaType::ExistField(exist_field) => infer_member_property_owner_by_member_key(
+        LuaType::MemberPathExist(exist_field) => infer_member_property_owner_by_member_key(
             db,
             config,
             exist_field.get_origin(),

@@ -1,10 +1,10 @@
 use emmylua_parser::{
     BinaryOperator, LuaAst, LuaAstNode, LuaBinaryExpr, LuaBlock, LuaCallArgList, LuaCallExpr,
-    LuaExpr, LuaIndexKey, LuaLiteralToken, LuaNameExpr, LuaStat, LuaSyntaxKind, UnaryOperator,
+    LuaExpr, LuaLiteralToken, LuaNameExpr, LuaStat, LuaSyntaxKind, PathTrait, UnaryOperator,
 };
 use rowan::TextRange;
 
-use crate::db_index::{LuaFlowChain, LuaMemberKey, LuaType, TypeAssertion};
+use crate::db_index::{LuaFlowChain, LuaType, TypeAssertion};
 
 use super::FlowAnalyzer;
 
@@ -64,23 +64,9 @@ fn broadcast_up(
             flow_chains.add_type_assert(type_assert, block.get_range());
         }
         LuaAst::LuaIndexExpr(index_expr) => {
-            let key = index_expr.get_index_key()?;
-            let reference_key = match key {
-                LuaIndexKey::Integer(i) => {
-                    if i.is_int() {
-                        LuaMemberKey::Integer(i.get_int_value())
-                    } else {
-                        return None;
-                    }
-                }
-                LuaIndexKey::Name(name) => {
-                    LuaMemberKey::Name(name.get_name_text().to_string().into())
-                }
-                LuaIndexKey::String(string) => LuaMemberKey::Name(string.get_value().into()),
-                _ => return None,
-            };
+            let member_path = index_expr.get_member_path()?;
 
-            let type_assert = TypeAssertion::FieldExist(reference_key.into());
+            let type_assert = TypeAssertion::MemberPathExist(member_path.into());
             broadcast_up(
                 analyzer,
                 flow_chains,

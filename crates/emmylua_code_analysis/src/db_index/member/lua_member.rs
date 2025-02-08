@@ -149,6 +149,14 @@ impl LuaMemberKey {
             _ => None,
         }
     }
+
+    pub fn to_path(&self) -> String {
+        match self {
+            LuaMemberKey::Name(name) => name.to_string(),
+            LuaMemberKey::Integer(i) => i.to_string(),
+            LuaMemberKey::None => "".to_string(),
+        }
+    }
 }
 
 impl PartialOrd for LuaMemberKey {

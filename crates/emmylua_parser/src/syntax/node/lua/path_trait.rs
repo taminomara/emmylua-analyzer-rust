@@ -45,4 +45,32 @@ pub trait PathTrait : LuaAstNode {
             }
         }
     }
+
+    fn get_member_path(&self) -> Option<String> {
+        let mut paths = Vec::new();
+        let mut current_node = self.syntax().clone();
+        loop {
+            match LuaExpr::cast(current_node)? {
+                LuaExpr::NameExpr(_) => {
+                    if paths.is_empty() {
+                        return None;
+                    } else {
+                        paths.reverse();
+                        return Some(paths.join("."));
+                    }
+                }
+                LuaExpr::CallExpr(call_expr) => {
+                    let prefix_expr = call_expr.get_prefix_expr()?;
+                    current_node = prefix_expr.syntax().clone();
+                }
+                LuaExpr::IndexExpr(index_expr) => {
+                    let path_parts = index_expr.get_index_key()?.get_path_part();
+                    paths.push(path_parts);
+
+                    current_node = index_expr.get_prefix_expr()?.syntax().clone();
+                }
+                _ => return None,
+            }
+        }
+    }
 }

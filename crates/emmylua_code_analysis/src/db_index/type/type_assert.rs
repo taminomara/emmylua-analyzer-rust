@@ -1,17 +1,14 @@
-use std::sync::Arc;
+use std::{ops::Deref, sync::Arc};
 
 use emmylua_parser::LuaSyntaxId;
-
-use crate::db_index::LuaMemberKey;
-
-use super::{LuaExistFieldType, LuaType, LuaUnionType};
+use super::{LuaMemberPathExistType, LuaType, LuaUnionType};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum TypeAssertion {
     Exist,
     NotExist,
     Force(LuaType),
-    FieldExist(Arc<LuaMemberKey>),
+    MemberPathExist(Arc<String>),
     Add(LuaType),
     Remove(LuaType),
     Reassign(LuaSyntaxId),
@@ -24,8 +21,8 @@ impl TypeAssertion {
             TypeAssertion::Exist => remove_nil_and_not_false(source),
             TypeAssertion::NotExist => force_nil_or_false(source),
             TypeAssertion::Force(t) => force_type(source, t.clone()),
-            TypeAssertion::FieldExist(key) => {
-                LuaType::ExistField(LuaExistFieldType::new((**key).clone(), source).into())
+            TypeAssertion::MemberPathExist(key) => {
+                LuaType::MemberPathExist(LuaMemberPathExistType::new(&key.deref(), source, 0).into())
             }
             TypeAssertion::Add(lua_type) => add_type(source, lua_type.clone()),
             TypeAssertion::Remove(lua_type) => remove_type(source, lua_type.clone()),

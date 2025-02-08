@@ -1,5 +1,5 @@
 use crate::{
-    DbIndex, GenericTpl, LuaExistFieldType, LuaExtendedType, LuaFunctionType, LuaGenericType,
+    DbIndex, GenericTpl, LuaMemberPathExistType, LuaExtendedType, LuaFunctionType, LuaGenericType,
     LuaInstanceType, LuaIntersectionType, LuaMemberKey, LuaMemberOwner, LuaMultiReturn,
     LuaObjectType, LuaSignatureId, LuaStringTplType, LuaTupleType, LuaType, LuaTypeDeclId,
     LuaUnionType,
@@ -74,7 +74,7 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
         LuaType::TplRef(tpl) => humanize_tpl_ref_type(tpl),
         LuaType::StrTplRef(str_tpl) => humanize_str_tpl_ref_type(str_tpl),
         LuaType::MuliReturn(multi) => humanize_multi_return_type(db, multi, level),
-        LuaType::ExistField(exist_field) => humanize_exist_field_type(db, exist_field, level),
+        LuaType::MemberPathExist(exist_field) => humanize_exist_field_type(db, exist_field, level),
         LuaType::Instance(ins) => humanize_instance_type(db, ins, level),
         LuaType::Signature(signature_id) => humanize_signature_type(db, signature_id, level),
         LuaType::Namespace(ns) => format!("{{ {} }}", ns),
@@ -417,7 +417,7 @@ fn humanize_multi_return_type(db: &DbIndex, multi: &LuaMultiReturn, level: Rende
 // optimize
 fn humanize_exist_field_type(
     db: &DbIndex,
-    exist_field: &LuaExistFieldType,
+    exist_field: &LuaMemberPathExistType,
     level: RenderLevel,
 ) -> String {
     humanize_type(db, exist_field.get_origin(), level)

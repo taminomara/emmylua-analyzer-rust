@@ -1,6 +1,6 @@
 mod expr;
-mod stat;
 mod path_trait;
+mod stat;
 mod test;
 
 use crate::{
@@ -10,8 +10,8 @@ use crate::{
 };
 
 pub use expr::*;
-pub use stat::*;
 pub use path_trait::*;
+pub use stat::*;
 
 use super::{LuaLiteralToken, LuaNameToken, LuaNumberToken, LuaStringToken};
 
@@ -359,6 +359,17 @@ impl LuaIndexKey {
         match self {
             LuaIndexKey::Expr(expr) => Some(expr),
             _ => None,
+        }
+    }
+
+    pub fn get_path_part(&self) -> String {
+        match self {
+            LuaIndexKey::String(s) => s.get_value(),
+            LuaIndexKey::Name(name) => name.get_name_text().to_string(),
+            LuaIndexKey::Integer(i) => i.get_int_value().to_string(),
+            LuaIndexKey::Expr(expr) => {
+                format!("[{}]", expr.syntax().text())
+            }
         }
     }
 }
