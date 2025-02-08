@@ -153,7 +153,9 @@ impl LuaMemberKey {
     pub fn to_path(&self) -> String {
         match self {
             LuaMemberKey::Name(name) => name.to_string(),
-            LuaMemberKey::Integer(i) => i.to_string(),
+            LuaMemberKey::Integer(i) => {
+                format!("[{}]", i)
+            },
             LuaMemberKey::None => "".to_string(),
         }
     }

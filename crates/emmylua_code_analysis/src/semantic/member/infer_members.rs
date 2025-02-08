@@ -242,6 +242,21 @@ fn infer_exist_field_members(
         };
 
     if !field_founded {
+        if path.starts_with('[') {
+            if let Some(end_idx) = path.find(']') {
+                let number_str = &path[1..end_idx];
+                if let Ok(number) = number_str.parse::<i64>() {
+                    members.push(LuaMemberInfo {
+                        property_owner_id: None,
+                        key: LuaMemberKey::Integer(number),
+                        typ: LuaType::Any,
+                        origin_typ: None,
+                    });
+
+                    return Some(members);
+                }
+            }
+        }
         members.push(LuaMemberInfo {
             property_owner_id: None,
             key: path.to_string().into(),

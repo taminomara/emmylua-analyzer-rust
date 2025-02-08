@@ -366,7 +366,9 @@ impl LuaIndexKey {
         match self {
             LuaIndexKey::String(s) => s.get_value(),
             LuaIndexKey::Name(name) => name.get_name_text().to_string(),
-            LuaIndexKey::Integer(i) => i.get_int_value().to_string(),
+            LuaIndexKey::Integer(i) => {
+                format!("[{}]", i.get_int_value())
+            },
             LuaIndexKey::Expr(expr) => {
                 format!("[{}]", expr.syntax().text())
             }
