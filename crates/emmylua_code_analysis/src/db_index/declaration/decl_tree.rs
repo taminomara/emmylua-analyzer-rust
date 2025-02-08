@@ -44,7 +44,13 @@ impl LuaDeclarationTree {
                         return true;
                     }
                 }
-                ScopeOrDeclId::Scope(_) => {}
+                ScopeOrDeclId::Scope(scope) => {
+                    let scope = self.scopes.get(scope.id as usize).unwrap();
+                    // self found method stat, donot return decl id
+                    if scope.get_kind() == LuaScopeKind::MethodStat && name == "self" {
+                        return true;
+                    }
+                }
             }
 
             false
@@ -176,7 +182,7 @@ impl LuaDeclarationTree {
         F: FnMut(ScopeOrDeclId) -> bool,
     {
         match scope.get_kind() {
-            LuaScopeKind::LocalOrAssignStat | LuaScopeKind::FuncStat => {
+            LuaScopeKind::LocalOrAssignStat | LuaScopeKind::FuncStat | LuaScopeKind::MethodStat => {
                 for child in scope.get_children() {
                     if let ScopeOrDeclId::Decl(decl_id) = child {
                         if f(decl_id.into()) {
@@ -254,12 +260,14 @@ impl LuaDeclarationTree {
                 }
                 ScopeOrDeclId::Scope(scope_id) => {
                     if let Some(scope) = self.scopes.get(scope_id.id as usize) {
-                        let range = scope.get_range();
-                        let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::FuncStat.into(), range);
-                        let id = self.find_self_decl_id(db, &root, syntax_id);
-                        if id.is_some() {
-                            result = id;
-                            return true;
+                        if scope.get_kind() == LuaScopeKind::MethodStat {
+                            let range = scope.get_range();
+                            let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::FuncStat.into(), range);
+                            let id = self.find_self_decl_id(db, &root, syntax_id);
+                            if id.is_some() {
+                                result = id;
+                                return true;
+                            }
                         }
                     }
                 }

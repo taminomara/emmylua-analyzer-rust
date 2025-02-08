@@ -36,11 +36,8 @@ pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) ->
 fn is_decl_used(decl: &LuaDecl, local_refs: &LuaReferenceIndex) -> bool {
     if decl.is_global() {
         return true;
-    } else if decl.is_param() {
-        match decl.get_name() {
-            "self" | "..." => return true,
-            _ => {}
-        }
+    } else if decl.is_param() && decl.get_name() == "..." {
+        return true;
     }
 
     let file_id = decl.get_file_id();

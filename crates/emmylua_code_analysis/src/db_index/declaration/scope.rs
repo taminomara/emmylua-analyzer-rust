@@ -10,7 +10,9 @@ pub enum LuaScopeKind {
     Repeat,
     LocalOrAssignStat,
     ForRange,
-    FuncStat
+    FuncStat,
+    // defined in function xxx:aaa() end
+    MethodStat,
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
@@ -29,7 +31,7 @@ impl LuaScope {
             children: Vec::new(),
             range,
             kind,
-            id
+            id,
         }
     }
 

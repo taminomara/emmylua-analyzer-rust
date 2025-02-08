@@ -8,7 +8,7 @@ use crate::{
 };
 
 use super::AnalyzeContext;
-use emmylua_parser::{LuaAst, LuaAstNode, LuaChunk, LuaSyntaxKind};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaChunk, LuaFuncStat, LuaSyntaxKind, LuaVarExpr};
 use rowan::{TextRange, TextSize, WalkEvent};
 
 use crate::{
@@ -54,7 +54,11 @@ fn walk_node_enter(analyzer: &mut DeclAnalyzer, node: LuaAst) {
             stats::analyze_for_range_stat(analyzer, stat);
         }
         LuaAst::LuaFuncStat(stat) => {
-            analyzer.create_scope(stat.get_range(), LuaScopeKind::FuncStat);
+            if is_method_func_stat(&stat).unwrap_or(false) {
+                analyzer.create_scope(stat.get_range(), LuaScopeKind::MethodStat);
+            } else {
+                analyzer.create_scope(stat.get_range(), LuaScopeKind::FuncStat);
+            }
             stats::analyze_func_stat(analyzer, stat);
         }
         LuaAst::LuaLocalFuncStat(stat) => {
@@ -201,4 +205,12 @@ impl<'a> DeclAnalyzer<'a> {
     pub fn get_file_id(&self) -> FileId {
         self.decl.file_id()
     }
+}
+
+fn is_method_func_stat(stat: &LuaFuncStat) -> Option<bool> {
+    let func_name = stat.get_func_name()?;
+    if let LuaVarExpr::IndexExpr(index_expr) = func_name {
+        return Some(index_expr.get_index_token()?.is_colon());
+    }
+    None
 }

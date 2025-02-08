@@ -13,11 +13,6 @@ use super::DeclAnalyzer;
 pub fn analyze_name_expr(analyzer: &mut DeclAnalyzer, expr: LuaNameExpr) -> Option<()> {
     let name_token = expr.get_name_token()?;
     let name = name_token.get_name_text();
-    // donot analyze self here
-    if name == "self" {
-        return Some(());
-    }
-
     let position = name_token.get_position();
     let range = name_token.get_range();
     let file_id = analyzer.get_file_id();
