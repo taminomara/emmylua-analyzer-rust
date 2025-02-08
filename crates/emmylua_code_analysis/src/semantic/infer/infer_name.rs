@@ -71,7 +71,7 @@ pub fn infer_name_expr(
 fn infer_self(db: &DbIndex, config: &LuaInferConfig, name_expr: LuaNameExpr) -> InferResult {
     let file_id = config.get_file_id();
     let tree = db.get_decl_index().get_decl_tree(&file_id)?;
-    let id = tree.find_self_decl(db, name_expr)?;
+    let id = tree.find_self_decl(db, name_expr.clone())?;
     match id {
         LuaDeclOrMemberId::Decl(decl_id) => {
             let decl = db.get_decl_index().get_decl(&decl_id)?;
@@ -105,6 +105,13 @@ fn infer_self(db: &DbIndex, config: &LuaInferConfig, name_expr: LuaNameExpr) -> 
 
             if let LuaType::Ref(id) = decl_type {
                 decl_type = LuaType::Def(id);
+            }
+
+            let flow_chain = db.get_flow_index().get_flow_chain(file_id, decl_id);
+            if let Some(flow_chain) = flow_chain {
+                for type_assert in flow_chain.get_type_asserts(name_expr.get_position()) {
+                    decl_type = type_assert.tighten_type(decl_type);
+                }
             }
 
             Some(decl_type)
