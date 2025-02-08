@@ -111,8 +111,7 @@ fn infer_type_compact(
                 .unwrap_or(false)
         }
         (LuaType::Array(a), LuaType::Array(b)) => infer_type_compact(db, config, a, b, infer_guard),
-        // TODO implement the check for table
-        (LuaType::Array(_), _) => compact_type.is_table(),
+        (LuaType::Array(a), _) => infer_array_type_compact_by_element_type(db, config, a, &compact_type, infer_guard),
         (LuaType::Tuple(a), LuaType::Tuple(b)) => {
             infer_tuple_type_compact(db, config, a, b, infer_guard).unwrap_or(false)
         }
@@ -356,6 +355,24 @@ fn infer_object_type_compact(
 
         // }
         _ => Some(false),
+    }
+}
+
+fn infer_array_type_compact_by_element_type(
+    db: &DbIndex,
+    config: &mut LuaInferConfig,
+    source_element_type: &LuaType,
+    compact_type: &LuaType,
+    infer_guard: &mut InferGuard,
+) -> bool {
+    match compact_type {
+        LuaType::Array(element_type) => infer_type_compact(db, config, source_element_type, element_type, infer_guard),
+        LuaType::Tuple(tuple_type) =>
+            tuple_type.get_types()
+                .into_iter()
+                .all(|element_type| infer_type_compact(db, config, source_element_type, element_type, infer_guard)),
+        // TODO implement the check for table
+        _ => compact_type.is_table()
     }
 }
 

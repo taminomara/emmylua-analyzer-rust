@@ -2,6 +2,8 @@
 
 # 0.4.7(unreleased)
 
+`NEW` Support type-check when casting tuples to arrays.
+
 # 0.4.6
 
 `FIX` Fix issue with executable file directory hierarchy being too deep.
