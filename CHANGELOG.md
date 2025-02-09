@@ -6,6 +6,12 @@
 
 `NEW` Now autocompletion suggests function overloads.
 
+`NEW` Better completion for integer member keys.
+
+`NEW` Infer value by reassign
+
+`NEW` Better analyze base control flow
+
 # 0.4.6
 
 `FIX` Fix issue with executable file directory hierarchy being too deep.
