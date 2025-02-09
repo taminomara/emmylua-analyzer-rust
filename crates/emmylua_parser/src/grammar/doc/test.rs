@@ -1471,12 +1471,11 @@ Syntax(Chunk)@0..69
         ---@public
         ---@package
         ---@protected
-        ---@internal
         "#;
 
         let result = r#"
-Syntax(Chunk)@0..218
-  Syntax(Block)@0..218
+Syntax(Chunk)@0..197
+  Syntax(Block)@0..197
     Token(TkEndOfLine)@0..1 "\n"
     Token(TkWhitespace)@1..9 "        "
     Syntax(Comment)@9..17
@@ -1516,7 +1515,7 @@ Syntax(Chunk)@0..218
     Token(TkEndOfLine)@106..107 "\n"
     Token(TkEndOfLine)@107..108 "\n"
     Token(TkWhitespace)@108..116 "        "
-    Syntax(Comment)@116..209
+    Syntax(Comment)@116..188
       Token(TkDocStart)@116..120 "---@"
       Syntax(DocTagVisibility)@120..136
         Token(TkTagVisibility)@120..127 "private"
@@ -1536,16 +1535,10 @@ Syntax(Chunk)@0..218
         Token(TkWhitespace)@167..175 "        "
         Syntax(DocDescription)@175..175
       Token(TkDocStart)@175..179 "---@"
-      Syntax(DocTagVisibility)@179..197
+      Syntax(DocTagVisibility)@179..188
         Token(TkTagVisibility)@179..188 "protected"
-        Token(TkEndOfLine)@188..189 "\n"
-        Token(TkWhitespace)@189..197 "        "
-        Syntax(DocDescription)@197..197
-      Token(TkDocStart)@197..201 "---@"
-      Syntax(DocTagVisibility)@201..209
-        Token(TkTagVisibility)@201..209 "internal"
-    Token(TkEndOfLine)@209..210 "\n"
-    Token(TkWhitespace)@210..218 "        "
+    Token(TkEndOfLine)@188..189 "\n"
+    Token(TkWhitespace)@189..197 "        "
         "#;
 
         assert_ast_eq!(code, result);
