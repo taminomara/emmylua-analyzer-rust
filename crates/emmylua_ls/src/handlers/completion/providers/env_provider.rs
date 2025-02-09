@@ -46,7 +46,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
             .get_flow_chain(file_id, decl_id.clone())
         {
             for type_assert in chain.get_type_asserts(name_expr.get_position()) {
-                typ = type_assert.tighten_type(typ);
+                typ = type_assert.simple_tighten_type(typ);
             }
         }
 

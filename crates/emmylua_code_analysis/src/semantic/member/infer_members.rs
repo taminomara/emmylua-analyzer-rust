@@ -232,7 +232,7 @@ fn infer_exist_field_members(
         if let Some(mut members) = infer_members_guard(db, base, &mut InferGuard::new()) {
             for info in members.iter_mut() {
                 if info.key.to_path() == path {
-                    info.typ = TypeAssertion::Exist.tighten_type(info.typ.clone());
+                    info.typ = TypeAssertion::Exist.simple_tighten_type(info.typ.clone());
                     field_founded = true;
                 }
             }
