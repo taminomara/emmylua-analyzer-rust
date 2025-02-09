@@ -20,7 +20,7 @@ use smol_str::SmolStr;
 
 use crate::{
     db_index::{DbIndex, LuaOperator, LuaOperatorMetaMethod, LuaSignatureId, LuaType},
-    InFiled,
+    InFiled, LuaDeclExtra, LuaMultiReturn,
 };
 
 pub type InferResult = Option<LuaType>;
@@ -45,7 +45,7 @@ pub fn infer_expr(db: &DbIndex, config: &mut LuaInferConfig, expr: LuaExpr) -> I
     let result_type = match expr {
         LuaExpr::CallExpr(call_expr) => infer_call_expr(db, config, call_expr)?,
         LuaExpr::TableExpr(table_expr) => infer_table_expr(db, config, table_expr)?,
-        LuaExpr::LiteralExpr(literal_expr) => infer_literal_expr(literal_expr)?,
+        LuaExpr::LiteralExpr(literal_expr) => infer_literal_expr(db, config, literal_expr)?,
         LuaExpr::BinaryExpr(binary_expr) => infer_binary_expr(db, config, binary_expr)?,
         LuaExpr::UnaryExpr(unary_expr) => infer_unary_expr(db, config, unary_expr)?,
         LuaExpr::ClosureExpr(closure_expr) => infer_closure_expr(config, closure_expr)?,
@@ -59,7 +59,7 @@ pub fn infer_expr(db: &DbIndex, config: &mut LuaInferConfig, expr: LuaExpr) -> I
     Some(result_type)
 }
 
-fn infer_literal_expr(expr: LuaLiteralExpr) -> InferResult {
+fn infer_literal_expr(db: &DbIndex, config: &LuaInferConfig, expr: LuaLiteralExpr) -> InferResult {
     match expr.get_literal()? {
         LuaLiteralToken::Nil(_) => Some(LuaType::Nil),
         LuaLiteralToken::Bool(bool) => Some(LuaType::BooleanConst(bool.is_true())),
@@ -75,7 +75,34 @@ fn infer_literal_expr(expr: LuaLiteralExpr) -> InferResult {
         LuaLiteralToken::String(str) => {
             Some(LuaType::StringConst(SmolStr::new(str.get_value()).into()))
         }
-        LuaLiteralToken::Dots(_) => Some(LuaType::Any),
+        LuaLiteralToken::Dots(_) => {
+            let file_id = config.get_file_id();
+            let range = expr.get_range();
+        
+            let decl_id = db.get_reference_index()
+                .get_local_reference(&file_id)
+                .and_then(|file_ref| file_ref.get_decl_id(&range));
+        
+            let decl_type = match decl_id.and_then(|id| db.get_decl_index().get_decl(&id)) {
+                Some(decl) if decl.is_global() => LuaType::Any,
+                Some(decl) if decl.is_param() => {
+                    let LuaDeclExtra::Param { idx, signature_id } = &decl.extra else {
+                        unreachable!()
+                    };
+                    let param_info = db.get_signature_index()
+                        .get(signature_id)
+                        .and_then(|sig| sig.get_param_info_by_id(*idx))?;
+                    let mut typ = param_info.type_ref.clone();
+                    typ = LuaType::MuliReturn(LuaMultiReturn::Base(typ).into());
+                    typ
+                }
+                _ => LuaType::Any, // 默认返回 Any
+
+            };
+
+        
+            Some(decl_type)
+        }
     }
 }
 

@@ -177,18 +177,44 @@ pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, expr: LuaTableExpr) -> Op
 }
 
 pub fn analyze_literal_expr(analyzer: &mut DeclAnalyzer, expr: LuaLiteralExpr) -> Option<()> {
-    if let LuaLiteralToken::String(string_token) = expr.get_literal()? {
-        let file_id = analyzer.get_file_id();
-        let value = string_token.get_value();
-        if value.len() > 64 {
-            return Some(());
-        }
+    let literal = expr.get_literal()?;
+    let file_id = analyzer.get_file_id();
 
-        analyzer.db.get_reference_index_mut().add_string_reference(
-            file_id,
-            &value,
-            string_token.get_range(),
-        );
+    match literal {
+        LuaLiteralToken::String(string_token) => {
+
+            let value = string_token.get_value();
+            if value.len() <= 64 {
+                analyzer.db.get_reference_index_mut().add_string_reference(
+                    file_id,
+                    &value,
+                    string_token.get_range(),
+                );
+            }
+        }
+        LuaLiteralToken::Dots(dots_token) => {
+            let position = dots_token.get_position();
+            let range = dots_token.get_range();
+
+            let decl_id = LuaDeclId::new(file_id, position);
+            let decl_id = analyzer
+                .decl
+                .get_decl(&decl_id)
+                .map(|_| decl_id)
+                .or_else(|| {
+                    analyzer
+                        .find_decl(&dots_token.get_text(), position)
+                        .and_then(|decl| decl.is_local().then(|| decl.get_id()))
+                });
+
+            if let Some(id) = decl_id {
+                analyzer
+                    .db
+                    .get_reference_index_mut()
+                    .add_decl_reference(id, file_id, range, false);
+            }
+        }
+        _ => {}
     }
 
     Some(())
