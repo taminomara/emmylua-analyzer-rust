@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcStrict {
     /// Whether to enable strict mode require path.
-    #[serde(default = "default_true")]
+    #[serde(default = "default_false")]
     pub require_path: bool,
     #[serde(default)]
     pub type_call: bool,
@@ -14,12 +14,12 @@ pub struct EmmyrcStrict {
 impl Default for EmmyrcStrict {
     fn default() -> Self {
         Self {
-            require_path: default_true(),
+            require_path: false,
             type_call: false,
         }
     }
 }
 
-fn default_true() -> bool {
-    true
+fn default_false() -> bool {
+    false
 }
