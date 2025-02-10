@@ -12,6 +12,7 @@ use infer_call::infer_call_expr;
 pub use infer_call::instantiate_doc_function;
 use infer_config::ExprCache;
 pub use infer_config::LuaInferConfig;
+pub use infer_table::infer_table_should_be;
 use infer_index::infer_index_expr;
 use infer_name::infer_name_expr;
 use infer_table::infer_table_expr;

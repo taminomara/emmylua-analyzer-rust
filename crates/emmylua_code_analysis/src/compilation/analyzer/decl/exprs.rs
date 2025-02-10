@@ -60,6 +60,7 @@ pub fn analyze_index_expr(analyzer: &mut DeclAnalyzer, index_expr: LuaIndexExpr)
         }
         LuaIndexKey::String(string) => LuaMemberKey::Name(string.get_value().into()),
         LuaIndexKey::Expr(_) => return None,
+        LuaIndexKey::Idx(i) => LuaMemberKey::Integer(i as i64)
     };
 
     let file_id = analyzer.get_file_id();

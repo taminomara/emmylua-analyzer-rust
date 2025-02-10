@@ -132,9 +132,10 @@ fn build_tokens_semantic_token(
         | LuaTokenKind::TkTagNamespace
         | LuaTokenKind::TkTagUsing
         | LuaTokenKind::TkTagSource => {
-            if !client_id.is_vscode() {
-                builder.push(token, SemanticTokenType::DECORATOR);
-            }
+            // if !client_id.is_vscode() {
+            //     builder.push(token, SemanticTokenType::DECORATOR);
+            // }
+            builder.push_with_modifier(token, SemanticTokenType::KEYWORD, SemanticTokenModifier::DOCUMENTATION);
         }
         LuaTokenKind::TkDocKeyOf
         | LuaTokenKind::TkDocExtends

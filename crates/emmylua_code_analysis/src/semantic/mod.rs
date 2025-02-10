@@ -11,8 +11,8 @@ mod visibility;
 
 use std::{collections::HashSet, sync::Arc};
 
-use emmylua_parser::{LuaCallExpr, LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken};
-use infer::InferResult;
+use emmylua_parser::{LuaCallExpr, LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken, LuaTableExpr};
+use infer::{infer_table_should_be, InferResult};
 pub use infer::LuaInferConfig;
 use member::infer_members;
 pub use member::LuaMemberInfo;
@@ -89,6 +89,10 @@ impl<'a> SemanticModel<'a> {
 
     pub fn infer_expr(&mut self, expr: LuaExpr) -> InferResult {
         infer_expr(self.db, &mut self.infer_config, expr)
+    }
+
+    pub fn infer_table_should_be(&mut self, table: LuaTableExpr) -> Option<LuaType> {
+        infer_table_should_be(self.db, &mut self.infer_config, table)
     }
 
     pub fn infer_member_infos(&self, prefix_type: &LuaType) -> Option<Vec<LuaMemberInfo>> {

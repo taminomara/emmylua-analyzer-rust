@@ -1,9 +1,8 @@
 use std::collections::HashSet;
 
-use emmylua_code_analysis::{LuaMemberInfo, LuaMemberKey, LuaType};
+use emmylua_code_analysis::{LuaMemberInfo, LuaMemberKey};
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaNameExpr, LuaNameToken,
-    LuaTableExpr, LuaTableField,
+    LuaAstNode, LuaAstToken, LuaNameExpr, LuaNameToken, LuaTableExpr, LuaTableField,
 };
 use lsp_types::CompletionItem;
 
@@ -17,12 +16,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
 
     // todo non-function completion (e.g. in other tables)
     // todo support parents which types are inferred implicitly
-    let table_type = match table_expr.get_parent()? {
-        LuaAst::LuaCallArgList(call_arg_list) => {
-            get_table_type_by_calleee(builder, call_arg_list, LuaAst::LuaTableExpr(table_expr))
-        }
-        _ => None,
-    }?;
+    let table_type = builder.semantic_model.infer_table_should_be(table_expr)?;
 
     let mut duplicated_set = HashSet::new();
     let member_infos = builder.semantic_model.infer_member_infos(&table_type)?;
@@ -36,27 +30,6 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     }
 
     Some(())
-}
-
-fn get_table_type_by_calleee(
-    builder: &mut CompletionBuilder,
-    call_arg_list: LuaCallArgList,
-    table_expr: LuaAst,
-) -> Option<LuaType> {
-    let call_expr = call_arg_list.get_parent::<LuaCallExpr>()?;
-    let func_type = builder
-        .semantic_model
-        .infer_call_expr_func(call_expr.clone(), None)?;
-    let param_types = func_type.get_params();
-    let call_arg_number = call_arg_list
-        .children::<LuaAst>()
-        .into_iter()
-        .enumerate()
-        .find(|(_, arg)| *arg == table_expr)?
-        .0;
-    let table_type = param_types.get(call_arg_number)?.1.clone();
-
-    return table_type;
 }
 
 fn add_table_field_completion(

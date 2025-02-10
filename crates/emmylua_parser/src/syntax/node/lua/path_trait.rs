@@ -37,6 +37,10 @@ pub trait PathTrait : LuaAstNode {
                             let text = format!("[{}]", expr.syntax().text());
                             paths.push(text);
                         }
+                        LuaIndexKey::Idx(idx) => {
+                            let text = format!("[{}]", idx);
+                            paths.push(text);
+                        }
                     }
 
                     current_node = index_expr.get_prefix_expr()?.syntax().clone();

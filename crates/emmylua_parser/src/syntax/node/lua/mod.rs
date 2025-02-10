@@ -257,6 +257,18 @@ impl LuaTableField {
 
     pub fn get_field_key(&self) -> Option<LuaIndexKey> {
         if !self.is_assign_field() {
+            let parent_table = self.get_parent::<LuaTableExpr>()?;
+            let fields = parent_table.get_fields();
+            let mut idx = 1;
+            for field in fields {
+                if field.is_value_field() {
+                    if field.syntax() == self.syntax() {
+                        return Some(LuaIndexKey::Idx(idx));
+                    }
+                    idx += 1;
+                }
+            }
+
             return None;
         }
 
@@ -315,6 +327,7 @@ pub enum LuaIndexKey {
     String(LuaStringToken),
     Integer(LuaNumberToken),
     Expr(LuaExpr),
+    Idx(usize)
 }
 
 impl LuaIndexKey {
@@ -368,9 +381,12 @@ impl LuaIndexKey {
             LuaIndexKey::Name(name) => name.get_name_text().to_string(),
             LuaIndexKey::Integer(i) => {
                 format!("[{}]", i.get_int_value())
-            },
+            }
             LuaIndexKey::Expr(expr) => {
                 format!("[{}]", expr.syntax().text())
+            }
+            LuaIndexKey::Idx(i) => {
+                format!("[{}]", i)
             }
         }
     }
@@ -447,5 +463,70 @@ impl LuaAstNode for LuaParamList {
 impl LuaParamList {
     pub fn get_params(&self) -> LuaAstChildren<LuaParamName> {
         self.children()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum LuaIndexMemberExpr {
+    IndexExpr(LuaIndexExpr),
+    TableField(LuaTableField),
+}
+
+impl LuaAstNode for LuaIndexMemberExpr {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        match self {
+            LuaIndexMemberExpr::IndexExpr(expr) => expr.syntax(),
+            LuaIndexMemberExpr::TableField(field) => field.syntax(),
+        }
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        LuaIndexExpr::can_cast(kind) || LuaTableField::can_cast(kind)
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if LuaIndexExpr::can_cast(syntax.kind().into()) {
+            Some(Self::IndexExpr(LuaIndexExpr::cast(syntax).unwrap()))
+        } else if LuaTableField::can_cast(syntax.kind().into()) {
+            Some(Self::TableField(LuaTableField::cast(syntax).unwrap()))
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaIndexMemberExpr {
+    pub fn get_index_expr(&self) -> Option<LuaIndexExpr> {
+        match self {
+            LuaIndexMemberExpr::IndexExpr(expr) => Some(expr.clone()),
+            _ => None,
+        }
+    }
+
+    pub fn get_table_field(&self) -> Option<LuaTableField> {
+        match self {
+            LuaIndexMemberExpr::TableField(field) => Some(field.clone()),
+            _ => None,
+        }
+    }
+
+    pub fn get_index_key(&self) -> Option<LuaIndexKey> {
+        match self {
+            LuaIndexMemberExpr::IndexExpr(expr) => expr.get_index_key(),
+            LuaIndexMemberExpr::TableField(field) => field.get_field_key(),
+        }
+    }
+
+    pub fn get_prefix_expr(&self) -> Option<LuaExpr> {
+        match self {
+            LuaIndexMemberExpr::IndexExpr(expr) => expr.get_prefix_expr(),
+            LuaIndexMemberExpr::TableField(field) => field.get_parent(),
+        }
     }
 }
