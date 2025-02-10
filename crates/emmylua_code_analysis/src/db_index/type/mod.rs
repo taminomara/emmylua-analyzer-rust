@@ -3,6 +3,7 @@ mod test;
 mod type_assert;
 mod type_decl;
 mod types;
+mod type_ops;
 
 use super::traits::LuaIndex;
 use crate::{FileId, InFiled};
