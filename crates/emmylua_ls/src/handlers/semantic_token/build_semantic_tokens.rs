@@ -133,7 +133,7 @@ fn build_tokens_semantic_token(
         | LuaTokenKind::TkTagUsing
         | LuaTokenKind::TkTagSource => {
             if !client_id.is_vscode() {
-                builder.push(token, SemanticTokenType::DECORATOR);
+                builder.push(token, SemanticTokenType::KEYWORD);
             }
         }
         LuaTokenKind::TkDocKeyOf
@@ -213,12 +213,6 @@ fn build_node_semantic_token(
         LuaAst::LuaDocTagField(doc_field) => {
             if let Some(LuaDocFieldKey::Name(name)) = doc_field.get_field_key() {
                 builder.push(name.syntax().clone(), SemanticTokenType::PROPERTY);
-            }
-            if let Some(visiblity_token) = doc_field.get_visibility_token() {
-                builder.push(
-                    visiblity_token.syntax().clone(),
-                    SemanticTokenType::MODIFIER,
-                );
             }
         }
         LuaAst::LuaDocTagDiagnostic(doc_diagnostic) => {
