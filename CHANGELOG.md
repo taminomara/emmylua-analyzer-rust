@@ -14,6 +14,12 @@
 
 `NEW` Improved hover for class
 
+`NEW` Optimized semantic token
+
+`NEW` Infer Some table array as tuple
+
+`NEW` Infer `{ ... }` as array
+
 # 0.4.6
 
 `FIX` Fix issue with executable file directory hierarchy being too deep.
