@@ -1,6 +1,6 @@
 use crate::{
-    DbIndex, GenericTpl, LuaMemberPathExistType, LuaExtendedType, LuaFunctionType, LuaGenericType,
-    LuaInstanceType, LuaIntersectionType, LuaMemberKey, LuaMemberOwner, LuaMultiReturn,
+    DbIndex, GenericTpl, LuaExtendedType, LuaFunctionType, LuaGenericType, LuaInstanceType,
+    LuaIntersectionType, LuaMemberKey, LuaMemberOwner, LuaMemberPathExistType, LuaMultiReturn,
     LuaObjectType, LuaSignatureId, LuaStringTplType, LuaTupleType, LuaType, LuaTypeDeclId,
     LuaUnionType,
 };
@@ -9,6 +9,8 @@ use crate::{
 pub enum RenderLevel {
     Detailed,
     Simple,
+    Normal,
+    Brief,
     Minimal,
 }
 
@@ -16,7 +18,9 @@ impl RenderLevel {
     pub fn next_level(self) -> RenderLevel {
         match self {
             RenderLevel::Detailed => RenderLevel::Simple,
-            RenderLevel::Simple => RenderLevel::Minimal,
+            RenderLevel::Simple => RenderLevel::Normal,
+            RenderLevel::Normal => RenderLevel::Brief,
+            RenderLevel::Brief => RenderLevel::Minimal,
             RenderLevel::Minimal => RenderLevel::Minimal,
         }
     }
@@ -41,7 +45,7 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
             humanize_table_const_type(db, member_owner, level)
         }
         LuaType::Global => "global".to_string(),
-        LuaType::Def(id) => humanize_def_type(db, id),
+        LuaType::Def(id) => humanize_def_type(db, id, level),
         LuaType::Union(union) => humanize_union_type(db, union, level),
         LuaType::Tuple(tuple) => humanize_tuple_type(db, tuple, level),
         LuaType::Unknown => "unknown".to_string(),
@@ -54,7 +58,8 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
         LuaType::DocIntegerConst(i) => i.to_string(),
         LuaType::Ref(id) => {
             if let Some(type_decl) = db.get_type_index().get_type_decl(id) {
-                type_decl.get_name().to_string()
+                let name = type_decl.get_name().to_string();
+                humanize_simple_type(db, id, &name, level).unwrap_or(name.to_string())
             } else {
                 id.get_name().to_string()
             }
@@ -83,7 +88,7 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
     }
 }
 
-fn humanize_def_type(db: &DbIndex, id: &LuaTypeDeclId) -> String {
+fn humanize_def_type(db: &DbIndex, id: &LuaTypeDeclId, level: RenderLevel) -> String {
     let type_decl = db.get_type_index().get_type_decl(id);
     if type_decl.is_none() {
         return id.get_name().to_string();
@@ -93,7 +98,7 @@ fn humanize_def_type(db: &DbIndex, id: &LuaTypeDeclId) -> String {
     let simple_name = type_decl.get_name();
     let generic = db.get_type_index().get_generic_params(id);
     if generic.is_none() {
-        return simple_name.to_string();
+        return humanize_simple_type(db, id, &simple_name, level).unwrap_or(simple_name.to_string());
     }
 
     let generic_names = generic
@@ -105,13 +110,68 @@ fn humanize_def_type(db: &DbIndex, id: &LuaTypeDeclId) -> String {
     format!("{}<{}>", simple_name, generic_names)
 }
 
+fn humanize_simple_type(db: &DbIndex, id: &LuaTypeDeclId, name: &str, level: RenderLevel) -> Option<String> {
+    if level != RenderLevel::Detailed {
+        return Some(name.to_string());
+    }
+
+    let member_owner = LuaMemberOwner::Type(id.clone());
+    let member_index = db.get_member_index();
+    let member_map = member_index.get_member_map(member_owner)?;
+    let mut member_vec = Vec::new();
+    for (member_key, member_id) in member_map {
+        let member = member_index.get_member(member_id)?;
+        let typ = member.get_decl_type();
+        if !typ.is_signature() {
+            member_vec.push((member_key, typ));
+        }
+    }
+
+    if member_vec.is_empty() {
+        return Some(name.to_string());
+    }
+
+    let mut member_strings = String::new();
+    member_vec.sort_by(|a, b| a.0.cmp(&b.0));
+
+    let mut count = 0;
+    for (member_key, typ) in member_vec {
+        let member_value_string =
+            humanize_type(db, typ, level.next_level());
+
+        let member_string = match member_key {
+            LuaMemberKey::Name(name) => format!("{} = {}", name, member_value_string),
+            LuaMemberKey::Integer(i) => format!("[{}] = {}", i, member_value_string),
+            LuaMemberKey::None => format!("{}", member_value_string),
+        };
+
+        member_strings.push_str(&format!("    {},\n", member_string));
+        count += 1;
+        if count >= 12 {
+            member_strings.push_str("    ...\n");
+            break;
+        }
+    }
+
+    Some(format!("{} {{\n{}}}", name, member_strings))
+}
+
 fn humanize_union_type(db: &DbIndex, union: &LuaUnionType, level: RenderLevel) -> String {
     let types = union.get_types();
-    let dots = if types.len() > 10 { "..." } else { "" };
+    let num = match level {
+        RenderLevel::Detailed => 10,
+        RenderLevel::Simple => 8,
+        RenderLevel::Normal => 4,
+        RenderLevel::Brief => 2,
+        RenderLevel::Minimal => {
+            return "union<...>".to_string();
+        }
+    };
+    let dots = if types.len() > num { "..." } else { "" };
 
     let type_str = types
         .iter()
-        .take(10)
+        .take(num)
         .map(|ty| humanize_type(db, ty, level.next_level()))
         .collect::<Vec<_>>()
         .join("|");
@@ -120,11 +180,21 @@ fn humanize_union_type(db: &DbIndex, union: &LuaUnionType, level: RenderLevel) -
 
 fn humanize_tuple_type(db: &DbIndex, tuple: &LuaTupleType, level: RenderLevel) -> String {
     let types = tuple.get_types();
-    let dots = if types.len() > 10 { "..." } else { "" };
+    let num = match level {
+        RenderLevel::Detailed => 10,
+        RenderLevel::Simple => 8,
+        RenderLevel::Normal => 4,
+        RenderLevel::Brief => 2,
+        RenderLevel::Minimal => {
+            return "tuple<...>".to_string();
+        }
+    };
+
+    let dots = if types.len() > num { "..." } else { "" };
 
     let type_str = types
         .iter()
-        .take(10)
+        .take(num)
         .map(|ty| humanize_type(db, ty, level.next_level()))
         .collect::<Vec<_>>()
         .join(",");
@@ -168,6 +238,10 @@ fn humanize_doc_function_type(
     lua_func: &LuaFunctionType,
     level: RenderLevel,
 ) -> String {
+    if level == RenderLevel::Minimal {
+        return "fun(...) => ...".to_string();
+    }
+
     let prev = if lua_func.is_async() { "async " } else { "" };
     let params = lua_func
         .get_params()
@@ -202,13 +276,21 @@ fn humanize_doc_function_type(
 }
 
 fn humanize_object_type(db: &DbIndex, object: &LuaObjectType, level: RenderLevel) -> String {
-    if level == RenderLevel::Minimal {
-        return "{...}".to_string();
-    }
+    let num = match level {
+        RenderLevel::Detailed => 10,
+        RenderLevel::Simple => 8,
+        RenderLevel::Normal => 4,
+        RenderLevel::Brief => 2,
+        RenderLevel::Minimal => {
+            return "{...}".to_string();
+        }
+    };
 
+    let dots = if object.get_fields().len() > num { ", ..." } else { "" };
     let fields = object
         .get_fields()
         .iter()
+        .take(num)
         .map(|field| {
             let name = field.0.clone();
             let ty_str = humanize_type(db, field.1, level.next_level());
@@ -233,9 +315,9 @@ fn humanize_object_type(db: &DbIndex, object: &LuaObjectType, level: RenderLevel
         .join(",");
 
     if access.is_empty() {
-        return format!("{{ {} }}", fields);
+        return format!("{{ {}{} }}", fields, dots);
     }
-    format!("{{ {}, {} }}", fields, access)
+    format!("{{ {}, {}{} }}", fields, access, dots)
 }
 
 fn humanize_intersect_type(
@@ -243,16 +325,22 @@ fn humanize_intersect_type(
     inter: &LuaIntersectionType,
     level: RenderLevel,
 ) -> String {
-    if level == RenderLevel::Minimal {
-        return "(...)".to_string();
-    }
+    let num = match level {
+        RenderLevel::Detailed => 10,
+        RenderLevel::Simple => 8,
+        RenderLevel::Normal => 4,
+        RenderLevel::Brief => 2,
+        RenderLevel::Minimal => {
+            return "intersect<...>".to_string();
+        }
+    };
 
     let types = inter.get_types();
-    let dots = if types.len() > 10 { "..." } else { "" };
+    let dots = if types.len() > num { ", ..." } else { "" };
 
     let type_str = types
         .iter()
-        .take(10)
+        .take(num)
         .map(|ty| humanize_type(db, ty, level.next_level()))
         .collect::<Vec<_>>()
         .join("&");
@@ -260,6 +348,10 @@ fn humanize_intersect_type(
 }
 
 fn humanize_extend_type(db: &DbIndex, ext: &LuaExtendedType, level: RenderLevel) -> String {
+    if level == RenderLevel::Minimal {
+        return "(extends)".to_string();
+    }
+
     let base = humanize_type(db, ext.get_base(), level.next_level());
     let extends = humanize_type(db, ext.get_ext(), level.next_level());
 
@@ -274,7 +366,7 @@ fn humanize_generic_type(db: &DbIndex, generic: &LuaGenericType, level: RenderLe
     }
 
     let simple_name = type_decl.unwrap().get_name();
-    if level.next_level() == RenderLevel::Minimal {
+    if level == RenderLevel::Minimal {
         return format!("{}<...>", simple_name);
     }
 
@@ -362,7 +454,7 @@ fn humanize_table_const_type(
             humanize_table_const_type_detail_and_simple(db, member_owned, level)
                 .unwrap_or("table".to_string())
         }
-        RenderLevel::Minimal => "table".to_string(),
+        _ => "table".to_string(),
     }
 }
 
@@ -371,17 +463,26 @@ fn humanize_table_generic_type(
     table_generic_params: &Vec<LuaType>,
     level: RenderLevel,
 ) -> String {
-    if level == RenderLevel::Minimal {
-        return "table<...>".to_string();
-    }
+    let num = match level {
+        RenderLevel::Detailed => 10,
+        RenderLevel::Simple => 8,
+        RenderLevel::Normal => 4,
+        RenderLevel::Brief => 2,
+        RenderLevel::Minimal => {
+            return "table<...>".to_string();
+        }
+    };
+
+    let dots = if table_generic_params.len() > num { ", ..." } else { "" };
 
     let generic_params = table_generic_params
         .iter()
+        .take(num)
         .map(|ty| humanize_type(db, ty, level.next_level()))
         .collect::<Vec<_>>()
         .join(",");
 
-    format!("table<{}>", generic_params)
+    format!("table<{}{}>", generic_params, dots)
 }
 
 fn humanize_tpl_ref_type(tpl: &GenericTpl) -> String {
@@ -404,12 +505,24 @@ fn humanize_multi_return_type(db: &DbIndex, multi: &LuaMultiReturn, level: Rende
             format!("{} ...", base_str)
         }
         LuaMultiReturn::Multi(types) => {
+            let num = match level {
+                RenderLevel::Detailed => 10,
+                RenderLevel::Simple => 8,
+                RenderLevel::Normal => 4,
+                RenderLevel::Brief => 2,
+                RenderLevel::Minimal => {
+                    return "multi<...>".to_string();
+                }
+            };
+
+            let dots = if types.len() > num { ", ..." } else { "" };
             let type_str = types
                 .iter()
-                .map(|ty| humanize_type(db, ty, level))
+                .take(num)
+                .map(|ty| humanize_type(db, ty, level.next_level()))
                 .collect::<Vec<_>>()
                 .join(",");
-            format!("({})", type_str)
+            format!("({}{})", type_str, dots)
         }
     }
 }

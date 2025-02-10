@@ -248,9 +248,10 @@ fn build_type_decl_hover(
             format!("(enum) {}", type_decl.get_name()),
         ));
     } else {
+        let humanize_text = humanize_type(db, &LuaType::Def(type_decl_id.clone()), RenderLevel::Detailed);
         marked_strings.push(MarkedString::from_language_code(
             "lua".to_string(),
-            format!("(class) {}", type_decl.get_name()),
+            format!("(class) {}", humanize_text),
         ));
     }
 

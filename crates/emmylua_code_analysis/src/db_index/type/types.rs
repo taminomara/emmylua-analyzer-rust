@@ -275,6 +275,10 @@ impl LuaType {
         )
     }
 
+    pub fn is_signature(&self) -> bool {
+        matches!(self, LuaType::Signature(_))
+    }
+
     pub fn is_object(&self) -> bool {
         matches!(self, LuaType::Object(_))
     }
