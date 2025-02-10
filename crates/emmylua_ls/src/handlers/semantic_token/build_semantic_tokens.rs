@@ -320,7 +320,11 @@ fn build_node_semantic_token(
         }
         LuaAst::LuaDocNameType(doc_name_type) => {
             let name = doc_name_type.get_name_token()?;
-            builder.push(name.syntax().clone(), SemanticTokenType::TYPE);
+            if name.get_name_text() == "self" {
+                builder.push(name.syntax().clone(), SemanticTokenType::KEYWORD);
+            } else {
+                builder.push(name.syntax().clone(), SemanticTokenType::TYPE);
+            }
         }
         LuaAst::LuaDocObjectType(doc_object_type) => {
             let fields = doc_object_type.get_fields();
