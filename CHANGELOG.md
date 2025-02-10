@@ -6,11 +6,13 @@
 
 `NEW` Now autocompletion suggests function overloads.
 
-`NEW` Better completion for integer member keys.
+`NEW` Improved completion for integer member keys.
 
 `NEW` Infer value by reassign
 
-`NEW` Better analyze base control flow
+`NEW` Improved analyze base control flow
+
+`NEW` Improved hover for class
 
 # 0.4.6
 

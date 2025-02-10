@@ -1,8 +1,9 @@
 use emmylua_code_analysis::SemanticModel;
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind, LuaVarExpr
+    LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr, LuaNameToken,
+    LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
 };
-use lsp_types::{SemanticToken, SemanticTokenType};
+use lsp_types::{SemanticToken, SemanticTokenModifier, SemanticTokenType};
 use rowan::NodeOrToken;
 
 use crate::context::ClientId;
@@ -149,7 +150,11 @@ fn build_tokens_semantic_token(
             builder.push(token, SemanticTokenType::OPERATOR);
         }
         LuaTokenKind::TkDocVisibility => {
-            builder.push(token, SemanticTokenType::DECORATOR);
+            builder.push_with_modifier(
+                token,
+                SemanticTokenType::KEYWORD,
+                SemanticTokenModifier::MODIFICATION,
+            );
         }
         LuaTokenKind::TkDocVersionNumber => {
             builder.push(token, SemanticTokenType::NUMBER);
@@ -328,6 +333,28 @@ fn build_node_semantic_token(
                         _ => {}
                     }
                 }
+            }
+        }
+        LuaAst::LuaDocFuncType(doc_func_type) => {
+            for name_token in doc_func_type.tokens::<LuaNameToken>() {
+                match name_token.get_name_text() {
+                    "fun" => {
+                        builder.push(name_token.syntax().clone(), SemanticTokenType::KEYWORD);
+                    }
+                    "async" => {
+                        builder.push_with_modifier(
+                            name_token.syntax().clone(),
+                            SemanticTokenType::KEYWORD,
+                            SemanticTokenModifier::ASYNC,
+                        );
+                    }
+                    _ => {}
+                }
+            }
+
+            for param in doc_func_type.get_params() {
+                let name = param.get_name_token()?;
+                builder.push(name.syntax().clone(), SemanticTokenType::PARAMETER);
             }
         }
         _ => {}
