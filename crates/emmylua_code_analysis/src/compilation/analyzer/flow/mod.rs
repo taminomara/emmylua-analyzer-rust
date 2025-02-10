@@ -30,6 +30,7 @@ fn flow_analyze(analyzer: &mut FlowAnalyzer) -> Option<()> {
     for (decl_id, decl_refs) in refs_map {
         let mut flow_chains = LuaFlowChain::new(decl_id);
 
+        let mut need_assign_infer = false;
         for decl_ref in &decl_refs {
             if !decl_ref.is_write {
                 let syntax_id =
@@ -37,15 +38,13 @@ fn flow_analyze(analyzer: &mut FlowAnalyzer) -> Option<()> {
                 if let Some(name_expr) = LuaNameExpr::cast(syntax_id.to_node_from_root(root)?) {
                     infer_name_expr(analyzer, &mut flow_chains, name_expr);
                 }
+            } else {
+                need_assign_infer = true;
             }
         }
 
-        let assign_refs = decl_refs
-            .iter()
-            .filter(|decl_ref| decl_ref.is_write)
-            .collect::<Vec<_>>();
-        if !assign_refs.is_empty() {
-            infer_from_assign_stats(analyzer, &mut flow_chains, assign_refs);
+        if need_assign_infer {
+            infer_from_assign_stats(analyzer, &mut flow_chains, decl_refs.iter().collect());
         }
 
         analyzer

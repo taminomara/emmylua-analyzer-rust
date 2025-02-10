@@ -498,7 +498,7 @@ fn to_tag(text: &str) -> LuaTokenKind {
         "async" => LuaTokenKind::TkTagAsync,
         "cast" => LuaTokenKind::TkTagCast,
         "deprecated" => LuaTokenKind::TkTagDeprecated,
-        "private" | "protected" | "public" | "package" | "internal" => {
+        "private" | "protected" | "public" | "package" => {
             LuaTokenKind::TkTagVisibility
         }
         "readonly" => LuaTokenKind::TkTagReadonly,
@@ -518,7 +518,7 @@ fn to_tag(text: &str) -> LuaTokenKind {
 
 fn to_modification_or_name(text: &str) -> LuaTokenKind {
     match text {
-        "private" | "protected" | "public" | "package" | "internal" => {
+        "private" | "protected" | "public" | "package" => {
             LuaTokenKind::TkDocVisibility
         }
         "readonly" => LuaTokenKind::TkDocReadonly,

@@ -315,7 +315,7 @@ fn infer_exist_path_member(
 
     if &current_path == need_current_path {
         member_type = match member_type {
-            Some(member_type) => Some(TypeAssertion::Exist.tighten_type(member_type)),
+            Some(member_type) => Some(TypeAssertion::Exist.simple_tighten_type(member_type)),
             None => Some(LuaType::Any),
         };
 
@@ -760,7 +760,7 @@ fn infer_member_by_index_exist_field(
 
     if &current_path == need_current_path {
         member_type = match member_type {
-            Some(member_type) => Some(TypeAssertion::Exist.tighten_type(member_type)),
+            Some(member_type) => Some(TypeAssertion::Exist.simple_tighten_type(member_type)),
             None => Some(LuaType::Any),
         };
 

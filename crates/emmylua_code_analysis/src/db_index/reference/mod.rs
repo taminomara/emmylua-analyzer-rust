@@ -89,7 +89,7 @@ impl LuaReferenceIndex {
         &self,
         file_id: &FileId,
         decl_id: &LuaDeclId,
-    ) -> Option<&HashSet<DeclReference>> {
+    ) -> Option<&Vec<DeclReference>> {
         self.file_references
             .get(file_id)?
             .get_decl_references(decl_id)
@@ -98,7 +98,7 @@ impl LuaReferenceIndex {
     pub fn get_decl_references_map(
         &self,
         file_id: &FileId,
-    ) -> Option<&HashMap<LuaDeclId, HashSet<DeclReference>>> {
+    ) -> Option<&HashMap<LuaDeclId, Vec<DeclReference>>> {
         self.file_references
             .get(file_id)
             .map(|file_reference| file_reference.get_decl_references_map())
