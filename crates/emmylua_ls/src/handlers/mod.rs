@@ -2,7 +2,7 @@ mod code_actions;
 mod code_lens;
 mod command;
 mod completion;
-mod defination;
+mod definition;
 mod document_color;
 mod document_formatting;
 mod document_highlight;
@@ -52,7 +52,7 @@ pub fn server_capabilities(client_capabilities: &ClientCapabilities) -> ServerCa
     capabilities!(document_range_formatting);
     capabilities!(completion);
     capabilities!(inlay_hint);
-    capabilities!(defination);
+    capabilities!(definition);
     capabilities!(references);
     capabilities!(rename);
     capabilities!(code_lens);

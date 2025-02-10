@@ -1,9 +1,9 @@
 use emmylua_code_analysis::EmmyrcFilenameConvention;
 
-pub fn module_name_convert(name: &str, file_convension: EmmyrcFilenameConvention) -> String {
+pub fn module_name_convert(name: &str, file_conversion: EmmyrcFilenameConvention) -> String {
     let mut module_name = name.to_string();
 
-    match file_convension {
+    match file_conversion {
         EmmyrcFilenameConvention::SnakeCase => {
             module_name = to_snake_case(&module_name);
         }

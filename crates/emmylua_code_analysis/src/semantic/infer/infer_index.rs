@@ -341,9 +341,9 @@ fn infer_instance_member(
 ) -> InferResult {
     let range = inst.get_range();
 
-    let orign_type = inst.get_base();
+    let origin_type = inst.get_base();
     if let Some(result) =
-        infer_member_by_member_key(db, config, &orign_type, index_expr.clone(), infer_guard)
+        infer_member_by_member_key(db, config, &origin_type, index_expr.clone(), infer_guard)
     {
         return Some(result);
     }

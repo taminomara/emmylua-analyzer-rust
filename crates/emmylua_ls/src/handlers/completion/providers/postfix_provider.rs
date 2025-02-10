@@ -45,35 +45,35 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         left_token.text_range().start(),
         builder.trigger_token.text_range().end(),
     );
-    let repalce_lsp_range = builder
+    let replace_lsp_range = builder
         .semantic_model
         .get_document()
         .to_lsp_range(replace_range)?;
 
     add_postfix_completion(
         builder,
-        repalce_lsp_range,
+        replace_lsp_range,
         "if",
         format!("if {} then\n\t$0\nend", left_token_text),
     );
 
     add_postfix_completion(
         builder,
-        repalce_lsp_range,
+        replace_lsp_range,
         "ifn",
         format!("if not {} then\n\t$0\nend", left_token_text),
     );
 
     add_postfix_completion(
         builder,
-        repalce_lsp_range,
+        replace_lsp_range,
         "while",
         format!("while {} do\n\t$0\nend", left_token_text),
     );
 
     add_postfix_completion(
         builder,
-        repalce_lsp_range,
+        replace_lsp_range,
         "forp",
         format!(
             "for ${{1:k}}, ${{2:v}} in pairs({}) do\n\t$0\nend",
@@ -83,7 +83,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
 
     add_postfix_completion(
         builder,
-        repalce_lsp_range,
+        replace_lsp_range,
         "forip",
         format!(
             "for ${{1:i}}, ${{2:v}} in ipairs({}) do\n\t$0\nend",
@@ -93,56 +93,56 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
 
     add_postfix_completion(
         builder,
-        repalce_lsp_range,
+        replace_lsp_range,
         "fori",
         format!("for ${{1:i}} = 1, {} do\n\t$0\nend", left_token_text),
     );
 
     add_postfix_completion(
         builder,
-        repalce_lsp_range,
+        replace_lsp_range,
         "function",
         format!("function {}(${{1:...}})\n\t$0\nend", left_token_text),
     );
 
     add_postfix_completion(
         builder,
-        repalce_lsp_range,
+        replace_lsp_range,
         "insert",
         format!("table.insert({}, ${{1:value}})", left_token_text),
     );
 
     add_postfix_completion(
         builder,
-        repalce_lsp_range,
+        replace_lsp_range,
         "remove",
         format!("table.remove({}, ${{1:index}})", left_token_text),
     );
 
     add_postfix_completion(
         builder,
-        repalce_lsp_range,
+        replace_lsp_range,
         "++",
         format!("{0} = {0} + 1", left_token_text),
     );
 
     add_postfix_completion(
         builder,
-        repalce_lsp_range,
+        replace_lsp_range,
         "--",
         format!("{0} = {0} - 1", left_token_text),
     );
 
     add_postfix_completion(
         builder,
-        repalce_lsp_range,
+        replace_lsp_range,
         "+n",
         format!("{0} = {0} + $1", left_token_text),
     );
 
     add_postfix_completion(
         builder,
-        repalce_lsp_range,
+        replace_lsp_range,
         "-n",
         format!("{0} = {0} - $1", left_token_text),
     );

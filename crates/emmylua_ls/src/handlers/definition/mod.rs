@@ -1,11 +1,11 @@
-mod goto_def_defination;
+mod goto_def_definition;
 mod goto_doc_see;
 mod goto_module_file;
 
 use emmylua_parser::{
     LuaAstNode, LuaAstToken, LuaDocTagSee, LuaNameToken, LuaStringToken, LuaTokenKind,
 };
-use goto_def_defination::goto_def_defination;
+use goto_def_definition::goto_def_definition;
 use goto_doc_see::goto_doc_see;
 use goto_module_file::goto_module_file;
 use lsp_types::{
@@ -16,7 +16,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
-pub async fn on_goto_defination_handler(
+pub async fn on_goto_definition_handler(
     context: ServerContextSnapshot,
     params: GotoDefinitionParams,
     _: CancellationToken,
@@ -51,7 +51,7 @@ pub async fn on_goto_defination_handler(
     };
 
     if let Some(property_owner) = semantic_model.get_property_owner_id(token.clone().into()) {
-        return goto_def_defination(&semantic_model, property_owner);
+        return goto_def_definition(&semantic_model, property_owner);
     } else if let Some(string_token) = LuaStringToken::cast(token.clone()) {
         if let Some(module_response) = goto_module_file(&semantic_model, string_token) {
             return Some(module_response);

@@ -466,7 +466,7 @@ fn infer_generic_type_compact_other(
     Some(false)
 }
 
-// a diffcult compare
+// a difficult compare
 fn infer_union_union_type_compact(
     db: &DbIndex,
     config: &mut LuaInferConfig,

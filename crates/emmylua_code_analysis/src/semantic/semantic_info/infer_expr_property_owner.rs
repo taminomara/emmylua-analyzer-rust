@@ -180,7 +180,7 @@ fn infer_member_property_owner_by_member_key(
             infer_instance_member_property_by_member_key(db, config, inst, member_key, infer_guard)
         }
         LuaType::Global => {
-            infer_globla_member_property_by_member_key(db, config, member_key, infer_guard)
+            infer_global_member_property_by_member_key(db, config, member_key, infer_guard)
         }
         _ => None,
     }
@@ -287,9 +287,9 @@ fn infer_instance_member_property_by_member_key(
 ) -> Option<LuaPropertyOwnerId> {
     let range = inst.get_range();
 
-    let orign_type = inst.get_base();
+    let origin_type = inst.get_base();
     if let Some(result) =
-        infer_member_property_owner_by_member_key(db, config, orign_type, member_key, infer_guard)
+        infer_member_property_owner_by_member_key(db, config, origin_type, member_key, infer_guard)
     {
         return Some(result);
     }
@@ -302,7 +302,7 @@ fn infer_instance_member_property_by_member_key(
     None
 }
 
-fn infer_globla_member_property_by_member_key(
+fn infer_global_member_property_by_member_key(
     db: &DbIndex,
     _: &LuaInferConfig,
     member_key: &LuaMemberKey,

@@ -40,9 +40,9 @@ fn check_name_expr(
     }
 
     let name_token = name_expr.get_name_token()?;
-    if !semantic_model.is_property_visiable(name_token.syntax().clone(), property_owner.clone()) {
+    if !semantic_model.is_property_visible(name_token.syntax().clone(), property_owner.clone()) {
         let emmyrc = semantic_model.get_emmyrc();
-        report_reson(context, &emmyrc, name_token.get_range(), property_owner);
+        report_reason(context, &emmyrc, name_token.get_range(), property_owner);
     }
     Some(())
 }
@@ -62,15 +62,15 @@ fn check_index_expr(
     }
 
     let index_token = index_expr.get_index_name_token()?;
-    if !semantic_model.is_property_visiable(index_token.clone(), property_owner.clone()) {
+    if !semantic_model.is_property_visible(index_token.clone(), property_owner.clone()) {
         let emmyrc = semantic_model.get_emmyrc();
-        report_reson(context, &emmyrc, index_token.text_range(), property_owner);
+        report_reason(context, &emmyrc, index_token.text_range(), property_owner);
     }
 
     Some(())
 }
 
-fn report_reson(
+fn report_reason(
     context: &mut DiagnosticContext,
     emmyrc: &Emmyrc,
     range: TextRange,
@@ -83,8 +83,8 @@ fn report_reson(
 
     if let Some(version_conds) = &property.version_conds {
         let version_number = emmyrc.runtime.version.to_lua_version_number();
-        let visiable = version_conds.iter().any(|cond| cond.check(&version_number));
-        if !visiable {
+        let visible = version_conds.iter().any(|cond| cond.check(&version_number));
+        if !visible {
             let message = t!(
                 "The current Lua version %{version} is not accessible; expected %{conds}.",
                 version = version_number,
@@ -105,8 +105,8 @@ fn report_reson(
         }
     }
 
-    if let Some(visiblity) = property.visibility {
-        let message = match visiblity {
+    if let Some(visibility) = property.visibility {
+        let message = match visibility {
             VisibilityKind::Protected => {
                 t!("The property is protected and cannot be accessed outside its subclasses.")
             }
