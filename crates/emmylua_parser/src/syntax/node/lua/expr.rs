@@ -314,7 +314,12 @@ impl LuaIndexExpr {
         let index_token = self.get_index_token()?;
         index_token.syntax().next_token()
     }
+
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
+        self.token()
+    }
 }
+
 
 impl PathTrait for LuaIndexExpr {}
 

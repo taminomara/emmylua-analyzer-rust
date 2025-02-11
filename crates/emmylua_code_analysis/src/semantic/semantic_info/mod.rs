@@ -1,8 +1,7 @@
 mod infer_expr_property_owner;
 
 use emmylua_parser::{
-    LuaAstNode, LuaDocNameType, LuaDocTag, LuaExpr, LuaSyntaxKind, LuaSyntaxNode, LuaSyntaxToken,
-    LuaTableField,
+    LuaAstNode, LuaAstToken, LuaDocNameType, LuaDocTag, LuaExpr, LuaLocalName, LuaSyntaxKind, LuaSyntaxNode, LuaSyntaxToken, LuaTableField
 };
 use infer_expr_property_owner::infer_expr_property_owner;
 
@@ -206,6 +205,11 @@ pub fn infer_node_property_owner(
                 }
                 _ => return None,
             }
+        }
+        local_name if LuaLocalName::can_cast(local_name.kind().into()) => {
+            let local_name = LuaLocalName::cast(local_name)?;
+            let name_token = local_name.get_name_token()?;
+            infer_token_property_owner(db, infer_config, name_token.syntax().clone())
         }
         _ => None,
     }
