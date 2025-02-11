@@ -23,7 +23,7 @@ pub async fn on_hover(
     let position = params.text_document_position_params.position;
     let analysis = context.analysis.read().await;
     let file_id = analysis.get_file_id(&uri)?;
-    let mut semantic_model = analysis.compilation.get_semantic_model(file_id)?;
+    let semantic_model = analysis.compilation.get_semantic_model(file_id)?;
 
     if !semantic_model.get_emmyrc().hover.enable {
         return None;
