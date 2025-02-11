@@ -17,6 +17,7 @@ pub use type_decl::{
     LuaDeclLocation, LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId,
 };
 pub use types::*;
+pub use type_ops::TypeOps;
 
 #[derive(Debug)]
 pub struct LuaTypeIndex {

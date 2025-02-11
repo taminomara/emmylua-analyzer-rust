@@ -9,6 +9,7 @@ mod type_calc;
 mod type_compact;
 mod visibility;
 
+use std::cell::RefCell;
 use std::{collections::HashSet, sync::Arc};
 
 use emmylua_parser::{LuaCallExpr, LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken, LuaTableExpr};
@@ -41,7 +42,7 @@ use overload_resolve::resolve_signature;
 pub struct SemanticModel<'a> {
     file_id: FileId,
     db: &'a DbIndex,
-    infer_config: LuaInferConfig,
+    infer_config: RefCell<LuaInferConfig>,
     emmyrc: Arc<Emmyrc>,
     root: LuaChunk,
 }
@@ -60,7 +61,7 @@ impl<'a> SemanticModel<'a> {
         Self {
             file_id,
             db,
-            infer_config,
+            infer_config: RefCell::new(infer_config),
             emmyrc,
             root,
         }
@@ -87,32 +88,32 @@ impl<'a> SemanticModel<'a> {
         self.db.get_vfs().get_file_parse_error(&self.file_id)
     }
 
-    pub fn infer_expr(&mut self, expr: LuaExpr) -> InferResult {
-        infer_expr(self.db, &mut self.infer_config, expr)
+    pub fn infer_expr(&self, expr: LuaExpr) -> InferResult {
+        infer_expr(self.db, &mut self.infer_config.borrow_mut(), expr)
     }
 
-    pub fn infer_table_should_be(&mut self, table: LuaTableExpr) -> Option<LuaType> {
-        infer_table_should_be(self.db, &mut self.infer_config, table)
+    pub fn infer_table_should_be(&self, table: LuaTableExpr) -> Option<LuaType> {
+        infer_table_should_be(self.db, &mut self.infer_config.borrow_mut(), table)
     }
 
     pub fn infer_member_infos(&self, prefix_type: &LuaType) -> Option<Vec<LuaMemberInfo>> {
         infer_members(self.db, prefix_type)
     }
 
-    pub fn check_type_compact(&mut self, source: &LuaType, compact_type: &LuaType) -> bool {
-        check_type_compact(self.db, &mut self.infer_config, source, compact_type)
+    pub fn check_type_compact(&self, source: &LuaType, compact_type: &LuaType) -> bool {
+        check_type_compact(self.db, &mut self.infer_config.borrow_mut(), source, compact_type)
     }
 
     pub fn infer_call_expr_func(
-        &mut self,
+        &self,
         call_expr: LuaCallExpr,
         arg_count: Option<usize>,
     ) -> Option<Arc<LuaFunctionType>> {
         let prefix_expr = call_expr.get_prefix_expr()?;
-        let call_expr_type = infer_expr(self.db, &mut self.infer_config, prefix_expr.into())?;
+        let call_expr_type = infer_expr(self.db, &mut self.infer_config.borrow_mut(), prefix_expr.into())?;
         infer_call_expr_func(
             self.db,
-            &mut self.infer_config,
+            &mut self.infer_config.borrow_mut(),
             call_expr,
             call_expr_type,
             &mut InferGuard::new(),
@@ -126,10 +127,10 @@ impl<'a> SemanticModel<'a> {
     ) -> Option<SemanticInfo> {
         match node_or_token {
             NodeOrToken::Node(node) => {
-                infer_node_semantic_info(self.db, &mut self.infer_config, node)
+                infer_node_semantic_info(self.db, &mut self.infer_config.borrow_mut(), node)
             }
             NodeOrToken::Token(token) => {
-                infer_token_semantic_info(self.db, &mut self.infer_config, token)
+                infer_token_semantic_info(self.db, &mut self.infer_config.borrow_mut(), token)
             }
         }
     }
@@ -140,10 +141,10 @@ impl<'a> SemanticModel<'a> {
     ) -> Option<LuaPropertyOwnerId> {
         match node_or_token {
             NodeOrToken::Node(node) => {
-                infer_node_property_owner(self.db, &mut self.infer_config, node)
+                infer_node_property_owner(self.db, &mut self.infer_config.borrow_mut(), node)
             }
             NodeOrToken::Token(token) => {
-                infer_token_property_owner(self.db, &mut self.infer_config, token)
+                infer_token_property_owner(self.db, &mut self.infer_config.borrow_mut(), token)
             }
         }
     }
@@ -153,7 +154,7 @@ impl<'a> SemanticModel<'a> {
         node: LuaSyntaxNode,
         property_owner: LuaPropertyOwnerId,
     ) -> bool {
-        is_reference_to(self.db, &mut self.infer_config, node, property_owner).unwrap_or(false)
+        is_reference_to(self.db, &mut self.infer_config.borrow_mut(), node, property_owner).unwrap_or(false)
     }
 
     pub fn is_property_visible(
@@ -165,7 +166,7 @@ impl<'a> SemanticModel<'a> {
             self.db,
             self.file_id,
             &self.emmyrc,
-            &mut self.infer_config,
+            &mut self.infer_config.borrow_mut(),
             token,
             property_owner,
         )
@@ -194,6 +195,10 @@ impl<'a> SemanticModel<'a> {
 
     pub fn get_file_id(&self) -> FileId {
         self.file_id
+    }
+
+    pub fn get_config(&self) -> &RefCell<LuaInferConfig> {
+        &self.infer_config
     }
 }
 

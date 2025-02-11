@@ -1,5 +1,6 @@
 use emmylua_parser::{
-    LuaAstNode, LuaIndexExpr, LuaIndexKey, LuaIndexMemberExpr, LuaSyntaxId, LuaSyntaxKind, LuaTableExpr
+    LuaAstNode, LuaIndexExpr, LuaIndexKey, LuaIndexMemberExpr, LuaSyntaxId, LuaSyntaxKind,
+    LuaTableExpr,
 };
 use rowan::TextRange;
 use smol_str::SmolStr;
@@ -8,7 +9,7 @@ use crate::{
     db_index::{
         DbIndex, LuaGenericType, LuaIntersectionType, LuaMemberKey, LuaMemberOwner,
         LuaMemberPathExistType, LuaObjectType, LuaOperatorMetaMethod, LuaTupleType, LuaType,
-        LuaTypeDeclId, LuaUnionType, TypeAssertion,
+        LuaTypeDeclId, LuaUnionType,
     },
     semantic::{
         instantiate::{instantiate_type, TypeSubstitutor},
@@ -16,7 +17,7 @@ use crate::{
         type_compact::check_type_compact,
         InferGuard,
     },
-    InFiled, LuaInstanceType,
+    InFiled, LuaInstanceType, TypeOps,
 };
 
 use super::{infer_expr, InferResult, LuaInferConfig};
@@ -39,9 +40,13 @@ pub fn infer_index_expr(
         return Some(member_type);
     }
 
-    if let Some(member_type) =
-        infer_member_by_operator(db, config, &prefix_type, index_member_expr, &mut InferGuard::new())
-    {
+    if let Some(member_type) = infer_member_by_operator(
+        db,
+        config,
+        &prefix_type,
+        index_member_expr,
+        &mut InferGuard::new(),
+    ) {
         return Some(member_type);
     }
 
@@ -316,7 +321,7 @@ fn infer_exist_path_member(
 
     if &current_path == need_current_path {
         member_type = match member_type {
-            Some(member_type) => Some(TypeAssertion::Exist.simple_tighten_type(member_type)),
+            Some(member_type) => Some(TypeOps::Remove.apply(&member_type, &LuaType::Nil)),
             None => Some(LuaType::Any),
         };
 
@@ -761,7 +766,7 @@ fn infer_member_by_index_exist_field(
 
     if &current_path == need_current_path {
         member_type = match member_type {
-            Some(member_type) => Some(TypeAssertion::Exist.simple_tighten_type(member_type)),
+            Some(member_type) => Some(TypeOps::Remove.apply(&member_type, &LuaType::Nil)),
             None => Some(LuaType::Any),
         };
 

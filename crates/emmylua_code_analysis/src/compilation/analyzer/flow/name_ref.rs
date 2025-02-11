@@ -114,8 +114,8 @@ fn broadcast_up(
                                     TypeAssertion::NotExist
                                 }
                             }
-                            LuaLiteralToken::Number(_) => TypeAssertion::Force(LuaType::Number),
-                            LuaLiteralToken::String(_) => TypeAssertion::Force(LuaType::String),
+                            LuaLiteralToken::Number(_) => TypeAssertion::Narrow(LuaType::Number),
+                            LuaLiteralToken::String(_) => TypeAssertion::Narrow(LuaType::String),
                             _ => return None,
                         };
 
@@ -206,14 +206,14 @@ fn infer_lua_type_assert(
     };
 
     let type_assert = match type_literal.as_str() {
-        "number" => TypeAssertion::Force(LuaType::Number),
-        "string" => TypeAssertion::Force(LuaType::String),
-        "boolean" => TypeAssertion::Force(LuaType::Boolean),
-        "table" => TypeAssertion::Force(LuaType::Table),
-        "function" => TypeAssertion::Force(LuaType::Function),
-        "thread" => TypeAssertion::Force(LuaType::Thread),
-        "userdata" => TypeAssertion::Force(LuaType::Userdata),
-        "nil" => TypeAssertion::Force(LuaType::Nil),
+        "number" => TypeAssertion::Narrow(LuaType::Number),
+        "string" => TypeAssertion::Narrow(LuaType::String),
+        "boolean" => TypeAssertion::Narrow(LuaType::Boolean),
+        "table" => TypeAssertion::Narrow(LuaType::Table),
+        "function" => TypeAssertion::Narrow(LuaType::Function),
+        "thread" => TypeAssertion::Narrow(LuaType::Thread),
+        "userdata" => TypeAssertion::Narrow(LuaType::Userdata),
+        "nil" => TypeAssertion::Narrow(LuaType::Nil),
         _ => {
             return None;
         }
