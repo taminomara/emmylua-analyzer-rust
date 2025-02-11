@@ -28,8 +28,8 @@ pub async fn on_document_symbol(
     let file_id = analysis.get_file_id(&uri)?;
     let mut semantic_model = analysis.compilation.get_semantic_model(file_id)?;
     let document_symbol_root = build_document_symbol(&mut semantic_model)?;
-    let respone = DocumentSymbolResponse::Nested(vec![document_symbol_root]);
-    Some(respone)
+    let response = DocumentSymbolResponse::Nested(vec![document_symbol_root]);
+    Some(response)
 }
 
 fn build_document_symbol(semantic_model: &mut SemanticModel) -> Option<DocumentSymbol> {
@@ -55,35 +55,35 @@ fn build_document_symbol(semantic_model: &mut SemanticModel) -> Option<DocumentS
     Some(builder.build(root))
 }
 
-fn build_child_document_symbols(buider: &mut DocumentSymbolBuilder, root: &LuaChunk) -> Option<()> {
+fn build_child_document_symbols(builder: &mut DocumentSymbolBuilder, root: &LuaChunk) -> Option<()> {
     for child in root.descendants::<LuaAst>() {
         match child {
             LuaAst::LuaLocalStat(local_stat) => {
-                build_local_stat_symbol(buider, local_stat);
+                build_local_stat_symbol(builder, local_stat);
             }
             LuaAst::LuaAssignStat(assign_stat) => {
-                build_assign_stat_symbol(buider, assign_stat);
+                build_assign_stat_symbol(builder, assign_stat);
             }
             LuaAst::LuaForStat(for_stat) => {
-                build_for_stat_symbol(buider, for_stat);
+                build_for_stat_symbol(builder, for_stat);
             }
             LuaAst::LuaForRangeStat(for_range_stat) => {
-                build_for_range_stat_symbol(buider, for_range_stat);
+                build_for_range_stat_symbol(builder, for_range_stat);
             }
             LuaAst::LuaLocalFuncStat(local_func) => {
-                build_local_func_stat_symbol(buider, local_func);
+                build_local_func_stat_symbol(builder, local_func);
             }
             LuaAst::LuaFuncStat(func) => {
-                build_func_stat_symbol(buider, func);
+                build_func_stat_symbol(builder, func);
             }
             LuaAst::LuaClosureExpr(closure) => {
-                build_closure_expr_symbol(buider, closure);
+                build_closure_expr_symbol(builder, closure);
             }
             LuaAst::LuaTableExpr(table) => {
-                build_table_symbol(buider, table);
+                build_table_symbol(builder, table);
             }
             LuaAst::LuaIfStat(if_stat) => {
-                build_if_stat_symbol(buider, if_stat);
+                build_if_stat_symbol(builder, if_stat);
             }
             _ => {}
         }

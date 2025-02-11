@@ -1,7 +1,7 @@
 mod text_document_handler;
 mod watched_file_handler;
 mod set_trace;
-mod regsiter_file_watch;
+mod register_file_watch;
 
 use lsp_types::{
     ClientCapabilities, SaveOptions, ServerCapabilities, TextDocumentSyncCapability,
@@ -13,7 +13,7 @@ pub use text_document_handler::{
 };
 pub use watched_file_handler::on_did_change_watched_files;
 pub use set_trace::on_set_trace;
-pub use regsiter_file_watch::register_files_watch;
+pub use register_file_watch::register_files_watch;
 
 pub fn register_capabilities(
     server_capabilities: &mut ServerCapabilities,

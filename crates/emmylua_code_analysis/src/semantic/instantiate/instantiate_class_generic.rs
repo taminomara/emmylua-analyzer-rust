@@ -94,7 +94,7 @@ fn instantiate_object(
     substitutor: &TypeSubstitutor,
 ) -> LuaType {
     let fields = object.get_fields();
-    let index_acess = object.get_index_access();
+    let index_access = object.get_index_access();
 
     let mut new_fields = HashMap::new();
     for (key, field) in fields {
@@ -103,7 +103,7 @@ fn instantiate_object(
     }
 
     let mut new_index_access = Vec::new();
-    for (key, value) in index_acess {
+    for (key, value) in index_access {
         let key = instantiate_type(db, &key, substitutor);
         let value = instantiate_type(db, &value, substitutor);
         new_index_access.push((key, value));

@@ -86,13 +86,13 @@ mod tests {
     fn test_relative_path() {
         #[cfg(windows)]
         {
-            let worksapce = Path::new("C:/Users\\username/Documents");
+            let workspace = Path::new("C:/Users\\username/Documents");
             let uri = Uri::from_str("file:///C:/Users/username/Documents/test.lua").unwrap();
             let file_path = uri_to_file_path(&uri).unwrap();
-            let relative_path = file_path.strip_prefix(worksapce).unwrap();
+            let relative_path = file_path.strip_prefix(workspace).unwrap();
             assert_eq!(relative_path, Path::new("test.lua"));
             let file_path2 = Path::new("C:\\Users\\username/Documents\\test.lua");
-            let relative_path2 = file_path2.strip_prefix(worksapce).unwrap();
+            let relative_path2 = file_path2.strip_prefix(workspace).unwrap();
             assert_eq!(relative_path2, Path::new("test.lua"));
         }
     }

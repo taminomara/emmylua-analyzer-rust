@@ -3,7 +3,7 @@ use std::str::FromStr;
 use emmylua_code_analysis::{LuaPropertyOwnerId, SemanticModel};
 use lsp_types::{GotoDefinitionResponse, Location, Position, Range, Uri};
 
-pub fn goto_def_defination(
+pub fn goto_def_definition(
     semantic_model: &SemanticModel,
     property_owner: LuaPropertyOwnerId,
 ) -> Option<GotoDefinitionResponse> {

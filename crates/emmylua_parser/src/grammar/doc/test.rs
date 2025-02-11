@@ -1847,7 +1847,7 @@ Syntax(Chunk)@0..74
     }
 
     #[test]
-    fn test_visiblity() {
+    fn test_visibility() {
         let code = r#"
         ---@private
         ---@public

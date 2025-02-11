@@ -80,7 +80,7 @@ fn check_call_expr(
                             DiagnosticCode::ParamTypeNotMatch,
                             arg.get_range(),
                             format!(
-                                "expected {} but founded {}",
+                                "expected {} but found {}",
                                 humanize_type(db, &param_type, RenderLevel::Simple),
                                 humanize_type(db, &expr_type, RenderLevel::Simple)
                             ),
@@ -109,7 +109,7 @@ fn check_call_expr(
                     DiagnosticCode::ParamTypeNotMatch,
                     arg.get_range(),
                     format!(
-                        "expected {} but founded {}",
+                        "expected {} but found {}",
                         humanize_type(db, &param_type, RenderLevel::Simple),
                         humanize_type(db, &expr_type, RenderLevel::Simple)
                     ),

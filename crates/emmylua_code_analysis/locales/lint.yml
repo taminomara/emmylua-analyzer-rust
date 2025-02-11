@@ -34,7 +34,7 @@ The property is protected and cannot be accessed outside its subclasses.:
   zh_CN: '该属性受保护，无法在其子类之外访问。'
   zh_HK: '該屬性受保護，無法在其子類之外訪問。'
   zh_TW: '該屬性受保護，無法在其子類之外訪問。'
-expected %{num} but founded %{found_num}. %{infos}:
+expected %{num} but found %{found_num}. %{infos}:
   en: 'expected %{num} but found %{found_num}. %{infos}'
   zh_CN: '期望 %{num} 但找到 %{found_num}。%{infos}'
   zh_HK: '期望 %{num} 但找到 %{found_num}。%{infos}'

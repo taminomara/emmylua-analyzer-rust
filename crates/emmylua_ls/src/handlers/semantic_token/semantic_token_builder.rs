@@ -1,6 +1,7 @@
 use emmylua_code_analysis::LuaDocument;
 use emmylua_parser::LuaSyntaxToken;
 use lsp_types::{SemanticToken, SemanticTokenModifier, SemanticTokenType};
+use rowan::TextSize;
 use std::{collections::HashMap, vec::Vec};
 
 pub const SEMANTIC_TOKEN_TYPES: &[SemanticTokenType] = &[
@@ -64,7 +65,7 @@ pub struct SemanticBuilder<'a> {
     multi_line_support: bool,
     type_to_id: HashMap<SemanticTokenType, u32>,
     modifier_to_id: HashMap<SemanticTokenModifier, u32>,
-    data: HashMap<LuaSyntaxToken, SemanticTokenData>,
+    data: HashMap<TextSize, SemanticTokenData>,
 }
 
 #[allow(unused)]
@@ -94,7 +95,8 @@ impl<'a> SemanticBuilder<'a> {
     }
 
     fn push_data(&mut self, token: LuaSyntaxToken, typ: u32, modifiers: u32) -> Option<()> {
-        if self.data.contains_key(&token) {
+        let position = token.text_range().start();
+        if self.data.contains_key(&position) {
             return Some(());
         }
 
@@ -132,16 +134,20 @@ impl<'a> SemanticBuilder<'a> {
                 modifiers,
             });
 
-            self.data.insert(token, SemanticTokenData::MultiLine(muliti_line_data));
+            self.data
+                .insert(position, SemanticTokenData::MultiLine(muliti_line_data));
         } else {
             let length = token.text().chars().count() as u32;
-            self.data.insert(token, SemanticTokenData::Basic(BasicSemanticTokenData {
-                line: start_line as u32,
-                col: start_col as u32,
-                length,
-                typ,
-                modifiers,
-            }));
+            self.data.insert(
+                position,
+                SemanticTokenData::Basic(BasicSemanticTokenData {
+                    line: start_line as u32,
+                    col: start_col as u32,
+                    length,
+                    typ,
+                    modifiers,
+                }),
+            );
         }
 
         Some(())
@@ -161,6 +167,30 @@ impl<'a> SemanticBuilder<'a> {
         let typ = *self.type_to_id.get(&ty)?;
         let modifier = 1 << *self.modifier_to_id.get(&modifier)?;
         self.push_data(token, typ, modifier);
+        Some(())
+    }
+
+    pub fn push_at_position(
+        &mut self,
+        position: TextSize,
+        length: u32,
+        ty: SemanticTokenType,
+        modifiers: SemanticTokenModifier,
+    ) -> Option<()> {
+        let lsp_position = self.document.to_lsp_position(position)?;
+        let start_line = lsp_position.line;
+        let start_col = lsp_position.character;
+
+        self.data.insert(
+            position,
+            SemanticTokenData::Basic(BasicSemanticTokenData {
+                line: start_line as u32,
+                col: start_col as u32,
+                length,
+                typ: *self.type_to_id.get(&ty)?,
+                modifiers: 1 << *self.modifier_to_id.get(&modifiers)?,
+            }),
+        );
         Some(())
     }
 

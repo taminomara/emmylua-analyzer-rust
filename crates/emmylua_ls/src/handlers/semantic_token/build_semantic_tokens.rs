@@ -172,6 +172,20 @@ fn build_tokens_semantic_token(
         LuaTokenKind::TkDocRegion | LuaTokenKind::TkDocEndRegion => {
             builder.push(token, SemanticTokenType::KEYWORD);
         }
+        LuaTokenKind::TkDocStart => {
+            let range = token.text_range();
+            // find '@'
+            let text = token.text();
+            let mut start = 0;
+            for (i, c) in text.char_indices() {
+                if c == '@' {
+                    start = i;
+                    break;
+                }
+            }
+            let position = u32::from(range.start()) + start as u32;
+            builder.push_at_position(position.into(), 1, SemanticTokenType::KEYWORD, SemanticTokenModifier::DOCUMENTATION);
+        }
         _ => {}
     }
 }

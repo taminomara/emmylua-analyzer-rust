@@ -220,34 +220,34 @@ fn narrow_down_type(source: LuaType, target: LuaType) -> LuaType {
     }
 }
 
-fn add_type(source: LuaType, addded_typ: LuaType) -> LuaType {
-    if addded_typ.is_nil() {
+fn add_type(source: LuaType, added_typ: LuaType) -> LuaType {
+    if added_typ.is_nil() {
         return LuaType::Nullable(source.into());
     }
 
     match source {
         LuaType::Union(union) => {
             let mut types = union.get_types().to_vec();
-            types.push(addded_typ);
+            types.push(added_typ);
             LuaType::Union(LuaUnionType::new(types).into())
         }
         LuaType::Nullable(inner) => {
-            let inner = add_type((*inner).clone(), addded_typ);
+            let inner = add_type((*inner).clone(), added_typ);
             LuaType::Nullable(inner.into())
         }
-        LuaType::Unknown | LuaType::Any => addded_typ,
+        LuaType::Unknown | LuaType::Any => added_typ,
         _ => {
-            if source.is_number() && addded_typ.is_number() {
+            if source.is_number() && added_typ.is_number() {
                 return LuaType::Number;
-            } else if source.is_string() && addded_typ.is_string() {
+            } else if source.is_string() && added_typ.is_string() {
                 return LuaType::String;
-            } else if source.is_boolean() && addded_typ.is_boolean() {
+            } else if source.is_boolean() && added_typ.is_boolean() {
                 return LuaType::Boolean;
-            } else if source.is_table() && addded_typ.is_table() {
+            } else if source.is_table() && added_typ.is_table() {
                 return LuaType::Table;
             } 
             
-            LuaType::Union(LuaUnionType::new(vec![source, addded_typ]).into())
+            LuaType::Union(LuaUnionType::new(vec![source, added_typ]).into())
         },
     }
 }

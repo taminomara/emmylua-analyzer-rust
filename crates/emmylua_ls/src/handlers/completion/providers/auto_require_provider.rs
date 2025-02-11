@@ -21,7 +21,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     // optimize for large project
     let prefix = name_expr.get_name_text()?.to_lowercase();
     let emmyrc = builder.semantic_model.get_emmyrc();
-    let file_convension = emmyrc
+    let file_conversion = emmyrc
         .completion
         .auto_require_naming_convention;
     let version_number = emmyrc.runtime.version.to_lua_version_number();
@@ -45,7 +45,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
                 builder,
                 &prefix,
                 &module_info,
-                file_convension,
+                file_conversion,
                 lsp_position,
                 &mut completions,
             );
@@ -63,11 +63,11 @@ fn add_module_completion_item(
     builder: &CompletionBuilder,
     prefix: &str,
     module_info: &ModuleInfo,
-    file_convension: EmmyrcFilenameConvention,
+    file_conversion: EmmyrcFilenameConvention,
     position: Position,
     completions: &mut Vec<CompletionItem>,
 ) -> Option<()> {
-    let completion_name = module_name_convert(&module_info.name, file_convension);
+    let completion_name = module_name_convert(&module_info.name, file_conversion);
     if !completion_name.to_lowercase().starts_with(prefix) {
         return None;
     }

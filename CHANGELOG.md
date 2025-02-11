@@ -48,7 +48,7 @@
 
 `FIX` Fix possible panic due to integer overflow when calculating pows.
 
-`NEW` Support compile by winodws mingw
+`NEW` Support compile by windows mingw
 
 `NEW` `emmylua_check` now supports `workspace.library`
 

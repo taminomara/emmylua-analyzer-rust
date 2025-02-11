@@ -143,13 +143,13 @@ pub async fn init_analysis(
 
     drop(mut_analysis);
 
-    let cancle_token = CancellationToken::new();
+    let cancel_token = CancellationToken::new();
     // diagnostic files
     let (tx, mut rx) = tokio::sync::mpsc::channel::<FileId>(100);
     let valid_file_count = file_ids.len();
     for file_id in file_ids {
         let analysis = analysis.clone();
-        let token = cancle_token.clone();
+        let token = cancel_token.clone();
         let client = client_proxy.clone();
         let tx = tx.clone();
         tokio::spawn(async move {

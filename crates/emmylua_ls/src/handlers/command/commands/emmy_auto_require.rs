@@ -26,8 +26,8 @@ pub async fn handle(context: ServerContextSnapshot, args: Vec<Value>) -> Option<
     let emmyrc = semantic_model.get_emmyrc();
     let require_like_func = &emmyrc.runtime.require_like_function;
     let auto_require_func = emmyrc.completion.auto_require_function.clone();
-    let file_convension = emmyrc.completion.auto_require_naming_convention;
-    let local_name = module_name_convert(&module_info.name, file_convension);
+    let file_conversion = emmyrc.completion.auto_require_naming_convention;
+    let local_name = module_name_convert(&module_info.name, file_conversion);
     let require_str = format!(
         "local {} = {}(\"{}\")",
         local_name, auto_require_func, module_info.full_module_name
