@@ -3,7 +3,7 @@ use smol_str::SmolStr;
 
 use crate::{
     db_index::{DbIndex, LuaOperatorMetaMethod, LuaType},
-    LuaUnionType,
+    TypeOps,
 };
 
 use super::{get_custom_type_operator, infer_config::LuaInferConfig, infer_expr, InferResult};
@@ -363,10 +363,5 @@ fn infer_binary_expr_concat(db: &DbIndex, left: LuaType, right: LuaType) -> Infe
 }
 
 fn infer_binary_expr_or(left: LuaType, right: LuaType) -> InferResult {
-    if left.is_boolean() && right.is_boolean() {
-        return Some(LuaType::Boolean);
-    }
-
-    // xxx or yyy
-    LuaType::Union(LuaUnionType::new(vec![left.clone(), right.clone()]).into()).into()
+    Some(TypeOps::Union.apply(&left, &right))
 }
