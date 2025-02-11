@@ -1,6 +1,9 @@
 # CHANGELOG
 
-# 0.4.7(unreleased)
+# 0.5.1 (unreleased)
+
+
+# 0.5.0
 
 `NEW` Support type-check when casting tuples to arrays.
 
