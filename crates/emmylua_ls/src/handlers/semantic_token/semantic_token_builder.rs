@@ -30,13 +30,16 @@ pub const SEMANTIC_TOKEN_TYPES: &[SemanticTokenType] = &[
 ];
 
 pub const SEMANTIC_TOKEN_MODIFIERS: &[SemanticTokenModifier] = &[
-    SemanticTokenModifier::MODIFICATION,
     SemanticTokenModifier::DECLARATION,
     SemanticTokenModifier::DEFINITION,
     SemanticTokenModifier::READONLY,
     SemanticTokenModifier::STATIC,
     SemanticTokenModifier::ABSTRACT,
     SemanticTokenModifier::DEPRECATED,
+    SemanticTokenModifier::ASYNC,
+    SemanticTokenModifier::MODIFICATION,
+    SemanticTokenModifier::DOCUMENTATION,
+    SemanticTokenModifier::DEFAULT_LIBRARY,
 ];
 
 #[derive(Debug)]
