@@ -13,7 +13,6 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     }
 
     let name_expr = LuaNameExpr::cast(builder.trigger_token.parent()?)?;
-
     let file_id = builder.semantic_model.get_file_id();
     let decl_tree = builder
         .semantic_model
@@ -23,6 +22,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
 
     let mut duplicated_name = HashSet::new();
     let local_env = decl_tree.get_env_decls(builder.trigger_token.text_range().start())?;
+
     for decl_id in local_env.iter() {
         let (name, mut typ) = {
             let decl = builder
@@ -45,8 +45,12 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
             .get_flow_index()
             .get_flow_chain(file_id, decl_id.clone())
         {
+            let semantic_model = &builder.semantic_model;
+            let db = semantic_model.get_db();
+            let root = semantic_model.get_root().syntax();
+            let config = semantic_model.get_config();
             for type_assert in chain.get_type_asserts(name_expr.get_position()) {
-                typ = type_assert.simple_tighten_type(typ);
+                typ = type_assert.tighten_type(db, &mut config.borrow_mut(), root, typ)?;
             }
         }
 

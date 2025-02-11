@@ -9,7 +9,7 @@ use crate::{
     },
     DbIndex, FileId, LuaGenericType, LuaInstanceType, LuaIntersectionType, LuaMemberKey,
     LuaMemberOwner, LuaMemberPathExistType, LuaObjectType, LuaPropertyOwnerId, LuaTupleType,
-    LuaType, LuaTypeDeclId, LuaUnionType, TypeAssertion,
+    LuaType, LuaTypeDeclId, LuaUnionType, TypeOps,
 };
 
 use super::{get_buildin_type_map_type_id, InferMembersResult, LuaMemberInfo};
@@ -232,7 +232,7 @@ fn infer_exist_field_members(
         if let Some(mut members) = infer_members_guard(db, base, &mut InferGuard::new()) {
             for info in members.iter_mut() {
                 if info.key.to_path() == path {
-                    info.typ = TypeAssertion::Exist.simple_tighten_type(info.typ.clone());
+                    info.typ = TypeOps::Remove.apply(&info.typ, &LuaType::Nil);
                     field_founded = true;
                 }
             }

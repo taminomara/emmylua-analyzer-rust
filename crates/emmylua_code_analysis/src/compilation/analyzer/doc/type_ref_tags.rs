@@ -313,7 +313,7 @@ fn analyze_cast_with_name_token(
                     flow_chain.add_type_assert(TypeAssertion::Remove(typ), effect_range);
                 }
                 CastAction::Force => {
-                    flow_chain.add_type_assert(TypeAssertion::Force(typ), effect_range);
+                    flow_chain.add_type_assert(TypeAssertion::Narrow(typ), effect_range);
                 }
             }
         }

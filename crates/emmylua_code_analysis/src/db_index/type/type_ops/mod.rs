@@ -1,4 +1,6 @@
 mod union_type;
+mod remove_type;
+mod narrow_type;
 
 use super::LuaType;
 
@@ -16,9 +18,8 @@ impl TypeOps {
     pub fn apply(&self, source: &LuaType, target: &LuaType) -> LuaType {
         match self {
             TypeOps::Union => union_type::union_type(source.clone(), target.clone()),
-            // TypeOps::Remove => remove_type(source, target),
-            // TypeOps::Narrow => narrow_down_type(source, target),
-            _ => source.clone(),
+            TypeOps::Remove => remove_type::remove_type(source.clone(), target.clone()),
+            TypeOps::Narrow => narrow_type::narrow_down_type(source.clone(), target.clone()),
         }
     }
 }

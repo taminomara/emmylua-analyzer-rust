@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-#[allow(unused_imports)]
 use emmylua_parser::{LuaAssignStat, LuaAstNode, LuaNameExpr, LuaSyntaxId, LuaSyntaxKind};
 use emmylua_parser::{LuaAst, LuaBlock, LuaExpr, LuaIfStat, LuaSyntaxNode};
 use rowan::TextRange;
