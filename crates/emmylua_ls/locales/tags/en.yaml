@@ -16,7 +16,7 @@ tags.enum: |
   }
   ```
 tags.interface: |
-  The `interface` is depracted, use `class` instead.
+  The `interface` is deprecated, use `class` instead.
   Example:
   ```lua
   ---@interface MyInterface

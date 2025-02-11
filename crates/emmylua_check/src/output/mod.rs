@@ -1,5 +1,5 @@
-mod json_output_writter;
-mod text_output_writter;
+mod json_output_writer;
+mod text_output_writer;
 
 use std::path::PathBuf;
 
@@ -18,9 +18,9 @@ pub async fn output_result(
     output: OutputDestination,
     warnings_as_errors: bool,
 ) -> i32 {
-    let mut writter: Box<dyn OutputWritter> = match output_format {
-        OutputFormat::Json => Box::new(json_output_writter::JsonOutputWritter::new(output)),
-        OutputFormat::Text => Box::new(text_output_writter::TextOutputWritter::new(workspace)),
+    let mut writer: Box<dyn OutputWriter> = match output_format {
+        OutputFormat::Json => Box::new(json_output_writer::JsonOutputWriter::new(output)),
+        OutputFormat::Text => Box::new(text_output_writer::TextOutputWriter::new(workspace)),
     };
 
     let mut has_error = false;
@@ -39,7 +39,7 @@ pub async fn output_result(
                     break;
                 }
             }
-            writter.write(db, file_id, diagnostics);
+            writer.write(db, file_id, diagnostics);
         }
 
         if count == total_count {
@@ -47,7 +47,7 @@ pub async fn output_result(
         }
     }
 
-    writter.finish();
+    writer.finish();
 
     if has_error {
         1
@@ -56,7 +56,7 @@ pub async fn output_result(
     }
 }
 
-trait OutputWritter {
+trait OutputWriter {
     fn write(&mut self, db: &DbIndex, file_id: FileId, diagnostics: Vec<Diagnostic>);
 
     fn finish(&mut self);

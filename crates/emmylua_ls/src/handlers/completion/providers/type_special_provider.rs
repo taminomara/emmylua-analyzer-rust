@@ -215,12 +215,12 @@ fn add_alias_member_completion(
         _ => return None,
     };
 
-    let propperty_owner_id = LuaPropertyOwnerId::Member(member_id.clone());
+    let property_owner_id = LuaPropertyOwnerId::Member(member_id.clone());
     let description = if let Some(property) = builder
         .semantic_model
         .get_db()
         .get_property_index()
-        .get_property(propperty_owner_id)
+        .get_property(property_owner_id)
     {
         if property.description.is_some() {
             Some(*(property.description.clone().unwrap()))

@@ -6,16 +6,16 @@ use serde_json::{json, Value};
 
 use crate::cmd_args::OutputDestination;
 
-use super::OutputWritter;
+use super::OutputWriter;
 
 #[derive(Debug)]
-pub struct JsonOutputWritter {
+pub struct JsonOutputWriter {
     output: Option<File>,
     first_write: bool,
     json_file_caches: Vec<Value>,
 }
 
-impl JsonOutputWritter {
+impl JsonOutputWriter {
     pub fn new(output: OutputDestination) -> Self {
         let output = match output {
             OutputDestination::Stdout => None,
@@ -29,7 +29,7 @@ impl JsonOutputWritter {
                 Some(std::fs::File::create(path).unwrap())
             }
         };
-        JsonOutputWritter {
+        JsonOutputWriter {
             output,
             first_write: true,
             json_file_caches: Vec::new(),
@@ -37,7 +37,7 @@ impl JsonOutputWritter {
     }
 }
 
-impl OutputWritter for JsonOutputWritter {
+impl OutputWriter for JsonOutputWriter {
     fn write(&mut self, db: &DbIndex, file_id: FileId, diagnostics: Vec<Diagnostic>) {
         let file_path = db.get_vfs().get_file_path(&file_id).unwrap();
         let file_path = file_path.to_str().unwrap();

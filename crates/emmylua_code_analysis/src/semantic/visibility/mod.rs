@@ -20,8 +20,8 @@ pub fn check_visibility(
         .get_property(property_owner.clone())?;
     if let Some(version_conds) = &property.version_conds {
         let version_number = emmyrc.runtime.version.to_lua_version_number();
-        let visiable = version_conds.iter().any(|cond| cond.check(&version_number));
-        if !visiable {
+        let visible = version_conds.iter().any(|cond| cond.check(&version_number));
+        if !visible {
             return Some(false);
         }
     }

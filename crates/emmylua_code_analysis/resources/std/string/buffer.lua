@@ -9,7 +9,7 @@
 ---
 --- The convenient string buffer API simplifies common string manipulation tasks, that would otherwise require creating many intermediate strings. String buffers improve performance by eliminating redundant memory copies, object creation, string interning and garbage collection overhead. In conjunction with the FFI library, they allow zero-copy operations.
 ---
---- The string buffer libary also includes a high-performance serializer for Lua objects.
+--- The string buffer library also includes a high-performance serializer for Lua objects.
 ---
 ---
 --- ## Streaming Serialization

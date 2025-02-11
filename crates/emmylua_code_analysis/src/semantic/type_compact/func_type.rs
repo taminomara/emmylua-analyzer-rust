@@ -23,11 +23,11 @@ pub fn infer_doc_func_type_compact(
             infer_guard,
             false,
         ),
-        LuaType::Signature(signatur_id) => infer_doc_func_type_compact_for_signature(
+        LuaType::Signature(signature_id) => infer_doc_func_type_compact_for_signature(
             db,
             config,
             source_func,
-            signatur_id,
+            signature_id,
             infer_guard,
         )
         .unwrap_or(false),

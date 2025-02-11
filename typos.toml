@@ -1,0 +1,12 @@
+[default]
+extend-ignore-re = [
+  # git commit hashes in CHANGELOG.md
+  "\\[[0-9a-f]{7}\\]",
+  # Line ignore with trailing # spellchecker:disable-line
+  "(?Rm)^.*(#|--|//)\\s*spellchecker:disable-line$",
+]
+
+[files]
+extend-exclude = [
+  "CHANGELOG.md",
+]

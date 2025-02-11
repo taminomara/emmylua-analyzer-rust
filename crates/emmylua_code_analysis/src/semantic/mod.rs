@@ -156,7 +156,7 @@ impl<'a> SemanticModel<'a> {
         is_reference_to(self.db, &mut self.infer_config, node, property_owner).unwrap_or(false)
     }
 
-    pub fn is_property_visiable(
+    pub fn is_property_visible(
         &mut self,
         token: LuaSyntaxToken,
         property_owner: LuaPropertyOwnerId,
@@ -198,7 +198,7 @@ impl<'a> SemanticModel<'a> {
 }
 
 /// Guard to prevent infinite recursion
-/// Some type may reference itself, so we need to check if we have already infered this type
+/// Some type may reference itself, so we need to check if we have already inferred this type
 #[derive(Debug)]
 pub struct InferGuard {
     guard: HashSet<LuaTypeDeclId>,

@@ -216,12 +216,12 @@ impl LuaDocParser<'_, '_> {
             return;
         }
         self.current_token = LuaTokenKind::None;
-        let readed_range = self.current_token_range;
+        let read_range = self.current_token_range;
         let origin_token_range = self.tokens[self.origin_token_index].range;
         let origin_token_kind = self.tokens[self.origin_token_index].kind;
         let new_range = SourceRange {
-            start_offset: readed_range.start_offset,
-            length: origin_token_range.end_offset() - readed_range.start_offset,
+            start_offset: read_range.start_offset,
+            length: origin_token_range.end_offset() - read_range.start_offset,
         };
 
         self.lexer.reset(origin_token_kind, new_range);

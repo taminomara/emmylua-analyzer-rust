@@ -20,7 +20,7 @@ use super::{
     code_lens::{on_code_lens_handler, on_resolve_code_lens_handler},
     command::on_execute_command_handler,
     completion::{on_completion_handler, on_completion_resolve_handler},
-    defination::on_goto_defination_handler,
+    definition::on_goto_definition_handler,
     document_color::{on_document_color, on_document_color_presentation},
     document_formatting::on_formatting_handler,
     document_highlight::on_document_highlight_handler,
@@ -71,7 +71,7 @@ pub async fn on_req_handler(
         .await
         .on_parallel::<InlayHintResolveRequest, _, _>(on_resolve_inlay_hint)
         .await
-        .on_parallel::<GotoDefinition, _, _>(on_goto_defination_handler)
+        .on_parallel::<GotoDefinition, _, _>(on_goto_definition_handler)
         .await
         .on_parallel::<References, _, _>(on_references_handler)
         .await

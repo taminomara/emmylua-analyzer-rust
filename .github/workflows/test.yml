@@ -9,7 +9,21 @@ on:
     branches:
       - main
 
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+  CLICOLOR: 1
+
 jobs:
+  spelling:
+    name: Spell Check with Typos
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Spell Check Repo
+      uses: crate-ci/typos@master
+
   test:
     runs-on: ubuntu-latest
     steps:

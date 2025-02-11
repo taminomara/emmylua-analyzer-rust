@@ -3,21 +3,21 @@ use std::path::PathBuf;
 use emmylua_code_analysis::{DbIndex, FileId};
 use lsp_types::Diagnostic;
 
-use super::OutputWritter;
+use super::OutputWriter;
 use ariadne::{Color, Label, Report, ReportKind, Source};
 
 #[derive(Debug)]
-pub struct TextOutputWritter {
+pub struct TextOutputWriter {
     workspace: PathBuf,
 }
 
-impl TextOutputWritter {
+impl TextOutputWriter {
     pub fn new(workspace: PathBuf) -> Self {
-        TextOutputWritter { workspace }
+        TextOutputWriter { workspace }
     }
 }
 
-impl OutputWritter for TextOutputWritter {
+impl OutputWriter for TextOutputWriter {
     fn write(&mut self, db: &DbIndex, file_id: FileId, diagnostics: Vec<Diagnostic>) {
         if diagnostics.is_empty() {
             return;
