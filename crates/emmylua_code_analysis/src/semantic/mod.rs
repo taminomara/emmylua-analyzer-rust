@@ -136,7 +136,7 @@ impl<'a> SemanticModel<'a> {
     }
 
     pub fn get_property_owner_id(
-        &mut self,
+        &self,
         node_or_token: NodeOrToken<LuaSyntaxNode, LuaSyntaxToken>,
     ) -> Option<LuaPropertyOwnerId> {
         match node_or_token {
