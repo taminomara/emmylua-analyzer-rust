@@ -74,7 +74,7 @@ fn check_call_expr(
                         expr_type = LuaType::Any;
                     }
 
-                    if !semantic_model.check_type_compact(&param_type, &expr_type) {
+                    if !semantic_model.type_check(&param_type, &expr_type) {
                         let db = semantic_model.get_db();
                         context.add_diagnostic(
                             DiagnosticCode::ParamTypeNotMatch,
@@ -103,7 +103,7 @@ fn check_call_expr(
                 expr_type = LuaType::Any;
             }
 
-            if !semantic_model.check_type_compact(&param_type, &expr_type) {
+            if !semantic_model.type_check(&param_type, &expr_type) {
                 let db = semantic_model.get_db();
                 context.add_diagnostic(
                     DiagnosticCode::ParamTypeNotMatch,

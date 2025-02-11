@@ -5,7 +5,7 @@ use emmylua_parser::{
 
 use crate::{DbIndex, Emmyrc, FileId, LuaMemberOwner, LuaPropertyOwnerId, LuaType};
 
-use super::{infer_expr, type_compact::is_sub_type_of, LuaInferConfig};
+use super::{infer_expr, type_check::is_sub_type_of, LuaInferConfig};
 
 pub fn check_visibility(
     db: &DbIndex,

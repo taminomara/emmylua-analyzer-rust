@@ -6,7 +6,7 @@ mod overload_resolve;
 mod reference;
 mod semantic_info;
 mod type_calc;
-mod type_compact;
+mod type_check;
 mod visibility;
 
 use std::cell::RefCell;
@@ -24,7 +24,7 @@ use semantic_info::{
     infer_node_property_owner, infer_node_semantic_info, infer_token_property_owner,
     infer_token_semantic_info,
 };
-use type_compact::{check_type_compact, is_sub_type_of};
+use type_check::{check_type_compact, is_sub_type_of};
 use visibility::check_visibility;
 
 use crate::LuaFunctionType;
@@ -100,7 +100,7 @@ impl<'a> SemanticModel<'a> {
         infer_members(self.db, prefix_type)
     }
 
-    pub fn check_type_compact(&self, source: &LuaType, compact_type: &LuaType) -> bool {
+    pub fn type_check(&self, source: &LuaType, compact_type: &LuaType) -> bool {
         check_type_compact(
             self.db,
             &mut self.infer_config.borrow_mut(),

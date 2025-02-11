@@ -61,13 +61,13 @@ fn infer_type_compact(
         (_, LuaType::MemberPathExist(right)) => {
             infer_type_compact(db, config, source, &right.get_origin(), infer_guard)
         }
-        (LuaType::BooleanConst(_), _) => compact_type.is_boolean(),
-        (LuaType::IntegerConst(_), _) => compact_type.is_number(),
-        (LuaType::StringConst(_), _) => compact_type.is_string(),
-        (LuaType::Number, _) => compact_type.is_number(),
-        (LuaType::Integer, _) => compact_type.is_integer(),
-        (LuaType::String, _) => compact_type.is_string(),
-        (LuaType::Boolean, _) => compact_type.is_boolean(),
+        (LuaType::BooleanConst(_), right) if right.is_boolean() => true,
+        (LuaType::IntegerConst(_), right) if right.is_number() => true,
+        (LuaType::StringConst(_), right) if right.is_string() => true,
+        (LuaType::Number, right) if right.is_number() => true,
+        (LuaType::Integer, right) if right.is_integer() => true,
+        (LuaType::String, right) if right.is_string() => true,
+        (LuaType::Boolean, right) if right.is_boolean() => true,
         (LuaType::DocIntegerConst(i), _) => match compact_type {
             LuaType::IntegerConst(j) => *i == j,
             LuaType::DocIntegerConst(j) => *i == j,
@@ -111,7 +111,9 @@ fn infer_type_compact(
                 .unwrap_or(false)
         }
         (LuaType::Array(a), LuaType::Array(b)) => infer_type_compact(db, config, a, b, infer_guard),
-        (LuaType::Array(a), _) => infer_array_type_compact_by_element_type(db, config, a, &compact_type, infer_guard),
+        (LuaType::Array(a), _) => {
+            infer_array_type_compact_by_element_type(db, config, a, &compact_type, infer_guard)
+        }
         (LuaType::Tuple(a), LuaType::Tuple(b)) => {
             infer_tuple_type_compact(db, config, a, b, infer_guard).unwrap_or(false)
         }
@@ -124,6 +126,11 @@ fn infer_type_compact(
             .get_types()
             .iter()
             .any(|t| infer_type_compact(db, config, t, &compact_type, infer_guard)),
+        (left, LuaType::Union(b)) if !left.is_union() => b
+            .get_types()
+            .iter()
+            .all(|t| infer_type_compact(db, config, left, t, infer_guard)),
+
         (LuaType::Intersection(a), _) => a
             .get_types()
             .iter()
@@ -366,13 +373,14 @@ fn infer_array_type_compact_by_element_type(
     infer_guard: &mut InferGuard,
 ) -> bool {
     match compact_type {
-        LuaType::Array(element_type) => infer_type_compact(db, config, source_element_type, element_type, infer_guard),
-        LuaType::Tuple(tuple_type) =>
-            tuple_type.get_types()
-                .into_iter()
-                .all(|element_type| infer_type_compact(db, config, source_element_type, element_type, infer_guard)),
+        LuaType::Array(element_type) => {
+            infer_type_compact(db, config, source_element_type, element_type, infer_guard)
+        }
+        LuaType::Tuple(tuple_type) => tuple_type.get_types().into_iter().all(|element_type| {
+            infer_type_compact(db, config, source_element_type, element_type, infer_guard)
+        }),
         // TODO implement the check for table
-        _ => compact_type.is_table()
+        _ => compact_type.is_table(),
     }
 }
 

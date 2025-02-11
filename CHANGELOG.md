@@ -27,6 +27,8 @@
 
 `FIX` Fix inference issue by resolving iteration order problem.
 
+`FIX` Improve type check
+
 # 0.4.6
 
 `FIX` Fix issue with executable file directory hierarchy being too deep.

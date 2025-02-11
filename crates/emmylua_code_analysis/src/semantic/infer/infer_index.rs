@@ -14,7 +14,7 @@ use crate::{
     semantic::{
         instantiate::{instantiate_type, TypeSubstitutor},
         member::{get_buildin_type_map_type_id, without_index_operator, without_members},
-        type_compact::check_type_compact,
+        type_check::check_type_compact,
         InferGuard,
     },
     InFiled, LuaInstanceType, TypeOps,

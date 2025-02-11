@@ -5,7 +5,7 @@ use emmylua_parser::LuaCallExpr;
 use crate::db_index::{DbIndex, LuaFunctionType, LuaType};
 
 use super::{
-    infer_expr, instantiate::instantiate_func, type_compact::check_type_compact, LuaInferConfig,
+    infer_expr, instantiate::instantiate_func, type_check::check_type_compact, LuaInferConfig,
 };
 
 pub fn resolve_signature(
