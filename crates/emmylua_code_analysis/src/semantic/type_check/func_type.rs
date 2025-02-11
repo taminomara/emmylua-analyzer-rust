@@ -66,9 +66,16 @@ fn infer_doc_func_type_compact_for_params(
         compact_params.insert(0, ("self".to_string(), None));
     }
 
-    let source_len = source_params.len();
-    for i in 0..source_len {
-        let source_param = &source_params[i];
+    let compact_len = compact_params.len();
+    for i in 0..compact_len {
+        let source_param = match source_params.get(i) {
+            Some(p) => p,
+            None => {
+                return false;
+            }
+        };
+        let compact_param = &compact_params[i];
+
         let source_param_type = &source_param.1;
         // too many complex session to handle varargs
         if source_param.0 == "..." {
@@ -84,19 +91,6 @@ fn infer_doc_func_type_compact_for_params(
 
             return false;
         }
-
-        let compact_param = match compact_params.get(i) {
-            Some(p) => p,
-            None => {
-                if let Some(source_type) = &source_param.1 {
-                    if source_type.is_optional() {
-                        continue;
-                    }
-                };
-
-                return false;
-            }
-        };
 
         if compact_param.0 == "..." {
             break;

@@ -78,7 +78,7 @@ fn infer_type_compact(
             LuaType::DocStringConst(t) => *s == t,
             _ => false,
         },
-        (LuaType::FloatConst(_), _) => compact_type.is_number(),
+        (LuaType::FloatConst(_), right) if right.is_number() => true,
         (LuaType::Table, _) => {
             compact_type.is_table()
                 || compact_type.is_array()
