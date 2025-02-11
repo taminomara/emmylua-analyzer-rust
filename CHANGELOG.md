@@ -22,6 +22,8 @@
 
 `NEW` Semantic Model now is immutable
 
+`FIX` Fix inference issue by resolving iteration order problem.
+
 # 0.4.6
 
 `FIX` Fix issue with executable file directory hierarchy being too deep.

@@ -49,4 +49,8 @@ impl LuaInferConfig {
     pub fn get_cache_expr_type(&self, syntax_id: &LuaSyntaxId) -> Option<&ExprCache> {
         self.expr_type_cache.get(syntax_id)
     }
+
+    pub fn remove_cache(&mut self, syntax_id: &LuaSyntaxId) {
+        self.expr_type_cache.remove(syntax_id);
+    }
 }

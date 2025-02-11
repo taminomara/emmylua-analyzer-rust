@@ -12,10 +12,10 @@ use infer_call::infer_call_expr;
 pub use infer_call::instantiate_doc_function;
 use infer_config::ExprCache;
 pub use infer_config::LuaInferConfig;
-pub use infer_table::infer_table_should_be;
 use infer_index::infer_index_expr;
 use infer_name::infer_name_expr;
 use infer_table::infer_table_expr;
+pub use infer_table::infer_table_should_be;
 use infer_unary::infer_unary_expr;
 use smol_str::SmolStr;
 
@@ -44,20 +44,24 @@ pub fn infer_expr(db: &DbIndex, config: &mut LuaInferConfig, expr: LuaExpr) -> I
 
     config.mark_ready_cache(syntax_id);
     let result_type = match expr {
-        LuaExpr::CallExpr(call_expr) => infer_call_expr(db, config, call_expr)?,
-        LuaExpr::TableExpr(table_expr) => infer_table_expr(db, config, table_expr)?,
-        LuaExpr::LiteralExpr(literal_expr) => infer_literal_expr(db, config, literal_expr)?,
-        LuaExpr::BinaryExpr(binary_expr) => infer_binary_expr(db, config, binary_expr)?,
-        LuaExpr::UnaryExpr(unary_expr) => infer_unary_expr(db, config, unary_expr)?,
-        LuaExpr::ClosureExpr(closure_expr) => infer_closure_expr(config, closure_expr)?,
-        LuaExpr::ParenExpr(paren_expr) => infer_expr(db, config, paren_expr.get_expr()?)?,
-        LuaExpr::NameExpr(name_expr) => infer_name_expr(db, config, name_expr)?,
-        LuaExpr::IndexExpr(index_expr) => infer_index_expr(db, config, index_expr)?,
+        LuaExpr::CallExpr(call_expr) => infer_call_expr(db, config, call_expr),
+        LuaExpr::TableExpr(table_expr) => infer_table_expr(db, config, table_expr),
+        LuaExpr::LiteralExpr(literal_expr) => infer_literal_expr(db, config, literal_expr),
+        LuaExpr::BinaryExpr(binary_expr) => infer_binary_expr(db, config, binary_expr),
+        LuaExpr::UnaryExpr(unary_expr) => infer_unary_expr(db, config, unary_expr),
+        LuaExpr::ClosureExpr(closure_expr) => infer_closure_expr(config, closure_expr),
+        LuaExpr::ParenExpr(paren_expr) => infer_expr(db, config, paren_expr.get_expr()?),
+        LuaExpr::NameExpr(name_expr) => infer_name_expr(db, config, name_expr),
+        LuaExpr::IndexExpr(index_expr) => infer_index_expr(db, config, index_expr),
     };
 
-    config.cache_expr_type(syntax_id, result_type.clone());
+    if let Some(result_type) = &result_type {
+        config.cache_expr_type(syntax_id, result_type.clone());
+    } else {
+        config.remove_cache(&syntax_id);
+    }
 
-    Some(result_type)
+    result_type
 }
 
 fn infer_literal_expr(db: &DbIndex, config: &LuaInferConfig, expr: LuaLiteralExpr) -> InferResult {
@@ -79,18 +83,20 @@ fn infer_literal_expr(db: &DbIndex, config: &LuaInferConfig, expr: LuaLiteralExp
         LuaLiteralToken::Dots(_) => {
             let file_id = config.get_file_id();
             let range = expr.get_range();
-        
-            let decl_id = db.get_reference_index()
+
+            let decl_id = db
+                .get_reference_index()
                 .get_local_reference(&file_id)
                 .and_then(|file_ref| file_ref.get_decl_id(&range));
-        
+
             let decl_type = match decl_id.and_then(|id| db.get_decl_index().get_decl(&id)) {
                 Some(decl) if decl.is_global() => LuaType::Any,
                 Some(decl) if decl.is_param() => {
                     let LuaDeclExtra::Param { idx, signature_id } = &decl.extra else {
                         unreachable!()
                     };
-                    let param_info = db.get_signature_index()
+                    let param_info = db
+                        .get_signature_index()
                         .get(signature_id)
                         .and_then(|sig| sig.get_param_info_by_id(*idx))?;
                     let mut typ = param_info.type_ref.clone();
@@ -98,10 +104,8 @@ fn infer_literal_expr(db: &DbIndex, config: &LuaInferConfig, expr: LuaLiteralExp
                     typ
                 }
                 _ => LuaType::Any, // 默认返回 Any
-
             };
 
-        
             Some(decl_type)
         }
     }
