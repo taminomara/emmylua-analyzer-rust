@@ -12,7 +12,7 @@ use rowan::NodeOrToken;
 use emmylua_code_analysis::humanize_type;
 
 pub fn build_signature_helper(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     call_expr: LuaCallExpr,
     token: LuaSyntaxToken,
 ) -> Option<SignatureHelp> {

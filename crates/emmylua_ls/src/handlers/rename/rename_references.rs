@@ -9,7 +9,7 @@ use emmylua_parser::{
 use lsp_types::{Uri, WorkspaceEdit};
 
 pub fn rename_references(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     compilation: &LuaCompilation,
     token: LuaSyntaxToken,
     new_name: String,
@@ -48,7 +48,7 @@ pub fn rename_references(
 }
 
 fn rename_decl_references(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     compilation: &LuaCompilation,
     decl_id: LuaDeclId,
     result: &mut HashMap<Uri, HashSet<lsp_types::Range>>,
@@ -127,7 +127,7 @@ fn get_decl_name_token_lsp_range(
 }
 
 fn rename_member_references(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     compilation: &LuaCompilation,
     member_id: LuaMemberId,
     result: &mut HashMap<Uri, HashSet<lsp_types::Range>>,

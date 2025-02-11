@@ -8,7 +8,7 @@ use super::DiagnosticContext;
 
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::NeedCheckNil];
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &mut SemanticModel) -> Option<()> {
+pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
     let root = semantic_model.get_root().clone();
     for expr in root.descendants::<LuaExpr>() {
         match expr {
@@ -30,7 +30,7 @@ pub fn check(context: &mut DiagnosticContext, semantic_model: &mut SemanticModel
 
 fn check_call_expr(
     context: &mut DiagnosticContext,
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     call_expr: LuaCallExpr,
 ) -> Option<()> {
     let prefix = call_expr.get_prefix_expr()?;
@@ -53,7 +53,7 @@ fn check_call_expr(
 
 fn check_index_expr(
     context: &mut DiagnosticContext,
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     index_expr: LuaIndexExpr,
 ) -> Option<()> {
     let prefix = index_expr.get_prefix_expr()?;
@@ -72,7 +72,7 @@ fn check_index_expr(
 
 fn check_binary_expr(
     context: &mut DiagnosticContext,
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     binary_expr: LuaBinaryExpr,
 ) -> Option<()> {
     let op = binary_expr.get_op_token()?.get_op();

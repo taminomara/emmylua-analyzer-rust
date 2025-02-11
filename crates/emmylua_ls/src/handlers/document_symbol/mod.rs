@@ -32,7 +32,7 @@ pub async fn on_document_symbol(
     Some(response)
 }
 
-fn build_document_symbol(semantic_model: &mut SemanticModel) -> Option<DocumentSymbol> {
+fn build_document_symbol(semantic_model: &SemanticModel) -> Option<DocumentSymbol> {
     let document = semantic_model.get_document();
     let root = semantic_model.get_root();
     let file_id = semantic_model.get_file_id();

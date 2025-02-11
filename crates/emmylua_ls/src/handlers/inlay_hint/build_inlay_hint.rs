@@ -13,7 +13,7 @@ use rowan::NodeOrToken;
 
 use emmylua_code_analysis::humanize_type;
 
-pub fn build_inlay_hints(semantic_model: &mut SemanticModel) -> Option<Vec<InlayHint>> {
+pub fn build_inlay_hints(semantic_model: &SemanticModel) -> Option<Vec<InlayHint>> {
     let mut result = Vec::new();
     let root = semantic_model.get_root();
     for node in root.clone().descendants::<LuaAst>() {
@@ -39,7 +39,7 @@ pub fn build_inlay_hints(semantic_model: &mut SemanticModel) -> Option<Vec<Inlay
 }
 
 fn build_closure_hint(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     result: &mut Vec<InlayHint>,
     closure: LuaClosureExpr,
 ) -> Option<()> {
@@ -91,7 +91,7 @@ fn build_closure_hint(
 }
 
 fn build_call_expr_param_hint(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     result: &mut Vec<InlayHint>,
     call_expr: LuaCallExpr,
 ) -> Option<()> {
@@ -130,7 +130,7 @@ fn build_call_expr_param_hint(
 }
 
 fn build_call_expr_await_hint(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     result: &mut Vec<InlayHint>,
     call_expr: LuaCallExpr,
 ) -> Option<()> {
@@ -186,7 +186,7 @@ fn build_call_expr_await_hint(
 }
 
 fn build_call_args_for_func_type(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     result: &mut Vec<InlayHint>,
     call_args: Vec<LuaExpr>,
     colon_call: bool,
@@ -259,7 +259,7 @@ fn build_call_args_for_func_type(
 }
 
 fn build_call_args_for_signature(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     result: &mut Vec<InlayHint>,
     call_args: Vec<LuaExpr>,
     colon_call: bool,
@@ -336,7 +336,7 @@ fn build_call_args_for_signature(
 }
 
 fn build_local_name_hint(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     result: &mut Vec<InlayHint>,
     local_name: LuaLocalName,
 ) -> Option<()> {
@@ -371,7 +371,7 @@ fn build_local_name_hint(
 }
 
 fn build_func_stat_override_hint(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     result: &mut Vec<InlayHint>,
     func_stat: LuaFuncStat,
 ) -> Option<()> {
@@ -438,7 +438,7 @@ fn build_func_stat_override_hint(
 }
 
 fn get_super_member_id(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     super_type: LuaType,
     member_key: &LuaMemberKey,
     infer_guard: &mut InferGuard,
@@ -472,7 +472,7 @@ fn get_super_member_id(
 }
 
 fn get_override_lsp_location(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     file_id: FileId,
     syntax_id: LuaSyntaxId,
 ) -> Option<lsp_types::Location> {

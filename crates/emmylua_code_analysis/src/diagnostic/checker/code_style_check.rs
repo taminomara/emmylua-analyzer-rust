@@ -7,7 +7,7 @@ use super::DiagnosticContext;
 
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::CodeStyleCheck];
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &mut SemanticModel) -> Option<()> {
+pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
     let document = semantic_model.get_document();
     let file_path = document.get_file_path();
     let text = document.get_text();

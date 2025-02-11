@@ -13,8 +13,8 @@ use std::cell::RefCell;
 use std::{collections::HashSet, sync::Arc};
 
 use emmylua_parser::{LuaCallExpr, LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken, LuaTableExpr};
-use infer::{infer_table_should_be, InferResult};
 pub use infer::LuaInferConfig;
+use infer::{infer_table_should_be, InferResult};
 use member::infer_members;
 pub use member::LuaMemberInfo;
 use reference::is_reference_to;
@@ -101,7 +101,12 @@ impl<'a> SemanticModel<'a> {
     }
 
     pub fn check_type_compact(&self, source: &LuaType, compact_type: &LuaType) -> bool {
-        check_type_compact(self.db, &mut self.infer_config.borrow_mut(), source, compact_type)
+        check_type_compact(
+            self.db,
+            &mut self.infer_config.borrow_mut(),
+            source,
+            compact_type,
+        )
     }
 
     pub fn infer_call_expr_func(
@@ -110,7 +115,11 @@ impl<'a> SemanticModel<'a> {
         arg_count: Option<usize>,
     ) -> Option<Arc<LuaFunctionType>> {
         let prefix_expr = call_expr.get_prefix_expr()?;
-        let call_expr_type = infer_expr(self.db, &mut self.infer_config.borrow_mut(), prefix_expr.into())?;
+        let call_expr_type = infer_expr(
+            self.db,
+            &mut self.infer_config.borrow_mut(),
+            prefix_expr.into(),
+        )?;
         infer_call_expr_func(
             self.db,
             &mut self.infer_config.borrow_mut(),
@@ -122,7 +131,7 @@ impl<'a> SemanticModel<'a> {
     }
 
     pub fn get_semantic_info(
-        &mut self,
+        &self,
         node_or_token: NodeOrToken<LuaSyntaxNode, LuaSyntaxToken>,
     ) -> Option<SemanticInfo> {
         match node_or_token {
@@ -136,7 +145,7 @@ impl<'a> SemanticModel<'a> {
     }
 
     pub fn get_property_owner_id(
-        &mut self,
+        &self,
         node_or_token: NodeOrToken<LuaSyntaxNode, LuaSyntaxToken>,
     ) -> Option<LuaPropertyOwnerId> {
         match node_or_token {
@@ -150,15 +159,21 @@ impl<'a> SemanticModel<'a> {
     }
 
     pub fn is_reference_to(
-        &mut self,
+        &self,
         node: LuaSyntaxNode,
         property_owner: LuaPropertyOwnerId,
     ) -> bool {
-        is_reference_to(self.db, &mut self.infer_config.borrow_mut(), node, property_owner).unwrap_or(false)
+        is_reference_to(
+            self.db,
+            &mut self.infer_config.borrow_mut(),
+            node,
+            property_owner,
+        )
+        .unwrap_or(false)
     }
 
     pub fn is_property_visible(
-        &mut self,
+        &self,
         token: LuaSyntaxToken,
         property_owner: LuaPropertyOwnerId,
     ) -> bool {

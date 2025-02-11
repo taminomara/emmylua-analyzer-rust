@@ -6,7 +6,7 @@ use super::DiagnosticContext;
 
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::Unused];
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &mut SemanticModel) -> Option<()> {
+pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
     let root = semantic_model.get_root().clone();
     for node in root.descendants::<LuaAst>() {
         match node {
@@ -25,7 +25,7 @@ pub fn check(context: &mut DiagnosticContext, semantic_model: &mut SemanticModel
 
 fn check_name_expr(
     context: &mut DiagnosticContext,
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     name_expr: LuaNameExpr,
 ) -> Option<()> {
     let property_owner = semantic_model
@@ -61,7 +61,7 @@ fn check_name_expr(
 
 fn check_index_expr(
     context: &mut DiagnosticContext,
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     index_expr: LuaIndexExpr,
 ) -> Option<()> {
     let property_owner = semantic_model

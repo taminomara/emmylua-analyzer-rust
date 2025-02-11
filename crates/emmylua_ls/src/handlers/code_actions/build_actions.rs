@@ -6,7 +6,7 @@ use lsp_types::{CodeActionOrCommand, CodeActionResponse, Diagnostic, NumberOrStr
 use crate::handlers::command::{make_disable_code_command, DisableAction};
 
 pub fn build_actions(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     diagnostics: Vec<Diagnostic>,
 ) -> Option<CodeActionResponse> {
     let mut actions = Vec::new();

@@ -4,7 +4,7 @@ use lsp_types::{DocumentHighlight, DocumentHighlightKind};
 use rowan::NodeOrToken;
 
 pub fn highlight_tokens(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     token: LuaSyntaxToken,
 ) -> Option<Vec<DocumentHighlight>> {
     let mut result = Vec::new();

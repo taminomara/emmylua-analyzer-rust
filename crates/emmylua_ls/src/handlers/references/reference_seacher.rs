@@ -7,7 +7,7 @@ use emmylua_parser::{LuaAstNode, LuaAstToken, LuaNameToken, LuaStringToken, LuaS
 use lsp_types::Location;
 
 pub fn search_references(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     compilation: &LuaCompilation,
     token: LuaSyntaxToken,
 ) -> Option<Vec<Location>> {
@@ -32,7 +32,7 @@ pub fn search_references(
 }
 
 pub fn search_decl_references(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     decl_id: LuaDeclId,
     result: &mut Vec<Location>,
 ) -> Option<()> {

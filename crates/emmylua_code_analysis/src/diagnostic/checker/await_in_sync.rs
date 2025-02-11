@@ -7,7 +7,7 @@ use super::DiagnosticContext;
 
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::AwaitInSync];
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &mut SemanticModel) -> Option<()> {
+pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
     let root = semantic_model.get_root().clone();
     for call_expr in root.descendants::<LuaCallExpr>() {
         check_call_expr(context, semantic_model, call_expr);
@@ -18,7 +18,7 @@ pub fn check(context: &mut DiagnosticContext, semantic_model: &mut SemanticModel
 
 fn check_call_expr(
     context: &mut DiagnosticContext,
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     call_expr: LuaCallExpr,
 ) -> Option<()> {
     let prefix_node = call_expr.get_prefix_expr()?;
@@ -44,7 +44,7 @@ fn check_call_expr(
 }
 
 fn check_call_is_in_async_function(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     call_expr: LuaCallExpr,
 ) -> Option<bool> {
     let file_id = semantic_model.get_file_id();

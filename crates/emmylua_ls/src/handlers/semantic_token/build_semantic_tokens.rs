@@ -13,7 +13,7 @@ use super::{
 };
 
 pub fn build_semantic_tokens(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     support_muliline_token: bool,
     client_id: ClientId,
 ) -> Option<Vec<SemanticToken>> {
@@ -132,7 +132,11 @@ fn build_tokens_semantic_token(
         | LuaTokenKind::TkTagNamespace
         | LuaTokenKind::TkTagUsing
         | LuaTokenKind::TkTagSource => {
-            builder.push_with_modifier(token, SemanticTokenType::KEYWORD, SemanticTokenModifier::DOCUMENTATION);
+            builder.push_with_modifier(
+                token,
+                SemanticTokenType::KEYWORD,
+                SemanticTokenModifier::DOCUMENTATION,
+            );
         }
         LuaTokenKind::TkDocKeyOf
         | LuaTokenKind::TkDocExtends
@@ -181,7 +185,12 @@ fn build_tokens_semantic_token(
                 }
             }
             let position = u32::from(range.start()) + start as u32;
-            builder.push_at_position(position.into(), 1, SemanticTokenType::KEYWORD, SemanticTokenModifier::DOCUMENTATION);
+            builder.push_at_position(
+                position.into(),
+                1,
+                SemanticTokenType::KEYWORD,
+                SemanticTokenModifier::DOCUMENTATION,
+            );
         }
         _ => {}
     }

@@ -7,7 +7,7 @@ use super::DiagnosticContext;
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::ParamTypeNotMatch];
 
 /// a simple implementation of param type check, later we will do better
-pub fn check(context: &mut DiagnosticContext, semantic_model: &mut SemanticModel) -> Option<()> {
+pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
     let root = semantic_model.get_root().clone();
     for node in root.descendants::<LuaAst>() {
         match node {
@@ -23,7 +23,7 @@ pub fn check(context: &mut DiagnosticContext, semantic_model: &mut SemanticModel
 
 fn check_call_expr(
     context: &mut DiagnosticContext,
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     call_expr: LuaCallExpr,
 ) -> Option<()> {
     let func = semantic_model.infer_call_expr_func(call_expr.clone(), None)?;

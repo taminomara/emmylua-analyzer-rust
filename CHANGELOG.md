@@ -20,6 +20,8 @@
 
 `NEW` Infer `{ ... }` as array
 
+`NEW` Semantic Model now is immutable
+
 # 0.4.6
 
 `FIX` Fix issue with executable file directory hierarchy being too deep.

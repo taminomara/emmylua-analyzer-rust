@@ -4,7 +4,7 @@ use lsp_types::{InlineValue, InlineValueVariableLookup, Position};
 use rowan::TokenAtOffset;
 
 pub fn build_inline_values(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     position: Position,
 ) -> Option<Vec<InlineValue>> {
     let mut result = Vec::new();

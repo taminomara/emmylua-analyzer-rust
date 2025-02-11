@@ -26,7 +26,7 @@ use super::{
 
 pub fn check_file(
     context: &mut DiagnosticContext,
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
 ) -> Option<()> {
     macro_rules! check {
         ($module:ident) => {
