@@ -74,6 +74,7 @@ async fn main_loop(
         match msg {
             Message::Request(req) => {
                 if connection.handle_shutdown(&req)? {
+                    server_context.close().await;
                     return Ok(());
                 }
 
@@ -88,5 +89,6 @@ async fn main_loop(
         }
     }
 
+    server_context.close().await;
     Ok(())
 }
