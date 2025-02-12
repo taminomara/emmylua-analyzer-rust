@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
 
     connection.initialize_finish(id, initialize_data)?;
 
-    main_loop(&connection, initialization_params, cmd_args).await?;
+    main_loop(connection, initialization_params, cmd_args).await?;
     threads.join()?;
 
     eprintln!("Server shutting down.");
@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
 }
 
 async fn main_loop(
-    connection: &Connection,
+    connection: Connection,
     params: InitializeParams,
     cmd_args: CmdArgs,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {

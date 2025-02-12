@@ -2,6 +2,7 @@
 
 # 0.5.1 (unreleased)
 
+`FIX` Fix issue `emmylua_ls` might not exit in unix.
 
 # 0.5.0
 
