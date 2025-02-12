@@ -622,6 +622,8 @@ impl LuaAstToken for LuaDocTypeBinaryToken {
             || kind == LuaTokenKind::TkDocExtends
             || kind == LuaTokenKind::TkDocIn
             || kind == LuaTokenKind::TkDocContinueOr
+            || kind == LuaTokenKind::TkPlus
+            || kind == LuaTokenKind::TkMinus
     }
 
     fn cast(syntax: LuaSyntaxToken) -> Option<Self>
