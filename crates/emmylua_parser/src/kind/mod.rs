@@ -189,6 +189,8 @@ impl LuaOpKind {
             LuaTokenKind::TkDocAnd => LuaTypeBinaryOperator::Intersection,
             LuaTokenKind::TkIn => LuaTypeBinaryOperator::In,
             LuaTokenKind::TkDocExtends => LuaTypeBinaryOperator::Extends,
+            LuaTokenKind::TkPlus => LuaTypeBinaryOperator::Add,
+            LuaTokenKind::TkMinus => LuaTypeBinaryOperator::Sub,
             _ => LuaTypeBinaryOperator::None,
         }
     }
