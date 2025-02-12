@@ -147,11 +147,6 @@ fn infer_member_property_owner_by_member_key(
             member_key,
             infer_guard,
         ),
-        // LuaType::Module(_) => todo!(),
-        LuaType::KeyOf(_) => {
-            let decl_id = LuaTypeDeclId::new("string");
-            infer_custom_type_member_property_owner(db, config, decl_id, member_key, infer_guard)
-        }
         LuaType::Nullable(inner_type) => infer_member_property_owner_by_member_key(
             db,
             config,

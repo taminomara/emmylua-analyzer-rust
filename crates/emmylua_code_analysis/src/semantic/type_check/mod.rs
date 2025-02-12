@@ -161,7 +161,7 @@ fn infer_type_compact(
         (LuaType::Module(_), _) => false,
         (LuaType::Signature(_), _) => false,
         (LuaType::TableConst(_), _) => false,
-        (LuaType::Extends(_), _) => false,
+        (LuaType::Call(_), _) => false,
         (LuaType::MuliReturn(_), _) => false,
         (LuaType::Namespace(a), LuaType::Namespace(b)) => a == b,
         _ => false,

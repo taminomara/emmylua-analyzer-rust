@@ -10,10 +10,10 @@ use smol_str::SmolStr;
 
 use crate::{
     db_index::{
-        AnalyzeError, LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey,
+        AnalyzeError, LuaAliasCallType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey,
         LuaIntersectionType, LuaObjectType, LuaStringTplType, LuaTupleType, LuaType, LuaUnionType,
     },
-    DiagnosticCode, GenericTpl,
+    DiagnosticCode, GenericTpl, LuaAliasCallKind,
 };
 
 use super::DocAnalyzer;
@@ -67,6 +67,7 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
                     LuaLiteralToken::Nil(_) => return LuaType::Nil,
                     // todo
                     LuaLiteralToken::Dots(_) => return LuaType::Any,
+                    LuaLiteralToken::Question(_) => return LuaType::Nil,
                 }
             }
         }
@@ -279,7 +280,26 @@ fn infer_binary_type(analyzer: &mut DocAnalyzer, binary_type: LuaDocBinaryType) 
                     }
                 },
                 LuaTypeBinaryOperator::Extends => {
-                    return LuaType::Extends(LuaExtendedType::new(left_type, right_type).into());
+                    return LuaType::Call(
+                        LuaAliasCallType::new(
+                            left_type,
+                            LuaAliasCallKind::Extends,
+                            Some(right_type),
+                        )
+                        .into(),
+                    );
+                }
+                LuaTypeBinaryOperator::Add => {
+                    return LuaType::Call(
+                        LuaAliasCallType::new(left_type, LuaAliasCallKind::Add, Some(right_type))
+                            .into(),
+                    );
+                }
+                LuaTypeBinaryOperator::Sub => {
+                    return LuaType::Call(
+                        LuaAliasCallType::new(left_type, LuaAliasCallKind::Sub, Some(right_type))
+                            .into(),
+                    );
                 }
                 _ => {}
             }
@@ -299,7 +319,9 @@ fn infer_unary_type(analyzer: &mut DocAnalyzer, unary_type: LuaDocUnaryType) -> 
         if let Some(op) = unary_type.get_op_token() {
             match op.get_op() {
                 LuaTypeUnaryOperator::Keyof => {
-                    return LuaType::KeyOf(base.into());
+                    return LuaType::Call(
+                        LuaAliasCallType::new(base, LuaAliasCallKind::KeyOf, None).into(),
+                    );
                 }
                 _ => {}
             }

@@ -364,6 +364,7 @@ pub enum LuaLiteralToken {
     Bool(LuaBoolToken),
     Nil(LuaNilToken),
     Dots(LuaGeneralToken),
+    Question(LuaGeneralToken),
 }
 
 impl LuaAstToken for LuaLiteralToken {
@@ -374,6 +375,7 @@ impl LuaAstToken for LuaLiteralToken {
             LuaLiteralToken::Bool(token) => token.syntax(),
             LuaLiteralToken::Nil(token) => token.syntax(),
             LuaLiteralToken::Dots(token) => token.syntax(),
+            LuaLiteralToken::Question(token) => token.syntax(),
         }
     }
 
@@ -390,7 +392,8 @@ impl LuaAstToken for LuaLiteralToken {
             | LuaTokenKind::TkFalse
             | LuaTokenKind::TkDots
             | LuaTokenKind::TkString
-            | LuaTokenKind::TkLongString => true,
+            | LuaTokenKind::TkLongString
+            | LuaTokenKind::TkDocQuestion => true,
             _ => false,
         }
     }
@@ -411,6 +414,7 @@ impl LuaAstToken for LuaLiteralToken {
             }
             LuaTokenKind::TkNil => LuaNilToken::cast(syntax).map(LuaLiteralToken::Nil),
             LuaTokenKind::TkDots => LuaGeneralToken::cast(syntax).map(LuaLiteralToken::Dots),
+            LuaTokenKind::TkDocQuestion => LuaGeneralToken::cast(syntax).map(LuaLiteralToken::Question),
             _ => None,
         }
     }

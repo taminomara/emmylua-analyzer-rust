@@ -58,16 +58,22 @@ fn parse_sub_type(p: &mut LuaDocParser, limit: i32) -> ParseResult {
         let range = p.current_token_range();
         let m = cm.precede(p, LuaSyntaxKind::TypeBinary);
         p.bump();
-        match parse_sub_type(p, bop.get_priority().right) {
-            Ok(_) => {}
-            Err(err) => {
-                p.push_error(LuaParseError::from_source_range(
-                    &t!("binary operator not followed by type"),
-                    range,
-                ));
+        if p.current_token() != LuaTokenKind::TkDocQuestion {
+            match parse_sub_type(p, bop.get_priority().right) {
+                Ok(_) => {}
+                Err(err) => {
+                    p.push_error(LuaParseError::from_source_range(
+                        &t!("binary operator not followed by type"),
+                        range,
+                    ));
 
-                return Err(err);
+                    return Err(err);
+                }
             }
+        } else {
+            let m2 = p.mark(LuaSyntaxKind::TypeLiteral);
+            p.bump();
+            m2.complete(p);
         }
 
         cm = m.complete(p);
@@ -125,7 +131,7 @@ fn parse_object_or_mapped_type(p: &mut LuaDocParser) -> ParseResult {
         }
     }
 
-    expect_token(p,LuaTokenKind::TkRightBrace)?;
+    expect_token(p, LuaTokenKind::TkRightBrace)?;
 
     Ok(m.complete(p))
 }

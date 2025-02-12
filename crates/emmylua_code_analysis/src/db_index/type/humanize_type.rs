@@ -1,8 +1,8 @@
 use crate::{
-    DbIndex, GenericTpl, LuaExtendedType, LuaFunctionType, LuaGenericType, LuaInstanceType,
+    DbIndex, GenericTpl, LuaAliasCallType, LuaFunctionType, LuaGenericType, LuaInstanceType,
     LuaIntersectionType, LuaMemberKey, LuaMemberOwner, LuaMemberPathExistType, LuaMultiReturn,
     LuaObjectType, LuaSignatureId, LuaStringTplType, LuaTupleType, LuaType, LuaTypeDeclId,
-    LuaUnionType,
+    LuaUnionType, TypeSubstitutor,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,12 +66,11 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
         }
         LuaType::Module(module_path) => humanize_module_type(db, module_path, level),
         LuaType::Array(arr_inner) => humanize_array_type(db, arr_inner, level),
-        LuaType::KeyOf(base_type) => humanize_key_of_type(db, base_type, level),
+        LuaType::Call(alias_call) => humanize_call_type(db, alias_call, level),
         LuaType::Nullable(inner) => humanize_nullable_type(db, inner, level),
         LuaType::DocFunction(lua_func) => humanize_doc_function_type(db, lua_func, level),
         LuaType::Object(object) => humanize_object_type(db, object, level),
         LuaType::Intersection(inter) => humanize_intersect_type(db, inter, level),
-        LuaType::Extends(ext) => humanize_extend_type(db, ext, level),
         LuaType::Generic(generic) => humanize_generic_type(db, generic, level),
         LuaType::TableGeneric(table_generic_params) => {
             humanize_table_generic_type(db, table_generic_params, level)
@@ -98,7 +97,8 @@ fn humanize_def_type(db: &DbIndex, id: &LuaTypeDeclId, level: RenderLevel) -> St
     let simple_name = type_decl.get_name();
     let generic = db.get_type_index().get_generic_params(id);
     if generic.is_none() {
-        return humanize_simple_type(db, id, &simple_name, level).unwrap_or(simple_name.to_string());
+        return humanize_simple_type(db, id, &simple_name, level)
+            .unwrap_or(simple_name.to_string());
     }
 
     let generic_names = generic
@@ -110,7 +110,12 @@ fn humanize_def_type(db: &DbIndex, id: &LuaTypeDeclId, level: RenderLevel) -> St
     format!("{}<{}>", simple_name, generic_names)
 }
 
-fn humanize_simple_type(db: &DbIndex, id: &LuaTypeDeclId, name: &str, level: RenderLevel) -> Option<String> {
+fn humanize_simple_type(
+    db: &DbIndex,
+    id: &LuaTypeDeclId,
+    name: &str,
+    level: RenderLevel,
+) -> Option<String> {
     if level != RenderLevel::Detailed {
         return Some(name.to_string());
     }
@@ -136,8 +141,7 @@ fn humanize_simple_type(db: &DbIndex, id: &LuaTypeDeclId, name: &str, level: Ren
 
     let mut count = 0;
     for (member_key, typ) in member_vec {
-        let member_value_string =
-            humanize_type(db, typ, level.next_level());
+        let member_value_string = humanize_type(db, typ, level.next_level());
 
         let member_string = match member_key {
             LuaMemberKey::Name(name) => format!("{} = {}", name, member_value_string),
@@ -220,12 +224,14 @@ fn humanize_array_type(db: &DbIndex, inner: &LuaType, level: RenderLevel) -> Str
     format!("{}[]", element_type)
 }
 
-fn humanize_key_of_type(db: &DbIndex, inner: &LuaType, level: RenderLevel) -> String {
-    if level == RenderLevel::Minimal {
-        return "(keyof)".to_string();
-    }
-    let element_type = humanize_type(db, inner, level.next_level());
-    format!("keyof {}", element_type)
+#[allow(unused)]
+fn humanize_call_type(db: &DbIndex, inner: &LuaAliasCallType, level: RenderLevel) -> String {
+    // if level == RenderLevel::Minimal {
+    //     return "(keyof)".to_string();
+    // }
+    // let element_type = humanize_type(db, inner, level.next_level());
+    // format!("keyof {}", element_type)
+    "(call)".to_string()
 }
 
 fn humanize_nullable_type(db: &DbIndex, inner: &LuaType, level: RenderLevel) -> String {
@@ -286,7 +292,11 @@ fn humanize_object_type(db: &DbIndex, object: &LuaObjectType, level: RenderLevel
         }
     };
 
-    let dots = if object.get_fields().len() > num { ", ..." } else { "" };
+    let dots = if object.get_fields().len() > num {
+        ", ..."
+    } else {
+        ""
+    };
     let fields = object
         .get_fields()
         .iter()
@@ -347,17 +357,6 @@ fn humanize_intersect_type(
     format!("({}{})", type_str, dots)
 }
 
-fn humanize_extend_type(db: &DbIndex, ext: &LuaExtendedType, level: RenderLevel) -> String {
-    if level == RenderLevel::Minimal {
-        return "(extends)".to_string();
-    }
-
-    let base = humanize_type(db, ext.get_base(), level.next_level());
-    let extends = humanize_type(db, ext.get_ext(), level.next_level());
-
-    format!("{} extends {}", base, extends)
-}
-
 fn humanize_generic_type(db: &DbIndex, generic: &LuaGenericType, level: RenderLevel) -> String {
     let base_id = generic.get_base_type_id();
     let type_decl = db.get_type_index().get_type_decl(&base_id);
@@ -365,9 +364,22 @@ fn humanize_generic_type(db: &DbIndex, generic: &LuaGenericType, level: RenderLe
         return base_id.get_name().to_string();
     }
 
-    let simple_name = type_decl.unwrap().get_name();
+    let type_decl = type_decl.unwrap();
+    let simple_name = type_decl.get_name();
     if level == RenderLevel::Minimal {
         return format!("{}<...>", simple_name);
+    }
+
+    if type_decl.is_alias_replace() {
+        let params = generic
+            .get_params()
+            .iter()
+            .map(|ty| ty.clone())
+            .collect::<Vec<_>>();
+        let substitutor = TypeSubstitutor::from_type_array(params);
+        if let Some(origin) = type_decl.get_alias_origin(db, Some(&substitutor)) {
+            return humanize_type(db, &origin, level.next_level())
+        }
     }
 
     let generic_params = generic
@@ -473,7 +485,11 @@ fn humanize_table_generic_type(
         }
     };
 
-    let dots = if table_generic_params.len() > num { ", ..." } else { "" };
+    let dots = if table_generic_params.len() > num {
+        ", ..."
+    } else {
+        ""
+    };
 
     let generic_params = table_generic_params
         .iter()

@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use crate::{
     db_index::{
-        LuaMemberPathExistType, LuaExtendedType, LuaFunctionType, LuaGenericType, LuaIntersectionType,
+        LuaFunctionType, LuaGenericType, LuaIntersectionType, LuaMemberPathExistType,
         LuaMultiReturn, LuaObjectType, LuaTupleType, LuaType, LuaUnionType,
     },
-    DbIndex, GenericTpl, LuaPropertyOwnerId, LuaSignatureId,
+    DbIndex, GenericTpl, LuaAliasCallKind, LuaAliasCallType, LuaPropertyOwnerId, LuaSignatureId, TypeOps,
 };
 
 use super::type_substitutor::TypeSubstitutor;
@@ -13,7 +13,6 @@ use super::type_substitutor::TypeSubstitutor;
 pub fn instantiate_type(db: &DbIndex, ty: &LuaType, substitutor: &TypeSubstitutor) -> LuaType {
     match ty {
         LuaType::Array(base) => instantiate_array(db, base, substitutor),
-        LuaType::KeyOf(base) => instantiate_key_of(db, base, substitutor),
         LuaType::Nullable(base) => instantiate_nullable(db, base, substitutor),
         LuaType::Tuple(tuple) => instantiate_tuple(db, tuple, substitutor),
         LuaType::DocFunction(doc_func) => instantiate_doc_function(db, doc_func, substitutor),
@@ -22,15 +21,17 @@ pub fn instantiate_type(db: &DbIndex, ty: &LuaType, substitutor: &TypeSubstituto
         LuaType::Intersection(intersection) => {
             instantiate_intersection(db, intersection, substitutor)
         }
-        LuaType::Extends(extends) => instantiate_extends(db, extends, substitutor),
         LuaType::Generic(generic) => instantiate_generic(db, generic, substitutor),
         LuaType::TableGeneric(table_params) => {
             instantiate_table_generic(db, table_params, substitutor)
         }
         LuaType::TplRef(tpl) => instantiate_tpl_ref(db, tpl, substitutor),
         LuaType::MuliReturn(multi) => instantiate_multi_return(db, multi, substitutor),
-        LuaType::MemberPathExist(exit_field) => instantiate_exist_field(db, exit_field, substitutor),
+        LuaType::MemberPathExist(exit_field) => {
+            instantiate_exist_field(db, exit_field, substitutor)
+        }
         LuaType::Signature(sig_id) => instantiate_signature(db, sig_id, substitutor),
+        LuaType::Call(alias_call) => instantiate_alias_call(db, alias_call, substitutor),
         _ => ty.clone(),
     }
 }
@@ -38,11 +39,6 @@ pub fn instantiate_type(db: &DbIndex, ty: &LuaType, substitutor: &TypeSubstituto
 fn instantiate_array(db: &DbIndex, base: &LuaType, substitutor: &TypeSubstitutor) -> LuaType {
     let base = instantiate_type(db, base, substitutor);
     LuaType::Array(base.into())
-}
-
-fn instantiate_key_of(db: &DbIndex, base: &LuaType, substitutor: &TypeSubstitutor) -> LuaType {
-    let base = instantiate_type(db, base, substitutor);
-    LuaType::KeyOf(base.into())
 }
 
 fn instantiate_nullable(db: &DbIndex, inner: &LuaType, substitutor: &TypeSubstitutor) -> LuaType {
@@ -138,18 +134,6 @@ fn instantiate_intersection(
     LuaType::Intersection(LuaIntersectionType::new(new_types).into())
 }
 
-fn instantiate_extends(
-    db: &DbIndex,
-    extends: &LuaExtendedType,
-    substitutor: &TypeSubstitutor,
-) -> LuaType {
-    let base = extends.get_base();
-    let new_base = instantiate_type(db, base, substitutor);
-    let ext = extends.get_ext();
-    let new_ext = instantiate_type(db, ext, substitutor);
-    LuaType::Extends(LuaExtendedType::new(new_base, new_ext).into())
-}
-
 fn instantiate_generic(
     db: &DbIndex,
     generic: &LuaGenericType,
@@ -163,13 +147,22 @@ fn instantiate_generic(
     }
 
     let base = generic.get_base_type();
-    let decl_id = if let LuaType::Ref(id) = base {
+    let type_decl_id = if let LuaType::Ref(id) = base {
         id
     } else {
         return LuaType::Unknown;
     };
 
-    LuaType::Generic(LuaGenericType::new(decl_id, new_params).into())
+    if let Some(type_decl) = db.get_type_index().get_type_decl(&type_decl_id) {
+        if type_decl.is_alias_replace() {
+            let new_substitutor = TypeSubstitutor::from_type_array(new_params.clone());
+            if let Some(origin) = type_decl.get_alias_origin(db, Some(&new_substitutor)) {
+                return origin;
+            }
+        }
+    }
+
+    LuaType::Generic(LuaGenericType::new(type_decl_id, new_params).into())
 }
 
 fn instantiate_table_generic(
@@ -256,4 +249,26 @@ fn instantiate_signature(
     }
 
     return LuaType::Signature(signature_id.clone());
+}
+
+fn instantiate_alias_call(
+    db: &DbIndex,
+    alias_call: &LuaAliasCallType,
+    substitutor: &TypeSubstitutor,
+) -> LuaType {
+    let left = alias_call.get_source();
+    let right = alias_call.get_operand().unwrap_or(&LuaType::Unknown);
+    let left_inst = instantiate_type(db, left, substitutor);
+    let right_inst = instantiate_type(db, right, substitutor);
+    match alias_call.get_call_kind() {
+        LuaAliasCallKind::Sub => {
+            return TypeOps::Remove.apply(&left_inst, &right_inst)
+        }
+        LuaAliasCallKind::Add => {
+            return TypeOps::Union.apply(&left_inst, &right_inst)
+        }
+        _ => {}
+    }
+
+    LuaType::Unknown
 }

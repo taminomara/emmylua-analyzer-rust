@@ -108,6 +108,7 @@ fn infer_literal_expr(db: &DbIndex, config: &LuaInferConfig, expr: LuaLiteralExp
 
             Some(decl_type)
         }
+        _ => None
     }
 }
 

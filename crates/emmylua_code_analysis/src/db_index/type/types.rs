@@ -36,14 +36,12 @@ pub enum LuaType {
     Def(LuaTypeDeclId),
     Module(ArcIntern<SmolStr>),
     Array(Arc<LuaType>),
-    KeyOf(Arc<LuaType>),
     Nullable(Arc<LuaType>),
     Tuple(Arc<LuaTupleType>),
     DocFunction(Arc<LuaFunctionType>),
     Object(Arc<LuaObjectType>),
     Union(Arc<LuaUnionType>),
     Intersection(Arc<LuaIntersectionType>),
-    Extends(Arc<LuaExtendedType>),
     Generic(Arc<LuaGenericType>),
     TableGeneric(Arc<Vec<LuaType>>),
     TplRef(Arc<GenericTpl>),
@@ -56,6 +54,7 @@ pub enum LuaType {
     DocIntegerConst(i64),
     Namespace(ArcIntern<SmolStr>),
     Variadic(Arc<LuaType>),
+    Call(Arc<LuaAliasCallType>)
 }
 
 impl PartialEq for LuaType {
@@ -84,14 +83,13 @@ impl PartialEq for LuaType {
             (LuaType::Def(a), LuaType::Def(b)) => a == b,
             (LuaType::Module(a), LuaType::Module(b)) => a == b,
             (LuaType::Array(a), LuaType::Array(b)) => a == b,
-            (LuaType::KeyOf(a), LuaType::KeyOf(b)) => a == b,
+            (LuaType::Call(a), LuaType::Call(b)) => a == b,
             (LuaType::Nullable(a), LuaType::Nullable(b)) => a == b,
             (LuaType::Tuple(a), LuaType::Tuple(b)) => a == b,
             (LuaType::DocFunction(a), LuaType::DocFunction(b)) => a == b,
             (LuaType::Object(a), LuaType::Object(b)) => Arc::ptr_eq(a, b),
             (LuaType::Union(a), LuaType::Union(b)) => Arc::ptr_eq(a, b),
             (LuaType::Intersection(a), LuaType::Intersection(b)) => Arc::ptr_eq(a, b),
-            (LuaType::Extends(a), LuaType::Extends(b)) => Arc::ptr_eq(a, b),
             (LuaType::Generic(a), LuaType::Generic(b)) => Arc::ptr_eq(a, b),
             (LuaType::TableGeneric(a), LuaType::TableGeneric(b)) => a == b,
             (LuaType::TplRef(a), LuaType::TplRef(b)) => a == b,
@@ -137,7 +135,7 @@ impl Hash for LuaType {
             LuaType::Def(a) => (20, a).hash(state),
             LuaType::Module(a) => (21, a).hash(state),
             LuaType::Array(a) => (22, a).hash(state),
-            LuaType::KeyOf(a) => (23, a).hash(state),
+            LuaType::Call(a) => (23, a).hash(state),
             LuaType::Nullable(a) => (24, a).hash(state),
             LuaType::Tuple(a) => (25, a).hash(state),
             LuaType::DocFunction(a) => (26, a).hash(state),
@@ -153,30 +151,26 @@ impl Hash for LuaType {
                 let ptr = Arc::as_ptr(a);
                 (29, ptr).hash(state)
             }
-            LuaType::Extends(a) => {
+            LuaType::Generic(a) => {
                 let ptr = Arc::as_ptr(a);
                 (30, ptr).hash(state)
             }
-            LuaType::Generic(a) => {
+            LuaType::TableGeneric(a) => {
                 let ptr = Arc::as_ptr(a);
                 (31, ptr).hash(state)
             }
-            LuaType::TableGeneric(a) => {
-                let ptr = Arc::as_ptr(a);
-                (32, ptr).hash(state)
-            }
-            LuaType::TplRef(a) => (33, a).hash(state),
-            LuaType::StrTplRef(a) => (34, a).hash(state),
+            LuaType::TplRef(a) => (32, a).hash(state),
+            LuaType::StrTplRef(a) => (33, a).hash(state),
             LuaType::MuliReturn(a) => {
                 let ptr = Arc::as_ptr(a);
-                (35, ptr).hash(state)
+                (34, ptr).hash(state)
             }
-            LuaType::MemberPathExist(a) => (36, a).hash(state),
-            LuaType::Signature(a) => (37, a).hash(state),
-            LuaType::Instance(a) => (38, a).hash(state),
-            LuaType::DocStringConst(a) => (39, a).hash(state),
-            LuaType::DocIntegerConst(a) => (40, a).hash(state),
-            LuaType::Namespace(a) => (41, a).hash(state),
+            LuaType::MemberPathExist(a) => (35, a).hash(state),
+            LuaType::Signature(a) => (36, a).hash(state),
+            LuaType::Instance(a) => (37, a).hash(state),
+            LuaType::DocStringConst(a) => (38, a).hash(state),
+            LuaType::DocIntegerConst(a) => (39, a).hash(state),
+            LuaType::Namespace(a) => (40, a).hash(state),
             LuaType::Variadic(a) => (42, a).hash(state),
         }
     }
@@ -252,10 +246,6 @@ impl LuaType {
         matches!(self, LuaType::Array(_))
     }
 
-    pub fn is_key_of(&self) -> bool {
-        matches!(self, LuaType::KeyOf(_))
-    }
-
     pub fn is_nullable(&self) -> bool {
         matches!(self, LuaType::Nullable(_))
     }
@@ -291,8 +281,8 @@ impl LuaType {
         matches!(self, LuaType::Intersection(_))
     }
 
-    pub fn is_extends(&self) -> bool {
-        matches!(self, LuaType::Extends(_))
+    pub fn is_call(&self) -> bool {
+        matches!(self, LuaType::Call(_))
     }
 
     pub fn is_generic(&self) -> bool {
@@ -355,14 +345,13 @@ impl LuaType {
     pub fn contain_tpl(&self) -> bool {
         match self {
             LuaType::Array(base) => base.contain_tpl(),
-            LuaType::KeyOf(base) => base.contain_tpl(),
+            LuaType::Call(base) => base.contain_tpl(),
             LuaType::Nullable(base) => base.contain_tpl(),
             LuaType::Tuple(base) => base.contain_tpl(),
             LuaType::DocFunction(base) => base.contain_tpl(),
             LuaType::Object(base) => base.contain_tpl(),
             LuaType::Union(base) => base.contain_tpl(),
             LuaType::Intersection(base) => base.contain_tpl(),
-            LuaType::Extends(base) => base.contain_tpl(),
             LuaType::Generic(base) => base.contain_tpl(),
             LuaType::MuliReturn(multi) => multi.contain_tpl(),
             LuaType::MemberPathExist(field) => field.contain_tpl(),
@@ -601,33 +590,46 @@ impl From<LuaIntersectionType> for LuaType {
     }
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub struct LuaExtendedType {
-    base: LuaType,
-    ext: LuaType,
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub enum LuaAliasCallKind {
+    KeyOf,
+    Index,
+    Extends,
+    Add,
+    Sub
 }
 
-impl LuaExtendedType {
-    pub fn new(base: LuaType, ext: LuaType) -> Self {
-        Self { base, ext }
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct LuaAliasCallType {
+    source: LuaType,
+    call_kind: LuaAliasCallKind,
+    operand: Option<LuaType>,
+}
+
+impl LuaAliasCallType {
+    pub fn new(source: LuaType, call_kind: LuaAliasCallKind, operand: Option<LuaType>) -> Self {
+        Self {
+            source,
+            call_kind,
+            operand,
+        }
     }
 
-    pub fn get_base(&self) -> &LuaType {
-        &self.base
+    pub fn get_source(&self) -> &LuaType {
+        &self.source
     }
 
-    pub fn get_ext(&self) -> &LuaType {
-        &self.ext
+    pub fn get_operand(&self) -> Option<&LuaType> {
+        self.operand.as_ref()
+    }
+
+    pub fn get_call_kind(&self) -> LuaAliasCallKind {
+        self.call_kind
     }
 
     pub fn contain_tpl(&self) -> bool {
-        self.base.contain_tpl() || self.ext.contain_tpl()
-    }
-}
-
-impl From<LuaExtendedType> for LuaType {
-    fn from(t: LuaExtendedType) -> Self {
-        LuaType::Extends(t.into())
+        self.source.contain_tpl() || self.operand.as_ref().map_or(false, |o| o.contain_tpl())
     }
 }
 

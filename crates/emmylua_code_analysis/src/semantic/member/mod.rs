@@ -21,7 +21,6 @@ pub fn without_members(type_: &LuaType) -> bool {
         | LuaType::Unknown
         | LuaType::Any
         | LuaType::SelfInfer
-        | LuaType::Extends(_)
         | LuaType::StrTplRef(_)
         | LuaType::TplRef(_)
         | LuaType::Array(_)
@@ -49,10 +48,8 @@ pub fn without_index_operator(type_: &LuaType) -> bool {
         | LuaType::StringConst(_)
         | LuaType::Io
         | LuaType::Any
-        | LuaType::Extends(_)
         | LuaType::StrTplRef(_)
         | LuaType::TplRef(_)
-        | LuaType::KeyOf(_)
         | LuaType::MuliReturn(_) => true,
         _ => false,
     }

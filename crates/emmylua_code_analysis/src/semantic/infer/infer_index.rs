@@ -80,10 +80,6 @@ pub fn infer_member_by_member_key(
             infer_custom_type_member(db, config, decl_id.clone(), index_expr, infer_guard)
         }
         // LuaType::Module(_) => todo!(),
-        LuaType::KeyOf(_) => {
-            let decl_id = LuaTypeDeclId::new("string");
-            infer_custom_type_member(db, config, decl_id, index_expr, infer_guard)
-        }
         LuaType::Nullable(inner_type) => {
             infer_member_by_member_key(db, config, &inner_type, index_expr, infer_guard)
         }

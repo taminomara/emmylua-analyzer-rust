@@ -21,7 +21,7 @@
 ---@generic T
 ---@param v T
 ---@param message? string
----@return T
+---@return NotNull<T>
 function assert(v, message) end
 
 ---
@@ -105,7 +105,7 @@ function getmetatable(object) end
 --- the first absent index.
 ---@generic V
 ---@param t table<any, V> | V[]
----@return fun(tbl: any):int, V
+---@return fun(tbl: any):int, NotNull<V>
 function ipairs(t) end
 
 ---
@@ -216,7 +216,7 @@ function next(table, index) end
 --- traversal.
 ---@generic K, V
 ---@param t table<K, V> | V[]
----@return fun(tbl: any):K, V
+---@return fun(tbl: any):K, NotNull<V>
 function pairs(t) end
 ---
 --- Calls function `f` with the given arguments in *protected mode*. This

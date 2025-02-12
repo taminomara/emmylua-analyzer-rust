@@ -13,6 +13,8 @@ pub enum LuaTypeBinaryOperator {
     Intersection,
     In,
     Extends,
+    Add,
+    Sub,
     // TODO: Add more binary operators
     // As
 }
@@ -23,6 +25,8 @@ pub const PRIORITY: &[PriorityTable] = &[
     PriorityTable { left: 2, right: 2 }, // Intersection
     PriorityTable { left: 0, right: 0 }, // In
     PriorityTable { left: 4, right: 4 }, // Extends
+    PriorityTable { left: 6, right: 6 }, // Add
+    PriorityTable { left: 6, right: 6 }, // Sub
 ];
 
 impl LuaTypeBinaryOperator {

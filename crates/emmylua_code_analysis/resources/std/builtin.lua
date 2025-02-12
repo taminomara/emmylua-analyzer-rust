@@ -105,3 +105,7 @@
 ---@class namespace<T: string>
 
 ---@class function
+
+---@alias NotNull<T> T-?
+
+---@alias Nullable<T> T+?
