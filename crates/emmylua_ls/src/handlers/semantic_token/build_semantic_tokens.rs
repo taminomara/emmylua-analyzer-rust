@@ -1,12 +1,10 @@
-use std::collections::HashSet;
-
-use emmylua_code_analysis::{LuaMemberKey, LuaPropertyOwnerId, LuaType, SemanticModel};
+use emmylua_code_analysis::{LuaPropertyOwnerId, LuaType, SemanticModel};
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr, LuaNameToken,
     LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
 };
 use lsp_types::{SemanticToken, SemanticTokenModifier, SemanticTokenType};
-use rowan::{NodeOrToken, TextRange};
+use rowan::NodeOrToken;
 
 use crate::context::ClientId;
 
@@ -15,7 +13,7 @@ use super::{
 };
 
 pub fn build_semantic_tokens(
-    semantic_model: &SemanticModel,
+    semantic_model: &mut SemanticModel,
     support_muliline_token: bool,
     client_id: ClientId,
 ) -> Option<Vec<SemanticToken>> {
@@ -28,20 +26,10 @@ pub fn build_semantic_tokens(
         SEMANTIC_TOKEN_MODIFIERS.to_vec(),
     );
 
-    // 用于渲染全局方法/标准库
-    let mut use_range_set = HashSet::new();
-    calc_name_expr_ref(semantic_model, &mut use_range_set);
-
     for node_or_token in root.syntax().descendants_with_tokens() {
         match node_or_token {
             NodeOrToken::Node(node) => {
-                build_node_semantic_token(
-                    semantic_model,
-                    &mut builder,
-                    node,
-                    &mut use_range_set,
-                    client_id,
-                );
+                build_node_semantic_token(semantic_model, &mut builder, node, client_id);
             }
             NodeOrToken::Token(token) => {
                 build_tokens_semantic_token(semantic_model, &mut builder, token, client_id);
@@ -205,26 +193,6 @@ fn build_tokens_semantic_token(
                 SemanticTokenModifier::DOCUMENTATION,
             );
         }
-        // LuaTokenKind::TkName => {
-        //     let property_owner = semantic_model.get_property_owner_id(token.clone().into());
-        //     match property_owner {
-        //         Some(LuaPropertyOwnerId::LuaDecl(decl_id)) => {
-        //             let decl = semantic_model.get_db().get_decl_index().get_decl(&decl_id);
-        //             if let Some(decl) = decl {
-        //                 let decl_type = decl.get_type();
-        //                 if let Some(decl_type) = decl_type {
-        //                     match decl_type {
-        //                         LuaType::Def(def) => {
-        //                             builder.push(token, SemanticTokenType::CLASS);
-        //                         }
-        //                         _ => {}
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //         _ => {}
-        //     }
-        // }
         _ => {}
     }
 }
@@ -233,7 +201,6 @@ fn build_node_semantic_token(
     semantic_model: &SemanticModel,
     builder: &mut SemanticBuilder,
     node: LuaSyntaxNode,
-    use_range_set: &mut HashSet<TextRange>,
     _: ClientId,
 ) -> Option<()> {
     match LuaAst::cast(node)? {
@@ -370,18 +337,6 @@ fn build_node_semantic_token(
                 }
             }
         }
-        LuaAst::LuaLocalStat(local_stat) => {
-            let var_exprs = local_stat.descendants::<LuaVarExpr>();
-            for var_expr in var_exprs {
-                match var_expr {
-                    LuaVarExpr::IndexExpr(name_expr) => {
-                        let name = name_expr.get_name_token()?;
-                        builder.push(name.syntax().clone(), SemanticTokenType::PROPERTY);
-                    }
-                    _ => {}
-                }
-            }
-        }
         LuaAst::LuaLocalAttribute(local_attribute) => {
             let name = local_attribute.get_name_token()?;
             builder.push(name.syntax().clone(), SemanticTokenType::KEYWORD);
@@ -393,29 +348,25 @@ fn build_node_semantic_token(
             match prefix {
                 LuaExpr::NameExpr(name_expr) => {
                     let name = name_expr.get_name_token()?;
-
                     if let Some(prefix_type) = prefix_type {
                         match prefix_type {
-                            LuaType::Signature(_) => {
-                                let name_text = name_expr.get_name_text()?;
-                                let name_range = name_expr.get_range();
-                                if !use_range_set.contains(&name_range) {
-                                    let decl_index = semantic_model.get_db().get_decl_index();
-                                    let member_key = LuaMemberKey::Name(name_text.clone().into());
-                                    if decl_index.get_global_decl_id(&member_key).is_some() {
-                                        builder.push_with_modifier(
-                                            name.syntax().clone(),
-                                            SemanticTokenType::FUNCTION,
-                                            SemanticTokenModifier::DEFAULT_LIBRARY,
-                                        );
-                                        return Some(());
-                                    }
+                            LuaType::Signature(signature) => {
+                                if semantic_model
+                                    .get_db()
+                                    .get_meta_file()
+                                    .is_meta_file(&signature.get_file_id())
+                                {
+                                    builder.push_with_modifier(
+                                        name.syntax().clone(),
+                                        SemanticTokenType::FUNCTION,
+                                        SemanticTokenModifier::DEFAULT_LIBRARY,
+                                    );
+                                    return Some(());
                                 }
                             }
                             _ => {}
                         }
                     }
-
                     builder.push(name.syntax().clone(), SemanticTokenType::FUNCTION);
                 }
                 LuaExpr::IndexExpr(index_expr) => {
@@ -498,20 +449,4 @@ fn is_class_def(semantic_model: &SemanticModel, node: LuaSyntaxNode) -> Option<b
     } else {
         None
     }
-}
-
-fn calc_name_expr_ref(
-    semantic_model: &SemanticModel,
-    use_range_set: &mut HashSet<TextRange>,
-) -> Option<()> {
-    let file_id = semantic_model.get_file_id();
-    let db = semantic_model.get_db();
-    let refs_index = db.get_reference_index().get_local_reference(&file_id)?;
-    for (_, decl_refs) in refs_index.get_decl_references_map() {
-        for decl_ref in decl_refs {
-            use_range_set.insert(decl_ref.range.clone());
-        }
-    }
-
-    None
 }
