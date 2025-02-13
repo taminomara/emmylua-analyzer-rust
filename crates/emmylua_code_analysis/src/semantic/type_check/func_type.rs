@@ -2,14 +2,13 @@ use crate::{
     db_index::{
         DbIndex, LuaFunctionType, LuaOperatorMetaMethod, LuaSignatureId, LuaType, LuaTypeDeclId,
     },
-    semantic::{InferGuard, LuaInferConfig},
+    semantic::InferGuard,
 };
 
 use super::infer_type_compact;
 
 pub fn infer_doc_func_type_compact(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
     source_func: &LuaFunctionType,
     compact_type: &LuaType,
     infer_guard: &mut InferGuard,
@@ -17,43 +16,29 @@ pub fn infer_doc_func_type_compact(
     match compact_type {
         LuaType::DocFunction(compact_func) => infer_doc_func_type_compact_for_params(
             db,
-            config,
             source_func,
             compact_func,
             infer_guard,
             false,
         ),
-        LuaType::Signature(signature_id) => infer_doc_func_type_compact_for_signature(
-            db,
-            config,
-            source_func,
-            signature_id,
-            infer_guard,
-        )
-        .unwrap_or(false),
-        LuaType::Ref(type_id) => infer_doc_func_type_compact_for_custom_type(
-            db,
-            config,
-            source_func,
-            type_id,
-            infer_guard,
-        )
-        .unwrap_or(false),
-        LuaType::Def(type_id) => infer_doc_func_type_compact_for_custom_type(
-            db,
-            config,
-            source_func,
-            type_id,
-            infer_guard,
-        )
-        .unwrap_or(false),
+        LuaType::Signature(signature_id) => {
+            infer_doc_func_type_compact_for_signature(db, source_func, signature_id, infer_guard)
+                .unwrap_or(false)
+        }
+        LuaType::Ref(type_id) => {
+            infer_doc_func_type_compact_for_custom_type(db, source_func, type_id, infer_guard)
+                .unwrap_or(false)
+        }
+        LuaType::Def(type_id) => {
+            infer_doc_func_type_compact_for_custom_type(db, source_func, type_id, infer_guard)
+                .unwrap_or(false)
+        }
         _ => false,
     }
 }
 
 fn infer_doc_func_type_compact_for_params(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
     source_func: &LuaFunctionType,
     compact_func: &LuaFunctionType,
     infer_guard: &mut InferGuard,
@@ -81,7 +66,6 @@ fn infer_doc_func_type_compact_for_params(
         if source_param.0 == "..." {
             if infer_doc_func_type_compact_for_varargs(
                 db,
-                config,
                 source_param_type,
                 &compact_params[i..],
                 infer_guard,
@@ -100,7 +84,7 @@ fn infer_doc_func_type_compact_for_params(
 
         match (source_param_type, compact_param_type) {
             (Some(source_type), Some(compact_type)) => {
-                if !infer_type_compact(db, config, source_type, compact_type, infer_guard) {
+                if !infer_type_compact(db, source_type, compact_type, infer_guard) {
                     return false;
                 }
             }
@@ -113,7 +97,6 @@ fn infer_doc_func_type_compact_for_params(
 
 fn infer_doc_func_type_compact_for_varargs(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
     varargs: &Option<LuaType>,
     compact_params: &[(String, Option<LuaType>)],
     infer_guard: &mut InferGuard,
@@ -125,7 +108,7 @@ fn infer_doc_func_type_compact_for_varargs(
             let compact_param = &compact_params[i];
             let compact_param_type = &compact_param.1;
             if let Some(compact_param_type) = compact_param_type {
-                if !infer_type_compact(db, config, varargs_type, compact_param_type, infer_guard) {
+                if !infer_type_compact(db, varargs_type, compact_param_type, infer_guard) {
                     return false;
                 }
             }
@@ -137,7 +120,6 @@ fn infer_doc_func_type_compact_for_varargs(
 
 fn infer_doc_func_type_compact_for_signature(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
     source_func: &LuaFunctionType,
     signature_id: &LuaSignatureId,
     infer_guard: &mut InferGuard,
@@ -151,7 +133,6 @@ fn infer_doc_func_type_compact_for_signature(
     for overload_func in &signature.overloads {
         if infer_doc_func_type_compact_for_params(
             db,
-            config,
             source_func,
             overload_func,
             infer_guard,
@@ -169,7 +150,6 @@ fn infer_doc_func_type_compact_for_signature(
     );
     let r = infer_doc_func_type_compact_for_params(
         db,
-        config,
         &source_func,
         &fake_doc_func,
         infer_guard,
@@ -182,7 +162,6 @@ fn infer_doc_func_type_compact_for_signature(
 // check type is callable
 fn infer_doc_func_type_compact_for_custom_type(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
     source_func: &LuaFunctionType,
     custom_type_id: &LuaTypeDeclId,
     infer_guard: &mut InferGuard,
@@ -194,7 +173,6 @@ fn infer_doc_func_type_compact_for_custom_type(
         let alias_type = decl_type.get_alias_origin(db, None)?;
         return Some(infer_doc_func_type_compact(
             db,
-            config,
             source_func,
             &alias_type,
             infer_guard,
@@ -209,7 +187,7 @@ fn infer_doc_func_type_compact_for_custom_type(
         for operator_id in call_operators {
             let operator = db.get_operator_index().get_operator(operator_id)?;
             let call_type = operator.get_call_operator_type()?;
-            if infer_doc_func_type_compact(db, config, source_func, &call_type, infer_guard) {
+            if infer_doc_func_type_compact(db, source_func, &call_type, infer_guard) {
                 return Some(true);
             }
         }

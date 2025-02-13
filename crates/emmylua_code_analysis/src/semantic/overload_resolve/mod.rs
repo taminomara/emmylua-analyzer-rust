@@ -48,7 +48,7 @@ pub fn resolve_signature(
             arg_count,
         );
     } else {
-        return resolve_signature_by_args(db, infer_config, overloads, expr_types, arg_count);
+        return resolve_signature_by_args(db, overloads, expr_types, arg_count);
     }
 }
 
@@ -110,7 +110,7 @@ fn resolve_signature_by_generic(
             let expr_type = &expr_types[i];
             if param_type == LuaType::Any {
                 match_count += 1;
-            } else if check_type_compact(db, infer_config, &param_type, expr_type) {
+            } else if check_type_compact(db, &param_type, expr_type) {
                 match_count += 1;
             }
         }
@@ -129,7 +129,6 @@ fn resolve_signature_by_generic(
 
 fn resolve_signature_by_args(
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
     overloads: Vec<Arc<LuaFunctionType>>,
     expr_types: Vec<LuaType>,
     arg_count: Option<usize>,
@@ -153,7 +152,7 @@ fn resolve_signature_by_args(
             let expr_type = &expr_types[i];
             if param_type == LuaType::Any {
                 match_count += 1;
-            } else if check_type_compact(db, infer_config, &param_type, expr_type) {
+            } else if check_type_compact(db, &param_type, expr_type) {
                 match_count += 1;
             }
         }

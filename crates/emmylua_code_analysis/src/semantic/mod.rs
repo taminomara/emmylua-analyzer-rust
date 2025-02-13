@@ -101,12 +101,7 @@ impl<'a> SemanticModel<'a> {
     }
 
     pub fn type_check(&self, source: &LuaType, compact_type: &LuaType) -> bool {
-        check_type_compact(
-            self.db,
-            &mut self.infer_config.borrow_mut(),
-            source,
-            compact_type,
-        )
+        check_type_compact(self.db, source, compact_type)
     }
 
     pub fn infer_call_expr_func(
@@ -158,11 +153,7 @@ impl<'a> SemanticModel<'a> {
         }
     }
 
-    pub fn is_reference_to(
-        &self,
-        node: LuaSyntaxNode,
-        property_owner: LuaPropertyOwnerId,
-    ) -> bool {
+    pub fn is_reference_to(&self, node: LuaSyntaxNode, property_owner: LuaPropertyOwnerId) -> bool {
         is_reference_to(
             self.db,
             &mut self.infer_config.borrow_mut(),

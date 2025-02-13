@@ -5,8 +5,9 @@ use crate::{
         LuaFunctionType, LuaGenericType, LuaIntersectionType, LuaMemberPathExistType,
         LuaMultiReturn, LuaObjectType, LuaTupleType, LuaType, LuaUnionType,
     },
-    DbIndex, GenericTpl, LuaAliasCallKind, LuaAliasCallType, LuaPropertyOwnerId, LuaSignatureId,
-    TypeOps,
+    semantic::{member::infer_members, type_check},
+    DbIndex, GenericTpl, LuaAliasCallKind, LuaAliasCallType, LuaMemberKey,
+    LuaPropertyOwnerId, LuaSignatureId, TypeOps,
 };
 
 use super::type_substitutor::TypeSubstitutor;
@@ -267,6 +268,23 @@ fn instantiate_alias_call(
     match alias_call.get_call_kind() {
         LuaAliasCallKind::Sub => return TypeOps::Remove.apply(&left_inst, &right_inst),
         LuaAliasCallKind::Add => return TypeOps::Union.apply(&left_inst, &right_inst),
+        LuaAliasCallKind::KeyOf => {
+            let members = infer_members(db, &left_inst).unwrap_or(Vec::new());
+            let member_key_types = members
+                .iter()
+                .filter_map(|m| match &m.key {
+                    LuaMemberKey::Integer(i) => Some(LuaType::DocIntegerConst(i.clone())),
+                    LuaMemberKey::Name(s) => Some(LuaType::DocStringConst(s.clone().into())),
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+
+            return LuaType::Union(LuaUnionType::new(member_key_types).into());
+        }
+        LuaAliasCallKind::Extends => {
+            let compact = type_check::check_type_compact(db, &right_inst, &left_inst);
+            return LuaType::BooleanConst(compact);
+        }
         _ => {}
     }
 

@@ -13,21 +13,15 @@ use crate::{
     LuaUnionType,
 };
 
-use super::{InferGuard, LuaInferConfig, TypeSubstitutor};
+use super::{InferGuard, TypeSubstitutor};
 pub use sub_type::is_sub_type_of;
 
-pub fn check_type_compact(
-    db: &DbIndex,
-    config: &mut LuaInferConfig,
-    source: &LuaType,
-    compact_type: &LuaType,
-) -> bool {
-    return infer_type_compact(db, config, source, compact_type, &mut InferGuard::new());
+pub fn check_type_compact(db: &DbIndex, source: &LuaType, compact_type: &LuaType) -> bool {
+    return infer_type_compact(db, source, compact_type, &mut InferGuard::new());
 }
 
 fn infer_type_compact(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
     source: &LuaType,
     compact_type: &LuaType,
     infer_guard: &mut InferGuard,
@@ -56,10 +50,10 @@ fn infer_type_compact(
         (LuaType::SelfInfer, _) => true,
         (LuaType::Unknown, _) => true,
         (_, LuaType::Instance(right)) => {
-            infer_type_compact(db, config, source, &right.get_base(), infer_guard)
+            infer_type_compact(db, source, &right.get_base(), infer_guard)
         }
         (_, LuaType::MemberPathExist(right)) => {
-            infer_type_compact(db, config, source, &right.get_origin(), infer_guard)
+            infer_type_compact(db, source, &right.get_origin(), infer_guard)
         }
         (LuaType::BooleanConst(_), right) if right.is_boolean() => true,
         (LuaType::IntegerConst(_), right) if right.is_number() => true,
@@ -102,52 +96,49 @@ fn infer_type_compact(
         // any custom type will merge from expr
         (LuaType::Def(_), _) => true,
         (LuaType::Ref(type_id), _) => {
-            infer_custom_type_compact(db, config, type_id, &compact_type, infer_guard)
-                .unwrap_or(false)
+            infer_custom_type_compact(db, type_id, &compact_type, infer_guard).unwrap_or(false)
         }
         // complex type comb
         (LuaType::Object(object), _) => {
-            infer_object_type_compact(db, config, object, &compact_type, infer_guard)
-                .unwrap_or(false)
+            infer_object_type_compact(db, object, &compact_type, infer_guard).unwrap_or(false)
         }
-        (LuaType::Array(a), LuaType::Array(b)) => infer_type_compact(db, config, a, b, infer_guard),
+        (LuaType::Array(a), LuaType::Array(b)) => infer_type_compact(db, a, b, infer_guard),
         (LuaType::Array(a), _) => {
-            infer_array_type_compact_by_element_type(db, config, a, &compact_type, infer_guard)
+            infer_array_type_compact_by_element_type(db, a, &compact_type, infer_guard)
         }
         (LuaType::Tuple(a), LuaType::Tuple(b)) => {
-            infer_tuple_type_compact(db, config, a, b, infer_guard).unwrap_or(false)
+            infer_tuple_type_compact(db, a, b, infer_guard).unwrap_or(false)
         }
         // TODO implement the check for table
         (LuaType::Tuple(_), _) => compact_type.is_table(),
         (LuaType::Union(a), LuaType::Union(b)) => {
-            infer_union_union_type_compact(db, config, a, b, infer_guard).unwrap_or(false)
+            infer_union_union_type_compact(db, a, b, infer_guard).unwrap_or(false)
         }
         (LuaType::Union(a), _) => a
             .get_types()
             .iter()
-            .any(|t| infer_type_compact(db, config, t, &compact_type, infer_guard)),
+            .any(|t| infer_type_compact(db, t, &compact_type, infer_guard)),
         (left, LuaType::Union(b)) if !left.is_union() => b
             .get_types()
             .iter()
-            .all(|t| infer_type_compact(db, config, left, t, infer_guard)),
+            .all(|t| infer_type_compact(db, left, t, infer_guard)),
 
         (LuaType::Intersection(a), _) => a
             .get_types()
             .iter()
-            .all(|t| infer_type_compact(db, config, t, &compact_type, infer_guard)),
+            .all(|t| infer_type_compact(db, t, &compact_type, infer_guard)),
         (LuaType::DocFunction(f), _) => {
-            infer_doc_func_type_compact(db, config, f, &compact_type, infer_guard)
+            infer_doc_func_type_compact(db, f, &compact_type, infer_guard)
         }
         (LuaType::Nullable(base), _) => {
-            compact_type.is_nil()
-                || infer_type_compact(db, config, base, &compact_type, infer_guard)
+            compact_type.is_nil() || infer_type_compact(db, base, &compact_type, infer_guard)
         }
         (LuaType::Generic(source_generic), LuaType::Generic(compact_generic)) => {
-            infer_generic_type_compact(db, config, source_generic, compact_generic, infer_guard)
+            infer_generic_type_compact(db, source_generic, compact_generic, infer_guard)
                 .unwrap_or(false)
         }
         (LuaType::Generic(source_generic), _) => {
-            infer_generic_type_compact_other(db, config, source_generic, &compact_type, infer_guard)
+            infer_generic_type_compact_other(db, source_generic, &compact_type, infer_guard)
                 .unwrap_or(false)
         }
         // template
@@ -170,7 +161,7 @@ fn infer_type_compact(
 
 fn infer_custom_type_compact(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+
     type_id: &LuaTypeDeclId,
     compact_type: &LuaType,
     infer_guard: &mut InferGuard,
@@ -181,7 +172,6 @@ fn infer_custom_type_compact(
         if let Some(origin_type) = type_decl.get_alias_origin(db, None) {
             return Some(infer_type_compact(
                 db,
-                config,
                 &origin_type,
                 compact_type,
                 infer_guard,
@@ -191,7 +181,7 @@ fn infer_custom_type_compact(
             for member_id in members {
                 let member = db.get_member_index().get_member(member_id)?;
                 let member_type = member.get_decl_type();
-                if infer_type_compact(db, config, member_type, compact_type, infer_guard) {
+                if infer_type_compact(db, member_type, compact_type, infer_guard) {
                     return Some(true);
                 }
             }
@@ -262,7 +252,6 @@ fn infer_custom_type_compact(
                 let table_member_owner = LuaMemberOwner::Element(range.clone());
                 return infer_custom_type_compact_table(
                     db,
-                    config,
                     type_id,
                     table_member_owner,
                     infer_guard,
@@ -281,7 +270,6 @@ fn infer_custom_type_compact(
 
 fn infer_custom_type_compact_table(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
     type_id: &LuaTypeDeclId,
     table_owner: LuaMemberOwner,
     infer_guard: &mut InferGuard,
@@ -297,7 +285,7 @@ fn infer_custom_type_compact_table(
         if let Some(table_member_id) = table_members.get(key) {
             let table_member = member_index.get_member(table_member_id)?;
             let table_member_type = table_member.get_decl_type();
-            if !infer_type_compact(db, config, type_member_type, table_member_type, infer_guard) {
+            if !infer_type_compact(db, type_member_type, table_member_type, infer_guard) {
                 return Some(false);
             }
         } else if type_member_type.is_optional() {
@@ -311,7 +299,7 @@ fn infer_custom_type_compact_table(
     if let Some(supers) = supers {
         for super_type in supers {
             let table_type = LuaType::TableConst(table_owner.get_element_range()?.clone());
-            if !infer_type_compact(db, config, &super_type, &table_type, infer_guard) {
+            if !infer_type_compact(db, &super_type, &table_type, infer_guard) {
                 return Some(false);
             }
         }
@@ -333,7 +321,6 @@ fn escape_alias(db: &DbIndex, type_id: &LuaTypeDeclId) -> Option<LuaType> {
 
 fn infer_object_type_compact(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
     source: &LuaObjectType,
     compact_type: &LuaType,
     infer_guard: &mut InferGuard,
@@ -348,7 +335,7 @@ fn infer_object_type_compact(
                 let table_member_id = members.get(key)?;
                 let table_member = member_index.get_member(table_member_id)?;
                 let table_member_type = table_member.get_decl_type();
-                if !infer_type_compact(db, config, source_type, table_member_type, infer_guard) {
+                if !infer_type_compact(db, source_type, table_member_type, infer_guard) {
                     return Some(false);
                 }
             }
@@ -367,17 +354,16 @@ fn infer_object_type_compact(
 
 fn infer_array_type_compact_by_element_type(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
     source_element_type: &LuaType,
     compact_type: &LuaType,
     infer_guard: &mut InferGuard,
 ) -> bool {
     match compact_type {
         LuaType::Array(element_type) => {
-            infer_type_compact(db, config, source_element_type, element_type, infer_guard)
+            infer_type_compact(db, source_element_type, element_type, infer_guard)
         }
         LuaType::Tuple(tuple_type) => tuple_type.get_types().into_iter().all(|element_type| {
-            infer_type_compact(db, config, source_element_type, element_type, infer_guard)
+            infer_type_compact(db, source_element_type, element_type, infer_guard)
         }),
         // TODO implement the check for table
         _ => compact_type.is_table(),
@@ -386,7 +372,6 @@ fn infer_array_type_compact_by_element_type(
 
 fn infer_tuple_type_compact(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
     source: &LuaTupleType,
     compact_type: &LuaTupleType,
     infer_guard: &mut InferGuard,
@@ -401,7 +386,7 @@ fn infer_tuple_type_compact(
     for i in 0..source_types_len {
         let source_type = &source_types[i];
         let target_type = &target_types[i];
-        if !infer_type_compact(db, config, source_type, target_type, infer_guard) {
+        if !infer_type_compact(db, source_type, target_type, infer_guard) {
             return Some(false);
         }
     }
@@ -411,7 +396,6 @@ fn infer_tuple_type_compact(
 
 fn infer_generic_type_compact(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
     source_generic: &LuaGenericType,
     compact_generic: &LuaGenericType,
     infer_guard: &mut InferGuard,
@@ -433,13 +417,7 @@ fn infer_generic_type_compact(
     for i in 0..source_params.len() {
         let source_param = &source_params[i];
         let compact_param = &compact_params[i];
-        if !infer_type_compact(
-            db,
-            config,
-            source_param,
-            compact_param,
-            &mut InferGuard::new(),
-        ) {
+        if !infer_type_compact(db, source_param, compact_param, &mut InferGuard::new()) {
             return Some(false);
         }
     }
@@ -449,7 +427,6 @@ fn infer_generic_type_compact(
 
 fn infer_generic_type_compact_other(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
     source_generic: &LuaGenericType,
     compact_type: &LuaType,
     infer_guard: &mut InferGuard,
@@ -463,7 +440,6 @@ fn infer_generic_type_compact_other(
         if let Some(origin_type) = type_decl.get_alias_origin(db, Some(&substitutor)) {
             return Some(infer_type_compact(
                 db,
-                config,
                 &origin_type,
                 compact_type,
                 infer_guard,
@@ -477,7 +453,6 @@ fn infer_generic_type_compact_other(
 // a difficult compare
 fn infer_union_union_type_compact(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
     source: &LuaUnionType,
     compact_type: &LuaUnionType,
     infer_guard: &mut InferGuard,
@@ -488,7 +463,7 @@ fn infer_union_union_type_compact(
     for a_type in a_types {
         if !b_types
             .iter()
-            .any(|b_type| infer_type_compact(db, config, a_type, b_type, infer_guard))
+            .any(|b_type| infer_type_compact(db, a_type, b_type, infer_guard))
         {
             return Some(false);
         }
@@ -497,7 +472,7 @@ fn infer_union_union_type_compact(
     for b_type in b_types {
         if !a_types
             .iter()
-            .any(|a_type| infer_type_compact(db, config, a_type, b_type, infer_guard))
+            .any(|a_type| infer_type_compact(db, a_type, b_type, infer_guard))
         {
             return Some(false);
         }
