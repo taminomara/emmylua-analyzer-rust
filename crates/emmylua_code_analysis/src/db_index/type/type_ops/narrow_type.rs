@@ -6,8 +6,16 @@ pub fn narrow_down_type(source: LuaType, target: LuaType) -> LuaType {
         LuaType::Union(union) => {
             let mut types = union.get_types().to_vec();
             match target {
-                LuaType::Number | LuaType::FloatConst(_) | LuaType::IntegerConst(_) => {
+                LuaType::Number | LuaType::FloatConst(_) => {
                     types.retain(|t| t.is_number());
+                    if types.len() == 1 {
+                        types.pop().unwrap()
+                    } else {
+                        LuaType::Union(LuaUnionType::new(types).into())
+                    }
+                }
+                LuaType::Integer | LuaType::IntegerConst(_) => {
+                    types.retain(|t| t.is_integer());
                     if types.len() == 1 {
                         types.pop().unwrap()
                     } else {
@@ -94,7 +102,12 @@ pub fn narrow_down_type(source: LuaType, target: LuaType) -> LuaType {
 
             target
         }
-        LuaType::IntegerConst(_) => {
+        LuaType::IntegerConst(_) => match target {
+            LuaType::Number => LuaType::Number,
+            LuaType::Integer | LuaType::IntegerConst(_) => LuaType::Integer,
+            _ => target,
+        },
+        LuaType::Number => {
             if target.is_number() {
                 return LuaType::Number;
             }
@@ -111,4 +124,3 @@ pub fn narrow_down_type(source: LuaType, target: LuaType) -> LuaType {
         _ => target,
     }
 }
-

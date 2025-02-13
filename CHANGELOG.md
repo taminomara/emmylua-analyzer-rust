@@ -4,6 +4,10 @@
 
 `FIX` Fix issue `emmylua_ls` might not exit in unix.
 
+`NEW` Support TypeScript-like type gymnastics
+
+`FIX` Fix infinite recursion issue in alias generics.
+
 # 0.5.0
 
 `NEW` Support type-check when casting tuples to arrays.

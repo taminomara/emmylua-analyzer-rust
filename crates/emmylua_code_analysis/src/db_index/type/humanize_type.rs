@@ -366,20 +366,24 @@ fn humanize_generic_type(db: &DbIndex, generic: &LuaGenericType, level: RenderLe
 
     let type_decl = type_decl.unwrap();
     let simple_name = type_decl.get_name();
-    if level == RenderLevel::Minimal {
-        return format!("{}<...>", simple_name);
-    }
-
-    if type_decl.is_alias_replace() {
-        let params = generic
-            .get_params()
-            .iter()
-            .map(|ty| ty.clone())
-            .collect::<Vec<_>>();
-        let substitutor = TypeSubstitutor::from_type_array(params);
-        if let Some(origin) = type_decl.get_alias_origin(db, Some(&substitutor)) {
-            return humanize_type(db, &origin, level.next_level())
+    match level {
+        RenderLevel::Brief => {
+            if type_decl.is_alias_replace() {
+                let params = generic
+                    .get_params()
+                    .iter()
+                    .map(|ty| ty.clone())
+                    .collect::<Vec<_>>();
+                let substitutor = TypeSubstitutor::from_type_array(params);
+                if let Some(origin) = type_decl.get_alias_origin(db, Some(&substitutor)) {
+                    return humanize_type(db, &origin, level.next_level());
+                }
+            }
         }
+        RenderLevel::Minimal => {
+            return format!("{}<...>", simple_name);
+        }
+        _ => {}
     }
 
     let generic_params = generic

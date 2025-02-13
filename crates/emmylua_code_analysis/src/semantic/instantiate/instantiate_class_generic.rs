@@ -5,7 +5,8 @@ use crate::{
         LuaFunctionType, LuaGenericType, LuaIntersectionType, LuaMemberPathExistType,
         LuaMultiReturn, LuaObjectType, LuaTupleType, LuaType, LuaUnionType,
     },
-    DbIndex, GenericTpl, LuaAliasCallKind, LuaAliasCallType, LuaPropertyOwnerId, LuaSignatureId, TypeOps,
+    DbIndex, GenericTpl, LuaAliasCallKind, LuaAliasCallType, LuaPropertyOwnerId, LuaSignatureId,
+    TypeOps,
 };
 
 use super::type_substitutor::TypeSubstitutor;
@@ -153,11 +154,14 @@ fn instantiate_generic(
         return LuaType::Unknown;
     };
 
-    if let Some(type_decl) = db.get_type_index().get_type_decl(&type_decl_id) {
-        if type_decl.is_alias_replace() {
-            let new_substitutor = TypeSubstitutor::from_type_array(new_params.clone());
-            if let Some(origin) = type_decl.get_alias_origin(db, Some(&new_substitutor)) {
-                return origin;
+    if !substitutor.check_recursion(&type_decl_id) {
+        if let Some(type_decl) = db.get_type_index().get_type_decl(&type_decl_id) {
+            if type_decl.is_alias_replace() {
+                let new_substitutor =
+                    TypeSubstitutor::from_alias(new_params.clone(), type_decl_id.clone());
+                if let Some(origin) = type_decl.get_alias_origin(db, Some(&new_substitutor)) {
+                    return origin;
+                }
             }
         }
     }
@@ -261,12 +265,8 @@ fn instantiate_alias_call(
     let left_inst = instantiate_type(db, left, substitutor);
     let right_inst = instantiate_type(db, right, substitutor);
     match alias_call.get_call_kind() {
-        LuaAliasCallKind::Sub => {
-            return TypeOps::Remove.apply(&left_inst, &right_inst)
-        }
-        LuaAliasCallKind::Add => {
-            return TypeOps::Union.apply(&left_inst, &right_inst)
-        }
+        LuaAliasCallKind::Sub => return TypeOps::Remove.apply(&left_inst, &right_inst),
+        LuaAliasCallKind::Add => return TypeOps::Union.apply(&left_inst, &right_inst),
         _ => {}
     }
 
