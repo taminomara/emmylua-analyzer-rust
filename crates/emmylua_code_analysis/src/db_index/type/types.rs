@@ -251,7 +251,11 @@ impl LuaType {
     }
 
     pub fn is_optional(&self) -> bool {
-        matches!(self, LuaType::Nil | LuaType::Nullable(_))
+        match self {
+            LuaType::Nullable(_) | LuaType::Nil => true,
+            LuaType::Union(u) => u.types.iter().any(|t| t.is_optional()),
+            _ => false,
+        }
     }
 
     pub fn is_tuple(&self) -> bool {

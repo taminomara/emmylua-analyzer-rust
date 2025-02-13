@@ -13,7 +13,7 @@ use crate::{
         AnalyzeError, LuaAliasCallType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey,
         LuaIntersectionType, LuaObjectType, LuaStringTplType, LuaTupleType, LuaType, LuaUnionType,
     },
-    DiagnosticCode, GenericTpl, LuaAliasCallKind,
+    DiagnosticCode, GenericTpl, LuaAliasCallKind, TypeOps,
 };
 
 use super::DocAnalyzer;
@@ -400,11 +400,15 @@ fn infer_object_type(analyzer: &mut DocAnalyzer, object_type: LuaDocObjectType) 
             continue;
         };
 
-        let type_ref = if let Some(type_ref) = field.get_type() {
+        let mut type_ref = if let Some(type_ref) = field.get_type() {
             infer_type(analyzer, type_ref)
         } else {
             LuaType::Unknown
         };
+
+        if field.is_nullable() {
+            type_ref = TypeOps::Union.apply(&type_ref, &LuaType::Nil);
+        }
 
         fields.push((key, type_ref));
     }

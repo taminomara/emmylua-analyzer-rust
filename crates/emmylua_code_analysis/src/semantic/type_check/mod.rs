@@ -1,7 +1,7 @@
 mod func_type;
 mod sub_type;
 
-use std::ops::Deref;
+use std::{collections::HashMap, ops::Deref};
 
 use func_type::infer_doc_func_type_compact;
 
@@ -329,10 +329,22 @@ fn infer_object_type_compact(
         LuaType::TableConst(range) => {
             let table_owner = LuaMemberOwner::Element(range.clone());
             let member_index = db.get_member_index();
-            let members = member_index.get_member_map(table_owner.clone())?;
+            let default_map = HashMap::new();
+            let members = member_index
+                .get_member_map(table_owner.clone())
+                .unwrap_or(&default_map);
             let fields = source.get_fields();
             for (key, source_type) in fields {
-                let table_member_id = members.get(key)?;
+                let table_member_id = match members.get(key) {
+                    Some(id) => id,
+                    None => {
+                        if source_type.is_optional() || source_type.is_any() {
+                            continue;
+                        } else {
+                            return Some(false);
+                        }
+                    }
+                };
                 let table_member = member_index.get_member(table_member_id)?;
                 let table_member_type = table_member.get_decl_type();
                 if !infer_type_compact(db, source_type, table_member_type, infer_guard) {
