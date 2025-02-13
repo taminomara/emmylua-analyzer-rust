@@ -106,6 +106,6 @@
 
 ---@class function
 
----@alias NotNull<T> T-?
+---@alias NotNull<T> T - ?
 
----@alias Nullable<T> T+?
+---@alias Nullable<T> T + ?
