@@ -64,6 +64,10 @@ fn broadcast_up(
             flow_chains.add_type_assert(type_assert, block.get_range());
         }
         LuaAst::LuaIndexExpr(index_expr) => {
+            if index_expr.get_position() != origin.get_position() {
+                return None;
+            }
+
             let member_path = index_expr.get_member_path()?;
 
             let type_assert = TypeAssertion::MemberPathExist(member_path.into());

@@ -53,10 +53,10 @@ function os.clock() end
 ---
 --- On non-POSIX systems, this function may be not thread safe because of its
 --- reliance on C function `gmtime` and C function `localtime`.
----@overload fun():string|table
+---@overload fun(fmt:"*t", time: number):table
 ---@param format string
 ---@param time number
----@return string|table
+---@return string
 function os.date(format, time) end
 
 ---
