@@ -56,7 +56,7 @@ fn infer_doc_func_type_compact_for_params(
         let source_param = match source_params.get(i) {
             Some(p) => p,
             None => {
-                return false;
+                break;
             }
         };
         let compact_param = &compact_params[i];
