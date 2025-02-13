@@ -125,6 +125,11 @@ impl ServerContext {
         }
     }
 
+    pub async fn close(&self) {
+        let mut config_manager = self.config_manager.write().await;
+        config_manager.watcher = None;
+    }
+
     pub async fn send_response(&self, response: Response) {
         self.client.on_response(response).await;
     }
