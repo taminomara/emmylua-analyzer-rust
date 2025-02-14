@@ -1,4 +1,4 @@
-use emmylua_parser::{LuaAstNode, LuaExpr, LuaIndexExpr, LuaNameExpr};
+use emmylua_parser::{LuaAstNode, LuaExpr, LuaIndexExpr, LuaNameExpr, LuaSyntaxKind};
 
 use crate::{
     semantic::{
@@ -49,6 +49,28 @@ fn infer_name_expr_property_owner(
         return infer_self_property_owner(db, infer_config, name_expr);
     }
 
+    let decl_id = get_name_decl_id(db, infer_config, &name, name_expr.clone())?;
+    let decl = db.get_decl_index().get_decl(&decl_id)?;
+    if let Some(value_expr_id) = decl.get_value_syntax_id() {
+        if matches!(value_expr_id.get_kind(), LuaSyntaxKind::NameExpr | LuaSyntaxKind::IndexExpr) {
+            // second infer
+            let value_expr = LuaExpr::cast(value_expr_id.to_node_from_root(&name_expr.get_root())?)?;
+            if let Some(property_owner_id) = infer_expr_property_owner(db, infer_config, value_expr) {
+                return Some(property_owner_id);
+            }
+        }
+    }
+
+
+    Some(LuaPropertyOwnerId::LuaDecl(decl_id))
+}
+
+fn get_name_decl_id(
+    db: &DbIndex,
+    infer_config: &mut LuaInferConfig,
+    name: &str,
+    name_expr: LuaNameExpr,
+) -> Option<LuaDeclId> {
     let file_id = infer_config.get_file_id();
     let references_index = db.get_reference_index();
     let range = name_expr.get_range();
@@ -58,7 +80,7 @@ fn infer_name_expr_property_owner(
     if let Some(decl_id) = decl_id {
         let decl = db.get_decl_index().get_decl(&decl_id)?;
         if decl.is_local() {
-            return Some(LuaPropertyOwnerId::LuaDecl(decl_id));
+            return Some(decl_id);
         }
     }
 
@@ -66,11 +88,7 @@ fn infer_name_expr_property_owner(
         .get_decl_index()
         .get_global_decl_id(&LuaMemberKey::Name(name.into()));
 
-    if decl_id.is_some() {
-        Some(LuaPropertyOwnerId::LuaDecl(decl_id.unwrap()))
-    } else {
-        None
-    }
+    decl_id
 }
 
 fn infer_self_property_owner(

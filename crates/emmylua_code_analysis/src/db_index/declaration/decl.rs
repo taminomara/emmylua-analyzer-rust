@@ -13,6 +13,7 @@ pub struct LuaDecl {
     name: SmolStr,
     file_id: FileId,
     range: TextRange,
+    expr_id: Option<LuaSyntaxId>,
     pub extra: LuaDeclExtra,
 }
 
@@ -34,12 +35,19 @@ pub enum LuaDeclExtra {
 }
 
 impl LuaDecl {
-    pub fn new(name: &str, file_id: FileId, range: TextRange, extra: LuaDeclExtra) -> Self {
+    pub fn new(
+        name: &str,
+        file_id: FileId,
+        range: TextRange,
+        extra: LuaDeclExtra,
+        expr_id: Option<LuaSyntaxId>,
+    ) -> Self {
         Self {
             name: SmolStr::new(name),
             file_id,
             range,
-            extra
+            expr_id,
+            extra,
         }
     }
 
@@ -85,14 +93,19 @@ impl LuaDecl {
             LuaDeclExtra::Param { .. } => {
                 LuaSyntaxId::new(LuaSyntaxKind::ParamName.into(), self.range)
             }
-            LuaDeclExtra::Global { kind, .. } => {
-                LuaSyntaxId::new(kind, self.range)
-            }
+            LuaDeclExtra::Global { kind, .. } => LuaSyntaxId::new(kind, self.range),
         }
     }
 
+    pub fn get_value_syntax_id(&self) -> Option<LuaSyntaxId> {
+        self.expr_id
+    }
+
     pub fn is_local(&self) -> bool {
-        matches!(&self.extra, LuaDeclExtra::Local { .. } | LuaDeclExtra::Param { .. })
+        matches!(
+            &self.extra,
+            LuaDeclExtra::Local { .. } | LuaDeclExtra::Param { .. }
+        )
     }
 
     pub fn is_param(&self) -> bool {

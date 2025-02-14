@@ -111,6 +111,7 @@ pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) -
             file_id,
             range,
             LuaDeclExtra::Param { idx, signature_id },
+            None
         );
 
         analyzer.add_decl(decl);

@@ -3,7 +3,9 @@ use std::collections::HashMap;
 use emmylua_code_analysis::{
     LuaCompilation, LuaDeclId, LuaMemberId, LuaMemberKey, LuaPropertyOwnerId, SemanticModel,
 };
-use emmylua_parser::{LuaAstNode, LuaAstToken, LuaNameToken, LuaStringToken, LuaSyntaxToken};
+use emmylua_parser::{
+    LuaAst, LuaAstNode, LuaAstToken, LuaNameToken, LuaStringToken, LuaSyntaxNode, LuaSyntaxToken,
+};
 use lsp_types::Location;
 
 pub fn search_references(
@@ -59,8 +61,7 @@ pub fn search_decl_references(
             .get_reference_index()
             .get_global_references(name)?;
         for in_filed_syntax_id in global_references {
-            let document =
-                semantic_model.get_document_by_file_id(in_filed_syntax_id.file_id)?;
+            let document = semantic_model.get_document_by_file_id(in_filed_syntax_id.file_id)?;
             let location = document.to_lsp_location(in_filed_syntax_id.value.get_range())?;
             result.push(location);
         }
@@ -99,12 +100,50 @@ pub fn search_member_references(
             };
         let root = semantic_model.get_root();
         let node = in_filed_syntax_id.value.to_node_from_root(root.syntax())?;
-        if semantic_model.is_reference_to(node, property_owner.clone()) {
+        if semantic_model.is_reference_to(node.clone(), property_owner.clone()) {
             let document = semantic_model.get_document();
             let range = in_filed_syntax_id.value.get_range();
             let location = document.to_lsp_location(range)?;
             result.push(location);
+            search_member_secondary_references(semantic_model, node, result);
         }
+    }
+
+    Some(())
+}
+
+fn search_member_secondary_references(
+    semantic_model: &SemanticModel,
+    node: LuaSyntaxNode,
+    result: &mut Vec<Location>,
+) -> Option<()> {
+    let position = node.text_range().start();
+    let parent = LuaAst::cast(node.parent()?)?;
+    match parent {
+        LuaAst::LuaAssignStat(assignt_stat) => {
+            let (vars, values) = assignt_stat.get_var_and_expr_list();
+            let idx = values
+                .iter()
+                .position(|value| value.get_position() == position)?;
+            let var = vars.get(idx)?;
+            let decl_id = LuaDeclId::new(semantic_model.get_file_id(), var.get_position());
+            search_decl_references(semantic_model, decl_id, result);
+            let document = semantic_model.get_document();
+            let range = document.to_lsp_location(var.get_range())?;
+            result.push(range);
+        }
+        LuaAst::LuaLocalStat(local_stat) => {
+            let local_names = local_stat.get_local_name_list().collect::<Vec<_>>();
+            let mut values = local_stat.get_value_exprs();
+            let idx = values.position(|value| value.get_position() == position)?;
+            let name = local_names.get(idx)?;
+            let decl_id = LuaDeclId::new(semantic_model.get_file_id(), name.get_position());
+            search_decl_references(semantic_model, decl_id, result);
+            let document = semantic_model.get_document();
+            let range = document.to_lsp_location(name.get_range())?;
+            result.push(range);
+        }
+        _ => {}
     }
 
     Some(())
