@@ -5,6 +5,7 @@ use include_dir::{include_dir, Dir, DirEntry};
 use crate::{load_workspace_files, LuaFileInfo};
 
 static RESOURCE_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/resources");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub fn load_resource_std(allow_create_resources_dir: bool) -> (PathBuf, Vec<LuaFileInfo>) {
     let exe_path = std::env::current_exe().unwrap();
@@ -44,7 +45,7 @@ fn load_resource_from_file_system() -> Option<Vec<LuaFileInfo>> {
     let exe_dir = exe_path.parent().unwrap();
     let resoucres_dir = exe_dir.join("resources");
 
-    if !resoucres_dir.exists() {
+    if check_need_dump_to_file_system() {
         log::info!("Creating resources dir: {:?}", resoucres_dir);
         let files = load_resource_from_include_dir();
         for file in &files {
@@ -68,6 +69,16 @@ fn load_resource_from_file_system() -> Option<Vec<LuaFileInfo>> {
                 }
             }
         }
+
+        let version_path = resoucres_dir.join("version");
+        let content = format!("{}", VERSION);
+        match std::fs::write(&version_path, content) {
+            Ok(_) => {}
+            Err(e) => {
+                log::error!("Failed to write file: {:?}, {:?}", version_path, e);
+                return None;
+            }
+        }
     }
 
     let std_dir = resoucres_dir.join("std");
@@ -82,6 +93,25 @@ fn load_resource_from_file_system() -> Option<Vec<LuaFileInfo>> {
     };
 
     return Some(files);
+}
+
+fn check_need_dump_to_file_system() -> bool {
+    let exe_path = std::env::current_exe().unwrap();
+    let exe_dir = exe_path.parent().unwrap();
+    let resoucres_dir = exe_dir.join("resources");
+    let version_path = resoucres_dir.join("version");
+
+    if !version_path.exists() {
+        return true;
+    }
+
+    let content = std::fs::read_to_string(&version_path).unwrap();
+    let version = content.trim();
+    if version != VERSION {
+        return true;
+    }
+
+    false
 }
 
 fn load_resource_from_include_dir() -> Vec<LuaFileInfo> {
