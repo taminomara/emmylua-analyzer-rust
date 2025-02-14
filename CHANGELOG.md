@@ -8,6 +8,8 @@
 
 `FIX` Fix infinite recursion issue in alias generics.
 
+`NEW` Improve reference search
+
 # 0.5.0
 
 `NEW` Support type-check when casting tuples to arrays.

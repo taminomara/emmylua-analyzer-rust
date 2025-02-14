@@ -120,8 +120,8 @@ fn search_member_secondary_references(
     let position = node.text_range().start();
     let parent = LuaAst::cast(node.parent()?)?;
     match parent {
-        LuaAst::LuaAssignStat(assignt_stat) => {
-            let (vars, values) = assignt_stat.get_var_and_expr_list();
+        LuaAst::LuaAssignStat(assign_stat) => {
+            let (vars, values) = assign_stat.get_var_and_expr_list();
             let idx = values
                 .iter()
                 .position(|value| value.get_position() == position)?;
