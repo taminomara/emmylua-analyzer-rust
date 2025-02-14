@@ -1,4 +1,7 @@
-use emmylua_code_analysis::{DbIndex, LuaPropertyOwnerId, LuaSignatureId, LuaType, RenderLevel};
+use emmylua_code_analysis::{
+    DbIndex, LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId,
+    LuaSignatureId, LuaType, RenderLevel,
+};
 
 use emmylua_code_analysis::humanize_type;
 pub fn hover_const_type(db: &DbIndex, typ: &LuaType) -> String {
@@ -14,7 +17,13 @@ pub fn hover_const_type(db: &DbIndex, typ: &LuaType) -> String {
     }
 }
 
-pub fn hover_function_type(db: &DbIndex, typ: &LuaType, func_name: &str, is_local: bool) -> String {
+pub fn hover_function_type(
+    db: &DbIndex,
+    typ: &LuaType,
+    owner_member: Option<&LuaMember>,
+    func_name: &str,
+    is_local: bool,
+) -> String {
     match typ {
         LuaType::Function => {
             format!(
@@ -24,66 +33,16 @@ pub fn hover_function_type(db: &DbIndex, typ: &LuaType, func_name: &str, is_loca
             )
         }
         LuaType::DocFunction(lua_func) => {
-            let async_prev = if lua_func.is_async() { "async " } else { "" };
-            let local_prev = if is_local { "local " } else { "" };
-            let params = lua_func
-                .get_params()
-                .iter()
-                .map(|param| {
-                    let name = param.0.clone();
-                    if let Some(ty) = &param.1 {
-                        format!("{}: {}", name, humanize_type(db, ty, RenderLevel::Simple))
-                    } else {
-                        name.to_string()
-                    }
-                })
-                .collect::<Vec<_>>();
-
-            let rets = lua_func.get_ret();
-
-            let ret_strs = rets
-                .iter()
-                .map(|ty| humanize_type(db, ty, RenderLevel::Simple))
-                .collect::<Vec<_>>()
-                .join(",");
-
-            let mut result = String::new();
-            result.push_str(async_prev);
-            result.push_str(local_prev);
-            result.push_str("function ");
-            result.push_str(func_name);
-            result.push_str("(");
-            if params.len() > 1 {
-                result.push_str("\n");
-                for param in &params {
-                    result.push_str("  ");
-                    result.push_str(param);
-                    result.push_str(",\n");
-                }
-                result.pop(); // Remove the last comma
-                result.pop(); // Remove the last newline
-                result.push_str("\n");
-            } else {
-                result.push_str(&params.join(", "));
-            }
-            result.push_str(")");
-            if ret_strs.len() > 15 {
-                result.push_str("\n");
-            }
-
-            if !ret_strs.is_empty() {
-                result.push_str("-> ");
-                result.push_str(&ret_strs);
-            }
-
-            result
+            hover_doc_function_type(db, &lua_func, owner_member, func_name)
         }
         LuaType::Signature(signature_id) => {
-            hover_signature_type(db, signature_id.clone(), func_name, is_local).unwrap_or(format!(
-                "{}function {}",
-                if is_local { "local " } else { "" },
-                func_name
-            ))
+            hover_signature_type(db, signature_id.clone(), owner_member, func_name).unwrap_or(
+                format!(
+                    "{}function {}",
+                    if is_local { "local " } else { "" },
+                    func_name
+                ),
+            )
         }
         _ => format!(
             "{}function {}",
@@ -93,22 +52,121 @@ pub fn hover_function_type(db: &DbIndex, typ: &LuaType, func_name: &str, is_loca
     }
 }
 
+#[allow(unused)]
+fn hover_doc_function_type(
+    db: &DbIndex,
+    lua_func: &LuaFunctionType,
+    owner_member: Option<&LuaMember>,
+    func_name: &str,
+) -> String {
+    let async_prev = if lua_func.is_async() { "async " } else { "" };
+    let mut type_prev = "function ";
+    // 有可能来源于类. 例如: `local add = class.add`, `add()`应被视为类方法
+    let full_func_name = if let Some(owner_member) = owner_member {
+        let mut name = String::new();
+        let parent_owner = owner_member.get_owner();
+        if let LuaMemberOwner::Type(ty) = &parent_owner {
+            name.push_str(ty.get_name());
+            if owner_member.is_field().is_some() {
+                type_prev = "(field) ";
+            }
+        }
+        match owner_member.get_decl_type() {
+            LuaType::DocFunction(func) => {
+                if func.is_colon_define() {
+                    type_prev = "(method) ";
+                    name.push_str(":");
+                } else {
+                    name.push_str(".");
+                }
+            }
+            _ => {}
+        }
+        if let LuaMemberKey::Name(n) = owner_member.get_key() {
+            name.push_str(n.as_str());
+        }
+        name
+    } else {
+        func_name.to_string()
+    };
+
+    let params = lua_func
+        .get_params()
+        .iter()
+        .map(|param| {
+            let name = param.0.clone();
+            if let Some(ty) = &param.1 {
+                format!("{}: {}", name, humanize_type(db, ty, RenderLevel::Normal))
+            } else {
+                name.to_string()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    let rets = lua_func.get_ret();
+
+    let mut result = String::new();
+    result.push_str(type_prev);
+    result.push_str(async_prev);
+    result.push_str(&full_func_name);
+    result.push_str("(");
+    result.push_str(params.as_str());
+    result.push_str(")");
+
+    if !rets.is_empty() {
+        result.push_str(" -> ");
+        if rets.len() > 1 {
+            result.push_str("(");
+        }
+        result.push_str(
+            &rets
+                .iter()
+                .map(|ty| humanize_type(db, ty, RenderLevel::Normal))
+                .collect::<Vec<_>>()
+                .join(", "),
+        );
+        if rets.len() > 1 {
+            result.push_str(")");
+        }
+    }
+
+    result
+}
+
 fn hover_signature_type(
     db: &DbIndex,
     signature_id: LuaSignatureId,
+    owner_member: Option<&LuaMember>,
     func_name: &str,
-    is_local: bool,
 ) -> Option<String> {
     let signature = db.get_signature_index().get(&signature_id)?;
-    let mut async_prev = "";
-    if let Some(property) = db
+    let mut type_prev = "function ";
+    // 有可能来源于类. 例如: `local add = class.add`, `add()`应被视为类定义的内容
+    let full_func_name = if let Some(owner_member) = owner_member {
+        let mut name = String::new();
+        if let LuaMemberOwner::Type(ty) = &owner_member.get_owner() {
+            name.push_str(ty.get_name());
+            if signature.is_colon_define {
+                type_prev = "(method) "; 
+                name.push_str(":");
+            } else {
+                name.push_str(".");
+            }
+        }
+        if let LuaMemberKey::Name(n) = owner_member.get_key() {
+            name.push_str(n.as_str());
+        }
+        name
+    } else {
+        func_name.to_string()
+    };
+    let async_prev = db
         .get_property_index()
         .get_property(LuaPropertyOwnerId::Signature(signature_id))
-    {
-        async_prev = if property.is_async { "async " } else { "" };
-    }
+        .map(|prop| if prop.is_async { "async " } else { "" })
+        .unwrap_or("");
 
-    let local_prev = if is_local { "local " } else { "" };
     let params = signature
         .get_type_params()
         .iter()
@@ -120,57 +178,41 @@ fn hover_signature_type(
                 name.to_string()
             }
         })
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+        .join(", ");
 
     let rets = &signature.return_docs;
 
     let mut result = String::new();
+    result.push_str(type_prev);
     result.push_str(async_prev);
-    result.push_str(local_prev);
-    result.push_str("function ");
-    result.push_str(func_name);
+    result.push_str(&full_func_name);
     result.push_str("(");
-    if params.len() > 1 {
-        result.push_str("\n");
-        for param in &params {
-            result.push_str("  ");
-            result.push_str(param);
-            result.push_str(",\n");
-        }
-        result.pop(); // Remove the last comma
-        result.pop(); // Remove the last newline
-        result.push_str("\n");
-    } else {
-        result.push_str(&params.join(", "));
-    }
+    result.push_str(params.as_str());
     result.push_str(")");
     match rets.len() {
         0 => {}
-        1 => {
-            result.push_str(" -> ");
-            let type_text = humanize_type(db, &rets[0].type_ref, RenderLevel::Simple);
-            let name = rets[0].name.clone().unwrap_or("".to_string());
-            let detail = if rets[0].description.is_some() {
-                format!(" -- {}", rets[0].description.as_ref().unwrap())
-            } else {
-                "".to_string()
-            };
-            result.push_str(format!("{} {}{}", name, type_text, detail).as_str());
-        }
         _ => {
             result.push_str("\n");
+            let mut i = 0;
             for ret in rets {
+                i += 1;
                 let type_text = humanize_type(db, &ret.type_ref, RenderLevel::Simple);
+                let prefix = if i == 1 {
+                    "->".to_string()
+                } else {
+                    format!("{}.", i.clone())
+                };
                 let name = ret.name.clone().unwrap_or("".to_string());
                 let detail = if ret.description.is_some() {
-                    format!(" -- {}", ret.description.as_ref().unwrap())
+                    format!(" — {}", ret.description.as_ref().unwrap().trim_end())
                 } else {
                     "".to_string()
                 };
-                result.push_str(format!(" -> {} {}{}\n", name, type_text, detail).as_str());
+                result
+                    .push_str(format!("  {} {}: {}{}\n", prefix, name, type_text, detail).as_str());
             }
         }
     }
-
     Some(result)
 }
