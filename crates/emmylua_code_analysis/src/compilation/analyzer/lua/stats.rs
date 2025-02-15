@@ -482,10 +482,6 @@ pub fn analyze_local_func_stat(
 }
 
 pub fn analyze_table_field(analyzer: &mut LuaAnalyzer, field: LuaTableField) -> Option<()> {
-    if field.is_value_field() {
-        return None;
-    }
-
     let _ = field.get_field_key()?;
     let value_expr = field.get_value_expr()?;
     let member_id = LuaMemberId::new(field.get_syntax_id(), analyzer.file_id);
