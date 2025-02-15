@@ -440,6 +440,18 @@ fn build_node_semantic_token(
             }
             builder.push(name.syntax().clone(), SemanticTokenType::PROPERTY);
         }
+        LuaAst::LuaTableField(table_field) => {
+            let value_type = semantic_model.infer_expr(table_field.get_value_expr()?.clone())?;
+            match value_type {
+                LuaType::Signature(_) => {
+                    builder.push(
+                        table_field.get_field_key()?.get_name()?.syntax().clone(),
+                        SemanticTokenType::FUNCTION,
+                    );
+                }
+                _ => {}
+            }
+        }
         _ => {}
     }
 
@@ -468,52 +480,70 @@ fn handle_name_node(
     semantic_model: &SemanticModel,
     builder: &mut SemanticBuilder,
     node: LuaSyntaxNode,
-    token: LuaSyntaxToken,
+    name_token: LuaSyntaxToken,
 ) -> Option<()> {
-    if is_class_def(semantic_model, node.to_owned()).is_some() {
-        builder.push(token, SemanticTokenType::CLASS);
+    if is_class_def(semantic_model, node.clone()).is_some() {
+        builder.push(name_token, SemanticTokenType::CLASS);
         return Some(());
     }
 
-    let decl =
-        semantic_model
-            .get_property_owner_id(node.into())
-            .and_then(|owner_id| match owner_id {
-                LuaPropertyOwnerId::LuaDecl(decl_id) => {
-                    semantic_model.get_db().get_decl_index().get_decl(&decl_id)
-                }
-                _ => None,
-            })?;
+    let owner_id = semantic_model.get_property_owner_id(node.into())?;
 
-    let (token_type, modifier) = match &decl.extra {
-        LuaDeclExtra::Local { decl_type, .. } => match decl_type {
-            Some(LuaType::Signature(_) | LuaType::DocFunction(_)) => {
-                builder.push(token, SemanticTokenType::FUNCTION);
+    match owner_id {
+        LuaPropertyOwnerId::Member(member_id) => {
+            let member = semantic_model
+                .get_db()
+                .get_member_index()
+                .get_member(&member_id)?;
+            if matches!(member.get_decl_type(), LuaType::Signature(_)) {
+                builder.push(name_token, SemanticTokenType::FUNCTION);
                 return Some(());
             }
-            _ => (SemanticTokenType::VARIABLE, None),
-        },
-        LuaDeclExtra::Global { decl_type, .. } => match decl_type {
-            Some(LuaType::Signature(signature)) => {
-                let is_meta = semantic_model
-                    .get_db()
-                    .get_meta_file()
-                    .is_meta_file(&signature.get_file_id());
-                (
-                    SemanticTokenType::FUNCTION,
-                    is_meta.then_some(SemanticTokenModifier::DEFAULT_LIBRARY),
-                )
-            }
-            _ => (SemanticTokenType::VARIABLE, None),
-        },
-        _ => (SemanticTokenType::VARIABLE, None),
-    };
+        }
 
-    if let Some(modifier) = modifier {
-        builder.push_with_modifier(token, token_type, modifier);
-    } else {
-        builder.push(token, token_type);
+        LuaPropertyOwnerId::LuaDecl(decl_id) => {
+            let decl = semantic_model
+                .get_db()
+                .get_decl_index()
+                .get_decl(&decl_id)?;
+
+            let (token_type, modifier) = match &decl.extra {
+                LuaDeclExtra::Local { decl_type, .. } => match decl_type {
+                    Some(LuaType::Signature(_) | LuaType::DocFunction(_)) => {
+                        builder.push(name_token, SemanticTokenType::FUNCTION);
+                        return Some(());
+                    }
+                    _ => (SemanticTokenType::VARIABLE, None),
+                },
+
+                LuaDeclExtra::Global { decl_type, .. } => match decl_type {
+                    Some(LuaType::Signature(signature)) => {
+                        let is_meta = semantic_model
+                            .get_db()
+                            .get_meta_file()
+                            .is_meta_file(&signature.get_file_id());
+                        (
+                            SemanticTokenType::FUNCTION,
+                            is_meta.then_some(SemanticTokenModifier::DEFAULT_LIBRARY),
+                        )
+                    }
+                    _ => (SemanticTokenType::VARIABLE, None),
+                },
+
+                _ => (SemanticTokenType::VARIABLE, None),
+            };
+
+            if let Some(modifier) = modifier {
+                builder.push_with_modifier(name_token, token_type, modifier);
+            } else {
+                builder.push(name_token, token_type);
+            }
+            return Some(());
+        }
+
+        _ => {}
     }
 
+    builder.push(name_token, SemanticTokenType::VARIABLE);
     Some(())
 }
