@@ -188,6 +188,7 @@ impl From<LuaIndexKey> for LuaMemberKey {
             LuaIndexKey::Name(name) => LuaMemberKey::Name(name.get_name_text().into()),
             LuaIndexKey::String(str) => LuaMemberKey::Name(str.get_value().into()),
             LuaIndexKey::Integer(i) => LuaMemberKey::Integer(i.get_int_value()),
+            LuaIndexKey::Idx(idx) => LuaMemberKey::Integer(idx as i64),
             _ => LuaMemberKey::None,
         }
     }
