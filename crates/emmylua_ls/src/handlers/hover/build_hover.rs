@@ -1,5 +1,5 @@
 use emmylua_code_analysis::{
-    DbIndex, LuaDecl, LuaDeclId, LuaDocument, LuaMemberId, LuaMemberKey,
+    DbIndex, LuaDecl, LuaDeclId, LuaDocument, LuaMember, LuaMemberId, LuaMemberKey,
     LuaPropertyOwnerId, LuaSignatureId, LuaType, LuaTypeDeclId, RenderLevel, SemanticInfo,
     SemanticModel,
 };
@@ -27,7 +27,7 @@ pub fn build_semantic_info_hover(
             build_decl_hover(semantic_model, db, document, token, typ, decl_id)
         }
         LuaPropertyOwnerId::Member(member_id) => {
-            build_member_hover(db, document, token, typ, member_id)
+            build_member_hover(semantic_model, db, document, token, typ, member_id)
         }
         LuaPropertyOwnerId::TypeDecl(type_decl_id) => {
             build_type_decl_hover(db, document, token, type_decl_id)
@@ -62,6 +62,26 @@ fn get_decl_owner<'a>(
     let node = decl.get_value_syntax_id()?.to_node_from_root(&root)?;
     semantic_model.get_property_owner_id(node.into())
 }
+
+// 获取`member`可能的来源
+fn get_member_function_member<'a>(
+    semantic_model: &'a SemanticModel,
+    token: LuaSyntaxToken,
+    member: &LuaMember,
+) -> Option<&'a LuaMember> {
+    let root = LuaAst::cast(token.parent()?)?.get_root();
+    let node = member.get_value_syntax_id()?.to_node_from_root(&root)?;
+    let property_owner = semantic_model.get_property_owner_id(node.into());
+    match property_owner {
+        Some(LuaPropertyOwnerId::Member(member_id)) => semantic_model
+            .get_db()
+            .get_member_index()
+            .get_member(&member_id),
+        _ => None,
+    }
+}
+
+
 
 fn build_decl_hover(
     semantic_model: &SemanticModel,
@@ -146,6 +166,7 @@ fn build_decl_hover(
 }
 
 fn build_member_hover(
+    semantic_model: &SemanticModel,
     db: &DbIndex,
     document: &LuaDocument,
     token: LuaSyntaxToken,
@@ -161,8 +182,16 @@ fn build_member_hover(
         _ => return None,
     };
 
+    let mut function_member = None;
     if typ.is_function() {
-        let hover_text = hover_function_type(db, &typ, Option::from(member), &member_name, false);
+        function_member = get_member_function_member(semantic_model, token.clone(), member);
+        let hover_text = hover_function_type(
+            db,
+            &typ,
+            function_member.or_else(|| Option::from(member)),
+            &member_name,
+            false,
+        );
 
         marked_strings.push(MarkedString::from_language_code(
             "lua".to_string(),
@@ -181,12 +210,16 @@ fn build_member_hover(
             format!("(field) {}: {}", member_name, type_humanize_text),
         ));
     }
-
-    add_description(
-        db,
-        &mut marked_strings,
-        LuaPropertyOwnerId::Member(member_id),
-    );
+    // 如果`decl`没有描述, 则从`owner_member`获取描述
+    if !add_description(db, &mut marked_strings, LuaPropertyOwnerId::Member(member_id)) {
+        if let Some(owner_member) = function_member {
+            add_description(
+                db,
+                &mut marked_strings,
+                LuaPropertyOwnerId::Member(owner_member.get_id()),
+            );
+        }
+    }
 
     if let LuaType::Signature(signature_id) = typ {
         add_signature_description(db, &mut marked_strings, signature_id);
@@ -310,3 +343,50 @@ fn build_type_decl_hover(
         range: document.to_lsp_range(token.text_range()),
     })
 }
+
+
+/*
+-- 处理以下情况
+local A = {
+    b = Class.MethodA -- hover b 时类型为 Class.MethodA
+}
+-- 难以处理
+A.c = Class.MethodA
+ */
+// fn get_member_function_member<'a>(
+//     semantic_model: &'a SemanticModel,
+//     typ: LuaType,
+//     member_id: LuaMemberId,
+// ) -> Option<&'a LuaMember> {
+//     match member_id.get_syntax_id().get_kind() {
+//         LuaSyntaxKind::TableFieldAssign => match typ {
+//             LuaType::Signature(_) => {
+//                 let root = semantic_model
+//                     .get_db()
+//                     .get_vfs()
+//                     .get_syntax_tree(&member_id.file_id)?
+//                     .get_red_root();
+//                 let node = member_id.get_syntax_id().to_node_from_root(&root)?;
+//                 match node {
+//                     table_field_node if LuaTableField::can_cast(table_field_node.kind().into()) => {
+//                         let table_field = LuaTableField::cast(table_field_node)?;
+//                         let value_expr_syntax_id = table_field.get_value_expr()?.get_syntax_id();
+//                         let expr = value_expr_syntax_id.to_node_from_root(&root)?;
+//                         let property_owner =
+//                             semantic_model.get_property_owner_id(expr.clone().into());
+//                         match property_owner {
+//                             Some(LuaPropertyOwnerId::Member(member_id)) => semantic_model
+//                                 .get_db()
+//                                 .get_member_index()
+//                                 .get_member(&member_id),
+//                             _ => None,
+//                         }
+//                     }
+//                     _ => None,
+//                 }
+//             }
+//             _ => None,
+//         },
+//         _ => None,
+//     }
+// }
