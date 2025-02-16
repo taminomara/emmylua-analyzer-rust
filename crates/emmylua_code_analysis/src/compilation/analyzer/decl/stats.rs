@@ -107,6 +107,7 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
                     file_id,
                     index_expr.get_syntax_id(),
                     None,
+                    value_expr_id
                 );
 
                 analyzer.db.get_member_index_mut().add_member(member);
@@ -250,6 +251,7 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
                 key.clone(),
                 file_id,
                 index_expr.get_syntax_id(),
+                None,
                 None,
             );
 

@@ -188,6 +188,7 @@ pub fn analyze_alias(analyzer: &mut DocAnalyzer, tag: LuaDocTagAlias) -> Option<
                 file_id,
                 field.get_syntax_id(),
                 Some(alias_member_type),
+                None,
             );
             let member_id = analyzer.db.get_member_index_mut().add_member(member);
             union_members.push(member_id);

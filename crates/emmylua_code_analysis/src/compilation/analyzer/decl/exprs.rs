@@ -161,7 +161,6 @@ pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, expr: LuaTableExpr) -> Op
                 if key.is_none() {
                     continue;
                 }
-
                 analyzer.db.get_reference_index_mut().add_index_reference(
                     key.clone(),
                     file_id,
@@ -169,7 +168,7 @@ pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, expr: LuaTableExpr) -> Op
                 );
 
                 let member =
-                    LuaMember::new(owner_id.clone(), key, file_id, field.get_syntax_id(), None);
+                    LuaMember::new(owner_id.clone(), key, file_id, field.get_syntax_id(), None,  field.get_value_expr().map(|expr| expr.get_syntax_id()));
                 analyzer.db.get_member_index_mut().add_member(member);
             }
         }

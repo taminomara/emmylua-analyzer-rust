@@ -5,8 +5,7 @@ use rowan::TextRange;
 use smol_str::SmolStr;
 
 use crate::{
-    db_index::{LuaMemberKey, LuaSignatureId},
-    InFiled,
+    db_index::{LuaMemberKey, LuaSignatureId}, InFiled
 };
 
 use super::type_decl::LuaTypeDeclId;

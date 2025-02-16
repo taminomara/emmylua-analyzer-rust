@@ -14,6 +14,7 @@ pub struct LuaMember {
     key: LuaMemberKey,
     file_id: FileId,
     syntax_id: LuaSyntaxId,
+    expr_id: Option<LuaSyntaxId>,
     pub(crate) decl_type: LuaType,
 }
 
@@ -24,12 +25,14 @@ impl LuaMember {
         file_id: FileId,
         id: LuaSyntaxId,
         decl_type: Option<LuaType>,
+        expr_id: Option<LuaSyntaxId>,
     ) -> Self {
         Self {
             owner,
             key,
             file_id,
             syntax_id: id,
+            expr_id,
             decl_type: if let Some(decl_type) = decl_type {
                 decl_type
             } else {
@@ -72,8 +75,13 @@ impl LuaMember {
             key: self.key.clone(),
             file_id: self.file_id,
             syntax_id: self.syntax_id,
+            expr_id: self.expr_id,
             decl_type: self.decl_type.clone(),
         }
+    }
+
+    pub fn get_value_syntax_id(&self) -> Option<LuaSyntaxId> {
+        self.expr_id
     }
 
     pub fn is_field(&self) -> Option<()> {
@@ -94,6 +102,10 @@ pub struct LuaMemberId {
 impl LuaMemberId {
     pub fn new(id: LuaSyntaxId, file_id: FileId) -> Self {
         Self { id, file_id }
+    }
+
+    pub fn get_syntax_id(&self) -> &LuaSyntaxId {
+        &self.id
     }
 }
 
