@@ -4,7 +4,7 @@ use emmylua_code_analysis::{
     SemanticModel,
 };
 use emmylua_parser::{LuaAst, LuaAstNode, LuaSyntaxToken};
-use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
+use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent, Range};
 
 use emmylua_code_analysis::humanize_type;
 
@@ -81,8 +81,6 @@ fn get_member_function_member<'a>(
     }
 }
 
-
-
 fn build_decl_hover(
     semantic_model: &SemanticModel,
     db: &DbIndex,
@@ -158,11 +156,10 @@ fn build_decl_hover(
     if let LuaType::Signature(signature_id) = typ {
         add_signature_description(db, &mut marked_strings, signature_id);
     }
-
-    Some(Hover {
-        contents: HoverContents::Array(marked_strings),
-        range: document.to_lsp_range(token.text_range()),
-    })
+    build_result_md(
+        &mut marked_strings,
+        document.to_lsp_range(token.text_range()),
+    )
 }
 
 fn build_member_hover(
@@ -211,7 +208,11 @@ fn build_member_hover(
         ));
     }
     // 如果`decl`没有描述, 则从`owner_member`获取描述
-    if !add_description(db, &mut marked_strings, LuaPropertyOwnerId::Member(member_id)) {
+    if !add_description(
+        db,
+        &mut marked_strings,
+        LuaPropertyOwnerId::Member(member_id),
+    ) {
         if let Some(owner_member) = function_member {
             add_description(
                 db,
@@ -225,10 +226,10 @@ fn build_member_hover(
         add_signature_description(db, &mut marked_strings, signature_id);
     }
 
-    Some(Hover {
-        contents: HoverContents::Array(marked_strings),
-        range: document.to_lsp_range(token.text_range()),
-    })
+    build_result_md(
+        &mut marked_strings,
+        document.to_lsp_range(token.text_range()),
+    )
 }
 
 fn add_description(
@@ -239,8 +240,12 @@ fn add_description(
     let mut has_description = false;
     if let Some(property) = db.get_property_index().get_property(property_owner.clone()) {
         if let Some(detail) = &property.description {
-            marked_strings.push(MarkedString::from_markdown(detail.to_string()));
+            if !has_description {
+                marked_strings.push(MarkedString::String("---".to_string()));
+            }
             has_description = true;
+
+            marked_strings.push(MarkedString::from_markdown(detail.to_string()));
         }
     }
     has_description
@@ -338,12 +343,31 @@ fn build_type_decl_hover(
     let property_owner = LuaPropertyOwnerId::TypeDecl(type_decl_id);
     add_description(db, &mut marked_strings, property_owner);
 
-    Some(Hover {
-        contents: HoverContents::Array(marked_strings),
-        range: document.to_lsp_range(token.text_range()),
-    })
+    build_result_md(&mut marked_strings, document.to_lsp_range(token.text_range()))
 }
 
+fn build_result_md(marked_strings: &mut Vec<MarkedString>, range: Option<Range>) -> Option<Hover> {
+    let mut result = String::new();
+
+    for marked_string in marked_strings {
+        match marked_string {
+            MarkedString::String(s) => {
+                result.push_str(&format!("\n{}\n", s));
+            }
+            MarkedString::LanguageString(s) => {
+                result.push_str(&format!("\n```{}\n{}\n```\n", s.language, s.value));
+            }
+        }
+    }
+
+    Some(Hover {
+        contents: HoverContents::Markup(MarkupContent {
+            kind: lsp_types::MarkupKind::Markdown,
+            value: result,
+        }),
+        range: range,
+    })
+}
 
 /*
 -- 处理以下情况
