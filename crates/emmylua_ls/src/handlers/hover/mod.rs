@@ -62,7 +62,7 @@ pub async fn on_hover(
             let semantic_info = semantic_model.get_semantic_info(token.clone().into())?;
             let db = semantic_model.get_db();
             let document = semantic_model.get_document();
-            build_semantic_info_hover(db, &document, token, semantic_info)
+            build_semantic_info_hover(&semantic_model, db, &document, token, semantic_info)
         }
     }
 }

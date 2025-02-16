@@ -10,9 +10,10 @@ use crate::{
 use super::DeclAnalyzer;
 
 pub fn analyze_local_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalStat) -> Option<()> {
-    let local_name_list = stat.get_local_name_list();
+    let local_name_list= stat.get_local_name_list().collect::<Vec<_>>();
     let value_expr_list = stat.get_value_exprs().collect::<Vec<_>>();
-    for local_name in local_name_list {
+    
+    for (index, local_name) in local_name_list.iter().enumerate() {
         let name = if let Some(name_token) = local_name.get_name_token() {
             name_token.get_name_text().to_string()
         } else {
@@ -32,7 +33,7 @@ pub fn analyze_local_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalStat) -> Op
 
         let file_id = analyzer.get_file_id();
         let range = local_name.get_range();
-        let expr_id = if let Some(expr) = value_expr_list.get(0) {
+        let expr_id = if let Some(expr) = value_expr_list.get(index) {
             Some(expr.get_syntax_id())
         } else {
             None

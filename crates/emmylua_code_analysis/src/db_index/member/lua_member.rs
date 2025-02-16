@@ -1,4 +1,4 @@
-use emmylua_parser::{LuaDocFieldKey, LuaIndexKey, LuaSyntaxId};
+use emmylua_parser::{LuaDocFieldKey, LuaIndexKey, LuaSyntaxId, LuaSyntaxKind};
 use rowan::TextRange;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
@@ -73,6 +73,14 @@ impl LuaMember {
             file_id: self.file_id,
             syntax_id: self.syntax_id,
             decl_type: self.decl_type.clone(),
+        }
+    }
+
+    pub fn is_field(&self) -> Option<()> {
+        if let LuaSyntaxKind::DocTagField = self.syntax_id.get_kind() {
+            Some(())
+        } else {
+            None
         }
     }
 }

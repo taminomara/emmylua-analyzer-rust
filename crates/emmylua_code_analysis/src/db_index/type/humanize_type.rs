@@ -144,8 +144,8 @@ fn humanize_simple_type(
         let member_value_string = humanize_type(db, typ, level.next_level());
 
         let member_string = match member_key {
-            LuaMemberKey::Name(name) => format!("{} = {}", name, member_value_string),
-            LuaMemberKey::Integer(i) => format!("[{}] = {}", i, member_value_string),
+            LuaMemberKey::Name(name) => format!("{}: {}", name, member_value_string),
+            LuaMemberKey::Integer(i) => format!("[{}]: {}", i, member_value_string),
             LuaMemberKey::None => format!("{}", member_value_string),
         };
 
@@ -248,7 +248,7 @@ fn humanize_doc_function_type(
         return "fun(...) => ...".to_string();
     }
 
-    let prev = if lua_func.is_async() { "async " } else { "" };
+    let prev = if lua_func.is_async() { "async fun" } else { "fun" };
     let params = lua_func
         .get_params()
         .iter()
@@ -261,7 +261,7 @@ fn humanize_doc_function_type(
             }
         })
         .collect::<Vec<_>>()
-        .join(",");
+        .join(", ");
 
     let rets = lua_func.get_ret();
 
@@ -276,9 +276,9 @@ fn humanize_doc_function_type(
         .join(",");
 
     if rets.len() > 1 {
-        return format!("{}({}) => ({})", prev, params, ret_strs);
+        return format!("{}({}): ({})", prev, params, ret_strs);
     }
-    format!("{}({}) => {}", prev, params, ret_strs)
+    format!("{}({}): {}", prev, params, ret_strs)
 }
 
 fn humanize_object_type(db: &DbIndex, object: &LuaObjectType, level: RenderLevel) -> String {
