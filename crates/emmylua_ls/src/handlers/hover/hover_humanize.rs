@@ -59,14 +59,14 @@ fn hover_doc_function_type(
     owner_member: Option<&LuaMember>,
     func_name: &str,
 ) -> String {
-    let async_prev = if lua_func.is_async() { "async " } else { "" };
+    let async_prev = if lua_func.is_async() { "async " } else { "" }; 
     let mut type_prev = "function ";
     // 有可能来源于类. 例如: `local add = class.add`, `add()`应被视为类方法
     let full_func_name = if let Some(owner_member) = owner_member {
         let mut name = String::new();
         let parent_owner = owner_member.get_owner();
         if let LuaMemberOwner::Type(ty) = &parent_owner {
-            name.push_str(ty.get_name());
+            name.push_str(ty.get_simple_name());
             if owner_member.is_field().is_some() {
                 type_prev = "(field) ";
             }
@@ -146,7 +146,7 @@ fn hover_signature_type(
     let full_func_name = if let Some(owner_member) = owner_member {
         let mut name = String::new();
         if let LuaMemberOwner::Type(ty) = &owner_member.get_owner() {
-            name.push_str(ty.get_name());
+            name.push_str(ty.get_simple_name());
             if signature.is_colon_define {
                 type_prev = "(method) "; 
                 name.push_str(":");

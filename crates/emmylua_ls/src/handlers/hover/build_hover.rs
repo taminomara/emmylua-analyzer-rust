@@ -1,5 +1,5 @@
 use emmylua_code_analysis::{
-    DbIndex, LuaDecl, LuaDeclId, LuaDocument, LuaMember, LuaMemberId, LuaMemberKey,
+    DbIndex, LuaDecl, LuaDeclId, LuaDocument, LuaMember, LuaMemberId, LuaMemberKey, LuaMemberOwner,
     LuaPropertyOwnerId, LuaSignatureId, LuaType, LuaTypeDeclId, RenderLevel, SemanticInfo,
     SemanticModel,
 };
@@ -111,6 +111,18 @@ fn build_decl_hover(
             "lua".to_string(),
             hover_text,
         ));
+        if let Some(owner_member) = owner_member {
+            if let LuaMemberOwner::Type(ty) = &owner_member.get_owner() {
+                if ty.get_name() != ty.get_simple_name() {
+                    marked_strings.push(MarkedString::from_markdown(format!(
+                        "{}{} `{}`",
+                        "&nbsp;&nbsp;",
+                        "in class",
+                        ty.get_name()
+                    )));
+                }
+            }
+        }
     } else if typ.is_const() {
         let const_value = hover_const_type(db, &typ);
         let prefix = if decl.is_local() {
@@ -194,6 +206,18 @@ fn build_member_hover(
             "lua".to_string(),
             hover_text,
         ));
+
+        let valid_member = function_member.as_ref().unwrap_or(&member);
+        if let LuaMemberOwner::Type(ty) = &valid_member.get_owner() {
+            if ty.get_name() != ty.get_simple_name() {
+                marked_strings.push(MarkedString::from_markdown(format!(
+                    "{}{} `{}`",
+                    "&nbsp;&nbsp;",
+                    "in class",
+                    ty.get_name()
+                )));
+            }
+        }
     } else if typ.is_const() {
         let const_value = hover_const_type(db, &typ);
         marked_strings.push(MarkedString::from_language_code(
@@ -343,7 +367,10 @@ fn build_type_decl_hover(
     let property_owner = LuaPropertyOwnerId::TypeDecl(type_decl_id);
     add_description(db, &mut marked_strings, property_owner);
 
-    build_result_md(&mut marked_strings, document.to_lsp_range(token.text_range()))
+    build_result_md(
+        &mut marked_strings,
+        document.to_lsp_range(token.text_range()),
+    )
 }
 
 fn build_result_md(marked_strings: &mut Vec<MarkedString>, range: Option<Range>) -> Option<Hover> {
@@ -359,13 +386,12 @@ fn build_result_md(marked_strings: &mut Vec<MarkedString>, range: Option<Range>)
             }
         }
     }
-
     Some(Hover {
         contents: HoverContents::Markup(MarkupContent {
             kind: lsp_types::MarkupKind::Markdown,
             value: result,
         }),
-        range: range,
+        range,
     })
 }
 
