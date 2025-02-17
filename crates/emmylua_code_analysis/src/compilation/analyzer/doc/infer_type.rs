@@ -3,7 +3,7 @@ use std::sync::Arc;
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaDocBinaryType, LuaDocFuncType, LuaDocGenericType, LuaDocObjectFieldKey,
     LuaDocObjectType, LuaDocStrTplType, LuaDocType, LuaDocUnaryType, LuaDocVariadicType,
-    LuaLiteralToken, LuaTypeBinaryOperator, LuaTypeUnaryOperator, LuaVarExpr,
+    LuaLiteralToken, LuaSyntaxKind, LuaTypeBinaryOperator, LuaTypeUnaryOperator, LuaVarExpr,
 };
 use rowan::TextRange;
 use smol_str::SmolStr;
@@ -358,7 +358,14 @@ fn infer_func_type(analyzer: &mut DocAnalyzer, func: LuaDocFuncType) -> LuaType 
     }
 
     let is_async = func.is_async();
-    let is_colon = get_colon_define(analyzer).unwrap_or(false);
+
+    let mut is_colon = false;
+    if let Some(parent) = func.get_parent::<LuaAst>() {
+        // old emmylua feature will auto infer colon define
+        if parent.syntax().kind() == LuaSyntaxKind::DocTagOverload.into() {
+            is_colon = get_colon_define(analyzer).unwrap_or(false);
+        }
+    }
 
     LuaType::DocFunction(
         LuaFunctionType::new(is_async, is_colon, params_result, return_types).into(),
