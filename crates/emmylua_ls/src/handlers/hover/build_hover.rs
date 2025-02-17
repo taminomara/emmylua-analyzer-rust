@@ -3,7 +3,9 @@ use emmylua_code_analysis::{
     LuaPropertyOwnerId, LuaSignatureId, LuaType, LuaTypeDeclId, RenderLevel, SemanticInfo,
     SemanticModel,
 };
-use emmylua_parser::{LuaAst, LuaAstNode, LuaSyntaxToken};
+use emmylua_parser::{
+    LuaAssignStat, LuaAst, LuaAstNode, LuaSyntaxKind, LuaSyntaxToken, LuaTableField,
+};
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent, Range};
 
 use emmylua_code_analysis::humanize_type;
@@ -61,24 +63,6 @@ fn get_decl_owner<'a>(
     let root = LuaAst::cast(token.parent()?)?.get_root();
     let node = decl.get_value_syntax_id()?.to_node_from_root(&root)?;
     semantic_model.get_property_owner_id(node.into())
-}
-
-// 获取`member`可能的来源
-fn get_member_function_member<'a>(
-    semantic_model: &'a SemanticModel,
-    token: LuaSyntaxToken,
-    member: &LuaMember,
-) -> Option<&'a LuaMember> {
-    let root = LuaAst::cast(token.parent()?)?.get_root();
-    let node = member.get_value_syntax_id()?.to_node_from_root(&root)?;
-    let property_owner = semantic_model.get_property_owner_id(node.into());
-    match property_owner {
-        Some(LuaPropertyOwnerId::Member(member_id)) => semantic_model
-            .get_db()
-            .get_member_index()
-            .get_member(&member_id),
-        _ => None,
-    }
 }
 
 fn build_decl_hover(
@@ -193,7 +177,7 @@ fn build_member_hover(
 
     let mut function_member = None;
     if typ.is_function() {
-        function_member = get_member_function_member(semantic_model, token.clone(), member);
+        function_member = get_member_function_member(semantic_model, member_id);
         let hover_text = hover_function_type(
             db,
             &typ,
@@ -400,43 +384,63 @@ fn build_result_md(marked_strings: &mut Vec<MarkedString>, range: Option<Range>)
 local A = {
     b = Class.MethodA -- hover b 时类型为 Class.MethodA
 }
--- 难以处理
-A.c = Class.MethodA
+A.c, A.d = Class.MethodA, Class.MethodB
  */
-// fn get_member_function_member<'a>(
-//     semantic_model: &'a SemanticModel,
-//     typ: LuaType,
-//     member_id: LuaMemberId,
-// ) -> Option<&'a LuaMember> {
-//     match member_id.get_syntax_id().get_kind() {
-//         LuaSyntaxKind::TableFieldAssign => match typ {
-//             LuaType::Signature(_) => {
-//                 let root = semantic_model
-//                     .get_db()
-//                     .get_vfs()
-//                     .get_syntax_tree(&member_id.file_id)?
-//                     .get_red_root();
-//                 let node = member_id.get_syntax_id().to_node_from_root(&root)?;
-//                 match node {
-//                     table_field_node if LuaTableField::can_cast(table_field_node.kind().into()) => {
-//                         let table_field = LuaTableField::cast(table_field_node)?;
-//                         let value_expr_syntax_id = table_field.get_value_expr()?.get_syntax_id();
-//                         let expr = value_expr_syntax_id.to_node_from_root(&root)?;
-//                         let property_owner =
-//                             semantic_model.get_property_owner_id(expr.clone().into());
-//                         match property_owner {
-//                             Some(LuaPropertyOwnerId::Member(member_id)) => semantic_model
-//                                 .get_db()
-//                                 .get_member_index()
-//                                 .get_member(&member_id),
-//                             _ => None,
-//                         }
-//                     }
-//                     _ => None,
-//                 }
-//             }
-//             _ => None,
-//         },
-//         _ => None,
-//     }
-// }
+fn get_member_function_member<'a>(
+    semantic_model: &'a SemanticModel,
+    member_id: LuaMemberId,
+) -> Option<&'a LuaMember> {
+    let root = semantic_model
+        .get_db()
+        .get_vfs()
+        .get_syntax_tree(&member_id.file_id)?
+        .get_red_root();
+    let cur_node = member_id.get_syntax_id().to_node_from_root(&root)?;
+
+    match member_id.get_syntax_id().get_kind() {
+        LuaSyntaxKind::TableFieldAssign => match cur_node {
+            table_field_node if LuaTableField::can_cast(table_field_node.kind().into()) => {
+                let table_field = LuaTableField::cast(table_field_node)?;
+                let value_expr_syntax_id = table_field.get_value_expr()?.get_syntax_id();
+                let expr = value_expr_syntax_id.to_node_from_root(&root)?;
+                let property_owner = semantic_model.get_property_owner_id(expr.clone().into());
+                match property_owner {
+                    Some(LuaPropertyOwnerId::Member(member_id)) => semantic_model
+                        .get_db()
+                        .get_member_index()
+                        .get_member(&member_id),
+                    _ => None,
+                }
+            }
+            _ => None,
+        },
+        LuaSyntaxKind::IndexExpr => {
+            let assign_node = cur_node.parent()?;
+            match assign_node {
+                assign_node if LuaAssignStat::can_cast(assign_node.kind().into()) => {
+                    let assign_stat = LuaAssignStat::cast(assign_node)?;
+                    let (vars, exprs) = assign_stat.get_var_and_expr_list();
+                    let mut member = None;
+                    for (var, expr) in vars.iter().zip(exprs.iter()) {
+                        if var.syntax().text_range() == cur_node.text_range() {
+                            let expr = expr.get_syntax_id().to_node_from_root(&root)?;
+                            let property_owner =
+                                semantic_model.get_property_owner_id(expr.clone().into());
+                            member = match property_owner {
+                                Some(LuaPropertyOwnerId::Member(member_id)) => semantic_model
+                                    .get_db()
+                                    .get_member_index()
+                                    .get_member(&member_id),
+                                _ => None,
+                            };
+                            break;
+                        }
+                    }
+                    member
+                }
+                _ => None,
+            }
+        }
+        _ => None,
+    }
+}
