@@ -1,6 +1,7 @@
 mod union_type;
 mod remove_type;
 mod narrow_type;
+mod test;
 
 use super::LuaType;
 

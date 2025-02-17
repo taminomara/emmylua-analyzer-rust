@@ -87,14 +87,14 @@ impl PartialEq for LuaType {
             (LuaType::Nullable(a), LuaType::Nullable(b)) => a == b,
             (LuaType::Tuple(a), LuaType::Tuple(b)) => a == b,
             (LuaType::DocFunction(a), LuaType::DocFunction(b)) => a == b,
-            (LuaType::Object(a), LuaType::Object(b)) => Arc::ptr_eq(a, b),
-            (LuaType::Union(a), LuaType::Union(b)) => Arc::ptr_eq(a, b),
-            (LuaType::Intersection(a), LuaType::Intersection(b)) => Arc::ptr_eq(a, b),
-            (LuaType::Generic(a), LuaType::Generic(b)) => Arc::ptr_eq(a, b),
+            (LuaType::Object(a), LuaType::Object(b)) => a == b,
+            (LuaType::Union(a), LuaType::Union(b)) => a == b,
+            (LuaType::Intersection(a), LuaType::Intersection(b)) => a == b,
+            (LuaType::Generic(a), LuaType::Generic(b)) => a == b,
             (LuaType::TableGeneric(a), LuaType::TableGeneric(b)) => a == b,
             (LuaType::TplRef(a), LuaType::TplRef(b)) => a == b,
-            (LuaType::StrTplRef(a), LuaType::StrTplRef(b)) => Arc::ptr_eq(a, b),
-            (LuaType::MuliReturn(a), LuaType::MuliReturn(b)) => Arc::ptr_eq(a, b),
+            (LuaType::StrTplRef(a), LuaType::StrTplRef(b)) => a == b,
+            (LuaType::MuliReturn(a), LuaType::MuliReturn(b)) => a == b,
             (LuaType::MemberPathExist(a), LuaType::MemberPathExist(b)) => a == b,
             (LuaType::Signature(a), LuaType::Signature(b)) => a == b,
             (LuaType::Instance(a), LuaType::Instance(b)) => a == b,
@@ -469,7 +469,7 @@ pub enum LuaIndexAccessKey {
     Type(LuaType),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LuaObjectType {
     fields: HashMap<LuaMemberKey, LuaType>,
     index_access: Vec<(LuaType, LuaType)>,

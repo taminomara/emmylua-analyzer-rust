@@ -1,7 +1,6 @@
 mod decl;
 mod decl_tree;
 mod scope;
-mod test;
 
 pub use decl::LuaDeclExtra;
 pub use decl::{LocalAttribute, LuaDecl, LuaDeclId};

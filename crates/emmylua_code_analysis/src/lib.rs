@@ -6,6 +6,7 @@ mod profile;
 mod resources;
 mod semantic;
 mod vfs;
+mod test_lib;
 
 pub use compilation::*;
 pub use config::*;
@@ -19,6 +20,7 @@ use std::{collections::HashSet, path::PathBuf, sync::Arc};
 use tokio_util::sync::CancellationToken;
 pub use vfs::*;
 pub use emmylua_codestyle::*;
+pub use test_lib::VirtualWorkspace;
 
 #[macro_use]
 extern crate rust_i18n;
