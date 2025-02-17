@@ -45,8 +45,8 @@ fn check_general_type_compact(
     if let Some(origin_type) = escape_type(db, compact_type) {
         return check_general_type_compact(
             db,
+            source,
             &origin_type,
-            compact_type,
             check_guard.next_level()?,
         );
     }

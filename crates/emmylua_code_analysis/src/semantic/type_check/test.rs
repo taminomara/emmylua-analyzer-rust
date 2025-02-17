@@ -142,4 +142,14 @@ mod test {
         assert!(ws.check_type(&tuple_ty, &tuple_ty2));
         assert!(!ws.check_type(&tuple_ty2, &tuple_ty));
     }
+
+
+    #[test]
+    fn test_issue_86() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        let ty = ws.ty("string");
+        let ty2 = ws.expr_ty("(\"hello\"):match(\".*\")");
+        assert!(ws.check_type(&ty, &ty2));
+    }
 }
