@@ -10,6 +10,10 @@
 
 `NEW` Improve reference search
 
+`NEW` Refactor type check
+
+`NEW` Optimize hover
+
 # 0.5.0
 
 `NEW` Support type-check when casting tuples to arrays.

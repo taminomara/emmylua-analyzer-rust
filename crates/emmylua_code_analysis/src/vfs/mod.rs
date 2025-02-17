@@ -1,54 +1,20 @@
 mod document;
+mod file_id;
 mod file_uri_handler;
-mod in_filed;
 mod loader;
-mod test;
 
 pub use document::LuaDocument;
 use emmylua_parser::{LineIndex, LuaParser, LuaSyntaxTree};
+pub use file_id::{FileId, InFiled};
 pub use file_uri_handler::{file_path_to_uri, uri_to_file_path};
-pub use in_filed::InFiled;
 pub use loader::{load_workspace_files, read_file_with_encoding, LuaFileInfo};
 use lsp_types::Uri;
 use rowan::{NodeCache, TextRange};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::Emmyrc;
-
-#[derive(Eq, PartialEq, Hash, Debug, Clone, Copy)]
-pub struct FileId {
-    pub id: u32,
-}
-
-impl Serialize for FileId {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_u32(self.id)
-    }
-}
-
-impl<'de> Deserialize<'de> for FileId {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let id = u32::deserialize(deserializer)?;
-        Ok(FileId { id })
-    }
-}
-
-impl FileId {
-    pub fn new() -> Self {
-        FileId { id: 0 }
-    }
-
-    pub const VIRTUAL: FileId = FileId { id: u32::MAX };
-}
 
 #[derive(Debug)]
 pub struct Vfs {

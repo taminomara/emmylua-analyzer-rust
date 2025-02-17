@@ -96,6 +96,10 @@ fn load_resource_from_file_system() -> Option<Vec<LuaFileInfo>> {
 }
 
 fn check_need_dump_to_file_system() -> bool {
+    if cfg!(debug_assertions) {
+        return true;
+    }
+
     let exe_path = std::env::current_exe().unwrap();
     let exe_dir = exe_path.parent().unwrap();
     let resoucres_dir = exe_dir.join("resources");
