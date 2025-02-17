@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::VirtualWorkspace;
+    use crate::{DiagnosticCode, VirtualWorkspace};
 
     #[test]
     fn test_string() {
@@ -33,7 +33,6 @@ mod test {
         let number_expr2 = ws.expr_ty("1.5");
         assert!(ws.check_type(&number_ty, &number_expr2));
 
-        
         assert!(ws.check_type(&number_ty, &integer_ty));
         assert!(!ws.check_type(&integer_ty, &number_ty));
 
@@ -143,7 +142,6 @@ mod test {
         assert!(!ws.check_type(&tuple_ty2, &tuple_ty));
     }
 
-
     #[test]
     fn test_issue_86() {
         let mut ws = VirtualWorkspace::new_with_init_std_lib();
@@ -151,5 +149,28 @@ mod test {
         let ty = ws.ty("string");
         let ty2 = ws.expr_ty("(\"hello\"):match(\".*\")");
         assert!(ws.check_type(&ty, &ty2));
+    }
+
+    #[test]
+    fn test_issue_82() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.def(
+            r#"
+            ---@generic F: function
+            ---@param _a F|integer
+            ---@param _b? F
+            ---@return F
+            function foo(_a, _b)
+                return _a
+            end"#,
+        );
+
+        assert!(ws.check_expr(
+            r#"
+            foo(function() end)
+        "#,
+            DiagnosticCode::ParamTypeNotMatch
+        ));
     }
 }

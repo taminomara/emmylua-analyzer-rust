@@ -223,3 +223,35 @@ fn check_doc_func_type_compact_for_custom_type(
 
     Err(TypeCheckFailReason::TypeNotMatch)
 }
+
+pub fn check_sig_type_compact(
+    db: &DbIndex,
+    sig_id: &LuaSignatureId,
+    compact_type: &LuaType,
+    check_guard: TypeCheckGuard,
+) -> TypeCheckResult {
+    let signature = db
+        .get_signature_index()
+        .get(sig_id)
+        .ok_or(TypeCheckFailReason::TypeNotMatch)?;
+
+    // cannot check generic method
+    if signature.is_generic() {
+        return Ok(());
+    }
+
+    let signature_params = signature.get_type_params();
+    let fake_doc_func = LuaFunctionType::new(
+        false,
+        signature.is_colon_define,
+        signature_params.iter().cloned().collect(),
+        Vec::new(),
+    );
+
+    check_doc_func_type_compact(
+        db,
+        &fake_doc_func,
+        compact_type,
+        check_guard.next_level()?,
+    )
+}

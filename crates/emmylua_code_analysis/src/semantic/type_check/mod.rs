@@ -9,7 +9,7 @@ mod type_check_guard;
 mod test;
 
 use complex_type::check_complex_type_compact;
-use func_type::check_doc_func_type_compact;
+use func_type::{check_doc_func_type_compact, check_sig_type_compact};
 use generic_type::check_generic_type_compact;
 use ref_type::check_ref_type_compact;
 use simple_type::check_simple_type_compact;
@@ -91,8 +91,10 @@ fn check_general_type_compact(
         LuaType::DocFunction(doc_func) => {
             check_doc_func_type_compact(db, doc_func, compact_type, check_guard)
         }
-        // signature type can not be source type
-        // LuaType::Signature(_) => todo!(),
+        // signature type 
+        LuaType::Signature(sig_id) => {
+            check_sig_type_compact(db, sig_id, compact_type, check_guard)
+        },
 
         // complex type
         LuaType::Array(_)

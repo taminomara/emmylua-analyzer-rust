@@ -154,7 +154,7 @@ pub async fn init_analysis(
         let tx = tx.clone();
         tokio::spawn(async move {
             let analysis = analysis.read().await;
-            let diagnostics = analysis.diagnose_file(file_id, token).await;
+            let diagnostics = analysis.diagnose_file(file_id, token);
             if let Some(diagnostics) = diagnostics {
                 let uri = analysis.get_uri(file_id).unwrap();
                 let diagnostic_param = lsp_types::PublishDiagnosticsParams {

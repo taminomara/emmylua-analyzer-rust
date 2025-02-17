@@ -25,7 +25,7 @@ impl LuaDiagnostic {
         self.config = LuaDiagnosticConfig::new(&emmyrc).into();
     }
 
-    pub async fn diagnose_file(
+    pub fn diagnose_file(
         &self,
         compilation: &LuaCompilation,
         file_id: FileId,

@@ -1,6 +1,10 @@
 use emmylua_parser::{LuaAstNode, LuaAstToken, LuaLocalName};
+use lsp_types::NumberOrString;
+use tokio_util::sync::CancellationToken;
 
-use crate::{check_type_compact, EmmyLuaAnalysis, FileId, LuaType, VirtualUrlGenerator};
+use crate::{
+    check_type_compact, DiagnosticCode, EmmyLuaAnalysis, FileId, LuaType, VirtualUrlGenerator,
+};
 
 /// A virtual workspace for testing.
 #[allow(unused)]
@@ -91,6 +95,25 @@ impl VirtualWorkspace {
     pub fn check_type(&self, source: &LuaType, compact_type: &LuaType) -> bool {
         let db = &self.analysis.compilation.get_db();
         check_type_compact(db, source, compact_type).is_ok()
+    }
+
+    pub fn check_expr(&mut self, block_str: &str, diagnostic_code: DiagnosticCode) -> bool {
+        let file_id = self.def(block_str);
+        let result = self
+            .analysis
+            .diagnose_file(file_id, CancellationToken::new());
+        if let Some(diagnostics) = result {
+            let code_string = Some(NumberOrString::String(
+                diagnostic_code.get_name().to_string(),
+            ));
+            for diagnostic in diagnostics {
+                if diagnostic.code == code_string {
+                    return false;
+                }
+            }
+        }
+
+        true
     }
 }
 

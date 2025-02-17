@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
         let analysis = analysis.clone();
         tokio::spawn(async move {
             let cancel_token = CancellationToken::new();
-            let diagnostics = analysis.diagnose_file(file_id, cancel_token).await;
+            let diagnostics = analysis.diagnose_file(file_id, cancel_token);
             sender.send((file_id, diagnostics)).await.unwrap();
         });
     }

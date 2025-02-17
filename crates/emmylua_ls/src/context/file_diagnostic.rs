@@ -54,7 +54,7 @@ impl FileDiagnostic {
                 _ = tokio::time::sleep(Duration::from_millis(interval)) => {
                     let analysis = analysis.read().await;
                     if let Some(uri) = analysis.get_uri(file_id_clone) {
-                        let diagnostics = analysis.diagnose_file(file_id_clone, cancel_token).await;
+                        let diagnostics = analysis.diagnose_file(file_id_clone, cancel_token);
                         if let Some(diagnostics) = diagnostics {
                             let diagnostic_param = lsp_types::PublishDiagnosticsParams {
                                 uri,

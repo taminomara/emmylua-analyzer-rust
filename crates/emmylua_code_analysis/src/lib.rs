@@ -146,14 +146,13 @@ impl EmmyLuaAnalysis {
         self.emmyrc.clone()
     }
 
-    pub async fn diagnose_file(
+    pub fn diagnose_file(
         &self,
         file_id: FileId,
         cancel_token: CancellationToken,
     ) -> Option<Vec<lsp_types::Diagnostic>> {
         self.diagnostic
             .diagnose_file(&self.compilation, file_id, cancel_token)
-            .await
     }
 }
 
