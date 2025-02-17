@@ -1,6 +1,7 @@
 use emmylua_parser::{LuaAst, LuaAstNode, LuaCallExpr};
+use rowan::TextRange;
 
-use crate::{humanize_type, DiagnosticCode, LuaType, RenderLevel, SemanticModel};
+use crate::{humanize_type, DiagnosticCode, LuaType, RenderLevel, SemanticModel, TypeCheckFailReason, TypeCheckResult};
 
 use super::DiagnosticContext;
 
@@ -74,7 +75,7 @@ fn check_call_expr(
                         expr_type = LuaType::Any;
                     }
 
-                    if !semantic_model.type_check(&param_type, &expr_type) {
+                    if !semantic_model.type_check(&param_type, &expr_type).is_ok() {
                         let db = semantic_model.get_db();
                         context.add_diagnostic(
                             DiagnosticCode::ParamTypeNotMatch,
@@ -102,22 +103,64 @@ fn check_call_expr(
             if expr_type.is_unknown() {
                 expr_type = LuaType::Any;
             }
-
-            if !semantic_model.type_check(&param_type, &expr_type) {
-                let db = semantic_model.get_db();
-                context.add_diagnostic(
-                    DiagnosticCode::ParamTypeNotMatch,
+            // todo: use type check result
+            let result = semantic_model.type_check(&param_type, &expr_type);
+            if !result.is_ok() {
+                add_type_check_diagnostic(
+                    context,
+                    semantic_model,
                     arg.get_range(),
-                    format!(
-                        "expected {} but found {}",
-                        humanize_type(db, &param_type, RenderLevel::Simple),
-                        humanize_type(db, &expr_type, RenderLevel::Simple)
-                    ),
-                    None,
+                    &param_type,
+                    &expr_type,
+                    result,
                 );
             }
         }
     }
 
     Some(())
+}
+
+fn add_type_check_diagnostic(
+    context: &mut DiagnosticContext,
+    semantic_model: &SemanticModel,
+    range: TextRange,
+    param_type: &LuaType,
+    expr_type: &LuaType,
+    result: TypeCheckResult,
+) {
+    let db = semantic_model.get_db();
+    match result {
+        Ok(_) => return,
+        Err(reason) => match reason {
+            TypeCheckFailReason::TypeNotMatchWithReason(reason) => {
+                context.add_diagnostic(
+                    DiagnosticCode::ParamTypeNotMatch,
+                    range,
+                    reason,
+                    None,
+                );
+            }
+            TypeCheckFailReason::TypeNotMatch => {
+                context.add_diagnostic(
+                    DiagnosticCode::ParamTypeNotMatch,
+                    range,
+                    t!(
+                        "expected %{source} but found %{found}",
+                        source = humanize_type(db, &param_type, RenderLevel::Simple),
+                        found = humanize_type(db, &expr_type, RenderLevel::Simple)
+                    ).to_string(),
+                    None,
+                );
+            }
+            TypeCheckFailReason::TypeRecursion => {
+                context.add_diagnostic(
+                    DiagnosticCode::ParamTypeNotMatch,
+                    range,
+                    "type recursion".into(),
+                    None,
+                );
+            }
+        },
+    }
 }

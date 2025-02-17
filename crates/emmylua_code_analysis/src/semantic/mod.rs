@@ -5,7 +5,6 @@ mod member;
 mod overload_resolve;
 mod reference;
 mod semantic_info;
-mod type_calc;
 mod type_check;
 mod visibility;
 
@@ -37,6 +36,7 @@ pub(crate) use call_func::infer_call_expr_func;
 pub(crate) use infer::{infer_expr, instantiate_doc_function};
 pub use instantiate::{instantiate_type, TypeSubstitutor};
 use overload_resolve::resolve_signature;
+pub use type_check::{TypeCheckResult, TypeCheckFailReason};
 
 #[derive(Debug)]
 pub struct SemanticModel<'a> {
@@ -100,7 +100,7 @@ impl<'a> SemanticModel<'a> {
         infer_members(self.db, prefix_type)
     }
 
-    pub fn type_check(&self, source: &LuaType, compact_type: &LuaType) -> bool {
+    pub fn type_check(&self, source: &LuaType, compact_type: &LuaType) -> TypeCheckResult {
         check_type_compact(self.db, source, compact_type)
     }
 

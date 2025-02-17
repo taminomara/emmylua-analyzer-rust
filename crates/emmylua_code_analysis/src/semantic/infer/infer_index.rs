@@ -733,7 +733,7 @@ fn infer_member_by_index_table_generic(
             _ => return None,
         };
 
-        if check_type_compact(db, key_type, &expr_type) {
+        if check_type_compact(db, key_type, &expr_type).is_ok() {
             return Some(value_type.clone());
         }
     }

@@ -110,7 +110,8 @@ fn resolve_signature_by_generic(
             let expr_type = &expr_types[i];
             if param_type == LuaType::Any {
                 match_count += 1;
-            } else if check_type_compact(db, &param_type, expr_type) {
+            } else if check_type_compact(db, &param_type, expr_type).is_ok()
+            {
                 match_count += 1;
             }
         }
@@ -152,7 +153,7 @@ fn resolve_signature_by_args(
             let expr_type = &expr_types[i];
             if param_type == LuaType::Any {
                 match_count += 1;
-            } else if check_type_compact(db, &param_type, expr_type) {
+            } else if check_type_compact(db, &param_type, expr_type).is_ok() {
                 match_count += 1;
             }
         }

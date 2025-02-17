@@ -6,8 +6,8 @@ use crate::{
         LuaMultiReturn, LuaObjectType, LuaTupleType, LuaType, LuaUnionType,
     },
     semantic::{member::infer_members, type_check},
-    DbIndex, GenericTpl, LuaAliasCallKind, LuaAliasCallType, LuaMemberKey,
-    LuaPropertyOwnerId, LuaSignatureId, TypeOps,
+    DbIndex, GenericTpl, LuaAliasCallKind, LuaAliasCallType, LuaMemberKey, LuaPropertyOwnerId,
+    LuaSignatureId, TypeOps,
 };
 
 use super::type_substitutor::TypeSubstitutor;
@@ -282,7 +282,7 @@ fn instantiate_alias_call(
             return LuaType::Union(LuaUnionType::new(member_key_types).into());
         }
         LuaAliasCallKind::Extends => {
-            let compact = type_check::check_type_compact(db, &right_inst, &left_inst);
+            let compact = type_check::check_type_compact(db, &right_inst, &left_inst).is_ok();
             return LuaType::BooleanConst(compact);
         }
         _ => {}
