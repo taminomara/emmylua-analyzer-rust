@@ -102,6 +102,13 @@ mod test {
             let matched_table_ty = ws.expr_ty("{ [1] = 'test', [2] = 1 }");
             assert!(ws.check_type(&object_ty, &matched_table_ty));
         }
+
+        // issue #69
+        {
+            let object_ty = ws.ty("{ [1]: number, [2]: integer }?");
+
+            assert!(ws.check_type(&object_ty, &object_ty));
+        }
     }
 
     #[test]
