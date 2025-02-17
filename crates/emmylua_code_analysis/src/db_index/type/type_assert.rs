@@ -19,20 +19,6 @@ pub enum TypeAssertion {
 
 #[allow(unused)]
 impl TypeAssertion {
-    pub fn simple_tighten_type(&self, source: LuaType) -> LuaType {
-        match self {
-            TypeAssertion::Exist => TypeOps::Remove.apply(&source, &LuaType::Nil),
-            TypeAssertion::NotExist => force_nil_or_false(source),
-            TypeAssertion::Narrow(t) => TypeOps::Narrow.apply(&source, t),
-            TypeAssertion::MemberPathExist(key) => LuaType::MemberPathExist(
-                LuaMemberPathExistType::new(&key.deref(), source, 0).into(),
-            ),
-            TypeAssertion::Add(lua_type) => TypeOps::Union.apply(&source, lua_type),
-            TypeAssertion::Remove(lua_type) => TypeOps::Remove.apply(&source, lua_type),
-            _ => source,
-        }
-    }
-
     pub fn get_negation(&self) -> Option<TypeAssertion> {
         match self {
             TypeAssertion::Exist => Some(TypeAssertion::NotExist),
@@ -68,7 +54,7 @@ impl TypeAssertion {
                 for syntax_id in syntax_ids {
                     let expr = LuaExpr::cast(syntax_id.to_node_from_root(root)?)?;
                     let expr_type = infer_expr(db, config, expr)?;
-                    typ = TypeOps::Union.apply(&typ, &expr_type);
+                    typ = TypeOps::Narrow.apply(&typ, &expr_type);
                 }
                 
                 Some(typ)

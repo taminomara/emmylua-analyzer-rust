@@ -100,5 +100,10 @@ mod tests {
             TypeOps::Narrow.apply(&ws.ty("1 | nil"), &ws.ty("integer")),
             ws.ty("1")
         );
+
+        assert_eq!(
+            TypeOps::Narrow.apply(&ws.ty("string[]?"), &ws.expr_ty("{}")),
+            ws.ty("string[]")
+        );
     }
 }

@@ -240,6 +240,16 @@ pub fn check_complex_type_compact(
         _ => {}
     }
     // Do I need to check union types?
+    if let LuaType::Union(union) = compact_type {
+        for sub_compact in union.get_types() {
+            if check_complex_type_compact(db, source, sub_compact, check_guard.next_level()?).is_err()
+            {
+                return Err(TypeCheckFailReason::TypeNotMatch);
+            }
+        }
+
+        return Ok(());
+    }
 
     Err(TypeCheckFailReason::TypeNotMatch)
 }

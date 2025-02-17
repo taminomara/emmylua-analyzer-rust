@@ -121,6 +121,20 @@ pub fn narrow_down_type(source: LuaType, target: LuaType) -> LuaType {
 
             target
         }
+        LuaType::Array(_) => {
+            if target.is_table() {
+                return source;
+            }
+
+            target
+        }
+        LuaType::Tuple(_) => {
+            if target.is_table() {
+                return source;
+            }
+
+            target
+        }
         _ => target,
     }
 }

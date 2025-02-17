@@ -189,7 +189,7 @@ impl LuaType {
     pub fn is_table(&self) -> bool {
         matches!(
             self,
-            LuaType::Table | LuaType::TableGeneric(_) | LuaType::TableConst(_) | LuaType::Global | LuaType::Tuple(_)
+            LuaType::Table | LuaType::TableGeneric(_) | LuaType::TableConst(_) | LuaType::Global | LuaType::Tuple(_) | LuaType::Array(_)
         )
     }
 
