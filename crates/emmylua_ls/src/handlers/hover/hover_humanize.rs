@@ -59,7 +59,7 @@ fn hover_doc_function_type(
     owner_member: Option<&LuaMember>,
     func_name: &str,
 ) -> String {
-    let async_prev = if lua_func.is_async() { "async " } else { "" }; 
+    let async_prev = if lua_func.is_async() { "async " } else { "" };
     let mut type_prev = "function ";
     // 有可能来源于类. 例如: `local add = class.add`, `add()`应被视为类方法
     let full_func_name = if let Some(owner_member) = owner_member {
@@ -73,7 +73,14 @@ fn hover_doc_function_type(
         }
         match owner_member.get_decl_type() {
             LuaType::DocFunction(func) => {
-                if func.is_colon_define() {
+                if func.is_colon_define()
+                    || func.get_params().first().and_then(|param| {
+                        param.1.as_ref().map(|ty| {
+                            param.0 == "self"
+                                && humanize_type(db, ty, RenderLevel::Normal) == "self"
+                        })
+                    }) == Some(true)
+                {
                     type_prev = "(method) ";
                     name.push_str(":");
                 } else {
@@ -93,14 +100,22 @@ fn hover_doc_function_type(
     let params = lua_func
         .get_params()
         .iter()
-        .map(|param| {
+        .enumerate()
+        .map(|(index, param)| {
             let name = param.0.clone();
-            if let Some(ty) = &param.1 {
+            if index == 0
+                && param.1.is_some()
+                && name == "self"
+                && humanize_type(db, param.1.as_ref().unwrap(), RenderLevel::Normal) == "self"
+            {
+                "".to_string()
+            } else if let Some(ty) = &param.1 {
                 format!("{}: {}", name, humanize_type(db, ty, RenderLevel::Normal))
             } else {
                 name.to_string()
             }
         })
+        .filter(|s| !s.is_empty())
         .collect::<Vec<_>>()
         .join(", ");
 
@@ -148,7 +163,7 @@ fn hover_signature_type(
         if let LuaMemberOwner::Type(ty) = &owner_member.get_owner() {
             name.push_str(ty.get_simple_name());
             if signature.is_colon_define {
-                type_prev = "(method) "; 
+                type_prev = "(method) ";
                 name.push_str(":");
             } else {
                 name.push_str(".");
