@@ -46,7 +46,6 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
                 analyzer.file_id,
                 tag.get_syntax_id(),
                 Some(type_ref),
-                None,
             );
 
             analyzer.db.get_reference_index_mut().add_index_reference(
@@ -64,7 +63,6 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
                 analyzer.file_id,
                 tag.get_syntax_id(),
                 Some(type_ref),
-                None,
             );
 
             analyzer.db.get_reference_index_mut().add_index_reference(
@@ -82,7 +80,6 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
                 analyzer.file_id,
                 tag.get_syntax_id(),
                 Some(type_ref),
-                None,
             );
 
             analyzer.db.get_reference_index_mut().add_index_reference(
