@@ -1,10 +1,12 @@
 use emmylua_code_analysis::{
-    DbIndex, LuaDecl, LuaDeclId, LuaDocument, LuaMemberId, LuaMemberKey,
+    DbIndex, LuaDecl, LuaDeclId, LuaDocument, LuaMember, LuaMemberId, LuaMemberKey, LuaMemberOwner,
     LuaPropertyOwnerId, LuaSignatureId, LuaType, LuaTypeDeclId, RenderLevel, SemanticInfo,
     SemanticModel,
 };
-use emmylua_parser::{LuaAst, LuaAstNode, LuaSyntaxToken};
-use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
+use emmylua_parser::{
+    LuaAssignStat, LuaAst, LuaAstNode, LuaSyntaxKind, LuaSyntaxToken, LuaTableField,
+};
+use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent, Range};
 
 use emmylua_code_analysis::humanize_type;
 
@@ -27,7 +29,7 @@ pub fn build_semantic_info_hover(
             build_decl_hover(semantic_model, db, document, token, typ, decl_id)
         }
         LuaPropertyOwnerId::Member(member_id) => {
-            build_member_hover(db, document, token, typ, member_id)
+            build_member_hover(semantic_model, db, document, token, typ, member_id)
         }
         LuaPropertyOwnerId::TypeDecl(type_decl_id) => {
             build_type_decl_hover(db, document, token, type_decl_id)
@@ -93,6 +95,18 @@ fn build_decl_hover(
             "lua".to_string(),
             hover_text,
         ));
+        if let Some(owner_member) = owner_member {
+            if let LuaMemberOwner::Type(ty) = &owner_member.get_owner() {
+                if ty.get_name() != ty.get_simple_name() {
+                    marked_strings.push(MarkedString::from_markdown(format!(
+                        "{}{} `{}`",
+                        "&nbsp;&nbsp;",
+                        "in class",
+                        ty.get_name()
+                    )));
+                }
+            }
+        }
     } else if typ.is_const() {
         let const_value = hover_const_type(db, &typ);
         let prefix = if decl.is_local() {
@@ -138,14 +152,14 @@ fn build_decl_hover(
     if let LuaType::Signature(signature_id) = typ {
         add_signature_description(db, &mut marked_strings, signature_id);
     }
-
-    Some(Hover {
-        contents: HoverContents::Array(marked_strings),
-        range: document.to_lsp_range(token.text_range()),
-    })
+    build_result_md(
+        &mut marked_strings,
+        document.to_lsp_range(token.text_range()),
+    )
 }
 
 fn build_member_hover(
+    semantic_model: &SemanticModel,
     db: &DbIndex,
     document: &LuaDocument,
     token: LuaSyntaxToken,
@@ -161,13 +175,33 @@ fn build_member_hover(
         _ => return None,
     };
 
+    let mut function_member = None;
     if typ.is_function() {
-        let hover_text = hover_function_type(db, &typ, Option::from(member), &member_name, false);
+        function_member = get_member_function_member(semantic_model, member_id);
+        let hover_text = hover_function_type(
+            db,
+            &typ,
+            function_member.or_else(|| Option::from(member)),
+            &member_name,
+            false,
+        );
 
         marked_strings.push(MarkedString::from_language_code(
             "lua".to_string(),
             hover_text,
         ));
+
+        let valid_member = function_member.as_ref().unwrap_or(&member);
+        if let LuaMemberOwner::Type(ty) = &valid_member.get_owner() {
+            if ty.get_name() != ty.get_simple_name() {
+                marked_strings.push(MarkedString::from_markdown(format!(
+                    "{}{} `{}`",
+                    "&nbsp;&nbsp;",
+                    "in class",
+                    ty.get_name()
+                )));
+            }
+        }
     } else if typ.is_const() {
         let const_value = hover_const_type(db, &typ);
         marked_strings.push(MarkedString::from_language_code(
@@ -181,21 +215,29 @@ fn build_member_hover(
             format!("(field) {}: {}", member_name, type_humanize_text),
         ));
     }
-
-    add_description(
+    // 如果`decl`没有描述, 则从`owner_member`获取描述
+    if !add_description(
         db,
         &mut marked_strings,
         LuaPropertyOwnerId::Member(member_id),
-    );
+    ) {
+        if let Some(owner_member) = function_member {
+            add_description(
+                db,
+                &mut marked_strings,
+                LuaPropertyOwnerId::Member(owner_member.get_id()),
+            );
+        }
+    }
 
     if let LuaType::Signature(signature_id) = typ {
         add_signature_description(db, &mut marked_strings, signature_id);
     }
 
-    Some(Hover {
-        contents: HoverContents::Array(marked_strings),
-        range: document.to_lsp_range(token.text_range()),
-    })
+    build_result_md(
+        &mut marked_strings,
+        document.to_lsp_range(token.text_range()),
+    )
 }
 
 fn add_description(
@@ -206,8 +248,12 @@ fn add_description(
     let mut has_description = false;
     if let Some(property) = db.get_property_index().get_property(property_owner.clone()) {
         if let Some(detail) = &property.description {
-            marked_strings.push(MarkedString::from_markdown(detail.to_string()));
+            if !has_description {
+                marked_strings.push(MarkedString::String("---".to_string()));
+            }
             has_description = true;
+
+            marked_strings.push(MarkedString::from_markdown(detail.to_string()));
         }
     }
     has_description
@@ -305,8 +351,96 @@ fn build_type_decl_hover(
     let property_owner = LuaPropertyOwnerId::TypeDecl(type_decl_id);
     add_description(db, &mut marked_strings, property_owner);
 
+    build_result_md(
+        &mut marked_strings,
+        document.to_lsp_range(token.text_range()),
+    )
+}
+
+fn build_result_md(marked_strings: &mut Vec<MarkedString>, range: Option<Range>) -> Option<Hover> {
+    let mut result = String::new();
+
+    for marked_string in marked_strings {
+        match marked_string {
+            MarkedString::String(s) => {
+                result.push_str(&format!("\n{}\n", s));
+            }
+            MarkedString::LanguageString(s) => {
+                result.push_str(&format!("\n```{}\n{}\n```\n", s.language, s.value));
+            }
+        }
+    }
     Some(Hover {
-        contents: HoverContents::Array(marked_strings),
-        range: document.to_lsp_range(token.text_range()),
+        contents: HoverContents::Markup(MarkupContent {
+            kind: lsp_types::MarkupKind::Markdown,
+            value: result,
+        }),
+        range,
     })
+}
+
+/*
+-- 处理以下情况
+local A = {
+    b = Class.MethodA -- hover b 时类型为 Class.MethodA
+}
+A.c, A.d = Class.MethodA, Class.MethodB
+ */
+fn get_member_function_member<'a>(
+    semantic_model: &'a SemanticModel,
+    member_id: LuaMemberId,
+) -> Option<&'a LuaMember> {
+    let root = semantic_model
+        .get_db()
+        .get_vfs()
+        .get_syntax_tree(&member_id.file_id)?
+        .get_red_root();
+    let cur_node = member_id.get_syntax_id().to_node_from_root(&root)?;
+
+    match member_id.get_syntax_id().get_kind() {
+        LuaSyntaxKind::TableFieldAssign => match cur_node {
+            table_field_node if LuaTableField::can_cast(table_field_node.kind().into()) => {
+                let table_field = LuaTableField::cast(table_field_node)?;
+                let value_expr_syntax_id = table_field.get_value_expr()?.get_syntax_id();
+                let expr = value_expr_syntax_id.to_node_from_root(&root)?;
+                let property_owner = semantic_model.get_property_owner_id(expr.clone().into());
+                match property_owner {
+                    Some(LuaPropertyOwnerId::Member(member_id)) => semantic_model
+                        .get_db()
+                        .get_member_index()
+                        .get_member(&member_id),
+                    _ => None,
+                }
+            }
+            _ => None,
+        },
+        LuaSyntaxKind::IndexExpr => {
+            let assign_node = cur_node.parent()?;
+            match assign_node {
+                assign_node if LuaAssignStat::can_cast(assign_node.kind().into()) => {
+                    let assign_stat = LuaAssignStat::cast(assign_node)?;
+                    let (vars, exprs) = assign_stat.get_var_and_expr_list();
+                    let mut member = None;
+                    for (var, expr) in vars.iter().zip(exprs.iter()) {
+                        if var.syntax().text_range() == cur_node.text_range() {
+                            let expr = expr.get_syntax_id().to_node_from_root(&root)?;
+                            let property_owner =
+                                semantic_model.get_property_owner_id(expr.clone().into());
+                            member = match property_owner {
+                                Some(LuaPropertyOwnerId::Member(member_id)) => semantic_model
+                                    .get_db()
+                                    .get_member_index()
+                                    .get_member(&member_id),
+                                _ => None,
+                            };
+                            break;
+                        }
+                    }
+                    member
+                }
+                _ => None,
+            }
+        }
+        _ => None,
+    }
 }

@@ -95,6 +95,10 @@ impl LuaMemberId {
     pub fn new(id: LuaSyntaxId, file_id: FileId) -> Self {
         Self { id, file_id }
     }
+
+    pub fn get_syntax_id(&self) -> &LuaSyntaxId {
+        &self.id
+    }
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]

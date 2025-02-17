@@ -58,8 +58,8 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
         LuaType::DocIntegerConst(i) => i.to_string(),
         LuaType::Ref(id) => {
             if let Some(type_decl) = db.get_type_index().get_type_decl(id) {
-                let name = type_decl.get_name().to_string();
-                humanize_simple_type(db, id, &name, level).unwrap_or(name.to_string())
+                let name = type_decl.get_full_name().to_string();
+                humanize_simple_type(db, id, &name, level).unwrap_or(name)
             } else {
                 id.get_name().to_string()
             }
@@ -94,11 +94,11 @@ fn humanize_def_type(db: &DbIndex, id: &LuaTypeDeclId, level: RenderLevel) -> St
     }
 
     let type_decl = type_decl.unwrap();
-    let simple_name = type_decl.get_name();
+    let full_name = type_decl.get_full_name();
     let generic = db.get_type_index().get_generic_params(id);
     if generic.is_none() {
-        return humanize_simple_type(db, id, &simple_name, level)
-            .unwrap_or(simple_name.to_string());
+        return humanize_simple_type(db, id, &full_name, level)
+            .unwrap_or(full_name.to_string());
     }
 
     let generic_names = generic
@@ -107,7 +107,7 @@ fn humanize_def_type(db: &DbIndex, id: &LuaTypeDeclId, level: RenderLevel) -> St
         .map(|it| it.0.clone())
         .collect::<Vec<_>>()
         .join(", ");
-    format!("{}<{}>", simple_name, generic_names)
+    format!("{}<{}>", full_name, generic_names)
 }
 
 fn humanize_simple_type(
@@ -141,13 +141,12 @@ fn humanize_simple_type(
 
     let mut count = 0;
     for (member_key, typ) in member_vec {
-        let member_value_string = humanize_type(db, typ, level.next_level());
-
-        let member_string = match member_key {
-            LuaMemberKey::Name(name) => format!("{}: {}", name, member_value_string),
-            LuaMemberKey::Integer(i) => format!("[{}]: {}", i, member_value_string),
-            LuaMemberKey::None => format!("{}", member_value_string),
-        };
+        let member_string = build_table_member_string(
+            member_key,
+            typ,
+            humanize_type(db, typ, level.next_level()),
+            level,
+        );
 
         member_strings.push_str(&format!("    {},\n", member_string));
         count += 1;
@@ -245,10 +244,14 @@ fn humanize_doc_function_type(
     level: RenderLevel,
 ) -> String {
     if level == RenderLevel::Minimal {
-        return "fun(...) => ...".to_string();
+        return "fun(...) -> ...".to_string();
     }
 
-    let prev = if lua_func.is_async() { "async fun" } else { "fun" };
+    let prev = if lua_func.is_async() {
+        "async fun"
+    } else {
+        "fun"
+    };
     let params = lua_func
         .get_params()
         .iter()
@@ -273,12 +276,12 @@ fn humanize_doc_function_type(
         .iter()
         .map(|ty| humanize_type(db, ty, level.next_level()))
         .collect::<Vec<_>>()
-        .join(",");
+        .join(", ");
 
     if rets.len() > 1 {
-        return format!("{}({}): ({})", prev, params, ret_strs);
+        return format!("{}({}) -> ({})", prev, params, ret_strs);
     }
-    format!("{}({}): {}", prev, params, ret_strs)
+    format!("{}({}) -> {}", prev, params, ret_strs)
 }
 
 fn humanize_object_type(db: &DbIndex, object: &LuaObjectType, level: RenderLevel) -> String {
@@ -416,14 +419,13 @@ fn humanize_table_const_type_detail_and_simple(
             Some(value) => value,
             None => continue,
         };
-        let member_value_string =
-            humanize_type(db, member_value.get_decl_type(), level.next_level());
-
-        let member_string = match member_key {
-            LuaMemberKey::Name(name) => format!("{} = {}", name, member_value_string),
-            LuaMemberKey::Integer(i) => format!("[{}] = {}", i, member_value_string),
-            LuaMemberKey::None => format!("{}", member_value_string),
-        };
+        let typ = member_value.get_decl_type();
+        let member_string = build_table_member_string(
+            member_key,
+            typ,
+            humanize_type(db, typ, level.next_level()),
+            level,
+        );
 
         match level {
             RenderLevel::Detailed => {
@@ -566,7 +568,7 @@ fn humanize_signature_type(
     level: RenderLevel,
 ) -> String {
     if level == RenderLevel::Minimal {
-        return "fun(...) => ...".to_string();
+        return "fun(...) -> ...".to_string();
     }
 
     let signature = db.get_signature_index().get(signature_id);
@@ -587,14 +589,14 @@ fn humanize_signature_type(
             }
         })
         .collect::<Vec<_>>()
-        .join(",");
+        .join(", ");
 
     let generics = signature
         .generic_params
         .iter()
         .map(|(name, _)| name.to_string())
         .collect::<Vec<_>>()
-        .join(",");
+        .join(", ");
 
     let rets = signature
         .return_docs
@@ -611,8 +613,34 @@ fn humanize_signature_type(
     let ret_str = if rets.is_empty() {
         "".to_string()
     } else {
-        format!(" => {}", rets.join(","))
+        format!(" -> {}", rets.join(","))
     };
 
     format!("fun{}({}){}", generic_str, params, ret_str)
+}
+
+fn build_table_member_string(
+    member_key: &LuaMemberKey,
+    ty: &LuaType,
+    member_value_string: String,
+    level: RenderLevel,
+) -> String {
+    let (member_value, separator) = if level == RenderLevel::Detailed {
+        let val = match ty {
+            LuaType::IntegerConst(_) | LuaType::DocIntegerConst(_) => format!("integer = {member_value_string}"),
+            LuaType::FloatConst(_) => format!("number = {member_value_string}"),
+            LuaType::StringConst(_) | LuaType::DocStringConst(_) => format!("string = {member_value_string}"),
+            LuaType::BooleanConst(_) => format!("boolean = {member_value_string}"),
+            _ => member_value_string,
+        };
+        (val, ": ")
+    } else {
+        (member_value_string, " = ")
+    };
+
+    match member_key {
+        LuaMemberKey::Name(name) => format!("{name}{separator}{member_value}"),
+        LuaMemberKey::Integer(i) => format!("[{i}]{separator}{member_value}"),
+        LuaMemberKey::None => member_value,
+    }
 }
