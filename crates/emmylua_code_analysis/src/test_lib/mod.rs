@@ -1,6 +1,6 @@
 use emmylua_parser::{LuaAstNode, LuaAstToken, LuaLocalName};
 
-use crate::{EmmyLuaAnalysis, FileId, LuaType, VirtualUrlGenerator};
+use crate::{check_type_compact, EmmyLuaAnalysis, FileId, LuaType, VirtualUrlGenerator};
 
 /// A virtual workspace for testing.
 #[allow(unused)]
@@ -86,6 +86,11 @@ impl VirtualWorkspace {
             .get_semantic_info(token.syntax().clone().into())
             .unwrap();
         info.typ
+    }
+
+    pub fn check_type(&self, source: &LuaType, compact_type: &LuaType) -> bool {
+        let db = &self.analysis.compilation.get_db();
+        check_type_compact(db, source, compact_type).is_ok()
     }
 }
 

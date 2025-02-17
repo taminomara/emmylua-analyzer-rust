@@ -23,7 +23,8 @@ use semantic_info::{
     infer_node_property_owner, infer_node_semantic_info, infer_token_property_owner,
     infer_token_semantic_info,
 };
-use type_check::{check_type_compact, is_sub_type_of};
+pub(crate) use type_check::check_type_compact;
+use type_check::is_sub_type_of;
 use visibility::check_visibility;
 
 use crate::LuaFunctionType;
@@ -36,7 +37,7 @@ pub(crate) use call_func::infer_call_expr_func;
 pub(crate) use infer::{infer_expr, instantiate_doc_function};
 pub use instantiate::{instantiate_type, TypeSubstitutor};
 use overload_resolve::resolve_signature;
-pub use type_check::{TypeCheckResult, TypeCheckFailReason};
+pub use type_check::{TypeCheckFailReason, TypeCheckResult};
 
 #[derive(Debug)]
 pub struct SemanticModel<'a> {

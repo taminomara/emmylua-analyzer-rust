@@ -6,6 +6,7 @@ mod simple_type;
 mod sub_type;
 mod type_check_fail_reason;
 mod type_check_guard;
+mod test;
 
 use complex_type::check_complex_type_compact;
 use func_type::check_doc_func_type_compact;
