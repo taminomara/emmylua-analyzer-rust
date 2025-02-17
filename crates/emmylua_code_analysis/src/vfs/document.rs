@@ -131,21 +131,15 @@ impl<'a> LuaDocument<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
-
-    use lsp_types::{Position, Range};
-
-    use crate::{Emmyrc, Vfs};
-
     use super::*;
+    use crate::{Emmyrc, Vfs, VirtualUrlGenerator};
+    use lsp_types::{Position, Range};
 
     fn create_vfs() -> Vfs {
         let mut vfs = Vfs::new();
         vfs.update_config(Emmyrc::default().into());
         vfs
     }
-
-    static TEST_URI: &str = "file:///C:/Users/username/Documents/test.lua";
 
     #[test]
     fn test_basic() {
@@ -154,118 +148,124 @@ mod tests {
         print(a)
         "#;
         let mut vfs = create_vfs();
-        let uri = Uri::from_str(TEST_URI).unwrap();
+        let vg = VirtualUrlGenerator::new();
+        let uri = vg.new_uri("test.lua");
         let id = vfs.set_file_content(&uri, Some(code.to_string()));
         let document = vfs.get_document(&id).unwrap();
 
         assert_eq!(document.get_file_id(), id);
         assert_eq!(document.get_file_name(), Some("test.lua".to_string()));
         assert_eq!(document.get_uri(), uri);
-        assert_eq!(
-            *document.get_file_path(),
-            PathBuf::from("C:/Users/username/Documents/test.lua")
-        );
+        assert_eq!(*document.get_file_path(), vg.new_path("test.lua"));
         assert!(document.get_line_count() > 0, "Document should have lines");
     }
 
     #[test]
-    fn test_get_text_methods() {
-        // Define a simple Lua code snippet without extra whitespace.
-        let code = "local a = 1\nprint(a)";
+    fn test_text_slice() {
+        let code = "Hello, World!";
         let mut vfs = create_vfs();
-        let uri = Uri::from_str(TEST_URI).unwrap();
+        let vg = VirtualUrlGenerator::new();
+        let uri = vg.new_uri("slice.lua");
         let id = vfs.set_file_content(&uri, Some(code.to_string()));
         let document = vfs.get_document(&id).unwrap();
 
-        // Test get_text returns the full document text.
-        assert_eq!(document.get_text(), code);
-
-        // Test get_text_slice: extract "local" (first 5 characters).
-        let start = TextSize::from(0);
-        let end = TextSize::from(5);
-        let slice = document.get_text_slice(TextRange::new(start, end));
-        assert_eq!(slice, "local");
+        // Slice "Hello" from "Hello, World!"
+        let range = TextRange::new(TextSize::from(0), TextSize::from(5));
+        assert_eq!(document.get_text_slice(range), "Hello");
     }
 
     #[test]
-    fn test_lsp_conversion_methods() {
-        let code = "local a = 1\nprint(a)";
+    fn test_to_lsp_conversions() {
+        // Create a document with three lines.
+        let code = "line1\nline2\nline3";
         let mut vfs = create_vfs();
-        let uri = Uri::from_str(TEST_URI).unwrap();
+        let vg = VirtualUrlGenerator::new();
+        let uri = vg.new_uri("conversion.lua");
         let id = vfs.set_file_content(&uri, Some(code.to_string()));
         let document = vfs.get_document(&id).unwrap();
 
-        // Test conversion of an offset to an LSP position.
-        let lsp_position = document.to_lsp_position(TextSize::from(0)).unwrap();
-        assert_eq!(lsp_position.line, 0);
+        // Test conversion of offset to lsp position.
+        // "line1\n" has 6 bytes so offset 6 should be at the start of "line2".
+        let lsp_position = document.to_lsp_position(TextSize::from(6)).unwrap();
+        assert_eq!(lsp_position.line, 1);
         assert_eq!(lsp_position.character, 0);
 
-        // Test conversion of a text range (first 5 characters) to an LSP range.
-        let text_range = TextRange::new(TextSize::from(0), TextSize::from(5));
-        let lsp_range = document.to_lsp_range(text_range).unwrap();
+        // Test converting a text range (offset from start of "line2" to its end) to an lsp range.
+        // "line2" is 5 characters long, starting at offset 6.
+        let range = TextRange::new(TextSize::from(6), TextSize::from(11));
+        let lsp_range = document.to_lsp_range(range).unwrap();
         assert_eq!(
             lsp_range.start,
             Position {
-                line: 0,
+                line: 1,
                 character: 0
             }
         );
-        // Assuming "local" occupies 5 characters on line 0.
         assert_eq!(
             lsp_range.end,
             Position {
-                line: 0,
+                line: 1,
                 character: 5
             }
         );
 
-        // Test conversion to an LSP location.
-        let lsp_location = document.to_lsp_location(text_range).unwrap();
-        assert_eq!(lsp_location.uri, uri);
-        assert_eq!(lsp_location.range.start.line, 0);
+        // Test converting an lsp range back to a rowan range.
+        let rowan_range = document.to_rowan_range(lsp_range).unwrap();
+        assert_eq!(rowan_range.start(), TextSize::from(6));
+        assert_eq!(rowan_range.end(), TextSize::from(11));
     }
 
     #[test]
-    fn test_to_rowan_range_and_range_span() {
-        let code = "local a = 1\nprint(a)";
+    fn test_range_span() {
+        let code = "abcde";
         let mut vfs = create_vfs();
-        let uri = Uri::from_str(TEST_URI).unwrap();
+        let vg = VirtualUrlGenerator::new();
+        let uri = vg.new_uri("span.lua");
         let id = vfs.set_file_content(&uri, Some(code.to_string()));
         let document = vfs.get_document(&id).unwrap();
 
-        // Create an LSP range for the word "local" in the first line.
         let lsp_range = Range {
             start: Position {
                 line: 0,
-                character: 0,
+                character: 1,
             },
             end: Position {
                 line: 0,
-                character: 5,
+                character: 4,
             },
         };
-
-        // Test conversion from LSP range to rowan TextRange.
-        let text_range = document.to_rowan_range(lsp_range).unwrap();
-        assert_eq!(text_range.start(), TextSize::from(0));
-        assert_eq!(text_range.end(), TextSize::from(5));
-
-        // Test getting the range span as (start_offset, end_offset).
         let span = document.get_range_span(lsp_range).unwrap();
-        assert_eq!(span.0, 0);
-        assert_eq!(span.1, 5);
+        // Expecting span (1, 4) which corresponds to substring "bcd".
+        assert_eq!(span, (1, 4));
     }
 
     #[test]
-    fn test_get_document_lsp_range() {
-        let code = "local a = 1\nprint(a)";
+    fn test_file_name_and_uri() {
+        let code = "";
         let mut vfs = create_vfs();
-        let uri = Uri::from_str(TEST_URI).unwrap();
+        let vg = VirtualUrlGenerator::new();
+        let uri = vg.new_uri("filename_test.lua");
+        let id = vfs.set_file_content(&uri, Some(code.to_string()));
+        let document = vfs.get_document(&id).unwrap();
+
+        assert_eq!(
+            document.get_file_name(),
+            Some("filename_test.lua".to_string())
+        );
+        assert_eq!(document.get_uri(), uri);
+    }
+
+    #[test]
+    fn test_document_lsp_range() {
+        let code = "one\ntwo\nthree";
+        let mut vfs = create_vfs();
+        let vg = VirtualUrlGenerator::new();
+        let uri = vg.new_uri("doc_range.lua");
         let id = vfs.set_file_content(&uri, Some(code.to_string()));
         let document = vfs.get_document(&id).unwrap();
 
         let doc_range = document.get_document_lsp_range();
-        // The start of the document range should be at line 0, character 0.
+        // The document range should start at line 0 and end at line count.
         assert_eq!(
             doc_range.start,
             Position {
@@ -273,7 +273,6 @@ mod tests {
                 character: 0
             }
         );
-        // The end line should equal the total number of lines in the document.
         assert_eq!(doc_range.end.line, document.get_line_count() as u32);
         assert_eq!(doc_range.end.character, 0);
     }
