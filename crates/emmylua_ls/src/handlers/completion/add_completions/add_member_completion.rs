@@ -71,11 +71,7 @@ pub fn add_member_completion(
     };
 
     // 紧靠着 label 显示的描述
-    let detail = if let Some(id) = &property_owner {
-        get_detail(builder, id, &typ, display)
-    } else {
-        None
-    };
+    let detail = get_detail(builder, &typ, display);
     // 在`detail`更右侧, 且不紧靠着`detail`显示
     let description = get_description(builder, &typ);
 
@@ -119,11 +115,7 @@ pub fn add_member_completion(
         overloads.into_iter().for_each(|overload| {
             let typ = LuaType::DocFunction(overload);
             let description = get_description(builder, &typ);
-            let detail = if let Some(id) = &property_owner {
-                get_detail(builder, id, &typ, display)
-            } else {
-                None
-            };
+            let detail = get_detail(builder, &typ, display);
             let data = if let Some(id) = &property_owner {
                 CompletionData::from_property_owner_id(id.clone().into())
             } else {

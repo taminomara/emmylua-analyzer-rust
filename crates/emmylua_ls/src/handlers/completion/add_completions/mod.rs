@@ -65,7 +65,6 @@ pub enum CallDisplay {
 
 fn get_detail(
     builder: &CompletionBuilder,
-    property_owner_id: &LuaPropertyOwnerId,
     typ: &LuaType,
     display: CallDisplay,
 ) -> Option<String> {
@@ -153,23 +152,11 @@ fn get_detail(
             };
             Some(format!("({}){}", params_str.join(", "), rets_detail))
         }
-        _ => {
-            // show comment in detail
-            let property = builder
-                .semantic_model
-                .get_db()
-                .get_property_index()
-                .get_property(property_owner_id.clone())?;
-
-            if let Some(detail) = &property.description {
-                Some(truncate_with_ellipsis(detail, 25))
-            } else {
-                None
-            }
-        }
+        _ => None,
     }
 }
 
+#[allow(unused)]
 fn truncate_with_ellipsis(s: &str, max_len: usize) -> String {
     if s.chars().count() > max_len {
         let truncated: String = s.chars().take(max_len).collect();

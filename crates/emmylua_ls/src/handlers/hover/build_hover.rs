@@ -36,6 +36,7 @@ pub fn build_semantic_info_hover(
         db,
         Some(typ),
         semantic_info.property_owner.unwrap(),
+        true,
     );
     if let Some(hover_content) = hover_content {
         build_hover_result(hover_content, document.to_lsp_range(token.text_range()))
@@ -65,16 +66,17 @@ pub fn build_hover_content(
     db: &DbIndex,
     typ: Option<LuaType>,
     property_id: LuaPropertyOwnerId,
+    fun_ret_newline: bool, // 是否将函数签名的返回值显示为独立行
 ) -> Option<HoverContent> {
     match property_id {
         LuaPropertyOwnerId::LuaDecl(decl_id) => {
             if let Some(semantic_model) = semantic_model {
                 if let Some(typ) = typ {
-                    build_decl_hover(semantic_model, db, typ, decl_id)
+                    build_decl_hover(semantic_model, db, typ, decl_id, fun_ret_newline)
                 } else {
                     let decl = db.get_decl_index().get_decl(&decl_id)?;
                     let typ = decl.get_type()?;
-                    build_decl_hover(semantic_model, db, typ.clone(), decl_id)
+                    build_decl_hover(semantic_model, db, typ.clone(), decl_id, fun_ret_newline)
                 }
             } else {
                 None
@@ -83,11 +85,11 @@ pub fn build_hover_content(
         LuaPropertyOwnerId::Member(member_id) => {
             if let Some(semantic_model) = semantic_model {
                 if let Some(typ) = typ {
-                    build_member_hover(semantic_model, db, typ, member_id)
+                    build_member_hover(semantic_model, db, typ, member_id, fun_ret_newline)
                 } else {
                     let member = db.get_member_index().get_member(&member_id)?;
                     let typ = member.get_decl_type();
-                    build_member_hover(semantic_model, db, typ.clone(), member_id)
+                    build_member_hover(semantic_model, db, typ.clone(), member_id, fun_ret_newline)
                 }
             } else {
                 None
@@ -103,6 +105,7 @@ fn build_decl_hover(
     db: &DbIndex,
     typ: LuaType,
     decl_id: LuaDeclId,
+    fun_ret_newline: bool,
 ) -> Option<HoverContent> {
     let decl = db.get_decl_index().get_decl(&decl_id)?;
 
@@ -125,7 +128,8 @@ fn build_decl_hover(
             }
             _ => {}
         }
-        let hover_text = hover_function_type(db, &typ, owner_member, decl.get_name());
+        let hover_text =
+            hover_function_type(db, &typ, owner_member, decl.get_name(), fun_ret_newline);
         type_signature = MarkedString::from_language_code("lua".to_string(), hover_text);
         if let Some(owner_member) = owner_member {
             if let LuaMemberOwner::Type(ty) = &owner_member.get_owner() {
@@ -185,6 +189,9 @@ fn build_decl_hover(
 
     if let LuaType::Signature(signature_id) = typ {
         add_signature_description(db, &mut detailed_description, signature_id);
+        if !fun_ret_newline {
+            add_signature_ret_description(db, &mut detailed_description, signature_id);
+        }
     }
 
     Some(HoverContent {
@@ -199,6 +206,7 @@ fn build_member_hover(
     db: &DbIndex,
     typ: LuaType,
     member_id: LuaMemberId,
+    fun_ret_newline: bool,
 ) -> Option<HoverContent> {
     let member = db.get_member_index().get_member(&member_id)?;
     let member_name = match member.get_key() {
@@ -219,6 +227,7 @@ fn build_member_hover(
             &typ,
             function_member.or_else(|| Option::from(member)),
             &member_name,
+            fun_ret_newline,
         );
 
         type_signature = MarkedString::from_language_code("lua".to_string(), hover_text);
@@ -266,6 +275,9 @@ fn build_member_hover(
 
     if let LuaType::Signature(signature_id) = typ {
         add_signature_description(db, &mut detailed_description, signature_id);
+        if !fun_ret_newline {
+            add_signature_ret_description(db, &mut detailed_description, signature_id);
+        }
     }
 
     Some(HoverContent {
@@ -277,10 +289,8 @@ fn build_member_hover(
 
 fn build_type_decl_hover(db: &DbIndex, type_decl_id: LuaTypeDeclId) -> Option<HoverContent> {
     let type_decl = db.get_type_index().get_type_decl(&type_decl_id)?;
-
     let type_signature;
     let mut detailed_description = Vec::new();
-
     if type_decl.is_alias() {
         if let Some(origin) = type_decl.get_alias_origin(db, None) {
             let origin_type = humanize_type(db, &origin, RenderLevel::Detailed);
@@ -379,6 +389,30 @@ pub fn add_signature_description(
     if !s.is_empty() {
         marked_strings.push(MarkedString::from_markdown(s));
     }
+    Some(())
+}
+
+pub fn add_signature_ret_description(
+    db: &DbIndex,
+    marked_strings: &mut Vec<MarkedString>,
+    signature_id: LuaSignatureId,
+) -> Option<()> {
+    let signature = db.get_signature_index().get(&signature_id)?;
+    let mut s = String::new();
+    for i in 0..signature.return_docs.len() {
+        let ret_info = &signature.return_docs[i];
+        if let Some(description) = ret_info.description.clone() {
+            s.push_str(&format!(
+                "@*return* {} — {}\n",
+                match &ret_info.name {
+                    Some(name) if !name.is_empty() => format!("`{}` ", name),
+                    _ => "".to_string(),
+                },
+                description
+            ));
+        }
+    }
+    marked_strings.push(MarkedString::from_markdown(s));
     Some(())
 }
 

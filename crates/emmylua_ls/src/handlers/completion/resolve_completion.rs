@@ -1,7 +1,4 @@
-use emmylua_code_analysis::{
-    DbIndex,
-    SemanticModel,
-};
+use emmylua_code_analysis::{DbIndex, SemanticModel};
 use lsp_types::{CompletionItem, Documentation, MarkedString, MarkupContent};
 
 use crate::handlers::hover::build_hover_content;
@@ -17,7 +14,7 @@ pub fn resolve_completion(
     // todo: resolve completion
     match completion_data {
         CompletionData::PropertyOwnerId(property_id) => {
-            let hover_content = build_hover_content(semantic_model, db, None, property_id);
+            let hover_content = build_hover_content(semantic_model, db, None, property_id, false);
             if let Some(hover_content) = hover_content {
                 match hover_content.type_signature {
                     MarkedString::String(s) => {
@@ -37,7 +34,6 @@ pub fn resolve_completion(
     }
     Some(())
 }
-
 
 fn markdown_to_string(marked_strings: Vec<MarkedString>, remove_first_underscore: bool) -> String {
     let mut result = String::new();
