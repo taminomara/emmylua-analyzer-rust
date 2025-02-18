@@ -222,21 +222,24 @@ fn func_tpl_pattern_match_doc_func(
 ) -> Option<()> {
     let tpl_func_params = tpl_func.get_params();
     let target_func_params = target_func.get_params();
-    for (i, param_tuple) in tpl_func_params.iter().enumerate() {
-        if let Some(target_param_tuple) = target_func_params.get(i) {
-            if param_tuple.1.is_some() && target_param_tuple.1.is_some() {
-                let param_type = param_tuple.1.clone()?;
-                let target_param_type = target_param_tuple.1.clone()?;
-                tpl_pattern_match(
-                    db,
-                    config,
-                    root,
-                    &param_type,
-                    &target_param_type,
-                    substitutor,
-                );
-            }
-        }
+    let len = tpl_func_params.len();
+    for i in 0..len {
+        let tpl_param_tuple = tpl_func_params.get(i)?;
+        let target_param_tuple = match target_func_params.get(i) {
+            Some(t) => t,
+            None => break,
+        };
+
+        let tpl_param_type = tpl_param_tuple.1.clone().unwrap_or(LuaType::Any);
+        let target_param_type = target_param_tuple.1.clone().unwrap_or(LuaType::Any);
+        tpl_pattern_match(
+            db,
+            config,
+            root,
+            &tpl_param_type,
+            &target_param_type,
+            substitutor,
+        );
     }
 
     let rets = tpl_func.get_ret();
