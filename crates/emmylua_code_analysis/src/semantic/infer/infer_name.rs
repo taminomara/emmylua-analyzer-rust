@@ -59,6 +59,10 @@ pub fn infer_name_expr(
             }
         }
 
+        if decl_type.is_unknown() {
+            return None;
+        }
+
         Some(decl_type)
     } else {
         let decl_type = db

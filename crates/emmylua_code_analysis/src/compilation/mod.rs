@@ -1,4 +1,5 @@
 mod analyzer;
+mod test;
 
 use std::sync::Arc;
 

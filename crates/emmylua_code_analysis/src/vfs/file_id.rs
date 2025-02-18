@@ -1,6 +1,8 @@
+use std::cmp;
+
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-#[derive(Eq, PartialEq, Hash, Debug, Clone, Copy)]
+#[derive(Eq, PartialEq, Hash, Debug, Clone, Copy, PartialOrd)]
 pub struct FileId {
     pub id: u32,
 }
@@ -30,6 +32,12 @@ impl FileId {
     }
 
     pub const VIRTUAL: FileId = FileId { id: u32::MAX };
+}
+
+impl cmp::Ord for FileId {
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
+        self.id.cmp(&other.id)
+    }
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]

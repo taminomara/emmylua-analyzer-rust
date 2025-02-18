@@ -18,19 +18,25 @@ pub struct VirtualWorkspace {
 #[allow(unused)]
 impl VirtualWorkspace {
     pub fn new() -> Self {
+        let gen = VirtualUrlGenerator::new();
         let mut analysis = EmmyLuaAnalysis::new();
+        let base = &gen.base;
+        analysis.add_workspace_root(base.clone());
         VirtualWorkspace {
-            virtual_url_generator: VirtualUrlGenerator::new(),
+            virtual_url_generator: gen,
             analysis,
             id_counter: 0,
         }
     }
 
     pub fn new_with_init_std_lib() -> Self {
+        let gen = VirtualUrlGenerator::new();
         let mut analysis = EmmyLuaAnalysis::new();
         analysis.init_std_lib(false);
+        let base = &gen.base;
+        analysis.add_workspace_root(base.clone());
         VirtualWorkspace {
-            virtual_url_generator: VirtualUrlGenerator::new(),
+            virtual_url_generator: gen,
             analysis,
             id_counter: 0,
         }
@@ -47,6 +53,30 @@ impl VirtualWorkspace {
             .update_file_by_uri(&uri, Some(content.to_string()))
             .unwrap();
         file_id
+    }
+
+    pub fn def_file(&mut self, file_name: &str, content: &str) -> FileId {
+        let uri = self.virtual_url_generator.new_uri(file_name);
+        let file_id = self
+            .analysis
+            .update_file_by_uri(&uri, Some(content.to_string()))
+            .unwrap();
+        file_id
+    }
+
+    pub fn def_files(&mut self, files: Vec<(&str, &str)>) -> Vec<FileId> {
+        let file_infos = files
+            .iter()
+            .map(|(file_name, content)| {
+                let uri = self.virtual_url_generator.new_uri(file_name);
+                (uri, Some(content.to_string()))
+            })
+            .collect();
+
+        let mut file_ids = self.analysis.update_files_by_uri(file_infos);
+        file_ids.sort();
+
+        file_ids
     }
 
     pub fn get_node<Ast: LuaAstNode>(&self, file_id: FileId) -> Ast {
