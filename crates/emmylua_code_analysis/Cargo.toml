@@ -44,5 +44,5 @@ include_dir.workspace = true
 emmylua_codestyle.workspace = true
 
 [package.metadata.i18n]
-available-locales = ["en", "zh_CN", "zh_HK", "zh_TW"]
+available-locales = ["en", "zh_CN", "zh_HK"]
 default-locale = "en"

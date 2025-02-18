@@ -2,25 +2,27 @@ mod compilation;
 mod config;
 mod db_index;
 mod diagnostic;
+mod locale;
 mod profile;
 mod resources;
 mod semantic;
-mod vfs;
 mod test_lib;
+mod vfs;
 
 pub use compilation::*;
 pub use config::*;
 pub use db_index::*;
 pub use diagnostic::*;
+pub use emmylua_codestyle::*;
 use lsp_types::Uri;
 pub use profile::Profile;
 use resources::load_resource_std;
 pub use semantic::*;
 use std::{collections::HashSet, path::PathBuf, sync::Arc};
+pub use test_lib::VirtualWorkspace;
 use tokio_util::sync::CancellationToken;
 pub use vfs::*;
-pub use emmylua_codestyle::*;
-pub use test_lib::VirtualWorkspace;
+pub use locale::get_locale_code;
 
 #[macro_use]
 extern crate rust_i18n;

@@ -193,3 +193,13 @@ keywords.in: |
       print(index, fruit)
   end
   
+keywords.goto: |
+  The `goto` keyword is used to jump to a label in the code.
+
+  ### Example Usage
+
+  ```lua
+  ::label::
+  print("Hello")
+  goto label
+  ```

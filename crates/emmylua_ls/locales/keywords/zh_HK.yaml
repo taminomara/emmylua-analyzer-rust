@@ -219,3 +219,13 @@ keywords.in: |
       print(index, fruit)
   end
   ```
+keywords.goto: |
+  `goto` 關鍵字用於跳轉到程式中的某個標籤。
+
+  ### 使用示例
+
+  ```lua
+  ::label::
+  print("Hello")
+  goto label
+  ```

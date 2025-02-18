@@ -3,50 +3,96 @@ Type '%{name}' already defined:
   en: Type '%{name}' already defined
   zh_CN: 类型 '%{name}' 已经定义
   zh_HK: 類型 '%{name}' 已經定義
-  zh_TW: 類型 '%{name}' 已經定義
 Type '%{name}' not found:
   en: Type '%{name}' not found
   zh_CN: 类型 '%{name}' 未找到
   zh_HK: 類型 '%{name}' 未找到
-  zh_TW: 類型 '%{name}' 未找到
 '%{name} is never used, if this is intentional, prefix it with an underscore: _%{name}':
   en: '%{name} is never used, if this is intentional, prefix it with an underscore: _%{name}'
   zh_CN: '%{name} 从未被使用，如果这是有意的，请在前面加下划线: _%{name}'
   zh_HK: '%{name} 從未被使用，如果這是有意的，請在前面加下劃線: _%{name}'
-  zh_TW: '%{name} 從未被使用，如果這是有意的，請在前面加下劃線: _%{name}'
 The current Lua version %{version} is not accessible; expected %{conds}.:
   en: 'The current Lua version %{version} is not accessible; expected %{conds}.'
   zh_CN: '当前的 Lua 版本 %{version} 无法访问；预期为 %{conds}。'
   zh_HK: '當前的 Lua 版本 %{version} 無法訪問；預期為 %{conds}。'
-  zh_TW: '當前的 Lua 版本 %{version} 無法訪問；預期為 %{conds}。'
 The property is package-private and cannot be accessed outside the package.:
   en: 'The property is package-private and cannot be accessed outside the package.'
   zh_CN: '该属性为包私有，无法在包外访问。'
   zh_HK: '該屬性為包私有，無法在包外訪問。'
-  zh_TW: '該屬性為包私有，無法在包外訪問。'
 The property is private and cannot be accessed outside the class.:
   en: 'The property is private and cannot be accessed outside the class.'
   zh_CN: '该属性为私有，无法在类外访问。'
   zh_HK: '該屬性為私有，無法在類外訪問。'
-  zh_TW: '該屬性為私有，無法在類外訪問。'
 The property is protected and cannot be accessed outside its subclasses.:
   en: 'The property is protected and cannot be accessed outside its subclasses.'
   zh_CN: '该属性受保护，无法在其子类之外访问。'
   zh_HK: '該屬性受保護，無法在其子類之外訪問。'
-  zh_TW: '該屬性受保護，無法在其子類之外訪問。'
 expected %{num} but found %{found_num}. %{infos}:
   en: 'expected %{num} but found %{found_num}. %{infos}'
   zh_CN: '期望 %{num} 但找到 %{found_num}。%{infos}'
   zh_HK: '期望 %{num} 但找到 %{found_num}。%{infos}'
-  zh_TW: '期望 %{num} 但找到 %{found_num}。%{infos}'
 'missing parameter: %{name}':
   en: 'missing parameter: %{name}'
   zh_CN: '缺少参数: %{name}'
   zh_HK: '缺少參數: %{name}'
-  zh_TW: '缺少參數: %{name}'
 'undefined global variable: %{name}':
   en: 'undefined global variable: %{name}'
   zh_CN: '未定义的全局变量: %{name}'
   zh_HK: '未定義的全局變量: %{name}'
-  zh_TW: '未定義的全局變量: %{name}'
-
+'%{name} may be nil':
+  en: '%{name} may be nil'
+  zh_CN: '%{name} 可能为 nil'
+  zh_HK: '%{name} 可能為 nil'
+'%{name} value may be nil':
+  en: '%{name} value may be nil'
+  zh_CN: '%{name} 的值可能是 nil'
+  zh_HK: '%{name} 的值可能為 nil'
+Cannot reassign to a constant variable:
+  en: Cannot reassign to a constant variable
+  zh_CN: '无法重新赋值给常量变量'
+  zh_HK: '不可重新指定常量變數'
+Invalid hex escape sequence '\x%{hex}':
+  en: Invalid hex escape sequence '\x%{hex}'
+  zh_CN: '无效的十六进制转义序列 "\x%{hex}"'
+  zh_HK: '無效的十六進制轉義序列 "\x%{hex}"'
+Invalid unicode escape sequence '\u{{%{unicode_hex}}}':
+  en: Invalid unicode escape sequence '\u{{%{unicode_hex}}}'
+  zh_CN: '无效的 Unicode 转义序列 "\u{{%{unicode_hex}}}"'
+  zh_HK: '無效的 Unicode 轉義序列 "\u{{%{unicode_hex}}}"'
+Should not reassign to iter variable:
+  en: Should not reassign to iter variable
+  zh_CN: '不应重新赋值给迭代变量'
+  zh_HK: '不應重新指定迭代變數'
+_version: 2
+expected %{source} but found %{found}:
+  en: expected %{source} but found %{found}
+  zh_CN: '预期 %{source}，但得到 %{found}'
+  zh_HK: '期望 %{source}，但得到 %{found}'
+function %{name} may be nil:
+  en: function %{name} may be nil
+  zh_CN: '函数 %{name} 可能为 nil'
+  zh_HK: '函式 %{name} 可能為 nil'
+member %{key} not match, expect %{typ}, but got %{got}:
+  en: member %{key} not match, expect %{typ}, but got %{got}
+  zh_CN: '成员 %{key} 不匹配，期望 %{typ}，但得到 %{got}'
+  zh_HK: '成員 %{key} 不匹配，期望 %{typ}，但得到 %{got}'
+member %{name} type not match, expect %{expect}, got %{got}:
+  en: member %{name} type not match, expect %{expect}, got %{got}
+  zh_CN: '成员 %{name} 的类型不匹配，期望 %{expect}，但得到 %{got}'
+  zh_HK: '成員 %{name} 的類型不匹配，期望 %{expect}，但得到 %{got}'
+missing member %{key}:
+  en: missing member %{key}
+  zh_CN: '缺少成员 %{key}'
+  zh_HK: '缺少成員 %{key}'
+missing member %{name}, in table:
+  en: missing member %{name}, in table
+  zh_CN: '在表中缺少成员 %{name}'
+  zh_HK: '在表中缺少成員 %{name}'
+missing tuple member %{idx}:
+  en: missing tuple member %{idx}
+  zh_CN: '缺少元组成员 %{idx}'
+  zh_HK: '缺少元組成員 %{idx}'
+tuple member %{idx} not match, expect %{typ}, but got %{got}:
+  en: tuple member %{idx} not match, expect %{typ}, but got %{got}
+  zh_CN: '元组成员 %{idx} 不匹配，期望 %{typ}，但得到 %{got}'
+  zh_HK: '元組成員 %{idx} 不匹配，期望 %{typ}，但得到 %{got}'

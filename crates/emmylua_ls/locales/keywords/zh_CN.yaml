@@ -193,3 +193,13 @@ keywords.in: |
       print(index, fruit)
   end
   ```
+keywords.goto: |
+  `goto` 关键字用于跳转到代码中的某个标签。
+
+  ### 使用示例
+
+  ```lua
+  ::label::
+  print("Hello")
+  goto label
+  ```
