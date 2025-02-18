@@ -6,6 +6,7 @@ mod resolve_completion;
 
 use add_completions::CompletionData;
 use completion_builder::CompletionBuilder;
+use emmylua_code_analysis::LuaPropertyOwnerId;
 use emmylua_parser::LuaAstNode;
 use log::error;
 use lsp_types::{
@@ -64,6 +65,8 @@ pub async fn on_completion_resolve_handler(
     let analysis = context.analysis.read().await;
     let db = analysis.compilation.get_db();
     let mut completion_item = params;
+    let config_manager = context.config_manager.read().await;
+    let client_id = config_manager.client_config.client_id;
     if let Some(data) = completion_item.data.clone() {
         let completion_data = match serde_json::from_value::<CompletionData>(data.clone()) {
             Ok(data) => data,
@@ -72,8 +75,31 @@ pub async fn on_completion_resolve_handler(
                 return completion_item;
             }
         };
+        let mut semantic_model = None;
+        match &completion_data {
+            CompletionData::PropertyOwnerId(property_id) => {
+                match property_id {
+                    LuaPropertyOwnerId::LuaDecl(decl_id) => {
+                        let decl = db.get_decl_index().get_decl(&decl_id);
+                        if let Some(decl) = decl {
+                            let file_id = decl.get_file_id();
+                            semantic_model = analysis.compilation.get_semantic_model(file_id);
+                        }
+                    }
+                    LuaPropertyOwnerId::Member(member_id) => {
+                        let member = db.get_member_index().get_member(&member_id);
+                        if let Some(member) = member {
+                            let file_id = member.get_file_id();
+                            semantic_model = analysis.compilation.get_semantic_model(file_id);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
 
-        resolve_completion(db, &mut completion_item, completion_data);
+        resolve_completion(semantic_model.as_ref(), db, &mut completion_item, completion_data, client_id);
     }
 
     completion_item

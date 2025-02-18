@@ -65,7 +65,6 @@ pub enum CallDisplay {
 
 fn get_detail(
     builder: &CompletionBuilder,
-    property_owner_id: &LuaPropertyOwnerId,
     typ: &LuaType,
     display: CallDisplay,
 ) -> Option<String> {
@@ -94,8 +93,26 @@ fn get_detail(
                 }
                 _ => {}
             }
+            let rets = &signature.return_docs;
+            let rets_detail = if rets.len() == 1 {
+                let detail = humanize_type(
+                    builder.semantic_model.get_db(),
+                    &rets[0].type_ref,
+                    RenderLevel::Minimal,
+                );
+                format!(" -> {}", detail)
+            } else if rets.len() > 1 {
+                let detail = humanize_type(
+                    builder.semantic_model.get_db(),
+                    &rets[0].type_ref,
+                    RenderLevel::Minimal,
+                );
+                format!(" -> {} ...", detail)
+            } else {
+                "".to_string()
+            };
 
-            Some(format!("({})", params_str.join(", ")))
+            Some(format!("({}){}", params_str.join(", "), rets_detail))
         }
         LuaType::DocFunction(f) => {
             let mut params_str = f
@@ -115,26 +132,31 @@ fn get_detail(
                 }
                 _ => {}
             }
-
-            Some(format!("({})", params_str.join(", ")))
-        }
-        _ => {
-            // show comment in detail
-            let property = builder
-                .semantic_model
-                .get_db()
-                .get_property_index()
-                .get_property(property_owner_id.clone())?;
-
-            if let Some(detail) = &property.description {
-                Some(truncate_with_ellipsis(detail, 25))
+            let rets = f.get_ret();
+            let rets_detail = if rets.len() == 1 {
+                let detail = humanize_type(
+                    builder.semantic_model.get_db(),
+                    &rets[0],
+                    RenderLevel::Minimal,
+                );
+                format!(" -> {}", detail)
+            } else if rets.len() > 1 {
+                let detail = humanize_type(
+                    builder.semantic_model.get_db(),
+                    &rets[0],
+                    RenderLevel::Minimal,
+                );
+                format!(" -> {} ...", detail)
             } else {
-                None
-            }
+                "".to_string()
+            };
+            Some(format!("({}){}", params_str.join(", "), rets_detail))
         }
+        _ => None,
     }
 }
 
+#[allow(unused)]
 fn truncate_with_ellipsis(s: &str, max_len: usize) -> String {
     if s.chars().count() > max_len {
         let truncated: String = s.chars().take(max_len).collect();
@@ -146,50 +168,11 @@ fn truncate_with_ellipsis(s: &str, max_len: usize) -> String {
 
 fn get_description(builder: &CompletionBuilder, typ: &LuaType) -> Option<String> {
     match typ {
-        LuaType::Signature(signature_id) => {
-            let signature = builder
-                .semantic_model
-                .get_db()
-                .get_signature_index()
-                .get(&signature_id)?;
-            let rets = &signature.return_docs;
-            if rets.len() == 1 {
-                let detail = humanize_type(
-                    builder.semantic_model.get_db(),
-                    &rets[0].type_ref,
-                    RenderLevel::Minimal,
-                );
-                Some(detail)
-            } else if rets.len() > 1 {
-                let detail = humanize_type(
-                    builder.semantic_model.get_db(),
-                    &rets[0].type_ref,
-                    RenderLevel::Minimal,
-                );
-                Some(format!("{} ...", detail))
-            } else {
-                None
-            }
+        LuaType::Signature(_) => {
+            None
         }
-        LuaType::DocFunction(f) => {
-            let rets = f.get_ret();
-            if rets.len() == 1 {
-                let detail = humanize_type(
-                    builder.semantic_model.get_db(),
-                    &rets[0],
-                    RenderLevel::Minimal,
-                );
-                Some(detail)
-            } else if rets.len() > 1 {
-                let detail = humanize_type(
-                    builder.semantic_model.get_db(),
-                    &rets[0],
-                    RenderLevel::Minimal,
-                );
-                Some(format!("{} ...", detail))
-            } else {
-                None
-            }
+        LuaType::DocFunction(_) => {
+            None
         }
         _ if typ.is_unknown() => None,
         _ => Some(humanize_type(
