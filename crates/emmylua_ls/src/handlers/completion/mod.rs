@@ -65,6 +65,8 @@ pub async fn on_completion_resolve_handler(
     let analysis = context.analysis.read().await;
     let db = analysis.compilation.get_db();
     let mut completion_item = params;
+    let config_manager = context.config_manager.read().await;
+    let client_id = config_manager.client_config.client_id;
     if let Some(data) = completion_item.data.clone() {
         let completion_data = match serde_json::from_value::<CompletionData>(data.clone()) {
             Ok(data) => data,
@@ -97,7 +99,7 @@ pub async fn on_completion_resolve_handler(
             _ => {}
         }
 
-        resolve_completion(semantic_model.as_ref(), db, &mut completion_item, completion_data);
+        resolve_completion(semantic_model.as_ref(), db, &mut completion_item, completion_data, client_id);
     }
 
     completion_item
