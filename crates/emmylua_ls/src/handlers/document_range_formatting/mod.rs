@@ -27,9 +27,9 @@ pub async fn on_range_formatting_handler(
         text,
         &normalized_path,
         request_range.start.line as i32,
-        request_range.start.character as i32,
-        request_range.end.line as i32,
-        request_range.end.character as i32,
+        0,
+        request_range.end.line as i32 + 1,
+        0,
     );
 
     let mut formatted_text = formatted_result.text;
