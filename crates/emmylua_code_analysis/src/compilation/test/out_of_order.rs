@@ -38,7 +38,7 @@ mod test {
         ws.def_files(files);
 
         let ty = ws.expr_ty("require('rx').subject.new()");
-        let expected = ws.ty("subject");
+        let expected = ws.ty("Subject");
         assert_eq!(ty, expected);
     }
 }
