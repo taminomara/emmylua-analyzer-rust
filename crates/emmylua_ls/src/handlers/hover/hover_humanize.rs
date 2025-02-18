@@ -20,15 +20,13 @@ pub fn hover_const_type(db: &DbIndex, typ: &LuaType) -> String {
 pub fn hover_function_type(
     db: &DbIndex,
     typ: &LuaType,
-    function_member: Option<&LuaMember>, // 函数来源成员, 不一定是`hover`指向的成员
+    function_member: Option<&LuaMember>,
     func_name: &str,
-    is_local: bool,
 ) -> String {
     match typ {
         LuaType::Function => {
             format!(
-                "{}function {}()",
-                if is_local { "local " } else { "" },
+                "function {}()",
                 func_name
             )
         }
@@ -38,15 +36,13 @@ pub fn hover_function_type(
         LuaType::Signature(signature_id) => {
             hover_signature_type(db, signature_id.clone(), function_member, func_name).unwrap_or(
                 format!(
-                    "{}function {}",
-                    if is_local { "local " } else { "" },
+                    "function {}",
                     func_name
                 ),
             )
         }
         _ => format!(
-            "{}function {}",
-            if is_local { "local " } else { "" },
+            "function {}",
             func_name
         ),
     }

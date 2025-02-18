@@ -11,6 +11,7 @@ use lsp_types::{
 };
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
+pub use build_hover::build_hover_content;
 
 use crate::context::ServerContextSnapshot;
 
