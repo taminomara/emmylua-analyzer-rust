@@ -20,35 +20,26 @@ pub fn hover_const_type(db: &DbIndex, typ: &LuaType) -> String {
 pub fn hover_function_type(
     db: &DbIndex,
     typ: &LuaType,
-    function_member: Option<&LuaMember>, // 函数来源成员, 不一定是`hover`指向的成员
+    function_member: Option<&LuaMember>,
     func_name: &str,
-    is_local: bool,
+    ret_newline: bool, // 返回值在独立行显示
 ) -> String {
     match typ {
         LuaType::Function => {
-            format!(
-                "{}function {}()",
-                if is_local { "local " } else { "" },
-                func_name
-            )
+            format!("function {}()", func_name)
         }
         LuaType::DocFunction(lua_func) => {
             hover_doc_function_type(db, &lua_func, function_member, func_name)
         }
-        LuaType::Signature(signature_id) => {
-            hover_signature_type(db, signature_id.clone(), function_member, func_name).unwrap_or(
-                format!(
-                    "{}function {}",
-                    if is_local { "local " } else { "" },
-                    func_name
-                ),
-            )
-        }
-        _ => format!(
-            "{}function {}",
-            if is_local { "local " } else { "" },
-            func_name
-        ),
+        LuaType::Signature(signature_id) => hover_signature_type(
+            db,
+            signature_id.clone(),
+            function_member,
+            func_name,
+            ret_newline,
+        )
+        .unwrap_or(format!("function {}", func_name)),
+        _ => format!("function {}", func_name),
     }
 }
 
@@ -154,6 +145,7 @@ fn hover_signature_type(
     signature_id: LuaSignatureId,
     owner_member: Option<&LuaMember>,
     func_name: &str,
+    ret_newline: bool,
 ) -> Option<String> {
     let signature = db.get_signature_index().get(&signature_id)?;
     let mut type_prev = "function ";
@@ -205,9 +197,8 @@ fn hover_signature_type(
     result.push_str("(");
     result.push_str(params.as_str());
     result.push_str(")");
-    match rets.len() {
-        0 => {}
-        _ => {
+    if !rets.is_empty() {
+        if ret_newline {
             result.push_str("\n");
             let mut i = 0;
             for ret in rets {
@@ -224,10 +215,28 @@ fn hover_signature_type(
                 } else {
                     "".to_string()
                 };
-                result
-                    .push_str(format!("  {} {}: {}{}\n", prefix, name, type_text, detail).as_str());
+                result.push_str(
+                    format!(
+                        "  {}{} {}{}\n",
+                        prefix,
+                        if !name.is_empty() { format!("{}:", name) } else { "".to_string() },
+                        type_text,
+                        detail
+                    )
+                    .as_str(),
+                );
             }
+        } else {
+            result.push_str(" -> ");
+            result.push_str(
+                rets.iter()
+                    .map(|ret| humanize_type(db, &ret.type_ref, RenderLevel::Simple))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+                    .as_str(),
+            );
         }
     }
+
     Some(result)
 }
