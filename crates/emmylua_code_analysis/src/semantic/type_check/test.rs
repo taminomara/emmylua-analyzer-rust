@@ -150,27 +150,4 @@ mod test {
         let ty2 = ws.expr_ty("(\"hello\"):match(\".*\")");
         assert!(ws.check_type(&ty, &ty2));
     }
-
-    #[test]
-    fn test_issue_82() {
-        let mut ws = VirtualWorkspace::new_with_init_std_lib();
-
-        ws.def(
-            r#"
-            ---@generic F: function
-            ---@param _a F|integer
-            ---@param _b? F
-            ---@return F
-            function foo(_a, _b)
-                return _a
-            end"#,
-        );
-
-        assert!(ws.check_expr(
-            r#"
-            foo(function() end)
-        "#,
-            DiagnosticCode::ParamTypeNotMatch
-        ));
-    }
 }

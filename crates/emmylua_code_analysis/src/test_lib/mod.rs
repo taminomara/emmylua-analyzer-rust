@@ -127,7 +127,7 @@ impl VirtualWorkspace {
         check_type_compact(db, source, compact_type).is_ok()
     }
 
-    pub fn check_expr(&mut self, block_str: &str, diagnostic_code: DiagnosticCode) -> bool {
+    pub fn check_file_for(&mut self, diagnostic_code: DiagnosticCode, block_str: &str) -> bool {
         let file_id = self.def(block_str);
         let result = self
             .analysis
