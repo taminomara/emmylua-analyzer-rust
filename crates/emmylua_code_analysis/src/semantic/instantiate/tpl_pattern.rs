@@ -176,73 +176,74 @@ fn func_tpl_pattern_match(
     db: &DbIndex,
     config: &mut LuaInferConfig,
     root: &LuaSyntaxNode,
-    doc_func: &LuaFunctionType,
+    tpl_func: &LuaFunctionType,
     target: &LuaType,
     substitutor: &mut TypeSubstitutor,
 ) -> Option<()> {
     match target {
         LuaType::DocFunction(target_doc_func) => {
-            let params = doc_func.get_params();
-            let target_params = target_doc_func.get_params();
-            for (i, param_tuple) in params.iter().enumerate() {
-                if let Some(target_param_tuple) = target_params.get(i) {
-                    if param_tuple.1.is_some() && target_param_tuple.1.is_some() {
-                        let param_type = param_tuple.1.clone()?;
-                        let target_param_type = target_param_tuple.1.clone()?;
-                        tpl_pattern_match(
-                            db,
-                            config,
-                            root,
-                            &param_type,
-                            &target_param_type,
-                            substitutor,
-                        );
-                    }
-                }
-            }
-
-            let rets = doc_func.get_ret();
-            for (i, ret_type) in rets.iter().enumerate() {
-                if let Some(target_ret_type) = &target_doc_func.get_ret().get(i) {
-                    tpl_pattern_match(db, config, root, ret_type, target_ret_type, substitutor);
-                }
-            }
+            func_tpl_pattern_match_doc_func(
+                db,
+                config,
+                root,
+                tpl_func,
+                target_doc_func,
+                substitutor,
+            );
         }
         LuaType::Signature(signature_id) => {
-            let params = doc_func.get_params();
             let signature = db.get_signature_index().get(&signature_id)?;
-
-            for (i, param_tuple) in params.iter().enumerate() {
-                let signature_param_info = signature.get_param_info_by_id(i);
-                if param_tuple.1.is_some() && signature_param_info.is_some() {
-                    let param_type = param_tuple.1.clone()?;
-                    let target_param_type = &signature_param_info.unwrap().type_ref;
-                    tpl_pattern_match(
-                        db,
-                        config,
-                        root,
-                        &param_type,
-                        target_param_type,
-                        substitutor,
-                    );
-                }
-            }
-
-            let rets = doc_func.get_ret();
-            for (i, ret_type) in rets.iter().enumerate() {
-                if let Some(signature_ret_info) = &signature.return_docs.get(i) {
-                    tpl_pattern_match(
-                        db,
-                        config,
-                        root,
-                        ret_type,
-                        &signature_ret_info.type_ref,
-                        substitutor,
-                    );
-                }
-            }
+            let typed_params = signature.get_type_params();
+            let rets = signature.get_return_types();
+            let fake_doc_func =
+                LuaFunctionType::new(false, signature.is_colon_define, typed_params, rets);
+            func_tpl_pattern_match_doc_func(
+                db,
+                config,
+                root,
+                tpl_func,
+                &fake_doc_func,
+                substitutor,
+            );
         }
         _ => {}
+    }
+
+    Some(())
+}
+
+fn func_tpl_pattern_match_doc_func(
+    db: &DbIndex,
+    config: &mut LuaInferConfig,
+    root: &LuaSyntaxNode,
+    tpl_func: &LuaFunctionType,
+    target_func: &LuaFunctionType,
+    substitutor: &mut TypeSubstitutor,
+) -> Option<()> {
+    let tpl_func_params = tpl_func.get_params();
+    let target_func_params = target_func.get_params();
+    for (i, param_tuple) in tpl_func_params.iter().enumerate() {
+        if let Some(target_param_tuple) = target_func_params.get(i) {
+            if param_tuple.1.is_some() && target_param_tuple.1.is_some() {
+                let param_type = param_tuple.1.clone()?;
+                let target_param_type = target_param_tuple.1.clone()?;
+                tpl_pattern_match(
+                    db,
+                    config,
+                    root,
+                    &param_type,
+                    &target_param_type,
+                    substitutor,
+                );
+            }
+        }
+    }
+
+    let rets = tpl_func.get_ret();
+    for (i, ret_type) in rets.iter().enumerate() {
+        if let Some(target_ret_type) = &target_func.get_ret().get(i) {
+            tpl_pattern_match(db, config, root, ret_type, target_ret_type, substitutor);
+        }
     }
 
     Some(())

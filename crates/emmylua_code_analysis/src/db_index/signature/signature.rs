@@ -77,6 +77,10 @@ impl LuaSignature {
 
         None
     }
+
+    pub fn get_return_types(&self) -> Vec<LuaType> {
+        self.return_docs.iter().map(|info| info.type_ref.clone()).collect()
+    }
 }
 
 #[derive(Debug)]
