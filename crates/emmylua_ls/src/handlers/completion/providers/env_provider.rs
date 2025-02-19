@@ -64,18 +64,22 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         .get_decl_index()
         .get_global_decls();
     for decl_id in global_env.iter() {
+        let decl = builder
+            .semantic_model
+            .get_db()
+            .get_decl_index()
+            .get_decl(&decl_id)?;
         let (name, typ) = {
-            let decl = builder
-                .semantic_model
-                .get_db()
-                .get_decl_index()
-                .get_decl(&decl_id)?;
             (
                 decl.get_name().to_string(),
                 decl.get_type().cloned().unwrap_or(LuaType::Unknown),
             )
         };
         if duplicated_name.contains(&name) {
+            continue;
+        }
+        // 如果范围相同, 则是在定义一个新的全局变量, 不需要添加
+        if decl.get_range() == builder.trigger_token.text_range() {
             continue;
         }
 

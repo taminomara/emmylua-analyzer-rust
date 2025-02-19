@@ -47,6 +47,10 @@ impl<'a> CompletionBuilder<'a> {
         self.completion_items
     }
 
+    pub fn get_completion_items_mut(&mut self) -> &mut Vec<CompletionItem> {
+        &mut self.completion_items
+    }
+
     pub fn stop_here(&mut self) {
         self.stopped = true;
     }
