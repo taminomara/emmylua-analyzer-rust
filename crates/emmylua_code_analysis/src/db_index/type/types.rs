@@ -54,7 +54,7 @@ pub enum LuaType {
     DocIntegerConst(i64),
     Namespace(ArcIntern<SmolStr>),
     Variadic(Arc<LuaType>),
-    Call(Arc<LuaAliasCallType>)
+    Call(Arc<LuaAliasCallType>),
 }
 
 impl PartialEq for LuaType {
@@ -189,7 +189,12 @@ impl LuaType {
     pub fn is_table(&self) -> bool {
         matches!(
             self,
-            LuaType::Table | LuaType::TableGeneric(_) | LuaType::TableConst(_) | LuaType::Global | LuaType::Tuple(_) | LuaType::Array(_)
+            LuaType::Table
+                | LuaType::TableGeneric(_)
+                | LuaType::TableConst(_)
+                | LuaType::Global
+                | LuaType::Tuple(_)
+                | LuaType::Array(_)
         )
     }
 
@@ -594,14 +599,13 @@ impl From<LuaIntersectionType> for LuaType {
     }
 }
 
-
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum LuaAliasCallKind {
     KeyOf,
     Index,
     Extends,
     Add,
-    Sub
+    Sub,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -680,7 +684,28 @@ pub enum LuaMultiReturn {
 impl LuaMultiReturn {
     pub fn get_type(&self, idx: usize) -> Option<&LuaType> {
         match self {
-            LuaMultiReturn::Multi(types) => types.get(idx),
+            LuaMultiReturn::Multi(types) => {
+                let types_len = types.len();
+                if types_len == 0 {
+                    return None;
+                }
+
+                // If the index exceeds the range, return the last element
+                if idx + 1 < types.len() {
+                    Some(&types[idx])
+                } else {
+                    let last = types_len - 1;
+                    let ty = &types[last];
+                    let offset = idx - last;
+                    if let LuaType::MuliReturn(multi) = ty {
+                        multi.get_type(offset)
+                    } else if offset == 0 {
+                        Some(ty)
+                    } else {
+                        None
+                    }
+                }
+            }
             LuaMultiReturn::Base(t) => Some(t),
         }
     }
