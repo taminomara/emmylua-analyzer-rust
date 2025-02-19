@@ -18,24 +18,24 @@ pub fn resolve_completion(
     // todo: resolve completion
     match completion_data {
         CompletionData::PropertyOwnerId(property_id) => {
-            let hover_content = build_hover_content(semantic_model, db, None, property_id, false);
+            let hover_content =
+                build_hover_content(semantic_model, db, None, property_id, true, None);
             if let Some(hover_content) = hover_content {
                 if client_id.is_vscode() {
-                    match hover_content.type_signature {
-                        MarkedString::String(s) => {
-                            completion_item.detail = Some(s);
-                        }
-                        MarkedString::LanguageString(s) => {
-                            completion_item.detail = Some(s.value);
-                        }
-                    }
-                    completion_item.documentation =
-                        Some(Documentation::MarkupContent(MarkupContent {
-                            kind: lsp_types::MarkupKind::Markdown,
-                            value: markdown_to_string(hover_content.detailed_description, true),
-                        }));
+                    build_vscode_completion_item(completion_item, hover_content);
                 } else {
-                    build_other(completion_item, hover_content);
+                    build_other_completion_item(completion_item, hover_content);
+                }
+            }
+        }
+        CompletionData::Overload((property_id, index)) => {
+            let hover_content =
+                build_hover_content(semantic_model, db, None, property_id, true, Some(index));
+            if let Some(hover_content) = hover_content {
+                if client_id.is_vscode() {
+                    build_vscode_completion_item(completion_item, hover_content);
+                } else {
+                    build_other_completion_item(completion_item, hover_content);
                 }
             }
         }
@@ -61,10 +61,35 @@ fn markdown_to_string(marked_strings: Vec<MarkedString>, remove_first_underscore
             }
         }
     }
-    result
+    result.trim_end().to_string()
 }
 
-fn build_other(completion_item: &mut CompletionItem, hover_content: HoverContent) -> Option<()> {
+fn build_vscode_completion_item(
+    completion_item: &mut CompletionItem,
+    hover_content: HoverContent,
+) -> Option<()> {
+    match hover_content.type_signature {
+        MarkedString::String(s) => {
+            completion_item.detail = Some(s);
+        }
+        MarkedString::LanguageString(s) => {
+            completion_item.detail = Some(s.value);
+        }
+    }
+    let documentation = markdown_to_string(hover_content.detailed_description, true);
+    if !documentation.is_empty() {
+        completion_item.documentation = Some(Documentation::MarkupContent(MarkupContent {
+            kind: lsp_types::MarkupKind::Markdown,
+            value: documentation,
+        }));
+    }
+    Some(())
+}
+
+fn build_other_completion_item(
+    completion_item: &mut CompletionItem,
+    hover_content: HoverContent,
+) -> Option<()> {
     let mut result = String::new();
     match hover_content.type_signature {
         MarkedString::String(s) => {

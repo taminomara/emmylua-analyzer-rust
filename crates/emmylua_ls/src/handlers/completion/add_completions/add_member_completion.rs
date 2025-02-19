@@ -112,12 +112,12 @@ pub fn add_member_completion(
     if let LuaType::Signature(signature_id) = typ {
         let overloads = builder.semantic_model.get_db().get_signature_index().get(&signature_id)?.overloads.clone();
 
-        overloads.into_iter().for_each(|overload| {
+        overloads.into_iter().enumerate().for_each(|(index, overload)| {
             let typ = LuaType::DocFunction(overload);
             let description = get_description(builder, &typ);
             let detail = get_detail(builder, &typ, display);
             let data = if let Some(id) = &property_owner {
-                CompletionData::from_property_owner_id(id.clone().into())
+                CompletionData::from_overload(id.clone().into(), index)
             } else {
                 None
             };
