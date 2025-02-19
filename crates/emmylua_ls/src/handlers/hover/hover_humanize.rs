@@ -1,6 +1,6 @@
 use emmylua_code_analysis::{
     DbIndex, LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId,
-    LuaSignatureId, LuaType, RenderLevel,
+    LuaSignature, LuaSignatureId, LuaType, RenderLevel,
 };
 
 use emmylua_code_analysis::humanize_type;
@@ -22,7 +22,8 @@ pub fn hover_function_type(
     typ: &LuaType,
     function_member: Option<&LuaMember>,
     func_name: &str,
-    ret_newline: bool, // 返回值在独立行显示
+    is_completion: bool, // 是否在补全时使用
+    overload_index: Option<usize>, // 重载索引, 存在时优先使用重载
 ) -> String {
     match typ {
         LuaType::Function => {
@@ -36,7 +37,8 @@ pub fn hover_function_type(
             signature_id.clone(),
             function_member,
             func_name,
-            ret_newline,
+            is_completion,
+            overload_index,
         )
         .unwrap_or(format!("function {}", func_name)),
         _ => format!("function {}", func_name),
@@ -145,9 +147,16 @@ fn hover_signature_type(
     signature_id: LuaSignatureId,
     owner_member: Option<&LuaMember>,
     func_name: &str,
-    ret_newline: bool,
+    is_completion: bool,           // 是否在补全时使用
+    overload_index: Option<usize>, // 重载索引, 存在时优先使用重载
 ) -> Option<String> {
     let signature = db.get_signature_index().get(&signature_id)?;
+    let overload = if let Some(index) = overload_index {
+        Some(signature.overloads[index].clone())
+    } else {
+        None
+    };
+
     let mut type_prev = "function ";
     // 有可能来源于类. 例如: `local add = class.add`, `add()`应被视为类定义的内容
     let full_func_name = if let Some(owner_member) = owner_member {
@@ -168,27 +177,48 @@ fn hover_signature_type(
     } else {
         func_name.to_string()
     };
-    let async_prev = db
-        .get_property_index()
-        .get_property(LuaPropertyOwnerId::Signature(signature_id))
-        .map(|prop| if prop.is_async { "async " } else { "" })
-        .unwrap_or("");
 
-    let params = signature
-        .get_type_params()
-        .iter()
-        .map(|param| {
-            let name = param.0.clone();
-            if let Some(ty) = &param.1 {
-                format!("{}: {}", name, humanize_type(db, ty, RenderLevel::Simple))
-            } else {
-                name.to_string()
-            }
-        })
-        .collect::<Vec<_>>()
-        .join(", ");
+    let async_prev = {
+        let is_async;
+        if let Some(overload) = &overload {
+            is_async = overload.is_async();
+        } else {
+            is_async = db
+                .get_property_index()
+                .get_property(LuaPropertyOwnerId::Signature(signature_id))
+                .map(|prop| prop.is_async)
+                .unwrap_or(false);
+        }
+        if is_async {
+            "async "
+        } else {
+            ""
+        }
+    };
 
-    let rets = &signature.return_docs;
+    let params = if let Some(overload) = &overload {
+        overload.get_params().to_vec()
+    } else {
+        signature.get_type_params().to_vec()
+    }
+    .iter()
+    .map(|param| {
+        let name = param.0.clone();
+        if let Some(ty) = &param.1 {
+            format!("{}: {}", name, humanize_type(db, ty, RenderLevel::Simple))
+        } else {
+            name.to_string()
+        }
+    })
+    .collect::<Vec<_>>()
+    .join(", ");
+
+    let rets = get_signature_rets_string(
+        db,
+        signature,
+        is_completion,
+        overload.as_ref().map(|o| o.as_ref()),
+    );
 
     let mut result = String::new();
     result.push_str(type_prev);
@@ -197,46 +227,87 @@ fn hover_signature_type(
     result.push_str("(");
     result.push_str(params.as_str());
     result.push_str(")");
-    if !rets.is_empty() {
-        if ret_newline {
-            result.push_str("\n");
-            let mut i = 0;
-            for ret in rets {
-                i += 1;
-                let type_text = humanize_type(db, &ret.type_ref, RenderLevel::Simple);
-                let prefix = if i == 1 {
-                    "->".to_string()
-                } else {
-                    format!("{}.", i.clone())
-                };
-                let name = ret.name.clone().unwrap_or("".to_string());
-                let detail = if ret.description.is_some() {
-                    format!(" — {}", ret.description.as_ref().unwrap().trim_end())
-                } else {
-                    "".to_string()
-                };
-                result.push_str(
-                    format!(
-                        "  {}{} {}{}\n",
-                        prefix,
-                        if !name.is_empty() { format!("{}:", name) } else { "".to_string() },
-                        type_text,
-                        detail
-                    )
-                    .as_str(),
-                );
-            }
+    result.push_str(rets.as_str());
+
+    Some(result)
+}
+
+fn get_signature_rets_string(
+    db: &DbIndex,
+    signature: &LuaSignature,
+    is_completion: bool,
+    overload: Option<&LuaFunctionType>,
+) -> String {
+    let mut result = String::new();
+    // overload 的返回值固定为单行
+    let overload_rets_string = if let Some(overload) = overload {
+        let rets = overload.get_ret();
+        format!(
+            " -> {}",
+            rets.iter()
+                .map(|typ| humanize_type(db, typ, RenderLevel::Simple))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    } else {
+        "".to_string()
+    };
+
+    if is_completion {
+        let rets = if !overload_rets_string.is_empty() {
+            overload_rets_string
         } else {
-            result.push_str(" -> ");
-            result.push_str(
+            let rets = &signature.return_docs;
+            format!(
+                " -> {}",
                 rets.iter()
                     .map(|ret| humanize_type(db, &ret.type_ref, RenderLevel::Simple))
                     .collect::<Vec<_>>()
                     .join(", ")
-                    .as_str(),
-            );
-        }
-    }
+            )
+        };
+        result.push_str(rets.as_str());
+    } else {
+        let rets = if !overload_rets_string.is_empty() {
+            overload_rets_string
+        } else {
+            let rets = &signature.return_docs;
+            if rets.is_empty() {
+                "".to_string()
+            } else {
+                let mut rets_string_multiline = String::with_capacity(512); // 预分配容量
+                rets_string_multiline.push_str("\n");
 
-    Some(result)
+                for (i, ret) in rets.iter().enumerate() {
+                    let type_text = humanize_type(db, &ret.type_ref, RenderLevel::Simple);
+                    let prefix = if i == 0 {
+                        "->".to_string()
+                    } else {
+                        format!("{}.", i + 1)
+                    };
+                    let name = ret.name.clone().unwrap_or_default();
+                    let detail = ret
+                        .description
+                        .as_ref()
+                        .map(|desc| format!(" — {}", desc.trim_end()))
+                        .unwrap_or_default();
+
+                    rets_string_multiline.push_str(&format!(
+                        "  {}{} {}{}\n",
+                        prefix,
+                        if !name.is_empty() {
+                            format!("{}:", name)
+                        } else {
+                            "".to_string()
+                        },
+                        type_text,
+                        detail
+                    ));
+                }
+                rets_string_multiline
+            }
+        };
+        result.push_str(rets.as_str());
+    };
+    result
 }

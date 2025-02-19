@@ -25,7 +25,6 @@ fn add_stat_keyword_completions(
     if name_expr.syntax().parent()?.parent()?.kind() != LuaSyntaxKind::Block.into() {
         return None;
     }
-
     for keyword_info in KEYWORD_COMPLETIONS {
         let item = CompletionItem {
             label: keyword_info.label.to_string(),
