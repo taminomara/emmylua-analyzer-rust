@@ -20,4 +20,23 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_75() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            local a, b = pcall(string.rep, "a", "w")
+        "#
+        ));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            local a, b = pcall(string.rep, "a", 10000)
+        "#
+        ));
+    }
 }
