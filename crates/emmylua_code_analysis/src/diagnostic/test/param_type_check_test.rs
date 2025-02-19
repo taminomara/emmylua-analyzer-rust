@@ -6,7 +6,7 @@ mod test {
     fn test_issue_82() {
         let mut ws = VirtualWorkspace::new();
 
-        assert!(ws.check_file_for(
+        assert!(ws.check_code_for(
             DiagnosticCode::ParamTypeNotMatch,
             r#"
             ---@generic F: function

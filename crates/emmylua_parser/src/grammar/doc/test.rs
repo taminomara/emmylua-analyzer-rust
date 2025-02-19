@@ -1927,10 +1927,10 @@ Syntax(Chunk)@0..89
 
     #[test]
     fn test_tuple_type() {
-      let code = r#"
+        let code = r#"
       ---@type [string]
       "#;
-      let result = r#"
+        let result = r#"
 Syntax(Chunk)@0..31
   Syntax(Block)@0..31
     Token(TkEndOfLine)@0..1 "\n"
@@ -1949,6 +1949,32 @@ Syntax(Chunk)@0..31
     Token(TkWhitespace)@25..31 "      "
       "#;
 
-      assert_ast_eq!(code, result);
+        assert_ast_eq!(code, result);
+    }
+
+    #[test]
+    fn test_variadic_type() {
+        let code = r#"
+        ---@type T...
+        "#;
+        let result = r#"
+Syntax(Chunk)@0..31
+  Syntax(Block)@0..31
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..22
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagType)@13..22
+        Token(TkTagType)@13..17 "type"
+        Token(TkWhitespace)@17..18 " "
+        Syntax(TypeVariadic)@18..22
+          Syntax(TypeName)@18..19
+            Token(TkName)@18..19 "T"
+          Token(TkDots)@19..22 "..."
+    Token(TkEndOfLine)@22..23 "\n"
+    Token(TkWhitespace)@23..31 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
     }
 }

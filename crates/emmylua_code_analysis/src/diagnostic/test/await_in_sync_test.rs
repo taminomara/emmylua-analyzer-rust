@@ -6,7 +6,7 @@ mod test {
     fn test_await_in_sync() {
         let mut ws = crate::VirtualWorkspace::new_with_init_std_lib();
 
-        assert!(!ws.check_file_for(
+        assert!(!ws.check_code_for(
             DiagnosticCode::AwaitInSync,
             r#"
         local function name(callback)
@@ -19,7 +19,7 @@ mod test {
         "#
         ));
 
-        assert!(ws.check_file_for(
+        assert!(ws.check_code_for(
             DiagnosticCode::AwaitInSync,
             r#"
         local function name(callback)
@@ -33,7 +33,7 @@ mod test {
         "#
         ));
 
-        assert!(ws.check_file_for(
+        assert!(ws.check_code_for(
             DiagnosticCode::AwaitInSync,
             r#"
         ---@param callback async fun()
@@ -45,6 +45,22 @@ mod test {
             local a = coroutine.yield(1)
         end)
         "#
+        ));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::AwaitInSync,
+            r#"
+            ---@generic T, R
+            ---@param call async fun(...: T...): R...
+            ---@return async fun(...: T...): R...
+            local function name(call)
+
+            end
+
+            local d = name(function()
+                local a = coroutine.yield(1)
+            end)
+            "#
         ));
     }
 }
