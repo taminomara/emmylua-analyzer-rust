@@ -77,23 +77,23 @@ pub async fn on_completion_resolve_handler(
         };
         let mut semantic_model = None;
         match &completion_data {
-            CompletionData::PropertyOwnerId(property_id) => {
-                match property_id {
+            CompletionData::PropertyOwnerId(property_id) | CompletionData::Overload((property_id, _)) => {
+                let semantic_model_opt = match property_id {
                     LuaPropertyOwnerId::LuaDecl(decl_id) => {
-                        let decl = db.get_decl_index().get_decl(&decl_id);
-                        if let Some(decl) = decl {
-                            let file_id = decl.get_file_id();
-                            semantic_model = analysis.compilation.get_semantic_model(file_id);
-                        }
+                        db.get_decl_index()
+                            .get_decl(&decl_id)
+                            .map(|decl| decl.get_file_id())
                     }
                     LuaPropertyOwnerId::Member(member_id) => {
-                        let member = db.get_member_index().get_member(&member_id);
-                        if let Some(member) = member {
-                            let file_id = member.get_file_id();
-                            semantic_model = analysis.compilation.get_semantic_model(file_id);
-                        }
+                        db.get_member_index()
+                            .get_member(&member_id)
+                            .map(|member| member.get_file_id())
                     }
-                    _ => {}
+                    _ => None,
+                };
+        
+                if let Some(file_id) = semantic_model_opt {
+                    semantic_model = analysis.compilation.get_semantic_model(file_id);
                 }
             }
             _ => {}
@@ -112,7 +112,7 @@ pub fn register_capabilities(
     server_capabilities.completion_provider = Some(CompletionOptions {
         resolve_provider: Some(true),
         trigger_characters: Some(
-            vec![".", ":", "(", "[", "\"", "\'", ",", "@", "\\", "/"]
+            vec![".", ":", "(", "[", "\"", "\'", " ", "@", "\\", "/"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),

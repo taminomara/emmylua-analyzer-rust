@@ -187,12 +187,18 @@ fn get_description(builder: &CompletionBuilder, typ: &LuaType) -> Option<String>
 pub enum CompletionData {
     PropertyOwnerId(LuaPropertyOwnerId),
     Module(String),
+    Overload((LuaPropertyOwnerId, usize)),
 }
 
 #[allow(unused)]
 impl CompletionData {
     pub fn from_property_owner_id(id: LuaPropertyOwnerId) -> Option<Value> {
         let data = Self::PropertyOwnerId(id);
+        Some(serde_json::to_value(data).unwrap())
+    }
+
+    pub fn from_overload(id: LuaPropertyOwnerId, index: usize) -> Option<Value> {
+        let data = Self::Overload((id, index));
         Some(serde_json::to_value(data).unwrap())
     }
 
