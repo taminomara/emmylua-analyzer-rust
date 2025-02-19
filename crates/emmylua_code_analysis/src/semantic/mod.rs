@@ -34,7 +34,7 @@ use crate::{
     FileId,
 };
 pub(crate) use call_func::infer_call_expr_func;
-pub(crate) use infer::{infer_expr, instantiate_doc_function};
+pub(crate) use infer::infer_expr;
 pub use instantiate::{instantiate_type, TypeSubstitutor};
 use overload_resolve::resolve_signature;
 pub use type_check::{TypeCheckFailReason, TypeCheckResult};

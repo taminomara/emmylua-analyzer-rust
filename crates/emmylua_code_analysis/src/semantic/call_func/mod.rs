@@ -8,8 +8,8 @@ use crate::{
 };
 
 use super::{
-    instantiate::TypeSubstitutor, instantiate_doc_function, instantiate_type, resolve_signature,
-    InferGuard, LuaInferConfig,
+    instantiate::{instantiate_func_generic, TypeSubstitutor},
+    instantiate_type, resolve_signature, InferGuard, LuaInferConfig,
 };
 
 pub fn infer_call_expr_func(
@@ -74,15 +74,7 @@ fn infer_signature_doc_function(
             vec![],
         );
         if signature.is_generic() {
-            let instantiate_func = instantiate_doc_function(
-                db,
-                config,
-                &fake_doc_function,
-                call_expr,
-                signature.is_colon_define,
-            )?;
-
-            fake_doc_function = instantiate_func;
+            fake_doc_function = instantiate_func_generic(db, config, &fake_doc_function, call_expr)?;
         }
 
         Some(fake_doc_function.into())
@@ -101,7 +93,6 @@ fn infer_signature_doc_function(
             config,
             new_overloads,
             call_expr.clone(),
-            signature.is_colon_define,
             signature.is_generic(),
             args_count,
         )?;
@@ -149,15 +140,7 @@ fn infer_type_doc_function(
         }
     }
 
-    let doc_func = resolve_signature(
-        db,
-        config,
-        overloads,
-        call_expr.clone(),
-        false,
-        false,
-        args_count,
-    )?;
+    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, args_count)?;
     Some(doc_func)
 }
 
@@ -189,7 +172,6 @@ fn infer_generic_type_doc_function(
         return None;
     }
 
-
     let operator_index = db.get_operator_index();
     let operator_map = operator_index.get_operators_by_type(&type_id)?;
     let operator_ids = operator_map.get(&LuaOperatorMetaMethod::Call)?;
@@ -206,14 +188,6 @@ fn infer_generic_type_doc_function(
         }
     }
 
-    let doc_func = resolve_signature(
-        db,
-        config,
-        overloads,
-        call_expr.clone(),
-        false,
-        false,
-        args_count,
-    )?;
+    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, args_count)?;
     Some(doc_func)
 }

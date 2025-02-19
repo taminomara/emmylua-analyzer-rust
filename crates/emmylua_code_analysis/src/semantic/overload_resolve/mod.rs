@@ -5,7 +5,8 @@ use emmylua_parser::LuaCallExpr;
 use crate::db_index::{DbIndex, LuaFunctionType, LuaType};
 
 use super::{
-    infer_expr, instantiate::instantiate_func, type_check::check_type_compact, LuaInferConfig,
+    infer_expr, instantiate::instantiate_func_generic, type_check::check_type_compact,
+    LuaInferConfig,
 };
 
 pub fn resolve_signature(
@@ -13,7 +14,6 @@ pub fn resolve_signature(
     infer_config: &mut LuaInferConfig,
     overloads: Vec<Arc<LuaFunctionType>>,
     call_expr: LuaCallExpr,
-    colon_define: bool,
     is_generic: bool,
     arg_count: Option<usize>,
 ) -> Option<Arc<LuaFunctionType>> {
@@ -23,26 +23,11 @@ pub fn resolve_signature(
         expr_types.push(infer_expr(db, infer_config, arg)?);
     }
 
-    let colon_call = call_expr.is_colon_call();
-    let mut expr_types = expr_types;
-    match (colon_call, colon_define) {
-        (true, true) | (false, false) => {}
-        (false, true) => {
-            if expr_types.len() > 0 {
-                expr_types.remove(0);
-            }
-        }
-        (true, false) => {
-            expr_types.insert(0, LuaType::Any);
-        }
-    }
-
     if is_generic {
         return resolve_signature_by_generic(
             db,
             infer_config,
             overloads,
-            colon_define,
             call_expr,
             expr_types,
             arg_count,
@@ -56,7 +41,6 @@ fn resolve_signature_by_generic(
     db: &DbIndex,
     infer_config: &mut LuaInferConfig,
     overloads: Vec<Arc<LuaFunctionType>>,
-    colon_define: bool,
     call_expr: LuaCallExpr,
     expr_types: Vec<LuaType>,
     arg_count: Option<usize>,
@@ -65,33 +49,8 @@ fn resolve_signature_by_generic(
     let mut matched_func: Option<Arc<LuaFunctionType>> = None;
     let mut instantiate_funcs = Vec::new();
     for func in overloads {
-        let params = func.get_params();
-        let mut func_param_types: Vec<_> = params
-            .iter()
-            .map(|(_, t)| t.clone().unwrap_or(LuaType::Any))
-            .collect();
-        let mut func_return_types = func.get_ret().to_vec();
-
-        instantiate_func(
-            db,
-            infer_config,
-            colon_define,
-            call_expr.clone(),
-            &mut func_param_types,
-            &mut func_return_types,
-        );
-        let mut new_params = Vec::new();
-        for i in 0..params.len() {
-            let new_param = func_param_types[i].clone();
-            new_params.push((params[i].0.clone(), Some(new_param)));
-        }
-        let new_func = Arc::new(LuaFunctionType::new(
-            func.is_async(),
-            func.is_colon_define(),
-            new_params,
-            func_return_types,
-        ));
-        instantiate_funcs.push(new_func);
+        let instantiate_func = instantiate_func_generic(db, infer_config, &func, call_expr.clone())?;
+        instantiate_funcs.push(Arc::new(instantiate_func));
     }
 
     for func in &instantiate_funcs {
@@ -110,8 +69,7 @@ fn resolve_signature_by_generic(
             let expr_type = &expr_types[i];
             if param_type == LuaType::Any {
                 match_count += 1;
-            } else if check_type_compact(db, &param_type, expr_type).is_ok()
-            {
+            } else if check_type_compact(db, &param_type, expr_type).is_ok() {
                 match_count += 1;
             }
         }

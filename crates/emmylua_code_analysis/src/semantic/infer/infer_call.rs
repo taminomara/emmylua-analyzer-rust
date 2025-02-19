@@ -8,7 +8,7 @@ use crate::{
         LuaOperatorMetaMethod, LuaSignatureId, LuaType, LuaTypeDeclId,
     },
     semantic::{
-        instantiate::{instantiate_func, instantiate_type, TypeSubstitutor},
+        instantiate::{instantiate_func_generic, instantiate_type, TypeSubstitutor},
         overload_resolve::resolve_signature,
         InferGuard,
     },
@@ -45,13 +45,9 @@ fn infer_call_result(
     infer_guard: &mut InferGuard,
 ) -> Option<LuaType> {
     let return_type = match prefix_type {
-        LuaType::DocFunction(func) => infer_call_by_doc_function(
-            db,
-            config,
-            &func,
-            call_expr.clone(),
-            func.is_colon_define(),
-        )?,
+        LuaType::DocFunction(func) => {
+            infer_call_by_doc_function(db, config, &func, call_expr.clone())?
+        }
         LuaType::Signature(signature_id) => {
             infer_call_by_signature(db, config, signature_id.clone(), call_expr.clone())?
         }
@@ -83,12 +79,11 @@ fn infer_call_by_doc_function(
     config: &mut LuaInferConfig,
     func: &LuaFunctionType,
     call_expr: LuaCallExpr,
-    colon_define: bool,
 ) -> Option<LuaType> {
     let rets = func.get_ret();
     let is_generic_rets = rets.iter().any(|ret| ret.contain_tpl());
     let ret = if is_generic_rets {
-        let instantiate_func = instantiate_doc_function(db, config, func, call_expr, colon_define)?;
+        let instantiate_func = instantiate_func_generic(db, config, func, call_expr)?;
         let rets = instantiate_func.get_ret();
         match rets.len() {
             0 => LuaType::Nil,
@@ -137,13 +132,8 @@ fn infer_call_by_signature(
                 signature.get_type_params(),
                 vec![ret.clone()],
             );
-            let instantiate_func = instantiate_doc_function(
-                db,
-                config,
-                &fake_doc_function,
-                call_expr,
-                signature.is_colon_define,
-            )?;
+            let instantiate_func =
+                instantiate_func_generic(db, config, &fake_doc_function, call_expr)?;
             let rets = instantiate_func.get_ret();
             return rets.get(0).cloned();
         }
@@ -174,57 +164,11 @@ fn infer_call_by_signature(
             config,
             new_overloads,
             call_expr.clone(),
-            signature.is_colon_define,
             signature.is_generic(),
             None,
         )?;
-        return infer_call_by_doc_function(
-            db,
-            config,
-            &doc_func,
-            call_expr,
-            signature.is_colon_define,
-        );
+        return infer_call_by_doc_function(db, config, &doc_func, call_expr);
     }
-}
-
-pub fn instantiate_doc_function(
-    db: &DbIndex,
-    config: &mut LuaInferConfig,
-    func: &LuaFunctionType,
-    call_expr: LuaCallExpr,
-    colon_define: bool,
-) -> Option<LuaFunctionType> {
-    let origin_params = func.get_params();
-    let mut func_param_types: Vec<_> = origin_params
-        .iter()
-        .map(|(_, t)| t.clone().unwrap_or(LuaType::Unknown))
-        .collect();
-
-    let mut func_return_types: Vec<_> = func.get_ret().to_vec();
-    let is_async = func.is_async();
-
-    instantiate_func(
-        db,
-        config,
-        colon_define,
-        call_expr,
-        &mut func_param_types,
-        &mut func_return_types,
-    )?;
-
-    let mut new_params = Vec::new();
-    for i in 0..origin_params.len() {
-        let new_param = func_param_types[i].clone();
-        new_params.push((origin_params[i].0.clone(), Some(new_param)));
-    }
-
-    Some(LuaFunctionType::new(
-        is_async,
-        colon_define,
-        new_params,
-        func_return_types,
-    ))
 }
 
 fn infer_call_by_custom_type(
@@ -258,8 +202,8 @@ fn infer_call_by_custom_type(
         }
     }
 
-    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, false, None)?;
-    return infer_call_by_doc_function(db, config, &doc_func, call_expr, false);
+    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, None)?;
+    return infer_call_by_doc_function(db, config, &doc_func, call_expr);
 }
 
 fn infer_call_by_custom_generic_type(
@@ -297,8 +241,8 @@ fn infer_call_by_custom_generic_type(
         }
     }
 
-    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, false, None)?;
-    return infer_call_by_doc_function(db, config, &doc_func, call_expr, false);
+    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, None)?;
+    return infer_call_by_doc_function(db, config, &doc_func, call_expr);
 }
 
 fn unwrapp_return_type(

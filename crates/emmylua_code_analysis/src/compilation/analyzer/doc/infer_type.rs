@@ -336,6 +336,8 @@ fn infer_func_type(analyzer: &mut DocAnalyzer, func: LuaDocFuncType) -> LuaType 
     for param in func.get_params() {
         let name = if let Some(param) = param.get_name_token() {
             param.get_name_text().to_string()
+        } else if param.is_dots() {
+            "...".to_string()
         } else {
             continue;
         };

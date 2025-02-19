@@ -4,7 +4,7 @@ use crate::{GenericTplId, LuaType, LuaTypeDeclId};
 
 #[derive(Debug, Clone)]
 pub struct TypeSubstitutor {
-    tpl_replace_map: HashMap<GenericTplId, LuaType>,
+    tpl_replace_map: HashMap<GenericTplId, SubstitutorValue>,
     alias_type_id: Option<LuaTypeDeclId>,
 }
 
@@ -19,7 +19,7 @@ impl TypeSubstitutor {
     pub fn from_type_array(type_array: Vec<LuaType>) -> Self {
         let mut tpl_replace_map = HashMap::new();
         for (i, ty) in type_array.into_iter().enumerate() {
-            tpl_replace_map.insert(GenericTplId::Type(i as u32), ty);
+            tpl_replace_map.insert(GenericTplId::Type(i as u32), SubstitutorValue::Type(ty));
         }
         Self {
             tpl_replace_map,
@@ -30,7 +30,7 @@ impl TypeSubstitutor {
     pub fn from_alias(type_array: Vec<LuaType>, alias_type_id: LuaTypeDeclId) -> Self {
         let mut tpl_replace_map = HashMap::new();
         for (i, ty) in type_array.into_iter().enumerate() {
-            tpl_replace_map.insert(GenericTplId::Type(i as u32), ty);
+            tpl_replace_map.insert(GenericTplId::Type(i as u32), SubstitutorValue::Type(ty));
         }
         Self {
             tpl_replace_map,
@@ -38,11 +38,19 @@ impl TypeSubstitutor {
         }
     }
 
-    pub fn insert(&mut self, tpl_id: GenericTplId, replace_type: LuaType) {
-        self.tpl_replace_map.insert(tpl_id, replace_type);
+    pub fn insert_type(&mut self, tpl_id: GenericTplId, replace_type: LuaType) {
+        self.tpl_replace_map.insert(tpl_id, SubstitutorValue::Type(replace_type));
     }
 
-    pub fn get(&self, tpl_id: GenericTplId) -> Option<&LuaType> {
+    pub fn insert_params(&mut self, tpl_id: GenericTplId, params: Vec<(String, Option<LuaType>)>) {
+        self.tpl_replace_map.insert(tpl_id, SubstitutorValue::Params(params));
+    }
+
+    pub fn insert_multi_types(&mut self, tpl_id: GenericTplId, types: Vec<LuaType>) {
+        self.tpl_replace_map.insert(tpl_id, SubstitutorValue::MultiTypes(types));
+    }
+
+    pub fn get(&self, tpl_id: GenericTplId) -> Option<&SubstitutorValue> {
         self.tpl_replace_map.get(&tpl_id)
     }
 
@@ -55,4 +63,12 @@ impl TypeSubstitutor {
         
         false
     }
+}
+
+
+#[derive(Debug, Clone)]
+pub enum SubstitutorValue {
+    Type(LuaType),
+    Params(Vec<(String, Option<LuaType>)>),
+    MultiTypes(Vec<LuaType>),
 }

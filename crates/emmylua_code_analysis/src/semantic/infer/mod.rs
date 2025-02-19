@@ -9,7 +9,6 @@ mod infer_unary;
 use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLiteralToken};
 use infer_binary::infer_binary_expr;
 use infer_call::infer_call_expr;
-pub use infer_call::instantiate_doc_function;
 use infer_config::ExprCache;
 pub use infer_config::LuaInferConfig;
 use infer_index::infer_index_expr;

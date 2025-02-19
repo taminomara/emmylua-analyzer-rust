@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Deref};
 
 use crate::{
     db_index::{
@@ -10,7 +10,7 @@ use crate::{
     LuaSignatureId, TypeOps,
 };
 
-use super::type_substitutor::TypeSubstitutor;
+use super::type_substitutor::{SubstitutorValue, TypeSubstitutor};
 
 pub fn instantiate_type(db: &DbIndex, ty: &LuaType, substitutor: &TypeSubstitutor) -> LuaType {
     match ty {
@@ -34,6 +34,7 @@ pub fn instantiate_type(db: &DbIndex, ty: &LuaType, substitutor: &TypeSubstituto
         }
         LuaType::Signature(sig_id) => instantiate_signature(db, sig_id, substitutor),
         LuaType::Call(alias_call) => instantiate_alias_call(db, alias_call, substitutor),
+        LuaType::Variadic(inner) => instantiate_variadic_type(db, inner, substitutor),
         _ => ty.clone(),
     }
 }
@@ -58,32 +59,75 @@ fn instantiate_tuple(db: &DbIndex, tuple: &LuaTupleType, substitutor: &TypeSubst
     LuaType::Tuple(LuaTupleType::new(new_types).into())
 }
 
-fn instantiate_doc_function(
+pub fn instantiate_doc_function(
     db: &DbIndex,
     doc_func: &LuaFunctionType,
     substitutor: &TypeSubstitutor,
 ) -> LuaType {
-    let func_params = doc_func.get_params();
-    let ret = doc_func.get_ret();
+    let tpl_func_params = doc_func.get_params();
+    let tpl_ret = doc_func.get_ret();
     let is_async = doc_func.is_async();
     let colon_define = doc_func.is_colon_define();
+
     let mut new_params = Vec::new();
-    for (name, param_type) in func_params {
-        if param_type.is_some() {
-            let new_param = instantiate_type(db, param_type.as_ref().unwrap(), substitutor);
-            new_params.push((name.clone(), Some(new_param)));
+    for i in 0..tpl_func_params.len() {
+        let origin_param = &tpl_func_params[i];
+        if origin_param.1.is_none() {
+            new_params.push((origin_param.0.clone(), None));
             continue;
-        } else {
-            new_params.push((name.clone(), None));
+        }
+
+        let origin_param_type = origin_param.1.clone().unwrap();
+        match &origin_param_type {
+            LuaType::Variadic(inner) => {
+                if let LuaType::TplRef(tpl) = inner.deref() {
+                    if let Some(value) = substitutor.get(tpl.get_tpl_id()) {
+                        match value {
+                            SubstitutorValue::Params(params) => {
+                                for param in params {
+                                    new_params.push(param.clone());
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            _ => {
+                let new_type = instantiate_type(db, &origin_param_type, &substitutor);
+                new_params.push((origin_param.0.clone(), Some(new_type)));
+            }
         }
     }
 
-    let mut new_ret = Vec::new();
-    for ret_type in ret {
-        let new_ret_type = instantiate_type(db, ret_type, substitutor);
-        new_ret.push(new_ret_type);
+    let mut new_returns = Vec::new();
+    for i in 0..tpl_ret.len() {
+        let ret_type = &tpl_ret[i];
+        match &ret_type {
+            LuaType::Variadic(inner) => {
+                if let LuaType::TplRef(tpl) = inner.deref() {
+                    if let Some(value) = substitutor.get(tpl.get_tpl_id()) {
+                        match value {
+                            SubstitutorValue::MultiTypes(types) => {
+                                for typ in types {
+                                    new_returns.push(typ.clone());
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            _ => {
+                let new_type = instantiate_type(db, &ret_type, &substitutor);
+                new_returns.push(new_type);
+            }
+        }
     }
-    LuaType::DocFunction(LuaFunctionType::new(is_async, colon_define, new_params, new_ret).into())
+
+    LuaType::DocFunction(
+        LuaFunctionType::new(is_async, colon_define, new_params, new_returns).into(),
+    )
 }
 
 fn instantiate_object(
@@ -185,11 +229,24 @@ fn instantiate_table_generic(
 }
 
 fn instantiate_tpl_ref(_: &DbIndex, tpl: &GenericTpl, substitutor: &TypeSubstitutor) -> LuaType {
-    if let Some(ty) = substitutor.get(tpl.get_tpl_id()) {
-        ty.clone()
-    } else {
-        LuaType::TplRef(tpl.clone().into())
+    if let Some(value) = substitutor.get(tpl.get_tpl_id()) {
+        match value {
+            SubstitutorValue::Type(ty) => return ty.clone(),
+            SubstitutorValue::MultiTypes(types) => {
+                return types.first().unwrap_or(&LuaType::Unknown).clone();
+            }
+            SubstitutorValue::Params(params) => {
+                return params
+                    .first()
+                    .unwrap_or(&(String::new(), None))
+                    .1
+                    .clone()
+                    .unwrap_or(LuaType::Unknown);
+            }
+        }
     }
+
+    LuaType::TplRef(tpl.clone().into())
 }
 
 fn instantiate_multi_return(
@@ -289,4 +346,30 @@ fn instantiate_alias_call(
     }
 
     LuaType::Unknown
+}
+
+fn instantiate_variadic_type(
+    db: &DbIndex,
+    inner: &LuaType,
+    substitutor: &TypeSubstitutor,
+) -> LuaType {
+    if let LuaType::TplRef(tpl) = inner {
+        if let Some(value) = substitutor.get(tpl.get_tpl_id()) {
+            match value {
+                SubstitutorValue::Type(ty) => return ty.clone(),
+                SubstitutorValue::MultiTypes(types) => {
+                    return LuaType::MuliReturn(LuaMultiReturn::Multi(types.clone()).into())
+                }
+                SubstitutorValue::Params(params) => {
+                    let types = params
+                        .iter()
+                        .filter_map(|(_, ty)| ty.clone())
+                        .collect::<Vec<_>>();
+                    return LuaType::MuliReturn(LuaMultiReturn::Multi(types).into());
+                }
+            }
+        }
+    }
+
+    instantiate_type(db, inner, substitutor)
 }

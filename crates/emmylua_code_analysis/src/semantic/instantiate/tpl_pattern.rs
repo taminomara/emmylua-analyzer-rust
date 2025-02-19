@@ -22,7 +22,7 @@ pub fn tpl_pattern_match(
     match pattern {
         LuaType::TplRef(tpl) => {
             if tpl.get_tpl_id().is_func() {
-                substitutor.insert(tpl.get_tpl_id(), target.clone());
+                substitutor.insert_type(tpl.get_tpl_id(), target.clone());
             }
         }
         LuaType::StrTplRef(str_tpl) => match target {
@@ -33,7 +33,7 @@ pub fn tpl_pattern_match(
                 } else {
                     SmolStr::new(format!("{}{}", prefix, s))
                 };
-                substitutor.insert(str_tpl.get_tpl_id(), type_name.into());
+                substitutor.insert_type(str_tpl.get_tpl_id(), type_name.into());
             }
             _ => {}
         },
@@ -222,8 +222,8 @@ fn func_tpl_pattern_match_doc_func(
 ) -> Option<()> {
     let tpl_func_params = tpl_func.get_params();
     let target_func_params = target_func.get_params();
-    let len = tpl_func_params.len();
-    for i in 0..len {
+    let param_len = tpl_func_params.len();
+    for i in 0..param_len {
         let tpl_param_tuple = tpl_func_params.get(i)?;
         let target_param_tuple = match target_func_params.get(i) {
             Some(t) => t,
@@ -231,6 +231,17 @@ fn func_tpl_pattern_match_doc_func(
         };
 
         let tpl_param_type = tpl_param_tuple.1.clone().unwrap_or(LuaType::Any);
+
+        // T ... match all other params
+        if tpl_param_tuple.0 == "..." {
+            let target_rest_params = &target_func_params[i..];
+            if let LuaType::Variadic(inner) = tpl_param_type {
+                func_varargs_tpl_pattern_match(&inner, target_rest_params, substitutor);
+            }
+
+            break;
+        }
+
         let target_param_type = target_param_tuple.1.clone().unwrap_or(LuaType::Any);
         tpl_pattern_match(
             db,
@@ -242,11 +253,55 @@ fn func_tpl_pattern_match_doc_func(
         );
     }
 
-    let rets = tpl_func.get_ret();
-    for (i, ret_type) in rets.iter().enumerate() {
-        if let Some(target_ret_type) = &target_func.get_ret().get(i) {
-            tpl_pattern_match(db, config, root, ret_type, target_ret_type, substitutor);
+    let tpl_rets = tpl_func.get_ret();
+    let target_rets = target_func.get_ret();
+    let ret_len = tpl_rets.len();
+    for i in 0..ret_len {
+        let tpl_ret_type = &tpl_rets[i];
+
+        if let LuaType::Variadic(inner) = tpl_ret_type {
+            let target_rest_rets = &target_rets[i..];
+            func_varrets_tpl_pattern_match(&inner, target_rest_rets, substitutor);
+            break;
         }
+
+        let target_ret_type = match target_rets.get(i) {
+            Some(t) => t,
+            None => return None,
+        };
+        tpl_pattern_match(db, config, root, tpl_ret_type, target_ret_type, substitutor);
+    }
+
+    Some(())
+}
+
+fn func_varargs_tpl_pattern_match(
+    tpl: &LuaType,
+    target_rest_params: &[(String, Option<LuaType>)],
+    substitutor: &mut TypeSubstitutor,
+) -> Option<()> {
+    if let LuaType::TplRef(tpl_ref) = tpl {
+        let tpl_id = tpl_ref.get_tpl_id();
+        substitutor.insert_params(
+            tpl_id,
+            target_rest_params
+                .iter()
+                .map(|(n, t)| (n.clone(), t.clone()))
+                .collect(),
+        );
+    }
+
+    Some(())
+}
+
+fn func_varrets_tpl_pattern_match(
+    tpl: &LuaType,
+    target_rest_rets: &[LuaType],
+    substitutor: &mut TypeSubstitutor,
+) -> Option<()> {
+    if let LuaType::TplRef(tpl_ref) = tpl {
+        let tpl_id = tpl_ref.get_tpl_id();
+        substitutor.insert_multi_types(tpl_id, target_rest_rets.to_vec());
     }
 
     Some(())

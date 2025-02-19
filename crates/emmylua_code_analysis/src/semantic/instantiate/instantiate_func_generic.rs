@@ -1,29 +1,34 @@
+use std::ops::Deref;
+
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxNode};
 
 use crate::{
     db_index::{DbIndex, LuaType},
     semantic::{infer_expr, LuaInferConfig},
+    LuaFunctionType,
 };
 
-use super::{instantiate_type, tpl_pattern::tpl_pattern_match, type_substitutor::TypeSubstitutor};
+use super::{
+    instantiate_class_generic::instantiate_doc_function, tpl_pattern::tpl_pattern_match,
+    type_substitutor::TypeSubstitutor,
+};
 
-pub fn instantiate_func(
+pub fn instantiate_func_generic(
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
-    colon_define: bool,
+    config: &mut LuaInferConfig,
+    func: &LuaFunctionType,
     call_expr: LuaCallExpr,
-    func_param_types: &mut Vec<LuaType>,
-    func_return_types: &mut Vec<LuaType>,
-) -> Option<()> {
-    let arg_list = call_expr.get_args_list()?;
-    let mut arg_types = Vec::new();
-    for arg in arg_list.get_args() {
-        let arg_type = infer_expr(db, infer_config, arg.clone())?;
-        arg_types.push(arg_type);
-    }
+) -> Option<LuaFunctionType> {
+    let origin_params = func.get_params();
+    let func_param_types: Vec<_> = origin_params
+        .iter()
+        .map(|(_, t)| t.clone().unwrap_or(LuaType::Unknown))
+        .collect();
+
+    let mut arg_types = collect_arg_types(db, config, &call_expr)?;
 
     let colon_call = call_expr.is_colon_call();
-
+    let colon_define = func.is_colon_define();
     match (colon_define, colon_call) {
         (true, true) | (false, false) => {}
         (true, false) => {
@@ -36,33 +41,43 @@ pub fn instantiate_func(
         }
     }
 
-    instantiate_func_by_args(
+    let substitutor = match_tpl_args(
         db,
-        infer_config,
-        func_param_types,
-        func_return_types,
+        config,
+        &func_param_types,
         &arg_types,
         &call_expr.get_root(),
     );
-    // instantiate_func_by_return(
-    //     db,
-    //     infer_config,
-    //     file_id,
-    //     func_param_types,
-    //     func_return_types,
-    // );
 
-    Some(())
+    if let LuaType::DocFunction(f) = instantiate_doc_function(db, func, &substitutor) {
+        Some(f.deref().clone())
+    } else {
+        func.clone().into()
+    }
 }
 
-fn instantiate_func_by_args(
+fn collect_arg_types(
+    db: &DbIndex,
+    config: &mut LuaInferConfig,
+    call_expr: &LuaCallExpr,
+) -> Option<Vec<LuaType>> {
+    let arg_list = call_expr.get_args_list()?;
+    let mut arg_types = Vec::new();
+    for arg in arg_list.get_args() {
+        let arg_type = infer_expr(db, config, arg.clone())?;
+        arg_types.push(arg_type);
+    }
+
+    Some(arg_types)
+}
+
+fn match_tpl_args(
     db: &DbIndex,
     infer_config: &mut LuaInferConfig,
-    func_param_types: &mut Vec<LuaType>,
-    func_return_types: &mut Vec<LuaType>,
+    func_param_types: &Vec<LuaType>,
     arg_types: &Vec<LuaType>,
     root: &LuaSyntaxNode,
-) -> Option<()> {
+) -> TypeSubstitutor {
     let mut substitutor = TypeSubstitutor::new();
     for (i, func_param_type) in func_param_types.iter().enumerate() {
         let arg_type = if i < arg_types.len() {
@@ -81,19 +96,7 @@ fn instantiate_func_by_args(
         );
     }
 
-    for i in 0..func_param_types.len() {
-        let func_param_type = &mut func_param_types[i];
-        let new_func_param_type = instantiate_type(db, &func_param_type, &substitutor);
-        *func_param_type = new_func_param_type;
-    }
-
-    for i in 0..func_return_types.len() {
-        let func_return_type = &mut func_return_types[i];
-        let new_func_return_type = instantiate_type(db, &func_return_type, &substitutor);
-        *func_return_type = new_func_return_type;
-    }
-
-    Some(())
+    substitutor
 }
 
 // fn instantiate_func_by_return(
