@@ -14,6 +14,10 @@
 
 `NEW` Optimize hover
 
+`NEW` Optimize completion
+
+`NEW` Support `pcall` return type and check
+
 # 0.5.0
 
 `NEW` Support type-check when casting tuples to arrays.
