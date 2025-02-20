@@ -89,4 +89,24 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_83() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+        ---@param _t table<any, string>
+        local function foo(_t) end
+
+        foo({})
+        foo({'a'})
+        foo({'a', 'b'})
+
+        local a ---@type string[]
+        foo(a)
+        "#
+        ));
+    }
 }

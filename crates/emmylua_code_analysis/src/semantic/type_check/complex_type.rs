@@ -6,7 +6,7 @@ use crate::{
 };
 
 use super::{
-    check_general_type_compact, type_check_fail_reason::TypeCheckFailReason,
+    check_general_type_compact, check_type_compact, type_check_fail_reason::TypeCheckFailReason,
     type_check_guard::TypeCheckGuard, TypeCheckResult,
 };
 
@@ -203,6 +203,40 @@ pub fn check_complex_type_compact(
                         check_guard.next_level()?,
                     );
                 }
+                LuaType::Array(base) => {
+                    if source_generic_param.len() == 2 {
+                        let key = &source_generic_param[0];
+                        let value = &source_generic_param[1];
+                        if key.is_any() && check_type_compact(db, value, base).is_ok() {
+                            return Ok(());
+                        }
+                    }
+                }
+                LuaType::Tuple(tuple) => {
+                    if source_generic_param.len() == 2 {
+                        let key = &source_generic_param[0];
+                        let value = &source_generic_param[1];
+                        if key.is_any() {
+                            for tuple_type in tuple.get_types() {
+                                if check_general_type_compact(
+                                    db,
+                                    value,
+                                    tuple_type,
+                                    check_guard.next_level()?,
+                                )
+                                .is_err()
+                                {
+                                    return Err(TypeCheckFailReason::TypeNotMatch);
+                                }
+                            }
+
+                            return Ok(());
+                        }
+
+                        return Ok(());
+                    }
+                }
+                // maybe support object
                 // need check later
                 LuaType::Ref(_) | LuaType::Def(_) | LuaType::Userdata => return Ok(()),
                 _ => {}
@@ -242,7 +276,8 @@ pub fn check_complex_type_compact(
     // Do I need to check union types?
     if let LuaType::Union(union) = compact_type {
         for sub_compact in union.get_types() {
-            if check_complex_type_compact(db, source, sub_compact, check_guard.next_level()?).is_err()
+            if check_complex_type_compact(db, source, sub_compact, check_guard.next_level()?)
+                .is_err()
             {
                 return Err(TypeCheckFailReason::TypeNotMatch);
             }
