@@ -32,9 +32,26 @@ pub fn infer_call_expr(
         }
     }
 
+    check_can_infer(db, config, &call_expr)?;
+
     let prefix_type = infer_expr(db, config, prefix_expr)?;
 
     infer_call_result(db, config, prefix_type, call_expr, &mut InferGuard::new())
+}
+
+fn check_can_infer(db: &DbIndex, config: &LuaInferConfig, call_expr: &LuaCallExpr) -> Option<()> {
+    let call_args = call_expr.get_args_list()?.get_args();
+    for arg in call_args {
+        if let LuaExpr::ClosureExpr(cloure) = arg {
+            let sig_id = LuaSignatureId::new(config.get_file_id(), &cloure);
+            let signature = db.get_signature_index().get(&sig_id)?;
+            if !signature.is_resolve_return() {
+                return None;
+            }
+        }
+    }
+
+    Some(())
 }
 
 fn infer_call_result(

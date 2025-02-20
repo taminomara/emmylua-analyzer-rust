@@ -48,7 +48,7 @@ pub fn infer_expr(db: &DbIndex, config: &mut LuaInferConfig, expr: LuaExpr) -> I
         LuaExpr::LiteralExpr(literal_expr) => infer_literal_expr(db, config, literal_expr),
         LuaExpr::BinaryExpr(binary_expr) => infer_binary_expr(db, config, binary_expr),
         LuaExpr::UnaryExpr(unary_expr) => infer_unary_expr(db, config, unary_expr),
-        LuaExpr::ClosureExpr(closure_expr) => infer_closure_expr(config, closure_expr),
+        LuaExpr::ClosureExpr(closure_expr) => infer_closure_expr(db, config, closure_expr),
         LuaExpr::ParenExpr(paren_expr) => infer_expr(db, config, paren_expr.get_expr()?),
         LuaExpr::NameExpr(name_expr) => infer_name_expr(db, config, name_expr),
         LuaExpr::IndexExpr(index_expr) => infer_index_expr(db, config, index_expr),
@@ -107,15 +107,17 @@ fn infer_literal_expr(db: &DbIndex, config: &LuaInferConfig, expr: LuaLiteralExp
 
             Some(decl_type)
         }
-        _ => None
+        _ => None,
     }
 }
 
-fn infer_closure_expr(config: &LuaInferConfig, closure: LuaClosureExpr) -> InferResult {
-    Some(LuaType::Signature(LuaSignatureId::new(
-        config.get_file_id(),
-        &closure,
-    )))
+fn infer_closure_expr(
+    _: &DbIndex,
+    config: &LuaInferConfig,
+    closure: LuaClosureExpr,
+) -> InferResult {
+    let signature_id = LuaSignatureId::new(config.get_file_id(), &closure);
+    Some(LuaType::Signature(signature_id))
 }
 
 fn get_custom_type_operator(

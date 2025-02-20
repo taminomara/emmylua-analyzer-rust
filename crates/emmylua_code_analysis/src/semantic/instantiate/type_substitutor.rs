@@ -39,15 +39,30 @@ impl TypeSubstitutor {
     }
 
     pub fn insert_type(&mut self, tpl_id: GenericTplId, replace_type: LuaType) {
-        self.tpl_replace_map.insert(tpl_id, SubstitutorValue::Type(replace_type));
+        if self.tpl_replace_map.contains_key(&tpl_id) {
+            return;
+        }
+
+        self.tpl_replace_map
+            .insert(tpl_id, SubstitutorValue::Type(replace_type));
     }
 
     pub fn insert_params(&mut self, tpl_id: GenericTplId, params: Vec<(String, Option<LuaType>)>) {
-        self.tpl_replace_map.insert(tpl_id, SubstitutorValue::Params(params));
+        if self.tpl_replace_map.contains_key(&tpl_id) {
+            return;
+        }
+
+        self.tpl_replace_map
+            .insert(tpl_id, SubstitutorValue::Params(params));
     }
 
     pub fn insert_multi_types(&mut self, tpl_id: GenericTplId, types: Vec<LuaType>) {
-        self.tpl_replace_map.insert(tpl_id, SubstitutorValue::MultiTypes(types));
+        if self.tpl_replace_map.contains_key(&tpl_id) {
+            return;
+        }
+        
+        self.tpl_replace_map
+            .insert(tpl_id, SubstitutorValue::MultiTypes(types));
     }
 
     pub fn get(&self, tpl_id: GenericTplId) -> Option<&SubstitutorValue> {
@@ -60,11 +75,10 @@ impl TypeSubstitutor {
                 return true;
             }
         }
-        
+
         false
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub enum SubstitutorValue {

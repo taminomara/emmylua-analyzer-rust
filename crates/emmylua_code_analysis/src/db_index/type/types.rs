@@ -9,7 +9,7 @@ use crate::{
     InFiled,
 };
 
-use super::type_decl::LuaTypeDeclId;
+use super::{type_decl::LuaTypeDeclId, TypeOps};
 
 #[derive(Debug, Clone)]
 pub enum LuaType {
@@ -405,6 +405,25 @@ impl LuaTupleType {
 
     pub fn contain_tpl(&self) -> bool {
         self.types.iter().any(|t| t.contain_tpl())
+    }
+
+    pub fn cast_down_array_base(&self) -> LuaType {
+        let mut ty = LuaType::Unknown;
+        for t in &self.types {
+            if t.is_integer() {
+                ty = TypeOps::Union.apply(&ty, &LuaType::Integer);
+            } else if t.is_number() {
+                ty = TypeOps::Union.apply(&ty, &LuaType::Number);
+            } else if t.is_string() {
+                ty = TypeOps::Union.apply(&ty, &LuaType::String);
+            } else if t.is_boolean() {
+                ty = TypeOps::Union.apply(&ty, &LuaType::Boolean);
+            } else {
+                ty = TypeOps::Union.apply(&ty, &t);
+            }
+        }
+
+        ty
     }
 }
 
