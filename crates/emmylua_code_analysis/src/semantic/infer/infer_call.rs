@@ -42,8 +42,8 @@ pub fn infer_call_expr(
 fn check_can_infer(db: &DbIndex, config: &LuaInferConfig, call_expr: &LuaCallExpr) -> Option<()> {
     let call_args = call_expr.get_args_list()?.get_args();
     for arg in call_args {
-        if let LuaExpr::ClosureExpr(cloure) = arg {
-            let sig_id = LuaSignatureId::new(config.get_file_id(), &cloure);
+        if let LuaExpr::ClosureExpr(closure) = arg {
+            let sig_id = LuaSignatureId::new(config.get_file_id(), &closure);
             let signature = db.get_signature_index().get(&sig_id)?;
             if !signature.is_resolve_return() {
                 return None;
