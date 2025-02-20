@@ -53,6 +53,28 @@ fn instantiate_tuple(db: &DbIndex, tuple: &LuaTupleType, substitutor: &TypeSubst
     let tuple_types = tuple.get_types();
     let mut new_types = Vec::new();
     for t in tuple_types {
+        if let LuaType::Variadic(inner) = t {
+            if let LuaType::TplRef(tpl) = inner.deref() {
+                if let Some(value) = substitutor.get(tpl.get_tpl_id()) {
+                    match value {
+                        SubstitutorValue::MultiTypes(types) => {
+                            for typ in types {
+                                new_types.push(typ.clone());
+                            }
+                        }
+                        SubstitutorValue::Params(params) => {
+                            for (_, ty) in params {
+                                new_types.push(ty.clone().unwrap_or(LuaType::Unknown));
+                            }
+                        }
+                        SubstitutorValue::Type(ty) => new_types.push(ty.clone()),
+                    }
+                }
+            }
+
+            break;
+        }
+
         let t = instantiate_type(db, t, substitutor);
         new_types.push(t);
     }
@@ -124,7 +146,6 @@ pub fn instantiate_doc_function(
             }
         }
     }
-
     LuaType::DocFunction(
         LuaFunctionType::new(is_async, colon_define, new_params, new_returns).into(),
     )

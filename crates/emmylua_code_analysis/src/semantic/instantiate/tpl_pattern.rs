@@ -4,9 +4,7 @@ use emmylua_parser::{LuaAstNode, LuaSyntaxId, LuaSyntaxNode, LuaTableExpr};
 use smol_str::SmolStr;
 
 use crate::{
-    db_index::{DbIndex, LuaGenericType, LuaType},
-    semantic::{infer_expr, LuaInferConfig},
-    LuaFunctionType, LuaUnionType,
+    db_index::{DbIndex, LuaGenericType, LuaType}, semantic::{infer_expr, LuaInferConfig}, LuaFunctionType, LuaTupleType, LuaUnionType
 };
 
 use super::type_substitutor::TypeSubstitutor;
@@ -54,6 +52,9 @@ pub fn tpl_pattern_match(
         }
         LuaType::DocFunction(doc_func) => {
             func_tpl_pattern_match(db, config, root, doc_func, target, substitutor);
+        }
+        LuaType::Tuple(tuple) => {
+            tuple_tpl_pattern_match(db, config, root, tuple, target, substitutor);
         }
         _ => {}
     }
@@ -265,7 +266,7 @@ fn func_tpl_pattern_match_doc_func(
 
         if let LuaType::Variadic(inner) = tpl_ret_type {
             let target_rest_rets = &target_rets[i..];
-            func_varrets_tpl_pattern_match(&inner, target_rest_rets, substitutor);
+            variadic_tpl_pattern_match(&inner, target_rest_rets, substitutor);
             break;
         }
 
@@ -298,14 +299,53 @@ fn func_varargs_tpl_pattern_match(
     Some(())
 }
 
-fn func_varrets_tpl_pattern_match(
+fn variadic_tpl_pattern_match(
     tpl: &LuaType,
-    target_rest_rets: &[LuaType],
+    target_rest_types: &[LuaType],
     substitutor: &mut TypeSubstitutor,
 ) -> Option<()> {
     if let LuaType::TplRef(tpl_ref) = tpl {
         let tpl_id = tpl_ref.get_tpl_id();
-        substitutor.insert_multi_types(tpl_id, target_rest_rets.to_vec());
+        substitutor.insert_multi_types(tpl_id, target_rest_types.to_vec());
+    }
+
+    Some(())
+}
+
+fn tuple_tpl_pattern_match(
+    db: &DbIndex,
+    config: &mut LuaInferConfig,
+    root: &LuaSyntaxNode,
+    tpl_tuple: &LuaTupleType,
+    target: &LuaType,
+    substitutor: &mut TypeSubstitutor,
+) -> Option<()> {
+    match target {
+        LuaType::Tuple(target_tuple) => {
+            let tpl_tuple_types = tpl_tuple.get_types();
+            let target_tuple_types = target_tuple.get_types();
+            let tpl_tuple_len = tpl_tuple_types.len();
+            for i in 0..tpl_tuple_len {
+                let tpl_type = &tpl_tuple_types[i];
+
+                if let LuaType::Variadic(inner) = tpl_type {
+                    let target_rest_types = &target_tuple_types[i..];
+                    variadic_tpl_pattern_match(inner, target_rest_types, substitutor);
+                    break;
+                }
+
+                let target_type = match target_tuple_types.get(i) {
+                    Some(t) => t,
+                    None => break,
+                };
+
+                tpl_pattern_match(db, config, root, tpl_type, target_type, substitutor);
+            }
+        }
+        // LuaType::Array(target_array_base) => {
+            
+        // }
+        _ => {}
     }
 
     Some(())

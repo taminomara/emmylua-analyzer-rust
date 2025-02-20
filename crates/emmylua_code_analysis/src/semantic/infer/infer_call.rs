@@ -152,7 +152,11 @@ fn infer_call_by_signature(
             let instantiate_func =
                 instantiate_func_generic(db, config, &fake_doc_function, call_expr)?;
             let rets = instantiate_func.get_ret();
-            return rets.get(0).cloned();
+            return match rets.len() {
+                0 => Some(LuaType::Nil),
+                1 => Some(rets[0].clone()),
+                _ => Some(LuaType::MuliReturn(LuaMultiReturn::Multi(rets.to_vec()).into())),
+            };
         }
 
         return Some(ret);
