@@ -1,140 +1,124 @@
 use crate::{LuaType, LuaUnionType};
 
 // need to be optimized
-pub fn narrow_down_type(source: LuaType, target: LuaType) -> LuaType {
+pub fn narrow_down_type(source: LuaType, target: LuaType) -> Option<LuaType> {
+    match &target {
+        LuaType::Number => {
+            if source.is_number() {
+                return Some(source);
+            }
+        }
+        LuaType::Integer => {
+            if source.is_integer() {
+                return Some(source);
+            }
+        }
+        LuaType::String => {
+            if source.is_string() {
+                return Some(source);
+            }
+        }
+        LuaType::Boolean => {
+            if source.is_boolean() {
+                return Some(source);
+            }
+        }
+        LuaType::Table => {
+            if source.is_table() {
+                return Some(source);
+            }
+        }
+        LuaType::Function => {
+            if source.is_function() {
+                return Some(source);
+            }
+        }
+        LuaType::Thread => {
+            if source.is_thread() {
+                return Some(source);
+            }
+        }
+        LuaType::Userdata => {
+            if source.is_userdata() {
+                return Some(source);
+            }
+        }
+        LuaType::Nil => {
+            if source.is_nil() {
+                return Some(source);
+            }
+        }
+        LuaType::Any => {
+            return Some(source);
+        }
+        LuaType::FloatConst(f) => {
+            if source.is_number() {
+                return Some(LuaType::Number);
+            } else if source.is_unknown() {
+                return Some(LuaType::FloatConst(*f));
+            }
+        }
+        LuaType::IntegerConst(i) => {
+            if source.is_integer() {
+                return Some(LuaType::Integer);
+            } else if source.is_unknown() {
+                return Some(LuaType::IntegerConst(*i));
+            }
+        }
+        LuaType::StringConst(s) => {
+            if source.is_string() {
+                return Some(LuaType::String);
+            } else if source.is_unknown() {
+                return Some(LuaType::StringConst(s.clone()));
+            }
+        }
+        LuaType::TableConst(t) => match &source {
+            LuaType::TableConst(s) => {
+                return Some(LuaType::TableConst(s.clone()));
+            }
+            LuaType::Table | LuaType::Userdata | LuaType::Any | LuaType::Unknown => {
+                return Some(LuaType::TableConst(t.clone()));
+            }
+            LuaType::Ref(_)
+            | LuaType::Def(_)
+            | LuaType::Global
+            | LuaType::Array(_)
+            | LuaType::Tuple(_)
+            | LuaType::Generic(_)
+            | LuaType::TableGeneric(_) => return Some(source),
+            _ => {}
+        },
+        _ => return Some(target),
+    }
+
     match &source {
         LuaType::Union(union) => {
-            let mut types = union.get_types().to_vec();
-            match target {
-                LuaType::Number | LuaType::FloatConst(_) => {
-                    types.retain(|t| t.is_number());
-                    if types.len() == 1 {
-                        types.pop().unwrap()
-                    } else {
-                        LuaType::Union(LuaUnionType::new(types).into())
-                    }
-                }
-                LuaType::Integer | LuaType::IntegerConst(_) => {
-                    types.retain(|t| t.is_integer());
-                    if types.len() == 1 {
-                        types.pop().unwrap()
-                    } else {
-                        LuaType::Union(LuaUnionType::new(types).into())
-                    }
-                }
-                LuaType::String | LuaType::StringConst(_) => {
-                    types.retain(|t| t.is_string());
-                    if types.len() == 1 {
-                        types.pop().unwrap()
-                    } else {
-                        LuaType::Union(LuaUnionType::new(types).into())
-                    }
-                }
-                LuaType::Boolean | LuaType::BooleanConst(_) => {
-                    types.retain(|t| t.is_boolean());
-                    if types.len() == 1 {
-                        types.pop().unwrap()
-                    } else {
-                        LuaType::Union(LuaUnionType::new(types).into())
-                    }
-                }
-                LuaType::Table | LuaType::TableConst(_) => {
-                    types.retain(|t| t.is_table());
-                    if types.len() == 1 {
-                        types.pop().unwrap()
-                    } else {
-                        LuaType::Union(LuaUnionType::new(types).into())
-                    }
-                }
-                LuaType::Function => {
-                    types.retain(|t| t.is_function());
-                    if types.len() == 1 {
-                        types.pop().unwrap()
-                    } else {
-                        LuaType::Union(LuaUnionType::new(types).into())
-                    }
-                }
-                LuaType::Thread => {
-                    types.retain(|t| t.is_thread());
-                    if types.len() == 1 {
-                        types.pop().unwrap()
-                    } else {
-                        LuaType::Union(LuaUnionType::new(types).into())
-                    }
-                }
-                LuaType::Userdata => {
-                    types.retain(|t| t.is_userdata());
-                    if types.len() == 1 {
-                        types.pop().unwrap()
-                    } else {
-                        LuaType::Union(LuaUnionType::new(types).into())
-                    }
-                }
-                LuaType::Nil => {
-                    types.retain(|t| t.is_nil());
-                    if types.len() == 1 {
-                        types.pop().unwrap()
-                    } else {
-                        LuaType::Union(LuaUnionType::new(types).into())
-                    }
-                }
-                _ => target,
-            }
+            let union_types = union
+                .get_types()
+                .iter()
+                .filter_map(|t| narrow_down_type(t.clone(), target.clone()))
+                .collect::<Vec<_>>();
+
+            return match union_types.len() {
+                0 => Some(target),
+                1 => Some(union_types[0].clone()),
+                _ => Some(LuaType::Union(LuaUnionType::new(union_types).into())),
+            };
         }
         LuaType::Nullable(inner) => {
-            if !target.is_nullable() {
-                narrow_down_type(target, (**inner).clone())
-            } else {
-                LuaType::Nil
-            }
-        }
-        LuaType::BooleanConst(_) => {
-            if target.is_boolean() {
-                return LuaType::Boolean;
-            }
+            let union_types = vec![LuaType::Nil, (**inner).clone()]
+                .iter()
+                .filter_map(|t| narrow_down_type(t.clone(), target.clone()))
+                .collect::<Vec<_>>();
 
-            target
+            return match union_types.len() {
+                0 => Some(target),
+                1 => Some(union_types[0].clone()),
+                _ => Some(LuaType::Union(LuaUnionType::new(union_types).into())),
+            };
         }
-        LuaType::FloatConst(_) => {
-            if target.is_number() {
-                return LuaType::Number;
-            }
-
-            target
-        }
-        LuaType::IntegerConst(_) => match target {
-            LuaType::Number => LuaType::Number,
-            LuaType::Integer | LuaType::IntegerConst(_) => LuaType::Integer,
-            _ => target,
-        },
-        LuaType::Number => {
-            if target.is_number() {
-                return LuaType::Number;
-            }
-
-            target
-        }
-        LuaType::StringConst(_) => {
-            if target.is_string() {
-                return LuaType::String;
-            }
-
-            target
-        }
-        LuaType::Array(_) => {
-            if target.is_table() {
-                return source;
-            }
-
-            target
-        }
-        LuaType::Tuple(_) => {
-            if target.is_table() {
-                return source;
-            }
-
-            target
-        }
-        _ => target,
+        _ => {}
     }
+
+    None
 }

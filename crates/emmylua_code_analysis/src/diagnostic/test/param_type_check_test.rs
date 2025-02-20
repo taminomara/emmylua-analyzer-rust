@@ -39,4 +39,54 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_85() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+        ---@param a table | nil
+        local function foo(a)
+            a = a or {}
+            _ = a.b
+        end
+
+        ---@param a table?
+        local function _bar(a)
+            a = a or {}
+            _ = a.b
+        end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_issue_84() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+        ---@param _a string[]
+        local function bar(_a) end
+
+        ---@param a? string[]?
+        local function _foo(a)
+            if not a then
+                a = {}
+            end
+
+            bar(a)
+
+            if not a then
+                a = {}
+            end
+
+            bar(a)
+        end
+        "#
+        ));
+    }
 }

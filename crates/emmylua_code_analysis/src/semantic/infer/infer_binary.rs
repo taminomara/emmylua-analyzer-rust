@@ -363,5 +363,5 @@ fn infer_binary_expr_concat(db: &DbIndex, left: LuaType, right: LuaType) -> Infe
 }
 
 fn infer_binary_expr_or(left: LuaType, right: LuaType) -> InferResult {
-    Some(TypeOps::Union.apply(&left, &right))
+    Some(TypeOps::Narrow.apply(&left, &right))
 }
