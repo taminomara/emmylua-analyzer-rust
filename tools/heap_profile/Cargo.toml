@@ -1,0 +1,10 @@
+[package]
+name = "heap_profile"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+emmylua_code_analysis.workspace = true
+emmylua_parser.workspace = true
+
+dhat.workspace = true
