@@ -1,6 +1,7 @@
 mod build_hover;
 mod hover_humanize;
 mod keyword_hover;
+mod hover_builder;
 
 use build_hover::build_semantic_info_hover;
 use emmylua_parser::LuaAstNode;
@@ -12,7 +13,7 @@ use lsp_types::{
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
 pub use build_hover::build_hover_content;
-pub use build_hover::HoverContent;
+pub use hover_builder::HoverBuilder;
 
 use crate::context::ServerContextSnapshot;
 

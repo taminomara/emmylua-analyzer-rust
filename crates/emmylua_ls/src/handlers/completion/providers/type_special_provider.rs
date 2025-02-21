@@ -6,6 +6,7 @@ use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaComment, LuaExpr,
     LuaNameToken, LuaSyntaxId, LuaSyntaxKind, LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
 };
+use itertools::Itertools;
 use lsp_types::CompletionItem;
 
 use crate::handlers::{
@@ -18,8 +19,10 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         return None;
     }
 
-    let typ = get_token_should_type(builder)?;
-    dispatch_type(builder, typ, &mut InferGuard::new());
+    let typs = get_token_should_type(builder)?;
+    for typ in typs {
+        dispatch_type(builder, typ, &mut InferGuard::new());
+    }
     Some(())
 }
 
@@ -40,7 +43,7 @@ fn dispatch_type(
         }
         LuaType::DocFunction(func) => {
             add_lambda_completion(builder, &func);
-        },
+        }
         LuaType::DocStringConst(key) => {
             add_string_completion(builder, key.as_str());
         }
@@ -155,7 +158,7 @@ fn add_string_completion(builder: &mut CompletionBuilder, str: &str) -> Option<(
     Some(())
 }
 
-fn get_token_should_type(builder: &mut CompletionBuilder) -> Option<LuaType> {
+fn get_token_should_type(builder: &mut CompletionBuilder) -> Option<Vec<LuaType>> {
     let token = builder.trigger_token.clone();
     let mut parent_node = token.parent()?;
     if LuaExpr::can_cast(parent_node.kind().into()) {
@@ -179,7 +182,7 @@ fn infer_call_arg_list(
     builder: &mut CompletionBuilder,
     call_arg_list: LuaCallArgList,
     token: LuaSyntaxToken,
-) -> Option<LuaType> {
+) -> Option<Vec<LuaType>> {
     let call_expr = call_arg_list.get_parent::<LuaCallExpr>()?;
     let mut param_idx = get_current_param_index(&call_expr, &token)?;
     let call_expr_func = builder
@@ -188,14 +191,92 @@ fn infer_call_arg_list(
     let colon_call = call_expr.is_colon_call();
     let colon_define = call_expr_func.is_colon_define();
     match (colon_call, colon_define) {
-        (true, true) | (false, false) => {}
-        (false, true) => {}
+        (true, true) | (false, false) | (false, true) => {}
         (true, false) => {
             param_idx += 1;
         }
     }
     let typ = call_expr_func.get_params().get(param_idx)?.1.clone()?;
-    Some(typ)
+    let mut types = Vec::new();
+    types.push(typ);
+    infer_call_arg_list_overload(builder, &call_expr, &call_expr_func, param_idx, &mut types);
+    Some(types.into_iter().unique().collect()) // 需要去重
+}
+
+fn infer_call_arg_list_overload(
+    builder: &mut CompletionBuilder,
+    call_expr: &LuaCallExpr,
+    call_expr_func: &LuaFunctionType,
+    param_idx: usize,
+    types: &mut Vec<LuaType>,
+) -> Option<()> {
+    let prefix_expr = call_expr.get_prefix_expr()?;
+    let property_owner_id = builder
+        .semantic_model
+        .get_property_owner_id(prefix_expr.syntax().clone().into())?;
+
+    let signature_id = match property_owner_id {
+        LuaPropertyOwnerId::Member(member_id) => {
+            let member = builder
+                .semantic_model
+                .get_db()
+                .get_member_index()
+                .get_member(&member_id)?;
+            if let LuaType::Signature(signature_id) = member.get_decl_type() {
+                Some(signature_id)
+            } else {
+                None
+            }
+        }
+        LuaPropertyOwnerId::LuaDecl(decl_id) => {
+            let decl = builder
+                .semantic_model
+                .get_db()
+                .get_decl_index()
+                .get_decl(&decl_id)?;
+            if let LuaType::Signature(signature_id) = decl.get_type()? {
+                Some(signature_id)
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }?;
+
+    let signature = builder
+        .semantic_model
+        .get_db()
+        .get_signature_index()
+        .get(&signature_id)?;
+
+    let call_params = call_expr_func.get_params();
+    for overload in signature.overloads.iter() {
+        let overload_param = overload.get_params();
+        // 前面的参数必须相同
+        let mut is_match = true;
+        if param_idx != 0 {
+            for (i, param) in call_params.iter().enumerate() {
+                if i < param_idx {
+                    if let Some(overload_param_type) = overload_param.get(i) {
+                        if param.1 != overload_param_type.1 {
+                            is_match = false;
+                            break;
+                        }
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+        if !is_match {
+            continue;
+        }
+        if let Some(param_type) = overload.get_params().get(param_idx)?.1.clone() {
+            types.push(param_type);
+        }
+    }
+
+    Some(())
 }
 
 fn add_alias_member_completion(
