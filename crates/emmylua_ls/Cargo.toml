@@ -32,3 +32,4 @@ structopt.workspace = true
 rust-i18n.workspace = true
 glob.workspace = true
 serde_yml.workspace = true
+itertools.workspace = true
