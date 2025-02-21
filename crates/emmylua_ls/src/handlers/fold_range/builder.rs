@@ -3,21 +3,29 @@ use emmylua_parser::LuaChunk;
 use lsp_types::{FoldingRange, FoldingRangeKind};
 use rowan::TextRange;
 
+use crate::context::ClientId;
+
 #[derive(Debug)]
 pub struct FoldingRangeBuilder<'a> {
     document: &'a LuaDocument<'a>,
     root: LuaChunk,
     folding_ranges: Vec<FoldingRange>,
     region_starts: Vec<TextRange>,
+    pub client_id: ClientId,
 }
 
 impl FoldingRangeBuilder<'_> {
-    pub fn new<'a>(document: &'a LuaDocument<'a>, root: LuaChunk) -> FoldingRangeBuilder<'a> {
+    pub fn new<'a>(
+        document: &'a LuaDocument<'a>,
+        client_id: ClientId,
+        root: LuaChunk,
+    ) -> FoldingRangeBuilder<'a> {
         FoldingRangeBuilder {
             document,
             root,
             folding_ranges: Vec::new(),
             region_starts: Vec::new(),
+            client_id,
         }
     }
 

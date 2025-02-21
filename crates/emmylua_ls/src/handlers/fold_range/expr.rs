@@ -1,5 +1,5 @@
 use emmylua_parser::{
-    LuaAstNode, LuaAstToken, LuaClosureExpr, LuaLiteralExpr, LuaLiteralToken, LuaSyntaxKind, LuaTableExpr
+    LuaAstNode, LuaAstToken, LuaClosureExpr, LuaLiteralExpr, LuaLiteralToken, LuaTableExpr,
 };
 use lsp_types::{FoldingRange, FoldingRangeKind};
 
@@ -63,17 +63,12 @@ pub fn build_closure_expr_fold_range(
     builder: &mut FoldingRangeBuilder,
     closure: LuaClosureExpr,
 ) -> Option<()> {
-    let parent = closure.syntax().parent()?;
-    if matches!(
-        parent.kind().into(),
-        LuaSyntaxKind::LocalFuncStat | LuaSyntaxKind::FuncStat
-    ) {
-        return None;
-    }
-
-    let range = closure.get_range();
     let document = builder.get_document();
-    let lsp_range = document.to_lsp_range(range)?;
+    let lsp_range = if let Some(block) = closure.get_block() {
+        document.to_lsp_range(block.get_range())?
+    } else {
+        document.to_lsp_range(closure.get_range())?
+    };
     if lsp_range.start.line == lsp_range.end.line {
         return None;
     }
@@ -81,10 +76,10 @@ pub fn build_closure_expr_fold_range(
     let folding_range = FoldingRange {
         start_line: lsp_range.start.line,
         start_character: Some(lsp_range.start.character),
-        end_line: lsp_range.end.line - 1,
+        end_line: lsp_range.end.line,
         end_character: Some(0),
         kind: Some(FoldingRangeKind::Region),
-        collapsed_text: Some("function ..".to_string()),
+        collapsed_text: Some(" .. ".to_string()),
     };
 
     builder.push(folding_range);

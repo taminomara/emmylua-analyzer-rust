@@ -2,7 +2,7 @@
 
 # 0.5.2 (unreleased)
 
-
+`CHG` Refactor `folding range`
 
 # 0.5.1 
 
