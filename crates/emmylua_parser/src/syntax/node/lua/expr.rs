@@ -367,6 +367,10 @@ impl LuaCallExpr {
         self.child()
     }
 
+    pub fn get_args_count(&self) -> Option<usize> {
+        self.get_args_list().map(|it| it.get_args().count())
+    }
+
     pub fn is_colon_call(&self) -> bool {
         let prefix = self.get_prefix_expr();
         if let Some(prefix) = prefix {
