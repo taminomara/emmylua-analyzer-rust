@@ -1,6 +1,10 @@
 # CHANGELOG
 
-# 0.5.1 (unreleased)
+# 0.5.2 (unreleased)
+
+
+
+# 0.5.1 
 
 `FIX` Fix issue `emmylua_ls` might not exit in unix.
 
