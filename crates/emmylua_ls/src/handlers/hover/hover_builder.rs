@@ -1,5 +1,5 @@
 use emmylua_code_analysis::{
-    LuaMember, LuaMemberOwner, LuaPropertyOwnerId, LuaType, SemanticModel,
+    LuaFunctionType, LuaMember, LuaMemberOwner, LuaPropertyOwnerId, LuaType, SemanticModel,
 };
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxKind, LuaSyntaxToken};
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
@@ -107,9 +107,8 @@ impl<'a> HoverBuilder<'a> {
         }
     }
 
-    /// 尝试设置完全匹配的签名
-    pub fn try_set_full_match_signature(&mut self) -> Option<()> {
-        if !self.is_completion || self.signature_overload.is_none() {
+    pub fn get_call_signature(&mut self) -> Option<LuaFunctionType> {
+        if self.is_completion {
             return None;
         }
         // 根据当前输入的参数, 匹配完全匹配的签名
@@ -118,9 +117,16 @@ impl<'a> HoverBuilder<'a> {
                 match call_expr.kind().into() {
                     LuaSyntaxKind::CallExpr => {
                         let call_expr = LuaCallExpr::cast(call_expr)?;
-                        let func = self.semantic_model.infer_call_expr_func(call_expr, None);
+                        let func = self.semantic_model.infer_call_expr_func(call_expr.clone(), None);
                         if let Some(func) = func {
-                            dbg!(&func);
+                            // 确定参数量是否与当前输入的参数数量一致, 因为`infer_call_expr_func`必然返回一个有效的类型, 即使不是完全匹配的
+                            let call_expr_args_count = call_expr.get_args_count();
+                            if let Some(call_expr_args_count) = call_expr_args_count {
+                                let func_params_count = func.get_params().len();
+                                if call_expr_args_count == func_params_count {
+                                    return Some((*func).clone());
+                                }
+                            }
                         }
                     }
                     _ => {}
@@ -128,7 +134,7 @@ impl<'a> HoverBuilder<'a> {
             }
         }
 
-        Some(())
+        None
     }
 
     pub fn build_hover_result(&self, range: Option<lsp_types::Range>) -> Option<Hover> {

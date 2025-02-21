@@ -214,7 +214,8 @@ fn hover_signature_type(
         result
     };
     // 构建所有重载
-    let overloads = {
+    let overloads: Vec<String> = {
+        let call_signature = builder.get_call_signature();
         let mut overloads = Vec::new();
         for (_, overload) in signature.overloads.iter().enumerate() {
             let async_label = if overload.is_async() { "async " } else { "" };
@@ -233,10 +234,30 @@ fn hover_signature_type(
                 .join(", ");
             let rets =
                 get_signature_rets_string(db, signature, builder.is_completion, Some(overload));
-            overloads.push(format!(
-                "{}function {}({}){}",
-                async_label, full_name, params, rets
-            ));
+
+            let mut result = String::new();
+            if type_label.starts_with("function") {
+                result.push_str(async_label);
+                result.push_str(type_label);
+            } else {
+                result.push_str(type_label);
+                result.push_str(async_label);
+            }
+            result.push_str(&full_name);
+            result.push_str("(");
+            result.push_str(params.as_str());
+            result.push_str(")");
+            result.push_str(rets.as_str());
+
+            if let Some(call_signature) = &call_signature {
+                if *call_signature == **overload {
+                    // 如果具有完全匹配的签名, 那么将其设置为当前签名, 且不显示重载
+                    builder.set_type_description(result);
+                    builder.signature_overload = None;
+                    return Some(());
+                }
+            };
+            overloads.push(result);
         }
         overloads
     };
