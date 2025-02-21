@@ -344,10 +344,15 @@ function setmetatable(table, metatable) end
 --- represents 10, 'B' represents 11, and so forth, with 'Z' representing 35. If
 --- the string `e` is not a valid numeral in the given base, the function
 --- returns **nil**.
----@overload fun(e:string|number):number
----@param e string|number
+---@overload fun(e:number):number
+---@overload fun(e:number, base: int):number
+---@overload fun(e:string):number|nil
+---@overload fun(e:string, base: int):number|nil
+---@overload fun(e:any):nil
+---@overload fun(e:any, base:int):nil
+---@param e any
 ---@param base? int
----@return number
+---@return number|nil
 function tonumber(e, base) end
 
 ---
