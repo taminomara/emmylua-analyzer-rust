@@ -1583,7 +1583,7 @@ Syntax(Chunk)@0..84
         Syntax(TypeName)@69..75
           Token(TkName)@69..75 "number"
     Token(TkEndOfLine)@75..76 "\n"
-    Token(TkWhitespace)@76..84 "        "     "
+    Token(TkWhitespace)@76..84 "        "
         "#;
 
         assert_ast_eq!(code, result);
