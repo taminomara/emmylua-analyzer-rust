@@ -1548,14 +1548,15 @@ Syntax(Chunk)@0..197
     fn test_operator() {
         let code = r#"
         ---@operator add(number): number
+        ---@operator call: number
         "#;
 
         let result = r#"
-Syntax(Chunk)@0..50
-  Syntax(Block)@0..50
+Syntax(Chunk)@0..84
+  Syntax(Block)@0..84
     Token(TkEndOfLine)@0..1 "\n"
     Token(TkWhitespace)@1..9 "        "
-    Syntax(Comment)@9..41
+    Syntax(Comment)@9..75
       Token(TkDocStart)@9..13 "---@"
       Syntax(DocTagOperator)@13..41
         Token(TkTagOperator)@13..21 "operator"
@@ -1570,8 +1571,19 @@ Syntax(Chunk)@0..50
         Token(TkWhitespace)@34..35 " "
         Syntax(TypeName)@35..41
           Token(TkName)@35..41 "number"
-    Token(TkEndOfLine)@41..42 "\n"
-    Token(TkWhitespace)@42..50 "        "
+      Token(TkEndOfLine)@41..42 "\n"
+      Token(TkWhitespace)@42..50 "        "
+      Token(TkDocStart)@50..54 "---@"
+      Syntax(DocTagOperator)@54..75
+        Token(TkTagOperator)@54..62 "operator"
+        Token(TkWhitespace)@62..63 " "
+        Token(TkName)@63..67 "call"
+        Token(TkColon)@67..68 ":"
+        Token(TkWhitespace)@68..69 " "
+        Syntax(TypeName)@69..75
+          Token(TkName)@69..75 "number"
+    Token(TkEndOfLine)@75..76 "\n"
+    Token(TkWhitespace)@76..84 "        "     "
         "#;
 
         assert_ast_eq!(code, result);

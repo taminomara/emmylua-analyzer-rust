@@ -45,6 +45,7 @@ impl LuaOperatorMetaMethod {
             "eq" => Some(LuaOperatorMetaMethod::Eq),
             "lt" => Some(LuaOperatorMetaMethod::Lt),
             "le" => Some(LuaOperatorMetaMethod::Le),
+            "call" => Some(LuaOperatorMetaMethod::Call),
             _ => None
         }
     }

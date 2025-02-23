@@ -562,6 +562,7 @@ fn parse_version(p: &mut LuaDocParser) -> ParseResult {
 }
 
 // ---@operator add(number): number
+// ---@operator call: number
 fn parse_tag_operator(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagOperator);
@@ -570,8 +571,8 @@ fn parse_tag_operator(p: &mut LuaDocParser) -> ParseResult {
     if p.current_token() == LuaTokenKind::TkLeftParen {
         p.bump();
         parse_type_list(p)?;
+        expect_token(p, LuaTokenKind::TkRightParen)?;
     }
-    expect_token(p, LuaTokenKind::TkRightParen)?;
 
     if p.current_token() == LuaTokenKind::TkColon {
         p.bump();
