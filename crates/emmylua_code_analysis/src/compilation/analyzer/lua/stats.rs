@@ -108,17 +108,6 @@ enum TypeOwner {
     Member(LuaMemberId),
 }
 
-#[allow(unused)]
-impl TypeOwner {
-    pub fn is_decl(&self) -> bool {
-        matches!(self, TypeOwner::Decl(_))
-    }
-
-    pub fn is_member(&self) -> bool {
-        matches!(self, TypeOwner::Member(_))
-    }
-}
-
 fn get_var_type_owner(
     analyzer: &mut LuaAnalyzer,
     var: LuaVarExpr,

@@ -1,33 +1,59 @@
 use emmylua_parser::{
     LuaAstNode, LuaAstToken, LuaDocDescriptionOwner, LuaDocFieldKey, LuaDocTagField,
-    LuaDocTagOperator,
+    LuaDocTagOperator, LuaDocType,
 };
 
-use crate::db_index::{
-    LuaMember, LuaMemberKey, LuaMemberOwner, LuaOperator, LuaOperatorMetaMethod,
-    LuaPropertyOwnerId, LuaType,
+use crate::{
+    db_index::{
+        LuaMember, LuaMemberKey, LuaMemberOwner, LuaOperator, LuaOperatorMetaMethod,
+        LuaPropertyOwnerId, LuaType,
+    },
+    AnalyzeError, DiagnosticCode, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaSignatureId,
 };
 
 use super::{infer_type::infer_type, DocAnalyzer};
 
 pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<()> {
-    let current_type_id = analyzer.current_type_id.clone()?;
-    let owner = LuaMemberOwner::Type(current_type_id.clone());
+    let current_type_id = match &analyzer.current_type_id {
+        Some(id) => id.clone(),
+        None => {
+            analyzer.db.get_diagnostic_index_mut().add_diagnostic(
+                analyzer.file_id,
+                AnalyzeError {
+                    kind: DiagnosticCode::AnnotationUsageError,
+                    message: t!("`@field` must be used under a `@class`").to_string(),
+                    range: tag.get_range(),
+                },
+            );
+            return None;
+        }
+    };
+
+    let member_owner = LuaMemberOwner::Type(current_type_id.clone());
     let visibility_kind = if let Some(visibility_token) = tag.get_visibility_token() {
         Some(visibility_token.get_visibility())
     } else {
         None
     };
 
+    let member_id = LuaMemberId::new(tag.get_syntax_id(), analyzer.file_id);
+
     let nullable = tag.is_nullable();
-    let mut type_ref = if let Some(type_ref) = tag.get_type() {
-        infer_type(analyzer, type_ref)
-    } else {
-        LuaType::Unknown
+    let type_node = tag.get_type()?;
+    let (mut field_type, property_owner) = match &type_node {
+        LuaDocType::Func(doc_func) => {
+            let typ = infer_type(analyzer, type_node.clone());
+            let signature_id = LuaSignatureId::from_doc_func(analyzer.file_id, &doc_func);
+            (typ, LuaPropertyOwnerId::Signature(signature_id))
+        }
+        _ => (
+            infer_type(analyzer, type_node),
+            LuaPropertyOwnerId::Member(member_id),
+        ),
     };
 
-    if nullable && !type_ref.is_nullable() {
-        type_ref = LuaType::Nullable(type_ref.into());
+    if nullable && !field_type.is_nullable() {
+        field_type = LuaType::Nullable(field_type.into());
     }
 
     let description = if let Some(description) = tag.get_description() {
@@ -36,58 +62,43 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
         None
     };
 
-    let key = tag.get_field_key()?;
-    let member_id = match key {
+    let field_key = tag.get_field_key()?;
+    let (key, member) = match field_key {
         LuaDocFieldKey::Name(name_token) => {
             let key = LuaMemberKey::Name(name_token.get_name_text().to_string().into());
             let member = LuaMember::new(
-                owner,
+                member_owner,
                 key.clone(),
                 analyzer.file_id,
                 tag.get_syntax_id(),
-                Some(type_ref),
+                Some(field_type),
             );
 
-            analyzer.db.get_reference_index_mut().add_index_reference(
-                key,
-                analyzer.file_id,
-                tag.get_syntax_id(),
-            );
-            analyzer.db.get_member_index_mut().add_member(member)
+            (key, member)
         }
         LuaDocFieldKey::String(string_token) => {
             let key = LuaMemberKey::Name(string_token.get_value().into());
             let member = LuaMember::new(
-                owner,
+                member_owner,
                 key.clone(),
                 analyzer.file_id,
                 tag.get_syntax_id(),
-                Some(type_ref),
+                Some(field_type),
             );
 
-            analyzer.db.get_reference_index_mut().add_index_reference(
-                key,
-                analyzer.file_id,
-                tag.get_syntax_id(),
-            );
-            analyzer.db.get_member_index_mut().add_member(member)
+            (key, member)
         }
         LuaDocFieldKey::Integer(int_token) => {
             let key = LuaMemberKey::Integer(int_token.get_int_value());
             let member = LuaMember::new(
-                owner,
+                member_owner,
                 key.clone(),
                 analyzer.file_id,
                 tag.get_syntax_id(),
-                Some(type_ref),
+                Some(field_type),
             );
 
-            analyzer.db.get_reference_index_mut().add_index_reference(
-                key,
-                analyzer.file_id,
-                tag.get_syntax_id(),
-            );
-            analyzer.db.get_member_index_mut().add_member(member)
+            (key, member)
         }
         LuaDocFieldKey::Type(doc_type) => {
             let range = doc_type.get_range();
@@ -97,10 +108,10 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
             }
 
             let operator = LuaOperator::new(
-                current_type_id,
+                current_type_id.clone(),
                 LuaOperatorMetaMethod::Index,
                 vec![key_type_ref],
-                type_ref,
+                field_type,
                 analyzer.file_id,
                 range,
             );
@@ -109,7 +120,22 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
         }
     };
 
-    let property_owner = LuaPropertyOwnerId::Member(member_id);
+    analyzer.db.get_reference_index_mut().add_index_reference(
+        key,
+        analyzer.file_id,
+        tag.get_syntax_id(),
+    );
+
+    match &property_owner {
+        LuaPropertyOwnerId::Signature(signature_id) => {
+            merge_signature_member(analyzer, member, signature_id.clone());
+        }
+        LuaPropertyOwnerId::Member(_) => {
+            analyzer.db.get_member_index_mut().add_member(member);
+        }
+        _ => {}
+    }
+
     if let Some(visibility_kind) = visibility_kind {
         analyzer.db.get_property_index_mut().add_visibility(
             analyzer.file_id,
@@ -126,6 +152,89 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
         );
     }
 
+    Some(())
+}
+
+fn merge_signature_member(
+    analyzer: &mut DocAnalyzer,
+    mut member: LuaMember,
+    signature_id: LuaSignatureId,
+) -> Option<()> {
+    let key = member.get_key();
+    let owner = member.get_owner();
+
+    if let Some(old_member) = analyzer
+        .db
+        .get_member_index()
+        .get_member_from_owner(&owner, &key)
+    {
+        let old_type = old_member.get_decl_type().clone();
+        match old_type {
+            LuaType::Signature(old_signature_id) => {
+                let signatrue = analyzer
+                    .db
+                    .get_signature_index_mut()
+                    .get_mut(&old_signature_id)?;
+                if let LuaType::DocFunction(f) = member.get_decl_type() {
+                    signatrue.overloads.push(f.clone());
+                }
+
+                return Some(());
+            }
+            _ => {
+                analyzer.db.get_diagnostic_index_mut().add_diagnostic(
+                    analyzer.file_id,
+                    AnalyzeError {
+                        kind: DiagnosticCode::AnnotationUsageError,
+                        message: t!("`@field` with signature type can't be used with other types")
+                            .to_string(),
+                        range: member.get_range(),
+                    },
+                );
+            }
+        }
+    }
+
+    // create signatrue from doc func type
+    let signature = analyzer
+        .db
+        .get_signature_index_mut()
+        .get_or_create(signature_id.clone());
+
+    if let LuaType::DocFunction(f) = member.get_decl_type() {
+        signature.is_colon_define = f.is_colon_define();
+        for (i, (name, typ)) in f.get_params().iter().enumerate() {
+            signature.params.push(name.clone());
+            signature.param_docs.insert(
+                i,
+                LuaDocParamInfo {
+                    name: name.clone(),
+                    type_ref: typ.clone().unwrap_or(LuaType::Any),
+                    nullable: false,
+                    description: None,
+                },
+            );
+        }
+
+        for typ in f.get_ret() {
+            signature.return_docs.push(LuaDocReturnInfo {
+                name: None,
+                type_ref: typ.clone(),
+                description: None,
+            });
+        }
+
+        if f.is_async() {
+            let property_owner = LuaPropertyOwnerId::Signature(signature_id.clone());
+            analyzer
+                .db
+                .get_property_index_mut()
+                .add_async(analyzer.file_id, property_owner);
+        }
+    }
+
+    member.decl_type = LuaType::Signature(signature_id);
+    analyzer.db.get_member_index_mut().add_member(member);
     Some(())
 }
 

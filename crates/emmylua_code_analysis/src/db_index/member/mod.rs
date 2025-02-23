@@ -69,6 +69,19 @@ impl LuaMemberIndex {
     ) -> Option<&HashMap<LuaMemberKey, LuaMemberId>> {
         self.owner_members.get(&owner)
     }
+
+    pub fn get_member_from_owner(
+        &self,
+        owner: &LuaMemberOwner,
+        key: &LuaMemberKey,
+    ) -> Option<&LuaMember> {
+        if let Some(member_id) = self.owner_members.get(owner)?.get(key) {
+            self.members.get(member_id)
+        } else {
+            None
+        }
+    }
+
 }
 
 impl LuaIndex for LuaMemberIndex {

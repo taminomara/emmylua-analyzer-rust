@@ -54,6 +54,8 @@ pub enum DiagnosticCode {
     NeedCheckNil,
     /// Await in sync
     AwaitInSync,
+    /// Doc tag usage error
+    AnnotationUsageError,
 
     #[serde(other)]
     None,
@@ -78,6 +80,7 @@ pub fn get_default_severity(code: DiagnosticCode) -> DiagnosticSeverity {
         DiagnosticCode::UndefinedField => DiagnosticSeverity::WARNING,
         DiagnosticCode::LocalConstReassign => DiagnosticSeverity::ERROR,
         DiagnosticCode::DuplicateType => DiagnosticSeverity::WARNING,
+        DiagnosticCode::AnnotationUsageError => DiagnosticSeverity::ERROR,
         _ => DiagnosticSeverity::WARNING,
     }
 }
