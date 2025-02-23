@@ -158,7 +158,7 @@ pub fn build_func_stat_symbol(
     let func_name = func.get_func_name()?;
     let name = func_name.syntax().text().to_string();
     let closure = func.get_closure()?;
-    let signature_id = LuaSignatureId::new(file_id, &closure);
+    let signature_id = LuaSignatureId::from_closure(file_id, &closure);
     let func_ty = LuaType::Signature(signature_id);
     let desc = builder.get_symbol_kind_and_detail(Some(&func_ty));
     let symbol = LuaSymbol::new(name, desc.1, desc.0, func.get_range());

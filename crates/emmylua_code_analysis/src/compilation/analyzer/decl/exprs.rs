@@ -91,7 +91,7 @@ pub fn analyze_index_expr(analyzer: &mut DeclAnalyzer, index_expr: LuaIndexExpr)
 
 pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) -> Option<()> {
     let params = expr.get_params_list()?;
-    let signature_id = LuaSignatureId::new(analyzer.get_file_id(), &expr);
+    let signature_id = LuaSignatureId::from_closure(analyzer.get_file_id(), &expr);
     let file_id = analyzer.get_file_id();
     for (idx, param) in params.get_params().enumerate() {
         let name = param.get_name_token().map_or_else(

@@ -128,7 +128,7 @@ pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaPropertyOwnerId> {
     match owner {
         LuaAst::LuaLocalFuncStat(_) | LuaAst::LuaFuncStat(_) => {
             let closure = find_owner_closure(analyzer)?;
-            Some(LuaPropertyOwnerId::Signature(LuaSignatureId::new(
+            Some(LuaPropertyOwnerId::Signature(LuaSignatureId::from_closure(
                 analyzer.file_id,
                 &closure,
             )))
@@ -161,7 +161,7 @@ pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaPropertyOwnerId> {
             let call_args = call_expr.get_args_list()?;
             for call_arg in call_args.get_args() {
                 if let LuaExpr::ClosureExpr(closure) = call_arg {
-                    return Some(LuaPropertyOwnerId::Signature(LuaSignatureId::new(
+                    return Some(LuaPropertyOwnerId::Signature(LuaSignatureId::from_closure(
                         analyzer.file_id,
                         &closure,
                     )));
@@ -170,7 +170,7 @@ pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaPropertyOwnerId> {
             None
         }
         LuaAst::LuaClosureExpr(closure) => Some(LuaPropertyOwnerId::Signature(
-            LuaSignatureId::new(analyzer.file_id, &closure),
+            LuaSignatureId::from_closure(analyzer.file_id, &closure),
         )),
 
         _ => None,

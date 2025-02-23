@@ -49,7 +49,7 @@ fn check_call_is_in_async_function(
 ) -> Option<bool> {
     let file_id = semantic_model.get_file_id();
     let closure = call_expr.ancestors::<LuaClosureExpr>().next()?;
-    let signature_id = LuaSignatureId::new(file_id, &closure);
+    let signature_id = LuaSignatureId::from_closure(file_id, &closure);
     let property_owner = LuaPropertyOwnerId::Signature(signature_id);
     let property = semantic_model
         .get_db()

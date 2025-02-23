@@ -47,7 +47,7 @@ fn build_closure_hint(
         return Some(());
     }
     let file_id = semantic_model.get_file_id();
-    let signature_id = LuaSignatureId::new(file_id, &closure);
+    let signature_id = LuaSignatureId::from_closure(file_id, &closure);
     let signature = semantic_model
         .get_db()
         .get_signature_index()

@@ -264,7 +264,7 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
 
     let closure = stat.get_closure()?;
     let file_id = analyzer.get_file_id();
-    let closure_owner_id = LuaPropertyOwnerId::Signature(LuaSignatureId::new(file_id, &closure));
+    let closure_owner_id = LuaPropertyOwnerId::Signature(LuaSignatureId::from_closure(file_id, &closure));
     analyzer.db.get_property_index_mut().add_owner_map(
         property_owner_id,
         closure_owner_id,
@@ -294,7 +294,7 @@ pub fn analyze_local_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalFuncSt
 
     let decl_id = analyzer.add_decl(decl);
     let closure = stat.get_closure()?;
-    let closure_owner_id = LuaPropertyOwnerId::Signature(LuaSignatureId::new(file_id, &closure));
+    let closure_owner_id = LuaPropertyOwnerId::Signature(LuaSignatureId::from_closure(file_id, &closure));
     let property_decl_id = LuaPropertyOwnerId::LuaDecl(decl_id);
     analyzer
         .db

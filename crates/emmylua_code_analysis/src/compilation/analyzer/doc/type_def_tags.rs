@@ -404,7 +404,7 @@ pub fn analyze_func_generic(analyzer: &mut DocAnalyzer, tag: LuaDocTagGeneric) -
             .add_generic_scope(ranges, params_result, true);
 
         let closure = find_owner_closure(analyzer)?;
-        let signature_id = LuaSignatureId::new(analyzer.file_id, &closure);
+        let signature_id = LuaSignatureId::from_closure(analyzer.file_id, &closure);
         let signature = analyzer
             .db
             .get_signature_index_mut()

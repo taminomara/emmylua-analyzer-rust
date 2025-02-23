@@ -10,7 +10,7 @@ use crate::{
 use super::{func_body::analyze_func_body_returns, LuaAnalyzer, LuaReturnPoint};
 
 pub fn analyze_closure(analyzer: &mut LuaAnalyzer, closure: LuaClosureExpr) -> Option<()> {
-    let signature_id = LuaSignatureId::new(analyzer.file_id, &closure);
+    let signature_id = LuaSignatureId::from_closure(analyzer.file_id, &closure);
 
     analyze_colon_define(analyzer, &signature_id, &closure);
     analyze_lambda_params(analyzer, &signature_id, &closure);

@@ -114,7 +114,7 @@ pub fn analyze_param(analyzer: &mut DocAnalyzer, tag: LuaDocTagParam) -> Option<
 
     // bind type ref to signature and param
     if let Some(closure) = find_owner_closure(analyzer) {
-        let id = LuaSignatureId::new(analyzer.file_id, &closure);
+        let id = LuaSignatureId::from_closure(analyzer.file_id, &closure);
         let signature = analyzer.db.get_signature_index_mut().get_or_create(id);
         let param_info = LuaDocParamInfo {
             name: name.clone(),
@@ -167,7 +167,7 @@ pub fn analyze_return(analyzer: &mut DocAnalyzer, tag: LuaDocTagReturn) -> Optio
     };
 
     if let Some(closure) = find_owner_closure(analyzer) {
-        let signature_id = LuaSignatureId::new(analyzer.file_id, &closure);
+        let signature_id = LuaSignatureId::from_closure(analyzer.file_id, &closure);
         let returns = tag.get_type_and_name_list();
         for (doc_type, name_token) in returns {
             let name = if let Some(name) = name_token {
@@ -203,7 +203,7 @@ pub fn analyze_overload(analyzer: &mut DocAnalyzer, tag: LuaDocTagOverload) -> O
         let type_ref = infer_type(analyzer, tag.get_type()?);
         match type_ref {
             LuaType::DocFunction(func) => {
-                let id = LuaSignatureId::new(analyzer.file_id, &closure);
+                let id = LuaSignatureId::from_closure(analyzer.file_id, &closure);
                 let signature = analyzer.db.get_signature_index_mut().get_or_create(id);
                 signature.overloads.push(func);
             }

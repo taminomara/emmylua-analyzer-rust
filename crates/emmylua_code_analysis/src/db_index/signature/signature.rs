@@ -3,7 +3,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
 use std::{collections::HashMap, sync::Arc};
 
-use emmylua_parser::{LuaAstNode, LuaClosureExpr};
+use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaDocFuncType};
 use rowan::TextSize;
 
 use crate::{
@@ -79,7 +79,10 @@ impl LuaSignature {
     }
 
     pub fn get_return_types(&self) -> Vec<LuaType> {
-        self.return_docs.iter().map(|info| info.type_ref.clone()).collect()
+        self.return_docs
+            .iter()
+            .map(|info| info.type_ref.clone())
+            .collect()
     }
 }
 
@@ -157,10 +160,17 @@ impl<'de> Deserialize<'de> for LuaSignatureId {
 }
 
 impl LuaSignatureId {
-    pub fn new(file_id: FileId, closure: &LuaClosureExpr) -> Self {
+    pub fn from_closure(file_id: FileId, closure: &LuaClosureExpr) -> Self {
         Self {
             file_id,
             position: closure.get_position(),
+        }
+    }
+
+    pub fn from_doc_func(file_id: FileId, func_type: &LuaDocFuncType) -> Self {
+        Self {
+            file_id,
+            position: func_type.get_position(),
         }
     }
 

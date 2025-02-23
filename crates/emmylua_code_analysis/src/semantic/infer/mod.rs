@@ -116,7 +116,7 @@ fn infer_closure_expr(
     config: &LuaInferConfig,
     closure: LuaClosureExpr,
 ) -> InferResult {
-    let signature_id = LuaSignatureId::new(config.get_file_id(), &closure);
+    let signature_id = LuaSignatureId::from_closure(config.get_file_id(), &closure);
     Some(LuaType::Signature(signature_id))
 }
 
