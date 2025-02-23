@@ -87,15 +87,17 @@ fn infer_custom_type_members(
 
     let mut members = Vec::new();
     let member_index = db.get_member_index();
-    let member_map = member_index.get_member_map(LuaMemberOwner::Type(type_decl_id.clone()))?;
-    for member_id in member_map.values() {
-        let member = member_index.get_member(member_id)?;
-        members.push(LuaMemberInfo {
-            property_owner_id: Some(LuaPropertyOwnerId::Member(*member_id)),
-            key: member.get_key().clone(),
-            typ: member.get_decl_type().clone(),
-            origin_typ: None,
-        });
+    let member_map = member_index.get_member_map(LuaMemberOwner::Type(type_decl_id.clone()));
+    if let Some(member_map) = member_map {
+        for member_id in member_map.values() {
+            let member = member_index.get_member(member_id)?;
+            members.push(LuaMemberInfo {
+                property_owner_id: Some(LuaPropertyOwnerId::Member(*member_id)),
+                key: member.get_key().clone(),
+                typ: member.get_decl_type().clone(),
+                origin_typ: None,
+            });
+        }
     }
 
     if type_decl.is_class() {
