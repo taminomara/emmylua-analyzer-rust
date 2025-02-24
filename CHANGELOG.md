@@ -4,6 +4,15 @@
 
 `CHG` Refactor `folding range`
 
+`FIX` Fix super class completion issue
+
+`NEW` Support `@field` function overload like:
+```lua
+---@class AAA
+---@field event fun(s:string):string
+---@field event fun(s:number):number
+```
+
 # 0.5.1 
 
 `FIX` Fix issue `emmylua_ls` might not exit in unix.
