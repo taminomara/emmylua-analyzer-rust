@@ -13,6 +13,12 @@
 ---@field event fun(s:number):number
 ```
 
+`FIX` Fix enum type check
+
+`FIX` custom operator infer
+
+
+
 # 0.5.1 
 
 `FIX` Fix issue `emmylua_ls` might not exit in unix.

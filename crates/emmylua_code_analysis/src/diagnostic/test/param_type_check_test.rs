@@ -135,4 +135,58 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_111() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+        local Table = {}
+
+        ---@param target table
+        ---@param ... table
+        ---@return table
+        function Table.mergeInto(target, ...)
+            -- Stuff
+        end
+
+        ---@param ... table
+        ---@return table
+        function Table.merge(...)
+            return Table.mergeInto({}, ...)
+        end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_var_param_check() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+        ---@param target table
+        ---@param ... table
+        ---@return table
+        function mergeInto(target, ...)
+            -- Stuff
+        end
+        "#);
+
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+        mergeInto({}, 1)
+        "#
+        ));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+        mergeInto({}, {}, {})
+        "#
+        ));
+    }
 }

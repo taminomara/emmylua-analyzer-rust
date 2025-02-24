@@ -1,7 +1,12 @@
-use emmylua_parser::{LuaAst, LuaAstNode, LuaCallExpr};
+use std::ops::Deref;
+
+use emmylua_parser::{LuaAst, LuaAstNode, LuaCallExpr, LuaExpr};
 use rowan::TextRange;
 
-use crate::{humanize_type, DiagnosticCode, LuaType, RenderLevel, SemanticModel, TypeCheckFailReason, TypeCheckResult};
+use crate::{
+    humanize_type, DiagnosticCode, LuaMultiReturn, LuaType, RenderLevel, SemanticModel,
+    TypeCheckFailReason, TypeCheckResult,
+};
 
 use super::DiagnosticContext;
 
@@ -49,76 +54,135 @@ fn check_call_expr(
     }
 
     for (idx, param) in params.iter().enumerate() {
-        if idx >= args.len() {
+        let arg = match args.get(idx) {
+            Some(arg) => match arg {
+                Some(arg) => arg,
+                None => continue,
+            },
+            None => break,
+        };
+
+        if param.0 == "..." {
+            if let Some(variadic_type) = param.1.clone() {
+                check_variadic_param_match_args(
+                    context,
+                    semantic_model,
+                    &variadic_type,
+                    &args[idx..],
+                );
+            }
+
             break;
         }
 
-        let arg = &args[idx];
-        if arg.is_none() {
-            continue;
-        }
-        let arg = arg.clone().unwrap();
+        if let Some(param_type) = param.1.clone() {
+            let expr_type = semantic_model
+                .infer_expr(arg.clone())
+                .unwrap_or(LuaType::Any);
 
-        if param.0 == "..." {
-            if param.1.is_none() {
-                break;
-            }
-
-            let param_type = param.1.clone().unwrap();
-            for arg in args.iter().skip(idx) {
-                if let Some(arg) = arg {
-                    let mut expr_type = semantic_model
-                        .infer_expr(arg.clone())
-                        .unwrap_or(LuaType::Any);
-                    // treat unknown type as any
-                    if expr_type.is_unknown() {
-                        expr_type = LuaType::Any;
+            match &expr_type {
+                LuaType::MuliReturn(multi) => {
+                    for (idx, param_type) in params[idx..].iter().map(|p| p.1.clone()).enumerate() {
+                        match (param_type, multi.get_type(idx)) {
+                            (Some(param_type), Some(expr_type)) => {
+                                let result = semantic_model.type_check(&param_type, &expr_type);
+                                if !result.is_ok() {
+                                    add_type_check_diagnostic(
+                                        context,
+                                        semantic_model,
+                                        arg.get_range(),
+                                        &param_type,
+                                        &expr_type,
+                                        result,
+                                    );
+                                }
+                            }
+                            (None, _) => continue,
+                            _ => break,
+                        }
                     }
 
-                    if !semantic_model.type_check(&param_type, &expr_type).is_ok() {
-                        let db = semantic_model.get_db();
-                        context.add_diagnostic(
-                            DiagnosticCode::ParamTypeNotMatch,
+                    break;
+                }
+                _ => {
+                    let result = semantic_model.type_check(&param_type, &expr_type);
+                    if !result.is_ok() {
+                        add_type_check_diagnostic(
+                            context,
+                            semantic_model,
                             arg.get_range(),
-                            format!(
-                                "expected {} but found {}",
-                                humanize_type(db, &param_type, RenderLevel::Simple),
-                                humanize_type(db, &expr_type, RenderLevel::Simple)
-                            ),
-                            None,
+                            &param_type,
+                            &expr_type,
+                            result,
                         );
                     }
                 }
-            }
-        } else {
-            if param.1.is_none() {
-                continue;
-            }
-
-            let param_type = param.1.clone().unwrap();
-            let mut expr_type = semantic_model
-                .infer_expr(arg.clone())
-                .unwrap_or(LuaType::Any);
-            // treat unknown type as any
-            if expr_type.is_unknown() {
-                expr_type = LuaType::Any;
-            }
-            // todo: use type check result
-            let result = semantic_model.type_check(&param_type, &expr_type);
-            if !result.is_ok() {
-                add_type_check_diagnostic(
-                    context,
-                    semantic_model,
-                    arg.get_range(),
-                    &param_type,
-                    &expr_type,
-                    result,
-                );
             }
         }
     }
 
     Some(())
+}
+
+fn check_variadic_param_match_args(
+    context: &mut DiagnosticContext,
+    semantic_model: &SemanticModel,
+    variadic_type: &LuaType,
+    args: &[Option<LuaExpr>],
+) {
+    for arg in args {
+        if let Some(arg) = arg {
+            let expr_type = semantic_model
+                .infer_expr(arg.clone())
+                .unwrap_or(LuaType::Any);
+
+            match &expr_type {
+                LuaType::MuliReturn(multi_return) => match multi_return.deref() {
+                    LuaMultiReturn::Base(base) => {
+                        let result = semantic_model.type_check(&variadic_type, base);
+                        if !result.is_ok() {
+                            add_type_check_diagnostic(
+                                context,
+                                semantic_model,
+                                arg.get_range(),
+                                &variadic_type,
+                                base,
+                                result,
+                            );
+                        }
+                    }
+                    LuaMultiReturn::Multi(types) => {
+                        for expr_type in types {
+                            let result = semantic_model.type_check(&variadic_type, expr_type);
+                            if !result.is_ok() {
+                                add_type_check_diagnostic(
+                                    context,
+                                    semantic_model,
+                                    arg.get_range(),
+                                    &variadic_type,
+                                    expr_type,
+                                    result,
+                                );
+                            }
+                        }
+                    }
+                },
+                _ => {
+                    let result = semantic_model.type_check(&variadic_type, &expr_type);
+                    if !result.is_ok() {
+                        add_type_check_diagnostic(
+                            context,
+                            semantic_model,
+                            arg.get_range(),
+                            &variadic_type,
+                            &expr_type,
+                            result,
+                        );
+                    }
+                }
+            }
+        }
+    }
 }
 
 fn add_type_check_diagnostic(
@@ -134,12 +198,7 @@ fn add_type_check_diagnostic(
         Ok(_) => return,
         Err(reason) => match reason {
             TypeCheckFailReason::TypeNotMatchWithReason(reason) => {
-                context.add_diagnostic(
-                    DiagnosticCode::ParamTypeNotMatch,
-                    range,
-                    reason,
-                    None,
-                );
+                context.add_diagnostic(DiagnosticCode::ParamTypeNotMatch, range, reason, None);
             }
             TypeCheckFailReason::TypeNotMatch => {
                 context.add_diagnostic(
@@ -149,7 +208,8 @@ fn add_type_check_diagnostic(
                         "expected %{source} but found %{found}",
                         source = humanize_type(db, &param_type, RenderLevel::Simple),
                         found = humanize_type(db, &expr_type, RenderLevel::Simple)
-                    ).to_string(),
+                    )
+                    .to_string(),
                     None,
                 );
             }
