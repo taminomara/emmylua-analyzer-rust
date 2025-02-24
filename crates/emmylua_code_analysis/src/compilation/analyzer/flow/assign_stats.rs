@@ -8,7 +8,6 @@ use crate::{DeclReference, LuaFlowChain, TypeAssertion};
 
 use super::FlowAnalyzer;
 
-#[allow(unused)]
 pub fn infer_from_assign_stats(
     analyzer: &FlowAnalyzer,
     flow_chains: &mut LuaFlowChain,
@@ -29,9 +28,9 @@ pub fn infer_from_assign_stats(
         .get_decl(&decl_id)?
         .get_syntax_id();
     let decl_root = syntax_id.to_node_from_root(analyzer.root.syntax())?;
-    let mut if_stat_related_exprs: HashMap<LuaIfStat, Vec<LuaExpr>> = HashMap::new();
+    let mut if_stat_related_exprs: HashMap<LuaIfStat, Vec<(LuaExpr, i32)>> = HashMap::new();
     for value_expr in assign_value_exprs {
-        let if_stat = match find_if_stat(&value_expr, &decl_root) {
+        let if_stat = match find_if_stat(&value_expr.0, &decl_root) {
             Some(if_stat) => if_stat,
             None => continue,
         };
@@ -53,7 +52,7 @@ pub fn infer_from_assign_stats(
 fn infer_one_assign_stat(
     analyzer: &FlowAnalyzer,
     flow_chains: &mut LuaFlowChain,
-    value_exprs: &mut Vec<LuaExpr>,
+    value_exprs: &mut Vec<(LuaExpr, i32)>,
     decl_ref: &DeclReference,
 ) -> Option<()> {
     let assign_stat = find_assign_stat(analyzer, decl_ref)?;
@@ -62,7 +61,7 @@ fn infer_one_assign_stat(
 
     let effect_range = get_effect_range(&assign_stat)?;
     flow_chains.add_type_assert(
-        crate::TypeAssertion::Reassign(value_expr.get_syntax_id()),
+        TypeAssertion::Reassign((value_expr.0.get_syntax_id(), value_expr.1)),
         effect_range,
     );
 
@@ -78,12 +77,23 @@ fn find_assign_stat(analyzer: &FlowAnalyzer, decl_ref: &DeclReference) -> Option
 fn find_assign_value_expr(
     assign_stat: &LuaAssignStat,
     decl_ref: &DeclReference,
-) -> Option<LuaExpr> {
+) -> Option<(LuaExpr, i32)> {
     let (vars, exprs) = assign_stat.get_var_and_expr_list();
+    if exprs.len() == 0 {
+        return None;
+    }
+
     let var_index = vars
         .iter()
         .position(|var| var.get_position() == decl_ref.range.start())?;
-    exprs.get(var_index).cloned()
+
+    match exprs.get(var_index) {
+        Some(expr) => Some((expr.clone(), 0)),
+        None => Some((
+            exprs.last().unwrap().clone(),
+            (var_index - exprs.len()) as i32,
+        )),
+    }
 }
 
 fn get_effect_range(assign_stat: &LuaAssignStat) -> Option<TextRange> {
@@ -114,7 +124,7 @@ fn find_if_stat(value_expr: &LuaExpr, decl_root: &LuaSyntaxNode) -> Option<LuaIf
 
 fn analyze_if_stat(
     flow_chains: &mut LuaFlowChain,
-    if_related_exprs: Vec<LuaExpr>,
+    if_related_exprs: Vec<(LuaExpr, i32)>,
     if_stat: LuaIfStat,
 ) -> Option<()> {
     let parent_block_range = if_stat.get_parent::<LuaBlock>()?.get_range();
@@ -149,7 +159,7 @@ fn analyze_if_stat(
 
     let reassign_vec = if_related_exprs
         .iter()
-        .map(|expr| expr.get_syntax_id())
+        .map(|expr| (expr.0.get_syntax_id(), expr.1))
         .collect();
 
     flow_chains.add_type_assert(TypeAssertion::AddUnion(reassign_vec), effect_range);
@@ -157,10 +167,10 @@ fn analyze_if_stat(
     Some(())
 }
 
-fn is_block_has_reassign(block: LuaBlock, if_related_exprs: &Vec<LuaExpr>) -> Option<bool> {
+fn is_block_has_reassign(block: LuaBlock, if_related_exprs: &Vec<(LuaExpr, i32)>) -> Option<bool> {
     let mut has_reassign = false;
     let range = block.get_range();
-    for expr in if_related_exprs {
+    for (expr, _) in if_related_exprs {
         if range.contains_range(expr.get_range()) {
             has_reassign = true;
             break;

@@ -3,27 +3,32 @@ mod test {
     use crate::VirtualWorkspace;
 
     #[test]
-    fn test_closure_return() {
+    fn test_flow() {
         let mut ws = VirtualWorkspace::new_with_init_std_lib();
 
         ws.def(
             r#"
-        --- @generic T, U
-        --- @param arr T[]
-        --- @param op fun(item: T, index: integer): U
-        --- @return U[]
-        function map(arr, op)
-        end
+
         "#,
         );
 
-        let ty = ws.expr_ty(
+        ws.def(
             r#"
-        map({ 1, 2, 3 }, function(item, i)
-            return tostring(item)
-        end)
+        --- @return string[] stdout
+        --- @return string? stderr
+        local function foo() end
+
+        --- @param _a string[]
+        local function bar(_a) end
+
+        local a = {}
+
+        a = foo()
+
+        b = a
         "#,
         );
+        let ty = ws.expr_ty("b");
         let expected = ws.ty("string[]");
         assert_eq!(ty, expected);
     }
