@@ -22,7 +22,7 @@ jobs:
           - { os: ubuntu-22.04,   target: aarch64-unknown-linux-gnu,   platform: linux-arm64,  cross: zigbuild, glibc: 2.17 }
           - { os: ubuntu-22.04,   target: riscv64gc-unknown-linux-gnu, platform: linux-riscv64,cross: cross }
           - { os: ubuntu-22.04,   target: x86_64-unknown-linux-musl,   platform: linux-musl,   cross: cross }
-          - { os: macos-latest,   target: x86_64-apple-darwin,         platform: darwin-x64,   cross: general }
+          - { os: macos-latest,   target: x86_64-apple-darwin,         platform: darwin-x64,   cross: general-macos-intel }
           - { os: macos-latest,   target: aarch64-apple-darwin,        platform: darwin-arm64, cross: general }
           - { os: windows-latest, target: x86_64-pc-windows-msvc,      platform: win32-x64,    cross: general }
           - { os: windows-latest, target: i686-pc-windows-msvc,        platform: win32-ia32,   cross: general }
@@ -56,6 +56,12 @@ jobs:
           cargo install --locked cargo-zigbuild
           pip3 install ziglang
           cargo zigbuild --release --target ${{ matrix.target }}.${{ matrix.glibc }} -p emmylua_ls
+      - name: Build - general macos-intel
+        if: ${{ matrix.cross == 'general-macos-intel' }}
+        run: |
+          rustup target add ${{ matrix.target }}
+          export MACOSX_DEPLOYMENT_TARGET=10.15
+          cargo build --release --target ${{ matrix.target }} -p emmylua_ls
       - name: copy-binary
         if: ${{ matrix.os != 'windows-latest'  }}
         run: |
@@ -67,10 +73,6 @@ jobs:
           mkdir -p ${{ github.workspace }}/artifact/
           cp ${{ github.workspace }}/target/${{ matrix.target }}/release/emmylua_ls.exe ${{ github.workspace }}/artifact/
         shell: pwsh
-      - name: test-macos-version
-        if: ${{ matrix.platform == 'darwin-x64'  }}
-        run: |
-          otool -l ./target/x86_64-apple-darwin/release/emmylua_ls | grep -A2 LC_BUILD_VERSION
       - name: Upload
         if: ${{ matrix.cross != 'zigbuild'  }}
         uses: actions/upload-artifact@v4
