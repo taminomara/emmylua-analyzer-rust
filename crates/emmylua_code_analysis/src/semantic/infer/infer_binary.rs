@@ -2,6 +2,7 @@ use emmylua_parser::{BinaryOperator, LuaBinaryExpr};
 use smol_str::SmolStr;
 
 use crate::{
+    check_type_compact,
     db_index::{DbIndex, LuaOperatorMetaMethod, LuaType},
     TypeOps,
 };
@@ -67,7 +68,7 @@ fn infer_binary_custom_operator(
     if let Some(operators) = operators {
         for operator in operators {
             let first_param = operator.get_operands().get(0)?;
-            if first_param == right {
+            if check_type_compact(db, first_param, right).is_ok() {
                 return Some(operator.get_result().clone());
             }
         }
@@ -77,7 +78,7 @@ fn infer_binary_custom_operator(
     if let Some(operators) = operators {
         for operator in operators {
             let first_param = operator.get_operands().get(0)?;
-            if first_param == left {
+            if check_type_compact(db, first_param, left).is_ok() {
                 return Some(operator.get_result().clone());
             }
         }

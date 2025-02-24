@@ -5,6 +5,7 @@ mod infer_index;
 mod infer_name;
 mod infer_table;
 mod infer_unary;
+mod test;
 
 use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLiteralToken};
 use infer_binary::infer_binary_expr;
