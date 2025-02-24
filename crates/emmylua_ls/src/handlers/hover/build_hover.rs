@@ -59,51 +59,38 @@ pub fn build_hover_content<'a>(
     db: &DbIndex,
     typ: Option<LuaType>,
     property_id: LuaPropertyOwnerId,
-    is_completion: bool, // 是否补全
+    is_completion: bool,
     token: Option<LuaSyntaxToken>,
 ) -> Option<HoverBuilder<'a>> {
+    let semantic_model = semantic_model?;
+    let mut builder = HoverBuilder::new(semantic_model, token, is_completion);
     match property_id {
         LuaPropertyOwnerId::LuaDecl(decl_id) => {
-            if let Some(semantic_model) = semantic_model {
-                let mut builder = HoverBuilder::new(semantic_model, token, is_completion);
-                if let Some(typ) = typ {
-                    build_decl_hover(&mut builder, db, typ, decl_id);
-                } else {
+            let effective_typ = match typ {
+                Some(t) => t,
+                None => {
                     let decl = db.get_decl_index().get_decl(&decl_id)?;
-                    let typ = decl.get_type()?;
-                    build_decl_hover(&mut builder, db, typ.clone(), decl_id);
+                    decl.get_type()?.clone()
                 }
-                Some(builder)
-            } else {
-                None
-            }
+            };
+            build_decl_hover(&mut builder, db, effective_typ, decl_id);
         }
         LuaPropertyOwnerId::Member(member_id) => {
-            if let Some(semantic_model) = semantic_model {
-                let mut builder = HoverBuilder::new(semantic_model, token, is_completion);
-                if let Some(typ) = typ {
-                    build_member_hover(&mut builder, db, typ, member_id);
-                } else {
+            let effective_typ = match typ {
+                Some(t) => t,
+                None => {
                     let member = db.get_member_index().get_member(&member_id)?;
-                    let typ = member.get_decl_type();
-                    build_member_hover(&mut builder, db, typ.clone(), member_id);
+                    member.get_decl_type().clone()
                 }
-                Some(builder)
-            } else {
-                None
-            }
+            };
+            build_member_hover(&mut builder, db, effective_typ, member_id);
         }
         LuaPropertyOwnerId::TypeDecl(type_decl_id) => {
-            if let Some(semantic_model) = semantic_model {
-                let mut builder = HoverBuilder::new(semantic_model, token, is_completion);
-                build_type_decl_hover(&mut builder, db, type_decl_id);
-                Some(builder)
-            } else {
-                None
-            }
+            build_type_decl_hover(&mut builder, db, type_decl_id);
         }
-        _ => None,
+        _ => return None,
     }
+    Some(builder)
 }
 
 fn build_decl_hover(
@@ -448,5 +435,3 @@ fn get_member_owner(
     }
     resolved_property_owner
 }
-
-
