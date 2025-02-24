@@ -109,4 +109,30 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_113() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            ---@enum Baz
+            local asd = {
+                Foo = 0,
+                Bar = 1,
+                Baz = 2,
+            }
+
+            ---@param bob {a: Baz}
+            function Foo(bob)
+                return Bar(bob)
+            end
+
+            ---@param bob {a: Baz}
+            function Bar(bob)
+            end
+        "#
+        ));
+    }
 }
