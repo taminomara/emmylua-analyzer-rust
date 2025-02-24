@@ -62,6 +62,7 @@ jobs:
           rustup target add ${{ matrix.target }}
           export MACOSX_DEPLOYMENT_TARGET=10.15
           cargo build --release --target ${{ matrix.target }} -p emmylua_ls
+          otool -l ${{ github.workspace }}/target/${{ matrix.target }}/release/emmylua_ls | grep -A 3 LC_VERSION_MIN_MACOSX
       - name: copy-binary
         if: ${{ matrix.os != 'windows-latest'  }}
         run: |
