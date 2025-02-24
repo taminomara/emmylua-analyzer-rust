@@ -342,8 +342,14 @@ fn infer_func_type(analyzer: &mut DocAnalyzer, func: LuaDocFuncType) -> LuaType 
             continue;
         };
 
+        let nullable = param.is_nullable();
+
         let type_ref = if let Some(type_ref) = param.get_type() {
-            Some(infer_type(analyzer, type_ref))
+            let mut typ = infer_type(analyzer, type_ref);
+            if nullable && !typ.is_optional() {
+                typ = TypeOps::Union.apply(&typ, &LuaType::Nil);
+            }
+            Some(typ)
         } else {
             None
         };

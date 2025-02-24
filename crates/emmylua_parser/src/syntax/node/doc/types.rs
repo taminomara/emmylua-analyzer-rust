@@ -260,6 +260,10 @@ impl LuaDocTypeParam {
     pub fn get_type(&self) -> Option<LuaDocType> {
         self.child()
     }
+
+    pub fn is_nullable(&self) -> bool {
+        self.token_by_kind(LuaTokenKind::TkDocQuestion).is_some()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

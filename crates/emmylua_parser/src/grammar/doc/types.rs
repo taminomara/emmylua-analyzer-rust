@@ -264,6 +264,7 @@ fn parse_typed_param(p: &mut LuaDocParser) -> ParseResult {
         }
         LuaTokenKind::TkDots => {
             p.bump();
+            if_token_bump(p, LuaTokenKind::TkDocQuestion);
         }
         _ => {
             return Err(LuaParseError::from_source_range(
