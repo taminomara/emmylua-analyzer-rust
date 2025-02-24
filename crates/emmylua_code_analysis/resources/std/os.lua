@@ -55,7 +55,7 @@ function os.clock() end
 --- reliance on C function `gmtime` and C function `localtime`.
 ---@overload fun(fmt:"*t", time: number):table
 ---@param format string
----@param time number
+---@param time? number
 ---@return string
 function os.date(format, time) end
 
