@@ -127,6 +127,9 @@ fn parse_object_or_mapped_type(p: &mut LuaDocParser) -> ParseResult {
         parse_typed_field(p)?;
         while p.current_token() == LuaTokenKind::TkComma {
             p.bump();
+            if p.current_token() == LuaTokenKind::TkRightBrace {
+                break;
+            }
             parse_typed_field(p)?;
         }
     }

@@ -2026,4 +2026,66 @@ Syntax(Chunk)@0..51
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_multi_line_type() {
+        let code = r#"
+        ---@type {
+        --- x: number,
+        --- y: number,
+        --- z: number,
+        ---}
+        "#;
+        let result = r#"
+Syntax(Chunk)@0..110
+  Syntax(Block)@0..110
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..101
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagType)@13..101
+        Token(TkTagType)@13..17 "type"
+        Token(TkWhitespace)@17..18 " "
+        Syntax(TypeObject)@18..101
+          Token(TkLeftBrace)@18..19 "{"
+          Token(TkEndOfLine)@19..20 "\n"
+          Token(TkWhitespace)@20..28 "        "
+          Token(TkDocContinue)@28..32 "--- "
+          Syntax(DocObjectField)@32..41
+            Token(TkName)@32..33 "x"
+            Token(TkColon)@33..34 ":"
+            Token(TkWhitespace)@34..35 " "
+            Syntax(TypeName)@35..41
+              Token(TkName)@35..41 "number"
+          Token(TkComma)@41..42 ","
+          Token(TkEndOfLine)@42..43 "\n"
+          Token(TkWhitespace)@43..51 "        "
+          Token(TkDocContinue)@51..55 "--- "
+          Syntax(DocObjectField)@55..64
+            Token(TkName)@55..56 "y"
+            Token(TkColon)@56..57 ":"
+            Token(TkWhitespace)@57..58 " "
+            Syntax(TypeName)@58..64
+              Token(TkName)@58..64 "number"
+          Token(TkComma)@64..65 ","
+          Token(TkEndOfLine)@65..66 "\n"
+          Token(TkWhitespace)@66..74 "        "
+          Token(TkDocContinue)@74..78 "--- "
+          Syntax(DocObjectField)@78..87
+            Token(TkName)@78..79 "z"
+            Token(TkColon)@79..80 ":"
+            Token(TkWhitespace)@80..81 " "
+            Syntax(TypeName)@81..87
+              Token(TkName)@81..87 "number"
+          Token(TkComma)@87..88 ","
+          Token(TkEndOfLine)@88..89 "\n"
+          Token(TkWhitespace)@89..97 "        "
+          Token(TkDocContinue)@97..100 "---"
+          Token(TkRightBrace)@100..101 "}"
+    Token(TkEndOfLine)@101..102 "\n"
+    Token(TkWhitespace)@102..110 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
 }
