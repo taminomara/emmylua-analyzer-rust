@@ -83,4 +83,37 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_101() {
+        let mut ws = crate::VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+        --- @async
+        function bar() end
+        "#,
+        );
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::AwaitInSync,
+            r#"
+        --- @async
+        function foo()
+            pcall(function()
+                bar() -- EXPECTED OK
+            end)
+        end
+        "#
+        ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::AwaitInSync,
+            r#"
+        function baz()
+            pcall(bar)
+        end
+        "#
+        ));
+    }
 }
