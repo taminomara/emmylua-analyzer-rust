@@ -189,4 +189,21 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_102() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+        ---@param _kind '' | 'Nr' | 'Ln' | 'Cul'
+        function foo(_kind) end
+
+        for _, kind in ipairs({ '', 'Nr', 'Ln', 'Cul' }) do
+            foo(kind)
+        end
+        "#
+        ));
+    }
 }

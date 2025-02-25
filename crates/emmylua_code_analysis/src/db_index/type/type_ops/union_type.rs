@@ -47,6 +47,7 @@ pub fn union_type(source: LuaType, target: LuaType) -> LuaType {
                 .iter()
                 .map(|it| it.clone())
                 .collect::<Vec<_>>();
+            types.dedup();
             types.push(right.clone());
 
             LuaType::Union(LuaUnionType::new(types).into())

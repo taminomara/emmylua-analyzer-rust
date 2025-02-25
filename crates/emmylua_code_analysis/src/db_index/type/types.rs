@@ -410,16 +410,19 @@ impl LuaTupleType {
     pub fn cast_down_array_base(&self) -> LuaType {
         let mut ty = LuaType::Unknown;
         for t in &self.types {
-            if t.is_integer() {
-                ty = TypeOps::Union.apply(&ty, &LuaType::Integer);
-            } else if t.is_number() {
-                ty = TypeOps::Union.apply(&ty, &LuaType::Number);
-            } else if t.is_string() {
-                ty = TypeOps::Union.apply(&ty, &LuaType::String);
-            } else if t.is_boolean() {
-                ty = TypeOps::Union.apply(&ty, &LuaType::Boolean);
-            } else {
-                ty = TypeOps::Union.apply(&ty, &t);
+            match t {
+                LuaType::IntegerConst(i) => {
+                    ty = TypeOps::Union.apply(&ty, &LuaType::DocIntegerConst(*i));
+                }
+                LuaType::FloatConst(_) => {
+                    ty = TypeOps::Union.apply(&ty, &LuaType::Number);
+                }
+                LuaType::StringConst(s) => {
+                    ty = TypeOps::Union.apply(&ty, &LuaType::DocStringConst(s.clone()));
+                }
+                _ => {
+                    ty = TypeOps::Union.apply(&ty, t);
+                }
             }
         }
 
