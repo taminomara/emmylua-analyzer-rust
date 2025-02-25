@@ -8,12 +8,6 @@ mod test {
 
         ws.def(
             r#"
-
-        "#,
-        );
-
-        ws.def(
-            r#"
         --- @return string[] stdout
         --- @return string? stderr
         local function foo() end

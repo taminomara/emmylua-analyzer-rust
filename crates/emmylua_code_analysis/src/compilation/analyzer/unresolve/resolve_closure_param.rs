@@ -17,29 +17,46 @@ pub fn try_resolve_closure_params(
     let call_doc_func = infer_call_expr_func(
         db,
         config,
-        call_expr,
+        call_expr.clone(),
         call_expr_type,
         &mut InferGuard::new(),
         None,
     )?;
 
-    let expr_closure_params =
-        if let Some(param_type) = call_doc_func.get_params().get(closure_params.param_idx) {
-            if let Some(LuaType::DocFunction(func)) = &param_type.1 {
-                if func.is_async() {
-                    let file_id = closure_params.file_id;
-                    let property_owner = LuaPropertyOwnerId::Signature(closure_params.signature_id);
-                    db.get_property_index_mut()
-                        .add_async(file_id, property_owner);
-                }
+    let colon_call = call_expr.is_colon_call();
+    let colon_define = call_doc_func.is_colon_define();
 
-                func.get_params()
-            } else {
+    let mut param_idx = closure_params.param_idx;
+    match (colon_call, colon_define) {
+        (true, false) => {
+            param_idx += 1;
+        }
+        (false, true) => {
+            if param_idx == 0 {
                 return Some(true);
             }
+
+            param_idx -= 1;
+        }
+        _ => {}
+    }
+
+    let expr_closure_params = if let Some(param_type) = call_doc_func.get_params().get(param_idx) {
+        if let Some(LuaType::DocFunction(func)) = &param_type.1 {
+            if func.is_async() {
+                let file_id = closure_params.file_id;
+                let property_owner = LuaPropertyOwnerId::Signature(closure_params.signature_id);
+                db.get_property_index_mut()
+                    .add_async(file_id, property_owner);
+            }
+
+            func.get_params()
         } else {
             return Some(true);
-        };
+        }
+    } else {
+        return Some(true);
+    };
 
     let signature = db
         .get_signature_index_mut()
