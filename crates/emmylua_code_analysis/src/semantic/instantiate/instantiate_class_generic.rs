@@ -308,27 +308,42 @@ fn instantiate_signature(
     substitutor: &TypeSubstitutor,
 ) -> LuaType {
     if let Some(signature) = db.get_signature_index().get(&signature_id) {
-        let rets = signature
-            .return_docs
-            .iter()
-            .map(|ret| ret.type_ref.clone())
-            .collect();
-        let is_async = if let Some(property) = db
-            .get_property_index()
-            .get_property(LuaPropertyOwnerId::Signature(signature_id.clone()))
-        {
-            property.is_async
-        } else {
-            false
+        let origin_type = {
+            let rets = signature
+                .return_docs
+                .iter()
+                .map(|ret| ret.type_ref.clone())
+                .collect();
+            let is_async = if let Some(property) = db
+                .get_property_index()
+                .get_property(LuaPropertyOwnerId::Signature(signature_id.clone()))
+            {
+                property.is_async
+            } else {
+                false
+            };
+            let fake_doc_function = LuaFunctionType::new(
+                is_async,
+                signature.is_colon_define,
+                signature.get_type_params(),
+                rets,
+            );
+            instantiate_doc_function(db, &fake_doc_function, substitutor)
         };
-        let fake_doc_function = LuaFunctionType::new(
-            is_async,
-            signature.is_colon_define,
-            signature.get_type_params(),
-            rets,
-        );
-        let instantiate_func = instantiate_doc_function(db, &fake_doc_function, substitutor);
-        return instantiate_func;
+        if signature.overloads.is_empty() {
+            return origin_type;
+        } else {
+            let mut result = Vec::new();
+            for overload in signature.overloads.iter() {
+                result.push(instantiate_doc_function(
+                    db,
+                    &(*overload).clone(),
+                    substitutor,
+                ));
+            }
+            result.push(origin_type); // 我们需要将原始类型放到最后
+            return LuaType::Union(LuaUnionType::new(result).into());
+        }
     }
 
     return LuaType::Signature(signature_id.clone());

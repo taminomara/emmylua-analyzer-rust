@@ -29,15 +29,12 @@ pub fn hover_function_type(
 ) {
     match typ {
         LuaType::Function => builder.set_type_description(format!("function {}()", func_name)),
-        LuaType::DocFunction(lua_func) => {
-            // 泛型时会将`Signature`转为`DocFunction`
-            builder.set_type_description(hover_doc_function_type(
-                db,
-                &lua_func,
-                function_member,
-                func_name,
-            ))
-        }
+        LuaType::DocFunction(lua_func) => builder.set_type_description(hover_doc_function_type(
+            db,
+            &lua_func,
+            function_member,
+            func_name,
+        )),
         LuaType::Signature(signature_id) => hover_signature_type(
             builder,
             db,
@@ -49,6 +46,35 @@ pub fn hover_function_type(
             builder.set_type_description(format!("function {}", func_name));
             builder.signature_overload = None;
         }),
+        LuaType::Union(union) => {
+            // 泛型处理
+            if let Some(call) = builder.get_call_signature() {
+                builder.set_type_description(hover_doc_function_type(
+                    db,
+                    &call,
+                    function_member,
+                    func_name,
+                ))
+            } else {
+                // 将最后一个作为 type_description
+                let mut overloads = Vec::new();
+                for typ in union.get_types() {
+                    if let LuaType::DocFunction(lua_func) = typ {
+                        overloads.push(hover_doc_function_type(
+                            db,
+                            &lua_func,
+                            function_member,
+                            func_name,
+                        ));
+                    }
+                }
+                let signature = overloads.pop().unwrap();
+                builder.set_type_description(signature);
+                for overload in overloads {
+                    builder.add_signature_overload(overload);
+                }
+            }
+        }
         _ => builder.set_type_description(format!("function {}", func_name)),
     }
 }
@@ -60,7 +86,6 @@ fn hover_doc_function_type(
     owner_member: Option<&LuaMember>,
     func_name: &str,
 ) -> String {
-    dbg!(&lua_func);
     let async_label = if lua_func.is_async() { "async " } else { "" };
     let mut type_label = "function ";
     // 有可能来源于类. 例如: `local add = class.add`, `add()`应被视为类方法
@@ -73,45 +98,11 @@ fn hover_doc_function_type(
                 type_label = "(field) ";
             }
         }
-        match owner_member.get_decl_type() {
-            LuaType::DocFunction(func) => {
-                if func.is_colon_define()
-                    || func.get_params().first().and_then(|param| {
-                        param
-                            .1
-                            .as_ref()
-                            .map(|ty| param.0 == "self" && ty.is_self_infer())
-                    }) == Some(true)
-                {
-                    type_label = "(method) ";
-                    name.push_str(":");
-                } else {
-                    name.push_str(".");
-                }
-            }
-            LuaType::Signature(signature_id) => {
-                let signature = db.get_signature_index().get(&signature_id);
-                if let Some(signature) = signature {
-                    if signature.is_colon_define
-                        || signature // @field 定义的`docfunction`会被视为`signature`, 因此这里也需要匹配以转换为`method`
-                            .get_type_params()
-                            .first()
-                            .and_then(|param| {
-                                param
-                                    .1
-                                    .as_ref()
-                                    .map(|ty| param.0 == "self" && ty.is_self_infer())
-                            })
-                            .is_some()
-                    {
-                        type_label = "(method) ";
-                        name.push_str(":");
-                    } else {
-                        name.push_str(".");
-                    }
-                }
-            }
-            _ => {}
+        if lua_func.is_colon_define() || lua_func.first_param_is_self() {
+            type_label = "(method) ";
+            name.push_str(":");
+        } else {
+            name.push_str(".");
         }
         if let LuaMemberKey::Name(n) = owner_member.get_key() {
             name.push_str(n.as_str());

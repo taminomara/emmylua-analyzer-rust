@@ -187,7 +187,18 @@ fn build_member_hover(
 
     let mut function_member = None;
     let mut owner_decl = None;
-    if typ.is_function() {
+    if typ.is_function()
+        || match &typ {
+            LuaType::Union(union) => {
+                union.get_types().len() > 1
+                    && union
+                        .get_types()
+                        .iter()
+                        .all(|t| matches!(t, LuaType::DocFunction(_)))
+            }
+            _ => false,
+        }
+    {
         let property_owner = get_member_owner(&builder.semantic_model, member_id);
         match property_owner {
             Some(LuaPropertyOwnerId::Member(member_id)) => {

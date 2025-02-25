@@ -117,12 +117,18 @@ impl<'a> HoverBuilder<'a> {
                 match call_expr.kind().into() {
                     LuaSyntaxKind::CallExpr => {
                         let call_expr = LuaCallExpr::cast(call_expr)?;
-                        let func = self.semantic_model.infer_call_expr_func(call_expr.clone(), None);
+                        let func = self
+                            .semantic_model
+                            .infer_call_expr_func(call_expr.clone(), None);
                         if let Some(func) = func {
                             // 确定参数量是否与当前输入的参数数量一致, 因为`infer_call_expr_func`必然返回一个有效的类型, 即使不是完全匹配的
                             let call_expr_args_count = call_expr.get_args_count();
-                            if let Some(call_expr_args_count) = call_expr_args_count {
+                            if let Some(mut call_expr_args_count) = call_expr_args_count {
                                 let func_params_count = func.get_params().len();
+                                if !func.is_colon_define() && call_expr.is_colon_call() {
+                                    // 不是冒号定义的函数, 但是是冒号调用
+                                    call_expr_args_count += 1;
+                                }
                                 if call_expr_args_count == func_params_count {
                                     return Some((*func).clone());
                                 }
