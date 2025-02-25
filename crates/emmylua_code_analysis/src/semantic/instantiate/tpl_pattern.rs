@@ -78,6 +78,10 @@ fn array_tpl_pattern_match(
             let target_base = target_tuple.cast_down_array_base();
             tpl_pattern_match(db, config, root, base, &target_base, substitutor);
         }
+        LuaType::Object(target_object) => {
+            let target_base = target_object.cast_down_array_base()?;
+            tpl_pattern_match(db, config, root, base, &target_base, substitutor);
+        }
         _ => {}
     }
 

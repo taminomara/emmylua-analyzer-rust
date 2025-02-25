@@ -58,15 +58,6 @@ function table.insert(list, pos, value) end
 ---@return table
 function table.move(a1, f, e, t, a2) end
 
----
---- Returns a new table with all arguments stored into keys 1, 2, etc. and
---- with a field "`n`" with the total number of arguments. Note that the
---- resulting table may not be a sequence, if some arguments are **nil**.
----@generic T...
----@param ... T...
----@return [T...]
-function table.pack(...) end
-
 ---@version 5.1
 ---
 ---Returns the largest positive numerical index of the given table, or zero if the table has no positive numerical indices.
@@ -108,8 +99,8 @@ function table.remove(list, pos) end
 --- order may have their relative positions changed by the sort.
 ---@overload fun(list:table):number
 ---@generic V
----@param list table<number, V> | V[]
----@param comp? fun(a:V, b:V):boolean
+---@param list V[]
+---@param comp fun(a:V, b:V):boolean
 ---@return number
 function table.sort(list, comp) end
 
@@ -130,7 +121,7 @@ function table.unpack(list, i, j) end
 ---
 ---@generic T
 ---@param ... T...
----@return [T...] | { n: number }
+---@return [T...] | { n: integer }
 ---@nodiscard
 function table.pack(...) end
 

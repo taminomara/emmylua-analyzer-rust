@@ -52,6 +52,17 @@ pub fn check_complex_type_compact(
                     check_guard.next_level()?,
                 );
             }
+            LuaType::Object(compact_object) => {
+                let compact_base = compact_object
+                    .cast_down_array_base()
+                    .ok_or(TypeCheckFailReason::TypeNotMatch)?;
+                return check_general_type_compact(
+                    db,
+                    source_base,
+                    &compact_base,
+                    check_guard.next_level()?,
+                );
+            }
             LuaType::Table => return Ok(()),
             _ => {}
         },

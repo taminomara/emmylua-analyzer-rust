@@ -555,6 +555,40 @@ impl LuaObjectType {
                 .iter()
                 .any(|(k, v)| k.contain_tpl() || v.contain_tpl())
     }
+
+    pub fn cast_down_array_base(&self) -> Option<LuaType> {
+        if self.index_access.len() != 0 {
+            return None;
+        }
+
+        let mut ty = LuaType::Unknown;
+        let mut count = 1;
+        let mut fields = self
+            .fields
+            .iter()
+            .collect::<Vec<_>>();
+
+        fields.sort_by(|(a, _), (b, _)| a.cmp(b));
+
+        for (key, value_type) in fields {
+            let idx = match key {
+                LuaMemberKey::Integer(i) => i,
+                _ => {
+                    return None;
+                }
+            };
+
+            if *idx != count {
+                return None;
+            }
+
+            count += 1;
+
+            ty = TypeOps::Union.apply(&ty, value_type);
+        }
+
+        Some(ty)
+    }
 }
 
 impl From<LuaObjectType> for LuaType {
