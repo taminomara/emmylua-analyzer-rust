@@ -1989,4 +1989,41 @@ Syntax(Chunk)@0..31
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_luals_multi_return() {
+        let code = r#"
+        ---@type fun(): (integer, number)
+        "#;
+        let result = r#"
+Syntax(Chunk)@0..51
+  Syntax(Block)@0..51
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..42
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagType)@13..42
+        Token(TkTagType)@13..17 "type"
+        Token(TkWhitespace)@17..18 " "
+        Syntax(TypeFun)@18..42
+          Token(TkName)@18..21 "fun"
+          Token(TkLeftParen)@21..22 "("
+          Token(TkRightParen)@22..23 ")"
+          Token(TkColon)@23..24 ":"
+          Token(TkWhitespace)@24..25 " "
+          Token(TkLeftParen)@25..26 "("
+          Syntax(DocTypeList)@26..41
+            Syntax(TypeName)@26..33
+              Token(TkName)@26..33 "integer"
+            Token(TkComma)@33..34 ","
+            Token(TkWhitespace)@34..35 " "
+            Syntax(TypeName)@35..41
+              Token(TkName)@35..41 "number"
+          Token(TkRightParen)@41..42 ")"
+    Token(TkEndOfLine)@42..43 "\n"
+    Token(TkWhitespace)@43..51 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
 }

@@ -245,7 +245,15 @@ pub fn parse_fun_type(p: &mut LuaDocParser) -> ParseResult {
 
     if p.current_token() == LuaTokenKind::TkColon {
         p.bump();
-        parse_type_list(p)?;
+
+        // compact luals return type (number, integer)
+        if p.current_token() == LuaTokenKind::TkLeftParen {
+            p.bump();
+            parse_type_list(p)?;
+            expect_token(p, LuaTokenKind::TkRightParen)?;
+        } else {
+            parse_type_list(p)?;
+        };
     }
 
     Ok(m.complete(p))
