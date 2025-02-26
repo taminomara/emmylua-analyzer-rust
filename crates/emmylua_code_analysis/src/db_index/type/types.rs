@@ -563,10 +563,7 @@ impl LuaObjectType {
 
         let mut ty = LuaType::Unknown;
         let mut count = 1;
-        let mut fields = self
-            .fields
-            .iter()
-            .collect::<Vec<_>>();
+        let mut fields = self.fields.iter().collect::<Vec<_>>();
 
         fields.sort_by(|(a, _), (b, _)| a.cmp(b));
 
@@ -662,30 +659,23 @@ pub enum LuaAliasCallKind {
     Extends,
     Add,
     Sub,
+    Select,
+    Unpack,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct LuaAliasCallType {
-    source: LuaType,
     call_kind: LuaAliasCallKind,
-    operand: Option<LuaType>,
+    operand: Vec<LuaType>,
 }
 
 impl LuaAliasCallType {
-    pub fn new(source: LuaType, call_kind: LuaAliasCallKind, operand: Option<LuaType>) -> Self {
-        Self {
-            source,
-            call_kind,
-            operand,
-        }
+    pub fn new(call_kind: LuaAliasCallKind, operand: Vec<LuaType>) -> Self {
+        Self { call_kind, operand }
     }
 
-    pub fn get_source(&self) -> &LuaType {
-        &self.source
-    }
-
-    pub fn get_operand(&self) -> Option<&LuaType> {
-        self.operand.as_ref()
+    pub fn get_operands(&self) -> &Vec<LuaType> {
+        &self.operand
     }
 
     pub fn get_call_kind(&self) -> LuaAliasCallKind {
@@ -693,7 +683,7 @@ impl LuaAliasCallType {
     }
 
     pub fn contain_tpl(&self) -> bool {
-        self.source.contain_tpl() || self.operand.as_ref().map_or(false, |o| o.contain_tpl())
+        self.operand.iter().any(|t| t.contain_tpl())
     }
 }
 

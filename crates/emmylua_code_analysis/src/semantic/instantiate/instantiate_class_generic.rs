@@ -339,15 +339,33 @@ fn instantiate_alias_call(
     alias_call: &LuaAliasCallType,
     substitutor: &TypeSubstitutor,
 ) -> LuaType {
-    let left = alias_call.get_source();
-    let right = alias_call.get_operand().unwrap_or(&LuaType::Unknown);
-    let left_inst = instantiate_type(db, left, substitutor);
-    let right_inst = instantiate_type(db, right, substitutor);
+    let operands = alias_call
+        .get_operands()
+        .iter()
+        .map(|it| instantiate_type(db, it, substitutor))
+        .collect::<Vec<_>>();
+
     match alias_call.get_call_kind() {
-        LuaAliasCallKind::Sub => return TypeOps::Remove.apply(&left_inst, &right_inst),
-        LuaAliasCallKind::Add => return TypeOps::Union.apply(&left_inst, &right_inst),
+        LuaAliasCallKind::Sub => {
+            if operands.len() != 2 {
+                return LuaType::Unknown;
+            }
+
+            return TypeOps::Remove.apply(&operands[0], &operands[1]);
+        }
+        LuaAliasCallKind::Add => {
+            if operands.len() != 2 {
+                return LuaType::Unknown;
+            }
+
+            return TypeOps::Union.apply(&operands[0], &operands[1]);
+        }
         LuaAliasCallKind::KeyOf => {
-            let members = infer_members(db, &left_inst).unwrap_or(Vec::new());
+            if operands.len() != 1 {
+                return LuaType::Unknown;
+            }
+
+            let members = infer_members(db, &operands[0]).unwrap_or(Vec::new());
             let member_key_types = members
                 .iter()
                 .filter_map(|m| match &m.key {
@@ -360,13 +378,92 @@ fn instantiate_alias_call(
             return LuaType::Union(LuaUnionType::new(member_key_types).into());
         }
         LuaAliasCallKind::Extends => {
-            let compact = type_check::check_type_compact(db, &right_inst, &left_inst).is_ok();
+            if operands.len() != 2 {
+                return LuaType::Unknown;
+            }
+
+            let compact = type_check::check_type_compact(db, &operands[0], &operands[1]).is_ok();
             return LuaType::BooleanConst(compact);
+        }
+        LuaAliasCallKind::Select => {
+            if operands.len() != 2 {
+                return LuaType::Unknown;
+            }
+
+            return instantiate_select_call(&operands[0], &operands[1]);
         }
         _ => {}
     }
 
     LuaType::Unknown
+}
+
+enum NumOrLen {
+    Num(i64),
+    Len,
+    LenUnknown,
+}
+
+fn instantiate_select_call(source: &LuaType, index: &LuaType) -> LuaType {
+    let num_or_len = match index {
+        LuaType::DocIntegerConst(i) => {
+            if *i == 0 {
+                return LuaType::Unknown;
+            }
+            NumOrLen::Num(*i)
+        }
+        LuaType::IntegerConst(i) => {
+            if *i == 0 {
+                return LuaType::Unknown;
+            }
+            NumOrLen::Num(*i)
+        }
+        LuaType::DocStringConst(s) => {
+            if s.as_str() == "#" {
+                NumOrLen::Len
+            } else {
+                NumOrLen::LenUnknown
+            }
+        }
+        LuaType::StringConst(s) => {
+            if s.as_str() == "#" {
+                NumOrLen::Len
+            } else {
+                NumOrLen::LenUnknown
+            }
+        }
+        _ => return LuaType::Unknown,
+    };
+    let multi_return = if let LuaType::MuliReturn(multi) = source {
+        multi.deref()
+    } else {
+        &LuaMultiReturn::Base(source.clone())
+    };
+
+    match num_or_len {
+        NumOrLen::Num(i) => match multi_return {
+            LuaMultiReturn::Base(_) => LuaType::MuliReturn(multi_return.clone().into()),
+            LuaMultiReturn::Multi(types) => {
+                let start = if i < 0 { types.len() as i64 + i } else { i - 1 };
+                if start < 0 || start as usize >= types.len() {
+                    return LuaType::Unknown;
+                }
+
+                let new_types = types
+                    .iter()
+                    .skip(start as usize)
+                    .cloned()
+                    .collect::<Vec<_>>();
+
+                LuaType::MuliReturn(LuaMultiReturn::Multi(new_types).into())
+            }
+        },
+        NumOrLen::Len => match multi_return {
+            LuaMultiReturn::Base(_) => LuaType::Integer,
+            LuaMultiReturn::Multi(types) => LuaType::DocIntegerConst(types.len() as i64),
+        },
+        NumOrLen::LenUnknown => LuaType::Integer,
+    }
 }
 
 fn instantiate_variadic_type(

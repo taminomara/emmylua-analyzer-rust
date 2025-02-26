@@ -309,11 +309,10 @@ function require(modname) end
 --- `index`. a negative number indexes from the end (-1 is the last argument).
 --- Otherwise, `index` must be the string "#", and `select` returns
 --- the total number of extra arguments it received.
----@generic T
----@param index number
----@param ... T...
----@return T...
----@overload fun(index: '#', ...): int
+---@generic T, Num: integer | '#'
+---@param index Num
+---@param ... T
+---@return Select<T, Num>
 function select(index, ...) end
 
 ---

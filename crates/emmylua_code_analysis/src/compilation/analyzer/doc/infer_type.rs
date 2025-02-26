@@ -213,6 +213,17 @@ fn infer_special_generic_type(
                 return Some(LuaType::Namespace(ns_str));
             }
         }
+        "Select" => {
+            let mut params = Vec::new();
+            for param in generic_type.get_generic_types()?.get_types() {
+                let param_type = infer_type(analyzer, param);
+                params.push(param_type);
+            }
+            return Some(LuaType::Call(
+                LuaAliasCallType::new(LuaAliasCallKind::Select, params).into(),
+            ));
+        }
+        "Unpack" => {}
         _ => {}
     }
 
@@ -282,22 +293,21 @@ fn infer_binary_type(analyzer: &mut DocAnalyzer, binary_type: LuaDocBinaryType) 
                 LuaTypeBinaryOperator::Extends => {
                     return LuaType::Call(
                         LuaAliasCallType::new(
-                            left_type,
                             LuaAliasCallKind::Extends,
-                            Some(right_type),
+                            vec![left_type, right_type],
                         )
                         .into(),
                     );
                 }
                 LuaTypeBinaryOperator::Add => {
                     return LuaType::Call(
-                        LuaAliasCallType::new(left_type, LuaAliasCallKind::Add, Some(right_type))
+                        LuaAliasCallType::new(LuaAliasCallKind::Add, vec![left_type, right_type])
                             .into(),
                     );
                 }
                 LuaTypeBinaryOperator::Sub => {
                     return LuaType::Call(
-                        LuaAliasCallType::new(left_type, LuaAliasCallKind::Sub, Some(right_type))
+                        LuaAliasCallType::new(LuaAliasCallKind::Sub, vec![left_type, right_type])
                             .into(),
                     );
                 }
@@ -320,7 +330,7 @@ fn infer_unary_type(analyzer: &mut DocAnalyzer, unary_type: LuaDocUnaryType) -> 
             match op.get_op() {
                 LuaTypeUnaryOperator::Keyof => {
                     return LuaType::Call(
-                        LuaAliasCallType::new(base, LuaAliasCallKind::KeyOf, None).into(),
+                        LuaAliasCallType::new(LuaAliasCallKind::KeyOf, vec![base]).into(),
                     );
                 }
                 _ => {}

@@ -109,3 +109,9 @@
 ---@alias NotNull<T> T - ?
 
 ---@alias Nullable<T> T + ?
+
+--- built-in type
+---@alias Select<T, StartOrLen> unkonwn
+
+--- built-in type
+---@alias Unpack<T, Start, End> unknown
