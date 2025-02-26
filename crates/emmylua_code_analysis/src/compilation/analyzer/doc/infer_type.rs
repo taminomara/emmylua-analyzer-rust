@@ -375,6 +375,15 @@ fn infer_func_type(analyzer: &mut DocAnalyzer, func: LuaDocFuncType) -> LuaType 
         }
     }
 
+    // compact luals
+    if is_colon {
+        if let Some(first_param) = params_result.first() {
+            if first_param.0 == "self" {
+                is_colon = false
+            }
+        }
+    }
+
     LuaType::DocFunction(
         LuaFunctionType::new(is_async, is_colon, params_result, return_types).into(),
     )

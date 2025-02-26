@@ -13,20 +13,15 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     let tree_list = context.tree_list.clone();
     // build decl and ref flow chain
     for in_filed_tree in &tree_list {
-        let mut analyzer =
-            FlowAnalyzer::new(db, in_filed_tree.file_id, in_filed_tree.value.clone());
-        flow_analyze(&mut analyzer);
+        flow_analyze(db, in_filed_tree.file_id, in_filed_tree.value.clone());
     }
 }
 
-fn flow_analyze(analyzer: &mut FlowAnalyzer) -> Option<()> {
-    let references_index = analyzer.db.get_reference_index();
-    let refs_map = references_index
-        .get_decl_references_map(&analyzer.file_id)?
-        .clone();
-    let root = analyzer.root.syntax();
-    let file_id = analyzer.file_id;
+fn flow_analyze(db: &mut DbIndex, file_id: FileId, root: LuaChunk) -> Option<()> {
+    let references_index = db.get_reference_index();
+    let refs_map = references_index.get_decl_references_map(&file_id)?.clone();
 
+    let mut analyzer = FlowAnalyzer::new(db, file_id, root.clone());
     for (decl_id, decl_refs) in refs_map {
         let mut flow_chains = LuaFlowChain::new(decl_id);
 
@@ -35,8 +30,10 @@ fn flow_analyze(analyzer: &mut FlowAnalyzer) -> Option<()> {
             if !decl_ref.is_write {
                 let syntax_id =
                     LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), decl_ref.range.clone());
-                if let Some(name_expr) = LuaNameExpr::cast(syntax_id.to_node_from_root(root)?) {
-                    infer_name_expr(analyzer, &mut flow_chains, name_expr);
+                if let Some(name_expr) =
+                    LuaNameExpr::cast(syntax_id.to_node_from_root(root.syntax())?)
+                {
+                    infer_name_expr(&mut analyzer, &mut flow_chains, name_expr);
                 }
             } else {
                 need_assign_infer = true;
@@ -44,7 +41,7 @@ fn flow_analyze(analyzer: &mut FlowAnalyzer) -> Option<()> {
         }
 
         if need_assign_infer {
-            infer_from_assign_stats(analyzer, &mut flow_chains, decl_refs.iter().collect());
+            infer_from_assign_stats(&mut analyzer, &mut flow_chains, decl_refs.iter().collect());
         }
 
         analyzer

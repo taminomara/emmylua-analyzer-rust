@@ -60,7 +60,7 @@ jobs:
         if: ${{ matrix.cross == 'general-macos-intel' }}
         run: |
           rustup target add ${{ matrix.target }}
-          RUSTFLAGS="-C link-args=-mmacos-version-min=10.15" cargo build --release --target ${{ matrix.target }} -p emmylua_ls
+          cargo build --release --target ${{ matrix.target }} -p emmylua_ls
           otool -l ./target/${{ matrix.target }}/release/emmylua_ls | grep -A4 "LC_BUILD_VERSION\|LC_VERSION_MIN_MACOSX"
       - name: copy-binary
         if: ${{ matrix.os != 'windows-latest'  }}

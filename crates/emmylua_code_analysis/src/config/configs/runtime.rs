@@ -34,25 +34,25 @@ impl Default for EmmyrcRuntime {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema, Clone, Copy, PartialEq, Eq)]
 pub enum EmmyrcLuaVersion {
     /// Lua 5.1
-    #[serde(rename = "Lua5.1")]
+    #[serde(rename = "Lua5.1", alias = "Lua 5.1")]
     Lua51,
     /// LuaJIT
     #[serde(rename = "LuaJIT")]
     LuaJIT,
     /// Lua 5.2
-    #[serde(rename = "Lua5.2")]
+    #[serde(rename = "Lua5.2", alias = "Lua 5.2")]
     Lua52,
     /// Lua 5.3
-    #[serde(rename = "Lua5.3")]
+    #[serde(rename = "Lua5.3", alias = "Lua 5.3")]
     Lua53,
     /// Lua 5.4
-    #[serde(rename = "Lua5.4")]
+    #[serde(rename = "Lua5.4", alias = "Lua 5.4")]
     Lua54,
-    /// Lua 5.4
-    #[serde(rename = "LuaLatest")]
+    /// Lua Latest
+    #[serde(rename = "LuaLatest", alias = "Lua Latest")]
     LuaLatest,
 }
 
@@ -72,5 +72,26 @@ impl EmmyrcLuaVersion {
             EmmyrcLuaVersion::Lua54 => LuaVersionNumber::new(5, 4, 0),
             EmmyrcLuaVersion::LuaLatest => LuaVersionNumber::new(5, 4, 0),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_emmyrc_runtime() {
+        let json1 = r#"{
+            "version": "Lua5.1"
+        }"#;
+        let runtime: EmmyrcRuntime = serde_json::from_str(json1).unwrap();
+        assert_eq!(runtime.version, EmmyrcLuaVersion::Lua51);
+
+        let json2 = r#"{
+            "version": "Lua 5.1"
+        }"#;
+
+        let runtime: EmmyrcRuntime = serde_json::from_str(json2).unwrap();
+        assert_eq!(runtime.version, EmmyrcLuaVersion::Lua51);
     }
 }
