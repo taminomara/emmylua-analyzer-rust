@@ -111,7 +111,7 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
 fn infer_buildin_or_ref_type(analyzer: &mut DocAnalyzer, name: &str, range: TextRange) -> LuaType {
     let position = range.start();
     match name {
-        "Unknown" => LuaType::Unknown,
+        "unknown" => LuaType::Unknown,
         "nil" | "void" => LuaType::Nil,
         "any" => LuaType::Any,
         "table" => LuaType::Table,

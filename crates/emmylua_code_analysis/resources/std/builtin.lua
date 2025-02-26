@@ -110,8 +110,8 @@
 
 ---@alias Nullable<T> T + ?
 
---- built-in type
----@alias Select<T, StartOrLen> unkonwn
-
---- built-in type
+--- built-in type for Select function
+---@alias Select<T, StartOrLen> unknown
+---
+--- built-in type for Unpack function
 ---@alias Unpack<T, Start, End> unknown
