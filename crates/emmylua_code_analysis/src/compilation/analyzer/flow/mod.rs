@@ -21,7 +21,7 @@ fn flow_analyze(db: &mut DbIndex, file_id: FileId, root: LuaChunk) -> Option<()>
     let references_index = db.get_reference_index();
     let refs_map = references_index.get_decl_references_map(&file_id)?.clone();
 
-    let mut analyzer = FlowAnalyzer::new(db, file_id, root.clone());
+    let mut analyzer = FlowAnalyzer::new(db, root.clone());
     for (decl_id, decl_refs) in refs_map {
         let mut flow_chains = LuaFlowChain::new(decl_id);
 
@@ -55,13 +55,12 @@ fn flow_analyze(db: &mut DbIndex, file_id: FileId, root: LuaChunk) -> Option<()>
 
 #[derive(Debug)]
 struct FlowAnalyzer<'a> {
-    file_id: FileId,
     db: &'a mut DbIndex,
     root: LuaChunk,
 }
 
 impl FlowAnalyzer<'_> {
-    pub fn new<'a>(db: &'a mut DbIndex, file_id: FileId, root: LuaChunk) -> FlowAnalyzer<'a> {
-        FlowAnalyzer { file_id, db, root }
+    pub fn new<'a>(db: &'a mut DbIndex, root: LuaChunk) -> FlowAnalyzer<'a> {
+        FlowAnalyzer { db, root }
     }
 }

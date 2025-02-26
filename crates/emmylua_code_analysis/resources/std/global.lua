@@ -405,3 +405,9 @@ function warn(message) end
 
 ---@type string[]
 arg = {}
+
+--- This is an incorrect annotation, but truly supporting _ENV would completely break the variable analysis path.
+--- For now, let's treat it as a global variable.
+---@version > 5.3
+---@type global
+_ENV = {}
