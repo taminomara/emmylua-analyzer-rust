@@ -213,7 +213,7 @@ fn infer_special_generic_type(
                 return Some(LuaType::Namespace(ns_str));
             }
         }
-        "Select" => {
+        "std.Select" => {
             let mut params = Vec::new();
             for param in generic_type.get_generic_types()?.get_types() {
                 let param_type = infer_type(analyzer, param);
@@ -223,7 +223,7 @@ fn infer_special_generic_type(
                 LuaAliasCallType::new(LuaAliasCallKind::Select, params).into(),
             ));
         }
-        "Unpack" => {}
+        "std.Unpack" => {}
         _ => {}
     }
 
