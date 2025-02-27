@@ -21,7 +21,7 @@
 ---@generic T
 ---@param v T
 ---@param message? string
----@return NotNull<T>
+---@return std.NotNull<T>
 function assert(v, message) end
 
 ---
@@ -105,7 +105,7 @@ function getmetatable(object) end
 --- the first absent index.
 ---@generic V
 ---@param t table<any, V> | V[]
----@return fun(tbl: any):int, NotNull<V>
+---@return fun(tbl: any):int, std.NotNull<V>
 function ipairs(t) end
 
 ---
@@ -216,7 +216,7 @@ function next(table, index) end
 --- traversal.
 ---@generic K, V
 ---@param t table<K, V> | V[]
----@return fun(tbl: any):K, NotNull<V>
+---@return fun(tbl: any):K, std.NotNull<V>
 function pairs(t) end
 ---
 --- Calls function `f` with the given arguments in *protected mode*. This
@@ -311,8 +311,8 @@ function require(modname) end
 --- the total number of extra arguments it received.
 ---@generic T, Num: integer | '#'
 ---@param index Num
----@param ... T
----@return Select<T, Num>
+---@param ... T...
+---@return std.Select<T..., Num>
 function select(index, ...) end
 
 ---
@@ -343,15 +343,12 @@ function setmetatable(table, metatable) end
 --- represents 10, 'B' represents 11, and so forth, with 'Z' representing 35. If
 --- the string `e` is not a valid numeral in the given base, the function
 --- returns **nil**.
----@overload fun(e:number):number
----@overload fun(e:number, base: int):number
----@overload fun(e:string):number|nil
----@overload fun(e:string, base: int):number|nil
----@overload fun(e:any):nil
----@overload fun(e:any, base:int):nil
+---@overload fun(e:number, base?: int):number
+---@overload fun(e:string, base?: int):number?
+---@overload fun(e:any, base?:int):nil
 ---@param e any
 ---@param base? int
----@return number|nil
+---@return number?
 function tonumber(e, base) end
 
 ---

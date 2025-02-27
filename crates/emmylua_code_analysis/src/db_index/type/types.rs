@@ -756,10 +756,49 @@ impl LuaMultiReturn {
         }
     }
 
-    pub fn get_len(&self) -> usize {
+    pub fn get_len(&self) -> Option<i64> {
         match self {
-            LuaMultiReturn::Multi(types) => types.len(),
-            LuaMultiReturn::Base(_) => 1,
+            LuaMultiReturn::Base(_) => None,
+            LuaMultiReturn::Multi(types) => {
+                let basic_len = types.len() as i64;
+                if basic_len == 0 {
+                    return Some(0);
+                }
+
+                if let Some(LuaType::MuliReturn(last_multi)) = types.last() {
+                    let last_element_len = last_multi.get_len();
+                    return match last_element_len {
+                        Some(len) => Some(basic_len - 1 + len),
+                        None => None,
+                    };
+                }
+
+                Some(basic_len)
+            }
+        }
+    }
+
+    pub fn get_new_multi_from(&self, idx: usize) -> LuaMultiReturn {
+        match self {
+            LuaMultiReturn::Multi(types) => {
+                if types.len() == 0 {
+                    return LuaMultiReturn::Multi(Vec::new());
+                }
+
+                let mut new_types = Vec::new();
+                if idx < types.len() {
+                    new_types.extend_from_slice(&types[idx..]);
+                } else {
+                    let last = types.len() - 1;
+                    if let LuaType::MuliReturn(multi) = &types[last] {
+                        let rest_offset = idx - last;
+                        return multi.get_new_multi_from(rest_offset);
+                    }
+                }
+
+                LuaMultiReturn::Multi(new_types)
+            }
+            LuaMultiReturn::Base(t) => LuaMultiReturn::Base(t.clone()),
         }
     }
 

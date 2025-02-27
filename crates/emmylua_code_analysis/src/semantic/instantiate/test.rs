@@ -25,4 +25,42 @@ mod test {
         let expected = ws.ty("async fun(a: number, b: string, c:boolean): number");
         assert_eq!(ty, expected);
     }
+
+    #[test]
+    fn test_select_type() {
+        let mut ws = crate::VirtualWorkspace::new_with_init_std_lib();
+        ws.def(r#"
+        ---@param ... string
+        function ffff(...)
+            a, b, c = select(2, ...)
+        end
+        "#);
+
+        let a_ty = ws.expr_ty("a");
+        let b_ty = ws.expr_ty("b");
+        let c_ty = ws.expr_ty("c");
+        let expected = ws.ty("string");
+        assert_eq!(a_ty, expected);
+        assert_eq!(b_ty, expected);
+        assert_eq!(c_ty, expected);
+
+        ws.def(r#"
+        e, f = select(2, "a", "b", "c")
+        "#);
+
+        let e = ws.expr_ty("e");
+        let expected = ws.expr_ty("'b'");
+        let f = ws.expr_ty("f");
+        let expected_f = ws.expr_ty("'c'");
+        assert_eq!(e, expected);
+        assert_eq!(f, expected_f);
+
+        ws.def(r#"
+        h = select('#', "a", "b")
+        "#);
+
+        let h = ws.expr_ty("h");
+        let expected = ws.expr_ty("2");
+        assert_eq!(h, expected);
+    }
 }

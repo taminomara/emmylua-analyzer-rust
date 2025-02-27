@@ -17,7 +17,7 @@
 
 `FIX` custom operator infer
 
-
+`FIX` Fix select function and add std.Select type 
 
 # 0.5.1 
 

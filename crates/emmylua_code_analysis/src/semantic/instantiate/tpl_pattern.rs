@@ -303,7 +303,7 @@ fn func_varargs_tpl_pattern_match(
     Some(())
 }
 
-fn variadic_tpl_pattern_match(
+pub fn variadic_tpl_pattern_match(
     tpl: &LuaType,
     target_rest_types: &[LuaType],
     substitutor: &mut TypeSubstitutor,

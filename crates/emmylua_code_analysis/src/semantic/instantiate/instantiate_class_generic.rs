@@ -443,25 +443,30 @@ fn instantiate_select_call(source: &LuaType, index: &LuaType) -> LuaType {
     match num_or_len {
         NumOrLen::Num(i) => match multi_return {
             LuaMultiReturn::Base(_) => LuaType::MuliReturn(multi_return.clone().into()),
-            LuaMultiReturn::Multi(types) => {
-                let start = if i < 0 { types.len() as i64 + i } else { i - 1 };
-                if start < 0 || start as usize >= types.len() {
-                    return LuaType::Unknown;
+            LuaMultiReturn::Multi(_) => {
+                let total_len = multi_return.get_len();
+                if total_len.is_none() {
+                    return source.clone();
                 }
 
-                let new_types = types
-                    .iter()
-                    .skip(start as usize)
-                    .cloned()
-                    .collect::<Vec<_>>();
+                let total_len = total_len.unwrap();
+                let start = if i < 0 { total_len as i64 + i } else { i - 1 };
+                if start < 0 || start >= total_len {
+                    return source.clone();
+                }
 
-                LuaType::MuliReturn(LuaMultiReturn::Multi(new_types).into())
+                let multi = multi_return.get_new_multi_from(start as usize);
+                LuaType::MuliReturn(multi.into())
             }
         },
-        NumOrLen::Len => match multi_return {
-            LuaMultiReturn::Base(_) => LuaType::Integer,
-            LuaMultiReturn::Multi(types) => LuaType::DocIntegerConst(types.len() as i64),
-        },
+        NumOrLen::Len => {
+            let len = multi_return.get_len();
+            if let Some(len) = len {
+                LuaType::IntegerConst(len)
+            } else {
+                LuaType::Integer
+            }
+        }
         NumOrLen::LenUnknown => LuaType::Integer,
     }
 }
