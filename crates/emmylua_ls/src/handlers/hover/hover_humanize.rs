@@ -319,14 +319,9 @@ fn get_signature_rets_string(
                         format!("{}.", i + 1)
                     };
                     let name = ret.name.clone().unwrap_or_default();
-                    let detail = ret
-                        .description
-                        .as_ref()
-                        .map(|desc| format!(" — {}", desc.trim_end()))
-                        .unwrap_or_default();
 
                     rets_string_multiline.push_str(&format!(
-                        "  {}{} {}{}\n",
+                        "  {}{} {}\n",
                         prefix,
                         if !name.is_empty() {
                             format!("{}:", name)
@@ -334,7 +329,6 @@ fn get_signature_rets_string(
                             "".to_string()
                         },
                         type_text,
-                        detail
                     ));
                 }
                 rets_string_multiline

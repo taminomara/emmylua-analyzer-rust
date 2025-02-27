@@ -140,13 +140,11 @@ impl<'a> HoverBuilder<'a> {
                 &mut self.annotation_description,
                 signature_id,
             );
-            if self.is_completion {
-                add_signature_ret_description(
-                    &self.semantic_model.get_db(),
-                    &mut self.annotation_description,
-                    signature_id,
-                );
-            }
+            add_signature_ret_description(
+                &self.semantic_model.get_db(),
+                &mut self.annotation_description,
+                signature_id,
+            );
         }
     }
 
