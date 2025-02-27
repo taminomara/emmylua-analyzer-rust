@@ -481,6 +481,12 @@ impl LuaFunctionType {
             .any(|(_, t)| t.as_ref().map_or(false, |t| t.contain_tpl()))
             || self.ret.iter().any(|t| t.contain_tpl())
     }
+
+    pub fn first_param_is_self(&self) -> bool {
+        self.params.first().map_or(false, |(_, t)| {
+            t.as_ref().map_or(false, |t| t.is_self_infer())
+        })
+    }
 }
 
 impl From<LuaFunctionType> for LuaType {
