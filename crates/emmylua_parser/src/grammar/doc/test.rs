@@ -686,8 +686,7 @@ Syntax(Chunk)@0..256
         Syntax(TypeLiteral)@187..192
           Token(TkString)@187..192 "\"aaa\""
         Token(TkWhitespace)@192..193 " "
-        Syntax(DocDescription)@193..199
-          Token(TkDocDetail)@193..199 "@ 1231"
+        Token(TkDocDetail)@193..199 "@ 1231"
     Token(TkEndOfLine)@199..200 "\n"
     Token(TkWhitespace)@200..208 "        "
     Syntax(FuncStat)@208..247
