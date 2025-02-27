@@ -2088,4 +2088,86 @@ Syntax(Chunk)@0..110
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_param_union() {
+        let code = r#"
+        ---@param a
+        ---| number # nihao 
+        ---| string # wohao
+        "#;
+        let result = r##"
+Syntax(Chunk)@0..86
+  Syntax(Block)@0..86
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..77
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagParam)@13..77
+        Token(TkTagParam)@13..18 "param"
+        Token(TkWhitespace)@18..19 " "
+        Token(TkName)@19..20 "a"
+        Token(TkEndOfLine)@20..21 "\n"
+        Token(TkWhitespace)@21..29 "        "
+        Token(TkDocContinueOr)@29..33 "---|"
+        Token(TkWhitespace)@33..34 " "
+        Syntax(TypeBinary)@34..77
+          Syntax(TypeName)@34..40
+            Token(TkName)@34..40 "number"
+          Token(TkWhitespace)@40..41 " "
+          Token(TkDocDetail)@41..49 "# nihao "
+          Token(TkEndOfLine)@49..50 "\n"
+          Token(TkWhitespace)@50..58 "        "
+          Token(TkDocContinueOr)@58..62 "---|"
+          Token(TkWhitespace)@62..63 " "
+          Syntax(TypeName)@63..69
+            Token(TkName)@63..69 "string"
+          Token(TkWhitespace)@69..70 " "
+          Token(TkDocDetail)@70..77 "# wohao"
+    Token(TkEndOfLine)@77..78 "\n"
+    Token(TkWhitespace)@78..86 "        "
+        "##;
+
+        assert_ast_eq!(code, result);
+    }
+
+        #[test]
+    fn test_return_union() {
+        let code = r#"
+        ---@return
+        ---| number # nihao 
+        ---| string # wohao
+        "#;
+        let result = r##"
+Syntax(Chunk)@0..85
+  Syntax(Block)@0..85
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..76
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagReturn)@13..76
+        Token(TkTagReturn)@13..19 "return"
+        Token(TkEndOfLine)@19..20 "\n"
+        Token(TkWhitespace)@20..28 "        "
+        Token(TkDocContinueOr)@28..32 "---|"
+        Token(TkWhitespace)@32..33 " "
+        Syntax(TypeBinary)@33..76
+          Syntax(TypeName)@33..39
+            Token(TkName)@33..39 "number"
+          Token(TkWhitespace)@39..40 " "
+          Token(TkDocDetail)@40..48 "# nihao "
+          Token(TkEndOfLine)@48..49 "\n"
+          Token(TkWhitespace)@49..57 "        "
+          Token(TkDocContinueOr)@57..61 "---|"
+          Token(TkWhitespace)@61..62 " "
+          Syntax(TypeName)@62..68
+            Token(TkName)@62..68 "string"
+          Token(TkWhitespace)@68..69 " "
+          Token(TkDocDetail)@69..76 "# wohao"
+    Token(TkEndOfLine)@76..77 "\n"
+    Token(TkWhitespace)@77..85 "        "
+        "##;
+
+        assert_ast_eq!(code, result);
+    }
 }

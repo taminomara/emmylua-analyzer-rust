@@ -352,6 +352,7 @@ fn parse_tag_param(p: &mut LuaDocParser) -> ParseResult {
 
 fn parse_param_or_type_list(p: &mut LuaDocParser) -> ParseResult {
     let mut cm = parse_type(p)?;
+    if_token_bump(p, LuaTokenKind::TkDocDetail);
     while p.current_token() == LuaTokenKind::TkDocContinueOr {
         let m = cm.precede(p, LuaSyntaxKind::TypeBinary);
         p.bump();
