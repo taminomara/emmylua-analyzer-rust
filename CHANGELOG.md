@@ -1,6 +1,8 @@
 # CHANGELOG
 
-# 0.5.2 (unreleased)
+# 0.5.3 (unreleased)
+
+# 0.5.2 
 
 `CHG` Refactor `folding range`
 
