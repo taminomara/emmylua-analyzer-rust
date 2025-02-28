@@ -68,6 +68,7 @@ fn instantiate_tuple(db: &DbIndex, tuple: &LuaTupleType, substitutor: &TypeSubst
                             }
                         }
                         SubstitutorValue::Type(ty) => new_types.push(ty.clone()),
+                        SubstitutorValue::MultiBase(base) => new_types.push(base.clone()),
                     }
                 }
             }
@@ -135,7 +136,17 @@ pub fn instantiate_doc_function(
                                     new_returns.push(typ.clone());
                                 }
                             }
-                            _ => {}
+                            SubstitutorValue::Params(params) => {
+                                for (_, ty) in params {
+                                    new_returns.push(ty.clone().unwrap_or(LuaType::Unknown));
+                                }
+                            }
+                            SubstitutorValue::Type(ty) => new_returns.push(ty.clone()),
+                            SubstitutorValue::MultiBase(base) => {
+                                new_returns.push(LuaType::MuliReturn(
+                                    LuaMultiReturn::Base(base.clone()).into(),
+                                ));
+                            }
                         }
                     }
                 }
@@ -264,6 +275,7 @@ fn instantiate_tpl_ref(_: &DbIndex, tpl: &GenericTpl, substitutor: &TypeSubstitu
                     .clone()
                     .unwrap_or(LuaType::Unknown);
             }
+            SubstitutorValue::MultiBase(base) => return base.clone(),
         }
     }
 
@@ -504,6 +516,9 @@ fn instantiate_variadic_type(
                         .filter_map(|(_, ty)| ty.clone())
                         .collect::<Vec<_>>();
                     return LuaType::MuliReturn(LuaMultiReturn::Multi(types).into());
+                }
+                SubstitutorValue::MultiBase(base) => {
+                    return LuaType::MuliReturn(LuaMultiReturn::Base(base.clone()).into());
                 }
             }
         }

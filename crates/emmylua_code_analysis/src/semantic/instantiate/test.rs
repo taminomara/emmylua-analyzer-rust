@@ -63,4 +63,24 @@ mod test {
         let expected = ws.expr_ty("2");
         assert_eq!(h, expected);
     }
+
+    #[test]
+    fn test_unpack() {
+        let mut ws = crate::VirtualWorkspace::new_with_init_std_lib();
+
+        ws.def(r#"
+        local h ---@type number[]
+        a, b, c = table.unpack(h)
+        "#);
+
+        let a = ws.expr_ty("a");
+        let expected = ws.ty("number");
+        let b = ws.expr_ty("b");
+        let expected_b = ws.ty("number");
+        let c = ws.expr_ty("c");
+        let expected_c = ws.ty("number");
+        assert_eq!(a, expected);
+        assert_eq!(b, expected_b);
+        assert_eq!(c, expected_c);
+    }
 }
