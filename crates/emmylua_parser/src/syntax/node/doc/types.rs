@@ -3,7 +3,7 @@ use crate::{
     LuaLiteralToken, LuaNameToken, LuaSyntaxKind, LuaSyntaxNode, LuaTokenKind,
 };
 
-use super::{LuaDocDetailOwner, LuaDocObjectField, LuaDocTypeList};
+use super::{LuaDocDescription, LuaDocObjectField, LuaDocTypeList};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LuaDocType {
@@ -713,10 +713,12 @@ impl LuaAstNode for LuaDocOneLineField {
     }
 }
 
-impl LuaDocDetailOwner for LuaDocOneLineField {}
-
 impl LuaDocOneLineField {
     pub fn get_type(&self) -> Option<LuaDocType> {
+        self.child()
+    }
+
+    pub fn get_description(&self) -> Option<LuaDocDescription> {
         self.child()
     }
 }

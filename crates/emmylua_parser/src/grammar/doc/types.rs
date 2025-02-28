@@ -1,11 +1,12 @@
 use crate::{
     grammar::ParseResult,
     kind::{LuaOpKind, LuaSyntaxKind, LuaTokenKind, LuaTypeBinaryOperator, LuaTypeUnaryOperator},
+    lexer::LuaDocLexerState,
     parser::{CompleteMarker, LuaDocParser, MarkerEventContainer},
     parser_error::LuaParseError,
 };
 
-use super::{expect_token, if_token_bump};
+use super::{expect_token, if_token_bump, parse_description};
 
 pub fn parse_type(p: &mut LuaDocParser) -> ParseResult {
     if p.current_token() == LuaTokenKind::TkDocContinueOr {
@@ -388,7 +389,6 @@ fn parse_suffixed_type(p: &mut LuaDocParser, cm: CompleteMarker) -> ParseResult 
     }
 }
 
-
 fn parse_multi_line_union_type(p: &mut LuaDocParser) -> ParseResult {
     let m = p.mark(LuaSyntaxKind::TypeMultiLineUnion);
 
@@ -404,8 +404,10 @@ fn parse_one_line_type(p: &mut LuaDocParser) -> ParseResult {
     let m = p.mark(LuaSyntaxKind::DocOneLineField);
 
     parse_simple_type(p)?;
-    if p.current_token() == LuaTokenKind::TkDocDetail {
-        p.bump();
+    if p.current_token() != LuaTokenKind::TkDocContinueOr {
+        p.set_state(LuaDocLexerState::Description);
+        parse_description(p);
+        p.set_state(LuaDocLexerState::Normal);
     }
 
     Ok(m.complete(p))

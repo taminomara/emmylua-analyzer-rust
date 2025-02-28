@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaDocBinaryType, LuaDocDetailOwner, LuaDocFuncType, LuaDocGenericType,
+    LuaAst, LuaAstNode, LuaDocBinaryType, LuaDocFuncType, LuaDocGenericType,
     LuaDocMultiLineUnionType, LuaDocObjectFieldKey, LuaDocObjectType, LuaDocStrTplType, LuaDocType,
     LuaDocUnaryType, LuaDocVariadicType, LuaLiteralToken, LuaSyntaxKind, LuaTypeBinaryOperator,
     LuaTypeUnaryOperator, LuaVarExpr,
@@ -503,9 +503,10 @@ fn infer_multi_line_union_type(
             continue;
         };
 
-        let description = if let Some(description_text) = field.get_detail_text() {
+        let description = if let Some(description) = field.get_description() {
+            let description_text = preprocess_description(&description.get_description_text());
             if !description_text.is_empty() {
-                Some(preprocess_description(&description_text))
+                Some(description_text)
             } else {
                 None
             }
