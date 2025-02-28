@@ -79,7 +79,7 @@ fn check_filter(db: &DbIndex, file_id: FileId, workspace: &Path) -> Option<()> {
     Some(())
 }
 
-fn generate_member_owner_module(
+pub fn generate_member_owner_module(
     db: &DbIndex,
     member_owner: LuaMemberOwner,
     owner_name: &str,
