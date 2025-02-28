@@ -107,8 +107,8 @@ fn generate_simple_global(db: &DbIndex, decl: &LuaDecl, context: &mut Context) -
         context.insert("display", &display);
     } else {
         let typ_display = humanize_type(db, &ty, RenderLevel::Detailed);
-        let dispaly = format!("```lua\n{} : {}\n```\n", name, typ_display);
-        context.insert("display", &dispaly);
+        let display = format!("```lua\n{} : {}\n```\n", name, typ_display);
+        context.insert("display", &display);
     }
 
     Some(())
