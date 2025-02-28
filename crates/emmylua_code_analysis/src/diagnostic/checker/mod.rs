@@ -126,6 +126,10 @@ impl<'a> DiagnosticContext<'a> {
     }
 
     fn get_severity(&self, code: DiagnosticCode) -> Option<DiagnosticSeverity> {
+        if let Some(severity) = self.config.severity.get(&code) {
+            return Some(severity.clone());
+        }
+
         Some(get_default_severity(code))
     }
 
