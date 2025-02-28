@@ -2,15 +2,14 @@ use std::collections::HashMap;
 
 use emmylua_parser::{
     LuaAssignStat, LuaAst, LuaAstNode, LuaAstToken, LuaCommentOwner, LuaDocDescriptionOwner,
-    LuaDocDetailOwner, LuaDocGenericDeclList, LuaDocTagAlias, LuaDocTagClass, LuaDocTagEnum,
-    LuaDocTagGeneric, LuaFuncStat, LuaLocalName, LuaLocalStat, LuaNameExpr, LuaSyntaxId,
-    LuaSyntaxKind, LuaTokenKind, LuaVarExpr,
+    LuaDocGenericDeclList, LuaDocTagAlias, LuaDocTagClass, LuaDocTagEnum, LuaDocTagGeneric,
+    LuaFuncStat, LuaLocalName, LuaLocalStat, LuaNameExpr, LuaSyntaxId, LuaSyntaxKind, LuaTokenKind,
+    LuaVarExpr,
 };
 use rowan::TextRange;
 
 use crate::db_index::{
-    LuaDeclId, LuaDeclTypeKind, LuaMember, LuaMemberId, LuaMemberKey, LuaMemberOwner,
-    LuaPropertyOwnerId, LuaSignatureId, LuaType,
+    LuaDeclId, LuaDeclTypeKind, LuaMemberId, LuaPropertyOwnerId, LuaSignatureId, LuaType,
 };
 
 use super::{
@@ -159,57 +158,14 @@ pub fn analyze_alias(analyzer: &mut DocAnalyzer, tag: LuaDocTagAlias) -> Option<
             .add_generic_scope(vec![range], params_index, false);
     }
 
-    if let Some(origin_type) = tag.get_type() {
-        let replace_type = infer_type(analyzer, origin_type);
-        if replace_type.is_unknown() {
-            return None;
-        }
-        let alias = analyzer
-            .db
-            .get_type_index_mut()
-            .get_type_decl_mut(&alias_decl_id)?;
-        alias.add_alias_origin(replace_type);
-    } else if let Some(field_list) = tag.get_alias_fields() {
-        let mut union_members = Vec::new();
-        for (i, field) in field_list.get_fields().enumerate() {
-            let alias_member_type = if let Some(field_type) = field.get_type() {
-                let type_ref = infer_type(analyzer, field_type);
-                if type_ref.is_unknown() {
-                    continue;
-                }
-                type_ref
-            } else {
-                continue;
-            };
+    let origin_type = infer_type(analyzer, tag.get_type()?);
 
-            let member = LuaMember::new(
-                LuaMemberOwner::Type(alias_decl_id.clone()),
-                LuaMemberKey::Integer(i as i64),
-                file_id,
-                field.get_syntax_id(),
-                Some(alias_member_type),
-            );
-            let member_id = analyzer.db.get_member_index_mut().add_member(member);
-            union_members.push(member_id);
-            if let Some(description_text) = field.get_detail_text() {
-                if description_text.is_empty() {
-                    continue;
-                }
-                let description_text = preprocess_description(&description_text);
-                analyzer.db.get_property_index_mut().add_description(
-                    file_id,
-                    LuaPropertyOwnerId::Member(member_id),
-                    description_text,
-                );
-            }
-        }
+    let alias = analyzer
+        .db
+        .get_type_index_mut()
+        .get_type_decl_mut(&alias_decl_id)?;
 
-        let alias = analyzer
-            .db
-            .get_type_index_mut()
-            .get_type_decl_mut(&alias_decl_id)?;
-        alias.add_alias_union_members(union_members);
-    }
+    alias.add_alias_origin(origin_type);
 
     let description_text = tag.get_description()?.get_description_text();
     if description_text.is_empty() {

@@ -55,6 +55,7 @@ pub enum LuaType {
     Namespace(ArcIntern<SmolStr>),
     Variadic(Arc<LuaType>),
     Call(Arc<LuaAliasCallType>),
+    MultiLineUnion(Arc<LuaMultiLineUnion>),
 }
 
 impl PartialEq for LuaType {
@@ -102,6 +103,7 @@ impl PartialEq for LuaType {
             (LuaType::DocIntegerConst(a), LuaType::DocIntegerConst(b)) => a == b,
             (LuaType::Namespace(a), LuaType::Namespace(b)) => a == b,
             (LuaType::Variadic(a), LuaType::Variadic(b)) => a == b,
+            (LuaType::MultiLineUnion(a), LuaType::MultiLineUnion(b)) => a == b,
             _ => false, // 不同变体之间不相等
         }
     }
@@ -172,6 +174,10 @@ impl Hash for LuaType {
             LuaType::DocIntegerConst(a) => (39, a).hash(state),
             LuaType::Namespace(a) => (40, a).hash(state),
             LuaType::Variadic(a) => (42, a).hash(state),
+            LuaType::MultiLineUnion(a) => {
+                let ptr = Arc::as_ptr(a);
+                (43, ptr).hash(state)
+            }
         }
     }
 }
@@ -973,5 +979,33 @@ impl LuaStringTplType {
 
     pub fn get_name(&self) -> &str {
         &self.name
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct LuaMultiLineUnion {
+    unions: Vec<(LuaType, Option<String>)>,
+}
+
+impl LuaMultiLineUnion {
+    pub fn new(unions: Vec<(LuaType, Option<String>)>) -> Self {
+        Self { unions }
+    }
+
+    pub fn get_unions(&self) -> &[(LuaType, Option<String>)] {
+        &self.unions
+    }
+
+    pub fn to_union(&self) -> LuaType {
+        let mut types = Vec::new();
+        for (t, _) in &self.unions {
+            types.push(t.clone());
+        }
+
+        LuaType::Union(Arc::new(LuaUnionType::new(types)))
+    }
+
+    pub fn contain_tpl(&self) -> bool {
+        self.unions.iter().any(|(t, _)| t.contain_tpl())
     }
 }

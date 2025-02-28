@@ -222,7 +222,7 @@ fn instantiate_generic(
 
     if !substitutor.check_recursion(&type_decl_id) {
         if let Some(type_decl) = db.get_type_index().get_type_decl(&type_decl_id) {
-            if type_decl.is_alias_replace() {
+            if type_decl.is_alias() {
                 let new_substitutor =
                     TypeSubstitutor::from_alias(new_params.clone(), type_decl_id.clone());
                 if let Some(origin) = type_decl.get_alias_origin(db, Some(&new_substitutor)) {
