@@ -256,45 +256,23 @@ fn build_type_decl_hover(
     type_decl_id: LuaTypeDeclId,
 ) -> Option<()> {
     let type_decl = db.get_type_index().get_type_decl(&type_decl_id)?;
-    let type_description;
-    if type_decl.is_alias() {
+    let type_description = if type_decl.is_alias() {
         if let Some(origin) = type_decl.get_alias_origin(db, None) {
             let origin_type = humanize_type(db, &origin, RenderLevel::Detailed);
-            type_description = format!("(type alias) {} = {}", type_decl.get_name(), origin_type)
+            format!("(type alias) {} = {}", type_decl.get_name(), origin_type)
         } else {
-            let mut s = String::new();
-            s.push_str(&format!("(type alias) {}\n", type_decl.get_name()));
-            let member_ids = type_decl.get_alias_union_members()?;
-            for member_id in member_ids {
-                let member = db.get_member_index().get_member(&member_id)?;
-                let type_humanize_text =
-                    humanize_type(db, &member.get_decl_type(), RenderLevel::Minimal);
-                let property_owner = LuaPropertyOwnerId::Member(member_id.clone());
-                let description = db
-                    .get_property_index()
-                    .get_property(property_owner)
-                    .and_then(|p| p.description.clone());
-                if let Some(description) = description {
-                    s.push_str(&format!(
-                        "    | {}  --{}\n",
-                        type_humanize_text, description
-                    ));
-                } else {
-                    s.push_str(&format!("    | {}\n", type_humanize_text));
-                }
-            }
-            type_description = s;
+            "".to_string()
         }
     } else if type_decl.is_enum() {
-        type_description = format!("(enum) {}", type_decl.get_name());
+        format!("(enum) {}", type_decl.get_name())
     } else {
         let humanize_text = humanize_type(
             db,
             &LuaType::Def(type_decl_id.clone()),
             RenderLevel::Detailed,
         );
-        type_description = format!("(class) {}", humanize_text);
-    }
+        format!("(class) {}", humanize_text)
+    };
 
     builder.set_type_description(type_description);
     builder.add_description(LuaPropertyOwnerId::TypeDecl(type_decl_id));

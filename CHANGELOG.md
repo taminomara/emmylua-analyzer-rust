@@ -19,6 +19,8 @@
 
 `FIX` Fix select function and add std.Select type 
 
+`CHG` Refactor Union type
+
 # 0.5.1 
 
 `FIX` Fix issue `emmylua_ls` might not exit in unix.

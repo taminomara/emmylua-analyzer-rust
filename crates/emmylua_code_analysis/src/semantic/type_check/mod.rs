@@ -148,6 +148,10 @@ fn escape_type(db: &DbIndex, typ: &LuaType) -> Option<LuaType> {
             let base = member_path.get_origin();
             return Some(TypeOps::Remove.apply(base, &LuaType::Nil));
         }
+        LuaType::MultiLineUnion(multi_union) => {
+            let union = multi_union.to_union();
+            return Some(union);
+        }
         _ => {}
     }
 

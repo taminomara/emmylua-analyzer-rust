@@ -98,7 +98,7 @@ impl LuaTypeIndex {
             }
 
             let location = LuaDeclLocation { file_id, range };
-            decls.defined_locations.push(location);
+            decls.locations.push(location);
         } else {
             let just_name = if let Some(i) = basic_name.rfind('.') {
                 basic_name[i + 1..].to_string()

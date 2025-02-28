@@ -8,6 +8,10 @@ use crate::{
 use super::{expect_token, if_token_bump};
 
 pub fn parse_type(p: &mut LuaDocParser) -> ParseResult {
+    if p.current_token() == LuaTokenKind::TkDocContinueOr {
+        return parse_multi_line_union_type(p);
+    }
+
     let cm = parse_sub_type(p, 0)?;
 
     // <type>?
@@ -382,4 +386,27 @@ fn parse_suffixed_type(p: &mut LuaDocParser, cm: CompleteMarker) -> ParseResult 
             _ => return Ok(cm),
         }
     }
+}
+
+
+fn parse_multi_line_union_type(p: &mut LuaDocParser) -> ParseResult {
+    let m = p.mark(LuaSyntaxKind::TypeMultiLineUnion);
+
+    while p.current_token() == LuaTokenKind::TkDocContinueOr {
+        p.bump();
+        parse_one_line_type(p)?;
+    }
+
+    Ok(m.complete(p))
+}
+
+fn parse_one_line_type(p: &mut LuaDocParser) -> ParseResult {
+    let m = p.mark(LuaSyntaxKind::DocOneLineField);
+
+    parse_simple_type(p)?;
+    if p.current_token() == LuaTokenKind::TkDocDetail {
+        p.bump();
+    }
+
+    Ok(m.complete(p))
 }
