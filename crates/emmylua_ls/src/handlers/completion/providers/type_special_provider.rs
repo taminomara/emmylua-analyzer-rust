@@ -298,9 +298,19 @@ fn add_multi_line_union_member_completion(
             None
         };
 
+        let label_details = if let Some(description) = description {
+            Some(lsp_types::CompletionItemLabelDetails {
+                detail: None,
+                description: Some(description.clone()),
+            })
+        } else {
+            None
+        };
+
         let completion_item = CompletionItem {
             label: name,
             kind: Some(lsp_types::CompletionItemKind::ENUM_MEMBER),
+            label_details,
             documentation,
             ..Default::default()
         };

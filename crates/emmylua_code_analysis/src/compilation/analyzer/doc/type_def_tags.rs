@@ -1,15 +1,18 @@
 use std::collections::HashMap;
 
 use emmylua_parser::{
-    LuaAssignStat, LuaAst, LuaAstNode, LuaAstToken, LuaCommentOwner, LuaDocDescriptionOwner,
-    LuaDocGenericDeclList, LuaDocTagAlias, LuaDocTagClass, LuaDocTagEnum, LuaDocTagGeneric,
-    LuaFuncStat, LuaLocalName, LuaLocalStat, LuaNameExpr, LuaSyntaxId, LuaSyntaxKind, LuaTokenKind,
-    LuaVarExpr,
+    LuaAssignStat, LuaAst, LuaAstNode, LuaAstToken, LuaCommentOwner, LuaDocDescription,
+    LuaDocDescriptionOwner, LuaDocGenericDeclList, LuaDocTagAlias, LuaDocTagClass, LuaDocTagEnum,
+    LuaDocTagGeneric, LuaFuncStat, LuaLocalName, LuaLocalStat, LuaNameExpr, LuaSyntaxId,
+    LuaSyntaxKind, LuaTokenKind, LuaVarExpr,
 };
 use rowan::TextRange;
 
-use crate::db_index::{
-    LuaDeclId, LuaDeclTypeKind, LuaMemberId, LuaPropertyOwnerId, LuaSignatureId, LuaType,
+use crate::{
+    db_index::{
+        LuaDeclId, LuaDeclTypeKind, LuaMemberId, LuaPropertyOwnerId, LuaSignatureId, LuaType,
+    },
+    LuaTypeDeclId,
 };
 
 use super::{
@@ -62,19 +65,43 @@ pub fn analyze_class(analyzer: &mut DocAnalyzer, tag: LuaDocTagClass) -> Option<
         }
     }
 
-    if let Some(description) = tag.get_description() {
-        let description_text = preprocess_description(&description.get_description_text());
-        if !description_text.is_empty() {
-            analyzer.db.get_property_index_mut().add_description(
-                file_id,
-                LuaPropertyOwnerId::TypeDecl(class_decl_id.clone()),
-                description_text,
-            );
-        }
-    }
+    add_description_for_type_decl(analyzer, &class_decl_id, tag.get_description());
 
     bind_def_type(analyzer, LuaType::Def(class_decl_id.clone()));
     Some(())
+}
+
+fn add_description_for_type_decl(
+    analyzer: &mut DocAnalyzer,
+    type_decl_id: &LuaTypeDeclId,
+    description: Option<LuaDocDescription>,
+) {
+    let mut description_text = String::new();
+
+    let comment = analyzer.comment.clone();
+    if let Some(description) = comment.get_description() {
+        let description = preprocess_description(&description.get_description_text());
+        if !description.is_empty() {
+            description_text.push_str(&description);
+        }
+    }
+
+    if let Some(description) = description {
+        let description = preprocess_description(&description.get_description_text());
+        if !description.is_empty() {
+            if !description_text.is_empty() {
+                description_text.push_str("\n\n");
+            }
+
+            description_text.push_str(&description);
+        }
+    }
+
+    analyzer.db.get_property_index_mut().add_description(
+        analyzer.file_id,
+        LuaPropertyOwnerId::TypeDecl(type_decl_id.clone()),
+        description_text,
+    );
 }
 
 pub fn analyze_enum(analyzer: &mut DocAnalyzer, tag: LuaDocTagEnum) -> Option<()> {
@@ -107,16 +134,8 @@ pub fn analyze_enum(analyzer: &mut DocAnalyzer, tag: LuaDocTagEnum) -> Option<()
         enum_decl.add_enum_base(base_type);
     }
 
-    if let Some(description) = tag.get_description() {
-        let description_text = preprocess_description(&description.get_description_text());
-        if !description_text.is_empty() {
-            analyzer.db.get_property_index_mut().add_description(
-                file_id,
-                LuaPropertyOwnerId::TypeDecl(enum_decl_id.clone()),
-                description_text,
-            );
-        }
-    }
+    let description = tag.get_description();
+    add_description_for_type_decl(analyzer, &enum_decl_id, description);
 
     bind_def_type(analyzer, LuaType::Def(enum_decl_id.clone()));
 
@@ -167,16 +186,8 @@ pub fn analyze_alias(analyzer: &mut DocAnalyzer, tag: LuaDocTagAlias) -> Option<
 
     alias.add_alias_origin(origin_type);
 
-    let description_text = tag.get_description()?.get_description_text();
-    if description_text.is_empty() {
-        return None;
-    }
-    let description_text = preprocess_description(&description_text);
-    analyzer.db.get_property_index_mut().add_description(
-        file_id,
-        LuaPropertyOwnerId::TypeDecl(alias_decl_id.clone()),
-        description_text,
-    );
+    let description = tag.get_description();
+    add_description_for_type_decl(analyzer, &alias_decl_id, description);
 
     Some(())
 }

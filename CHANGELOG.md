@@ -21,6 +21,8 @@
 
 `CHG` Refactor Union type
 
+`NEW` Add description to type
+
 # 0.5.1 
 
 `FIX` Fix issue `emmylua_ls` might not exit in unix.
