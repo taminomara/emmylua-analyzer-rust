@@ -233,10 +233,12 @@ fn build_member_hover(
     } else if typ.is_const() {
         let const_value = hover_const_type(db, &typ);
         builder.set_type_description(format!("(field) {}: {}", member_name, const_value));
+        builder.set_location_path(Some(&member));
     } else {
         let type_humanize_text =
             hover_type(builder, &typ, Some(RenderLevel::Simple)).unwrap_or_default();
         builder.set_type_description(format!("(field) {}: {}", member_name, type_humanize_text));
+        builder.set_location_path(Some(&member));
     }
 
     builder.add_annotation_description("---".to_string());
