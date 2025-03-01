@@ -307,8 +307,8 @@ fn generate_alias_type_markdown(
     }
 
     if let Some(origin_typ) = typ.get_alias_origin(db, None) {
-        let origin_typ_display = humanize_type(db, &origin_typ, RenderLevel::Detailed);
-        let display = format!("```lua\n(alias) {} = {}\n```\n", typ_name, origin_typ_display);
+        let origin_type_display = humanize_type(db, &origin_typ, RenderLevel::Detailed);
+        let display = format!("```lua\n(alias) {} = {}\n```\n", typ_name, origin_type_display);
         context.insert("origin_type", &display);
     }
 
