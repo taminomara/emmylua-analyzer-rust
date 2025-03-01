@@ -4,7 +4,8 @@ use emmylua_code_analysis::{LuaFlowId, LuaType};
 use emmylua_parser::{LuaAstNode, LuaNameExpr};
 
 use crate::handlers::completion::{
-    add_completions::add_decl_completion, completion_builder::CompletionBuilder,
+    add_completions::{add_decl_completion, check_match_word},
+    completion_builder::CompletionBuilder,
 };
 
 pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
@@ -36,6 +37,10 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
             )
         };
         if duplicated_name.contains(&name) {
+            continue;
+        }
+        if !check_match_word(builder.trigger_token.text(), name.as_str()) {
+            duplicated_name.insert(name.clone());
             continue;
         }
 
@@ -76,6 +81,10 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
             )
         };
         if duplicated_name.contains(&name) {
+            continue;
+        }
+        if !check_match_word(builder.trigger_token.text(), name.as_str()) {
+            duplicated_name.insert(name.clone());
             continue;
         }
         // 如果范围相同, 则是在定义一个新的全局变量, 不需要添加
