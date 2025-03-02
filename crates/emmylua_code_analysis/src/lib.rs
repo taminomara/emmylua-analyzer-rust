@@ -58,7 +58,7 @@ impl EmmyLuaAnalysis {
             .get_db_mut()
             .get_module_index_mut()
             .add_workspace_root(std_root, WorkspaceId::STD);
-        
+
         let files = files
             .into_iter()
             .filter_map(|file| {
@@ -87,7 +87,7 @@ impl EmmyLuaAnalysis {
             .add_workspace_root(root, WorkspaceId::MAIN);
     }
 
-    pub fn add_libary_workspace(&mut self, root: PathBuf) {
+    pub fn add_library_workspace(&mut self, root: PathBuf) {
         let id = WorkspaceId { id: self.lib_workspace_counter };
         self.lib_workspace_counter += 1;
 

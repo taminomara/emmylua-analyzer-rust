@@ -111,7 +111,7 @@ pub async fn init_analysis(
 
     for lib in &emmyrc.workspace.library {
         info!("add library: {:?}", lib);
-        mut_analysis.add_libary_workspace(PathBuf::from_str(lib).unwrap());
+        mut_analysis.add_library_workspace(PathBuf::from_str(lib).unwrap());
         workspace_folders.push(PathBuf::from_str(lib).unwrap());
     }
 
