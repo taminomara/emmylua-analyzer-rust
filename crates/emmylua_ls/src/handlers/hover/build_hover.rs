@@ -300,7 +300,7 @@ pub fn add_signature_param_description(
 
         if let Some(description) = &param_info.description {
             s.push_str(&format!(
-                "@*param* `{}` — {}\n",
+                "@*param* `{}` — {}\n\n",
                 param_info.name, description
             ));
         }
@@ -323,7 +323,7 @@ pub fn add_signature_ret_description(
         let ret_info = &signature.return_docs[i];
         if let Some(description) = ret_info.description.clone() {
             s.push_str(&format!(
-                "@*return* {} — {}\n",
+                "@*return* {} — {}\n\n",
                 match &ret_info.name {
                     Some(name) if !name.is_empty() => format!("`{}` ", name),
                     _ => "".to_string(),
