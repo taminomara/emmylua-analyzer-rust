@@ -84,10 +84,7 @@ impl<'a> HoverBuilder<'a> {
         if self.type_expansion.is_none() {
             self.type_expansion = Some(Vec::new());
         }
-        self.type_expansion
-            .as_mut()
-            .unwrap()
-            .push(type_expansion);
+        self.type_expansion.as_mut().unwrap().push(type_expansion);
     }
 
     pub fn get_type_expansion_count(&self) -> usize {
@@ -147,7 +144,7 @@ impl<'a> HoverBuilder<'a> {
                     if decl.is_global()
                         && is_std_by_name(&decl.get_name())
                         && is_std_by_path(self.semantic_model.get_db(), decl.get_file_id())
-                            .is_some()
+                            .unwrap_or(false)
                     {
                         let std_desc = hover_std_description(decl.get_name(), None);
                         if !std_desc.is_empty() {
