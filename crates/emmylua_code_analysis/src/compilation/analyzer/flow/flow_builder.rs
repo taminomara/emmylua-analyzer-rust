@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use rowan::TextSize;
 
@@ -10,7 +10,6 @@ use super::flow_tree::{FlowNode, FlowTree};
 pub struct FlowBuilder {
     current_flow_id: LuaFlowId,
     flow_id_stack: Vec<LuaFlowId>,
-    may_has_flow_node: HashSet<TextSize>,
     flow_trees: HashMap<LuaFlowId, FlowTree>,
 }
 
@@ -20,7 +19,6 @@ impl FlowBuilder {
         let mut builder = FlowBuilder {
             current_flow_id: LuaFlowId::chunk(),
             flow_id_stack: Vec::new(),
-            may_has_flow_node: HashSet::new(),
             flow_trees: HashMap::new(),
         };
 

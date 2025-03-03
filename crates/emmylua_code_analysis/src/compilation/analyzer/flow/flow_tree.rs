@@ -44,4 +44,8 @@ impl FlowTree {
     pub fn get_node(&self, position: TextSize) -> Option<&FlowNode> {
         self.nodes.get(&position)
     }
+
+    pub fn get_nodes(&self) -> Vec<&FlowNode> {
+        self.nodes.values().collect()
+    }
 }

@@ -3,7 +3,7 @@ mod flow_builder;
 mod flow_tree;
 mod var_analyze;
 
-use crate::{db_index::DbIndex, profile::Profile, LuaFlowId};
+use crate::{db_index::DbIndex, profile::Profile, FileId, LuaFlowChain, LuaFlowId};
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaCallExpr, LuaChunk, LuaExpr, LuaIndexExpr, LuaNameExpr,
     LuaTokenKind, PathTrait,
@@ -12,6 +12,7 @@ use flow_builder::FlowBuilder;
 use flow_tree::{FlowNode, FlowRefNode, FlowTree};
 use rowan::WalkEvent;
 use smol_str::SmolStr;
+use var_analyze::analyze_ref_expr;
 
 use super::AnalyzeContext;
 
@@ -21,7 +22,7 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     // build decl and ref flow chain
     for in_filed_tree in &tree_list {
         let flow_trees = build_flow(in_filed_tree.value.clone());
-        analyze_flow(db, flow_trees);
+        analyze_flow(db, in_filed_tree.file_id, flow_trees);
     }
 }
 
@@ -142,6 +143,40 @@ fn build_call_expr_flow(builder: &mut FlowBuilder, call_expr: LuaCallExpr) -> Op
 }
 
 #[allow(unused)]
-fn analyze_flow(db: &mut DbIndex, flow_trees: Vec<(LuaFlowId, FlowTree)>) {
-    for (flow_id, flow_tree) in flow_trees {}
+fn analyze_flow(db: &mut DbIndex, file_id: FileId, flow_trees: Vec<(LuaFlowId, FlowTree)>) {
+    for (flow_id, flow_tree) in flow_trees {
+        let node = flow_tree.get_nodes();
+        let mut flow_chain = LuaFlowChain::new(flow_id);
+        for node in node {
+            match node {
+                FlowNode::UseRef(ref_node) => {
+                    let path = &ref_node.path;
+                    let expr = &ref_node.node;
+                    analyze_ref_expr(db, &mut flow_chain, expr, path);
+                }
+                FlowNode::AssignRef(ref_node) => {
+                    let path = &ref_node.path;
+                    let expr = &ref_node.node;
+                    // analyze_ref_expr(db, &mut flow_chain, expr, path);
+                }
+                FlowNode::Return(return_stat) => {
+                    // do something
+                }
+                FlowNode::Break(break_stat) => {
+                    // do something
+                }
+                FlowNode::Goto(goto_stat) => {
+                    // do something
+                }
+                FlowNode::ThrowError(call_expr) => {
+                    // do something
+                }
+                FlowNode::Assert(call_expr) => {
+                    // do something
+                }
+            }
+        }
+
+        db.get_flow_index_mut().add_flow_chain(file_id, flow_chain);
+    }
 }
