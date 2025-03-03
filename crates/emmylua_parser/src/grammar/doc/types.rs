@@ -35,7 +35,7 @@ pub fn parse_type(p: &mut LuaDocParser) -> ParseResult {
 }
 
 // <type>
-// keyof <type>
+// keyof <type>, -1
 // <type> | <type> , <type> & <type>, <type> extends <type>, <type> in keyof <type>
 fn parse_sub_type(p: &mut LuaDocParser, limit: i32) -> ParseResult {
     let uop = LuaOpKind::to_type_unary_operator(p.current_token());

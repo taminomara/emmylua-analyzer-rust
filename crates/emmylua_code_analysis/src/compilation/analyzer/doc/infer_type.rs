@@ -337,6 +337,11 @@ fn infer_unary_type(analyzer: &mut DocAnalyzer, unary_type: LuaDocUnaryType) -> 
                         LuaAliasCallType::new(LuaAliasCallKind::KeyOf, vec![base]).into(),
                     );
                 }
+                LuaTypeUnaryOperator::Neg => {
+                    if let LuaType::DocIntegerConst(i) = base {
+                        return LuaType::DocIntegerConst(-i);
+                    }
+                }
                 _ => {}
             }
         }
