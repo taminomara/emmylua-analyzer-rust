@@ -220,4 +220,23 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_135() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+        ---@alias A
+        ---| "number" # A number
+
+        ---@param a A
+        local function f(a)
+        end
+
+        f("number")
+        "#
+        ));
+    }
 }
