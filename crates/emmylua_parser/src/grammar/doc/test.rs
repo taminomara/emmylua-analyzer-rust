@@ -2242,4 +2242,30 @@ Syntax(Chunk)@0..127
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_neg_integer() {
+        let code = r#"
+        ---@type -123
+        "#;
+        let result = r#"
+Syntax(Chunk)@0..31
+  Syntax(Block)@0..31
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..22
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagType)@13..22
+        Token(TkTagType)@13..17 "type"
+        Token(TkWhitespace)@17..18 " "
+        Syntax(TypeUnary)@18..22
+          Token(TkMinus)@18..19 "-"
+          Syntax(TypeLiteral)@19..22
+            Token(TkInt)@19..22 "123"
+    Token(TkEndOfLine)@22..23 "\n"
+    Token(TkWhitespace)@23..31 "        "
+        "#;
+
+        assert_ast_eq!(code, result);  
+    }
 }
