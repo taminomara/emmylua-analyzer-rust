@@ -2,6 +2,10 @@
 
 # 0.5.3 (unreleased)
 
+`NEW` Support negative integer as type
+
+`Fix` Fix alias type check issue
+
 # 0.5.2 
 
 `CHG` Refactor `folding range`
