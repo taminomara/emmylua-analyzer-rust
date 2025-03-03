@@ -103,7 +103,9 @@ fn check_general_type_compact(
         | LuaType::Object(_)
         | LuaType::Union(_)
         | LuaType::Intersection(_)
-        | LuaType::TableGeneric(_) => {
+        | LuaType::TableGeneric(_) 
+        | LuaType::MultiLineUnion(_)
+        => {
             check_complex_type_compact(db, source, compact_type, check_guard)
         }
 
