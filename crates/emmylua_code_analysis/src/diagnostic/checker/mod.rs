@@ -11,6 +11,7 @@ mod syntax_error;
 mod undefined_global;
 mod unused;
 mod code_style_check;
+mod redundant_parameter;
 
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
@@ -46,6 +47,7 @@ pub fn check_file(
     check!(undefined_global);
     check!(access_invisible);
     check!(missing_parameter);
+    check!(redundant_parameter);
     check!(local_const_reassign);
     check!(discard_returns);
     check!(await_in_sync);

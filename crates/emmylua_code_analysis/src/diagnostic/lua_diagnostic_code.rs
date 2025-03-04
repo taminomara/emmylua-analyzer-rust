@@ -18,6 +18,8 @@ pub enum DiagnosticCode {
     ParamTypeNotMatch,
     /// Missing parameter
     MissingParameter,
+    /// Redundant parameter
+    RedundantParameter,
     /// Inject field fail
     InjectFieldFail,
     /// Unreachable code

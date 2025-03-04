@@ -27,6 +27,10 @@ The property is protected and cannot be accessed outside its subclasses.:
   en: 'The property is protected and cannot be accessed outside its subclasses.'
   zh_CN: '该属性受保护，无法在其子类之外访问。'
   zh_HK: '該屬性受保護，無法在其子類之外訪問。'
+expected %{num} parameters but found %{found_num}:
+  en: 'expected %{num} parameters but found %{found_num}'
+  zh_CN: '期望 %{num} 个参数，但找到 %{found_num} 个'
+  zh_HK: '期望 %{num} 個參數，但找到 %{found_num} 個'
 expected %{num} parameters but found %{found_num}. %{infos}:
   en: 'expected %{num} parameters but found %{found_num}. %{infos}'
   zh_CN: '期望 %{num} 个参数，但找到 %{found_num} 个。%{infos}'
