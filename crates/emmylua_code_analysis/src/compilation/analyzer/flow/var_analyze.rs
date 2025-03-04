@@ -35,8 +35,8 @@ pub fn analyze_ref_assign(
     var_expr: LuaVarExpr,
     path: &str,
 ) -> Option<()> {
-    let assignt_stat = var_expr.get_parent::<LuaAssignStat>()?;
-    let (var_exprs, value_exprs) = assignt_stat.get_var_and_expr_list();
+    let assign_stat = var_expr.get_parent::<LuaAssignStat>()?;
+    let (var_exprs, value_exprs) = assign_stat.get_var_and_expr_list();
     let index = var_exprs
         .iter()
         .position(|it| it.get_position() == var_expr.get_position())?;
@@ -59,7 +59,7 @@ pub fn analyze_ref_assign(
         db,
         flow_chain,
         path,
-        LuaAst::LuaAssignStat(assignt_stat),
+        LuaAst::LuaAssignStat(assign_stat),
         type_assert,
         true,
     );
