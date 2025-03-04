@@ -29,10 +29,12 @@ pub fn hover_function_type(
     typ: &LuaType,
     function_member: Option<&LuaMember>,
     func_name: &str,
+    is_local: bool,
 ) {
     match typ {
         LuaType::Function => builder.set_type_description(format!("function {}()", func_name)),
         LuaType::DocFunction(lua_func) => builder.set_type_description(hover_doc_function_type(
+            builder,
             db,
             &lua_func,
             function_member,
@@ -44,6 +46,7 @@ pub fn hover_function_type(
             signature_id.clone(),
             function_member,
             func_name,
+            is_local,
         )
         .unwrap_or_else(|| {
             builder.set_type_description(format!("function {}", func_name));
@@ -53,6 +56,7 @@ pub fn hover_function_type(
             // 泛型处理
             if let Some(call) = builder.get_call_signature() {
                 builder.set_type_description(hover_doc_function_type(
+                    builder,
                     db,
                     &call,
                     function_member,
@@ -64,6 +68,7 @@ pub fn hover_function_type(
                 for typ in union.get_types() {
                     if let LuaType::DocFunction(lua_func) = typ {
                         overloads.push(hover_doc_function_type(
+                            builder,
                             db,
                             &lua_func,
                             function_member,
@@ -82,8 +87,8 @@ pub fn hover_function_type(
     }
 }
 
-// 泛型时会将`Signature`转为`DocFunction`, 我们必须处理这种情况
 fn hover_doc_function_type(
+    builder: &HoverBuilder,
     db: &DbIndex,
     lua_func: &LuaFunctionType,
     owner_member: Option<&LuaMember>,
@@ -93,10 +98,16 @@ fn hover_doc_function_type(
     let mut type_label = "function ";
     // 有可能来源于类. 例如: `local add = class.add`, `add()`应被视为类方法
     let full_name = if let Some(owner_member) = owner_member {
+        let global_name = builder.infer_prefix_global_name(owner_member);
         let mut name = String::new();
         let parent_owner = owner_member.get_owner();
         if let LuaMemberOwner::Type(ty) = &parent_owner.clone() {
-            name.push_str(ty.get_simple_name());
+            // 如果是全局定义, 则使用定义时的名称
+            if let Some(global_name) = global_name {
+                name.push_str(global_name);
+            } else {
+                name.push_str(ty.get_simple_name());
+            }
             if owner_member.is_field().is_some() {
                 type_label = "(field) ";
             }
@@ -121,11 +132,7 @@ fn hover_doc_function_type(
         .enumerate()
         .map(|(index, param)| {
             let name = param.0.clone();
-            if index == 0
-                && param.1.is_some()
-                && name == "self"
-                && param.1.as_ref().unwrap().is_self_infer()
-            {
+            if index == 0 && param.1.is_some() && param.1.as_ref().unwrap().is_self_infer() {
                 "".to_string()
             } else if let Some(ty) = &param.1 {
                 format!("{}: {}", name, humanize_type(db, ty, RenderLevel::Normal))
@@ -160,6 +167,7 @@ fn hover_signature_type(
     signature_id: LuaSignatureId,
     owner_member: Option<&LuaMember>,
     func_name: &str,
+    is_local: bool,
 ) -> Option<()> {
     let signature = db.get_signature_index().get(&signature_id)?;
     let call_signature = builder.get_call_signature();
@@ -167,10 +175,17 @@ fn hover_signature_type(
     let mut type_label = "function ";
     // 有可能来源于类. 例如: `local add = class.add`, `add()`应被视为类定义的内容
     let full_name = if let Some(owner_member) = owner_member {
+        let global_name = builder.infer_prefix_global_name(owner_member);
         let mut name = String::new();
         if let LuaMemberOwner::Type(ty) = &owner_member.get_owner() {
-            name.push_str(ty.get_simple_name());
-            if signature.is_colon_define {
+            // 如果是全局定义, 则使用定义时的名称
+            if let Some(global_name) = global_name {
+                name.push_str(global_name);
+            } else {
+                name.push_str(ty.get_simple_name());
+            }
+            // `field`定义的function也被视为`signature`, 因此这里需要额外处理
+            if signature.is_colon_define || signature.first_param_is_self() {
                 type_label = "(method) ";
                 name.push_str(":");
             } else {
@@ -182,6 +197,9 @@ fn hover_signature_type(
         }
         name
     } else {
+        if is_local {
+            type_label = "local function ";
+        }
         func_name.to_string()
     };
 
@@ -195,14 +213,18 @@ fn hover_signature_type(
         let params = signature
             .get_type_params()
             .iter()
-            .map(|param| {
+            .enumerate()
+            .map(|(index, param)| {
                 let name = param.0.clone();
-                if let Some(ty) = &param.1 {
+                if index == 0 && param.1.is_some() && param.1.as_ref().unwrap().is_self_infer() {
+                    "".to_string()
+                } else if let Some(ty) = &param.1 {
                     format!("{}: {}", name, humanize_type(db, ty, RenderLevel::Simple))
                 } else {
                     name
                 }
             })
+            .filter(|s| !s.is_empty())
             .collect::<Vec<_>>()
             .join(", ");
         let rets = build_signature_rets(builder, signature, builder.is_completion, None);
@@ -226,14 +248,19 @@ fn hover_signature_type(
             let params = overload
                 .get_params()
                 .iter()
-                .map(|param| {
+                .enumerate()
+                .map(|(index, param)| {
                     let name = param.0.clone();
-                    if let Some(ty) = &param.1 {
+                    if index == 0 && param.1.is_some() && param.1.as_ref().unwrap().is_self_infer()
+                    {
+                        "".to_string()
+                    } else if let Some(ty) = &param.1 {
                         format!("{}: {}", name, humanize_type(db, ty, RenderLevel::Simple))
                     } else {
                         name
                     }
                 })
+                .filter(|s| !s.is_empty())
                 .collect::<Vec<_>>()
                 .join(", ");
             let rets =
@@ -355,10 +382,10 @@ fn build_signature_rets(
                     let name = ret.name.clone().unwrap_or_default();
 
                     rets_string_multiline.push_str(&format!(
-                        "  {}{} {}\n",
+                        "  {}{}{}\n",
                         prefix,
                         if !name.is_empty() {
-                            format!("{}:", name)
+                            format!("{}: ", name)
                         } else {
                             "".to_string()
                         },

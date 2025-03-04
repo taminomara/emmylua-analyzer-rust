@@ -84,6 +84,13 @@ impl LuaSignature {
             .map(|info| info.type_ref.clone())
             .collect()
     }
+
+    // `field`定义的`function`也被视为`signature`
+    pub fn first_param_is_self(&self) -> bool {
+        self.get_param_info_by_id(0).map_or(false, |info| {
+            info.type_ref.is_self_infer()
+        })
+    }
 }
 
 #[derive(Debug)]
