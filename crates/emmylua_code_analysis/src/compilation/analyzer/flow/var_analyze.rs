@@ -1,9 +1,9 @@
 use emmylua_parser::{
     BinaryOperator, LuaAst, LuaAstNode, LuaBinaryExpr, LuaBlock, LuaCallArgList, LuaCallExpr,
-    LuaExpr, LuaLiteralToken, LuaStat, LuaSyntaxKind, PathTrait,
-    UnaryOperator,
+    LuaExpr, LuaLiteralToken, LuaStat, UnaryOperator,
 };
 use rowan::TextRange;
+use smol_str::SmolStr;
 
 use crate::{
     db_index::{LuaType, TypeAssertion},
@@ -69,23 +69,6 @@ fn broadcast_up(
             let block = else_if_clause_stat.get_block()?;
             flow_chain.add_type_assert(path, type_assert, block.get_range());
         }
-        LuaAst::LuaIndexExpr(index_expr) => {
-            if index_expr.get_position() != origin.get_position() {
-                return None;
-            }
-
-            let member_path = index_expr.get_member_path()?;
-
-            let type_assert = TypeAssertion::MemberPathExist(member_path.into());
-            broadcast_up(
-                db,
-                flow_chain,
-                path,
-                index_expr.get_parent::<LuaAst>()?,
-                LuaAst::LuaIndexExpr(index_expr),
-                type_assert,
-            );
-        }
         LuaAst::LuaBinaryExpr(binary_expr) => {
             let op = binary_expr.get_op_token()?;
             match op.get_op() {
@@ -104,11 +87,15 @@ fn broadcast_up(
                         type_assert,
                     );
                 }
-                BinaryOperator::OpEq => {
-                    if origin.syntax().kind() != LuaSyntaxKind::NameExpr.into() {
-                        return None;
+                BinaryOperator::OpOr => {
+                    let (left, right) = binary_expr.get_exprs()?;
+                    if left.get_position() == origin.get_position() {
+                        if let Some(ne) = type_assert.get_negation() {
+                            flow_chain.add_type_assert(path, ne, right.get_range());
+                        }
                     }
-
+                }
+                BinaryOperator::OpEq => {
                     let (left, right) = binary_expr.get_exprs()?;
                     let expr = if left.get_position() == origin.get_position() {
                         right
@@ -126,8 +113,16 @@ fn broadcast_up(
                                     TypeAssertion::NotExist
                                 }
                             }
-                            LuaLiteralToken::Number(_) => TypeAssertion::Narrow(LuaType::Number),
-                            LuaLiteralToken::String(_) => TypeAssertion::Narrow(LuaType::String),
+                            LuaLiteralToken::Number(i) => {
+                                if i.is_int() {
+                                    TypeAssertion::Narrow(LuaType::IntegerConst(i.get_int_value()))
+                                } else {
+                                    TypeAssertion::Narrow(LuaType::Number)
+                                }
+                            }
+                            LuaLiteralToken::String(s) => TypeAssertion::Narrow(
+                                LuaType::StringConst(SmolStr::new(s.get_value()).into()),
+                            ),
                             _ => return None,
                         };
 
@@ -141,13 +136,53 @@ fn broadcast_up(
                         );
                     }
                 }
+                BinaryOperator::OpNe => {
+                    let (left, right) = binary_expr.get_exprs()?;
+                    let expr = if left.get_position() == origin.get_position() {
+                        right
+                    } else {
+                        left
+                    };
+
+                    if let LuaExpr::LiteralExpr(literal) = expr {
+                        let type_assert = match literal.get_literal()? {
+                            LuaLiteralToken::Nil(_) => TypeAssertion::Exist,
+                            LuaLiteralToken::Bool(b) => {
+                                if b.is_true() {
+                                    TypeAssertion::NotExist
+                                } else {
+                                    TypeAssertion::Exist
+                                }
+                            }
+                            LuaLiteralToken::Number(i) => {
+                                if i.is_int() {
+                                    TypeAssertion::Remove(LuaType::IntegerConst(i.get_int_value()))
+                                } else {
+                                    TypeAssertion::Remove(LuaType::Number)
+                                }
+                            }
+                            LuaLiteralToken::String(s) => TypeAssertion::Remove(
+                                LuaType::StringConst(SmolStr::new(s.get_value()).into()),
+                            ),
+                            _ => return None,
+                        };
+
+                        broadcast_up(
+                            db,
+                            flow_chain,
+                            path,
+                            binary_expr.get_parent::<LuaAst>()?,
+                            LuaAst::LuaBinaryExpr(binary_expr),
+                            type_assert,
+                        );
+                    }
+                }
+
                 _ => {}
             }
         }
         LuaAst::LuaCallArgList(call_args_list) => {
-            if type_assert == TypeAssertion::Exist {
-                infer_call_arg_list(db, flow_chain, path, call_args_list)?;
-            }
+            infer_call_arg_list(db, flow_chain, type_assert, path, call_args_list)?;
         }
         LuaAst::LuaUnaryExpr(unary_expr) => {
             let op = unary_expr.get_op_token()?;
@@ -172,9 +207,29 @@ fn broadcast_up(
     Some(())
 }
 
+#[allow(unused)]
+fn broadcast_down(
+    db: &mut DbIndex,
+    flow_chain: &mut LuaFlowChain,
+    path: &str,
+    node: LuaAst,
+    type_assert: TypeAssertion,
+) -> Option<()> {
+    let parent_block = node.get_parent::<LuaBlock>()?;
+    let parent_range = parent_block.get_range();
+    let range = node.get_range();
+    if range.end() < parent_range.end() {
+        let range = TextRange::new(range.end(), parent_range.end());
+        flow_chain.add_type_assert(path, type_assert, range);
+    }
+
+    Some(())
+}
+
 fn infer_call_arg_list(
     db: &mut DbIndex,
     flow_chain: &mut LuaFlowChain,
+    type_assert: TypeAssertion,
     path: &str,
     call_arg: LuaCallArgList,
 ) -> Option<()> {
@@ -183,9 +238,15 @@ fn infer_call_arg_list(
         LuaAst::LuaCallExpr(call_expr) => {
             if let LuaExpr::NameExpr(prefix_expr) = call_expr.get_prefix_expr()? {
                 let name_text = prefix_expr.get_name_text()?;
-                if name_text == "type" {
-                    infer_lua_type_assert(db, flow_chain, path, call_expr);
-                }
+                match name_text.as_str() {
+                    "type" => {
+                        infer_lua_type_assert(db, flow_chain, path, call_expr);
+                    }
+                    "assert" => {
+                        infer_lua_assert(db, flow_chain, type_assert, path, call_expr);
+                    }
+                    _ => {}
+                };
             }
         }
         _ => {}
@@ -255,9 +316,36 @@ fn is_block_has_return(block: LuaBlock) -> Option<bool> {
                     return Some(true);
                 }
             }
+            LuaStat::CallExprStat(call_stat) => {
+                let call_expr = call_stat.get_call_expr()?;
+                let prefix_expr = call_expr.get_prefix_expr()?;
+                if let LuaExpr::NameExpr(name_expr) = prefix_expr {
+                    let name = name_expr.get_name_text()?;
+                    if name == "error" {
+                        return Some(true);
+                    }
+                }
+            }
             _ => {}
         }
     }
 
     Some(false)
+}
+
+fn infer_lua_assert(
+    db: &mut DbIndex,
+    flow_chain: &mut LuaFlowChain,
+    type_assert: TypeAssertion,
+    path: &str,
+    call_expr: LuaCallExpr,
+) -> Option<()> {
+    broadcast_down(
+        db,
+        flow_chain,
+        path,
+        LuaAst::LuaCallExpr(call_expr),
+        type_assert,
+    );
+    Some(())
 }
