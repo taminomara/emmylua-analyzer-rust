@@ -59,7 +59,7 @@ fn build_name_expr_flow(
 ) -> Option<()> {
     let parent = name_expr.get_parent::<LuaAst>()?;
     match parent {
-        LuaAst::LuaIndexExpr(_) | LuaAst::LuaCallExpr(_) => return None,
+        LuaAst::LuaIndexExpr(_) | LuaAst::LuaCallExpr(_) | LuaAst::LuaFuncStat(_) => return None,
         LuaAst::LuaAssignStat(assign_stat) => {
             let eq_pos = assign_stat
                 .token_by_kind(LuaTokenKind::TkAssign)?
@@ -93,12 +93,12 @@ fn build_index_expr_flow(
 ) -> Option<()> {
     let parent = index_expr.get_parent::<LuaAst>()?;
     match parent {
-        LuaAst::LuaIndexExpr(_) | LuaAst::LuaCallExpr(_) => return None,
+        LuaAst::LuaIndexExpr(_) | LuaAst::LuaCallExpr(_) | LuaAst::LuaFuncStat(_) => return None,
         LuaAst::LuaAssignStat(assign_stat) => {
             let eq_pos = assign_stat
                 .token_by_kind(LuaTokenKind::TkAssign)?
                 .get_position();
-            
+
             let decl_id = LuaDeclId::new(file_id, index_expr.get_position());
             if db.get_decl_index().get_decl(&decl_id).is_some() {
                 return None;
