@@ -12,6 +12,9 @@ mod undefined_global;
 mod unused;
 mod code_style_check;
 mod redundant_parameter;
+mod return_type_mismatch;
+mod redundant_return_value;
+mod missing_return_value;
 
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
@@ -54,6 +57,9 @@ pub fn check_file(
     check!(param_type_check);
     check!(need_check_nil);
     check!(code_style_check);
+    check!(redundant_return_value);
+    check!(missing_return_value);
+    check!(return_type_mismatch);
 
     Some(())
 }
