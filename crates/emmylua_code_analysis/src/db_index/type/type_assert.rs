@@ -58,5 +58,5 @@ fn force_nil_or_false(t: LuaType) -> LuaType {
         return LuaType::BooleanConst(false);
     }
 
-    return LuaType::Nil;
+    return TypeOps::Narrow.apply(&t, &LuaType::Nil);
 }
