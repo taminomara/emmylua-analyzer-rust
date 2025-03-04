@@ -123,11 +123,11 @@ fn resolve_signature_by_args(
         let mut match_count = 0;
 
         for (i, param) in params.iter().enumerate() {
-            if expr_types.len() <= i - jump_param {
-                break;
-            }
             if i == 0 && jump_param > 0 {
                 continue;
+            }
+            if expr_types.len() <= i - jump_param {
+                break;
             }
 
             let param_type = param.1.clone().unwrap_or(LuaType::Any);

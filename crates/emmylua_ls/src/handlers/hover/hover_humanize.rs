@@ -348,9 +348,9 @@ fn build_signature_rets(
                 for (i, ret) in rets.iter().enumerate() {
                     let type_text = build_signature_ret_type(builder, ret, i);
                     let prefix = if i == 0 {
-                        "->".to_string()
+                        "-> ".to_string()
                     } else {
-                        format!("{}.", i + 1)
+                        format!("{}. ", i + 1)
                     };
                     let name = ret.name.clone().unwrap_or_default();
 
