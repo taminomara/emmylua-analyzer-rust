@@ -6,6 +6,12 @@
 
 `Fix` Fix alias type check issue
 
+`CHG` Refactor flow analyze algorithm
+
+`FIX` Fix property unwrap issue
+
+`NEW` Support filter the completion item
+
 # 0.5.2 
 
 `CHG` Refactor `folding range`
