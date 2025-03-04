@@ -1,4 +1,4 @@
-use emmylua_parser::{LuaAstNode, LuaCallExpr};
+use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaLiteralExpr, LuaLiteralToken};
 
 use crate::{DiagnosticCode, SemanticModel};
 
@@ -39,6 +39,19 @@ fn check_call_expr(
     }
 
     if args_count > params.len() {
+        // 调用参数是 `...`
+        if let Some(last_arg) = call_expr.get_args_list()?.child::<LuaLiteralExpr>() {
+            if let Some(literal_token) = last_arg.get_literal() {
+                if let LuaLiteralToken::Dots(_) = literal_token {
+                    return Some(());
+                }
+            }
+        }
+        // 参数定义中最后一个参数是 `...`
+        if params.last().map_or(false, |(name, _)| name == "...") {
+            return Some(());
+        }
+
         let mut adjusted_index = 0;
         if colon_call != colon_define {
             adjusted_index = if colon_define && !colon_call { -1 } else { 1 };
