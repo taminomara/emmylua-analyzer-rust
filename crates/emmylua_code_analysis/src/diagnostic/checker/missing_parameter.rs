@@ -76,10 +76,10 @@ fn check_call_expr(
                 DiagnosticCode::MissingParameter,
                 right_paren.get_range(),
                 t!(
-                    "expected %{num} but found %{found_num}.\n%{infos}",
+                    "expected %{num} parameters but found %{found_num}. %{infos}",
                     num = params.len(),
                     found_num = args_count,
-                    infos = miss_parameter_info.join("\n")
+                    infos = miss_parameter_info.join(" \n ")
                 )
                 .to_string(),
                 None,

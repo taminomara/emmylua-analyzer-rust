@@ -27,10 +27,10 @@ The property is protected and cannot be accessed outside its subclasses.:
   en: 'The property is protected and cannot be accessed outside its subclasses.'
   zh_CN: '该属性受保护，无法在其子类之外访问。'
   zh_HK: '該屬性受保護，無法在其子類之外訪問。'
-expected %{num} but found %{found_num}. %{infos}:
-  en: 'expected %{num} but found %{found_num}. %{infos}'
-  zh_CN: '期望 %{num} 但找到 %{found_num}。%{infos}'
-  zh_HK: '期望 %{num} 但找到 %{found_num}。%{infos}'
+expected %{num} parameters but found %{found_num}. %{infos}:
+  en: 'expected %{num} parameters but found %{found_num}. %{infos}'
+  zh_CN: '期望 %{num} 个参数，但找到 %{found_num} 个。%{infos}'
+  zh_HK: '期望 %{num} 個參數，但找到 %{found_num} 個。%{infos}'
 'missing parameter: %{name}':
   en: 'missing parameter: %{name}'
   zh_CN: '缺少参数: %{name}'
@@ -63,7 +63,7 @@ Should not reassign to iter variable:
   en: Should not reassign to iter variable
   zh_CN: '不应重新赋值给迭代变量'
   zh_HK: '不應重新指定迭代變數'
-_version: 2
+
 expected %{source} but found %{found}:
   en: expected %{source} but found %{found}
   zh_CN: '预期 %{source}，但得到 %{found}'
