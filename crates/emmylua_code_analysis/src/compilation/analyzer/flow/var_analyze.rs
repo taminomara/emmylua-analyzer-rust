@@ -1,6 +1,6 @@
 use emmylua_parser::{
     BinaryOperator, LuaAst, LuaAstNode, LuaBinaryExpr, LuaBlock, LuaCallArgList, LuaCallExpr,
-    LuaExpr, LuaIndexExpr, LuaLiteralToken, LuaNameExpr, LuaStat, LuaSyntaxKind, PathTrait,
+    LuaExpr, LuaLiteralToken, LuaStat, LuaSyntaxKind, PathTrait,
     UnaryOperator,
 };
 use rowan::TextRange;

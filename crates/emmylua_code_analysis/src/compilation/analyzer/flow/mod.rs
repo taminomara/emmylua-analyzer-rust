@@ -1,17 +1,15 @@
 mod assign_stats;
 mod flow_builder;
-mod flow_tree;
+mod flow_nodes;
 mod var_analyze;
 
 use crate::{db_index::DbIndex, profile::Profile, FileId, LuaFlowChain, LuaFlowId};
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaCallExpr, LuaChunk, LuaExpr, LuaIndexExpr, LuaNameExpr,
-    LuaTokenKind, PathTrait,
+    LuaAst, LuaAstNode, LuaAstToken, LuaChunk, LuaExpr, LuaIndexExpr, LuaNameExpr, LuaTokenKind, PathTrait
 };
 use flow_builder::FlowBuilder;
-use flow_tree::{FlowNode, FlowRefNode, FlowTree};
+use flow_nodes::{FlowNode, FlowNodes, FlowRef};
 use rowan::WalkEvent;
-use smol_str::SmolStr;
 use var_analyze::analyze_ref_expr;
 
 use super::AnalyzeContext;
@@ -21,12 +19,12 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     let tree_list = context.tree_list.clone();
     // build decl and ref flow chain
     for in_filed_tree in &tree_list {
-        let flow_trees = build_flow(in_filed_tree.value.clone());
+        let flow_trees = build_flow_cache(in_filed_tree.value.clone());
         analyze_flow(db, in_filed_tree.file_id, flow_trees);
     }
 }
 
-fn build_flow(root: LuaChunk) -> Vec<(LuaFlowId, FlowTree)> {
+fn build_flow_cache(root: LuaChunk) -> Vec<(LuaFlowId, FlowNodes)> {
     let mut builder = FlowBuilder::new();
     for walk_node in root.walk_descendants::<LuaAst>() {
         match walk_node {
@@ -39,25 +37,6 @@ fn build_flow(root: LuaChunk) -> Vec<(LuaFlowId, FlowTree)> {
                 }
                 LuaAst::LuaIndexExpr(index_expr) => {
                     build_index_expr_flow(&mut builder, index_expr);
-                }
-                LuaAst::LuaCallExpr(call_expr) => {
-                    build_call_expr_flow(&mut builder, call_expr);
-                }
-                LuaAst::LuaReturnStat(return_stat) => {
-                    builder.add_flow_node(
-                        return_stat.get_position(),
-                        FlowNode::Return(return_stat.clone()),
-                    );
-                }
-                LuaAst::LuaBreakStat(break_stat) => {
-                    builder.add_flow_node(
-                        break_stat.get_position(),
-                        FlowNode::Break(break_stat.clone()),
-                    );
-                }
-                LuaAst::LuaGotoStat(goto_stat) => {
-                    builder
-                        .add_flow_node(goto_stat.get_position(), FlowNode::Goto(goto_stat.clone()));
                 }
                 _ => {}
             },
@@ -81,22 +60,16 @@ fn build_name_expr_flow(builder: &mut FlowBuilder, name_expr: LuaNameExpr) -> Op
                 .get_position();
             if name_expr.get_position() < eq_pos {
                 builder.add_flow_node(
-                    name_expr.get_position(),
-                    FlowNode::AssignRef(FlowRefNode {
-                        path: SmolStr::new(&name_expr.get_access_path()?),
-                        node: LuaExpr::NameExpr(name_expr.clone()),
-                    }),
+                    &name_expr.get_access_path()?,
+                    FlowNode::AssignRef(FlowRef::NameExpr(name_expr.clone())),
                 );
             }
         }
         _ => {}
     }
     builder.add_flow_node(
-        name_expr.get_position(),
-        FlowNode::UseRef(FlowRefNode {
-            path: SmolStr::new(&name_expr.get_access_path()?),
-            node: LuaExpr::NameExpr(name_expr.clone()),
-        }),
+        &name_expr.get_access_path()?,
+        FlowNode::UseRef(FlowRef::NameExpr(name_expr.clone())),
     );
     Some(())
 }
@@ -105,74 +78,72 @@ fn build_index_expr_flow(builder: &mut FlowBuilder, index_expr: LuaIndexExpr) ->
     let parent = index_expr.get_parent::<LuaAst>()?;
     match parent {
         LuaAst::LuaIndexExpr(_) | LuaAst::LuaCallExpr(_) => return None,
+        LuaAst::LuaAssignStat(assign_stat) => {
+            let eq_pos = assign_stat
+                .token_by_kind(LuaTokenKind::TkEq)?
+                .get_position();
+            if index_expr.get_position() < eq_pos {
+                builder.add_flow_node(
+                    &index_expr.get_access_path()?,
+                    FlowNode::AssignRef(FlowRef::IndexExpr(index_expr.clone())),
+                );
+            }
+        }
         _ => {}
     }
     builder.add_flow_node(
-        index_expr.get_position(),
-        FlowNode::UseRef(FlowRefNode {
-            path: SmolStr::new(&index_expr.get_access_path()?),
-            node: LuaExpr::IndexExpr(index_expr.clone()),
-        }),
+        &index_expr.get_access_path()?,
+        FlowNode::UseRef(FlowRef::IndexExpr(index_expr.clone())),
     );
 
     Some(())
 }
 
-fn build_call_expr_flow(builder: &mut FlowBuilder, call_expr: LuaCallExpr) -> Option<()> {
-    let prefix = call_expr.get_prefix_expr()?;
-    if let LuaExpr::NameExpr(name) = prefix {
-        let name = name.get_name_text()?;
-        match name.as_str() {
-            "assert" => {
-                builder.add_flow_node(
-                    call_expr.get_position(),
-                    FlowNode::Assert(call_expr.clone()),
-                );
-            }
-            "error" => {
-                builder.add_flow_node(
-                    call_expr.get_position(),
-                    FlowNode::ThrowError(call_expr.clone()),
-                );
-            }
-            _ => {}
-        }
-    }
+// fn get_stat_special(builder: &mut FlowBuilder, call_expr: LuaCallExpr) -> Option<()> {
+//     // let prefix = call_expr.get_prefix_expr()?;
+//     // if let LuaExpr::NameExpr(name) = prefix {
+//     //     let name = name.get_name_text()?;
+//     //     match name.as_str() {
+//     //         "assert" => {
+//     //             builder.add_flow_node(
+//     //                 call_expr.get_position(),
+//     //                 FlowNode::Assert(call_expr.clone()),
+//     //             );
+//     //         }
+//     //         "error" => {
+//     //             builder.add_flow_node(
+//     //                 call_expr.get_position(),
+//     //                 FlowNode::ThrowError(call_expr.clone()),
+//     //             );
+//     //         }
+//     //         _ => {}
+//     //     }
+//     // }
 
-    Some(())
-}
+//     Some(())
+// }
 
 #[allow(unused)]
-fn analyze_flow(db: &mut DbIndex, file_id: FileId, flow_trees: Vec<(LuaFlowId, FlowTree)>) {
-    for (flow_id, flow_tree) in flow_trees {
-        let node = flow_tree.get_nodes();
+fn analyze_flow(db: &mut DbIndex, file_id: FileId, flow_caches: Vec<(LuaFlowId, FlowNodes)>) {
+    for (flow_id, cache) in flow_caches {
+        let nodes = cache.get_var_flow_nodes();
         let mut flow_chain = LuaFlowChain::new(flow_id);
-        for node in node {
-            match node {
-                FlowNode::UseRef(ref_node) => {
-                    let path = &ref_node.path;
-                    let expr = &ref_node.node;
-                    analyze_ref_expr(db, &mut flow_chain, expr, path);
-                }
-                FlowNode::AssignRef(ref_node) => {
-                    let path = &ref_node.path;
-                    let expr = &ref_node.node;
-                    // analyze_ref_expr(db, &mut flow_chain, expr, path);
-                }
-                FlowNode::Return(return_stat) => {
-                    // do something
-                }
-                FlowNode::Break(break_stat) => {
-                    // do something
-                }
-                FlowNode::Goto(goto_stat) => {
-                    // do something
-                }
-                FlowNode::ThrowError(call_expr) => {
-                    // do something
-                }
-                FlowNode::Assert(call_expr) => {
-                    // do something
+        for (var_path, flow_nodes) in nodes {
+            for flow_node in flow_nodes {
+                match flow_node {
+                    FlowNode::UseRef(ref_node) => {
+                        let expr = match ref_node {
+                            FlowRef::NameExpr(expr) => LuaExpr::NameExpr(expr.clone()),
+                            FlowRef::IndexExpr(expr) => LuaExpr::IndexExpr(expr.clone()),
+                        };
+
+                        analyze_ref_expr(db, &mut flow_chain, &expr, var_path);
+                    }
+                    FlowNode::AssignRef(ref_node) => {
+                        // let path = &ref_node.path;
+                        // let expr = &ref_node.node;
+                        // analyze_ref_expr(db, &mut flow_chain, expr, path);
+                    }
                 }
             }
         }
