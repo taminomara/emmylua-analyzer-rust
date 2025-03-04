@@ -51,18 +51,21 @@ fn check_call_expr(
         (true, false) => {
             args.insert(0, None);
 
-            if !func.first_param_is_self() {
-                let prefix_expr = call_expr.get_prefix_expr()?;
-                let colon_token = prefix_expr.token::<LuaIndexToken>()?;
-                let result = Err(TypeCheckFailReason::TypeNotMatch);
-                add_type_check_diagnostic(
-                    context,
-                    semantic_model,
-                    colon_token.get_range(),
-                    &params[0].1.clone().unwrap(),
-                    &LuaType::SelfInfer,
-                    result,
-                );
+            if let Some((_, Some(t))) = params.first() {
+                if !matches!(t, LuaType::SelfInfer | LuaType::Any) {
+                    if let Some(prefix_expr) = call_expr.get_prefix_expr() {
+                        if let Some(colon_token) = prefix_expr.token::<LuaIndexToken>() {
+                            add_type_check_diagnostic(
+                                context,
+                                semantic_model,
+                                colon_token.get_range(),
+                                t,
+                                &LuaType::SelfInfer,
+                                Err(TypeCheckFailReason::TypeNotMatch),
+                            );
+                        }
+                    }
+                }
             }
         }
     }
