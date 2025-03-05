@@ -8,6 +8,14 @@ on:
 
 jobs:
   build-and-cache:
+    strategy:
+      fail-fast: true
+      matrix:
+        nixChannel:
+          - nixos-24.11 # make sure to update this after a NixOS stable release
+          - nixos-unstable
+          - nixpkgs-unstable
+          
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -15,30 +23,24 @@ jobs:
         fetch-depth: 0
         
     - name: Install Nix
-      uses: cachix/install-nix-action@v22
+      uses: cachix/install-nix-action@v30
       with:
-        nix_path: nixpkgs=channel:nixos-unstable
-    
-    - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@stable
-    
-    - name: Set version
+        nix_path: nixpkgs=https://github.com/NixOS/nixpkgs/archive/refs/heads/${{ matrix.nixChannel }}.tar.gz
+        extra_nix_config: |
+          experimental-features = nix-command flakes
+          access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+    - name: Show the current nixpkgs version
       run: |
-        echo "current ref ${{ github.ref }}"
-        cargo run -p edit_version -- ${{ github.ref }}
+        nix eval --impure --raw --expr '"Building for nixpkgs " + (import <nixpkgs> { }).lib.version'
     
     - name: Setup Cachix
-      uses: cachix/cachix-action@v12
+      uses: cachix/cachix-action@v15
       with:
         name: emmylua-analyzer
-        authToken: '${{ secrets.CACHIX }}'
-        pushFilter: ""
+        signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
         
-    - name: Build and cache dependencies
+    - name: Build emmylua-analyzer
       run: |
-        if [ -f flake.nix ]; then
-          nix build
-        else
-          nix-build
-        fi
-
+        nix build .#emmylua_{ls,doc_cli,check}
