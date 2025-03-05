@@ -51,4 +51,8 @@ impl LuaIndex for LuaFlowIndex {
     fn remove(&mut self, file_id: crate::FileId) {
         self.chains_map.remove(&file_id);
     }
+
+    fn clear(&mut self) {
+        self.chains_map.clear();
+    }
 }

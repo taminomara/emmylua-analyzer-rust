@@ -30,4 +30,8 @@ impl LuaIndex for MetaFile {
     fn remove(&mut self, file_id: FileId) {
         self.meta_files.remove(&file_id);
     }
+
+    fn clear(&mut self) {
+        self.meta_files.clear();
+    }
 }

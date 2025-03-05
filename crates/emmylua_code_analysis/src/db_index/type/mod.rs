@@ -278,4 +278,14 @@ impl LuaIndex for LuaTypeIndex {
 
         self.as_force_type.retain(|id, _| id.file_id != file_id);
     }
+
+    fn clear(&mut self) {
+        self.file_namespace.clear();
+        self.file_using_namespace.clear();
+        self.file_types.clear();
+        self.full_name_type_map.clear();
+        self.generic_params.clear();
+        self.supers.clear();
+        self.as_force_type.clear();
+    }
 }

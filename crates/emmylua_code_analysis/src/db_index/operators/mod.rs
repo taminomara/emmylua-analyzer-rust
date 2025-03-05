@@ -74,4 +74,10 @@ impl LuaIndex for LuaOperatorIndex {
             }
         }
     }
+
+    fn clear(&mut self) {
+        self.operators.clear();
+        self.type_operators_map.clear();
+        self.in_filed_operator_map.clear();
+    }
 }

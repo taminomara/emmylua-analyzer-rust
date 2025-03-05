@@ -124,4 +124,9 @@ impl LuaIndex for LuaDeclIndex {
             !v.is_empty()
         });
     }
+
+    fn clear(&mut self) {
+        self.decl_trees.clear();
+        self.global_decl.clear();
+    }
 }

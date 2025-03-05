@@ -188,4 +188,11 @@ impl LuaIndex for LuaPropertyIndex {
             }
         }
     }
+
+    fn clear(&mut self) {
+        self.properties.clear();
+        self.property_owners_map.clear();
+        self.in_filed_owner.clear();
+        self.id_count = 0;
+    }
 }

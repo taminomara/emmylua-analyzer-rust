@@ -88,7 +88,9 @@ impl EmmyLuaAnalysis {
     }
 
     pub fn add_library_workspace(&mut self, root: PathBuf) {
-        let id = WorkspaceId { id: self.lib_workspace_counter };
+        let id = WorkspaceId {
+            id: self.lib_workspace_counter,
+        };
         self.lib_workspace_counter += 1;
 
         self.compilation
@@ -171,6 +173,18 @@ impl EmmyLuaAnalysis {
     ) -> Option<Vec<lsp_types::Diagnostic>> {
         self.diagnostic
             .diagnose_file(&self.compilation, file_id, cancel_token)
+    }
+
+    pub fn reindex(&mut self) {
+        let module = self.compilation.get_db().get_module_index();
+        let std_file_ids = module.get_std_file_ids();
+        let main_file_ids = module.get_main_workspace_file_ids();
+        let lib_file_ids = module.get_lib_file_ids();
+        self.compilation.clear_index();
+
+        self.compilation.update_index(std_file_ids);
+        self.compilation.update_index(lib_file_ids);
+        self.compilation.update_index(main_file_ids);
     }
 }
 

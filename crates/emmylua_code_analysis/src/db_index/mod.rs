@@ -26,7 +26,7 @@ pub use property::{LuaPropertyId, LuaPropertyIndex, LuaPropertyOwnerId};
 pub use r#type::*;
 pub use reference::{DeclReference, LuaReferenceIndex};
 pub use signature::*;
-use traits::LuaIndex;
+pub use traits::LuaIndex;
 
 #[derive(Debug)]
 pub struct DbIndex {
@@ -184,5 +184,19 @@ impl LuaIndex for DbIndex {
         self.diagnostic_index.remove(file_id);
         self.operator_index.remove(file_id);
         self.flow_index.remove(file_id);
+    }
+
+    fn clear(&mut self) {
+        self.decl_index.clear();
+        self.references_index.clear();
+        self.types_index.clear();
+        self.modules_index.clear();
+        self.meta_files_index.clear();
+        self.members_index.clear();
+        self.property_index.clear();
+        self.signature_index.clear();
+        self.diagnostic_index.clear();
+        self.operator_index.clear();
+        self.flow_index.clear();
     }
 }

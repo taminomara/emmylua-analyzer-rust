@@ -204,4 +204,11 @@ impl LuaIndex for LuaReferenceIndex {
             self.global_references.remove(&key);
         }
     }
+
+    fn clear(&mut self) {
+        self.file_references.clear();
+        self.string_references.clear();
+        self.index_reference.clear();
+        self.global_references.clear();
+    }
 }

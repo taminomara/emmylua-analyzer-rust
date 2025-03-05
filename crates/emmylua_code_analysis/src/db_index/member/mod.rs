@@ -101,4 +101,10 @@ impl LuaIndex for LuaMemberIndex {
             }
         }
     }
+
+    fn clear(&mut self) {
+        self.members.clear();
+        self.in_field_members.clear();
+        self.owner_members.clear();
+    }
 }

@@ -3,7 +3,7 @@ mod test;
 
 use std::sync::Arc;
 
-use crate::{db_index::DbIndex, semantic::SemanticModel, Emmyrc, FileId, InFiled};
+use crate::{db_index::DbIndex, semantic::SemanticModel, Emmyrc, FileId, InFiled, LuaIndex};
 
 #[derive(Debug)]
 pub struct LuaCompilation {
@@ -49,6 +49,10 @@ impl LuaCompilation {
 
     pub fn remove_index(&mut self, file_ids: Vec<FileId>) {
         self.db.remove_index(file_ids);
+    }
+
+    pub fn clear_index(&mut self) {
+        self.db.clear();
     }
 
     pub fn get_db(&self) -> &DbIndex {

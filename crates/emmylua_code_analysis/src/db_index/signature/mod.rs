@@ -44,4 +44,9 @@ impl LuaIndex for LuaSignatureIndex {
             }
         }
     }
+
+    fn clear(&mut self) {
+        self.signatures.clear();
+        self.in_file_signatures.clear();
+    }
 }

@@ -112,7 +112,7 @@ impl LuaModuleIndex {
         &mut self,
         file_id: FileId,
         module_path: String,
-        workspace_id: WorkspaceId
+        workspace_id: WorkspaceId,
     ) -> Option<()> {
         if self.file_module_map.contains_key(&file_id) {
             self.remove(file_id);
@@ -331,7 +331,9 @@ impl LuaModuleIndex {
     }
 
     pub fn add_workspace_root(&mut self, root: PathBuf, workspace_id: WorkspaceId) {
-        self.workspaces.push(Workspace::new(root, workspace_id));
+        if !self.workspaces.iter().any(|w| w.root == root) {
+            self.workspaces.push(Workspace::new(root, workspace_id));
+        }
     }
 
     #[allow(unused)]
@@ -373,6 +375,39 @@ impl LuaModuleIndex {
         );
 
         self.fuzzy_search = !config.strict.require_path;
+    }
+
+    pub fn get_std_file_ids(&self) -> Vec<FileId> {
+        let mut file_ids = Vec::new();
+        for module_info in self.file_module_map.values() {
+            if module_info.workspace_id == WorkspaceId::STD {
+                file_ids.push(module_info.file_id);
+            }
+        }
+
+        file_ids
+    }
+
+    pub fn get_main_workspace_file_ids(&self) -> Vec<FileId> {
+        let mut file_ids = Vec::new();
+        for module_info in self.file_module_map.values() {
+            if module_info.workspace_id == WorkspaceId::MAIN {
+                file_ids.push(module_info.file_id);
+            }
+        }
+
+        file_ids
+    }
+
+    pub fn get_lib_file_ids(&self) -> Vec<FileId> {
+        let mut file_ids = Vec::new();
+        for module_info in self.file_module_map.values() {
+            if module_info.workspace_id.is_library() {
+                file_ids.push(module_info.file_id);
+            }
+        }
+
+        file_ids
     }
 }
 
@@ -432,5 +467,14 @@ impl LuaIndex for LuaModuleIndex {
                 }
             }
         }
+    }
+
+    fn clear(&mut self) {
+        self.module_nodes.clear();
+        self.file_module_map.clear();
+        self.module_name_to_file_ids.clear();
+
+        let root_node = ModuleNode::default();
+        self.module_nodes.insert(self.module_root_id, root_node);
     }
 }

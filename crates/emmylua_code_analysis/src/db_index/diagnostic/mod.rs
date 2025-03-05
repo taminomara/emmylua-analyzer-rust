@@ -108,4 +108,11 @@ impl LuaIndex for DiagnosticIndex {
         self.file_diagnostic_disabled.remove(&file_id);
         self.file_diagnostic_enabled.remove(&file_id);
     }
+
+    fn clear(&mut self) {
+        self.diagnostic_actions.clear();
+        self.diagnostics.clear();
+        self.file_diagnostic_disabled.clear();
+        self.file_diagnostic_enabled.clear();
+    }
 }
