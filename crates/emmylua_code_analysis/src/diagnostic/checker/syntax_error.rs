@@ -1,8 +1,9 @@
 use emmylua_parser::{
-    float_token_value, int_token_value, LuaAstNode, LuaSyntaxToken, LuaTokenKind,
+    float_token_value, int_token_value, LuaAstNode, LuaClosureExpr, LuaLiteralExpr, LuaSyntaxKind,
+    LuaSyntaxToken, LuaTokenKind,
 };
 
-use crate::{DiagnosticCode, SemanticModel};
+use crate::{DiagnosticCode, LuaSignatureId, SemanticModel};
 
 use super::DiagnosticContext;
 
@@ -53,6 +54,9 @@ pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) ->
                             None,
                         );
                     }
+                }
+                LuaTokenKind::TkDots => {
+                    check_dots_literal_error(context, semantic_model, &token);
                 }
                 _ => {}
             }
@@ -148,4 +152,36 @@ fn check_normal_string_error(string_token: &LuaSyntaxToken) -> Result<(), String
         }
     }
     Ok(())
+}
+
+fn check_dots_literal_error(
+    context: &mut DiagnosticContext,
+    semantic_model: &SemanticModel,
+    dots_token: &LuaSyntaxToken,
+) -> Option<()> {
+    if let Some(literal_expr) = dots_token.parent() {
+        match literal_expr.kind().into() {
+            LuaSyntaxKind::LiteralExpr => {
+                let literal_expr = LuaLiteralExpr::cast(literal_expr)?;
+                let closure_expr = literal_expr.ancestors::<LuaClosureExpr>().next()?;
+                let signature_id =
+                    LuaSignatureId::from_closure(semantic_model.get_file_id(), &closure_expr);
+                let signature = context.db.get_signature_index().get(&signature_id)?;
+                if !signature.params.iter().any(|param| param == "...") {
+                    context.add_diagnostic(
+                        DiagnosticCode::SyntaxError,
+                        literal_expr.get_range(),
+                        t!(
+                            "Cannot use `...` outside a vararg function."
+                        )
+                        .to_string(),
+                        None,
+                    );
+                }
+            }
+            _ => {}
+        }
+    }
+
+    Some(())
 }

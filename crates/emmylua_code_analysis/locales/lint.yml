@@ -113,3 +113,7 @@ Annotations specify that at least %{min} return value(s) are required, found %{r
   en: 'Annotations specify that at least %{min} return value(s) are required, found %{rmin} returned here instead.'
   zh_CN: '至少需要 %{min} 个返回值，但此处只返回了 %{rmin} 个'
   zh_HK: '至少需要 %{min} 個回傳值，但此處只返回 %{rmin} 個'
+Cannot use `...` outside a vararg function.:
+  en: Cannot use `...` outside a vararg function.
+  zh_CN: '不能在非可变参数函数中使用 `...`'
+  zh_HK: '不能在非可變參數函數中使用 `...`'
