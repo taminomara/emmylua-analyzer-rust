@@ -11,12 +11,12 @@ mod signature;
 mod traits;
 mod r#type;
 
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use crate::{Emmyrc, FileId, Vfs};
 pub use declaration::*;
 pub use diagnostic::{AnalyzeError, DiagnosticAction, DiagnosticActionKind, DiagnosticIndex};
-pub use flow::{LuaFlowChain, LuaFlowIndex, LuaFlowId};
+pub use flow::{LuaFlowChain, LuaFlowId, LuaFlowIndex};
 pub use member::{LuaMember, LuaMemberId, LuaMemberIndex, LuaMemberKey, LuaMemberOwner};
 use meta::MetaFile;
 use module::LuaModuleIndex;
