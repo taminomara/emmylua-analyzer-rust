@@ -64,7 +64,9 @@ pub enum DiagnosticCode {
     MissingReturnValue,
     /// Redundant return value
     RedundantReturnValue,
-
+    /// Undefined Doc Param
+    UndefinedDocParam,
+    
     #[serde(other)]
     None,
 }

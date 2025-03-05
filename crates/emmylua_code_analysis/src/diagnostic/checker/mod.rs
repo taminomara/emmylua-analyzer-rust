@@ -15,6 +15,12 @@ mod return_type_mismatch;
 mod syntax_error;
 mod undefined_global;
 mod unused;
+mod code_style_check;
+mod redundant_parameter;
+mod return_type_mismatch;
+mod redundant_return_value;
+mod missing_return_value;
+mod undefined_doc_param;
 
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
@@ -57,6 +63,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(redundant_return_value);
     check!(missing_return_value);
     check!(return_type_mismatch);
+    check!(undefined_doc_param);
 
     Some(())
 }

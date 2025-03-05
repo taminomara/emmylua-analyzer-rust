@@ -117,3 +117,7 @@ Cannot use `...` outside a vararg function.:
   en: Cannot use `...` outside a vararg function.
   zh_CN: '不能在非可变参数函数中使用 `...`'
   zh_HK: '不能在非可變參數函數中使用 `...`'
+'Undefined doc param: `%{name}`':
+  en: 'Undefined doc param: `%{name}`'
+  zh_CN: '指向了未定义的参数 `%{name}`'
+  zh_HK: '指向了未定義的參數 `%{name}`'

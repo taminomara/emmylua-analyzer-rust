@@ -5,7 +5,8 @@ use crate::{
         node::{LuaBinaryOpToken, LuaNameToken, LuaUnaryOpToken},
         traits::{LuaAstChildren, LuaAstNode},
     },
-    LuaAstToken, LuaIndexToken, LuaLiteralToken, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind,
+    LuaAstToken, LuaComment, LuaIndexToken, LuaLiteralToken, LuaSyntaxNode, LuaSyntaxToken,
+    LuaTokenKind,
 };
 
 use super::{
@@ -634,6 +635,17 @@ impl LuaClosureExpr {
 
     pub fn get_params_list(&self) -> Option<LuaParamList> {
         self.child()
+    }
+
+    pub fn get_comment(&self) -> Option<LuaComment> {
+        let comment = self.syntax().parent()?.prev_sibling()?;
+        match comment.kind().into() {
+            LuaSyntaxKind::Comment => {
+                let comment = LuaComment::cast(comment)?;
+                Some(comment)
+            }
+            _ => None,
+        }
     }
 }
 
