@@ -178,7 +178,7 @@ async fn workspace_diagnostic(
             if count == valid_file_count {
                 status_bar.finish_progress_task(client_id, ProgressTask::DiagnoseWorkspace, None);
                 break;
-            }
+            }  
         }
     }
 }
