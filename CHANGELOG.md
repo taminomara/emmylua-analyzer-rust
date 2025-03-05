@@ -16,6 +16,8 @@
 
 `NEW` Support check for `redundant_parameter`, `redundant_return_value`, `missing_return_value`, `return_type_mismatch`
 
+`NEW` Better Support require module for other editor
+
 # 0.5.2 
 
 `CHG` Refactor `folding range`
