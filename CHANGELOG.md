@@ -12,6 +12,10 @@
 
 `NEW` Support filter the completion item
 
+`NEW` Support reindex project when save a file
+
+`NEW` Support check for `redundant_parameter`, `redundant_return_value`, `missing_return_value`, `return_type_mismatch`
+
 # 0.5.2 
 
 `CHG` Refactor `folding range`

@@ -11,7 +11,6 @@ pub struct FileDiagnostic {
     analysis: Arc<RwLock<EmmyLuaAnalysis>>,
     client: Arc<ClientProxy>,
     status_bar: Arc<StatusBar>,
-    pub client_id: ClientId,
     diagnostic_tokens: Arc<Mutex<HashMap<FileId, CancellationToken>>>,
     workspace_diagnostic_token: Arc<Mutex<Option<CancellationToken>>>,
 }
@@ -28,7 +27,6 @@ impl FileDiagnostic {
             diagnostic_tokens: Arc::new(Mutex::new(HashMap::new())),
             workspace_diagnostic_token: Arc::new(Mutex::new(None)),
             status_bar,
-            client_id: ClientId::VSCode,
         }
     }
 
@@ -86,7 +84,7 @@ impl FileDiagnostic {
         }
     }
 
-    pub async fn add_workspace_diagnostic_task(&self, interval: u64) {
+    pub async fn add_workspace_diagnostic_task(&self, client_id: ClientId, interval: u64) {
         let mut token = self.workspace_diagnostic_token.lock().await;
         if let Some(token) = token.as_ref() {
             token.cancel();
@@ -100,7 +98,6 @@ impl FileDiagnostic {
         let analysis = self.analysis.clone();
         let client_proxy = self.client.clone();
         let status_bar = self.status_bar.clone();
-        let client_id = self.client_id;
         tokio::spawn(async move {
             tokio::select! {
                 _ = tokio::time::sleep(Duration::from_millis(interval)) => {

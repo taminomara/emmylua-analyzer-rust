@@ -57,6 +57,7 @@ pub async fn initialized_handler(
     workspace_manager.workspace_folders = workspace_folders.clone();
     workspace_manager.client_config = client_config.clone();
     drop(workspace_manager);
+    // let file_diagnostic = context.file_diagnostic.clone();
 
     init_analysis(
         context.analysis.clone(),
@@ -144,7 +145,7 @@ pub async fn init_analysis(
 
     drop(mut_analysis);
 
-    file_diagnostic.add_workspace_diagnostic_task(0).await;
+    file_diagnostic.add_workspace_diagnostic_task(client_id, 0).await;
 }
 
 fn get_workspace_folders(params: &InitializeParams) -> Vec<PathBuf> {

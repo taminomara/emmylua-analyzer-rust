@@ -1,6 +1,6 @@
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
-use super::{ClientProxy, FileDiagnostic, StatusBar};
+use super::{ClientProxy, FileDiagnostic, ProgressTask, StatusBar};
 use crate::handlers::{init_analysis, ClientConfig};
 use emmylua_code_analysis::update_code_style;
 use emmylua_code_analysis::{load_configs, EmmyLuaAnalysis, Emmyrc};
@@ -138,12 +138,18 @@ impl WorkspaceManager {
         drop(update_token);
         let analysis = self.analysis.clone();
         let file_diagnostic = self.file_diagnostic.clone();
+        let client_id = self.client_config.client_id;
+        let status_bar = self.status_bar.clone();
+
         tokio::spawn(async move {
             select! {
                 _ = tokio::time::sleep(delay) => {
                     let mut analysis = analysis.write().await;
+                    status_bar.create_progress_task(client_id, ProgressTask::RefreshIndex);
+
                     analysis.reindex();
-                    file_diagnostic.add_workspace_diagnostic_task(500).await;
+                    status_bar.finish_progress_task(client_id, ProgressTask::RefreshIndex, None);
+                    file_diagnostic.add_workspace_diagnostic_task(client_id, 500).await;
                 }
                 _ = cancel_token.cancelled() => {
                     log::info!("cancel reindex workspace");
