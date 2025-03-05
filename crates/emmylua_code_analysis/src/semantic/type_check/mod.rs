@@ -4,11 +4,12 @@ mod generic_type;
 mod ref_type;
 mod simple_type;
 mod sub_type;
+mod test;
 mod type_check_fail_reason;
 mod type_check_guard;
-mod test;
 
 use complex_type::check_complex_type_compact;
+use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr, LuaIndexToken};
 use func_type::{check_doc_func_type_compact, check_sig_type_compact};
 use generic_type::check_generic_type_compact;
 use ref_type::check_ref_type_compact;
@@ -22,6 +23,8 @@ use crate::{
 };
 pub use sub_type::is_sub_type_of;
 
+use super::SemanticModel;
+
 pub type TypeCheckResult = Result<(), TypeCheckFailReason>;
 
 pub fn check_type_compact(
@@ -30,6 +33,36 @@ pub fn check_type_compact(
     compact_type: &LuaType,
 ) -> TypeCheckResult {
     check_general_type_compact(db, source, compact_type, TypeCheckGuard::new())
+}
+
+/// 检查是否可以进行冒号调用, 必须是冒号调用且非冒号定义的情况下才能检查
+pub fn can_colon_call(
+    semantic_model: &SemanticModel,
+    call_expr: LuaCallExpr,
+    self_type: &LuaType,
+) -> TypeCheckResult {
+    if !matches!(self_type, LuaType::SelfInfer | LuaType::Any) {
+        if let Some(prefix_expr) = call_expr.get_prefix_expr() {
+            if let Some(_) = prefix_expr.token::<LuaIndexToken>() {
+                // 我们需要将 `SelfInfer` 缩小为实际类型
+                let result = match prefix_expr {
+                    LuaExpr::IndexExpr(index_expr) => {
+                        if let Some(prefix_expr) = index_expr.get_prefix_expr() {
+                            let expr_type = semantic_model
+                                .infer_expr(prefix_expr.clone())
+                                .unwrap_or(LuaType::SelfInfer);
+                            semantic_model.type_check(self_type, &expr_type)
+                        } else {
+                            Err(TypeCheckFailReason::TypeNotMatch)
+                        }
+                    }
+                    _ => Err(TypeCheckFailReason::TypeNotMatch),
+                };
+                return result;
+            }
+        }
+    }
+    Ok(())
 }
 
 fn check_general_type_compact(
@@ -43,12 +76,7 @@ fn check_general_type_compact(
     }
 
     if let Some(origin_type) = escape_type(db, compact_type) {
-        return check_general_type_compact(
-            db,
-            source,
-            &origin_type,
-            check_guard.next_level()?,
-        );
+        return check_general_type_compact(db, source, &origin_type, check_guard.next_level()?);
     }
 
     match source {
@@ -91,10 +119,8 @@ fn check_general_type_compact(
         LuaType::DocFunction(doc_func) => {
             check_doc_func_type_compact(db, doc_func, compact_type, check_guard)
         }
-        // signature type 
-        LuaType::Signature(sig_id) => {
-            check_sig_type_compact(db, sig_id, compact_type, check_guard)
-        },
+        // signature type
+        LuaType::Signature(sig_id) => check_sig_type_compact(db, sig_id, compact_type, check_guard),
 
         // complex type
         LuaType::Array(_)
@@ -103,9 +129,8 @@ fn check_general_type_compact(
         | LuaType::Object(_)
         | LuaType::Union(_)
         | LuaType::Intersection(_)
-        | LuaType::TableGeneric(_) 
-        | LuaType::MultiLineUnion(_)
-        => {
+        | LuaType::TableGeneric(_)
+        | LuaType::MultiLineUnion(_) => {
             check_complex_type_compact(db, source, compact_type, check_guard)
         }
 

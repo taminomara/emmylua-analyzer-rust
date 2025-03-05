@@ -1,11 +1,11 @@
 use std::ops::Deref;
 
-use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaCallExpr, LuaExpr, LuaIndexToken};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaCallExpr, LuaExpr};
 use rowan::TextRange;
 
 use crate::{
-    humanize_type, DiagnosticCode, LuaMultiReturn, LuaType, RenderLevel, SemanticModel,
-    TypeCheckFailReason, TypeCheckResult,
+    can_colon_call, humanize_type, DiagnosticCode, LuaMultiReturn, LuaType, RenderLevel,
+    SemanticModel, TypeCheckFailReason, TypeCheckResult,
 };
 
 use super::DiagnosticContext;
@@ -51,20 +51,17 @@ fn check_call_expr(
         (true, false) => {
             args.insert(0, None);
 
-            if let Some((_, Some(t))) = params.first() {
-                if !matches!(t, LuaType::SelfInfer | LuaType::Any) {
-                    if let Some(prefix_expr) = call_expr.get_prefix_expr() {
-                        if let Some(colon_token) = prefix_expr.token::<LuaIndexToken>() {
-                            add_type_check_diagnostic(
-                                context,
-                                semantic_model,
-                                colon_token.get_range(),
-                                t,
-                                &LuaType::SelfInfer,
-                                Err(TypeCheckFailReason::TypeNotMatch),
-                            );
-                        }
-                    }
+            if let Some((_, Some(self_type))) = params.first() {
+                let result = can_colon_call(semantic_model, call_expr.clone(), self_type);
+                if !result.is_ok() {
+                    add_type_check_diagnostic(
+                        context,
+                        semantic_model,
+                        call_expr.get_colon_token()?.get_range(),
+                        self_type,
+                        &LuaType::SelfInfer,
+                        result,
+                    );
                 }
             }
         }
