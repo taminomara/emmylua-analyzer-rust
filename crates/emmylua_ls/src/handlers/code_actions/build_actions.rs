@@ -55,22 +55,26 @@ fn add_disable_code_action(
     file_id: FileId,
     range: Range,
 ) -> Option<()> {
+    // SyntaxError no need to disable
+    if diagnostic_code == DiagnosticCode::SyntaxError {
+        return Some(());
+    }
     actions.push(CodeActionOrCommand::Command(make_disable_code_command(
-        &format!(
-            "Disable current line diagnostic ({})",
-            diagnostic_code.get_name()
-        ),
+        &t!(
+            "Disable current line diagnostic (%{name})",
+            name = diagnostic_code.get_name()
+        ).to_string(),
         DisableAction::DisableLine,
         diagnostic_code,
         file_id,
-        range,
+        range, 
     )));
 
     actions.push(CodeActionOrCommand::Command(make_disable_code_command(
-        &format!(
-            "Disable all diagnostics in current file ({})",
-            diagnostic_code.get_name()
-        ),
+        &t!(
+            "Disable all diagnostics in current file (%{name})",
+            name = diagnostic_code.get_name()
+        ).to_string(),
         DisableAction::DisableFile,
         diagnostic_code,
         file_id,
@@ -78,10 +82,10 @@ fn add_disable_code_action(
     )));
 
     actions.push(CodeActionOrCommand::Command(make_disable_code_command(
-        &format!(
-            "Disable all diagnostics in current project ({})",
-            diagnostic_code.get_name()
-        ),
+        &t!(
+            "Disable all diagnostics in current project (%{name})",
+            name = diagnostic_code.get_name()
+        ).to_string(),
         DisableAction::DisableProject,
         diagnostic_code,
         file_id,
