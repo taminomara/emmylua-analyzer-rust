@@ -1,7 +1,7 @@
 use emmylua_code_analysis::{
     LuaFunctionType, LuaMember, LuaMemberOwner, LuaPropertyOwnerId, LuaType, SemanticModel,
 };
-use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxKind, LuaSyntaxToken};
+use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaIndexExpr, LuaSyntaxKind, LuaSyntaxToken};
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
 
 use crate::handlers::hover::std_hover::{hover_std_description, is_std_by_name};
@@ -208,6 +208,44 @@ impl<'a> HoverBuilder<'a> {
             }
         }
 
+        None
+    }
+
+    /// 推断前缀是否为全局定义, 如果是, 则返回全局名称, 否则返回 None
+    pub fn infer_prefix_global_name(&self, member: &LuaMember) -> Option<&str> {
+        let root = self
+            .semantic_model
+            .get_db()
+            .get_vfs()
+            .get_syntax_tree(&member.get_file_id())?
+            .get_red_root();
+        let cur_node = member.get_syntax_id().to_node_from_root(&root)?;
+
+        match cur_node.kind().into() {
+            LuaSyntaxKind::IndexExpr => {
+                let index_expr = LuaIndexExpr::cast(cur_node)?;
+                let property_owner = self.semantic_model.get_property_owner_id(
+                    index_expr
+                        .get_prefix_expr()?
+                        .get_syntax_id()
+                        .to_node_from_root(&root)
+                        .unwrap()
+                        .into(),
+                );
+                if let Some(property_owner) = property_owner {
+                    if let LuaPropertyOwnerId::LuaDecl(id) = property_owner {
+                        if let Some(decl) =
+                            self.semantic_model.get_db().get_decl_index().get_decl(&id)
+                        {
+                            if decl.is_global() {
+                                return Some(decl.get_name());
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
         None
     }
 

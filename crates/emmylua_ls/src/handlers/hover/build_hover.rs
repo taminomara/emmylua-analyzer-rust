@@ -128,6 +128,11 @@ fn build_decl_hover(
             } else {
                 decl.get_name()
             },
+            if let Some(owner_decl) = owner_decl {
+                owner_decl.is_local()
+            } else {
+                decl.is_local()
+            }
         );
 
         builder.set_location_path(owner_member);
@@ -227,6 +232,11 @@ fn build_member_hover(
             } else {
                 &member_name
             },
+            if let Some(owner_decl) = owner_decl {
+                owner_decl.is_local()
+            } else {
+                false
+            }
         );
 
         builder.set_location_path(Some(&function_member.as_ref().unwrap_or(&member)));
@@ -353,8 +363,11 @@ fn get_decl_owner(
         .get_value_syntax_id()?
         .to_node_from_root(&root)?;
     let property_owner = semantic_model.get_property_owner_id(node.into());
+    // 似乎在`get_property_owner_id`推断时就已递归处理了, 但还是再处理一次
     match property_owner {
-        Some(LuaPropertyOwnerId::Member(member_id)) => get_member_owner(semantic_model, member_id),
+        Some(LuaPropertyOwnerId::Member(member_id)) => {
+            get_member_owner(semantic_model, member_id).or(property_owner)
+        }
         Some(LuaPropertyOwnerId::LuaDecl(_)) => property_owner,
         _ => None,
     }
