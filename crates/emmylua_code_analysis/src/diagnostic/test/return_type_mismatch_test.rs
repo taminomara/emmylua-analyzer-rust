@@ -57,7 +57,6 @@ mod tests {
         ));
     }
 
-
     #[test]
     fn test_variadic_return_type_mismatch() {
         let mut ws = VirtualWorkspace::new();
@@ -73,4 +72,38 @@ mod tests {
         ));
     }
 
+    #[test]
+    fn test_issue_146() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+            local function bar()
+                return {}
+            end
+
+            ---@param _f fun():table 测试
+            function foo(_f) end
+
+            foo(function()
+                return bar()
+            end)
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_issue_150() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::RedundantReturnValue,
+            r#"
+            function bar(a)
+                return tonumber(a)
+            end
+            "#
+        ));
+    }
 }
