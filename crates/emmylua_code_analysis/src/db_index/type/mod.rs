@@ -278,32 +278,4 @@ impl LuaIndex for LuaTypeIndex {
 
         self.as_force_type.retain(|id, _| id.file_id != file_id);
     }
-
-    fn fill_snapshot_info(&self, info: &mut HashMap<String, String>) {
-        info.insert(
-            "type.file_namespace".to_string(),
-            self.file_namespace.len().to_string(),
-        );
-        info.insert(
-            "type.file_using_namespace".to_string(),
-            self.file_using_namespace.len().to_string(),
-        );
-        info.insert(
-            "type.file_types".to_string(),
-            self.file_types.len().to_string(),
-        );
-        info.insert(
-            "type.full_name_type_map".to_string(),
-            self.full_name_type_map.len().to_string(),
-        );
-        info.insert(
-            "type.generic_params".to_string(),
-            self.generic_params.len().to_string(),
-        );
-        info.insert("type.supers".to_string(), self.supers.len().to_string());
-        info.insert(
-            "type.as_force_type".to_string(),
-            self.as_force_type.len().to_string(),
-        );
-    }
 }

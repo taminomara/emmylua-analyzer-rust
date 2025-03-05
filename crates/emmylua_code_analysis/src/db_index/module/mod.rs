@@ -433,19 +433,4 @@ impl LuaIndex for LuaModuleIndex {
             }
         }
     }
-
-    fn fill_snapshot_info(&self, info: &mut HashMap<String, String>) {
-        info.insert(
-            "module_nodes".to_string(),
-            self.module_nodes.len().to_string(),
-        );
-        info.insert(
-            "file_module_map".to_string(),
-            self.file_module_map.len().to_string(),
-        );
-        info.insert(
-            "module_name_to_file_ids".to_string(),
-            self.module_name_to_file_ids.len().to_string(),
-        );
-    }
 }

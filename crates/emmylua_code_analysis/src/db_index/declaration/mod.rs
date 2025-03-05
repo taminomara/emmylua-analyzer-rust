@@ -124,9 +124,4 @@ impl LuaIndex for LuaDeclIndex {
             !v.is_empty()
         });
     }
-
-    fn fill_snapshot_info(&self, info: &mut HashMap<String, String>) {
-        info.insert("decl.decl_trees".to_string(), self.decl_trees.len().to_string());
-        info.insert("decl.global_decl".to_string(), self.global_decl.len().to_string());
-    }
 }

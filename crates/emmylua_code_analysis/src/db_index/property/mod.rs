@@ -188,11 +188,4 @@ impl LuaIndex for LuaPropertyIndex {
             }
         }
     }
-
-    fn fill_snapshot_info(&self, info: &mut HashMap<String, String>) {
-        info.insert(
-            "property_count".to_string(),
-            self.properties.len().to_string(),
-        );
-    }
 }
