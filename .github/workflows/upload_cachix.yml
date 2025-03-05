@@ -28,7 +28,7 @@ jobs:
         nix_path: nixpkgs=https://github.com/NixOS/nixpkgs/archive/refs/heads/${{ matrix.nixChannel }}.tar.gz
         extra_nix_config: |
           experimental-features = nix-command flakes
-          access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+          access-tokens = github.com=${{ secrets.RELEASE }}
 
     - name: Show the current nixpkgs version
       run: |
@@ -38,7 +38,7 @@ jobs:
       uses: cachix/cachix-action@v15
       with:
         name: emmylua-analyzer
-        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+        authToken: '${{ secrets.CACHIX }}'
         
     - name: Build emmylua-analyzer
       run: |
