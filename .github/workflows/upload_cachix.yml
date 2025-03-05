@@ -22,7 +22,7 @@ jobs:
       with:
         fetch-depth: 0
         
-    - name: Install Nix
+    - name: Setup Nix
       uses: cachix/install-nix-action@v30
       with:
         nix_path: nixpkgs=https://github.com/NixOS/nixpkgs/archive/refs/heads/${{ matrix.nixChannel }}.tar.gz
@@ -38,7 +38,6 @@ jobs:
       uses: cachix/cachix-action@v15
       with:
         name: emmylua-analyzer
-        signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
         
     - name: Build emmylua-analyzer
