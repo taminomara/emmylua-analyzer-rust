@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use emmylua_parser::{LuaAst, LuaAstNode, LuaCallExpr, LuaExpr};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaCallExpr, LuaExpr, LuaIndexToken};
 use rowan::TextRange;
 
 use crate::{
@@ -50,6 +50,23 @@ fn check_call_expr(
         }
         (true, false) => {
             args.insert(0, None);
+
+            if let Some((_, Some(t))) = params.first() {
+                if !matches!(t, LuaType::SelfInfer | LuaType::Any) {
+                    if let Some(prefix_expr) = call_expr.get_prefix_expr() {
+                        if let Some(colon_token) = prefix_expr.token::<LuaIndexToken>() {
+                            add_type_check_diagnostic(
+                                context,
+                                semantic_model,
+                                colon_token.get_range(),
+                                t,
+                                &LuaType::SelfInfer,
+                                Err(TypeCheckFailReason::TypeNotMatch),
+                            );
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -205,7 +222,7 @@ fn add_type_check_diagnostic(
                     DiagnosticCode::ParamTypeNotMatch,
                     range,
                     t!(
-                        "expected %{source} but found %{found}",
+                        "expected `%{source}` but found `%{found}`",
                         source = humanize_type(db, &param_type, RenderLevel::Simple),
                         found = humanize_type(db, &expr_type, RenderLevel::Simple)
                     )

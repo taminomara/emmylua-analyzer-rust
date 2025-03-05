@@ -239,4 +239,38 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_colon_call_and_not_colon_define() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            ---@class Test
+            local Test = {}
+
+            ---@param a string
+            function Test.name(a)
+            end
+
+            Test:name()
+        "#
+        ));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            ---@class Test
+            local Test = {}
+
+            ---@param ... any
+            function Test.dots(...)
+            end
+
+            Test:dots("a", "b", "c") 
+        "#
+        ));
+    }
+
 }
