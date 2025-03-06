@@ -10,7 +10,7 @@ use crate::{
     SemanticModel, TypeCheckFailReason, TypeCheckResult,
 };
 
-use super::DiagnosticContext;
+use super::{get_closure_expr_comment, DiagnosticContext};
 
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::ReturnTypeMismatch];
 
@@ -177,8 +177,7 @@ fn add_type_check_diagnostic(
 }
 
 pub fn has_doc_return_annotation(closure_expr: &LuaClosureExpr) -> Option<()> {
-    closure_expr
-        .get_comment()?
+    get_closure_expr_comment(closure_expr)?
         .children::<LuaDocTagReturn>()
         .next()
         .map(|_| ())

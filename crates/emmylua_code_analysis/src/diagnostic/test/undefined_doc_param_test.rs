@@ -16,5 +16,15 @@ mod tests {
             end
         "#
         ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UndefinedDocParam,
+            r#"
+            ---@param a string
+            ---@param ccc string
+            local d = call(function(a, b, c)
+            end)
+        "#
+        ));
     }
 }

@@ -1,10 +1,8 @@
-use emmylua_parser::{
-    LuaAstNode, LuaAstToken, LuaClosureExpr, LuaDocTagParam,
-};
+use emmylua_parser::{LuaAstNode, LuaAstToken, LuaClosureExpr, LuaDocTagParam};
 
 use crate::{DiagnosticCode, LuaSignatureId, SemanticModel};
 
-use super::DiagnosticContext;
+use super::{get_closure_expr_comment, DiagnosticContext};
 
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::UndefinedDocParam];
 
@@ -24,8 +22,7 @@ fn check_doc_param(
     let signature_id = LuaSignatureId::from_closure(semantic_model.get_file_id(), &closure_expr);
     let signature = context.db.get_signature_index().get(&signature_id)?;
 
-    closure_expr
-        .get_comment()?
+    get_closure_expr_comment(closure_expr)?
         .children::<LuaDocTagParam>()
         .for_each(|tag| {
             if let Some(name_token) = tag.get_name_token() {
