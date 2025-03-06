@@ -9,8 +9,7 @@ use crate::{
     db_index::{
         LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaPropertyOwnerId,
         LuaSignatureId, LuaType,
-    },
-    InFiled, LuaFlowId, TypeAssertion,
+    }, InFiled, LuaFlowId, SignatureReturnStatus, TypeAssertion
 };
 
 use super::{
@@ -191,6 +190,7 @@ pub fn analyze_return(analyzer: &mut DocAnalyzer, tag: LuaDocTagReturn) -> Optio
                 .get_signature_index_mut()
                 .get_or_create(signature_id);
             signature.return_docs.push(return_info);
+            signature.resolve_return = SignatureReturnStatus::DocResolve;
         }
     }
     Some(())

@@ -1,6 +1,6 @@
 use emmylua_parser::{LuaAstNode, LuaBlock, LuaClosureExpr, LuaReturnStat};
 
-use crate::{DiagnosticCode, LuaSignatureId, SemanticModel};
+use crate::{DiagnosticCode, LuaSignatureId, SemanticModel, SignatureReturnStatus};
 
 use super::DiagnosticContext;
 
@@ -29,7 +29,7 @@ fn check_return_stat(
     let return_types = signature.get_return_types();
 
     // 如果没有返回值注解, 则不检查
-    if signature.resolve_return || return_types.is_empty() {
+    if signature.resolve_return != SignatureReturnStatus::DocResolve {
         return Some(());
     }
     let disable_return_count_check = return_types.iter().any(|ty| ty.is_variadic());

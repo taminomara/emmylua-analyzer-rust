@@ -18,8 +18,7 @@ pub struct LuaSignature {
     pub param_docs: HashMap<usize, LuaDocParamInfo>,
     pub params: Vec<String>,
     pub return_docs: Vec<LuaDocReturnInfo>,
-    /// 当没有返回值注解且返回了值时, 该值有可能为`true`, 如果有返回值注解, 那么一定为`false`
-    pub(crate) resolve_return: bool,
+    pub resolve_return: SignatureReturnStatus,
     pub is_colon_define: bool,
 }
 
@@ -31,7 +30,7 @@ impl LuaSignature {
             param_docs: HashMap::new(),
             params: Vec::new(),
             return_docs: Vec::new(),
-            resolve_return: false,
+            resolve_return: SignatureReturnStatus::UnResolve,
             is_colon_define: false,
         }
     }
@@ -41,7 +40,7 @@ impl LuaSignature {
     }
 
     pub fn is_resolve_return(&self) -> bool {
-        self.resolve_return || !self.return_docs.is_empty()
+        self.resolve_return != SignatureReturnStatus::UnResolve
     }
 
     pub fn get_type_params(&self) -> Vec<(String, Option<LuaType>)> {
@@ -188,4 +187,11 @@ impl LuaSignatureId {
     pub fn get_position(&self) -> TextSize {
         self.position
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SignatureReturnStatus {
+    UnResolve,
+    DocResolve,
+    InferResolve
 }

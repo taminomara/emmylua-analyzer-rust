@@ -4,8 +4,8 @@ use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaCallExpr, LuaExpr};
 use rowan::TextRange;
 
 use crate::{
-    can_colon_call, humanize_type, DiagnosticCode, LuaMultiReturn, LuaType, RenderLevel,
-    SemanticModel, TypeCheckFailReason, TypeCheckResult,
+    humanize_type, DiagnosticCode, LuaMultiReturn, LuaType, RenderLevel, SemanticModel,
+    TypeCheckFailReason, TypeCheckResult,
 };
 
 use super::DiagnosticContext;
@@ -52,7 +52,8 @@ fn check_call_expr(
             args.insert(0, None);
 
             if let Some((_, Some(self_type))) = params.first() {
-                let result = can_colon_call(semantic_model, call_expr.clone(), self_type);
+                let result =
+                    check_first_param_colon_call(semantic_model, call_expr.clone(), self_type);
                 if !result.is_ok() {
                     add_type_check_diagnostic(
                         context,
@@ -237,4 +238,27 @@ fn add_type_check_diagnostic(
             }
         },
     }
+}
+
+/// Check if colon call is possible. This check can only be performed
+/// when it's a colon call but not a colon definition.
+fn check_first_param_colon_call(
+    semantic_model: &SemanticModel,
+    call_expr: LuaCallExpr,
+    self_type: &LuaType,
+) -> TypeCheckResult {
+    if !matches!(self_type, LuaType::SelfInfer | LuaType::Any) {
+        if let Some(LuaExpr::IndexExpr(index_expr)) = call_expr.get_prefix_expr() {
+            // We need to narrow `SelfInfer` to the actual type
+            return if let Some(prefix_expr) = index_expr.get_prefix_expr() {
+                let expr_type = semantic_model
+                    .infer_expr(prefix_expr.clone())
+                    .unwrap_or(LuaType::SelfInfer);
+                semantic_model.type_check(self_type, &expr_type)
+            } else {
+                Err(TypeCheckFailReason::TypeNotMatch)
+            };
+        }
+    }
+    Ok(())
 }
