@@ -235,7 +235,7 @@ fn merge_signature_member(
         }
     }
 
-    member.decl_type = LuaType::Signature(signature_id);
+    member.set_decl_type(LuaType::Signature(signature_id));
     analyzer.db.get_member_index_mut().add_member(member);
     Some(())
 }

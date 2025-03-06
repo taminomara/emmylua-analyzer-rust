@@ -326,8 +326,8 @@ fn merge_type_owner_and_expr_type(
                 .db
                 .get_member_index_mut()
                 .get_member_mut(&member_id)?;
-            if member.decl_type.is_unknown() {
-                member.decl_type = expr_type;
+            if member.get_decl_type().is_unknown() {
+                member.set_decl_type(expr_type);
             } else {
                 merge_member_type(analyzer.db, member_id, expr_type);
             }
@@ -448,7 +448,7 @@ pub fn analyze_func_stat(analyzer: &mut LuaAnalyzer, func_stat: LuaFuncStat) -> 
                 .get_member_index_mut()
                 .get_member_mut(&member_id)?;
 
-            member.decl_type = signature_type;
+            member.set_decl_type(signature_type);
         }
     }
 
@@ -497,7 +497,7 @@ pub fn analyze_table_field(analyzer: &mut LuaAnalyzer, field: LuaTableField) -> 
 
     let decl_type = member.get_decl_type();
     if decl_type.is_unknown() {
-        member.decl_type = value_type;
+        member.set_decl_type(value_type);
     } else if decl_type.is_def() {
         merge_member_type(analyzer.db, member_id, value_type);
     }

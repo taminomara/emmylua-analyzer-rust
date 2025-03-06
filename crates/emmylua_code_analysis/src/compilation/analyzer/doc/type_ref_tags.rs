@@ -52,7 +52,7 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                             .db
                             .get_member_index_mut()
                             .get_member_mut(&member_id)?;
-                        member.decl_type = type_ref.clone();
+                        member.set_decl_type(type_ref.clone());
                     }
                 }
             }
@@ -79,7 +79,7 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                     .db
                     .get_member_index_mut()
                     .get_member_mut(&member_id)?;
-                member.decl_type = first_type.clone();
+                member.set_decl_type(first_type.clone());
             }
         }
         _ => {}
