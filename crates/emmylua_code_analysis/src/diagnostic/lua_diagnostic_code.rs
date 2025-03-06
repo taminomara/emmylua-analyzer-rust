@@ -103,7 +103,7 @@ pub fn is_code_default_enable(code: &DiagnosticCode) -> bool {
     match code {
         DiagnosticCode::InjectFieldFail => false,
         DiagnosticCode::DisableGlobalDefine => false,
-        DiagnosticCode::UndefinedField => false,
+        // DiagnosticCode::UndefinedField => false,
         DiagnosticCode::IterVariableReassign => false,
         DiagnosticCode::CodeStyleCheck => false,
         // ... handle other variants
