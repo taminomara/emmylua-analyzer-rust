@@ -68,7 +68,9 @@ pub enum DiagnosticCode {
     RedundantReturnValue,
     /// Undefined Doc Param
     UndefinedDocParam,
-
+    /// Duplicate doc field
+    DuplicateDocField,
+    
     #[serde(other)]
     None,
 }

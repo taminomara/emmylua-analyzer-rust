@@ -15,6 +15,7 @@ mod return_type_mismatch;
 mod syntax_error;
 mod undefined_doc_param;
 mod undefined_global;
+mod duplicate_doc_field;
 mod unused;
 
 use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaComment, LuaStat, LuaSyntaxKind};
@@ -60,6 +61,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(missing_return_value);
     check!(return_type_mismatch);
     check!(undefined_doc_param);
+    check!(duplicate_doc_field);
 
     Some(())
 }
