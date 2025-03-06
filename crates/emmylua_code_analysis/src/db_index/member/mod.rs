@@ -28,10 +28,7 @@ impl LuaMemberIndex {
         let owner = member.get_owner();
         let key = member.get_key().clone();
         if !owner.is_none() {
-            self.owner_members
-                .entry(owner)
-                .or_insert_with(HashMap::new)
-                .entry(key).or_insert(id);
+            self.add_member_to_owner(owner, key, id);
         }
         let file_id = member.get_file_id();
         self.in_field_members
@@ -42,16 +39,29 @@ impl LuaMemberIndex {
         id
     }
 
+    fn add_member_to_owner(
+        &mut self,
+        owner: LuaMemberOwner,
+        key: LuaMemberKey,
+        id: LuaMemberId,
+    ) -> Option<()> {
+        let member_map = self.owner_members.entry(owner).or_insert_with(HashMap::new);
+        if let Some(old_id) = member_map.get(&key) {
+            let member = self.members.get_mut(&id)?;
+            member.prev_decl_member_id = Some(*old_id);
+        } else {
+            member_map.insert(key, id);
+        }
+
+        Some(())
+    }
+
     pub fn add_member_owner(&mut self, owner: LuaMemberOwner, id: LuaMemberId) -> Option<()> {
         let member = self.members.get_mut(&id)?;
         let key = member.get_key().clone();
         member.owner = owner.clone();
 
-        self.owner_members
-            .entry(owner)
-            .or_insert_with(HashMap::new)
-            .entry(key).or_insert(id);
-
+        self.add_member_to_owner(owner, key, id);
         Some(())
     }
 
@@ -81,7 +91,6 @@ impl LuaMemberIndex {
             None
         }
     }
-
 }
 
 impl LuaIndex for LuaMemberIndex {

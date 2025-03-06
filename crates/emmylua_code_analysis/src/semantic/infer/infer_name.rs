@@ -2,7 +2,7 @@ use emmylua_parser::{LuaAstNode, LuaNameExpr};
 
 use crate::{
     db_index::{DbIndex, LuaDeclOrMemberId, LuaMemberKey},
-    LuaDeclExtra, LuaFlowId, LuaType,
+    LuaDecl, LuaDeclExtra, LuaFlowId, LuaType,
 };
 
 use super::{InferResult, LuaInferConfig};
@@ -32,22 +32,7 @@ pub fn infer_name_expr(
         } else if let Some(typ) = decl.get_type() {
             typ.clone()
         } else if decl.is_param() {
-            match &decl.extra {
-                LuaDeclExtra::Param { idx, signature_id } => {
-                    let signature = db.get_signature_index().get(&signature_id)?;
-                    if let Some(param_info) = signature.get_param_info_by_id(*idx) {
-                        let mut typ = param_info.type_ref.clone();
-                        if param_info.nullable && !typ.is_nullable() {
-                            typ = LuaType::Nullable(typ.into());
-                        }
-
-                        typ
-                    } else {
-                        LuaType::Unknown
-                    }
-                }
-                _ => unreachable!(),
-            }
+            infer_param(db, config, name_expr.clone(), decl).unwrap_or(LuaType::Unknown)
         } else {
             LuaType::Unknown
         };
@@ -89,22 +74,7 @@ fn infer_self(db: &DbIndex, config: &mut LuaInferConfig, name_expr: LuaNameExpr)
             } else if let Some(typ) = decl.get_type() {
                 typ.clone()
             } else if decl.is_param() {
-                match &decl.extra {
-                    LuaDeclExtra::Param { idx, signature_id } => {
-                        let signature = db.get_signature_index().get(&signature_id)?;
-                        if let Some(param_info) = signature.get_param_info_by_id(*idx) {
-                            let mut typ = param_info.type_ref.clone();
-                            if param_info.nullable && !typ.is_nullable() {
-                                typ = LuaType::Nullable(typ.into());
-                            }
-
-                            typ
-                        } else {
-                            LuaType::Unknown
-                        }
-                    }
-                    _ => unreachable!(),
-                }
+                infer_param(db, config, name_expr.clone(), decl).unwrap_or(LuaType::Unknown)
             } else {
                 LuaType::Unknown
             };
@@ -134,4 +104,30 @@ fn infer_self(db: &DbIndex, config: &mut LuaInferConfig, name_expr: LuaNameExpr)
             }
         }
     }
+}
+
+fn infer_param(
+    db: &DbIndex,
+    config: &mut LuaInferConfig,
+    name_expr: LuaNameExpr,
+    decl: &LuaDecl,
+) -> InferResult {
+    let (param_idx, signature_id) = match &decl.extra {
+        LuaDeclExtra::Param { idx, signature_id } => (*idx, *signature_id),
+        _ => return None,
+    };
+
+    // find local annotation
+    if let Some(signature) = db.get_signature_index().get(&signature_id) {
+        if let Some(param_info) = signature.get_param_info_by_id(param_idx) {
+            let mut typ = param_info.type_ref.clone();
+            if param_info.nullable && !typ.is_nullable() {
+                typ = LuaType::Nullable(typ.into());
+            }
+
+            return Some(typ);
+        }
+    }
+
+    None
 }

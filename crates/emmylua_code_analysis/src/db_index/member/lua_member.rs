@@ -86,6 +86,14 @@ impl LuaMember {
             None
         }
     }
+
+    pub fn is_decl(&self) -> bool {
+        self.prev_decl_member_id.is_none()
+    }
+
+    pub fn get_decl_member_id(&self) -> Option<LuaMemberId> {
+        self.prev_decl_member_id
+    }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash, Serialize, Deserialize)]

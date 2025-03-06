@@ -153,8 +153,9 @@ function math.rad(x) end
 --- in the range *[m, n]*. The call `math.random(n)` is equivalent to `math
 --- .random`(1,n).
 ---@overload fun():number
+---@overload fun(m:integer):integer
 ---@param m integer
----@param n? integer
+---@param n integer
 ---@return integer
 function math.random(m, n) end
 
