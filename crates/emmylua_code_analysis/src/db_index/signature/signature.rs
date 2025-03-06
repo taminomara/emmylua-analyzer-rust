@@ -18,6 +18,7 @@ pub struct LuaSignature {
     pub param_docs: HashMap<usize, LuaDocParamInfo>,
     pub params: Vec<String>,
     pub return_docs: Vec<LuaDocReturnInfo>,
+    /// 当没有返回值注解且返回了值时, 该值有可能为`true`, 如果有返回值注解, 那么一定为`false`
     pub(crate) resolve_return: bool,
     pub is_colon_define: bool,
 }
@@ -87,9 +88,8 @@ impl LuaSignature {
 
     // `field`定义的`function`也被视为`signature`
     pub fn first_param_is_self(&self) -> bool {
-        self.get_param_info_by_id(0).map_or(false, |info| {
-            info.type_ref.is_self_infer()
-        })
+        self.get_param_info_by_id(0)
+            .map_or(false, |info| info.type_ref.is_self_infer())
     }
 }
 

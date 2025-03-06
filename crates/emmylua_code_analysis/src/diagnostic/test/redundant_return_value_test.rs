@@ -31,4 +31,30 @@ mod tests {
         "#
         ));
     }
+
+    #[test]
+    fn test_not_return_anno() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::MissingReturnValue,
+            r#"
+            local function baz()
+                if true then
+                    return 
+                end
+                return 1
+            end
+        "#
+        ));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::RedundantReturnValue,
+            r#"
+            function bar(a)
+                return tonumber(a)
+            end
+        "#
+        ));
+    }
 }
