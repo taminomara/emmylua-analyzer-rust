@@ -3,7 +3,9 @@ use emmylua_parser::{
 };
 
 use crate::{
-    compilation::analyzer::unresolve::{UnResolveClosureParams, UnResolveClosureReturn, UnResolveReturn},
+    compilation::analyzer::unresolve::{
+        UnResolveClosureParams, UnResolveClosureReturn, UnResolveReturn,
+    },
     db_index::{LuaDocReturnInfo, LuaSignatureId},
     SignatureReturnStatus,
 };
@@ -117,12 +119,14 @@ fn analyze_lambda_returns(
     let founded_idx = call_arg_list
         .get_args()
         .position(|arg| arg.get_position() == pos)?;
-
+    let block = closure.get_block()?;
+    let return_points = analyze_func_body_returns(block);
     let unresolved = UnResolveClosureReturn {
         file_id: analyzer.file_id,
         signature_id: signature_id.clone(),
         call_expr,
         param_idx: founded_idx,
+        return_points,
     };
 
     analyzer.add_unresolved(unresolved.into());

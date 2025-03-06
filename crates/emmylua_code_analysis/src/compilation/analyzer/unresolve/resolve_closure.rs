@@ -3,7 +3,10 @@ use crate::{
     LuaInferConfig, LuaPropertyOwnerId, LuaType, SignatureReturnStatus,
 };
 
-use super::{UnResolveClosureParams, UnResolveClosureReturn};
+use super::{
+    resolve::try_resolve_return_point, UnResolveClosureParams, UnResolveClosureReturn,
+    UnResolveReturn,
+};
 
 pub fn try_resolve_closure_params(
     db: &mut DbIndex,
@@ -114,6 +117,10 @@ pub fn try_resolve_closure_return(
         .get_signature_index_mut()
         .get_mut(&closure_return.signature_id)?;
 
+    if expr_closure_return.iter().any(|it| it.contain_tpl()) {
+        return try_convert_to_func_body_infer(db, config, closure_return);
+    }
+
     for ret_type in expr_closure_return {
         signature.return_docs.push(LuaDocReturnInfo {
             name: None,
@@ -124,4 +131,18 @@ pub fn try_resolve_closure_return(
 
     signature.resolve_return = SignatureReturnStatus::DocResolve;
     Some(true)
+}
+
+fn try_convert_to_func_body_infer(
+    db: &mut DbIndex,
+    config: &mut LuaInferConfig,
+    closure_return: &UnResolveClosureReturn,
+) -> Option<bool> {
+    let unresolve = UnResolveReturn {
+        file_id: closure_return.file_id,
+        signature_id: closure_return.signature_id,
+        return_points: closure_return.return_points.clone(),
+    };
+
+    try_resolve_return_point(db, config, &unresolve)
 }

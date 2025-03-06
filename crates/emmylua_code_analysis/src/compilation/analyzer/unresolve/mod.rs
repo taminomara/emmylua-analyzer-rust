@@ -201,6 +201,7 @@ pub struct UnResolveClosureReturn {
     pub signature_id: LuaSignatureId,
     pub call_expr: LuaCallExpr,
     pub param_idx: usize,
+    pub return_points: Vec<LuaReturnPoint>
 }
 
 impl From<UnResolveClosureReturn> for UnResolve {
