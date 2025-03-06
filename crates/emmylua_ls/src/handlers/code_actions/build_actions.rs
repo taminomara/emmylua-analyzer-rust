@@ -55,8 +55,8 @@ fn add_disable_code_action(
     file_id: FileId,
     range: Range,
 ) -> Option<()> {
-    // SyntaxError no need to disable
-    if diagnostic_code == DiagnosticCode::SyntaxError {
+    // LuaSyntaxError no need to disable
+    if diagnostic_code == DiagnosticCode::LuaSyntaxError {
         return Some(());
     }
     actions.push(CodeActionOrCommand::Command(make_disable_code_command(

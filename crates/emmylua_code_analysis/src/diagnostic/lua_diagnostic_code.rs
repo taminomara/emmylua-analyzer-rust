@@ -8,8 +8,10 @@ use serde::{Deserialize, Serialize};
 )]
 #[serde(rename_all = "kebab-case")]
 pub enum DiagnosticCode {
-    /// Syntax error
+    /// Syntax error. 可能包含 doc 语法错误, 允许抑制
     SyntaxError,
+    /// Lua syntax error. lua 的语法错误, 禁止抑制
+    LuaSyntaxError,
     /// Type not found
     TypeNotFound,
     /// Missing return statement
@@ -66,7 +68,7 @@ pub enum DiagnosticCode {
     RedundantReturnValue,
     /// Undefined Doc Param
     UndefinedDocParam,
-    
+
     #[serde(other)]
     None,
 }

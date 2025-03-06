@@ -7,7 +7,7 @@ use crate::{DiagnosticCode, LuaSignatureId, SemanticModel};
 
 use super::DiagnosticContext;
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::SyntaxError];
+pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::SyntaxError, DiagnosticCode::LuaSyntaxError];
 
 pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
     if let Some(parse_errors) = semantic_model.get_file_parse_error() {
@@ -169,7 +169,7 @@ fn check_dots_literal_error(
                 let signature = context.db.get_signature_index().get(&signature_id)?;
                 if !signature.params.iter().any(|param| param == "...") {
                     context.add_diagnostic(
-                        DiagnosticCode::SyntaxError,
+                        DiagnosticCode::LuaSyntaxError,
                         literal_expr.get_range(),
                         t!(
                             "Cannot use `...` outside a vararg function."
