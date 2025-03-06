@@ -1,8 +1,8 @@
 use emmylua_parser::{LuaAstNode, LuaBlock, LuaClosureExpr, LuaReturnStat};
 
-use crate::{DiagnosticCode, LuaSignatureId, SemanticModel, SignatureReturnStatus};
+use crate::{DiagnosticCode, LuaSignatureId, SemanticModel};
 
-use super::DiagnosticContext;
+use super::{return_type_mismatch::has_doc_return_annotation, DiagnosticContext};
 
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::RedundantReturnValue];
 
@@ -29,9 +29,7 @@ fn check_return_stat(
     let return_types = signature.get_return_types();
 
     // 如果没有返回值注解, 则不检查
-    if signature.resolve_return != SignatureReturnStatus::DocResolve {
-        return Some(());
-    }
+    has_doc_return_annotation(&closure_expr)?;
     let disable_return_count_check = return_types.iter().any(|ty| ty.is_variadic());
     let expr_return_len = return_stat.get_expr_list().collect::<Vec<_>>().len();
     let return_types_len = return_types.len();

@@ -1,11 +1,13 @@
 use std::ops::Deref;
 
-use emmylua_parser::{LuaAstNode, LuaBlock, LuaClosureExpr, LuaExpr, LuaReturnStat};
+use emmylua_parser::{
+    LuaAstNode, LuaBlock, LuaClosureExpr, LuaDocTagReturn, LuaExpr, LuaReturnStat,
+};
 use rowan::TextRange;
 
 use crate::{
     humanize_type, DiagnosticCode, LuaMultiReturn, LuaSignatureId, LuaType, RenderLevel,
-    SemanticModel, SignatureReturnStatus, TypeCheckFailReason, TypeCheckResult,
+    SemanticModel, TypeCheckFailReason, TypeCheckResult,
 };
 
 use super::DiagnosticContext;
@@ -34,9 +36,7 @@ fn check_return_stat(
     let signature = context.db.get_signature_index().get(&signature_id)?;
     let return_types = signature.get_return_types();
     // 如果没有返回值注解, 则不检查
-    if signature.resolve_return != SignatureReturnStatus::DocResolve {
-        return Some(());
-    }
+    has_doc_return_annotation(&closure_expr)?;
 
     for (index, expr) in return_stat.get_expr_list().enumerate() {
         let return_type = return_types.get(index).unwrap_or(&LuaType::Any);
@@ -174,4 +174,12 @@ fn add_type_check_diagnostic(
             }
         },
     }
+}
+
+pub fn has_doc_return_annotation(closure_expr: &LuaClosureExpr) -> Option<()> {
+    closure_expr
+        .get_comment()?
+        .children::<LuaDocTagReturn>()
+        .next()
+        .map(|_| ())
 }
