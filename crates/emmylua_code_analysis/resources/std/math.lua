@@ -50,7 +50,7 @@ function math.atan(y, x) return 0 end
 ---
 --- Returns the smallest integer larger than or equal to `x`.
 ---@param x number
----@return number
+---@return integer
 function math.ceil(x) return 0 end
 
 ---
@@ -74,7 +74,7 @@ function math.exp(x) end
 ---
 --- Returns the largest integer smaller than or equal to `x`.
 ---@param x number
----@return number
+---@return integer
 function math.floor(x) end
 
 ---
@@ -122,13 +122,14 @@ function math.min(x, ...) end
 
 ---
 --- An integer with the minimum value for an integer.
----@type number
+---@type integer
 math.mininteger = nil
 
 ---
 --- Returns the integral part of `x` and the fractional part of `x`. Its second
 --- result is always a float.
 ---@param x number
+---@return integer
 ---@return number
 function math.modf(x) end
 
@@ -179,20 +180,23 @@ function math.sqrt(x) return 0 end
 ---@return number
 function math.tan(x) return 0 end
 
+---@version >5.3
 ---
 --- If the value `x` is convertible to an integer, returns that integer.
 --- Otherwise, returns `nil`.
 ---@param x number
----@return number
+---@return integer?
 function math.tointeger(x) end
 
+---@version >5.3
 ---
 --- Returns "`integer`" if `x` is an integer, "`float`" if it is a float, or
 --- **nil** if `x` is not a number.
 ---@param x number
----@return number
+---@return 'integer'|'float'|nil
 function math.type(x) end
 
+---@version >5.3
 ---
 --- Returns a boolean, true if and only if integer `m` is below integer `n` when
 --- they are compared as unsigned integers.
