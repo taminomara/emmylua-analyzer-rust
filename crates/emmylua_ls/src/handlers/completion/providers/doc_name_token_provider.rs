@@ -2,8 +2,7 @@ use std::collections::HashSet;
 
 use emmylua_code_analysis::DiagnosticCode;
 use emmylua_parser::{
-    LuaAstNode, LuaClosureExpr, LuaComment, LuaDocTagParam, LuaSyntaxKind,
-    LuaTokenKind,
+    LuaAstNode, LuaClosureExpr, LuaComment, LuaDocTagParam, LuaSyntaxKind, LuaTokenKind,
 };
 use lsp_types::CompletionItem;
 
@@ -62,9 +61,7 @@ fn add_tag_param_name_completion(
     Some(())
 }
 
-fn add_tag_cast_name_completion(
-    builder: &mut CompletionBuilder,
-) -> Option<()> {
+fn add_tag_cast_name_completion(builder: &mut CompletionBuilder) -> Option<()> {
     let file_id = builder.semantic_model.get_file_id();
     let decl_tree = builder
         .semantic_model
@@ -80,7 +77,7 @@ fn add_tag_cast_name_completion(
                 .get_db()
                 .get_decl_index()
                 .get_decl(&decl_id)?;
-            
+
             decl.get_name().to_string()
         };
         if duplicated_name.contains(&name) {

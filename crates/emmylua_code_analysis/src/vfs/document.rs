@@ -78,7 +78,7 @@ impl<'a> LuaDocument<'a> {
         if let Some(end) = self.line_index.get_line_offset(line + 1) {
             Some(TextRange::new(start, end))
         } else {
-            let end = TextSize::new( self.text.len() as u32);
+            let end = TextSize::new(self.text.len() as u32);
             if end > start {
                 Some(TextRange::new(start, end))
             } else {

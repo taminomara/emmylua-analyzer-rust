@@ -1,7 +1,7 @@
 use std::fmt;
 
-use crate::{LuaMemberId, LuaSignatureId};
 use crate::{db_index::LuaType, FileId};
+use crate::{LuaMemberId, LuaSignatureId};
 use emmylua_parser::{LuaKind, LuaSyntaxId, LuaSyntaxKind};
 use rowan::{TextRange, TextSize};
 use serde::de::{self, Visitor};

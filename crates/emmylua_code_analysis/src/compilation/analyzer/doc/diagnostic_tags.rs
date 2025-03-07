@@ -124,7 +124,6 @@ fn analyze_diagnostic_disable_line(
     Some(())
 }
 
-
 fn analyze_diagnostic_enable(
     analyzer: &mut DocAnalyzer,
     diagnostic: LuaDocTagDiagnostic,

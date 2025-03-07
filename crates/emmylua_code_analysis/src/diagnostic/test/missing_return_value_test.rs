@@ -16,7 +16,6 @@ mod tests {
         "#
         ));
 
-        
         assert!(ws.check_code_for(
             DiagnosticCode::MissingReturnValue,
             r#"

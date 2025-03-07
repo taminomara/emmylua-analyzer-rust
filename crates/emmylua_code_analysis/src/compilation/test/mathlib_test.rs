@@ -35,6 +35,5 @@ mod test {
         assert_eq!(ws.expr_ty("math.random()"), ws.ty("number"));
         assert_eq!(ws.expr_ty("math.random(10)"), ws.ty("integer"));
         assert_eq!(ws.expr_ty("math.random(1, 10)"), ws.ty("integer"));
-
     }
 }

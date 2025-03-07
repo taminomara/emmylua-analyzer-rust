@@ -1,6 +1,9 @@
 use crate::{LuaPropertyOwnerId, LuaSignatureId};
 
-use super::{tags::{find_owner_closure, get_owner_id}, DocAnalyzer};
+use super::{
+    tags::{find_owner_closure, get_owner_id},
+    DocAnalyzer,
+};
 use emmylua_parser::{
     LuaDocDescriptionOwner, LuaDocTagDeprecated, LuaDocTagSource, LuaDocTagVersion,
     LuaDocTagVisibility,

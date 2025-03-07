@@ -327,7 +327,7 @@ pub enum LuaIndexKey {
     String(LuaStringToken),
     Integer(LuaNumberToken),
     Expr(LuaExpr),
-    Idx(usize)
+    Idx(usize),
 }
 
 impl LuaIndexKey {

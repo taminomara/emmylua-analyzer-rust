@@ -16,8 +16,9 @@ mod test {
             function a:aaa(a)
                 d = a
             end
-            "#);
-        
+            "#,
+        );
+
         let string_ty = ws.expr_ty("d");
         let expected = ws.ty("string");
         assert_eq!(string_ty, expected);

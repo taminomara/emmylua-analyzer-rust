@@ -100,7 +100,7 @@ mod test {
         "#
         ));
     }
-    
+
     #[test]
     fn test_issue_100() {
         let mut ws = VirtualWorkspace::new_with_init_std_lib();
@@ -159,7 +159,8 @@ mod test {
         if c.aaa then
             c.aaa("aaa")
         end
-        "#))
+        "#
+        ))
     }
 
     #[test]

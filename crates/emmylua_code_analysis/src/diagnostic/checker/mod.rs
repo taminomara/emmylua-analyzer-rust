@@ -1,20 +1,20 @@
 mod access_invisible;
 mod analyze_error;
 mod await_in_sync;
+mod code_style_check;
 mod deprecated;
 mod discard_returns;
 mod local_const_reassign;
 mod missing_parameter;
+mod missing_return_value;
 mod need_check_nil;
 mod param_type_check;
+mod redundant_parameter;
+mod redundant_return_value;
+mod return_type_mismatch;
 mod syntax_error;
 mod undefined_global;
 mod unused;
-mod code_style_check;
-mod redundant_parameter;
-mod return_type_mismatch;
-mod redundant_return_value;
-mod missing_return_value;
 
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
@@ -28,10 +28,7 @@ use super::{
     DiagnosticCode,
 };
 
-pub fn check_file(
-    context: &mut DiagnosticContext,
-    semantic_model: &SemanticModel,
-) -> Option<()> {
+pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
     macro_rules! check {
         ($module:ident) => {
             if $module::CODES

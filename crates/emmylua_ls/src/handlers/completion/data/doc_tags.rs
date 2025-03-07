@@ -1,4 +1,3 @@
-
 pub const DOC_TAGS: &[&str] = &[
     "class",
     "enum",

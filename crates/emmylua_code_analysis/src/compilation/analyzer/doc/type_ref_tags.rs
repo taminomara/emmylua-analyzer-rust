@@ -9,7 +9,8 @@ use crate::{
     db_index::{
         LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaPropertyOwnerId,
         LuaSignatureId, LuaType,
-    }, InFiled, LuaFlowId, SignatureReturnStatus, TypeAssertion
+    },
+    InFiled, LuaFlowId, SignatureReturnStatus, TypeAssertion,
 };
 
 use super::{

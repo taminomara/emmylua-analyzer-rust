@@ -10,21 +10,19 @@ pub fn check_match_word(key: &str, candidate_key: &str) -> bool {
     if key_first_char == '_' && candidate_key.starts_with('_') {
         return true;
     }
-    
+
     let mut prev_char = '\0'; // Used to track the previous character
-    
+
     for (i, curr_char) in candidate_key.chars().enumerate() {
         // Determine if the current character is the start of a word
-        let is_word_start = 
-            // First character (unless it's an underscore)
-            (i == 0 && curr_char != '_') ||
+        let is_word_start = (i == 0 && curr_char != '_') ||
             // Character after an underscore
             (prev_char == '_') ||
             // Uppercase letter preceded by a lowercase letter (camel case)
             (curr_char.is_uppercase() && prev_char.is_lowercase()) ||
             // Boundary between ASCII and non-ASCII characters, Chinese and English
             (curr_char.is_ascii_alphabetic() != prev_char.is_ascii_alphabetic() && i > 0);
-            
+
         // If the current character is the start of a word, check if it matches
         if is_word_start {
             let curr_lowercase = curr_char.to_lowercase().next().unwrap();
@@ -32,7 +30,7 @@ pub fn check_match_word(key: &str, candidate_key: &str) -> bool {
                 return true;
             }
         }
-        
+
         prev_char = curr_char;
     }
 
@@ -76,7 +74,6 @@ mod tests {
         assert_eq!(check_match_word("r", "如果"), false);
         assert_eq!(check_match_word("如", "如果If"), true);
         assert_eq!(check_match_word("果", "水果"), false);
-
     }
 
     #[test]
