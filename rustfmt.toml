@@ -4,9 +4,3 @@ hard_tabs = false               # Use spaces instead of tabs
 max_width = 100                 # Maximum width of each line
 edition = "2021"                # Rust edition
 
-# Import-related Configuration
-imports_granularity = "Crate"   # Import grouping style
-group_imports = "StdExternalCrate" # Group imports by stdlib, external crates and local modules
-
-# Comment Handling
-wrap_comments = true            # Automatically wrap long comments
