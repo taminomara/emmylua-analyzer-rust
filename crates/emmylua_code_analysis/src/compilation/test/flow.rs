@@ -143,4 +143,39 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_null_function_field() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_code_for(
+            DiagnosticCode::NeedCheckNil,
+            r#"
+        ---@class A
+        ---@field aaa? fun(a: string)
+
+
+        local c ---@type A
+
+        if c.aaa then
+            c.aaa("aaa")
+        end
+        "#))
+    }
+
+    #[test]
+    fn test_issue_162() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            --- @class Foo
+            --- @field a? fun()
+
+            --- @param _o Foo
+            function bar(_o) end
+
+            bar({})
+            "#
+        ));
+    }
 }
