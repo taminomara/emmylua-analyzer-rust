@@ -18,6 +18,8 @@
 
 `NEW` Better Support require module for other editor
 
+`NEW` Support function stat inherit param type from `@field` annotation
+
 # 0.5.2 
 
 `CHG` Refactor `folding range`

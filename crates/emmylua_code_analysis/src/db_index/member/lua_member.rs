@@ -15,7 +15,6 @@ pub struct LuaMember {
     file_id: FileId,
     syntax_id: LuaSyntaxId,
     decl_type: Option<LuaType>,
-    pub(super) prev_decl_member_id: Option<LuaMemberId>,
 }
 
 impl LuaMember {
@@ -32,7 +31,6 @@ impl LuaMember {
             file_id,
             syntax_id: id,
             decl_type,
-            prev_decl_member_id: None,
         }
     }
 
@@ -75,7 +73,6 @@ impl LuaMember {
             file_id: self.file_id,
             syntax_id: self.syntax_id,
             decl_type: self.decl_type.clone(),
-            prev_decl_member_id: self.prev_decl_member_id,
         }
     }
 
@@ -85,14 +82,6 @@ impl LuaMember {
         } else {
             None
         }
-    }
-
-    pub fn is_decl(&self) -> bool {
-        self.prev_decl_member_id.is_none()
-    }
-
-    pub fn get_decl_member_id(&self) -> Option<LuaMemberId> {
-        self.prev_decl_member_id
     }
 }
 

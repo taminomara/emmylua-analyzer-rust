@@ -135,7 +135,7 @@ fn get_var_type_owner(
             match prefix_type {
                 Some(prefix_type) => {
                     var_index.get_index_key()?;
-
+                    let member_id = LuaMemberId::new(var_index.get_syntax_id(), file_id);
                     let member_owner = match prefix_type {
                         LuaType::TableConst(in_file_range) => {
                             LuaMemberOwner::Element(in_file_range)
@@ -155,16 +155,27 @@ fn get_var_type_owner(
                             let decl_id = LuaDeclId::new(file_id, prefix_expr.get_position());
                             return Some(TypeOwner::Decl(decl_id));
                         }
+                        LuaType::Ref(ref_id) => {
+                            let member_owner = LuaMemberOwner::Type(ref_id);
+                            analyzer
+                                .db
+                                .get_member_index_mut()
+                                .add_member_owner(member_owner, member_id);
+                            return None;
+                        }
                         // is ref need extend field?
                         _ => {
                             return None;
                         }
                     };
-                    let member_id = LuaMemberId::new(var_index.get_syntax_id(), file_id);
                     analyzer
                         .db
                         .get_member_index_mut()
-                        .add_member_owner(member_owner, member_id);
+                        .add_member_owner(member_owner.clone(), member_id);
+                    analyzer
+                        .db
+                        .get_member_index_mut()
+                        .add_member_to_owner(member_owner, member_id);
                     return Some(TypeOwner::Member(member_id));
                 }
                 None => {
