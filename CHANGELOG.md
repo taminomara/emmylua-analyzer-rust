@@ -2,6 +2,9 @@
 
 # 0.6.0 (unreleased)
 
+# 0.5.4
+
+`Fix` Fix generic dots params type check
 
 # 0.5.3 
 

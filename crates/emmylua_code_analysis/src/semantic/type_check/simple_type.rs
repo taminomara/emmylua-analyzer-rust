@@ -11,6 +11,7 @@ pub fn check_simple_type_compact(
     check_guard: TypeCheckGuard,
 ) -> TypeCheckResult {
     match source {
+        LuaType::Unknown | LuaType::Any => return Ok(()),
         LuaType::Nil => {
             if let LuaType::Nil = compact_type {
                 return Ok(());
@@ -150,6 +151,13 @@ pub fn check_simple_type_compact(
         }
         LuaType::Variadic(source_type) => {
             if let LuaType::Variadic(compact_type) = compact_type {
+                return check_simple_type_compact(
+                    db,
+                    source_type,
+                    compact_type,
+                    check_guard.next_level()?,
+                );
+            } else {
                 return check_simple_type_compact(
                     db,
                     source_type,
