@@ -1,6 +1,9 @@
 # CHANGELOG
 
-# 0.5.3 (unreleased)
+# 0.6.0 (unreleased)
+
+
+# 0.5.3 
 
 `NEW` Support negative integer as type
 
