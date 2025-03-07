@@ -46,7 +46,7 @@ fn check_name_expr(
         let depreacated_message = if let Some(message) = &property.deprecated_message {
             message.to_string()
         } else {
-            "depreacated".to_string()
+            "depracated".to_string()
         };
 
         context.add_diagnostic(
