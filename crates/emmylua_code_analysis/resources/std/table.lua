@@ -23,11 +23,11 @@ table = {}
 --- `j` is #list. If `i` is greater than `j`, returns the empty string.
 ---@overload fun(list:string[]):string
 ---@overload fun(list:string[], sep:string):string
----@overload fun(list:string[], sep:string, i:number):string
+---@overload fun(list:string[], sep:string, i:integer):string
 ---@param list string[]
 ---@param sep string
----@param i number
----@param j number
+---@param i integer
+---@param j integer
 ---@return string
 function table.concat(list, sep, i, j) end
 
@@ -36,11 +36,11 @@ function table.concat(list, sep, i, j) end
 --- elements to `list[pos]`, `list[pos+1]`, `···`, `list[#list]`. The default
 --- value for `pos` is ``#list+1`, so that a call `table.insert(t,x)`` inserts
 --- `x` at the end of list `t`.
----@overload fun(list:table, value:any):number
+---@overload fun(list:table, value:any):integer
 ---@param list table
----@param pos number
+---@param pos integer
 ---@param value any
----@return number
+---@return integer
 function table.insert(list, pos, value) end
 
 ---
@@ -50,16 +50,16 @@ function table.insert(list, pos, value) end
 --- range. The number of elements to be moved must fit in a Lua integer.
 ---
 --- Returns the destination table `a2`.
----@overload fun(a1:table, f:number, e:number, t:number):table
+---@overload fun(a1:table, f:integer, e:integer, t:integer):table
 ---@param a1 table
----@param f number
----@param e number
----@param t number
+---@param f integer
+---@param e integer
+---@param t integer
 ---@param a2 table
 ---@return table
 function table.move(a1, f, e, t, a2) end
 
----@version 5.1
+---@version 5.1, JIT
 ---
 ---Returns the largest positive numerical index of the given table, or zero if the table has no positive numerical indices.
 ---
@@ -79,7 +79,7 @@ function table.maxn(table) end
 --- The default value for `pos` is `#list`, so that a call `table.remove(l)`
 --- removes the last element of list `l`.
 ---@generic V
----@param list table<number, V> | V[]
+---@param list table<integer, V> | V[]
 ---@param pos? integer
 ---@return V
 function table.remove(list, pos) end
@@ -98,11 +98,11 @@ function table.remove(list, pos) end
 ---
 --- The sort algorithm is not stable: elements considered equal by the given
 --- order may have their relative positions changed by the sort.
----@overload fun(list:table):number
+---@overload fun(list:table):integer
 ---@generic V
 ---@param list V[]
 ---@param comp fun(a:V, b:V):boolean
----@return number
+---@return integer
 function table.sort(list, comp) end
 
 ---@version > 5.2, JIT
@@ -110,8 +110,8 @@ function table.sort(list, comp) end
 --- return `list[i]`, `list[i+1]`, `···`, `list[j]`
 --- By default, i is 1 and j is #list.
 ---@generic T
----@param i? number
----@param j? number
+---@param i? integer
+---@param j? integer
 ---@param list [T...]
 ---@return T...
 function table.unpack(list, i, j) end
