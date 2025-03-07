@@ -171,10 +171,7 @@ fn check_dots_literal_error(
                     context.add_diagnostic(
                         DiagnosticCode::LuaSyntaxError,
                         literal_expr.get_range(),
-                        t!(
-                            "Cannot use `...` outside a vararg function."
-                        )
-                        .to_string(),
+                        t!("Cannot use `...` outside a vararg function.").to_string(),
                         None,
                     );
                 }

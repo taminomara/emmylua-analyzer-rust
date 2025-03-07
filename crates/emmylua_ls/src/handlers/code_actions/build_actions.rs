@@ -63,18 +63,20 @@ fn add_disable_code_action(
         &t!(
             "Disable current line diagnostic (%{name})",
             name = diagnostic_code.get_name()
-        ).to_string(),
+        )
+        .to_string(),
         DisableAction::DisableLine,
         diagnostic_code,
         file_id,
-        range, 
+        range,
     )));
 
     actions.push(CodeActionOrCommand::Command(make_disable_code_command(
         &t!(
             "Disable all diagnostics in current file (%{name})",
             name = diagnostic_code.get_name()
-        ).to_string(),
+        )
+        .to_string(),
         DisableAction::DisableFile,
         diagnostic_code,
         file_id,
@@ -85,7 +87,8 @@ fn add_disable_code_action(
         &t!(
             "Disable all diagnostics in current project (%{name})",
             name = diagnostic_code.get_name()
-        ).to_string(),
+        )
+        .to_string(),
         DisableAction::DisableProject,
         diagnostic_code,
         file_id,

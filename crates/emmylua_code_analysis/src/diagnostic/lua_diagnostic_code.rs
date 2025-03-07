@@ -8,9 +8,9 @@ use serde::{Deserialize, Serialize};
 )]
 #[serde(rename_all = "kebab-case")]
 pub enum DiagnosticCode {
-    /// Syntax error. 可能包含 doc 语法错误, 允许抑制
+    /// Syntax error
     SyntaxError,
-    /// Lua syntax error. lua 的语法错误, 禁止抑制
+    /// Lua syntax error
     LuaSyntaxError,
     /// Type not found
     TypeNotFound,
@@ -70,7 +70,7 @@ pub enum DiagnosticCode {
     UndefinedDocParam,
     /// Duplicate doc field
     DuplicateDocField,
-    
+
     #[serde(other)]
     None,
 }

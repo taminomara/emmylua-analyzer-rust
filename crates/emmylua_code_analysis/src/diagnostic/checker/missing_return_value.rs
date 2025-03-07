@@ -2,9 +2,9 @@ use emmylua_parser::{
     LuaAstNode, LuaAstToken, LuaBlock, LuaClosureExpr, LuaReturnStat, LuaTokenKind,
 };
 
-use crate::{DiagnosticCode, LuaSignatureId, SemanticModel};
+use crate::{DiagnosticCode, LuaSignatureId, SemanticModel, SignatureReturnStatus};
 
-use super::{return_type_mismatch::has_doc_return_annotation, DiagnosticContext};
+use super::DiagnosticContext;
 
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::MissingReturnValue];
 
@@ -28,13 +28,16 @@ fn check_return_stat(
 
     let signature_id = LuaSignatureId::from_closure(semantic_model.get_file_id(), &closure_expr);
     let signature = context.db.get_signature_index().get(&signature_id)?;
-    let min_return_types = signature.get_return_types().iter()
-        .filter(|ty| !ty.is_nullable())
+    let min_return_types = signature
+        .get_return_types()
+        .iter()
+        .filter(|ty| !ty.is_optional())
         .cloned()
         .collect::<Vec<_>>();
 
-    // 如果没有返回值注解, 则不检查
-    has_doc_return_annotation(&closure_expr)?;
+    if signature.resolve_return != SignatureReturnStatus::DocResolve {
+        return None;
+    }
 
     let disable_return_count_check = min_return_types.iter().any(|ty| ty.is_variadic());
 

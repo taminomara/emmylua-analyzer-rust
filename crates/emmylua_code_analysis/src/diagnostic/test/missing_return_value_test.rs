@@ -41,7 +41,6 @@ mod tests {
                 return
             end
         "#
-        ));     
+        ));
     }
-
 }
