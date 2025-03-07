@@ -13,9 +13,11 @@ mod redundant_parameter;
 mod redundant_return_value;
 mod return_type_mismatch;
 mod syntax_error;
+mod undefined_doc_param;
 mod undefined_global;
 mod unused;
 
+use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaComment, LuaStat, LuaSyntaxKind};
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
 use std::sync::Arc;
@@ -57,6 +59,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(redundant_return_value);
     check!(missing_return_value);
     check!(return_type_mismatch);
+    check!(undefined_doc_param);
 
     Some(())
 }
@@ -201,5 +204,20 @@ impl<'a> DiagnosticContext<'a> {
 
         // default setting
         is_code_default_enable(&code)
+    }
+}
+
+pub fn get_closure_expr_comment(closure_expr: &LuaClosureExpr) -> Option<LuaComment> {
+    let comment = closure_expr
+        .ancestors::<LuaStat>()
+        .next()?
+        .syntax()
+        .prev_sibling()?;
+    match comment.kind().into() {
+        LuaSyntaxKind::Comment => {
+            let comment = LuaComment::cast(comment)?;
+            Some(comment)
+        }
+        _ => None,
     }
 }
