@@ -30,15 +30,3 @@ pub const DOC_TAGS: &[&str] = &[
     "source",
     "readonly",
 ];
-
-// // trivia tags just for completion
-// pub const DOC_OTHER_TAGS: &[&str] = &[
-//     "example",
-//     "note",
-//     "warning",
-//     "todo",
-//     "fixme",
-//     "author",
-//     "since",
-//     "throws",
-// ];

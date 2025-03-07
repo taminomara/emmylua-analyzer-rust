@@ -100,7 +100,7 @@ fn add_tag_cast_name_completion(
 }
 
 fn add_tag_diagnostic_action_completion(builder: &mut CompletionBuilder) {
-    let actions = vec!["disable", "disable-next-line"];
+    let actions = vec!["disable", "disable-next-line", "disable-line"];
     for (sorted_index, action) in actions.iter().enumerate() {
         let completion_item = CompletionItem {
             label: action.to_string(),
