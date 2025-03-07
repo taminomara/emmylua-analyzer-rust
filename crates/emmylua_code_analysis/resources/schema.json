@@ -185,6 +185,13 @@
           ]
         },
         {
+          "description": "Lua syntax error",
+          "type": "string",
+          "enum": [
+            "lua-syntax-error"
+          ]
+        },
+        {
           "description": "Type not found",
           "type": "string",
           "enum": [
@@ -371,6 +378,20 @@
           "type": "string",
           "enum": [
             "redundant-return-value"
+          ]
+        },
+        {
+          "description": "Undefined Doc Param",
+          "type": "string",
+          "enum": [
+            "undefined-doc-param"
+          ]
+        },
+        {
+          "description": "Duplicate doc field",
+          "type": "string",
+          "enum": [
+            "duplicate-doc-field"
           ]
         }
       ]
