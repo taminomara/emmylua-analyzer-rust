@@ -28,11 +28,11 @@ string = {}
 --- `string.sub`.
 ---
 --- Note that numerical codes are not necessarily portable across platforms.
----@overload fun(s:string):number
+---@overload fun(s:string):integer
 ---@param s string
----@param i? number
----@param j? number
----@return number
+---@param i? integer
+---@param j? integer
+---@return integer
 function string.byte(s, i, j) end
 
 ---
@@ -41,7 +41,7 @@ function string.byte(s, i, j) end
 --- code equal to its corresponding argument.
 ---
 --- Note that numerical codes are not necessarily portable across platforms.
----@param ... int
+---@param ... integer
 ---@return string
 function string.char(...) end
 
@@ -75,12 +75,12 @@ function string.dump(func, strip) end
 ---
 --- If the pattern has captures, then in a successful match the captured values
 --- are also returned, after the two indices.
----@overload fun(s:string, pattern:string):number, number, string
+---@overload fun(s:string, pattern:string):integer, integer, string
 ---@param s string
 ---@param pattern string
----@param init? number
+---@param init? integer
 ---@param plain? boolean
----@return number, number, string
+---@return integer, integer, string
 function string.find(s, pattern, init, plain) end
 
 ---
@@ -190,12 +190,12 @@ function string.gmatch(s, pattern) end
 --- `local t = {name="lua", version="5.3"}`
 --- `x = string.gsub("$name-$version.tar.gz", "%$(%w+)", t)`
 --- > x="lua-5.3.tar.gz"
----@overload fun(s:string, pattern:string, repl:string|fun()):string, number
+---@overload fun(s:string, pattern:string, repl:string|fun()):string, integer
 ---@param s string
 ---@param pattern string
 ---@param repl string|fun(param:string)
----@param n? number
----@return string, number
+---@param n? integer
+---@return string, integer
 function string.gsub(s, pattern, repl, n) end
 
 ---
@@ -222,7 +222,7 @@ function string.lower(s) end
 ---@overload fun(s:string, pattern:string):any
 ---@param s string
 ---@param pattern string
----@param init? number
+---@param init? integer
 ---@return any
 function string.match(s, pattern, init) end
 
@@ -241,7 +241,7 @@ function string.pack(fmt, v1, v2, ...) end
 --- format. The format string cannot have the variable-length options '`s`' or
 --- '`z`'
 ---@param fmt string
----@return number
+---@return integer
 function string.packsize(fmt) end
 
 ---
@@ -252,9 +252,9 @@ function string.packsize(fmt) end
 ---
 --- Note that it is very easy to exhaust the memory of your machine with a
 --- single call to this function.
----@overload fun(s:string, n:number):string
+---@overload fun(s:string, n:integer):string
 ---@param s string
----@param n number
+---@param n integer
 ---@param sep? string
 ---@return string
 function string.rep(s, n, sep) end
@@ -277,10 +277,10 @@ function string.reverse(s) end
 --- corrected to 1. If `j` is greater than the string length, it is corrected to
 --- that length. If, after these corrections, `i` is greater than `j`, the
 --- function returns the empty string.
----@overload fun(s:string, i:number):string
+---@overload fun(s:string, i:integer):string
 ---@param s string
----@param i number
----@param j number
+---@param i integer
+---@param j integer
 ---@return string
 function string.sub(s, i, j) end
 
@@ -292,7 +292,7 @@ function string.sub(s, i, j) end
 ---@overload fun(fmt:string, s:string):string
 ---@param fmt string
 ---@param s string
----@param pos? number
+---@param pos? integer
 ---@return string
 function string.unpack(fmt, s, pos) end
 

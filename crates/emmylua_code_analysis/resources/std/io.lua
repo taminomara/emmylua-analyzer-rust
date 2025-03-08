@@ -196,7 +196,7 @@ function file:read(...) end
 --- to the end of the file, and returns its size.
 ---@overload fun()
 ---@param whence string | '"set"' | '"cur"' | '"end"'
----@param offset number
+---@param offset integer
 function file:seek(whence, offset) end
 
 ---
@@ -213,7 +213,7 @@ function file:seek(whence, offset) end
 --- bytes. The default is an appropriate size.
 ---@overload fun(mode:string)
 ---@param mode string | '"no"' | '"full"' | '"line"'
----@param size number
+---@param size integer
 function file:setvbuf(mode, size) end
 
 ---

@@ -89,7 +89,7 @@ function dofile(filename) end
 --- addition of error position information to the message.
 ---@overload fun(message:string)
 ---@param message string
----@param level? number
+---@param level? integer
 function error(message, level) end
 
 ---
@@ -275,7 +275,7 @@ function rawget(table, index) end
 --- Returns the length of the object `v`, which must be a table or a string, without
 --- invoking any metamethod. Returns an integer number.
 ---@param v string|table
----@return number
+---@return integer
 function rawlen(v) end
 
 ---
@@ -447,8 +447,8 @@ function xpcall(f, msgh, ...) end
 
 ---@version 5.1, JIT
 ---@generic T
----@param i? number
----@param j? number
+---@param i? integer
+---@param j? integer
 ---@param list [T...]
 ---@return T...
 function unpack(list, i, j) end

@@ -146,8 +146,8 @@ function debug.getregistry() end
 ---
 --- Variable names starting with '(' (open parenthesis) represent variables with
 --- no known names (variables from chunks saved without debug information).
----@param f number
----@param up number
+---@param f integer
+---@param up integer
 ---@return table
 function debug.getupvalue(f, up) end
 
@@ -155,7 +155,7 @@ function debug.getupvalue(f, up) end
 --- Returns the `n`-th user value associated to the userdata `u` plus a boolean,
 --- **false** if the userdata does not have that value.
 ---@param u userdata
----@param n number
+---@param n integer
 ---@return boolean
 function debug.getuservalue(u, n) end
 
@@ -211,7 +211,7 @@ function debug.setfenv(object, env) end
 ---@param thread thread
 ---@param hook fun():any
 ---@param mask? Hookmask
----@param count? number
+---@param count? integer
 function debug.sethook(thread, hook, mask, count) end
 
 ---
@@ -221,9 +221,9 @@ function debug.sethook(thread, hook, mask, count) end
 --- raises an error when called with a `level` out of range. (You can call
 --- `getinfo` to check whether the level is valid.) Otherwise, it returns the
 --- name of the local variable.
----@overload fun(level:number, var:string, value:any):string
+---@overload fun(level:integer, var:string, value:any):string
 ---@param thread thread
----@param level number
+---@param level integer
 ---@param var string
 ---@param value any
 ---@return string
@@ -243,7 +243,7 @@ function debug.setmetatable(value, meta) end
 --- of the function `f`. The function returns **nil** if there is no upvalue
 --- with the given index. Otherwise, it returns the name of the upvalue.
 ---@param f fun():any
----@param up number
+---@param up integer
 ---@param value any
 ---@return string
 function debug.setupvalue(f, up, value) end
@@ -254,7 +254,7 @@ function debug.setupvalue(f, up, value) end
 --- Returns `udata`, or **nil** if the userdata does not have that value.
 ---@param udata userdata
 ---@param value any
----@param n number
+---@param n integer
 ---@return userdata
 function debug.setuservalue(udata, value, n) end
 
@@ -267,7 +267,7 @@ function debug.setuservalue(udata, value, n) end
 ---@overload fun():string
 ---@param thread thread
 ---@param message string
----@param level? number
+---@param level? integer
 ---@return string
 function debug.traceback(thread, message, level) end
 
@@ -280,9 +280,9 @@ function debug.traceback(thread, message, level) end
 --- access a same external local variable) will return identical ids for those
 --- upvalue indices.
 ---@version >5.2, JIT
----@param f fun():number
----@param n number
----@return number
+---@param f fun():integer
+---@param n integer
+---@return integer
 function debug.upvalueid(f, n) end
 
 
@@ -291,7 +291,7 @@ function debug.upvalueid(f, n) end
 --- of the Lua closure f2.
 ---@version >5.2, JIT
 ---@param f1 fun():any
----@param n1 number
+---@param n1 integer
 ---@param f2 fun():any
----@param n2 number
+---@param n2 integer
 function debug.upvaluejoin(f1, n1, f2, n2) end
