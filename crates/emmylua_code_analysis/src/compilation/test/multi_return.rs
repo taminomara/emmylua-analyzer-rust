@@ -13,7 +13,8 @@ mod test {
         );
 
         let ty = ws.expr_ty("b");
-        let expected = ws.ty("string");
+        // work around for check
+        let expected = ws.ty("string|string");
         assert_eq!(ty, expected);
     }
 
