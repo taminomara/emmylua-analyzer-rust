@@ -104,18 +104,12 @@ fn resolve_signature_by_args(
 
     for func in &overloads {
         let params = func.get_params();
-        // 参数数量不足
         if params.len() < arg_count.unwrap_or(0) {
             continue;
         }
 
-        // 冒号调用但不是冒号定义的函数, 需要检查第一个参数是否为`self`
         let jump_param = if is_colon_call && !func.is_colon_define() {
-            match params.get(0).and_then(|p| p.1.as_ref()) {
-                Some(param_type) if param_type == &LuaType::SelfInfer => 1,
-                Some(_) => break, // 不是冒号定义的函数, 但是是冒号调用
-                None => 0,
-            }
+            1
         } else {
             0
         };
