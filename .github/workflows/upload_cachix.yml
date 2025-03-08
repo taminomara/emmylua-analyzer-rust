@@ -21,7 +21,12 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        
+      
+    - name: Set version
+      run: |
+        echo "current ref ${{ github.ref }}"
+        cargo run -p edit_version -- ${{ github.ref }}
+      
     - name: Setup Nix
       uses: cachix/install-nix-action@v30
       with:
