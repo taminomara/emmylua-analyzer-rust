@@ -255,15 +255,43 @@ pub fn parse_fun_type(p: &mut LuaDocParser) -> ParseResult {
         p.bump();
 
         // compact luals return type (number, integer)
-        if p.current_token() == LuaTokenKind::TkLeftParen {
-            p.bump();
-            parse_type_list(p)?;
-            expect_token(p, LuaTokenKind::TkRightParen)?;
-        } else {
-            parse_type_list(p)?;
-        };
+        parse_fun_return_list(p)?;
     }
 
+    Ok(m.complete(p))
+}
+
+fn parse_fun_return_list(p: &mut LuaDocParser) -> ParseResult {
+    let m = p.mark(LuaSyntaxKind::DocTypeList);
+    // compact luals return type (number, integer)
+    let parse_paren = if p.current_token() == LuaTokenKind::TkLeftParen {
+        p.bump();
+        true
+    } else {
+        false
+    };
+
+    parse_fun_return_type(p)?;
+
+    while p.current_token() == LuaTokenKind::TkComma {
+        p.bump();
+        parse_fun_return_type(p)?;
+    }
+
+    if parse_paren {
+        expect_token(p, LuaTokenKind::TkRightParen)?;
+    }
+
+    Ok(m.complete(p))
+}
+
+fn parse_fun_return_type(p: &mut LuaDocParser) -> ParseResult {
+    let m = p.mark(LuaSyntaxKind::DocNamedReturnType);
+    let cm = parse_type(p)?;
+    if cm.kind == LuaSyntaxKind::TypeName && p.current_token() == LuaTokenKind::TkColon {
+        p.bump();
+        parse_type(p)?;
+    }
     Ok(m.complete(p))
 }
 

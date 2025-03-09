@@ -110,6 +110,7 @@ pub enum LuaSyntaxKind {
     DocContinueOrField,
     // doc parameter
     DocTypedParameter,
+    DocNamedReturnType,
     DocGenericParameter,
     DocGenericDeclareList,
     DocDiagnosticNameList,

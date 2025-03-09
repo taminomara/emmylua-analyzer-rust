@@ -898,8 +898,9 @@ Syntax(Chunk)@0..125
           Token(TkColon)@47..48 ":"
           Token(TkWhitespace)@48..49 " "
           Syntax(DocTypeList)@49..55
-            Syntax(TypeName)@49..55
-              Token(TkName)@49..55 "number"
+            Syntax(DocNamedReturnType)@49..55
+              Syntax(TypeName)@49..55
+                Token(TkName)@49..55 "number"
       Token(TkEndOfLine)@55..56 "\n"
       Token(TkWhitespace)@56..64 "        "
       Token(TkDocStart)@64..68 "---@"
@@ -929,8 +930,9 @@ Syntax(Chunk)@0..125
           Token(TkColon)@108..109 ":"
           Token(TkWhitespace)@109..110 " "
           Syntax(DocTypeList)@110..116
-            Syntax(TypeName)@110..116
-              Token(TkName)@110..116 "string"
+            Syntax(DocNamedReturnType)@110..116
+              Syntax(TypeName)@110..116
+                Token(TkName)@110..116 "string"
     Token(TkEndOfLine)@116..117 "\n"
     Token(TkWhitespace)@117..125 "        "
         "#;
@@ -2021,15 +2023,17 @@ Syntax(Chunk)@0..51
           Token(TkRightParen)@22..23 ")"
           Token(TkColon)@23..24 ":"
           Token(TkWhitespace)@24..25 " "
-          Token(TkLeftParen)@25..26 "("
-          Syntax(DocTypeList)@26..41
-            Syntax(TypeName)@26..33
-              Token(TkName)@26..33 "integer"
+          Syntax(DocTypeList)@25..42
+            Token(TkLeftParen)@25..26 "("
+            Syntax(DocNamedReturnType)@26..33
+              Syntax(TypeName)@26..33
+                Token(TkName)@26..33 "integer"
             Token(TkComma)@33..34 ","
             Token(TkWhitespace)@34..35 " "
-            Syntax(TypeName)@35..41
-              Token(TkName)@35..41 "number"
-          Token(TkRightParen)@41..42 ")"
+            Syntax(DocNamedReturnType)@35..41
+              Syntax(TypeName)@35..41
+                Token(TkName)@35..41 "number"
+            Token(TkRightParen)@41..42 ")"
     Token(TkEndOfLine)@42..43 "\n"
     Token(TkWhitespace)@43..51 "        "
         "#;
@@ -2264,6 +2268,53 @@ Syntax(Chunk)@0..31
             Token(TkInt)@19..22 "123"
     Token(TkEndOfLine)@22..23 "\n"
     Token(TkWhitespace)@23..31 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
+
+    #[test]
+    fn test_fun_return_type() {
+        let code = r#"
+        ---@type fun(): (name: string, age: number)
+        "#;
+        let result = r#"
+Syntax(Chunk)@0..61
+  Syntax(Block)@0..61
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..52
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagType)@13..52
+        Token(TkTagType)@13..17 "type"
+        Token(TkWhitespace)@17..18 " "
+        Syntax(TypeFun)@18..52
+          Token(TkName)@18..21 "fun"
+          Token(TkLeftParen)@21..22 "("
+          Token(TkRightParen)@22..23 ")"
+          Token(TkColon)@23..24 ":"
+          Token(TkWhitespace)@24..25 " "
+          Syntax(DocTypeList)@25..52
+            Token(TkLeftParen)@25..26 "("
+            Syntax(DocNamedReturnType)@26..38
+              Syntax(TypeName)@26..30
+                Token(TkName)@26..30 "name"
+              Token(TkColon)@30..31 ":"
+              Token(TkWhitespace)@31..32 " "
+              Syntax(TypeName)@32..38
+                Token(TkName)@32..38 "string"
+            Token(TkComma)@38..39 ","
+            Token(TkWhitespace)@39..40 " "
+            Syntax(DocNamedReturnType)@40..51
+              Syntax(TypeName)@40..43
+                Token(TkName)@40..43 "age"
+              Token(TkColon)@43..44 ":"
+              Token(TkWhitespace)@44..45 " "
+              Syntax(TypeName)@45..51
+                Token(TkName)@45..51 "number"
+            Token(TkRightParen)@51..52 ")"
+    Token(TkEndOfLine)@52..53 "\n"
+    Token(TkWhitespace)@53..61 "        "
         "#;
 
         assert_ast_eq!(code, result);

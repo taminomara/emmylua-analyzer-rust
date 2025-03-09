@@ -246,6 +246,10 @@ impl LuaDocTypeList {
     pub fn get_types(&self) -> LuaAstChildren<LuaDocType> {
         self.children()
     }
+
+    pub fn get_return_type_list(&self) -> LuaAstChildren<LuaDocNamedReturnType> {
+        self.children()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -399,5 +403,50 @@ impl LuaAstNode for LuaDocAttribute {
 impl LuaDocAttribute {
     pub fn get_attrib_tokens(&self) -> LuaAstTokenChildren<LuaNameToken> {
         self.tokens()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaDocNamedReturnType {
+    syntax: LuaSyntaxNode,
+}
+
+impl LuaAstNode for LuaDocNamedReturnType {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        &self.syntax
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaSyntaxKind::DocNamedReturnType
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaDocNamedReturnType {
+    pub fn get_name_and_type(&self) -> (Option<LuaDocNameType>, Option<LuaDocType>) {
+        let types = self.children().collect::<Vec<LuaDocType>>();
+        if types.len() == 1 {
+            (None, Some(types[0].clone()))
+        } else if types.len() == 2 {
+            (
+                LuaDocNameType::cast(types[0].syntax().clone()),
+                types.last().cloned(),
+            )
+        } else {
+            (None, None)
+        }
     }
 }

@@ -378,9 +378,14 @@ fn infer_func_type(analyzer: &mut DocAnalyzer, func: LuaDocFuncType) -> LuaType 
 
     let mut return_types = Vec::new();
     if let Some(return_type_list) = func.get_return_type_list() {
-        for type_node in return_type_list.get_types() {
-            let t = infer_type(analyzer, type_node);
-            return_types.push(t);
+        for return_type in return_type_list.get_return_type_list() {
+            let (_, typ) = return_type.get_name_and_type();
+            if let Some(typ) = typ {
+                let t = infer_type(analyzer, typ);
+                return_types.push(t);
+            } else {
+                return_types.push(LuaType::Unknown);
+            }
         }
     }
 
