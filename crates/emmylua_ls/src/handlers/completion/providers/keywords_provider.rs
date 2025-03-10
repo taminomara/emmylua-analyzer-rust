@@ -15,9 +15,25 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         add_stat_keyword_completions(builder, None);
         return Some(());
     }
-    let name_expr = LuaNameExpr::cast(builder.trigger_token.parent()?)?;
-    add_stat_keyword_completions(builder, Some(name_expr));
-    add_expr_keyword_completions(builder);
+
+    match builder.trigger_token.kind().into() {
+        LuaTokenKind::TkName => {
+            let name_expr = LuaNameExpr::cast(builder.trigger_token.parent()?)?;
+            add_stat_keyword_completions(builder, Some(name_expr));
+            add_expr_keyword_completions(builder);
+        }
+        LuaTokenKind::TkWhitespace => {
+            let left_token = builder.trigger_token.prev_token()?;
+            match left_token.kind().into() {
+                LuaTokenKind::TkLocal => {
+                    add_function_keyword_completions(builder);
+                }
+                _ => {}
+            }
+        }
+        _ => {}
+    }
+
     Some(())
 }
 
@@ -99,6 +115,21 @@ fn add_expr_keyword_completions(builder: &mut CompletionBuilder) -> Option<()> {
 
         builder.add_completion_item(item)?;
     }
+
+    Some(())
+}
+
+fn add_function_keyword_completions(builder: &mut CompletionBuilder) -> Option<()> {
+    let item = CompletionItem {
+        label: "function".to_string(),
+        kind: Some(lsp_types::CompletionItemKind::SNIPPET),
+        insert_text: Some("function ${1:name}(${2:...})\n\t${0}\nend".to_string()),
+        insert_text_format: Some(InsertTextFormat::SNIPPET),
+        insert_text_mode: Some(InsertTextMode::ADJUST_INDENTATION),
+        ..CompletionItem::default()
+    };
+
+    builder.add_completion_item(item)?;
 
     Some(())
 }

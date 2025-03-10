@@ -11,6 +11,9 @@ mod postfix_provider;
 mod table_decl_field_provider;
 mod type_special_provider;
 
+use emmylua_parser::{LuaAstToken, LuaStringToken};
+use rowan::TextRange;
+
 use super::completion_builder::CompletionBuilder;
 
 pub fn add_completions(builder: &mut CompletionBuilder) -> Option<()> {
@@ -34,4 +37,33 @@ pub fn add_completions(builder: &mut CompletionBuilder) -> Option<()> {
     }
 
     Some(())
+}
+
+fn get_text_edit_range_in_string(
+    builder: &mut CompletionBuilder,
+    string_token: LuaStringToken,
+) -> Option<lsp_types::Range> {
+    let text = string_token.get_text();
+    let range = string_token.get_range();
+    if text.len() == 0 {
+        return None;
+    }
+
+    let mut start_offset = u32::from(range.start());
+    let mut end_offset = u32::from(range.end());
+    if text.starts_with('"') || text.starts_with('\'') {
+        start_offset += 1;
+    }
+
+    if text.ends_with('"') || text.ends_with('\'') {
+        end_offset -= 1;
+    }
+
+    let new_text_range = TextRange::new(start_offset.into(), end_offset.into());
+    let lsp_range = builder
+        .semantic_model
+        .get_document()
+        .to_lsp_range(new_text_range);
+
+    lsp_range
 }

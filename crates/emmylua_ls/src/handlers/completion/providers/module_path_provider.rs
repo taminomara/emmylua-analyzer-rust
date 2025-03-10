@@ -3,9 +3,10 @@ use emmylua_parser::{
     LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaExpr, LuaLiteralExpr, LuaStringToken,
 };
 use lsp_types::{CompletionItem, CompletionTextEdit, TextEdit};
-use rowan::TextRange;
 
 use crate::handlers::completion::completion_builder::CompletionBuilder;
+
+use super::get_text_edit_range_in_string;
 
 pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     if builder.is_cancelled() {
@@ -49,7 +50,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         ""
     };
 
-    let text_edit_range = get_text_edit_range(builder, string_token)?;
+    let text_edit_range = get_text_edit_range_in_string(builder, string_token)?;
 
     let db = builder.semantic_model.get_db();
     let mut module_completions = Vec::new();
@@ -105,33 +106,4 @@ fn is_require_call(emmyrc: &Emmyrc, name: &str) -> bool {
     }
 
     name == "require"
-}
-
-fn get_text_edit_range(
-    builder: &mut CompletionBuilder,
-    string_token: LuaStringToken,
-) -> Option<lsp_types::Range> {
-    let text = string_token.get_text();
-    let range = string_token.get_range();
-    if text.len() == 0 {
-        return None;
-    }
-
-    let mut start_offset = u32::from(range.start());
-    let mut end_offset = u32::from(range.end());
-    if text.starts_with('"') || text.starts_with('\'') {
-        start_offset += 1;
-    }
-
-    if text.ends_with('"') || text.ends_with('\'') {
-        end_offset -= 1;
-    }
-
-    let new_text_range = TextRange::new(start_offset.into(), end_offset.into());
-    let lsp_range = builder
-        .semantic_model
-        .get_document()
-        .to_lsp_range(new_text_range);
-
-    lsp_range
 }
