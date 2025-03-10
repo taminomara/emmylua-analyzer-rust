@@ -20,6 +20,8 @@ pub struct LuaSignature {
     pub return_docs: Vec<LuaDocReturnInfo>,
     pub resolve_return: SignatureReturnStatus,
     pub is_colon_define: bool,
+    pub is_async: bool,
+    pub is_nodiscard: bool,
 }
 
 impl LuaSignature {
@@ -32,6 +34,8 @@ impl LuaSignature {
             return_docs: Vec::new(),
             resolve_return: SignatureReturnStatus::UnResolve,
             is_colon_define: false,
+            is_async: false,
+            is_nodiscard: false,
         }
     }
 
@@ -85,10 +89,16 @@ impl LuaSignature {
             .collect()
     }
 
-    // `field`定义的`function`也被视为`signature`
-    pub fn first_param_is_self(&self) -> bool {
-        self.get_param_info_by_id(0)
-            .map_or(false, |info| info.type_ref.is_self_infer())
+    pub fn is_method(&self) -> bool {
+        if self.is_colon_define {
+            return true;
+        }
+
+        if let Some(name) = self.params.first() {
+            name == "self"
+        } else {
+            false
+        }
     }
 }
 

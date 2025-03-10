@@ -185,7 +185,7 @@ fn hover_signature_type(
                 name.push_str(ty.get_simple_name());
             }
             // `field`定义的function也被视为`signature`, 因此这里需要额外处理
-            if signature.is_colon_define || signature.first_param_is_self() {
+            if signature.is_method() {
                 type_label = "(method) ";
                 name.push_str(":");
             } else {
@@ -313,35 +313,6 @@ fn build_signature_rets(
         "".to_string()
     };
 
-    fn build_signature_ret_type(
-        builder: &mut HoverBuilder,
-        ret_info: &LuaDocReturnInfo,
-        i: usize,
-    ) -> String {
-        let type_expansion_count = builder.get_type_expansion_count();
-        let type_text =
-            hover_type(builder, &ret_info.type_ref, Some(RenderLevel::Simple)).unwrap_or_default();
-        if builder.get_type_expansion_count() > type_expansion_count {
-            // 重新设置`type_expansion`
-            if let Some(pop_type_expansion) =
-                builder.pop_type_expansion(type_expansion_count, builder.get_type_expansion_count())
-            {
-                let mut new_type_expansion = format!("return #{}", i + 1);
-                let mut seen = HashSet::new();
-                for type_expansion in pop_type_expansion {
-                    for line in type_expansion.lines().skip(1) {
-                        if seen.insert(line.to_string()) {
-                            new_type_expansion.push('\n');
-                            new_type_expansion.push_str(line);
-                        }
-                    }
-                }
-                builder.add_type_expansion(new_type_expansion);
-            }
-        };
-        type_text
-    }
-
     if is_completion {
         let rets = if !overload_rets_string.is_empty() {
             overload_rets_string
@@ -398,6 +369,35 @@ fn build_signature_rets(
         result.push_str(rets.as_str());
     };
     result
+}
+
+fn build_signature_ret_type(
+    builder: &mut HoverBuilder,
+    ret_info: &LuaDocReturnInfo,
+    i: usize,
+) -> String {
+    let type_expansion_count = builder.get_type_expansion_count();
+    let type_text =
+        hover_type(builder, &ret_info.type_ref, Some(RenderLevel::Simple)).unwrap_or_default();
+    if builder.get_type_expansion_count() > type_expansion_count {
+        // 重新设置`type_expansion`
+        if let Some(pop_type_expansion) =
+            builder.pop_type_expansion(type_expansion_count, builder.get_type_expansion_count())
+        {
+            let mut new_type_expansion = format!("return #{}", i + 1);
+            let mut seen = HashSet::new();
+            for type_expansion in pop_type_expansion {
+                for line in type_expansion.lines().skip(1) {
+                    if seen.insert(line.to_string()) {
+                        new_type_expansion.push('\n');
+                        new_type_expansion.push_str(line);
+                    }
+                }
+            }
+            builder.add_type_expansion(new_type_expansion);
+        }
+    };
+    type_text
 }
 
 fn format_function_type(

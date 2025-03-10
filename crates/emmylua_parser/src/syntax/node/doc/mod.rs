@@ -436,15 +436,16 @@ impl LuaAstNode for LuaDocNamedReturnType {
 }
 
 impl LuaDocNamedReturnType {
-    pub fn get_name_and_type(&self) -> (Option<LuaDocNameType>, Option<LuaDocType>) {
+    pub fn get_name_and_type(&self) -> (Option<LuaNameToken>, Option<LuaDocType>) {
         let types = self.children().collect::<Vec<LuaDocType>>();
         if types.len() == 1 {
             (None, Some(types[0].clone()))
         } else if types.len() == 2 {
-            (
-                LuaDocNameType::cast(types[0].syntax().clone()),
-                types.last().cloned(),
-            )
+            if let LuaDocType::Name(name) = &types[0] {
+                (name.get_name_token(), Some(types[1].clone()))
+            } else {
+                (None, None)
+            }
         } else {
             (None, None)
         }
