@@ -425,17 +425,18 @@ fn build_node_semantic_token(
         }
         LuaAst::LuaIndexExpr(index_expr) => {
             let name = index_expr.get_name_token()?;
-            let property_owner =
-                semantic_model.get_property_owner_id(name.syntax().clone().into())?;
-            if let LuaPropertyOwnerId::Member(member_id) = property_owner {
-                let member = semantic_model
-                    .get_db()
-                    .get_member_index()
-                    .get_member(&member_id)?;
-                let decl = member.get_decl_type();
-                if decl.is_function() {
-                    builder.push(name.syntax().clone(), SemanticTokenType::FUNCTION);
-                    return Some(());
+            let property_owner = semantic_model.get_property_owner_id(name.syntax().clone().into());
+            if let Some(property_owner) = property_owner {
+                if let LuaPropertyOwnerId::Member(member_id) = property_owner {
+                    let member = semantic_model
+                        .get_db()
+                        .get_member_index()
+                        .get_member(&member_id)?;
+                    let decl = member.get_decl_type();
+                    if decl.is_function() {
+                        builder.push(name.syntax().clone(), SemanticTokenType::FUNCTION);
+                        return Some(());
+                    }
                 }
             }
             builder.push(name.syntax().clone(), SemanticTokenType::PROPERTY);
@@ -443,7 +444,7 @@ fn build_node_semantic_token(
         LuaAst::LuaTableField(table_field) => {
             let value_type = semantic_model.infer_expr(table_field.get_value_expr()?.clone())?;
             match value_type {
-                LuaType::Signature(_) => {
+                LuaType::Signature(_) | LuaType::DocFunction(_) => {
                     builder.push(
                         table_field.get_field_key()?.get_name()?.syntax().clone(),
                         SemanticTokenType::FUNCTION,
