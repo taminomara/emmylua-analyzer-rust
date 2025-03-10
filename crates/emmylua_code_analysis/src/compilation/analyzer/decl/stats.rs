@@ -172,24 +172,21 @@ fn analyze_maybe_global_index_expr(
 pub fn analyze_for_stat(analyzer: &mut DeclAnalyzer, stat: LuaForStat) -> Option<()> {
     let it_var = stat.get_var_name()?;
     let name = it_var.get_name_text();
-    let pos = it_var.get_position();
     let file_id = analyzer.get_file_id();
     let range = it_var.get_range();
-    if analyzer.find_decl(&name, pos).is_none() {
-        let decl = LuaDecl::new(
-            name,
-            file_id,
-            range,
-            LuaDeclExtra::Local {
-                kind: it_var.syntax().kind().into(),
-                attrib: Some(LocalAttribute::IterConst),
-                decl_type: Some(LuaType::Integer),
-            },
-            None,
-        );
+    let decl = LuaDecl::new(
+        name,
+        file_id,
+        range,
+        LuaDeclExtra::Local {
+            kind: it_var.syntax().kind().into(),
+            attrib: Some(LocalAttribute::IterConst),
+            decl_type: Some(LuaType::Integer),
+        },
+        None,
+    );
 
-        analyzer.add_decl(decl);
-    }
+    analyzer.add_decl(decl);
 
     Some(())
 }
