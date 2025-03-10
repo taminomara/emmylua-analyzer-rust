@@ -7,10 +7,13 @@ use crate::{
     LuaTypeDeclId, LuaUnionType,
 };
 
-use super::{super::{
-    instantiate::{instantiate_func_generic, TypeSubstitutor},
-    instantiate_type, resolve_signature, InferGuard, LuaInferCache,
-}, infer_cache::CallCache};
+use super::{
+    super::{
+        instantiate::{instantiate_func_generic, TypeSubstitutor},
+        instantiate_type, resolve_signature, InferGuard, LuaInferCache,
+    },
+    infer_cache::CallCache,
+};
 
 pub fn infer_call_expr_func(
     db: &DbIndex,
@@ -85,7 +88,7 @@ pub fn infer_call_expr_func(
     } else {
         cache.clear_call_expr_cache(&key);
     }
-    
+
     result
 }
 
@@ -127,8 +130,7 @@ fn infer_signature_doc_function(
             vec![],
         );
         if signature.is_generic() {
-            fake_doc_function =
-                instantiate_func_generic(db, cache, &fake_doc_function, call_expr)?;
+            fake_doc_function = instantiate_func_generic(db, cache, &fake_doc_function, call_expr)?;
         }
 
         Some(fake_doc_function.into())

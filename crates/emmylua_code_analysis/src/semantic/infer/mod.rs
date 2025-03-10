@@ -1,23 +1,23 @@
 mod infer_binary;
-mod infer_call;
 mod infer_cache;
+mod infer_call;
+mod infer_call_func;
 mod infer_index;
 mod infer_name;
 mod infer_table;
 mod infer_unary;
-mod infer_call_func;
 mod test;
 
 use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLiteralToken};
 use infer_binary::infer_binary_expr;
-use infer_call::infer_call_expr;
 use infer_cache::ExprCache;
 pub use infer_cache::LuaInferCache;
+use infer_call::infer_call_expr;
+pub use infer_call_func::infer_call_expr_func;
 use infer_index::infer_index_expr;
 use infer_name::{infer_name_expr, infer_param};
 use infer_table::infer_table_expr;
 pub use infer_table::infer_table_should_be;
-pub use infer_call_func::infer_call_expr_func;
 use infer_unary::infer_unary_expr;
 use smol_str::SmolStr;
 
@@ -106,11 +106,7 @@ fn infer_literal_expr(db: &DbIndex, config: &LuaInferCache, expr: LuaLiteralExpr
     }
 }
 
-fn infer_closure_expr(
-    _: &DbIndex,
-    config: &LuaInferCache,
-    closure: LuaClosureExpr,
-) -> InferResult {
+fn infer_closure_expr(_: &DbIndex, config: &LuaInferCache, closure: LuaClosureExpr) -> InferResult {
     let signature_id = LuaSignatureId::from_closure(config.get_file_id(), &closure);
     Some(LuaType::Signature(signature_id))
 }

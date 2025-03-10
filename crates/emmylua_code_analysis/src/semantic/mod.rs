@@ -32,7 +32,7 @@ use crate::{
     db_index::{DbIndex, LuaType},
     FileId,
 };
-pub(crate) use infer::{infer_expr, infer_call_expr_func};
+pub(crate) use infer::{infer_call_expr_func, infer_expr};
 pub use instantiate::{instantiate_type, TypeSubstitutor};
 use overload_resolve::resolve_signature;
 pub use type_check::{TypeCheckFailReason, TypeCheckResult};
