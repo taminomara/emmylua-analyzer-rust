@@ -134,7 +134,6 @@ pub enum LuaTokenKind {
     TkDocVersionNumber,   // version number
     TkStringTemplateType, // type template
     TkDocMatch,           // =
-    TkDocBoolean,         // true false
     TKDocPath,            // path
     TkDocRegion,          // region
     TkDocEndRegion,       // endregion

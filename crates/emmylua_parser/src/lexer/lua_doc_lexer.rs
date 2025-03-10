@@ -518,7 +518,8 @@ fn to_modification_or_name(text: &str) -> LuaTokenKind {
 
 fn to_token_or_name(text: &str) -> LuaTokenKind {
     match text {
-        "true" | "false" => LuaTokenKind::TkDocBoolean,
+        "true" => LuaTokenKind::TkTrue,
+        "false" => LuaTokenKind::TkFalse,
         "keyof" => LuaTokenKind::TkDocKeyOf,
         "extends" => LuaTokenKind::TkDocExtends,
         "as" => LuaTokenKind::TkDocAs,

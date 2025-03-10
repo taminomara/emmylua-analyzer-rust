@@ -109,9 +109,10 @@ fn parse_primary_type(p: &mut LuaDocParser) -> ParseResult {
         LuaTokenKind::TkLeftBrace => parse_object_or_mapped_type(p),
         LuaTokenKind::TkLeftBracket => parse_tuple_type(p),
         LuaTokenKind::TkLeftParen => parse_paren_type(p),
-        LuaTokenKind::TkString | LuaTokenKind::TkInt | LuaTokenKind::TkDocBoolean => {
-            parse_literal_type(p)
-        }
+        LuaTokenKind::TkString
+        | LuaTokenKind::TkInt
+        | LuaTokenKind::TkTrue
+        | LuaTokenKind::TkFalse => parse_literal_type(p),
         LuaTokenKind::TkName => parse_name_or_func_type(p),
         LuaTokenKind::TkStringTemplateType => parse_string_template_type(p),
         LuaTokenKind::TkDots => parse_vararg_type(p),

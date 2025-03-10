@@ -136,6 +136,24 @@ pub fn check_simple_type_compact(
             }
             _ => {}
         },
+        LuaType::DocBooleanConst(b) => match compact_type {
+            LuaType::BooleanConst(t) => {
+                if b == t {
+                    return Ok(());
+                }
+
+                return Err(TypeCheckFailReason::TypeNotMatch);
+            }
+            LuaType::Boolean => return Err(TypeCheckFailReason::TypeNotMatch),
+            LuaType::DocBooleanConst(t) => {
+                if b == t {
+                    return Ok(());
+                }
+
+                return Err(TypeCheckFailReason::TypeNotMatch);
+            }
+            _ => {}
+        },
         LuaType::StrTplRef(_) => {
             if compact_type.is_string() {
                 return Ok(());

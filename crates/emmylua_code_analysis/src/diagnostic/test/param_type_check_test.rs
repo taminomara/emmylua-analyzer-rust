@@ -296,4 +296,19 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_bool_as_type() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+        --- @param _x string|true
+        function foo(_x) end
+
+        foo(true)
+        "#
+        ));
+    }
 }

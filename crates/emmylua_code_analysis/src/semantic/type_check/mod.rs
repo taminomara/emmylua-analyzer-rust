@@ -63,6 +63,7 @@ fn check_general_type_compact(
         | LuaType::TableConst(_)
         | LuaType::DocStringConst(_)
         | LuaType::DocIntegerConst(_)
+        | LuaType::DocBooleanConst(_)
         | LuaType::TplRef(_)
         | LuaType::StrTplRef(_)
         | LuaType::Namespace(_)

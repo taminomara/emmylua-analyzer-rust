@@ -1,7 +1,7 @@
 use emmylua_code_analysis::{LuaDeclExtra, LuaPropertyOwnerId, LuaType, SemanticModel};
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr, LuaNameToken,
-    LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
+    LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr,
+    LuaLiteralToken, LuaNameToken, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
 };
 use lsp_types::{SemanticToken, SemanticTokenModifier, SemanticTokenType};
 use rowan::NodeOrToken;
@@ -165,7 +165,7 @@ fn build_tokens_semantic_token(
         LuaTokenKind::TkStringTemplateType => {
             builder.push(token, SemanticTokenType::STRING);
         }
-        LuaTokenKind::TkDocMatch | LuaTokenKind::TkDocBoolean => {
+        LuaTokenKind::TkDocMatch => {
             builder.push(token, SemanticTokenType::KEYWORD);
         }
         LuaTokenKind::TKDocPath => {
@@ -453,6 +453,16 @@ fn build_node_semantic_token(
                 _ => {}
             }
         }
+        LuaAst::LuaDocLiteralType(literal) => match &literal.get_literal()? {
+            LuaLiteralToken::Bool(bool_token) => {
+                builder.push_with_modifier(
+                    bool_token.syntax(),
+                    SemanticTokenType::KEYWORD,
+                    SemanticTokenModifier::DOCUMENTATION,
+                );
+            }
+            _ => {}
+        },
         _ => {}
     }
 

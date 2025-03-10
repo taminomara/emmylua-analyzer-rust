@@ -63,7 +63,7 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
                         }
                     }
                     LuaLiteralToken::Bool(bool_token) => {
-                        return LuaType::BooleanConst(bool_token.is_true())
+                        return LuaType::DocBooleanConst(bool_token.is_true())
                     }
                     LuaLiteralToken::Nil(_) => return LuaType::Nil,
                     // todo

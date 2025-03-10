@@ -58,6 +58,7 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
         LuaType::StringConst(s) => format!("\"{}\"", s),
         LuaType::DocStringConst(s) => format!("\"{}\"", s),
         LuaType::DocIntegerConst(i) => i.to_string(),
+        LuaType::DocBooleanConst(b) => b.to_string(),
         LuaType::Ref(id) => {
             if let Some(type_decl) = db.get_type_index().get_type_decl(id) {
                 let name = type_decl.get_full_name().to_string();
