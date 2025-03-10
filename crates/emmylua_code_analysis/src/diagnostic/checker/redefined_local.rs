@@ -49,7 +49,7 @@ fn check_scope_for_redefined_locals(
     parent_locals: &mut HashMap<String, LuaDeclId>,
     diagnostics: &mut HashSet<LuaDeclId>,
 ) {
-    let is_normal = scope.get_kind() == LuaScopeKind::Normal;
+    let should_add_to_parent = should_add_to_parent_scope(scope);
 
     let mut current_locals = parent_locals.clone();
 
@@ -86,9 +86,17 @@ fn check_scope_for_redefined_locals(
     }
 
     // 更新到父作用域
-    if !is_normal {
+    if should_add_to_parent {
         for (name, decl_id) in current_locals {
             parent_locals.insert(name, decl_id);
         }
     }
+}
+
+/// 检查是否需要加入到父作用域
+fn should_add_to_parent_scope(scope: &LuaScope) -> bool {
+    scope.get_kind() == LuaScopeKind::FuncStat
+        || scope.get_kind() == LuaScopeKind::LocalOrAssignStat
+        || scope.get_kind() == LuaScopeKind::Repeat
+        || scope.get_kind() == LuaScopeKind::MethodStat
 }

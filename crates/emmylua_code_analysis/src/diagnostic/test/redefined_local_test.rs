@@ -80,5 +80,15 @@ mod tests {
             end
         "#
         ));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::RedefinedLocal,
+            r#"
+                for k, v in pairs({}) do
+                end
+                for k, v in pairs({}) do
+                end
+        "#
+        ));
     }
 }
