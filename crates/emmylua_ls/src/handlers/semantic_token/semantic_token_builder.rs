@@ -58,7 +58,6 @@ enum SemanticTokenData {
     MultiLine(Vec<BasicSemanticTokenData>),
 }
 
-#[allow(unused)]
 #[derive(Debug)]
 pub struct SemanticBuilder<'a> {
     document: &'a LuaDocument<'a>,
@@ -68,7 +67,6 @@ pub struct SemanticBuilder<'a> {
     data: HashMap<TextSize, SemanticTokenData>,
 }
 
-#[allow(unused)]
 impl<'a> SemanticBuilder<'a> {
     pub fn new(
         document: &'a LuaDocument,
@@ -94,7 +92,7 @@ impl<'a> SemanticBuilder<'a> {
         }
     }
 
-    fn push_data(&mut self, token: LuaSyntaxToken, typ: u32, modifiers: u32) -> Option<()> {
+    fn push_data(&mut self, token: &LuaSyntaxToken, typ: u32, modifiers: u32) -> Option<()> {
         let position = token.text_range().start();
         if self.data.contains_key(&position) {
             return Some(());
@@ -106,7 +104,7 @@ impl<'a> SemanticBuilder<'a> {
         let start_col = lsp_range.start.character;
         let end_line = lsp_range.end.line;
 
-        if (!self.multi_line_support && start_line != end_line) {
+        if !self.multi_line_support && start_line != end_line {
             let mut muliti_line_data = vec![];
             muliti_line_data.push(BasicSemanticTokenData {
                 line: start_line,
@@ -153,14 +151,14 @@ impl<'a> SemanticBuilder<'a> {
         Some(())
     }
 
-    pub fn push(&mut self, token: LuaSyntaxToken, ty: SemanticTokenType) -> Option<()> {
+    pub fn push(&mut self, token: &LuaSyntaxToken, ty: SemanticTokenType) -> Option<()> {
         self.push_data(token, *self.type_to_id.get(&ty)?, 0);
         Some(())
     }
 
     pub fn push_with_modifier(
         &mut self,
-        token: LuaSyntaxToken,
+        token: &LuaSyntaxToken,
         ty: SemanticTokenType,
         modifier: SemanticTokenModifier,
     ) -> Option<()> {
@@ -194,9 +192,10 @@ impl<'a> SemanticBuilder<'a> {
         Some(())
     }
 
+    #[allow(unused)]
     pub fn push_with_modifiers(
         &mut self,
-        token: LuaSyntaxToken,
+        token: &LuaSyntaxToken,
         ty: SemanticTokenType,
         modifiers: Vec<SemanticTokenModifier>,
     ) -> Option<()> {
