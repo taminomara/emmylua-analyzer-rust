@@ -66,9 +66,10 @@ fn infer_name_expr_property_owner(
             value_expr_id.get_kind(),
             LuaSyntaxKind::NameExpr | LuaSyntaxKind::IndexExpr
         ) {
+            let file_id = decl.get_file_id();
+            let tree = db.get_vfs().get_syntax_tree(&file_id)?;
             // second infer
-            let value_expr =
-                LuaExpr::cast(value_expr_id.to_node_from_root(&name_expr.get_root())?)?;
+            let value_expr = LuaExpr::cast(value_expr_id.to_node(tree)?)?;
             if let Some(property_owner_id) =
                 infer_expr_property_owner(db, infer_config, value_expr, owner_guard.next_level()?)
             {
