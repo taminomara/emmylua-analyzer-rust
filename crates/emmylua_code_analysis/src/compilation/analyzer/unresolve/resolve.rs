@@ -1,7 +1,7 @@
 use crate::{
     compilation::analyzer::lua::LuaReturnPoint,
     db_index::{DbIndex, LuaDocReturnInfo, LuaMemberOwner, LuaType},
-    semantic::{infer_expr, LuaInferConfig},
+    semantic::{infer_expr, LuaInferCache},
     SignatureReturnStatus,
 };
 
@@ -12,7 +12,7 @@ use super::{
 
 pub fn try_resolve_decl(
     db: &mut DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     decl: &UnResolveDecl,
 ) -> Option<bool> {
     let expr = decl.expr.clone();
@@ -32,7 +32,7 @@ pub fn try_resolve_decl(
 
 pub fn try_resolve_member(
     db: &mut DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     unresolve_member: &mut UnResolveMember,
 ) -> Option<bool> {
     if let Some(prefix_expr) = &unresolve_member.prefix {
@@ -78,7 +78,7 @@ pub fn try_resolve_member(
 
 pub fn try_resolve_module(
     db: &mut DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     module: &UnResolveModule,
 ) -> Option<bool> {
     let expr = module.expr.clone();
@@ -94,7 +94,7 @@ pub fn try_resolve_module(
 
 pub fn try_resolve_return_point(
     db: &mut DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     return_: &UnResolveReturn,
 ) -> Option<bool> {
     let mut is_nullable = false;
@@ -152,7 +152,7 @@ pub fn try_resolve_return_point(
 
 pub fn try_resolve_iter_var(
     db: &mut DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     iter_var: &UnResolveIterVar,
 ) -> Option<bool> {
     let expr_type = infer_expr(db, config, iter_var.iter_expr.clone())?;

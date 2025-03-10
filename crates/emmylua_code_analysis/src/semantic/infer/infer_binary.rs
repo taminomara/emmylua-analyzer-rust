@@ -7,11 +7,11 @@ use crate::{
     TypeOps,
 };
 
-use super::{get_custom_type_operator, infer_config::LuaInferConfig, infer_expr, InferResult};
+use super::{get_custom_type_operator, infer_cache::LuaInferCache, infer_expr, InferResult};
 
 pub fn infer_binary_expr(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    cache: &mut LuaInferCache,
     expr: LuaBinaryExpr,
 ) -> InferResult {
     let op = expr.get_op_token()?.get_op();
@@ -27,8 +27,8 @@ pub fn infer_binary_expr(
     }
 
     let (left, right) = expr.get_exprs()?;
-    let left_type = infer_expr(db, config, left);
-    let right_type = infer_expr(db, config, right);
+    let left_type = infer_expr(db, cache, left);
+    let right_type = infer_expr(db, cache, right);
 
     // fast infer
     match op {

@@ -1,37 +1,48 @@
 use std::sync::Arc;
 
-use emmylua_parser::LuaCallExpr;
+use emmylua_parser::{LuaAstNode, LuaCallExpr};
 
 use crate::{
     DbIndex, LuaFunctionType, LuaGenericType, LuaOperatorMetaMethod, LuaSignatureId, LuaType,
     LuaTypeDeclId, LuaUnionType,
 };
 
-use super::{
+use super::{super::{
     instantiate::{instantiate_func_generic, TypeSubstitutor},
-    instantiate_type, resolve_signature, InferGuard, LuaInferConfig,
-};
+    instantiate_type, resolve_signature, InferGuard, LuaInferCache,
+}, infer_cache::CallCache};
 
 pub fn infer_call_expr_func(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    cache: &mut LuaInferCache,
     call_expr: LuaCallExpr,
     call_expr_type: LuaType,
     infer_guard: &mut InferGuard,
     args_count: Option<usize>,
 ) -> Option<Arc<LuaFunctionType>> {
-    match call_expr_type {
+    let syntax_id = call_expr.get_syntax_id();
+    let key = (syntax_id, args_count);
+    match cache.get_cache_call_expr(&key) {
+        Some(cache) => match cache {
+            CallCache::Cache(ty) => return Some(ty.clone()),
+            CallCache::ReadyCache => return None,
+        },
+        None => {}
+    }
+
+    cache.mark_call_expr_ready_cache(key);
+    let result = match call_expr_type {
         LuaType::DocFunction(func) => Some(func),
         LuaType::Signature(signature_id) => infer_signature_doc_function(
             db,
-            config,
+            cache,
             signature_id.clone(),
             call_expr.clone(),
             args_count,
         ),
         LuaType::Def(type_def_id) => infer_type_doc_function(
             db,
-            config,
+            cache,
             type_def_id.clone(),
             call_expr.clone(),
             infer_guard,
@@ -39,7 +50,7 @@ pub fn infer_call_expr_func(
         ),
         LuaType::Ref(type_ref_id) => infer_type_doc_function(
             db,
-            config,
+            cache,
             type_ref_id.clone(),
             call_expr.clone(),
             infer_guard,
@@ -47,7 +58,7 @@ pub fn infer_call_expr_func(
         ),
         LuaType::Generic(generic) => infer_generic_type_doc_function(
             db,
-            config,
+            cache,
             &generic,
             call_expr.clone(),
             infer_guard,
@@ -61,18 +72,26 @@ pub fn infer_call_expr_func(
                     .iter()
                     .all(|t| matches!(t, LuaType::DocFunction(_)))
             {
-                infer_generic_doc_function_union(db, config, &union, call_expr, args_count)
+                infer_generic_doc_function_union(db, cache, &union, call_expr, args_count)
             } else {
                 None
             }
         }
         _ => return None,
+    };
+
+    if let Some(result_type) = &result {
+        cache.cache_call_expr(key, result_type.clone());
+    } else {
+        cache.clear_call_expr_cache(&key);
     }
+    
+    result
 }
 
 fn infer_generic_doc_function_union(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    cache: &mut LuaInferCache,
     union: &LuaUnionType,
     call_expr: LuaCallExpr,
     args_count: Option<usize>,
@@ -86,14 +105,14 @@ fn infer_generic_doc_function_union(
         })
         .collect::<Vec<_>>();
 
-    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, args_count)?;
+    let doc_func = resolve_signature(db, cache, overloads, call_expr.clone(), false, args_count)?;
 
     Some(doc_func)
 }
 
 fn infer_signature_doc_function(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    cache: &mut LuaInferCache,
     signature_id: LuaSignatureId,
     call_expr: LuaCallExpr,
     args_count: Option<usize>,
@@ -109,7 +128,7 @@ fn infer_signature_doc_function(
         );
         if signature.is_generic() {
             fake_doc_function =
-                instantiate_func_generic(db, config, &fake_doc_function, call_expr)?;
+                instantiate_func_generic(db, cache, &fake_doc_function, call_expr)?;
         }
 
         Some(fake_doc_function.into())
@@ -125,7 +144,7 @@ fn infer_signature_doc_function(
 
         let doc_func = resolve_signature(
             db,
-            config,
+            cache,
             new_overloads,
             call_expr.clone(),
             signature.is_generic(),
@@ -138,7 +157,7 @@ fn infer_signature_doc_function(
 
 fn infer_type_doc_function(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    cache: &mut LuaInferCache,
     type_id: LuaTypeDeclId,
     call_expr: LuaCallExpr,
     infer_guard: &mut InferGuard,
@@ -150,7 +169,7 @@ fn infer_type_doc_function(
         let origin_type = type_decl.get_alias_origin(db, None)?;
         return infer_call_expr_func(
             db,
-            config,
+            cache,
             call_expr,
             origin_type.clone(),
             infer_guard,
@@ -175,13 +194,13 @@ fn infer_type_doc_function(
         }
     }
 
-    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, args_count)?;
+    let doc_func = resolve_signature(db, cache, overloads, call_expr.clone(), false, args_count)?;
     Some(doc_func)
 }
 
 fn infer_generic_type_doc_function(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    cache: &mut LuaInferCache,
     generic: &LuaGenericType,
     call_expr: LuaCallExpr,
     infer_guard: &mut InferGuard,
@@ -197,7 +216,7 @@ fn infer_generic_type_doc_function(
         let origin_type = type_decl.get_alias_origin(db, Some(&substitutor))?;
         return infer_call_expr_func(
             db,
-            config,
+            cache,
             call_expr,
             origin_type.clone(),
             infer_guard,
@@ -223,6 +242,6 @@ fn infer_generic_type_doc_function(
         }
     }
 
-    let doc_func = resolve_signature(db, config, overloads, call_expr.clone(), false, args_count)?;
+    let doc_func = resolve_signature(db, cache, overloads, call_expr.clone(), false, args_count)?;
     Some(doc_func)
 }

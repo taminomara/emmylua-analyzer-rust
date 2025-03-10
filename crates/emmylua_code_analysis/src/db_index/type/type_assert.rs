@@ -1,4 +1,4 @@
-use crate::{infer_expr, DbIndex, LuaInferConfig};
+use crate::{infer_expr, DbIndex, LuaInferCache};
 use emmylua_parser::{LuaAstNode, LuaExpr, LuaSyntaxId, LuaSyntaxNode};
 
 use super::{type_ops::TypeOps, LuaType};
@@ -27,7 +27,7 @@ impl TypeAssertion {
     pub fn tighten_type(
         &self,
         db: &DbIndex,
-        config: &mut LuaInferConfig,
+        config: &mut LuaInferCache,
         root: &LuaSyntaxNode,
         source: LuaType,
     ) -> Option<LuaType> {

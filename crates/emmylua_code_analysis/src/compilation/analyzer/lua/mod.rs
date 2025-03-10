@@ -15,7 +15,7 @@ use stats::{
 use crate::{
     db_index::{DbIndex, LuaType},
     profile::Profile,
-    semantic::{infer_expr, LuaInferConfig},
+    semantic::{infer_expr, LuaInferCache},
     FileId,
 };
 
@@ -70,7 +70,7 @@ fn analyze_node(analyzer: &mut LuaAnalyzer, node: LuaAst) {
 struct LuaAnalyzer<'a> {
     file_id: FileId,
     db: &'a mut DbIndex,
-    infer_config: LuaInferConfig,
+    infer_config: LuaInferCache,
     unresolved: Vec<UnResolve>,
 }
 
@@ -78,7 +78,7 @@ impl LuaAnalyzer<'_> {
     pub fn new<'a>(
         db: &'a mut DbIndex,
         file_id: FileId,
-        infer_config: LuaInferConfig,
+        infer_config: LuaInferCache,
     ) -> LuaAnalyzer<'a> {
         LuaAnalyzer {
             file_id,

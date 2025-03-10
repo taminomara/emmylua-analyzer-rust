@@ -1,6 +1,6 @@
 use crate::{
     infer_call_expr_func, infer_expr, DbIndex, InferGuard, LuaDocParamInfo, LuaDocReturnInfo,
-    LuaInferConfig, LuaType, SignatureReturnStatus,
+    LuaInferCache, LuaType, SignatureReturnStatus,
 };
 
 use super::{
@@ -10,7 +10,7 @@ use super::{
 
 pub fn try_resolve_closure_params(
     db: &mut DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     closure_params: &UnResolveClosureParams,
 ) -> Option<bool> {
     let call_expr = closure_params.call_expr.clone();
@@ -87,7 +87,7 @@ pub fn try_resolve_closure_params(
 
 pub fn try_resolve_closure_return(
     db: &mut DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     closure_return: &UnResolveClosureReturn,
 ) -> Option<bool> {
     let call_expr = closure_return.call_expr.clone();
@@ -135,7 +135,7 @@ pub fn try_resolve_closure_return(
 
 fn try_convert_to_func_body_infer(
     db: &mut DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     closure_return: &UnResolveClosureReturn,
 ) -> Option<bool> {
     let unresolve = UnResolveReturn {

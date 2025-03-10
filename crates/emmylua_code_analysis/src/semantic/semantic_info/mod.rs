@@ -10,7 +10,7 @@ use owner_guard::OwnerGuard;
 
 use crate::{DbIndex, LuaDeclExtra, LuaDeclId, LuaMemberId, LuaPropertyOwnerId, LuaType};
 
-use super::{infer_expr, LuaInferConfig};
+use super::{infer_expr, LuaInferCache};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SemanticInfo {
@@ -20,7 +20,7 @@ pub struct SemanticInfo {
 
 pub fn infer_token_semantic_info(
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
     token: LuaSyntaxToken,
 ) -> Option<SemanticInfo> {
     let parent = token.parent()?;
@@ -64,7 +64,7 @@ pub fn infer_token_semantic_info(
 
 pub fn infer_node_semantic_info(
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
     node: LuaSyntaxNode,
 ) -> Option<SemanticInfo> {
     match node {
@@ -132,7 +132,7 @@ pub fn infer_node_semantic_info(
 fn type_def_tag_info(
     name: &str,
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
 ) -> Option<SemanticInfo> {
     let type_decl = db
         .get_type_index()
@@ -145,7 +145,7 @@ fn type_def_tag_info(
 
 pub fn infer_token_property_owner(
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
     token: LuaSyntaxToken,
 ) -> Option<LuaPropertyOwnerId> {
     let parent = token.parent()?;
@@ -164,7 +164,7 @@ pub fn infer_token_property_owner(
 
 pub fn infer_node_property_owner(
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
     node: LuaSyntaxNode,
 ) -> Option<LuaPropertyOwnerId> {
     match node {
@@ -224,7 +224,7 @@ pub fn infer_node_property_owner(
 fn type_def_tag_property_owner(
     name: &str,
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
 ) -> Option<LuaPropertyOwnerId> {
     let type_decl = db
         .get_type_index()

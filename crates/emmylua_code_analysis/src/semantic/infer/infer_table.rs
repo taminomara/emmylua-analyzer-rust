@@ -10,12 +10,12 @@ use crate::{
 
 use super::{
     infer_index::{infer_member_by_member_key, infer_member_by_operator},
-    InferResult, LuaInferConfig,
+    InferResult, LuaInferCache,
 };
 
 pub fn infer_table_expr(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     table: LuaTableExpr,
 ) -> InferResult {
     if table.is_array() {
@@ -30,7 +30,7 @@ pub fn infer_table_expr(
 
 fn infer_table_tuple_or_array(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     table: LuaTableExpr,
 ) -> InferResult {
     let fields = table.get_fields().collect::<Vec<_>>();
@@ -76,7 +76,7 @@ fn is_dots_expr(expr: &LuaExpr) -> Option<bool> {
 #[allow(unused)]
 pub fn infer_table_should_be(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     table: LuaTableExpr,
 ) -> InferResult {
     match table.get_parent::<LuaAst>()? {
@@ -91,7 +91,7 @@ pub fn infer_table_should_be(
 
 fn infer_table_type_by_calleee(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     call_arg_list: LuaCallArgList,
     table_expr: LuaTableExpr,
 ) -> InferResult {
@@ -118,7 +118,7 @@ fn infer_table_type_by_calleee(
 
 fn infer_table_type_by_parent(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     field: LuaTableField,
 ) -> InferResult {
     let member_id = LuaMemberId::new(field.get_syntax_id(), config.get_file_id());
@@ -159,7 +159,7 @@ fn infer_table_type_by_parent(
 
 fn infer_table_type_by_local(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     local: LuaLocalStat,
     table_expr: LuaTableExpr,
 ) -> InferResult {

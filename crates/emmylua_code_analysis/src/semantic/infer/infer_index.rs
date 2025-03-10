@@ -20,11 +20,11 @@ use crate::{
     InFiled, LuaFlowId, LuaInstanceType, TypeOps,
 };
 
-use super::{infer_expr, InferResult, LuaInferConfig};
+use super::{infer_expr, InferResult, LuaInferCache};
 
 pub fn infer_index_expr(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     index_expr: LuaIndexExpr,
 ) -> InferResult {
     let prefix_expr = index_expr.get_prefix_expr()?;
@@ -71,7 +71,7 @@ pub fn infer_index_expr(
 
 pub fn infer_member_by_member_key(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     prefix_type: &LuaType,
     index_expr: LuaIndexMemberExpr,
     infer_guard: &mut InferGuard,
@@ -133,7 +133,7 @@ fn infer_table_member(
 
 fn infer_custom_type_member(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     prefix_type_id: LuaTypeDeclId,
     index_expr: LuaIndexMemberExpr,
     infer_guard: &mut InferGuard,
@@ -199,7 +199,7 @@ fn infer_tuple_member(tuple_type: &LuaTupleType, index_expr: LuaIndexMemberExpr)
 
 fn infer_object_member(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     object_type: &LuaObjectType,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
@@ -243,7 +243,7 @@ fn infer_object_member(
 
 fn infer_union_member(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     union_type: &LuaUnionType,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
@@ -274,7 +274,7 @@ fn infer_union_member(
 
 fn infer_intersection_member(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     intersection_type: &LuaIntersectionType,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
@@ -299,7 +299,7 @@ fn infer_intersection_member(
 
 fn infer_generic_member(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     generic_type: &LuaGenericType,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
@@ -314,7 +314,7 @@ fn infer_generic_member(
 
 fn infer_exist_path_member(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     exist_field_type: &LuaMemberPathExistType,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
@@ -351,7 +351,7 @@ fn infer_exist_path_member(
 
 fn infer_instance_member(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     inst: &LuaInstanceType,
     index_expr: LuaIndexMemberExpr,
     infer_guard: &mut InferGuard,
@@ -375,7 +375,7 @@ fn infer_instance_member(
 
 pub fn infer_member_by_operator(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     prefix_type: &LuaType,
     index_expr: LuaIndexMemberExpr,
     infer_guard: &mut InferGuard,
@@ -417,7 +417,7 @@ pub fn infer_member_by_operator(
 
 fn infer_member_by_index_table(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     table_range: &InFiled<TextRange>,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
@@ -438,7 +438,7 @@ fn infer_member_by_index_table(
 
 fn infer_member_by_index_custom_type(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     prefix_type_id: &LuaTypeDeclId,
     index_expr: LuaIndexMemberExpr,
     infer_guard: &mut InferGuard,
@@ -510,7 +510,7 @@ fn infer_member_by_index_custom_type(
 
 fn infer_member_by_index_array(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     base: &LuaType,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
@@ -530,7 +530,7 @@ fn infer_member_by_index_array(
 
 fn infer_member_by_index_object(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     object: &LuaObjectType,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
@@ -551,7 +551,7 @@ fn infer_member_by_index_object(
 
 fn infer_member_by_index_union(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     union: &LuaUnionType,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
@@ -582,7 +582,7 @@ fn infer_member_by_index_union(
 
 fn infer_member_by_index_intersection(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     intersection: &LuaIntersectionType,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
@@ -607,7 +607,7 @@ fn infer_member_by_index_intersection(
 
 fn infer_member_by_index_generic(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     generic: &LuaGenericType,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
@@ -710,7 +710,7 @@ fn infer_member_by_index_generic(
 
 fn infer_member_by_index_table_generic(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     table_params: &Vec<LuaType>,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
@@ -759,7 +759,7 @@ fn infer_member_by_index_table_generic(
 
 fn infer_member_by_index_exist_field(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     exist_field_type: &LuaMemberPathExistType,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
@@ -796,7 +796,7 @@ fn infer_member_by_index_exist_field(
 
 fn infer_global_field_member(
     db: &DbIndex,
-    _: &LuaInferConfig,
+    _: &LuaInferCache,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
     let member_key = index_expr.get_index_key()?;
@@ -811,7 +811,7 @@ fn infer_global_field_member(
 
 fn infer_namespace_member(
     db: &DbIndex,
-    _: &LuaInferConfig,
+    _: &LuaInferCache,
     ns: &str,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {

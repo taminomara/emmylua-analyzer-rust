@@ -1,11 +1,11 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{semantic::LuaInferConfig, Emmyrc, FileId};
+use crate::{semantic::LuaInferCache, Emmyrc, FileId};
 
 #[derive(Debug)]
 pub struct InferManager {
     emmyrc: Arc<Emmyrc>,
-    infer_map: HashMap<FileId, LuaInferConfig>,
+    infer_map: HashMap<FileId, LuaInferCache>,
 }
 
 impl InferManager {
@@ -16,7 +16,7 @@ impl InferManager {
         }
     }
 
-    pub fn get_infer_config(&mut self, file_id: FileId) -> &mut LuaInferConfig {
+    pub fn get_infer_config(&mut self, file_id: FileId) -> &mut LuaInferCache {
         self.infer_map
             .entry(file_id)
             .or_insert_with(|| self.emmyrc.get_infer_config(file_id))

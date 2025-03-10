@@ -4,7 +4,7 @@ use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxNode};
 
 use crate::{
     db_index::{DbIndex, LuaType},
-    semantic::{infer_expr, LuaInferConfig},
+    semantic::{infer_expr, LuaInferCache},
     LuaFunctionType,
 };
 
@@ -16,7 +16,7 @@ use super::{
 
 pub fn instantiate_func_generic(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     func: &LuaFunctionType,
     call_expr: LuaCallExpr,
 ) -> Option<LuaFunctionType> {
@@ -59,7 +59,7 @@ pub fn instantiate_func_generic(
 
 fn collect_arg_types(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     call_expr: &LuaCallExpr,
 ) -> Option<Vec<LuaType>> {
     let arg_list = call_expr.get_args_list()?;
@@ -74,7 +74,7 @@ fn collect_arg_types(
 
 fn match_tpl_args(
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
     func_param_types: &Vec<LuaType>,
     arg_types: &Vec<LuaType>,
     root: &LuaSyntaxNode,

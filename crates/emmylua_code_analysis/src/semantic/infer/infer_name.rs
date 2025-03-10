@@ -7,11 +7,11 @@ use crate::{
     LuaDecl, LuaDeclExtra, LuaFlowId, LuaMember, LuaMemberId, LuaType, TypeOps,
 };
 
-use super::{InferResult, LuaInferConfig};
+use super::{InferResult, LuaInferCache};
 
 pub fn infer_name_expr(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     name_expr: LuaNameExpr,
 ) -> InferResult {
     let name_token = name_expr.get_name_token()?;
@@ -61,7 +61,7 @@ pub fn infer_name_expr(
     }
 }
 
-fn infer_self(db: &DbIndex, config: &mut LuaInferConfig, name_expr: LuaNameExpr) -> InferResult {
+fn infer_self(db: &DbIndex, config: &mut LuaInferCache, name_expr: LuaNameExpr) -> InferResult {
     let file_id = config.get_file_id();
     let tree = db.get_decl_index().get_decl_tree(&file_id)?;
     let id = tree.find_self_decl(db, name_expr.clone())?;

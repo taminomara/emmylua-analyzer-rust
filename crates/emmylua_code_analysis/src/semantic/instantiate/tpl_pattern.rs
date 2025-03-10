@@ -5,7 +5,7 @@ use smol_str::SmolStr;
 
 use crate::{
     db_index::{DbIndex, LuaGenericType, LuaType},
-    semantic::{infer_expr, LuaInferConfig},
+    semantic::{infer_expr, LuaInferCache},
     LuaFunctionType, LuaTupleType, LuaUnionType,
 };
 
@@ -13,7 +13,7 @@ use super::type_substitutor::TypeSubstitutor;
 
 pub fn tpl_pattern_match(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     root: &LuaSyntaxNode,
     pattern: &LuaType,
     target: &LuaType,
@@ -66,7 +66,7 @@ pub fn tpl_pattern_match(
 
 fn array_tpl_pattern_match(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     root: &LuaSyntaxNode,
     base: &LuaType,
     target: &LuaType,
@@ -92,7 +92,7 @@ fn array_tpl_pattern_match(
 
 fn table_tpl_pattern_match(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     root: &LuaSyntaxNode,
     table_generic_params: &Vec<LuaType>,
     target: &LuaType,
@@ -141,7 +141,7 @@ fn table_tpl_pattern_match(
 
 fn generic_tpl_pattern_match(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     root: &LuaSyntaxNode,
     generic: &LuaGenericType,
     target: &LuaType,
@@ -170,7 +170,7 @@ fn generic_tpl_pattern_match(
 
 fn union_tpl_pattern_match(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     root: &LuaSyntaxNode,
     union: &LuaUnionType,
     target: &LuaType,
@@ -185,7 +185,7 @@ fn union_tpl_pattern_match(
 
 fn func_tpl_pattern_match(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     root: &LuaSyntaxNode,
     tpl_func: &LuaFunctionType,
     target: &LuaType,
@@ -229,7 +229,7 @@ fn func_tpl_pattern_match(
 
 fn func_tpl_pattern_match_doc_func(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     root: &LuaSyntaxNode,
     tpl_func: &LuaFunctionType,
     target_func: &LuaFunctionType,
@@ -324,7 +324,7 @@ pub fn variadic_tpl_pattern_match(
 
 fn tuple_tpl_pattern_match(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     root: &LuaSyntaxNode,
     tpl_tuple: &LuaTupleType,
     target: &LuaType,

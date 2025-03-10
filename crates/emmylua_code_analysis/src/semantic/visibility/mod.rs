@@ -5,13 +5,13 @@ use emmylua_parser::{
 
 use crate::{DbIndex, Emmyrc, FileId, LuaMemberOwner, LuaPropertyOwnerId, LuaType};
 
-use super::{infer_expr, type_check::is_sub_type_of, LuaInferConfig};
+use super::{infer_expr, type_check::is_sub_type_of, LuaInferCache};
 
 pub fn check_visibility(
     db: &DbIndex,
     file_id: FileId,
     emmyrc: &Emmyrc,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
     token: LuaSyntaxToken,
     property_owner: LuaPropertyOwnerId,
 ) -> Option<bool> {
@@ -45,7 +45,7 @@ pub fn check_visibility(
 
 fn check_visibility_by_visibility(
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
     property_owner: LuaPropertyOwnerId,
     token: LuaSyntaxToken,
     visibility: VisibilityKind,
@@ -72,7 +72,7 @@ fn check_visibility_by_visibility(
 
 fn check_block_visibility(
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
     member_owner: &LuaMemberOwner,
     block: LuaBlock,
     visibility: VisibilityKind,

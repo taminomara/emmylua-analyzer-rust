@@ -2,11 +2,11 @@ use emmylua_parser::LuaSyntaxNode;
 
 use crate::{DbIndex, LuaMemberId, LuaPropertyOwnerId};
 
-use super::{semantic_info::infer_node_property_owner, LuaInferConfig};
+use super::{semantic_info::infer_node_property_owner, LuaInferCache};
 
 pub fn is_reference_to(
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
     node: LuaSyntaxNode,
     property_owner: LuaPropertyOwnerId,
 ) -> Option<bool> {

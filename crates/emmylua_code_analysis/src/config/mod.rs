@@ -7,7 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{semantic::LuaInferConfig, FileId};
+use crate::{semantic::LuaInferCache, FileId};
 pub use config_loader::load_configs;
 use configs::EmmyrcDocumentColor;
 pub use configs::EmmyrcFilenameConvention;
@@ -58,11 +58,11 @@ pub struct Emmyrc {
 }
 
 impl Emmyrc {
-    pub fn get_infer_config(&self, file_id: FileId) -> LuaInferConfig {
+    pub fn get_infer_config(&self, file_id: FileId) -> LuaInferCache {
         let require_map: HashSet<String> =
             self.runtime.require_like_function.iter().cloned().collect();
 
-        LuaInferConfig::new(file_id, require_map)
+        LuaInferCache::new(file_id, require_map)
     }
 
     pub fn get_parse_config<'cache>(

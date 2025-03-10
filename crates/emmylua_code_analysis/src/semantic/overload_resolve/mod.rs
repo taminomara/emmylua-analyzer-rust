@@ -6,12 +6,12 @@ use crate::db_index::{DbIndex, LuaFunctionType, LuaType};
 
 use super::{
     infer_expr, instantiate::instantiate_func_generic, type_check::check_type_compact,
-    LuaInferConfig,
+    LuaInferCache,
 };
 
 pub fn resolve_signature(
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
     overloads: Vec<Arc<LuaFunctionType>>,
     call_expr: LuaCallExpr,
     is_generic: bool,
@@ -44,7 +44,7 @@ pub fn resolve_signature(
 
 fn resolve_signature_by_generic(
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
     overloads: Vec<Arc<LuaFunctionType>>,
     call_expr: LuaCallExpr,
     expr_types: Vec<LuaType>,

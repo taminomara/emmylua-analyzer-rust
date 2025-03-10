@@ -2,11 +2,11 @@ use emmylua_parser::{LuaUnaryExpr, UnaryOperator};
 
 use crate::db_index::{DbIndex, LuaOperatorMetaMethod, LuaType};
 
-use super::{get_custom_type_operator, infer_expr, InferResult, LuaInferConfig};
+use super::{get_custom_type_operator, infer_expr, InferResult, LuaInferCache};
 
 pub fn infer_unary_expr(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     unary_expr: LuaUnaryExpr,
 ) -> InferResult {
     let op = unary_expr.get_op_token()?.get_op();

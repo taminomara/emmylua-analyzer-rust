@@ -2,7 +2,7 @@ use emmylua_parser::{LuaAstNode, LuaExpr, LuaIndexExpr, LuaNameExpr, LuaSyntaxKi
 
 use crate::{
     semantic::member::{get_buildin_type_map_type_id, without_members},
-    DbIndex, LuaDeclId, LuaDeclOrMemberId, LuaInferConfig, LuaInstanceType, LuaMemberId,
+    DbIndex, LuaDeclId, LuaDeclOrMemberId, LuaInferCache, LuaInstanceType, LuaMemberId,
     LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId, LuaType, LuaTypeDeclId, LuaUnionType,
 };
 
@@ -10,7 +10,7 @@ use super::{infer_expr, owner_guard::OwnerGuard};
 
 pub fn infer_expr_property_owner(
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
     expr: LuaExpr,
     owner_guard: OwnerGuard,
 ) -> Option<LuaPropertyOwnerId> {
@@ -40,7 +40,7 @@ pub fn infer_expr_property_owner(
 
 fn infer_name_expr_property_owner(
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
     name_expr: LuaNameExpr,
     owner_guard: OwnerGuard,
 ) -> Option<LuaPropertyOwnerId> {
@@ -82,7 +82,7 @@ fn infer_name_expr_property_owner(
 
 fn get_name_decl_id(
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
     name: &str,
     name_expr: LuaNameExpr,
 ) -> Option<LuaDeclId> {
@@ -108,7 +108,7 @@ fn get_name_decl_id(
 
 fn infer_self_property_owner(
     db: &DbIndex,
-    config: &LuaInferConfig,
+    config: &LuaInferCache,
     name_expr: LuaNameExpr,
 ) -> Option<LuaPropertyOwnerId> {
     let file_id = config.get_file_id();
@@ -126,7 +126,7 @@ fn infer_self_property_owner(
 
 fn infer_index_expr_property_owner(
     db: &DbIndex,
-    infer_config: &mut LuaInferConfig,
+    infer_config: &mut LuaInferCache,
     index_expr: LuaIndexExpr,
     owner_guard: OwnerGuard,
 ) -> Option<LuaPropertyOwnerId> {
@@ -149,7 +149,7 @@ fn infer_index_expr_property_owner(
 
 fn infer_member_property_owner_by_member_key(
     db: &DbIndex,
-    config: &LuaInferConfig,
+    config: &LuaInferCache,
     prefix_type: &LuaType,
     member_key: &LuaMemberKey,
     owner_guard: OwnerGuard,
@@ -246,7 +246,7 @@ fn infer_table_member_property_owner(
 
 fn infer_custom_type_member_property_owner(
     db: &DbIndex,
-    config: &LuaInferConfig,
+    config: &LuaInferCache,
     prefix_type_id: LuaTypeDeclId,
     member_key: &LuaMemberKey,
     owner_guard: OwnerGuard,
@@ -304,7 +304,7 @@ fn infer_custom_type_member_property_owner(
 
 fn infer_union_member_semantic_info(
     db: &DbIndex,
-    config: &LuaInferConfig,
+    config: &LuaInferCache,
     union_type: &LuaUnionType,
     member_key: &LuaMemberKey,
     owner_guard: OwnerGuard,
@@ -326,7 +326,7 @@ fn infer_union_member_semantic_info(
 
 fn infer_instance_member_property_by_member_key(
     db: &DbIndex,
-    config: &LuaInferConfig,
+    config: &LuaInferCache,
     inst: &LuaInstanceType,
     member_key: &LuaMemberKey,
     owner_guard: OwnerGuard,
@@ -354,7 +354,7 @@ fn infer_instance_member_property_by_member_key(
 
 fn infer_global_member_property_by_member_key(
     db: &DbIndex,
-    _: &LuaInferConfig,
+    _: &LuaInferCache,
     member_key: &LuaMemberKey,
     _: OwnerGuard,
 ) -> Option<LuaPropertyOwnerId> {

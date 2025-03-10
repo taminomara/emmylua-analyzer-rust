@@ -15,11 +15,11 @@ use crate::{
     InFiled,
 };
 
-use super::{infer_expr, LuaInferConfig};
+use super::{infer_expr, LuaInferCache};
 
 pub fn infer_call_expr(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     call_expr: LuaCallExpr,
 ) -> Option<LuaType> {
     let prefix_expr = call_expr.get_prefix_expr()?;
@@ -39,7 +39,7 @@ pub fn infer_call_expr(
     infer_call_result(db, config, prefix_type, call_expr, &mut InferGuard::new())
 }
 
-fn check_can_infer(db: &DbIndex, config: &LuaInferConfig, call_expr: &LuaCallExpr) -> Option<()> {
+fn check_can_infer(db: &DbIndex, config: &LuaInferCache, call_expr: &LuaCallExpr) -> Option<()> {
     let call_args = call_expr.get_args_list()?.get_args();
     for arg in call_args {
         if let LuaExpr::ClosureExpr(closure) = arg {
@@ -56,7 +56,7 @@ fn check_can_infer(db: &DbIndex, config: &LuaInferConfig, call_expr: &LuaCallExp
 
 fn infer_call_result(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     prefix_type: LuaType,
     call_expr: LuaCallExpr,
     infer_guard: &mut InferGuard,
@@ -93,7 +93,7 @@ fn infer_call_result(
 
 fn infer_call_by_doc_function(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     func: &LuaFunctionType,
     call_expr: LuaCallExpr,
 ) -> Option<LuaType> {
@@ -120,7 +120,7 @@ fn infer_call_by_doc_function(
 
 fn infer_call_by_signature(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     signature_id: LuaSignatureId,
     call_expr: LuaCallExpr,
 ) -> Option<LuaType> {
@@ -196,7 +196,7 @@ fn infer_call_by_signature(
 
 fn infer_call_by_custom_type(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     type_id: LuaTypeDeclId,
     call_expr: LuaCallExpr,
     infer_guard: &mut InferGuard,
@@ -231,7 +231,7 @@ fn infer_call_by_custom_type(
 
 fn infer_call_by_custom_generic_type(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     generic: &LuaGenericType,
     call_expr: LuaCallExpr,
     infer_guard: &mut InferGuard,
@@ -270,7 +270,7 @@ fn infer_call_by_custom_generic_type(
 
 fn unwrapp_return_type(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     return_type: LuaType,
     call_expr: LuaCallExpr,
 ) -> Option<LuaType> {
@@ -328,7 +328,7 @@ fn unwrapp_return_type(
 
 fn infer_require_call(
     db: &DbIndex,
-    config: &mut LuaInferConfig,
+    config: &mut LuaInferCache,
     call_expr: LuaCallExpr,
 ) -> Option<LuaType> {
     let arg_list = call_expr.get_args_list()?;
