@@ -1,4 +1,7 @@
-use std::{collections::{HashMap, HashSet}, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 use emmylua_parser::LuaSyntaxId;
 
@@ -69,7 +72,8 @@ impl LuaInferCache {
     }
 
     pub fn cache_call_expr(&mut self, key: (LuaSyntaxId, Option<usize>), ty: Arc<LuaFunctionType>) {
-        self.call_expr_resolve_cache.insert(key, CallCache::Cache(ty));
+        self.call_expr_resolve_cache
+            .insert(key, CallCache::Cache(ty));
     }
 
     pub fn get_cache_call_expr(&self, key: &(LuaSyntaxId, Option<usize>)) -> Option<&CallCache> {
