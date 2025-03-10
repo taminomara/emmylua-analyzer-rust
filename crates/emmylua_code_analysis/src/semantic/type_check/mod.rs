@@ -16,10 +16,7 @@ use simple_type::check_simple_type_compact;
 pub use type_check_fail_reason::TypeCheckFailReason;
 use type_check_guard::TypeCheckGuard;
 
-use crate::{
-    db_index::{DbIndex, LuaType},
-    TypeOps,
-};
+use crate::db_index::{DbIndex, LuaType};
 pub use sub_type::is_sub_type_of;
 pub type TypeCheckResult = Result<(), TypeCheckFailReason>;
 
@@ -136,10 +133,6 @@ fn escape_type(db: &DbIndex, typ: &LuaType) -> Option<LuaType> {
         LuaType::Instance(inst) => {
             let base = inst.get_base();
             return Some(base.clone());
-        }
-        LuaType::MemberPathExist(member_path) => {
-            let base = member_path.get_origin();
-            return Some(TypeOps::Remove.apply(base, &LuaType::Nil));
         }
         LuaType::MultiLineUnion(multi_union) => {
             let union = multi_union.to_union();

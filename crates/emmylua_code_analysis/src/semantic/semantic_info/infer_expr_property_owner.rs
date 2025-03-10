@@ -208,13 +208,6 @@ fn infer_member_property_owner_by_member_key(
             member_key,
             owner_guard.next_level()?,
         ),
-        LuaType::MemberPathExist(exist_field) => infer_member_property_owner_by_member_key(
-            db,
-            config,
-            exist_field.get_origin(),
-            member_key,
-            owner_guard.next_level()?,
-        ),
         LuaType::Instance(inst) => infer_instance_member_property_by_member_key(
             db,
             config,

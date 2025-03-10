@@ -47,11 +47,11 @@ pub enum LuaType {
     TplRef(Arc<GenericTpl>),
     StrTplRef(Arc<LuaStringTplType>),
     MuliReturn(Arc<LuaMultiReturn>),
-    MemberPathExist(Arc<LuaMemberPathExistType>),
     Signature(LuaSignatureId),
     Instance(Arc<LuaInstanceType>),
     DocStringConst(ArcIntern<SmolStr>),
     DocIntegerConst(i64),
+    DocBooleanConst(bool),
     Namespace(ArcIntern<SmolStr>),
     Variadic(Arc<LuaType>),
     Call(Arc<LuaAliasCallType>),
@@ -96,7 +96,7 @@ impl PartialEq for LuaType {
             (LuaType::TplRef(a), LuaType::TplRef(b)) => a == b,
             (LuaType::StrTplRef(a), LuaType::StrTplRef(b)) => a == b,
             (LuaType::MuliReturn(a), LuaType::MuliReturn(b)) => a == b,
-            (LuaType::MemberPathExist(a), LuaType::MemberPathExist(b)) => a == b,
+            (LuaType::DocBooleanConst(a), LuaType::DocBooleanConst(b)) => a == b,
             (LuaType::Signature(a), LuaType::Signature(b)) => a == b,
             (LuaType::Instance(a), LuaType::Instance(b)) => a == b,
             (LuaType::DocStringConst(a), LuaType::DocStringConst(b)) => a == b,
@@ -167,7 +167,7 @@ impl Hash for LuaType {
                 let ptr = Arc::as_ptr(a);
                 (34, ptr).hash(state)
             }
-            LuaType::MemberPathExist(a) => (35, a).hash(state),
+            LuaType::DocBooleanConst(a) => (35, a).hash(state),
             LuaType::Signature(a) => (36, a).hash(state),
             LuaType::Instance(a) => (37, a).hash(state),
             LuaType::DocStringConst(a) => (38, a).hash(state),
@@ -349,10 +349,6 @@ impl LuaType {
         matches!(self, LuaType::MuliReturn(_))
     }
 
-    pub fn is_exist_field(&self) -> bool {
-        matches!(self, LuaType::MemberPathExist(_))
-    }
-
     pub fn is_global(&self) -> bool {
         matches!(self, LuaType::Global)
     }
@@ -369,11 +365,11 @@ impl LuaType {
             LuaType::Intersection(base) => base.contain_tpl(),
             LuaType::Generic(base) => base.contain_tpl(),
             LuaType::MuliReturn(multi) => multi.contain_tpl(),
-            LuaType::MemberPathExist(field) => field.contain_tpl(),
             LuaType::TableGeneric(params) => params.iter().any(|p| p.contain_tpl()),
             LuaType::Variadic(inner) => inner.contain_tpl(),
             LuaType::TplRef(_) => true,
             LuaType::StrTplRef(_) => true,
+            LuaType::MultiLineUnion(inner) => inner.contain_tpl(),
             _ => false,
         }
     }
@@ -819,53 +815,6 @@ impl LuaMultiReturn {
             LuaMultiReturn::Multi(types) => types.iter().any(|t| t.contain_tpl()),
             LuaMultiReturn::Base(t) => t.contain_tpl(),
         }
-    }
-}
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub struct LuaMemberPathExistType {
-    member_path: SmolStr,
-    origin: LuaType,
-    current_path_idx: usize,
-}
-
-impl LuaMemberPathExistType {
-    pub fn new(member_path: &str, origin: LuaType, current_path_idx: usize) -> Self {
-        Self {
-            member_path: SmolStr::from(member_path),
-            origin,
-            current_path_idx,
-        }
-    }
-
-    pub fn get_path(&self) -> &str {
-        &self.member_path
-    }
-
-    pub fn get_origin(&self) -> &LuaType {
-        &self.origin
-    }
-
-    pub fn get_current_path_idx(&self) -> usize {
-        self.current_path_idx
-    }
-
-    pub fn get_current_path(&self) -> &str {
-        let paths: Vec<&str> = self.member_path.split('.').collect();
-        if paths.len() > self.current_path_idx {
-            paths[self.current_path_idx]
-        } else {
-            ""
-        }
-    }
-
-    pub fn is_final_path(&self) -> bool {
-        let paths: Vec<&str> = self.member_path.split('.').collect();
-        paths.len() == self.current_path_idx + 1
-    }
-
-    pub fn contain_tpl(&self) -> bool {
-        self.origin.contain_tpl()
     }
 }
 

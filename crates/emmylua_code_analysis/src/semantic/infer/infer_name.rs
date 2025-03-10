@@ -185,7 +185,7 @@ fn find_param_type_from_type(
             }
         }
         _ => {
-            eprintln!("find_param_type_from_type: {:?}", source_type);
+            log::error!("find_param_type_from_type: {:?}", source_type);
         }
     }
 

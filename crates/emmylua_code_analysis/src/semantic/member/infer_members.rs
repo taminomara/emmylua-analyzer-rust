@@ -8,8 +8,8 @@ use crate::{
         InferGuard,
     },
     DbIndex, FileId, LuaGenericType, LuaInstanceType, LuaIntersectionType, LuaMemberKey,
-    LuaMemberOwner, LuaMemberPathExistType, LuaObjectType, LuaPropertyOwnerId, LuaTupleType,
-    LuaType, LuaTypeDeclId, LuaUnionType, TypeOps,
+    LuaMemberOwner, LuaObjectType, LuaPropertyOwnerId, LuaTupleType, LuaType, LuaTypeDeclId,
+    LuaUnionType,
 };
 
 use super::{get_buildin_type_map_type_id, InferMembersResult, LuaMemberInfo};
@@ -44,7 +44,6 @@ fn infer_members_guard(
             infer_intersection_members(db, intersection_type, infer_guard)
         }
         LuaType::Generic(generic_type) => infer_generic_members(db, generic_type, infer_guard),
-        LuaType::MemberPathExist(exist_field) => infer_exist_field_members(db, exist_field),
         LuaType::Global => infer_global_members(db),
         LuaType::Instance(inst) => infer_instance_members(db, inst, infer_guard),
         LuaType::Namespace(ns) => infer_namespace_members(db, ns),
@@ -214,53 +213,6 @@ fn infer_generic_members(
         let origin_typ = info.typ.clone();
         info.typ = instantiate_type(db, &info.typ, &substitutor);
         info.origin_typ = Some(origin_typ);
-    }
-
-    Some(members)
-}
-
-fn infer_exist_field_members(
-    db: &DbIndex,
-    exist_field: &LuaMemberPathExistType,
-) -> InferMembersResult {
-    let base = exist_field.get_origin();
-    let path = exist_field.get_current_path();
-    let mut field_founded = false;
-    let mut members =
-        if let Some(mut members) = infer_members_guard(db, base, &mut InferGuard::new()) {
-            for info in members.iter_mut() {
-                if info.key.to_path() == path {
-                    info.typ = TypeOps::Remove.apply(&info.typ, &LuaType::Nil);
-                    field_founded = true;
-                }
-            }
-            members
-        } else {
-            vec![]
-        };
-
-    if !field_founded {
-        if path.starts_with('[') {
-            if let Some(end_idx) = path.find(']') {
-                let number_str = &path[1..end_idx];
-                if let Ok(number) = number_str.parse::<i64>() {
-                    members.push(LuaMemberInfo {
-                        property_owner_id: None,
-                        key: LuaMemberKey::Integer(number),
-                        typ: LuaType::Any,
-                        origin_typ: None,
-                    });
-
-                    return Some(members);
-                }
-            }
-        }
-        members.push(LuaMemberInfo {
-            property_owner_id: None,
-            key: path.to_string().into(),
-            typ: LuaType::Any,
-            origin_typ: None,
-        });
     }
 
     Some(members)

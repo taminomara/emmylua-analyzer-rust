@@ -7,9 +7,8 @@ use smol_str::SmolStr;
 
 use crate::{
     db_index::{
-        DbIndex, LuaGenericType, LuaIntersectionType, LuaMemberKey, LuaMemberOwner,
-        LuaMemberPathExistType, LuaObjectType, LuaOperatorMetaMethod, LuaTupleType, LuaType,
-        LuaTypeDeclId, LuaUnionType,
+        DbIndex, LuaGenericType, LuaIntersectionType, LuaMemberKey, LuaMemberOwner, LuaObjectType,
+        LuaOperatorMetaMethod, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType,
     },
     semantic::{
         instantiate::{instantiate_type, TypeSubstitutor},
@@ -17,7 +16,7 @@ use crate::{
         type_check::check_type_compact,
         InferGuard,
     },
-    InFiled, LuaFlowId, LuaInstanceType, TypeOps,
+    InFiled, LuaFlowId, LuaInstanceType,
 };
 
 use super::{infer_expr, InferResult, LuaInferCache};
@@ -107,9 +106,6 @@ pub fn infer_member_by_member_key(
         }
         LuaType::Generic(generic_type) => {
             infer_generic_member(db, config, generic_type, index_expr)
-        }
-        LuaType::MemberPathExist(exist_field) => {
-            infer_exist_path_member(db, config, exist_field, index_expr)
         }
         LuaType::Global => infer_global_field_member(db, config, index_expr),
         LuaType::Instance(inst) => infer_instance_member(db, config, inst, index_expr, infer_guard),
@@ -312,43 +308,6 @@ fn infer_generic_member(
     Some(instantiate_type(db, &member_type, &substitutor))
 }
 
-fn infer_exist_path_member(
-    db: &DbIndex,
-    config: &mut LuaInferCache,
-    exist_field_type: &LuaMemberPathExistType,
-    index_expr: LuaIndexMemberExpr,
-) -> InferResult {
-    let base_type = exist_field_type.get_origin();
-    let mut member_type = infer_member_by_member_key(
-        db,
-        config,
-        &base_type,
-        index_expr.clone(),
-        &mut InferGuard::new(),
-    );
-
-    let need_current_path = exist_field_type.get_current_path();
-    let index_key = index_expr.get_index_key()?;
-    let current_path = index_key.get_path_part();
-
-    if &current_path == need_current_path {
-        member_type = match member_type {
-            Some(member_type) => Some(TypeOps::Remove.apply(&member_type, &LuaType::Nil)),
-            None => Some(LuaType::Any),
-        };
-
-        if !exist_field_type.is_final_path() {
-            let path = exist_field_type.get_path();
-            let idx = exist_field_type.get_current_path_idx() + 1;
-            let next_exist_field =
-                LuaMemberPathExistType::new(path, member_type.unwrap_or(LuaType::Any), idx);
-            return Some(LuaType::MemberPathExist(next_exist_field.into()));
-        }
-    }
-
-    member_type
-}
-
 fn infer_instance_member(
     db: &DbIndex,
     config: &mut LuaInferCache,
@@ -407,9 +366,6 @@ pub fn infer_member_by_operator(
         LuaType::Generic(generic) => infer_member_by_index_generic(db, config, generic, index_expr),
         LuaType::TableGeneric(table_generic) => {
             infer_member_by_index_table_generic(db, config, table_generic, index_expr)
-        }
-        LuaType::MemberPathExist(exist_field) => {
-            infer_member_by_index_exist_field(db, config, exist_field, index_expr)
         }
         _ => None,
     }
@@ -755,43 +711,6 @@ fn infer_member_by_index_table_generic(
     }
 
     None
-}
-
-fn infer_member_by_index_exist_field(
-    db: &DbIndex,
-    config: &mut LuaInferCache,
-    exist_field_type: &LuaMemberPathExistType,
-    index_expr: LuaIndexMemberExpr,
-) -> InferResult {
-    let base_type = exist_field_type.get_origin();
-    let mut member_type = infer_member_by_operator(
-        db,
-        config,
-        &base_type,
-        index_expr.clone(),
-        &mut InferGuard::new(),
-    );
-
-    let need_current_path = exist_field_type.get_current_path();
-    let index_key = index_expr.get_index_key()?;
-    let current_path = index_key.get_path_part();
-
-    if &current_path == need_current_path {
-        member_type = match member_type {
-            Some(member_type) => Some(TypeOps::Remove.apply(&member_type, &LuaType::Nil)),
-            None => Some(LuaType::Any),
-        };
-
-        if !exist_field_type.is_final_path() {
-            let path = exist_field_type.get_path();
-            let idx = exist_field_type.get_current_path_idx() + 1;
-            let next_exist_field =
-                LuaMemberPathExistType::new(path, member_type.unwrap_or(LuaType::Any), idx);
-            return Some(LuaType::MemberPathExist(next_exist_field.into()));
-        }
-    }
-
-    member_type
 }
 
 fn infer_global_field_member(
