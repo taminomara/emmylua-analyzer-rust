@@ -93,9 +93,9 @@ pub fn narrow_down_type(source: LuaType, target: LuaType) -> Option<LuaType> {
             if target.is_unknown() {
                 return Some(source);
             }
-            
-            return Some(target)
-        },
+
+            return Some(target);
+        }
     }
 
     match &source {
