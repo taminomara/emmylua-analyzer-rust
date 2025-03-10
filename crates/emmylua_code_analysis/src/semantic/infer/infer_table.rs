@@ -1,6 +1,6 @@
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaCallArgList, LuaCallExpr, LuaExpr, LuaIndexMemberExpr, LuaLiteralToken,
-    LuaLocalStat, LuaTableExpr, LuaTableField,
+    LuaAssignStat, LuaAst, LuaAstNode, LuaCallArgList, LuaCallExpr, LuaExpr, LuaIndexMemberExpr,
+    LuaLiteralToken, LuaLocalStat, LuaTableExpr, LuaTableField,
 };
 
 use crate::{
@@ -85,6 +85,9 @@ pub fn infer_table_should_be(
         }
         LuaAst::LuaTableField(field) => infer_table_type_by_parent(db, config, field),
         LuaAst::LuaLocalStat(local) => infer_table_type_by_local(db, config, local, table),
+        LuaAst::LuaAssignStat(assign_stat) => {
+            infer_table_type_by_assign_stat(db, config, assign_stat, table)
+        }
         _ => None,
     }
 }
@@ -173,6 +176,28 @@ fn infer_table_type_by_local(
 
     let local_name = local_names.get(num)?;
     let decl_id = LuaDeclId::new(config.get_file_id(), local_name.get_position());
+    let decl = db.get_decl_index().get_decl(&decl_id)?;
+    let typ = decl.get_type()?;
+    match typ {
+        LuaType::TableConst(_) => None,
+        _ => Some(typ.clone()),
+    }
+}
+
+fn infer_table_type_by_assign_stat(
+    db: &DbIndex,
+    config: &mut LuaInferCache,
+    assign_stat: LuaAssignStat,
+    table_expr: LuaTableExpr,
+) -> InferResult {
+    let (vars, exprs) = assign_stat.get_var_and_expr_list();
+    let num = exprs
+        .iter()
+        .enumerate()
+        .find(|(_, expr)| expr.get_position() == table_expr.get_position())?
+        .0;
+    let name = vars.get(num)?;
+    let decl_id = LuaDeclId::new(config.get_file_id(), name.get_position());
     let decl = db.get_decl_index().get_decl(&decl_id)?;
     let typ = decl.get_type()?;
     match typ {
