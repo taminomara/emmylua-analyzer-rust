@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use emmylua_code_analysis::DiagnosticCode;
 use emmylua_parser::{
-    LuaAstNode, LuaClosureExpr, LuaComment, LuaDocTagParam, LuaSyntaxKind, LuaTokenKind,
+    LuaAst, LuaAstNode, LuaClosureExpr, LuaComment, LuaSyntaxKind, LuaSyntaxToken, LuaTokenKind,
 };
 use lsp_types::CompletionItem;
 
@@ -14,25 +14,20 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     }
 
     let trigger_token = &builder.trigger_token;
-    if !matches!(trigger_token.kind().into(), LuaTokenKind::TkName) {
-        return None;
-    }
-
-    let parent_node = trigger_token.parent()?;
-    match parent_node.kind().into() {
-        LuaSyntaxKind::DocTagParam => {
-            add_tag_param_name_completion(builder, LuaDocTagParam::cast(parent_node)?);
+    let expected = get_doc_completion_expected(trigger_token)?;
+    match expected {
+        DocCompletionExpected::ParamName => {
+            add_tag_param_name_completion(builder);
         }
-        LuaSyntaxKind::DocTagCast => {
+        DocCompletionExpected::Cast => {
             add_tag_cast_name_completion(builder);
         }
-        LuaSyntaxKind::DocTagDiagnostic => {
+        DocCompletionExpected::DiagnosticAction => {
             add_tag_diagnostic_action_completion(builder);
         }
-        LuaSyntaxKind::DocDiagnosticCodeList => {
+        DocCompletionExpected::DiagnosticCode => {
             add_tag_diagnostic_code_completion(builder);
         }
-        _ => {}
     }
 
     builder.stop_here();
@@ -40,11 +35,82 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     Some(())
 }
 
-fn add_tag_param_name_completion(
-    builder: &mut CompletionBuilder,
-    node: LuaDocTagParam,
-) -> Option<()> {
-    let comment = node.ancestors::<LuaComment>().next()?;
+fn get_doc_completion_expected(trigger_token: &LuaSyntaxToken) -> Option<DocCompletionExpected> {
+    match trigger_token.kind().into() {
+        LuaTokenKind::TkName => {
+            let parent_node = trigger_token.parent()?;
+            match parent_node.kind().into() {
+                LuaSyntaxKind::DocTagParam => Some(DocCompletionExpected::ParamName),
+                LuaSyntaxKind::DocTagCast => Some(DocCompletionExpected::Cast),
+                LuaSyntaxKind::DocTagDiagnostic => Some(DocCompletionExpected::DiagnosticAction),
+                LuaSyntaxKind::DocDiagnosticCodeList => Some(DocCompletionExpected::DiagnosticCode),
+                _ => None,
+            }
+        }
+        LuaTokenKind::TkWhitespace => {
+            let left_token = trigger_token.prev_token()?;
+            match left_token.kind().into() {
+                LuaTokenKind::TkTagParam => Some(DocCompletionExpected::ParamName),
+                LuaTokenKind::TkTagCast => Some(DocCompletionExpected::Cast),
+                LuaTokenKind::TkTagDiagnostic => Some(DocCompletionExpected::DiagnosticAction),
+                LuaTokenKind::TkColon => {
+                    let parent = left_token.parent()?;
+                    match parent.kind().into() {
+                        LuaSyntaxKind::DocTagDiagnostic => {
+                            Some(DocCompletionExpected::DiagnosticCode)
+                        }
+                        _ => None,
+                    }
+                }
+                LuaTokenKind::TkComma => {
+                    let parent = left_token.parent()?;
+                    match parent.kind().into() {
+                        LuaSyntaxKind::DocDiagnosticCodeList => {
+                            Some(DocCompletionExpected::DiagnosticCode)
+                        }
+                        _ => None,
+                    }
+                }
+                _ => None,
+            }
+        }
+        LuaTokenKind::TkColon => {
+            let parent = trigger_token.parent()?;
+            match parent.kind().into() {
+                LuaSyntaxKind::DocTagDiagnostic => Some(DocCompletionExpected::DiagnosticCode),
+                _ => None,
+            }
+        }
+        LuaTokenKind::TkComma => {
+            let parent = trigger_token.parent()?;
+            match parent.kind().into() {
+                LuaSyntaxKind::DocDiagnosticCodeList => Some(DocCompletionExpected::DiagnosticCode),
+                _ => None,
+            }
+        }
+        _ => return None,
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+enum DocCompletionExpected {
+    ParamName,
+    Cast,
+    DiagnosticAction,
+    DiagnosticCode,
+}
+
+fn add_tag_param_name_completion(builder: &mut CompletionBuilder) -> Option<()> {
+    let node = match builder.trigger_token.kind().into() {
+        LuaTokenKind::TkWhitespace => {
+            let left = builder.trigger_token.prev_token()?;
+            left.parent()?
+        }
+        _ => builder.trigger_token.parent()?,
+    };
+    let ast_node = LuaAst::cast(node)?;
+
+    let comment = ast_node.ancestors::<LuaComment>().next()?;
     let owner = comment.get_owner()?;
     let closure = owner.descendants::<LuaClosureExpr>().next()?;
     let params = closure.get_params_list()?.get_params();
@@ -97,7 +163,7 @@ fn add_tag_cast_name_completion(builder: &mut CompletionBuilder) -> Option<()> {
 }
 
 fn add_tag_diagnostic_action_completion(builder: &mut CompletionBuilder) {
-    let actions = vec!["disable", "disable-next-line", "disable-line"];
+    let actions = vec!["disable", "disable-next-line", "disable-line", "enable"];
     for (sorted_index, action) in actions.iter().enumerate() {
         let completion_item = CompletionItem {
             label: action.to_string(),

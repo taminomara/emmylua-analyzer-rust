@@ -35,10 +35,6 @@ impl<'a> CompletionBuilder<'a> {
     }
 
     pub fn add_completion_item(&mut self, item: CompletionItem) -> Option<()> {
-        if self.cancel_token.is_cancelled() {
-            return None;
-        };
-
         self.completion_items.push(item);
         Some(())
     }
