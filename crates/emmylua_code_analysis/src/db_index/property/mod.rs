@@ -112,18 +112,6 @@ impl LuaPropertyIndex {
         Some(())
     }
 
-    pub fn add_nodiscard(&mut self, file_id: FileId, owner_id: LuaPropertyOwnerId) -> Option<()> {
-        let property = self.get_or_create_property(owner_id.clone())?;
-        property.is_nodiscard = true;
-
-        self.in_filed_owner
-            .entry(file_id)
-            .or_insert_with(HashSet::new)
-            .insert(owner_id);
-
-        Some(())
-    }
-
     pub fn add_deprecated(
         &mut self,
         file_id: FileId,
@@ -159,19 +147,7 @@ impl LuaPropertyIndex {
         Some(())
     }
 
-    pub fn add_async(&mut self, file_id: FileId, owner_id: LuaPropertyOwnerId) -> Option<()> {
-        let property = self.get_or_create_property(owner_id.clone())?;
-        property.is_async = true;
-
-        self.in_filed_owner
-            .entry(file_id)
-            .or_insert_with(HashSet::new)
-            .insert(owner_id);
-
-        Some(())
-    }
-
-    pub fn get_property(&self, owner_id: LuaPropertyOwnerId) -> Option<&LuaProperty> {
+    pub fn get_property(&self, owner_id: &LuaPropertyOwnerId) -> Option<&LuaProperty> {
         self.property_owners_map
             .get(&owner_id)
             .and_then(|id| self.properties.get(id))

@@ -41,7 +41,7 @@ fn check_name_expr(
     let property = semantic_model
         .get_db()
         .get_property_index()
-        .get_property(property_owner)?;
+        .get_property(&property_owner)?;
     if property.is_deprecated {
         let depreacated_message = if let Some(message) = &property.deprecated_message {
             message.to_string()
@@ -75,7 +75,7 @@ fn check_index_expr(
     let property = semantic_model
         .get_db()
         .get_property_index()
-        .get_property(property_owner)?;
+        .get_property(&property_owner)?;
     if property.is_deprecated {
         let depreacated_message = if let Some(message) = &property.deprecated_message {
             message.to_string()

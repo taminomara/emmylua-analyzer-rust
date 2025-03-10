@@ -9,7 +9,7 @@ pub fn check(context: &mut DiagnosticContext, _: &SemanticModel) -> Option<()> {
     let file_id = context.get_file_id();
     let diagnostic_index = db.get_diagnostic_index();
     let errors: Vec<_> = diagnostic_index
-        .get_diagnostics(file_id)?
+        .get_diagnostics(&file_id)?
         .iter()
         .map(|e| e.clone())
         .collect();

@@ -79,7 +79,7 @@ fn report_reason(
     let property = context
         .db
         .get_property_index()
-        .get_property(property_owner_id)?;
+        .get_property(&property_owner_id)?;
 
     if let Some(version_conds) = &property.version_conds {
         let version_number = emmyrc.runtime.version.to_lua_version_number();

@@ -238,7 +238,7 @@ fn infer_table_member_property_owner(
     member_key: &LuaMemberKey,
 ) -> Option<LuaPropertyOwnerId> {
     let member_index = db.get_member_index();
-    let member_map = member_index.get_member_map(member_owner)?;
+    let member_map = member_index.get_member_map(&member_owner)?;
     let member_id = member_map.get(&member_key)?;
 
     Some(LuaPropertyOwnerId::Member(member_id.clone()))
@@ -276,7 +276,7 @@ fn infer_custom_type_member_property_owner(
     let member_owner = LuaMemberOwner::Type(prefix_type_id.clone());
     let member_index = db.get_member_index();
     // find member by key in self
-    if let Some(member_map) = member_index.get_member_map(member_owner) {
+    if let Some(member_map) = member_index.get_member_map(&member_owner) {
         if let Some(member_id) = member_map.get(&member_key) {
             return Some(LuaPropertyOwnerId::Member(member_id.clone()));
         }

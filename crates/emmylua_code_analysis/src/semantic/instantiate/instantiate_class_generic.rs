@@ -6,8 +6,7 @@ use crate::{
         LuaMultiReturn, LuaObjectType, LuaTupleType, LuaType, LuaUnionType,
     },
     semantic::{member::infer_members, type_check},
-    DbIndex, GenericTpl, LuaAliasCallKind, LuaAliasCallType, LuaMemberKey, LuaPropertyOwnerId,
-    LuaSignatureId, TypeOps,
+    DbIndex, GenericTpl, LuaAliasCallKind, LuaAliasCallType, LuaMemberKey, LuaSignatureId, TypeOps,
 };
 
 use super::type_substitutor::{SubstitutorValue, TypeSubstitutor};
@@ -331,14 +330,7 @@ fn instantiate_signature(
                 .iter()
                 .map(|ret| ret.type_ref.clone())
                 .collect();
-            let is_async = if let Some(property) = db
-                .get_property_index()
-                .get_property(LuaPropertyOwnerId::Signature(signature_id.clone()))
-            {
-                property.is_async
-            } else {
-                false
-            };
+            let is_async = signature.is_async;
             let fake_doc_function = LuaFunctionType::new(
                 is_async,
                 signature.is_colon_define,

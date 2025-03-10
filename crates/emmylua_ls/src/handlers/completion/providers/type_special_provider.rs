@@ -81,7 +81,7 @@ fn add_type_ref_completion(
             .semantic_model
             .get_db()
             .get_member_index()
-            .get_member_map(owner_id)?;
+            .get_member_map(&owner_id)?;
 
         if type_decl.is_enum_key() {
             let mut completion_items = Vec::new();

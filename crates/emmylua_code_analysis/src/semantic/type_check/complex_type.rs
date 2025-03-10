@@ -318,7 +318,7 @@ fn check_array_type_compact_table(
     let member_index = db.get_member_index();
     let default_map = HashMap::new();
     let member_map = member_index
-        .get_member_map(table_owner.clone())
+        .get_member_map(&table_owner)
         .unwrap_or(&default_map);
 
     let size = member_map.len();
@@ -400,7 +400,7 @@ fn check_tuple_type_compact_table(
     let member_index = db.get_member_index();
     let default_map = HashMap::new();
     let member_map = member_index
-        .get_member_map(table_owner.clone())
+        .get_member_map(&table_owner)
         .unwrap_or(&default_map);
 
     let tuple_members = source_tuple.get_types();
@@ -525,7 +525,7 @@ fn check_object_type_compact_member_owner(
     let member_index = db.get_member_index();
     let default_map = HashMap::new();
     let members = member_index
-        .get_member_map(member_owner.clone())
+        .get_member_map(&member_owner)
         .unwrap_or(&default_map);
 
     for (key, source_type) in source_object.get_fields() {
@@ -626,7 +626,7 @@ fn check_table_generic_compact_member_owner(
     let member_index = db.get_member_index();
     let default_map = HashMap::new();
     let members = member_index
-        .get_member_map(member_owner.clone())
+        .get_member_map(&member_owner)
         .unwrap_or(&default_map);
 
     let source_key = &source_generic_params[0];

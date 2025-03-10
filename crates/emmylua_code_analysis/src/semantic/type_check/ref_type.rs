@@ -53,7 +53,7 @@ pub fn check_ref_type_compact(
         let enum_member_owner = LuaMemberOwner::Type(source_id.clone());
         let member_map = db
             .get_member_index()
-            .get_member_map(enum_member_owner)
+            .get_member_map(&enum_member_owner)
             .ok_or(TypeCheckFailReason::TypeNotMatch)?;
 
         let mut union_types = Vec::new();
@@ -126,13 +126,13 @@ fn check_ref_type_compact_table(
     check_guard: TypeCheckGuard,
 ) -> TypeCheckResult {
     let member_index = db.get_member_index();
-    let table_member_map = match member_index.get_member_map(table_owner.clone()) {
+    let table_member_map = match member_index.get_member_map(&table_owner) {
         Some(map) => map,
         None => &HashMap::new(),
     };
 
     let source_type_owner = LuaMemberOwner::Type(source_type_id.clone());
-    let source_type_members = match member_index.get_member_map(source_type_owner) {
+    let source_type_members = match member_index.get_member_map(&source_type_owner) {
         Some(map) => map,
         // empty member donot need check
         None => return Ok(()),

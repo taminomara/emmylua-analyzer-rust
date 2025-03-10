@@ -74,7 +74,7 @@ fn merge_def_type_with_table(
     let expr_member_owner = LuaMemberOwner::Element(table_range);
     let member_index = db.get_member_index_mut();
     let expr_members = member_index
-        .get_member_map(expr_member_owner)?
+        .get_member_map(&expr_member_owner)?
         .values()
         .cloned()
         .collect::<Vec<_>>();

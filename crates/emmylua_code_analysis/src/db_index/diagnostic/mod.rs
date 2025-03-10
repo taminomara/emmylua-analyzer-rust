@@ -61,8 +61,8 @@ impl DiagnosticIndex {
             .push(diagnostic);
     }
 
-    pub fn get_diagnostics(&self, file_id: FileId) -> Option<&Vec<AnalyzeError>> {
-        self.diagnostics.get(&file_id)
+    pub fn get_diagnostics(&self, file_id: &FileId) -> Option<&Vec<AnalyzeError>> {
+        self.diagnostics.get(file_id)
     }
 
     pub fn is_file_diagnostic_code_disabled(

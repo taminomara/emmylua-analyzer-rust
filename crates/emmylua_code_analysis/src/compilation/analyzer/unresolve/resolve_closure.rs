@@ -1,6 +1,6 @@
 use crate::{
     infer_call_expr_func, infer_expr, DbIndex, InferGuard, LuaDocParamInfo, LuaDocReturnInfo,
-    LuaInferConfig, LuaPropertyOwnerId, LuaType, SignatureReturnStatus,
+    LuaInferConfig, LuaType, SignatureReturnStatus,
 };
 
 use super::{
@@ -44,13 +44,11 @@ pub fn try_resolve_closure_params(
         _ => {}
     }
 
+    let mut is_async = false;
     let expr_closure_params = if let Some(param_type) = call_doc_func.get_params().get(param_idx) {
         if let Some(LuaType::DocFunction(func)) = &param_type.1 {
             if func.is_async() {
-                let file_id = closure_params.file_id;
-                let property_owner = LuaPropertyOwnerId::Signature(closure_params.signature_id);
-                db.get_property_index_mut()
-                    .add_async(file_id, property_owner);
+                is_async = true;
             }
 
             func.get_params()
@@ -81,6 +79,8 @@ pub fn try_resolve_closure_params(
             },
         );
     }
+
+    signature.is_async = is_async;
 
     Some(true)
 }

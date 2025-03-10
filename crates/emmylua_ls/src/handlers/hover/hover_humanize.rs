@@ -2,8 +2,7 @@ use std::collections::HashSet;
 
 use emmylua_code_analysis::{
     DbIndex, LuaDocReturnInfo, LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner,
-    LuaMultiLineUnion, LuaPropertyOwnerId, LuaSignature, LuaSignatureId, LuaType, LuaUnionType,
-    RenderLevel,
+    LuaMultiLineUnion, LuaSignature, LuaSignatureId, LuaType, LuaUnionType, RenderLevel,
 };
 
 use emmylua_code_analysis::humanize_type;
@@ -206,9 +205,9 @@ fn hover_signature_type(
     // 构建 signature
     let signature_info = {
         let async_label = db
-            .get_property_index()
-            .get_property(LuaPropertyOwnerId::Signature(signature_id))
-            .map(|prop| if prop.is_async { "async " } else { "" })
+            .get_signature_index()
+            .get(&signature_id)
+            .map(|signature| if signature.is_async { "async " } else { "" })
             .unwrap_or("");
         let params = signature
             .get_type_params()

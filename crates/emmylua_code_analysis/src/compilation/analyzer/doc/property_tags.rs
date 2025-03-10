@@ -1,4 +1,4 @@
-use crate::{LuaPropertyOwnerId, LuaSignatureId};
+use crate::LuaSignatureId;
 
 use super::{
     tags::{find_owner_closure, get_owner_id},
@@ -38,12 +38,14 @@ pub fn analyze_source(analyzer: &mut DocAnalyzer, source: LuaDocTagSource) -> Op
 }
 
 pub fn analyze_nodiscard(analyzer: &mut DocAnalyzer) -> Option<()> {
-    let owner_id = get_owner_id(analyzer)?;
-
-    analyzer
+    let closure = find_owner_closure(analyzer)?;
+    let signature_id = LuaSignatureId::from_closure(analyzer.file_id, &closure);
+    let signature = analyzer
         .db
-        .get_property_index_mut()
-        .add_nodiscard(analyzer.file_id, owner_id);
+        .get_signature_index_mut()
+        .get_mut(&signature_id)?;
+
+    signature.is_nodiscard = true;
 
     Some(())
 }
@@ -84,13 +86,13 @@ pub fn analyze_version(analyzer: &mut DocAnalyzer, version: LuaDocTagVersion) ->
 
 pub fn analyze_async(analyzer: &mut DocAnalyzer) -> Option<()> {
     let closure = find_owner_closure(analyzer)?;
-    let sig_id = LuaSignatureId::from_closure(analyzer.file_id, &closure);
-    let owner_id = LuaPropertyOwnerId::Signature(sig_id);
-
-    analyzer
+    let signature_id = LuaSignatureId::from_closure(analyzer.file_id, &closure);
+    let signature = analyzer
         .db
-        .get_property_index_mut()
-        .add_async(analyzer.file_id, owner_id);
+        .get_signature_index_mut()
+        .get_mut(&signature_id)?;
+
+    signature.is_async = true;
 
     Some(())
 }

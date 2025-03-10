@@ -64,7 +64,7 @@ fn generate_class_type_markdown(
     context.insert("namespace", &namespace);
 
     let type_property_id = LuaPropertyOwnerId::TypeDecl(typ_id.clone());
-    let typ_property = db.get_property_index().get_property(type_property_id);
+    let typ_property = db.get_property_index().get_property(&type_property_id);
     if let Some(typ_property) = typ_property {
         if let Some(property_text) = &typ_property.description {
             context.insert("description", &property_text);
@@ -82,7 +82,7 @@ fn generate_class_type_markdown(
     }
 
     let member_owner = LuaMemberOwner::Type(typ_id);
-    let member_map = db.get_member_index().get_member_map(member_owner);
+    let member_map = db.get_member_index().get_member_map(&member_owner);
     let mut method_members: Vec<MemberDisplay> = Vec::new();
     let mut field_members: Vec<MemberDisplay> = Vec::new();
     if let Some(member_map) = member_map {
@@ -93,7 +93,7 @@ fn generate_class_type_markdown(
             let member = db.get_member_index().get_member(member_id)?;
             let member_typ = member.get_decl_type();
             let member_property_id = LuaPropertyOwnerId::Member(member_id.clone());
-            let member_property = db.get_property_index().get_property(member_property_id);
+            let member_property = db.get_property_index().get_property(&member_property_id);
             if let Some(member_property) = member_property {
                 if member_property.visibility.unwrap_or(VisibilityKind::Public)
                     != VisibilityKind::Public
@@ -194,7 +194,7 @@ fn generate_enum_type_markdown(
     context.insert("namespace", &namespace);
 
     let type_property_id = LuaPropertyOwnerId::TypeDecl(typ_id.clone());
-    let typ_property = db.get_property_index().get_property(type_property_id);
+    let typ_property = db.get_property_index().get_property(&type_property_id);
     if let Some(typ_property) = typ_property {
         if let Some(property_text) = &typ_property.description {
             context.insert("description", &property_text);
@@ -202,7 +202,7 @@ fn generate_enum_type_markdown(
     }
 
     let member_owner = LuaMemberOwner::Type(typ_id);
-    let member_map = db.get_member_index().get_member_map(member_owner);
+    let member_map = db.get_member_index().get_member_map(&member_owner);
     let mut field_members: Vec<EnumMember> = Vec::new();
     if let Some(member_map) = member_map {
         let mut member_vecs = member_map.iter().map(|(k, v)| (k, v)).collect::<Vec<_>>();
@@ -211,7 +211,7 @@ fn generate_enum_type_markdown(
             let member = db.get_member_index().get_member(member_id)?;
             let member_typ = member.get_decl_type();
             let member_property_id = LuaPropertyOwnerId::Member(member_id.clone());
-            let member_property = db.get_property_index().get_property(member_property_id);
+            let member_property = db.get_property_index().get_property(&member_property_id);
             if let Some(member_property) = member_property {
                 if member_property.visibility.unwrap_or(VisibilityKind::Public)
                     != VisibilityKind::Public
@@ -300,7 +300,7 @@ fn generate_alias_type_markdown(
     context.insert("namespace", &namespace);
 
     let type_property_id = LuaPropertyOwnerId::TypeDecl(typ_id.clone());
-    let typ_property = db.get_property_index().get_property(type_property_id);
+    let typ_property = db.get_property_index().get_property(&type_property_id);
     if let Some(typ_property) = typ_property {
         if let Some(property_text) = &typ_property.description {
             context.insert("description", &property_text);

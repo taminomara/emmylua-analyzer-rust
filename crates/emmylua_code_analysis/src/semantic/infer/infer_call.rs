@@ -144,7 +144,7 @@ fn infer_call_by_signature(
 
         if signature.is_generic() && ret.contain_tpl() {
             let fake_doc_function = LuaFunctionType::new(
-                false,
+                signature.is_async,
                 signature.is_colon_define,
                 signature.get_type_params(),
                 vec![ret.clone()],
@@ -175,7 +175,7 @@ fn infer_call_by_signature(
             )
         };
         let fake_doc_function = Arc::new(LuaFunctionType::new(
-            false,
+            signature.is_async,
             signature.is_colon_define,
             signature.get_type_params(),
             vec![ret.clone()],

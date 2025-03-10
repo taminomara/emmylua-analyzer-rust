@@ -1,6 +1,5 @@
 use emmylua_code_analysis::{
-    humanize_type, DbIndex, LuaFunctionType, LuaPropertyOwnerId, LuaSignatureId, LuaType,
-    RenderLevel,
+    humanize_type, DbIndex, LuaFunctionType, LuaSignatureId, LuaType, RenderLevel,
 };
 
 pub fn render_const_type(db: &DbIndex, typ: &LuaType) -> String {
@@ -119,11 +118,8 @@ fn render_signature_type(
 ) -> Option<String> {
     let signature = db.get_signature_index().get(&signature_id)?;
     let mut async_prev = "";
-    if let Some(property) = db
-        .get_property_index()
-        .get_property(LuaPropertyOwnerId::Signature(signature_id))
-    {
-        async_prev = if property.is_async { "async " } else { "" };
+    if let Some(signature) = db.get_signature_index().get(&signature_id) {
+        async_prev = if signature.is_async { "async " } else { "" };
     }
 
     let local_prev = if is_local { "local " } else { "" };

@@ -68,7 +68,7 @@ impl LuaMemberIndex {
 
     pub fn get_member_map(
         &self,
-        owner: LuaMemberOwner,
+        owner: &LuaMemberOwner,
     ) -> Option<&HashMap<LuaMemberKey, LuaMemberId>> {
         self.owner_members.get(&owner)
     }

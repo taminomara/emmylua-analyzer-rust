@@ -102,7 +102,7 @@ fn infer_signature_doc_function(
     let overloads = &signature.overloads;
     if overloads.is_empty() {
         let mut fake_doc_function = LuaFunctionType::new(
-            false,
+            signature.is_async,
             signature.is_colon_define,
             signature.get_type_params(),
             vec![],
@@ -116,7 +116,7 @@ fn infer_signature_doc_function(
     } else {
         let mut new_overloads = signature.overloads.clone();
         let fake_doc_function = Arc::new(LuaFunctionType::new(
-            false,
+            signature.is_async,
             signature.is_colon_define,
             signature.get_type_params(),
             vec![],

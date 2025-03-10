@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use emmylua_code_analysis::{
-    FileId, InferGuard, LuaFunctionType, LuaMemberId, LuaMemberKey, LuaMemberOwner,
-    LuaPropertyOwnerId, LuaSignatureId, LuaType, RenderLevel, SemanticModel,
+    FileId, InferGuard, LuaFunctionType, LuaMemberId, LuaMemberKey, LuaMemberOwner, LuaSignatureId,
+    LuaType, RenderLevel, SemanticModel,
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaCallExpr, LuaClosureExpr, LuaExpr, LuaFuncStat, LuaIndexExpr,
@@ -142,18 +142,17 @@ fn build_call_expr_await_hint(
             }
         }
         LuaType::Signature(signature_id) => {
-            let property_owner_id = LuaPropertyOwnerId::Signature(signature_id);
-            let property = semantic_model
+            let signature = semantic_model
                 .get_db()
-                .get_property_index()
-                .get_property(property_owner_id)?;
-            if property.is_async {
+                .get_signature_index()
+                .get(&signature_id)?;
+            if signature.is_async {
                 let range = call_expr.get_range();
                 let document = semantic_model.get_document();
                 let lsp_range = document.to_lsp_range(range)?;
                 let hint = InlayHint {
                     kind: Some(InlayHintKind::TYPE),
-                    label: InlayHintLabel::String("await".to_string()),
+                    label: InlayHintLabel::String("await ".to_string()),
                     position: lsp_range.start,
                     text_edits: None,
                     tooltip: None,
@@ -365,7 +364,7 @@ fn get_super_member_id(
         let member_map = semantic_model
             .get_db()
             .get_member_index()
-            .get_member_map(member_owner)?;
+            .get_member_map(&member_owner)?;
 
         if let Some(member_id) = member_map.get(&member_key) {
             return Some(member_id.clone());

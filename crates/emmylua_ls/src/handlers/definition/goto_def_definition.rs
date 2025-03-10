@@ -10,7 +10,7 @@ pub fn goto_def_definition(
     if let Some(property) = semantic_model
         .get_db()
         .get_property_index()
-        .get_property(property_owner.clone())
+        .get_property(&property_owner)
     {
         if let Some(source) = &property.source {
             if let Some(location) = goto_source_location(source) {

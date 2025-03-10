@@ -1,7 +1,7 @@
 use emmylua_parser::{LuaAstNode, LuaCallExprStat};
 use rowan::NodeOrToken;
 
-use crate::{DiagnosticCode, SemanticModel};
+use crate::{DiagnosticCode, LuaPropertyOwnerId, SemanticModel};
 
 use super::DiagnosticContext;
 
@@ -26,17 +26,19 @@ fn check_call_expr(
     let property_owner =
         semantic_model.get_property_owner_id(NodeOrToken::Node(prefix_node.clone()))?;
 
-    let property = semantic_model
-        .get_db()
-        .get_property_index()
-        .get_property(property_owner)?;
-    if property.is_nodiscard {
-        context.add_diagnostic(
-            DiagnosticCode::DiscardReturns,
-            prefix_node.text_range(),
-            "discard returns".to_string(),
-            None,
-        );
+    if let LuaPropertyOwnerId::Signature(signature_id) = property_owner {
+        let signature = semantic_model
+            .get_db()
+            .get_signature_index()
+            .get(&signature_id)?;
+        if signature.is_nodiscard {
+            context.add_diagnostic(
+                DiagnosticCode::DiscardReturns,
+                prefix_node.text_range(),
+                "discard returns".to_string(),
+                None,
+            );
+        }
     }
 
     Some(())

@@ -15,9 +15,7 @@ pub fn check_visibility(
     token: LuaSyntaxToken,
     property_owner: LuaPropertyOwnerId,
 ) -> Option<bool> {
-    let property = db
-        .get_property_index()
-        .get_property(property_owner.clone())?;
+    let property = db.get_property_index().get_property(&property_owner)?;
     if let Some(version_conds) = &property.version_conds {
         let version_number = emmyrc.runtime.version.to_lua_version_number();
         let visible = version_conds.iter().any(|cond| cond.check(&version_number));

@@ -115,7 +115,7 @@ impl<'a> HoverBuilder<'a> {
             .semantic_model
             .get_db()
             .get_property_index()
-            .get_property(property_owner.clone())?;
+            .get_property(&property_owner)?;
 
         let detail = property.description.as_ref()?;
         let mut description = detail.to_string();

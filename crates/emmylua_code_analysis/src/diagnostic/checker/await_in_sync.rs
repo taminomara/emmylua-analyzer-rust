@@ -1,7 +1,6 @@
 use emmylua_parser::{LuaAstNode, LuaCallArgList, LuaCallExpr, LuaClosureExpr, LuaExpr};
-use rowan::NodeOrToken;
 
-use crate::{DiagnosticCode, LuaPropertyOwnerId, LuaSignatureId, LuaType, SemanticModel};
+use crate::{DiagnosticCode, LuaSignatureId, LuaType, SemanticModel};
 
 use super::DiagnosticContext;
 
@@ -22,15 +21,11 @@ fn check_call_expr(
     semantic_model: &SemanticModel,
     call_expr: LuaCallExpr,
 ) -> Option<()> {
-    let prefix_expr = call_expr.get_prefix_expr()?;
-    let property_owner =
-        semantic_model.get_property_owner_id(NodeOrToken::Node(prefix_expr.syntax().clone()))?;
+    let function_type = semantic_model.infer_call_expr_func(call_expr.clone(), None)?;
+    let is_async = function_type.is_async();
 
-    let property = semantic_model
-        .get_db()
-        .get_property_index()
-        .get_property(property_owner)?;
-    if property.is_async {
+    if is_async {
+        let prefix_expr = call_expr.get_prefix_expr()?;
         if !check_call_is_in_async_function(semantic_model, call_expr).unwrap_or(false) {
             context.add_diagnostic(
                 DiagnosticCode::AwaitInSync,
@@ -60,13 +55,8 @@ fn check_pcall_or_xpcall(
             let is_async = match &arg_type {
                 LuaType::DocFunction(f) => f.is_async(),
                 LuaType::Signature(sig) => {
-                    let property_owner = LuaPropertyOwnerId::Signature(*sig);
-
-                    let property = semantic_model
-                        .get_db()
-                        .get_property_index()
-                        .get_property(property_owner)?;
-                    property.is_async
+                    let signature = semantic_model.get_db().get_signature_index().get(&sig)?;
+                    signature.is_async
                 }
                 _ => return None,
             };
@@ -95,15 +85,11 @@ fn check_call_is_in_async_function(
     let closures = call_expr.ancestors::<LuaClosureExpr>();
     for closure in closures {
         let signature_id = LuaSignatureId::from_closure(file_id, &closure);
-        let property_owner = LuaPropertyOwnerId::Signature(signature_id);
-        let is_async = match semantic_model
+        let is_async = semantic_model
             .get_db()
-            .get_property_index()
-            .get_property(property_owner)
-        {
-            Some(p) => p.is_async,
-            None => false,
-        };
+            .get_signature_index()
+            .get(&signature_id)?
+            .is_async;
         if is_async {
             return Some(true);
         }

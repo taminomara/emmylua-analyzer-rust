@@ -206,8 +206,12 @@ fn func_tpl_pattern_match(
             let signature = db.get_signature_index().get(&signature_id)?;
             let typed_params = signature.get_type_params();
             let rets = signature.get_return_types();
-            let fake_doc_func =
-                LuaFunctionType::new(false, signature.is_colon_define, typed_params, rets);
+            let fake_doc_func = LuaFunctionType::new(
+                signature.is_async,
+                signature.is_colon_define,
+                typed_params,
+                rets,
+            );
             func_tpl_pattern_match_doc_func(
                 db,
                 config,

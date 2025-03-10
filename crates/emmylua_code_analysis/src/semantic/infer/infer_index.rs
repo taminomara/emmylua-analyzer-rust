@@ -124,7 +124,7 @@ fn infer_table_member(
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
     let member_index = db.get_member_index();
-    let member_map = member_index.get_member_map(table_owner)?;
+    let member_map = member_index.get_member_map(&table_owner)?;
     let key: LuaMemberKey = index_expr.get_index_key()?.into();
     let member_id = member_map.get(&key)?;
     let member = member_index.get_member(&member_id)?;
@@ -159,7 +159,7 @@ fn infer_custom_type_member(
     let member_owner = LuaMemberOwner::Type(prefix_type_id.clone());
     let member_index = db.get_member_index();
     // find member by key in self
-    if let Some(member_map) = member_index.get_member_map(member_owner) {
+    if let Some(member_map) = member_index.get_member_map(&member_owner) {
         if let Some(member_id) = member_map.get(&key) {
             let member = member_index.get_member(&member_id)?;
             return Some(member.get_decl_type().clone());

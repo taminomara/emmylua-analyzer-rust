@@ -50,7 +50,7 @@ fn is_deprecated(builder: &CompletionBuilder, id: LuaPropertyOwnerId) -> bool {
         .semantic_model
         .get_db()
         .get_property_index()
-        .get_property(id);
+        .get_property(&id);
     if property.is_none() {
         return false;
     }

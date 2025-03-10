@@ -164,7 +164,7 @@ fn check_doc_func_type_compact_for_signature(
     }
 
     let fake_doc_func = LuaFunctionType::new(
-        false,
+        signature.is_async,
         signature.is_colon_define,
         signature_params.iter().cloned().collect(),
         Vec::new(),
@@ -242,7 +242,7 @@ pub fn check_sig_type_compact(
 
     let signature_params = signature.get_type_params();
     let fake_doc_func = LuaFunctionType::new(
-        false,
+        signature.is_async,
         signature.is_colon_define,
         signature_params.iter().cloned().collect(),
         Vec::new(),

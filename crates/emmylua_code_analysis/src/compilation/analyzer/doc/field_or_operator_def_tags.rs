@@ -243,11 +243,7 @@ fn merge_signature_member(
     }
 
     if f.is_async() {
-        let property_owner = LuaPropertyOwnerId::Signature(signature_id.clone());
-        analyzer
-            .db
-            .get_property_index_mut()
-            .add_async(analyzer.file_id, property_owner);
+        signature.is_async = true;
     }
 
     let mut member_type = LuaType::Signature(signature_id);

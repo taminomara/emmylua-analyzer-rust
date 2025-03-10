@@ -201,19 +201,19 @@ fn build_sig_id_signature_help(
 
     let label = format!("{}", params_str.join(", "));
     let property_owner = LuaPropertyOwnerId::Signature(signature_id);
-    let documentation = if let Some(property) = db.get_property_index().get_property(property_owner)
-    {
-        if let Some(description) = &property.description {
-            Some(Documentation::MarkupContent(MarkupContent {
-                kind: lsp_types::MarkupKind::Markdown,
-                value: description.to_string(),
-            }))
+    let documentation =
+        if let Some(property) = db.get_property_index().get_property(&property_owner) {
+            if let Some(description) = &property.description {
+                Some(Documentation::MarkupContent(MarkupContent {
+                    kind: lsp_types::MarkupKind::Markdown,
+                    value: description.to_string(),
+                }))
+            } else {
+                None
+            }
         } else {
             None
-        }
-    } else {
-        None
-    };
+        };
 
     let signature_info = SignatureInformation {
         label,

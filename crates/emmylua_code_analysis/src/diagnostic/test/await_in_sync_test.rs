@@ -62,6 +62,16 @@ mod test {
             end)
             "#
         ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::AwaitInSync,
+            r#"
+        ---@param callback async fun()
+        local function name(callback)
+            callback()
+        end
+        "#
+        ));
     }
 
     #[test]

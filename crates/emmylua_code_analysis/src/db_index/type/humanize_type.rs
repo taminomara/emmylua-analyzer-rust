@@ -126,7 +126,7 @@ fn humanize_simple_type(
 
     let member_owner = LuaMemberOwner::Type(id.clone());
     let member_index = db.get_member_index();
-    let member_map = member_index.get_member_map(member_owner)?;
+    let member_map = member_index.get_member_map(&member_owner)?;
     let mut member_vec = Vec::new();
     for (member_key, member_id) in member_map {
         let member = member_index.get_member(member_id)?;
@@ -454,7 +454,7 @@ fn humanize_table_const_type_detail_and_simple(
     level: RenderLevel,
 ) -> Option<String> {
     let member_index = db.get_member_index();
-    let member_map = member_index.get_member_map(member_owned)?;
+    let member_map = member_index.get_member_map(&member_owned)?;
 
     // sort by key
     let mut member_vec = member_map.into_iter().collect::<Vec<_>>();

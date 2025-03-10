@@ -85,7 +85,7 @@ pub fn generate_member_owner_module(
     owner_name: &str,
     context: &mut Context,
 ) -> Option<()> {
-    let member_map = db.get_member_index().get_member_map(member_owner);
+    let member_map = db.get_member_index().get_member_map(&member_owner);
     let mut method_members: Vec<MemberDisplay> = Vec::new();
     let mut field_members: Vec<MemberDisplay> = Vec::new();
 
@@ -97,7 +97,7 @@ pub fn generate_member_owner_module(
             let member = db.get_member_index().get_member(member_id)?;
             let member_typ = member.get_decl_type();
             let member_property_id = LuaPropertyOwnerId::Member(member_id.clone());
-            let member_property = db.get_property_index().get_property(member_property_id);
+            let member_property = db.get_property_index().get_property(&member_property_id);
             if let Some(member_property) = member_property {
                 if member_property.visibility.unwrap_or(VisibilityKind::Public)
                     != VisibilityKind::Public
