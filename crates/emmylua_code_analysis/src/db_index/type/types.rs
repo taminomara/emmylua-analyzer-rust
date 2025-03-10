@@ -213,7 +213,7 @@ impl LuaType {
     }
 
     pub fn is_boolean(&self) -> bool {
-        matches!(self, LuaType::BooleanConst(_) | LuaType::Boolean)
+        matches!(self, LuaType::BooleanConst(_) | LuaType::Boolean | LuaType::DocBooleanConst(_))
     }
 
     pub fn is_string(&self) -> bool {
