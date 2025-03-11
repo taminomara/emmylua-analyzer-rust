@@ -61,7 +61,7 @@ impl DbIndex {
             operator_index: LuaOperatorIndex::new(),
             flow_index: LuaFlowIndex::new(),
             vfs: Vfs::new(),
-            emmyrc: Arc::new(Emmyrc::default())
+            emmyrc: Arc::new(Emmyrc::default()),
         }
     }
 

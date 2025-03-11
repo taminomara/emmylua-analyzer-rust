@@ -19,7 +19,7 @@ impl Default for EmmyrcReference {
     fn default() -> Self {
         Self {
             enable: default_true(),
-            fuzzy_search: default_true(),            
+            fuzzy_search: default_true(),
             short_string_search: default_false(),
         }
     }

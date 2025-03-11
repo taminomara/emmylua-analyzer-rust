@@ -218,7 +218,7 @@ pub fn analyze_literal_expr(analyzer: &mut DeclAnalyzer, expr: LuaLiteralExpr) -
     match literal {
         LuaLiteralToken::String(string_token) => {
             if !analyzer.db.get_emmyrc().references.short_string_search {
-                return Some(())
+                return Some(());
             }
 
             let value = string_token.get_value();
