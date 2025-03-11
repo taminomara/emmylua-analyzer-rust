@@ -129,3 +129,12 @@ Cannot use `...` outside a vararg function.:
   en: 'Redefined local variable `%{name}`'
   zh_CN: '重定义局部变量 `%{name}`'
   zh_HK: '重定義局部變量 `%{name}`'
+'Missing required fields in type `%{typ}`: %{fields}':
+  en: 'Missing required fields in type `%{typ}`: %{fields}'
+  zh_CN: '缺少类型 `%{typ}` 的必要字段：%{fields}'
+  zh_HK: '缺少類型 `%{typ}` 的必要字段：%{fields}'
+'Fields cannot be injected into the reference of `%{class}` for `%{field}`. ':
+  en: 'Fields cannot be injected into the reference of `%{class}` for `%{field}`. '
+  zh_CN: '不能在 `%{class}` 的引用中注入字段 `%{field}` 。'
+  zh_HK: '不能在 `%{class}` 的引用中注入字段 `%{field}` 。'
+
