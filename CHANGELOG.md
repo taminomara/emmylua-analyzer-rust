@@ -2,6 +2,10 @@
 
 # 0.6.0 (unreleased)
 
+`NEW` Cancel re-index when file is save
+
+
+
 # 0.5.4
 
 `Fix` Fix generic dots params type check
