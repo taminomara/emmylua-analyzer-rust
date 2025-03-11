@@ -4,7 +4,11 @@
 
 `NEW` Disable re-index in default, need to enable by `workspace.enableReindex`
 
-`NEW` Add New Diagnostics `inject_field`, `missing_fields`
+`NEW` Add New Diagnostics `inject_field`, `missing_fields`, `redefined_local`
+
+`NEW` Support `true` and `false` as type
+
+`NEW` Compact luals fun return syntax like: `(name: string, age: number)`
 
 # 0.5.4
 

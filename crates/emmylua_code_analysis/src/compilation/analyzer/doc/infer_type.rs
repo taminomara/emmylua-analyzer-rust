@@ -14,7 +14,7 @@ use crate::{
         AnalyzeError, LuaAliasCallType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey,
         LuaIntersectionType, LuaObjectType, LuaStringTplType, LuaTupleType, LuaType, LuaUnionType,
     },
-    DiagnosticCode, GenericTpl, LuaAliasCallKind, LuaMultiLineUnion, TypeOps,
+    DiagnosticCode, GenericTpl, LuaAliasCallKind, LuaMultiLineUnion, LuaTypeDeclId, TypeOps,
 };
 
 use super::{preprocess_description, DocAnalyzer};
@@ -154,7 +154,8 @@ fn infer_buildin_or_ref_type(analyzer: &mut DocAnalyzer, name: &str, range: Text
                 ),
             );
 
-            LuaType::Unknown
+            // not found type, keep the name
+            LuaType::Ref(LuaTypeDeclId::new(name))
         }
     }
 }

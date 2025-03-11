@@ -42,6 +42,7 @@ pub struct DbIndex {
     operator_index: LuaOperatorIndex,
     flow_index: LuaFlowIndex,
     vfs: Vfs,
+    emmyrc: Arc<Emmyrc>,
 }
 
 #[allow(unused)]
@@ -60,6 +61,7 @@ impl DbIndex {
             operator_index: LuaOperatorIndex::new(),
             flow_index: LuaFlowIndex::new(),
             vfs: Vfs::new(),
+            emmyrc: Arc::new(Emmyrc::default())
         }
     }
 
@@ -168,6 +170,11 @@ impl DbIndex {
     pub fn update_config(&mut self, config: Arc<Emmyrc>) {
         self.vfs.update_config(config.clone());
         self.modules_index.update_config(config.clone());
+        self.emmyrc = config;
+    }
+
+    pub fn get_emmyrc(&self) -> &Emmyrc {
+        &self.emmyrc
     }
 }
 
