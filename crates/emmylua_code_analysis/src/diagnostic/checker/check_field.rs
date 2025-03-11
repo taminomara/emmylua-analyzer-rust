@@ -96,11 +96,7 @@ fn check_index_expr(
                 context.add_diagnostic(
                     DiagnosticCode::UndefinedField,
                     index_key.get_range()?,
-                    t!(
-                        "Undefined field `%{field}`. ",
-                        field = index_name,
-                    )
-                    .to_string(),
+                    t!("Undefined field `%{field}`. ", field = index_name,).to_string(),
                     None,
                 );
             }

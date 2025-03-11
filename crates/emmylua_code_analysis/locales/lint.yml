@@ -141,3 +141,8 @@ Cannot use `...` outside a vararg function.:
   en: 'Undefined field `%{field}`. '
   zh_CN: '未定义的属性/字段 `%{field}`。'
   zh_HK: '未定義的屬性/字段 `%{field}`。'
+'Circularly inherited classes.':
+  en: 'Circularly inherited classes.'
+  zh_CN: '循环继承的类'
+  zh_HK: '循環繼承的類'
+

@@ -2,6 +2,7 @@ mod access_invisible;
 mod analyze_error;
 mod await_in_sync;
 mod check_field;
+mod circle_doc_class;
 mod code_style_check;
 mod deprecated;
 mod discard_returns;
@@ -68,6 +69,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(redefined_local);
     check!(missing_fields);
     check!(check_field);
+    check!(circle_doc_class);
 
     Some(())
 }

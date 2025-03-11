@@ -74,6 +74,8 @@ pub enum DiagnosticCode {
     MissingFields,
     /// Inject Field
     InjectField,
+    /// Circle Doc Class
+    CircleDocClass,
 
     #[serde(other)]
     None,
