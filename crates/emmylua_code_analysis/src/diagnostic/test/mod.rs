@@ -1,6 +1,7 @@
 mod await_in_sync_test;
 mod disable_line_test;
 mod duplicate_doc_field_test;
+mod inject_field_test;
 mod missing_fields_test;
 mod missing_parameter_test;
 mod missing_return_value_test;

@@ -72,6 +72,8 @@ pub enum DiagnosticCode {
     DuplicateDocField,
     /// Missing fields
     MissingFields,
+    /// Inject Field
+    InjectField,
 
     #[serde(other)]
     None,
