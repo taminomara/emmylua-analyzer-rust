@@ -70,6 +70,10 @@ pub enum DiagnosticCode {
     UndefinedDocParam,
     /// Duplicate doc field
     DuplicateDocField,
+    /// Missing fields
+    MissingFields,
+    /// Inject Field
+    InjectField,
 
     #[serde(other)]
     None,

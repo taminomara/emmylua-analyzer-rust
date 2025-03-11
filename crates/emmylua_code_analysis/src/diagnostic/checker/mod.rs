@@ -4,7 +4,9 @@ mod await_in_sync;
 mod code_style_check;
 mod deprecated;
 mod discard_returns;
+mod inject_field;
 mod local_const_reassign;
+mod missing_fields;
 mod missing_parameter;
 mod missing_return_value;
 mod need_check_nil;
@@ -23,7 +25,9 @@ use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
 use std::sync::Arc;
 
-use crate::{db_index::DbIndex, semantic::SemanticModel, FileId};
+use crate::{
+    db_index::DbIndex, humanize_type, semantic::SemanticModel, FileId, LuaType, RenderLevel,
+};
 
 use super::{
     lua_diagnostic_code::{get_default_severity, is_code_default_enable},
@@ -62,6 +66,8 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(return_type_mismatch);
     check!(undefined_doc_param);
     check!(redefined_local);
+    check!(missing_fields);
+    check!(inject_field);
 
     Some(())
 }
@@ -221,5 +227,16 @@ pub fn get_closure_expr_comment(closure_expr: &LuaClosureExpr) -> Option<LuaComm
             Some(comment)
         }
         _ => None,
+    }
+}
+
+pub fn get_lint_type_name(db: &DbIndex, typ: &LuaType) -> String {
+    match typ {
+        LuaType::Ref(type_decl_id) => type_decl_id.get_simple_name().to_string(),
+        LuaType::Generic(generic_type) => generic_type
+            .get_base_type_id()
+            .get_simple_name()
+            .to_string(),
+        _ => humanize_type(db, typ, RenderLevel::Simple),
     }
 }

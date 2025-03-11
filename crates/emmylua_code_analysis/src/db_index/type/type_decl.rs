@@ -207,6 +207,39 @@ impl LuaTypeDeclId {
 
         &just_name
     }
+
+    pub fn collect_super_types(&self, db: &DbIndex, collected_types: &mut Vec<LuaType>) {
+        // 必须广度优先
+        let mut queue = Vec::new();
+        queue.push(self.clone());
+
+        while let Some(current_id) = queue.pop() {
+            let super_types = db.get_type_index().get_super_types(&current_id);
+            if let Some(super_types) = super_types {
+                for super_type in super_types {
+                    match &super_type {
+                        LuaType::Ref(super_type_id) => {
+                            if !collected_types.contains(&super_type) {
+                                collected_types.push(super_type.clone());
+                                queue.push(super_type_id.clone());
+                            }
+                        }
+                        _ => {
+                            if !collected_types.contains(&super_type) {
+                                collected_types.push(super_type.clone());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn collect_super_types_with_self(&self, db: &DbIndex, typ: LuaType) -> Vec<LuaType> {
+        let mut collected_types: Vec<LuaType> = vec![typ];
+        self.collect_super_types(db, &mut collected_types);
+        collected_types
+    }
 }
 
 impl Serialize for LuaTypeDeclId {
