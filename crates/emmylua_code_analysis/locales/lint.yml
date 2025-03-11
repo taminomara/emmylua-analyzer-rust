@@ -137,4 +137,7 @@ Cannot use `...` outside a vararg function.:
   en: 'Fields cannot be injected into the reference of `%{class}` for `%{field}`. '
   zh_CN: '不能在 `%{class}` 的引用中注入字段 `%{field}` 。'
   zh_HK: '不能在 `%{class}` 的引用中注入字段 `%{field}` 。'
-
+'Undefined field `%{field}`. ':
+  en: 'Undefined field `%{field}`. '
+  zh_CN: '未定义的属性/字段 `%{field}`。'
+  zh_HK: '未定義的屬性/字段 `%{field}`。'

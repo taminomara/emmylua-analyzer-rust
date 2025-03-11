@@ -97,9 +97,8 @@ fn check_index_expr(
                     DiagnosticCode::UndefinedField,
                     index_key.get_range()?,
                     t!(
-                        "Undefined field `%{field}` in the reference of `%{class}`. ",
+                        "Undefined field `%{field}`. ",
                         field = index_name,
-                        class = get_lint_type_name(&db, &prefix_typ),
                     )
                     .to_string(),
                     None,
