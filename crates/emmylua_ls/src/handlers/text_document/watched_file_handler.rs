@@ -70,8 +70,9 @@ fn collect_lua_files(
     match file_change_event {
         FileChangeType::CREATED | FileChangeType::CHANGED => {
             let path = uri_to_file_path(&uri).unwrap();
-            let text = read_file_with_encoding(&path, encoding).unwrap();
-            watched_lua_files.push((uri, Some(text)));
+            if let Some(text) = read_file_with_encoding(&path, encoding) {
+                watched_lua_files.push((uri, Some(text)));
+            }
         }
         FileChangeType::DELETED => {
             watched_lua_files.push((uri, None));
