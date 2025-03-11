@@ -80,6 +80,9 @@ pub fn infer_member_by_member_key(
     }
 
     match &prefix_type {
+        LuaType::Table | LuaType::Any | LuaType::Unknown => {
+            Some(LuaType::Any)
+        }
         LuaType::TableConst(id) => {
             let member_owner = LuaMemberOwner::Element(id.clone());
             infer_table_member(db, member_owner, index_expr)

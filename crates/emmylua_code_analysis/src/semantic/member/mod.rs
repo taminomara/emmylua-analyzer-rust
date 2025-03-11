@@ -17,12 +17,10 @@ pub fn without_members(type_: &LuaType) -> bool {
         | LuaType::FloatConst(_)
         | LuaType::Function
         | LuaType::DocFunction(_)
-        | LuaType::Table
         | LuaType::TableGeneric(_)
         | LuaType::Userdata
         | LuaType::Thread
         | LuaType::Unknown
-        | LuaType::Any
         | LuaType::SelfInfer
         | LuaType::StrTplRef(_)
         | LuaType::TplRef(_)

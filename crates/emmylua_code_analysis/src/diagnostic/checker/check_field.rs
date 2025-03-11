@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use emmylua_parser::{LuaAst, LuaAstNode, LuaIndexExpr, LuaVarExpr};
 
-use crate::{DiagnosticCode, SemanticModel};
+use crate::{DiagnosticCode, LuaType, SemanticModel};
 
 use super::{get_lint_type_name, DiagnosticContext};
 
@@ -53,6 +53,15 @@ fn check_index_expr(
     let db = context.db;
     let prefix = index_expr.get_prefix_expr()?;
     let prefix_typ = semantic_model.infer_expr(prefix)?;
+    match &prefix_typ {
+        LuaType::Any
+        | LuaType::Unknown
+        | LuaType::Table
+        | LuaType::TplRef(_)
+        | LuaType::StrTplRef(_) => return Some(()),
+        _ => {}
+    }
+
     let index_key = index_expr.get_index_key()?;
     let index_name = index_key.get_path_part();
     let member_info =
