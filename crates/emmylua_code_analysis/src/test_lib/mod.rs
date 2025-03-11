@@ -1,9 +1,12 @@
+use std::sync::Arc;
+
 use emmylua_parser::{LuaAstNode, LuaAstToken, LuaLocalName};
 use lsp_types::NumberOrString;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    check_type_compact, DiagnosticCode, EmmyLuaAnalysis, FileId, LuaType, VirtualUrlGenerator,
+    check_type_compact, DiagnosticCode, EmmyLuaAnalysis, Emmyrc, FileId, LuaType,
+    VirtualUrlGenerator,
 };
 
 /// A virtual workspace for testing.
@@ -144,6 +147,15 @@ impl VirtualWorkspace {
         }
 
         true
+    }
+
+    pub fn enable_full_diagnostic(&mut self) {
+        let mut emmyrc = Emmyrc::default();
+        let mut enables = emmyrc.diagnostics.enables;
+        enables.push(DiagnosticCode::IncompleteSignatureDoc);
+        enables.push(DiagnosticCode::MissingGlobalDoc);
+        emmyrc.diagnostics.enables = enables;
+        self.analysis.diagnostic.update_config(Arc::new(emmyrc));
     }
 }
 

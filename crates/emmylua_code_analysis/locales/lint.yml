@@ -145,4 +145,25 @@ Cannot use `...` outside a vararg function.:
   en: 'Circularly inherited classes.'
   zh_CN: '循环继承的类'
   zh_HK: '循環繼承的類'
+'Missing comment for global function `%{name}`.':
+  en: 'Missing comment for global function `%{name}`.'
+  zh_CN: '全局函数 `%{name}` 缺少注释'
+  zh_HK: '全局函數 `%{name}` 缺少註釋'
+'Missing @param annotation for parameter `%{name}` in global function `%{function_name}`.':
+  en: 'Missing @param annotation for parameter `%{name}` in global function `%{function_name}`.'
+  zh_CN: '全局函数 `%{function_name}` 的参数 `%{name}` 缺少 @param 注解。'
+  zh_HK: '全局函數 `%{function_name}` 的參數 `%{name}` 缺少 @param 註釋。'
+'Missing @return annotation at index `%{index}` in global function `%{function_name}`.':
+  en: 'Missing @return annotation at index `%{index}` in global function `%{function_name}`.'
+  zh_CN: '全局函数 `%{function_name}` 的第 `%{index}` 个返回值缺少 @return 注解。'
+  zh_HK: '全局函數 `%{function_name}` 的第 `%{index}` 個回傳值缺少 @return 註釋。'
+'Incomplete signature. Missing @param annotation for parameter `%{name}`.':
+  en: 'Incomplete signature. Missing @param annotation for parameter `%{name}`.'
+  zh_CN: '不完整的签名。参数 `%{name}` 缺少 @param 注解。'
+  zh_HK: '不完整的簽名。參數 `%{name}` 缺少 @param 註釋。'
+'Incomplete signature. Missing @return annotation at index `%{index}`.':
+  en: 'Incomplete signature. Missing @return annotation at index `%{index}`.'
+  zh_CN: '不完整的签名。第 `%{index}` 个返回值缺少 @return 注解。'
+  zh_HK: '不完整的簽名。第 `%{index}` 個回傳值缺少 @return 註釋。'
+
 
