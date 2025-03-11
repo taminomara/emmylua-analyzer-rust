@@ -10,6 +10,8 @@
 
 `NEW` Compact luals fun return syntax like: `(name: string, age: number)`
 
+`NEW` Aliases and overloads of iterator functions (i.e `fun(v: any): (K, V)` where `K` is the key type and `V` is the value type) are now used to infer types in `for` loops
+
 # 0.5.4
 
 `Fix` Fix generic dots params type check
