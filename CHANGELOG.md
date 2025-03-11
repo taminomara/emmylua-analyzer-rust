@@ -2,9 +2,9 @@
 
 # 0.6.0 (unreleased)
 
-`NEW` Cancel re-index when file is save
+`NEW` Disable re-index in default, need to enable by `workspace.enableReindex`
 
-
+`NEW` Add New Diagnostics `inject_field`, `missing_fields`
 
 # 0.5.4
 

@@ -33,6 +33,9 @@ pub struct EmmyrcWorkspace {
     /// when save a file, ls will reindex the workspace after reindex_duration milliseconds.
     #[serde(default = "reindex_duration_default")]
     pub reindex_duration: u64,
+    /// Enable reindex.
+    #[serde(default = "enable_reindex_default")]
+    pub enable_reindex: bool,
 }
 
 impl Default for EmmyrcWorkspace {
@@ -46,6 +49,7 @@ impl Default for EmmyrcWorkspace {
             encoding: encoding_default(),
             module_map: Vec::new(),
             reindex_duration: 5000,
+            enable_reindex: false,
         }
     }
 }
@@ -62,4 +66,8 @@ fn encoding_default() -> String {
 
 fn reindex_duration_default() -> u64 {
     5000
+}
+
+fn enable_reindex_default() -> bool {
+    false
 }

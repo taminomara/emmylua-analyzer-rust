@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use lsp_types::{
     DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams,
     DidSaveTextDocumentParams,
@@ -27,19 +29,23 @@ pub async fn on_did_open_text_document(
 }
 
 pub async fn on_did_save_text_document(
-    _: ServerContextSnapshot,
+    context: ServerContextSnapshot,
     _: DidSaveTextDocumentParams,
 ) -> Option<()> {
-    // let emmyrc = context.analysis.read().await.get_emmyrc();
-    // let mut duration = emmyrc.workspace.reindex_duration;
-    // // if duration is less than 1000ms, set it to 1000ms
-    // if duration < 1000 {
-    //     duration = 1000;
-    // }
-    // let workspace = context.workspace_manager.read().await;
-    // workspace
-    //     .reindex_workspace(Duration::from_millis(duration))
-    //     .await;
+    let emmyrc = context.analysis.read().await.get_emmyrc();
+    if !emmyrc.workspace.enable_reindex {
+        return Some(());
+    }
+
+    let mut duration = emmyrc.workspace.reindex_duration;
+    // if duration is less than 1000ms, set it to 1000ms
+    if duration < 1000 {
+        duration = 1000;
+    }
+    let workspace = context.workspace_manager.read().await;
+    workspace
+        .reindex_workspace(Duration::from_millis(duration))
+        .await;
     Some(())
 }
 
@@ -55,9 +61,11 @@ pub async fn on_did_change_text_document(
     let interval = emmyrc.diagnostics.diagnostic_interval.unwrap_or(500);
     drop(analysis);
 
-    // let workspace = context.workspace_manager.read().await;
-    // workspace.extend_reindex_delay().await;
-    // drop(workspace);
+    if emmyrc.workspace.enable_reindex {
+        let workspace = context.workspace_manager.read().await;
+        workspace.extend_reindex_delay().await;
+        drop(workspace);
+    }
     if let Some(file_id) = file_id {
         context
             .file_diagnostic
