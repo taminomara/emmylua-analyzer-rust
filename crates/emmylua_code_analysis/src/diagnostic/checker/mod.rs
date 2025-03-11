@@ -1,10 +1,10 @@
 mod access_invisible;
 mod analyze_error;
 mod await_in_sync;
+mod check_field;
 mod code_style_check;
 mod deprecated;
 mod discard_returns;
-mod inject_field;
 mod local_const_reassign;
 mod missing_fields;
 mod missing_parameter;
@@ -67,7 +67,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(undefined_doc_param);
     check!(redefined_local);
     check!(missing_fields);
-    check!(inject_field);
+    check!(check_field);
 
     Some(())
 }

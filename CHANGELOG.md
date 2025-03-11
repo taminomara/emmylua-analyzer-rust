@@ -4,7 +4,7 @@
 
 `NEW` Disable re-index in default, need to enable by `workspace.enableReindex`
 
-`NEW` Add New Diagnostics `inject_field`, `missing_fields`, `redefined_local`
+`NEW` Add New Diagnostics `inject_field`, `missing_fields`, `redefined_local`, `undefined_field`
 
 `NEW` Support `true` and `false` as type
 

@@ -2,7 +2,11 @@ use crate::{DiagnosticCode, SemanticModel};
 
 use super::DiagnosticContext;
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::TypeNotFound, DiagnosticCode::DuplicateType];
+pub const CODES: &[DiagnosticCode] = &[
+    DiagnosticCode::TypeNotFound,
+    DiagnosticCode::DuplicateType,
+    DiagnosticCode::AnnotationUsageError,
+];
 
 pub fn check(context: &mut DiagnosticContext, _: &SemanticModel) -> Option<()> {
     let db = context.get_db();
