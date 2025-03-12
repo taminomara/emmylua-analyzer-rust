@@ -12,10 +12,10 @@ use crate::{
         overload_resolve::resolve_signature,
         InferGuard,
     },
-    InFiled,
+    InFiled, LuaInferCache,
 };
 
-use super::{infer_expr, LuaInferCache};
+use super::infer_expr;
 
 pub fn infer_call_expr(
     db: &DbIndex,

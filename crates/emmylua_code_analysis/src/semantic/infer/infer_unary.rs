@@ -1,8 +1,11 @@
 use emmylua_parser::{LuaUnaryExpr, UnaryOperator};
 
-use crate::db_index::{DbIndex, LuaOperatorMetaMethod, LuaType};
+use crate::{
+    db_index::{DbIndex, LuaOperatorMetaMethod, LuaType},
+    LuaInferCache,
+};
 
-use super::{get_custom_type_operator, infer_expr, InferResult, LuaInferCache};
+use super::{get_custom_type_operator, infer_expr, InferResult};
 
 pub fn infer_unary_expr(
     db: &DbIndex,

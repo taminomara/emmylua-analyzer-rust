@@ -4,10 +4,10 @@ use emmylua_parser::{LuaAstNode, LuaNameExpr};
 
 use crate::{
     db_index::{DbIndex, LuaDeclOrMemberId, LuaMemberKey},
-    LuaDecl, LuaDeclExtra, LuaFlowId, LuaMember, LuaMemberId, LuaType, TypeOps,
+    LuaDecl, LuaDeclExtra, LuaFlowId, LuaInferCache, LuaMember, LuaMemberId, LuaType, TypeOps,
 };
 
-use super::{InferResult, LuaInferCache};
+use super::InferResult;
 
 pub fn infer_name_expr(
     db: &DbIndex,

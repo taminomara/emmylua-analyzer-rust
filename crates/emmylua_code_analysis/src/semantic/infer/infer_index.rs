@@ -16,10 +16,10 @@ use crate::{
         type_check::check_type_compact,
         InferGuard,
     },
-    InFiled, LuaFlowId, LuaInstanceType,
+    InFiled, LuaFlowId, LuaInferCache, LuaInstanceType,
 };
 
-use super::{infer_expr, InferResult, LuaInferCache};
+use super::{infer_expr, InferResult};
 
 pub fn infer_index_expr(
     db: &DbIndex,
