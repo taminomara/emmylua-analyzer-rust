@@ -4,7 +4,7 @@ use emmylua_parser::{LuaAst, LuaAstNode, LuaIndexExpr, LuaVarExpr};
 
 use crate::{DiagnosticCode, LuaType, SemanticModel};
 
-use super::{get_lint_type_name, DiagnosticContext};
+use super::{humanize_lint_type, DiagnosticContext};
 
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::InjectField, DiagnosticCode::UndefinedField];
 
@@ -85,7 +85,7 @@ fn check_index_expr(
                     index_key.get_range()?,
                     t!(
                         "Fields cannot be injected into the reference of `%{class}` for `%{field}`. ",
-                        class = get_lint_type_name(&db, &prefix_typ),
+                        class = humanize_lint_type(&db, &prefix_typ),
                         field = index_name,
                     )
                     .to_string(),
