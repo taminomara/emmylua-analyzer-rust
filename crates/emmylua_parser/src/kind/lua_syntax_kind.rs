@@ -38,7 +38,10 @@ pub enum LuaSyntaxKind {
     TableArrayExpr,  // { a, b, c}
     TableObjectExpr, // { a = 1, b = 2, c = 3}
     TableEmptyExpr,  // {}
-    CallExpr,
+    CallExpr,        // a()
+    RequireCallExpr, // require('a')
+    ErrorCallExpr,   // error('a')
+    AssertCallExpr,  // assert(a, b)
     IndexExpr,
     NameExpr,
 

@@ -214,7 +214,10 @@ impl LuaAstNode for LuaAst {
             LuaSyntaxKind::BinaryExpr => true,
             LuaSyntaxKind::UnaryExpr => true,
             LuaSyntaxKind::ParenExpr => true,
-            LuaSyntaxKind::CallExpr => true,
+            LuaSyntaxKind::CallExpr
+            | LuaSyntaxKind::AssertCallExpr
+            | LuaSyntaxKind::ErrorCallExpr
+            | LuaSyntaxKind::RequireCallExpr => true,
             LuaSyntaxKind::LiteralExpr => true,
             LuaSyntaxKind::ClosureExpr => true,
             LuaSyntaxKind::ParamList => true,
@@ -307,7 +310,10 @@ impl LuaAstNode for LuaAst {
             LuaSyntaxKind::BinaryExpr => LuaBinaryExpr::cast(syntax).map(LuaAst::LuaBinaryExpr),
             LuaSyntaxKind::UnaryExpr => LuaUnaryExpr::cast(syntax).map(LuaAst::LuaUnaryExpr),
             LuaSyntaxKind::ParenExpr => LuaParenExpr::cast(syntax).map(LuaAst::LuaParenExpr),
-            LuaSyntaxKind::CallExpr => LuaCallExpr::cast(syntax).map(LuaAst::LuaCallExpr),
+            LuaSyntaxKind::CallExpr
+            | LuaSyntaxKind::AssertCallExpr
+            | LuaSyntaxKind::ErrorCallExpr
+            | LuaSyntaxKind::RequireCallExpr => LuaCallExpr::cast(syntax).map(LuaAst::LuaCallExpr),
             LuaSyntaxKind::LiteralExpr => LuaLiteralExpr::cast(syntax).map(LuaAst::LuaLiteralExpr),
             LuaSyntaxKind::ClosureExpr => LuaClosureExpr::cast(syntax).map(LuaAst::LuaClosureExpr),
             LuaSyntaxKind::Comment => LuaComment::cast(syntax).map(LuaAst::LuaComment),

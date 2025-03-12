@@ -3,6 +3,7 @@ use crate::{
     kind::{BinaryOperator, LuaOpKind, LuaSyntaxKind, LuaTokenKind, UnaryOperator, UNARY_PRIORITY},
     parser::{LuaParser, MarkerEventContainer},
     parser_error::LuaParseError,
+    SpecialFunction,
 };
 
 use super::{expect_token, if_token_bump, parse_block};
@@ -186,7 +187,23 @@ fn parse_field(p: &mut LuaParser) -> ParseResult {
 }
 
 fn parse_suffixed_expr(p: &mut LuaParser) -> ParseResult {
-    let mut cm = parse_primary_expr(p)?;
+    let mut cm = match p.current_token() {
+        LuaTokenKind::TkName => parse_name_or_special_function(p)?,
+        LuaTokenKind::TkLeftParen => {
+            let m = p.mark(LuaSyntaxKind::ParenExpr);
+            p.bump();
+            parse_expr(p)?;
+            expect_token(p, LuaTokenKind::TkRightParen)?;
+            m.complete(p)
+        }
+        _ => {
+            return Err(LuaParseError::from_source_range(
+                &t!("expect primary expression"),
+                p.current_token_range(),
+            ))
+        }
+    };
+
     loop {
         match p.current_token() {
             LuaTokenKind::TkDot | LuaTokenKind::TkColon | LuaTokenKind::TkLeftBracket => {
@@ -209,25 +226,33 @@ fn parse_suffixed_expr(p: &mut LuaParser) -> ParseResult {
     }
 }
 
-fn parse_primary_expr(p: &mut LuaParser) -> ParseResult {
-    match p.current_token() {
-        LuaTokenKind::TkName => {
-            let m = p.mark(LuaSyntaxKind::NameExpr);
-            p.bump();
-            Ok(m.complete(p))
-        }
-        LuaTokenKind::TkLeftParen => {
-            let m = p.mark(LuaSyntaxKind::ParenExpr);
-            p.bump();
-            parse_expr(p)?;
-            expect_token(p, LuaTokenKind::TkRightParen)?;
-            Ok(m.complete(p))
-        }
-        _ => Err(LuaParseError::from_source_range(
-            &t!("expect primary expression"),
-            p.current_token_range(),
-        )),
+fn parse_name_or_special_function(p: &mut LuaParser) -> ParseResult {
+    let m = p.mark(LuaSyntaxKind::NameExpr);
+    let special_kind = match p.parse_config.get_special_function(p.current_token_text()) {
+        SpecialFunction::Require => LuaSyntaxKind::RequireCallExpr,
+        SpecialFunction::Assert => LuaSyntaxKind::AssertCallExpr,
+        SpecialFunction::Error => LuaSyntaxKind::ErrorCallExpr,
+        _ => LuaSyntaxKind::None,
+    };
+    p.bump();
+    let mut cm = m.complete(p);
+    if special_kind == LuaSyntaxKind::None {
+        return Ok(cm);
     }
+
+    if matches!(
+        p.current_token(),
+        LuaTokenKind::TkLeftParen
+            | LuaTokenKind::TkLongString
+            | LuaTokenKind::TkString
+            | LuaTokenKind::TkLeftBrace
+    ) {
+        let m1 = cm.precede(p, special_kind);
+        parse_args(p)?;
+        cm = m1.complete(p);
+    }
+
+    Ok(cm)
 }
 
 fn parse_index_struct(p: &mut LuaParser) -> Result<(), LuaParseError> {

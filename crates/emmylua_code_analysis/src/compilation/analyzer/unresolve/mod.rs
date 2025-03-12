@@ -22,7 +22,7 @@ use super::{lua::LuaReturnPoint, AnalyzeContext};
 pub fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     let _p = Profile::cond_new("resolve analyze", context.tree_list.len() > 1);
     let mut unresolves = std::mem::take(&mut context.unresolves);
-    let mut infer_manager = InferManager::new(context.config.clone());
+    let mut infer_manager = InferManager::new();
     while try_resolve(db, &mut infer_manager, &mut unresolves) {
         unresolves.retain(|un_resolve| match un_resolve {
             UnResolve::None => false,
@@ -42,7 +42,7 @@ fn try_resolve(
     for i in 0..unresolves.len() {
         let un_resolve = &mut unresolves[i];
         let file_id = un_resolve.get_file_id().unwrap_or(FileId { id: 0 });
-        let config = infer_manager.get_infer_config(file_id);
+        let config = infer_manager.get_infer_cache(file_id);
         let resolve = match un_resolve {
             UnResolve::Decl(un_resolve_decl) => {
                 try_resolve_decl(db, config, un_resolve_decl).unwrap_or(false)

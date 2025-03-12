@@ -320,7 +320,13 @@ fn parse_assign_or_expr_stat(p: &mut LuaParser) -> ParseResult {
     let mut m = p.mark(LuaSyntaxKind::AssignStat);
     let range = p.current_token_range();
     let mut cm = parse_expr(p)?;
-    if cm.kind == LuaSyntaxKind::CallExpr {
+    if matches!(
+        cm.kind,
+        LuaSyntaxKind::CallExpr
+            | LuaSyntaxKind::AssertCallExpr
+            | LuaSyntaxKind::ErrorCallExpr
+            | LuaSyntaxKind::RequireCallExpr
+    ) {
         m.set_kind(p, LuaSyntaxKind::CallExprStat);
         if_token_bump(p, LuaTokenKind::TkSemicolon);
         return Ok(m.complete(p));

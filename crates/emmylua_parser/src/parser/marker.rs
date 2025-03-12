@@ -80,14 +80,12 @@ impl Marker {
             }
             return CompleteMarker {
                 start: 0,
-                finish: 0,
                 kind: LuaSyntaxKind::None,
             };
         }
         p.push_node_end();
         CompleteMarker {
             start: self.position,
-            finish,
             kind,
         }
     }
@@ -104,10 +102,7 @@ impl Marker {
 }
 
 pub(crate) struct CompleteMarker {
-    #[allow(unused)]
-    pub start: usize,
-    #[allow(unused)]
-    pub finish: usize,
+    start: usize,
     pub kind: LuaSyntaxKind,
 }
 
@@ -125,7 +120,6 @@ impl CompleteMarker {
     pub fn empty() -> Self {
         CompleteMarker {
             start: 0,
-            finish: 0,
             kind: LuaSyntaxKind::None,
         }
     }

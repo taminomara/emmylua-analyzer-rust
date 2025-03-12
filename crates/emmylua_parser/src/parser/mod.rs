@@ -8,4 +8,4 @@ pub use lua_parser::LuaParser;
 #[allow(unused)]
 pub use marker::*;
 #[allow(unused)]
-pub use parser_config::ParserConfig;
+pub use parser_config::{ParserConfig, SpecialFunction};

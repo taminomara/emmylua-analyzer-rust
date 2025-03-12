@@ -26,8 +26,8 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     let tree_list = context.tree_list.clone();
     for in_filed_tree in &tree_list {
         let root = &in_filed_tree.value;
-        let config = context.config.get_infer_config(in_filed_tree.file_id);
-        let mut analyzer = LuaAnalyzer::new(db, in_filed_tree.file_id, config);
+        let cache = LuaInferCache::new(in_filed_tree.file_id);
+        let mut analyzer = LuaAnalyzer::new(db, in_filed_tree.file_id, cache);
         for node in root.descendants::<LuaAst>() {
             analyze_node(&mut analyzer, node);
         }
@@ -70,7 +70,7 @@ fn analyze_node(analyzer: &mut LuaAnalyzer, node: LuaAst) {
 struct LuaAnalyzer<'a> {
     file_id: FileId,
     db: &'a mut DbIndex,
-    infer_config: LuaInferCache,
+    infer_cache: LuaInferCache,
     unresolved: Vec<UnResolve>,
 }
 
@@ -83,7 +83,7 @@ impl LuaAnalyzer<'_> {
         LuaAnalyzer {
             file_id,
             db,
-            infer_config,
+            infer_cache: infer_config,
             unresolved: Vec::new(),
         }
     }
@@ -91,7 +91,7 @@ impl LuaAnalyzer<'_> {
 
 impl LuaAnalyzer<'_> {
     pub fn infer_expr(&mut self, expr: &LuaExpr) -> Option<LuaType> {
-        infer_expr(self.db, &mut self.infer_config, expr.clone())
+        infer_expr(self.db, &mut self.infer_cache, expr.clone())
     }
 
     pub fn add_unresolved(&mut self, unresolved: UnResolve) {

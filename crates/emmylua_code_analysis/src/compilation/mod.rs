@@ -3,7 +3,9 @@ mod test;
 
 use std::sync::Arc;
 
-use crate::{db_index::DbIndex, semantic::SemanticModel, Emmyrc, FileId, InFiled, LuaIndex};
+use crate::{
+    db_index::DbIndex, semantic::SemanticModel, Emmyrc, FileId, InFiled, LuaIndex, LuaInferCache,
+};
 
 #[derive(Debug)]
 pub struct LuaCompilation {
@@ -23,12 +25,12 @@ impl LuaCompilation {
     }
 
     pub fn get_semantic_model(&self, file_id: FileId) -> Option<SemanticModel> {
-        let config = self.emmyrc.get_infer_config(file_id);
+        let cache = LuaInferCache::new(file_id);
         let tree = self.db.get_vfs().get_syntax_tree(&file_id)?;
         Some(SemanticModel::new(
             file_id,
             &self.db,
-            config,
+            cache,
             self.emmyrc.clone(),
             tree.get_chunk_node(),
         ))

@@ -3,7 +3,7 @@ mod configs;
 mod flatten_config;
 
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     path::{Path, PathBuf},
 };
 
@@ -17,7 +17,7 @@ use configs::{
     EmmyrcReference, EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken, EmmyrcSignature,
     EmmyrcStrict, EmmyrcWorkspace,
 };
-use emmylua_parser::{LuaLanguageLevel, ParserConfig};
+use emmylua_parser::{LuaLanguageLevel, ParserConfig, SpecialFunction};
 use regex::Regex;
 use rowan::NodeCache;
 use schemars::JsonSchema;
@@ -59,10 +59,7 @@ pub struct Emmyrc {
 
 impl Emmyrc {
     pub fn get_infer_config(&self, file_id: FileId) -> LuaInferCache {
-        let require_map: HashSet<String> =
-            self.runtime.require_like_function.iter().cloned().collect();
-
-        LuaInferCache::new(file_id, require_map)
+        LuaInferCache::new(file_id)
     }
 
     pub fn get_parse_config<'cache>(
@@ -80,7 +77,11 @@ impl Emmyrc {
             EmmyrcLuaVersion::LuaLatest => LuaLanguageLevel::Lua54,
         };
 
-        ParserConfig::new(lua_language_level, Some(node_cache))
+        let mut special_like = HashMap::new();
+        for name in self.runtime.require_like_function.iter() {
+            special_like.insert(name.clone(), SpecialFunction::Require);
+        }
+        ParserConfig::new(lua_language_level, Some(node_cache), special_like)
     }
 
     pub fn pre_process_emmyrc(&mut self, workspace_root: &Path) {

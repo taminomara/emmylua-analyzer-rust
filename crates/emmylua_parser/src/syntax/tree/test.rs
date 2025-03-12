@@ -2,7 +2,7 @@
 mod test {
     use crate::{set_locale, LuaAstNode, LuaLanguageLevel, LuaParser, ParserConfig};
     // use std::time::Instant;
-    use std::thread;
+    use std::{collections::HashMap, thread};
 
     #[test]
     fn test_multithreaded_syntax_tree_traversal() {
@@ -36,7 +36,7 @@ mod test {
 if a ~= b then
 end
         "#;
-        let parse_config = ParserConfig::new(LuaLanguageLevel::Lua51, None);
+        let parse_config = ParserConfig::new(LuaLanguageLevel::Lua51, None, HashMap::new());
         let tree = LuaParser::parse(code, parse_config);
         assert_eq!(tree.get_errors().len(), 0);
     }

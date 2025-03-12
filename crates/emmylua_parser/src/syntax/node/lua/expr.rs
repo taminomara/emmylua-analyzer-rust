@@ -45,7 +45,10 @@ impl LuaAstNode for LuaExpr {
         Self: Sized,
     {
         match kind {
-            LuaSyntaxKind::CallExpr => true,
+            LuaSyntaxKind::CallExpr
+            | LuaSyntaxKind::AssertCallExpr
+            | LuaSyntaxKind::ErrorCallExpr
+            | LuaSyntaxKind::RequireCallExpr => true,
             LuaSyntaxKind::TableArrayExpr
             | LuaSyntaxKind::TableObjectExpr
             | LuaSyntaxKind::TableEmptyExpr => true,
@@ -65,7 +68,10 @@ impl LuaAstNode for LuaExpr {
         Self: Sized,
     {
         match syntax.kind().into() {
-            LuaSyntaxKind::CallExpr => LuaCallExpr::cast(syntax).map(LuaExpr::CallExpr),
+            LuaSyntaxKind::CallExpr
+            | LuaSyntaxKind::AssertCallExpr
+            | LuaSyntaxKind::ErrorCallExpr
+            | LuaSyntaxKind::RequireCallExpr => LuaCallExpr::cast(syntax).map(LuaExpr::CallExpr),
             LuaSyntaxKind::TableArrayExpr
             | LuaSyntaxKind::TableObjectExpr
             | LuaSyntaxKind::TableEmptyExpr => LuaTableExpr::cast(syntax).map(LuaExpr::TableExpr),
@@ -345,6 +351,9 @@ impl LuaAstNode for LuaCallExpr {
         Self: Sized,
     {
         kind == LuaSyntaxKind::CallExpr
+            || kind == LuaSyntaxKind::AssertCallExpr
+            || kind == LuaSyntaxKind::ErrorCallExpr
+            || kind == LuaSyntaxKind::RequireCallExpr
     }
 
     fn cast(syntax: LuaSyntaxNode) -> Option<Self>
@@ -384,6 +393,18 @@ impl LuaCallExpr {
             LuaExpr::IndexExpr(index_expr) => index_expr.get_index_token(),
             _ => None,
         })
+    }
+
+    pub fn is_require(&self) -> bool {
+        self.syntax().kind() == LuaSyntaxKind::RequireCallExpr.into()
+    }
+
+    pub fn is_error(&self) -> bool {
+        self.syntax().kind() == LuaSyntaxKind::ErrorCallExpr.into()
+    }
+
+    pub fn is_assert(&self) -> bool {
+        self.syntax().kind() == LuaSyntaxKind::AssertCallExpr.into()
     }
 }
 

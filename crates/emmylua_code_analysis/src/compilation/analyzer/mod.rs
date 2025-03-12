@@ -77,6 +77,7 @@ fn module_analyze(
 #[derive(Debug)]
 pub struct AnalyzeContext {
     tree_list: Vec<InFiled<LuaChunk>>,
+    #[allow(unused)]
     config: Arc<Emmyrc>,
     unresolves: Vec<UnResolve>,
 }

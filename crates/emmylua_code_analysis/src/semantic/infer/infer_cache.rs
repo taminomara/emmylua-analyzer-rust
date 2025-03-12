@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    sync::Arc,
-};
+use std::{collections::HashMap, sync::Arc};
 
 use emmylua_parser::LuaSyntaxId;
 
@@ -9,7 +6,6 @@ use crate::{db_index::LuaType, FileId, LuaFunctionType};
 
 #[derive(Debug)]
 pub struct LuaInferCache {
-    require_function: HashSet<String>,
     file_id: FileId,
     expr_type_cache: HashMap<LuaSyntaxId, ExprCache>,
     call_expr_resolve_cache: HashMap<(LuaSyntaxId, Option<usize>), CallCache>,
@@ -28,21 +24,12 @@ pub enum CallCache {
 }
 
 impl LuaInferCache {
-    pub fn new(file_id: FileId, require_function: HashSet<String>) -> Self {
+    pub fn new(file_id: FileId) -> Self {
         Self {
-            require_function,
             file_id,
             expr_type_cache: HashMap::new(),
             call_expr_resolve_cache: HashMap::new(),
         }
-    }
-
-    pub fn is_require_function(&self, function_name: &str) -> bool {
-        if self.require_function.contains(function_name) {
-            return true;
-        }
-
-        function_name == "require"
     }
 
     pub fn get_file_id(&self) -> FileId {

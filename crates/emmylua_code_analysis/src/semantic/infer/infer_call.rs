@@ -23,13 +23,8 @@ pub fn infer_call_expr(
     call_expr: LuaCallExpr,
 ) -> Option<LuaType> {
     let prefix_expr = call_expr.get_prefix_expr()?;
-    if let LuaExpr::NameExpr(name_expr) = &prefix_expr {
-        let name = name_expr.get_name_text();
-        if let Some(func_name) = name {
-            if config.is_require_function(&func_name) {
-                return infer_require_call(db, config, call_expr);
-            }
-        }
+    if call_expr.is_require() {
+        return infer_require_call(db, config, call_expr);
     }
 
     check_can_infer(db, config, &call_expr)?;
