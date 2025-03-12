@@ -311,17 +311,10 @@ fn infer_call_arg_list(
     let parent = call_arg.get_parent::<LuaAst>()?;
     match parent {
         LuaAst::LuaCallExpr(call_expr) => {
-            if let LuaExpr::NameExpr(prefix_expr) = call_expr.get_prefix_expr()? {
-                let name_text = prefix_expr.get_name_text()?;
-                match name_text.as_str() {
-                    "type" => {
-                        infer_lua_type_assert(db, flow_chain, path, call_expr);
-                    }
-                    "assert" => {
-                        infer_lua_assert(db, flow_chain, type_assert, path, call_expr);
-                    }
-                    _ => {}
-                };
+            if call_expr.is_type() {
+                infer_lua_type_assert(db, flow_chain, path, call_expr);
+            } else if call_expr.is_assert() {
+                infer_lua_assert(db, flow_chain, type_assert, path, call_expr);
             }
         }
         _ => {}

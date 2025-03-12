@@ -44,6 +44,7 @@ impl<'cache> ParserConfig<'cache> {
             "require" => SpecialFunction::Require,
             "error" => SpecialFunction::Error,
             "assert" => SpecialFunction::Assert,
+            "type" => SpecialFunction::Type,
             _ => *self
                 .special_like
                 .get(name)
@@ -71,4 +72,5 @@ pub enum SpecialFunction {
     Require,
     Error,
     Assert,
+    Type,
 }

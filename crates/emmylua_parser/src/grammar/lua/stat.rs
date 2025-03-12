@@ -326,6 +326,7 @@ fn parse_assign_or_expr_stat(p: &mut LuaParser) -> ParseResult {
             | LuaSyntaxKind::AssertCallExpr
             | LuaSyntaxKind::ErrorCallExpr
             | LuaSyntaxKind::RequireCallExpr
+            | LuaSyntaxKind::TypeCallExpr
     ) {
         m.set_kind(p, LuaSyntaxKind::CallExprStat);
         if_token_bump(p, LuaTokenKind::TkSemicolon);

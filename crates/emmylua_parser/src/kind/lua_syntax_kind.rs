@@ -41,7 +41,8 @@ pub enum LuaSyntaxKind {
     CallExpr,        // a()
     RequireCallExpr, // require('a')
     ErrorCallExpr,   // error('a')
-    AssertCallExpr,  // assert(a, b)
+    AssertCallExpr,  // assert(a)
+    TypeCallExpr,    // type(a)
     IndexExpr,
     NameExpr,
 
