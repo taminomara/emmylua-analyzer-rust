@@ -3,7 +3,8 @@ use std::sync::Arc;
 use emmylua_parser::{LuaAstNode, LuaCallExpr};
 
 use crate::{
-    CacheEntry, CacheKey, DbIndex, LuaFunctionType, LuaGenericType, LuaOperatorMetaMethod, LuaSignatureId, LuaType, LuaTypeDeclId, LuaUnionType
+    CacheEntry, CacheKey, DbIndex, LuaFunctionType, LuaGenericType, LuaOperatorMetaMethod,
+    LuaSignatureId, LuaType, LuaTypeDeclId, LuaUnionType,
 };
 
 use super::super::{

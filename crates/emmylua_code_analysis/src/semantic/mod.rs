@@ -1,3 +1,4 @@
+mod cache;
 mod infer;
 mod instantiate;
 mod member;
@@ -6,13 +7,12 @@ mod reference;
 mod semantic_info;
 mod type_check;
 mod visibility;
-mod cache;
 
 use std::cell::RefCell;
 use std::{collections::HashSet, sync::Arc};
 
+pub use cache::{CacheEntry, CacheKey, LuaInferCache};
 use emmylua_parser::{LuaCallExpr, LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken, LuaTableExpr};
-pub use cache::{LuaInferCache, CacheKey, CacheEntry};
 use infer::{infer_table_should_be, InferResult};
 use member::infer_members;
 pub use member::LuaMemberInfo;

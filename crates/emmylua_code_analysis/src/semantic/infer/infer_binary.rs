@@ -2,7 +2,9 @@ use emmylua_parser::{BinaryOperator, LuaBinaryExpr};
 use smol_str::SmolStr;
 
 use crate::{
-    check_type_compact, db_index::{DbIndex, LuaOperatorMetaMethod, LuaType}, LuaInferCache, TypeOps
+    check_type_compact,
+    db_index::{DbIndex, LuaOperatorMetaMethod, LuaType},
+    LuaInferCache, TypeOps,
 };
 
 use super::{get_custom_type_operator, infer_expr, InferResult};
