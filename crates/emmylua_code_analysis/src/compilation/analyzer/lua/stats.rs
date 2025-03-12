@@ -7,7 +7,7 @@ use crate::{
     compilation::analyzer::unresolve::{
         merge_decl_expr_type, merge_member_type, UnResolveDecl, UnResolveIterVar, UnResolveMember,
     },
-    db_index::{LuaDeclId, LuaMemberId, LuaMemberOwner, LuaType},
+    db_index::{LuaDeclId, LuaMemberId, LuaMemberOwner, LuaOperatorMetaMethod, LuaType},
 };
 
 use super::LuaAnalyzer;
@@ -393,7 +393,41 @@ pub fn analyze_for_range_stat(
     let first_iter_type = analyzer.infer_expr(&first_iter_expr);
 
     if let Some(first_iter_type) = first_iter_type {
-        if let LuaType::DocFunction(doc_func) = first_iter_type {
+        let iter_doc_func = match first_iter_type {
+            LuaType::DocFunction(doc_func) => Some(doc_func),
+            LuaType::Ref(type_decl_id) => {
+                let type_decl = analyzer.db.get_type_index().get_type_decl(&type_decl_id)?;
+                if type_decl.is_alias() {
+                    let alias_origin = type_decl.get_alias_origin(analyzer.db, None)?;
+                    match alias_origin {
+                        LuaType::DocFunction(doc_func) => Some(doc_func),
+                        _ => None,
+                    }
+                } else if type_decl.is_class() {
+                    let operator_index = analyzer.db.get_operator_index();
+                    let operator_map = operator_index.get_operators_by_type(&type_decl_id)?;
+                    let operator_ids = operator_map.get(&LuaOperatorMetaMethod::Call)?;
+                    operator_ids
+                        .iter()
+                        .filter_map(|overload_id| {
+                            let operator = operator_index.get_operator(overload_id)?;
+                            let func = operator.get_call_operator_type()?;
+                            match func {
+                                LuaType::DocFunction(f) => {
+                                    return Some(f.clone());
+                                }
+                                _ => None,
+                            }
+                        })
+                        .nth(0)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        };
+
+        if let Some(doc_func) = iter_doc_func {
             let rets = doc_func.get_ret();
             let mut idx = 0;
             for var_name in var_name_list {
