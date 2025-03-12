@@ -62,7 +62,7 @@ pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> Inf
     if let Some(result_type) = &result_type {
         cache.add_cache(&key, CacheEntry::ExprCache(result_type.clone()));
     } else {
-        cache.ready_cache(&key);
+        cache.remove(&key);
     }
 
     result_type
