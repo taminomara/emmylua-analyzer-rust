@@ -59,8 +59,7 @@ fn check_index_expr(
         | LuaType::Table
         | LuaType::TplRef(_)
         | LuaType::StrTplRef(_)
-        | LuaType::TableConst(_)
-        | LuaType::Def(_) => return Some(()),
+        | LuaType::TableConst(_) => return Some(()),
         _ => {}
     }
 
