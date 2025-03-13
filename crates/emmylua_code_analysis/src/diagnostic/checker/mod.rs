@@ -1,5 +1,6 @@
 mod access_invisible;
 mod analyze_error;
+mod assign_type_mismatch;
 mod await_in_sync;
 mod check_field;
 mod circle_doc_class;
@@ -72,6 +73,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(check_field);
     check!(circle_doc_class);
     check!(incomplete_signature_doc);
+    check!(assign_type_mismatch);
 
     Some(())
 }
