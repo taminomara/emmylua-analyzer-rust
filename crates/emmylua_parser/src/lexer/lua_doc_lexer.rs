@@ -368,11 +368,14 @@ impl LuaDocLexer<'_> {
     fn lex_see(&mut self) -> LuaTokenKind {
         let reader = self.reader.as_mut().unwrap();
         match reader.current_char() {
-            '#' => {
-                reader.bump();
-                LuaTokenKind::TkLen
+            ' ' | '\t' => {
+                reader.eat_while(is_doc_whitespace);
+                LuaTokenKind::TkWhitespace
             }
-            _ => self.lex_normal(),
+            _ => {
+                reader.eat_while(|_| true);
+                LuaTokenKind::TkDocSeeContent
+            }
         }
     }
 

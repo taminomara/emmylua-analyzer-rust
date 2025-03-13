@@ -1,7 +1,7 @@
 use emmylua_parser::{
     BinaryOperator, LuaAst, LuaAstNode, LuaAstToken, LuaBlock, LuaDocDescriptionOwner, LuaDocTagAs,
     LuaDocTagCast, LuaDocTagModule, LuaDocTagOverload, LuaDocTagParam, LuaDocTagReturn,
-    LuaDocTagType, LuaExpr, LuaLocalName, LuaNameToken, LuaVarExpr,
+    LuaDocTagSee, LuaDocTagType, LuaExpr, LuaLocalName, LuaNameToken, LuaVarExpr,
 };
 use smol_str::SmolStr;
 
@@ -325,6 +325,19 @@ fn analyze_cast_with_name_token(
             }
         }
     }
+
+    Some(())
+}
+
+pub fn analyze_see(analyzer: &mut DocAnalyzer, tag: LuaDocTagSee) -> Option<()> {
+    let owner = get_owner_id(analyzer)?;
+    let content = tag.get_see_content()?;
+    let text = content.get_text();
+
+    analyzer
+        .db
+        .get_property_index_mut()
+        .add_see(analyzer.file_id, owner, text.to_string());
 
     Some(())
 }

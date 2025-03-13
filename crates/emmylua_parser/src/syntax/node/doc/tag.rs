@@ -1,8 +1,8 @@
 use crate::{
     kind::LuaSyntaxKind, syntax::traits::LuaAstNode, BinaryOperator, LuaAstChildren, LuaAstToken,
     LuaAstTokenChildren, LuaBinaryOpToken, LuaDocVersionNumberToken, LuaDocVisibilityToken,
-    LuaKind, LuaNameToken, LuaNumberToken, LuaPathToken, LuaStringToken, LuaSyntaxNode,
-    LuaTokenKind, LuaVersionCondition,
+    LuaGeneralToken, LuaKind, LuaNameToken, LuaNumberToken, LuaPathToken, LuaStringToken,
+    LuaSyntaxNode, LuaTokenKind, LuaVersionCondition,
 };
 
 use super::{
@@ -739,8 +739,8 @@ impl LuaAstNode for LuaDocTagSee {
 impl LuaDocDescriptionOwner for LuaDocTagSee {}
 
 impl LuaDocTagSee {
-    pub fn get_names(&self) -> LuaAstTokenChildren<LuaNameToken> {
-        self.tokens()
+    pub fn get_see_content(&self) -> Option<LuaGeneralToken> {
+        self.token_by_kind(LuaTokenKind::TkDocSeeContent)
     }
 }
 

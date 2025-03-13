@@ -89,10 +89,17 @@ fn generate_simple_global(db: &DbIndex, decl: &LuaDecl, context: &mut Context) -
     let property = db.get_property_index().get_property(&property_owner_id);
 
     let description = if let Some(property) = property {
-        *property
+        let des = property
             .description
             .clone()
             .unwrap_or("".to_string().into())
+            .to_string();
+
+        if let Some(see) = &property.see_content {
+            format!("{}\n See: {}\n", des, see)
+        } else {
+            des
+        }
     } else {
         "".to_string()
     };

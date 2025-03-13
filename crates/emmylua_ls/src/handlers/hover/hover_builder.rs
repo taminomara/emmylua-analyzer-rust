@@ -13,16 +13,18 @@ use super::{
 
 #[derive(Debug)]
 pub struct HoverBuilder<'a> {
-    /// 类型描述, 不包含 overload
+    /// Type description, does not include overload
     pub type_description: MarkedString,
-    /// 类的全路径
+    /// Full path of the class
     pub location_path: Option<MarkedString>,
-    /// 函数重载签名, 第一个是重载签名
+    /// Function overload signatures, with the first being the primary overload
     pub signature_overload: Option<Vec<MarkedString>>,
-    /// 注释描述, 包含函数参数与返回值描述
+    /// Annotation descriptions, including function parameters and return values
     pub annotation_description: Vec<MarkedString>,
-    /// 类型展开, 常用于 alias 类型
+    /// Type expansion, often used for alias types
     pub type_expansion: Option<Vec<String>>,
+    /// see
+    pub see_content: Option<String>,
 
     pub is_completion: bool,
     trigger_token: Option<LuaSyntaxToken>,
@@ -44,6 +46,7 @@ impl<'a> HoverBuilder<'a> {
             is_completion,
             trigger_token: token,
             type_expansion: None,
+            see_content: None,
         }
     }
 
@@ -117,46 +120,54 @@ impl<'a> HoverBuilder<'a> {
             .get_property_index()
             .get_property(&property_owner)?;
 
-        let detail = property.description.as_ref()?;
-        let mut description = detail.to_string();
+        if let Some(detail) = &property.description {
+            let mut description = detail.to_string();
 
-        match property_owner {
-            LuaPropertyOwnerId::Member(id) => {
-                if let Some(member) = self
-                    .semantic_model
-                    .get_db()
-                    .get_member_index()
-                    .get_member(&id)
-                {
-                    if let LuaMemberOwner::Type(ty) = &member.get_owner() {
-                        if is_std_by_name(&ty.get_name()) {
-                            let std_desc =
-                                hover_std_description(ty.get_name(), member.get_key().get_name());
+            match property_owner {
+                LuaPropertyOwnerId::Member(id) => {
+                    if let Some(member) = self
+                        .semantic_model
+                        .get_db()
+                        .get_member_index()
+                        .get_member(&id)
+                    {
+                        if let LuaMemberOwner::Type(ty) = &member.get_owner() {
+                            if is_std_by_name(&ty.get_name()) {
+                                let std_desc = hover_std_description(
+                                    ty.get_name(),
+                                    member.get_key().get_name(),
+                                );
+                                if !std_desc.is_empty() {
+                                    description = std_desc;
+                                }
+                            }
+                        }
+                    }
+                }
+                LuaPropertyOwnerId::LuaDecl(id) => {
+                    if let Some(decl) = self.semantic_model.get_db().get_decl_index().get_decl(&id)
+                    {
+                        if decl.is_global()
+                            && is_std_by_name(&decl.get_name())
+                            && is_std_by_path(self.semantic_model.get_db(), decl.get_file_id())
+                                .unwrap_or(false)
+                        {
+                            let std_desc = hover_std_description(decl.get_name(), None);
                             if !std_desc.is_empty() {
                                 description = std_desc;
                             }
                         }
                     }
                 }
+                _ => {}
             }
-            LuaPropertyOwnerId::LuaDecl(id) => {
-                if let Some(decl) = self.semantic_model.get_db().get_decl_index().get_decl(&id) {
-                    if decl.is_global()
-                        && is_std_by_name(&decl.get_name())
-                        && is_std_by_path(self.semantic_model.get_db(), decl.get_file_id())
-                            .unwrap_or(false)
-                    {
-                        let std_desc = hover_std_description(decl.get_name(), None);
-                        if !std_desc.is_empty() {
-                            description = std_desc;
-                        }
-                    }
-                }
-            }
-            _ => {}
+
+            self.add_annotation_description(description);
         }
 
-        self.add_annotation_description(description);
+        if let Some(see) = &property.see_content {
+            self.see_content = Some(see.to_string());
+        }
         Some(())
     }
 
@@ -274,6 +285,10 @@ impl<'a> HoverBuilder<'a> {
                     result.push_str(&format!("\n```{}\n{}\n```\n", s.language, s.value));
                 }
             }
+        }
+
+        if let Some(see_content) = &self.see_content {
+            result.push_str(&format!("\nSee: {}\n", see_content));
         }
 
         if let Some(signature_overload) = &self.signature_overload {

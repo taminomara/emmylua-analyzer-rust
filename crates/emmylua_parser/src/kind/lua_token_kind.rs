@@ -137,6 +137,7 @@ pub enum LuaTokenKind {
     TKDocPath,            // path
     TkDocRegion,          // region
     TkDocEndRegion,       // endregion
+    TkDocSeeContent,      // see content
 }
 
 impl fmt::Display for LuaTokenKind {

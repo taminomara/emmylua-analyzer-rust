@@ -168,7 +168,7 @@ fn build_tokens_semantic_token(
         LuaTokenKind::TkDocMatch => {
             builder.push(token, SemanticTokenType::KEYWORD);
         }
-        LuaTokenKind::TKDocPath => {
+        LuaTokenKind::TKDocPath | LuaTokenKind::TkDocSeeContent => {
             builder.push(token, SemanticTokenType::STRING);
         }
         LuaTokenKind::TkDocRegion | LuaTokenKind::TkDocEndRegion => {

@@ -3,7 +3,7 @@ mod goto_doc_see;
 mod goto_module_file;
 
 use emmylua_parser::{
-    LuaAstNode, LuaAstToken, LuaDocTagSee, LuaNameToken, LuaStringToken, LuaTokenKind,
+    LuaAstNode, LuaAstToken, LuaDocTagSee, LuaGeneralToken, LuaStringToken, LuaTokenKind,
 };
 use goto_def_definition::goto_def_definition;
 use goto_doc_see::goto_doc_see;
@@ -56,9 +56,10 @@ pub async fn on_goto_definition_handler(
         if let Some(module_response) = goto_module_file(&semantic_model, string_token) {
             return Some(module_response);
         }
-    } else if let Some(name_token) = LuaNameToken::cast(token.clone()) {
-        if let Some(doc_see) = name_token.get_parent::<LuaDocTagSee>() {
-            return goto_doc_see(&semantic_model, doc_see, name_token);
+    } else if token.kind() == LuaTokenKind::TkDocSeeContent.into() {
+        let general_token = LuaGeneralToken::cast(token.clone())?;
+        if let Some(_) = general_token.get_parent::<LuaDocTagSee>() {
+            return goto_doc_see(&semantic_model, general_token);
         }
     }
 

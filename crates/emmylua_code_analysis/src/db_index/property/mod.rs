@@ -147,6 +147,23 @@ impl LuaPropertyIndex {
         Some(())
     }
 
+    pub fn add_see(
+        &mut self,
+        file_id: FileId,
+        owner_id: LuaPropertyOwnerId,
+        see_content: String,
+    ) -> Option<()> {
+        let property = self.get_or_create_property(owner_id.clone())?;
+        property.see_content = Some(Box::new(see_content));
+
+        self.in_filed_owner
+            .entry(file_id)
+            .or_insert_with(HashSet::new)
+            .insert(owner_id);
+
+        Some(())
+    }
+
     pub fn get_property(&self, owner_id: &LuaPropertyOwnerId) -> Option<&LuaProperty> {
         self.property_owners_map
             .get(&owner_id)

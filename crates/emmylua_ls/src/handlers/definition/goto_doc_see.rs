@@ -1,21 +1,13 @@
 use emmylua_code_analysis::{LuaMemberKey, LuaMemberOwner, SemanticModel};
-use emmylua_parser::{LuaAstToken, LuaDocTagSee, LuaNameToken};
+use emmylua_parser::{LuaAstToken, LuaGeneralToken};
 use lsp_types::GotoDefinitionResponse;
 
 pub fn goto_doc_see(
     semantic_model: &SemanticModel,
-    doc_see: LuaDocTagSee,
-    see_name: LuaNameToken,
+    content_token: LuaGeneralToken,
 ) -> Option<GotoDefinitionResponse> {
-    let name_tokens = doc_see.get_names();
-    let mut name_parts = Vec::new();
-    for name_token in name_tokens {
-        let name = name_token.get_name_text();
-        name_parts.push(name.to_string());
-        if name_token.get_position() == see_name.get_position() {
-            break;
-        }
-    }
+    let text = content_token.get_text();
+    let name_parts = text.split('#').collect::<Vec<_>>();
 
     match name_parts.len() {
         1 => {

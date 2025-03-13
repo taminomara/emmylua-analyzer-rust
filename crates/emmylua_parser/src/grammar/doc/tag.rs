@@ -359,16 +359,12 @@ fn parse_tag_generic(p: &mut LuaDocParser) -> ParseResult {
 
 // ---@see <name>
 // ---@see <name>#<name>
+// ---@see <any conent>
 fn parse_tag_see(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::See);
     let m = p.mark(LuaSyntaxKind::DocTagSee);
     p.bump();
-    expect_token(p, LuaTokenKind::TkName)?;
-    while p.current_token() == LuaTokenKind::TkLen {
-        p.bump();
-        expect_token(p, LuaTokenKind::TkName)?;
-    }
-
+    expect_token(p, LuaTokenKind::TkDocSeeContent)?;
     p.set_state(LuaDocLexerState::Description);
     parse_description(p);
     Ok(m.complete(p))

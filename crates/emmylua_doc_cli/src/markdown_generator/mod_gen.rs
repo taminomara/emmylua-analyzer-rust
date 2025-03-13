@@ -107,10 +107,17 @@ pub fn generate_member_owner_module(
             }
 
             let description = if let Some(member_property) = member_property {
-                *member_property
+                let des = member_property
                     .description
                     .clone()
                     .unwrap_or("".to_string().into())
+                    .to_string();
+
+                if let Some(see) = &member_property.see_content {
+                    format!("{}\n See: {}\n", des, see)
+                } else {
+                    des
+                }
             } else {
                 "".to_string()
             };
