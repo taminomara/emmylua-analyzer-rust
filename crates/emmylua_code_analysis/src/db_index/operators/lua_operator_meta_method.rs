@@ -21,6 +21,7 @@ pub enum LuaOperatorMetaMethod {
     Le,     // <=
     Index,  // __index
     Call,   // __call
+    Pairs,  // __pairs unimplemented
 }
 
 impl LuaOperatorMetaMethod {
@@ -46,6 +47,7 @@ impl LuaOperatorMetaMethod {
             "lt" => Some(LuaOperatorMetaMethod::Lt),
             "le" => Some(LuaOperatorMetaMethod::Le),
             "call" => Some(LuaOperatorMetaMethod::Call),
+            "pairs" => Some(LuaOperatorMetaMethod::Pairs),
             _ => None,
         }
     }

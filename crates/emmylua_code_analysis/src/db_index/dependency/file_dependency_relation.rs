@@ -55,6 +55,31 @@ impl<'a> FileDenpendencyRelation<'a> {
         }
         order
     }
+
+    /// Get all direct and indirect dependencies for the file list
+    pub fn collect_file_dependents(&self, file_ids: Vec<FileId>) -> Vec<FileId> {
+        let mut reverse_map: HashMap<FileId, Vec<FileId>> = HashMap::new();
+        for (&fid, deps) in self.dependencies.iter() {
+            for &dep in deps {
+                reverse_map.entry(dep).or_default().push(fid);
+            }
+        }
+        let mut result = HashSet::new();
+        let mut queue = VecDeque::new();
+        for file_id in file_ids {
+            queue.push_back(file_id);
+        }
+        while let Some(file_id) = queue.pop_front() {
+            if let Some(dependents) = reverse_map.get(&file_id) {
+                for &d in dependents {
+                    if result.insert(d) {
+                        queue.push_back(d);
+                    }
+                }
+            }
+        }
+        result.into_iter().collect()
+    }
 }
 
 #[cfg(test)]
@@ -92,5 +117,22 @@ mod tests {
         let rel = FileDenpendencyRelation::new(&map);
         let result = rel.get_best_analysis_order(vec![1.into(), 2.into(), 3.into(), 4.into()]);
         assert_eq!(result, vec![3.into(), 4.into(), 2.into(), 1.into()]);
+    }
+
+    #[test]
+    fn test_collect_file_dependents() {
+        let mut deps = HashMap::new();
+        deps.insert(
+            FileId::new(1),
+            [FileId::new(2), FileId::new(3)].iter().cloned().collect(),
+        );
+        deps.insert(FileId::new(2), [FileId::new(3)].iter().cloned().collect());
+        deps.insert(FileId::new(3), HashSet::new());
+        deps.insert(FileId::new(4), [FileId::new(3)].iter().cloned().collect());
+
+        let rel = FileDenpendencyRelation::new(&deps);
+        let mut result = rel.collect_file_dependents(vec![FileId::new(3)]);
+        result.sort();
+        assert_eq!(result, vec![FileId::new(1), FileId::new(2), FileId::new(4)]);
     }
 }
