@@ -5,14 +5,14 @@ use emmylua_parser::{
 use rowan::TextRange;
 
 use crate::{
-    DiagnosticCode, LuaDeclId, LuaPropertyOwnerId, LuaType, SemanticModel, TypeCheckResult,
+    DiagnosticCode, LuaDeclId, LuaPropertyOwnerId, LuaType, SemanticModel, TypeCheckFailReason,
+    TypeCheckResult,
 };
 
 use super::{humanize_lint_type, DiagnosticContext};
 
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::AssignTypeMismatch];
 
-#[allow(unused)]
 pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
     let root = semantic_model.get_root().clone();
     for node in root.descendants::<LuaAst>() {
@@ -44,7 +44,6 @@ fn check_assign_stat(
                 check_name_expr(context, semantic_model, name_expr, expr.clone());
             }
         }
-        check_table_expr(context, semantic_model, expr);
     }
     Some(())
 }
@@ -67,16 +66,16 @@ fn check_name_expr(
         }
         _ => None,
     };
-    let expr_type = semantic_model.infer_expr(expr);
+    let expr_type = semantic_model.infer_expr(expr.clone());
     check_assign_type_mismatch(
         context,
         semantic_model,
         name_expr.get_range(),
-        origin_type,
+        origin_type.clone(),
         expr_type,
         false,
     );
-    Some(())
+    handle_value_is_table_expr(context, semantic_model, origin_type, &expr)
 }
 
 fn check_index_expr(
@@ -87,16 +86,16 @@ fn check_index_expr(
 ) -> Option<()> {
     let member_info =
         semantic_model.get_semantic_info(rowan::NodeOrToken::Node(index_expr.syntax().clone()))?;
-    let expr_type = semantic_model.infer_expr(expr);
+    let expr_type = semantic_model.infer_expr(expr.clone());
     check_assign_type_mismatch(
         context,
         semantic_model,
         index_expr.get_range(),
-        Some(member_info.typ),
+        Some(member_info.typ.clone()),
         expr_type,
         true,
     );
-    Some(())
+    handle_value_is_table_expr(context, semantic_model, Some(member_info.typ), &expr)
 }
 
 fn check_local_stat(
@@ -116,7 +115,12 @@ fn check_local_stat(
             .get_decl_index()
             .get_decl(&decl_id)?;
         let value_expr = LuaExpr::cast(decl.get_value_syntax_id()?.to_node_from_root(root)?)?;
-        check_table_expr(context, semantic_model, &value_expr);
+        handle_value_is_table_expr(
+            context,
+            semantic_model,
+            decl.get_type().cloned(),
+            &value_expr,
+        );
         check_assign_type_mismatch(
             context,
             semantic_model,
@@ -129,14 +133,15 @@ fn check_local_stat(
     Some(())
 }
 
-// 处理 value_expr 是 TableExpr 的情况
-fn check_table_expr(
+// 处理 value_expr 是 TableExpr 的情况, 但不会处理 `local a = { x = 1 }, local v = a`
+fn handle_value_is_table_expr(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
+    table_type: Option<LuaType>,
     value_expr: &LuaExpr,
 ) -> Option<()> {
+    let table_type = table_type?;
     let table_expr = LuaTableExpr::cast(value_expr.syntax().clone())?;
-    let table_type = semantic_model.infer_table_should_be(table_expr.clone())?;
     let member_infos = semantic_model.infer_member_infos(&table_type)?;
     table_expr.get_fields().for_each(|field| {
         let field_key = field.get_field_key();
@@ -218,21 +223,38 @@ fn add_type_check_diagnostic(
     value_type: &LuaType,
     result: TypeCheckResult,
 ) {
+    let db = semantic_model.get_db();
     match result {
         Ok(_) => return,
-        Err(_) => {
-            let db = semantic_model.get_db();
-            context.add_diagnostic(
-                DiagnosticCode::AssignTypeMismatch,
-                range,
-                t!(
-                    "Cannot assign `%{value}` to `%{source}`.",
-                    value = humanize_lint_type(db, &value_type),
-                    source = humanize_lint_type(db, &source_type)
-                )
-                .to_string(),
-                None,
-            );
-        }
+        Err(reason) => match reason {
+            TypeCheckFailReason::TypeNotMatchWithReason(reason) => {
+                context.add_diagnostic(
+                    DiagnosticCode::AssignTypeMismatch,
+                    range,
+                    t!(
+                        "Cannot assign `%{value}` to `%{source}`. %{reason}",
+                        value = humanize_lint_type(db, &value_type),
+                        source = humanize_lint_type(db, &source_type),
+                        reason = reason
+                    )
+                    .to_string(),
+                    None,
+                );
+            }
+            _ => {
+                context.add_diagnostic(
+                    DiagnosticCode::AssignTypeMismatch,
+                    range,
+                    t!(
+                        "Cannot assign `%{value}` to `%{source}`. %{reason}",
+                        value = humanize_lint_type(db, &value_type),
+                        source = humanize_lint_type(db, &source_type),
+                        reason = ""
+                    )
+                    .to_string(),
+                    None,
+                );
+            }
+        },
     }
 }

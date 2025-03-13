@@ -2,66 +2,29 @@
 mod tests {
     use crate::{DiagnosticCode, VirtualWorkspace};
 
-    //     /// 暂时无法解决的测试
-    //     #[test]
-    //     fn test_error() {
-    //         let mut ws = VirtualWorkspace::new();
+    /// 暂时无法解决的测试
+    #[test]
+    fn test_error() {
+        // let mut ws = VirtualWorkspace::new();
 
-    //         // 推断类型异常
-    //         assert!(ws.check_code_for_namespace(
-    //             DiagnosticCode::AssignTypeMismatch,
-    //             r#"
-    // local n
+        // 推断类型异常
+        // assert!(ws.check_code_for_namespace(
+        //     DiagnosticCode::AssignTypeMismatch,
+        //     r#"
+        // local n
 
-    // if G then
-    //     n = {}
-    // else
-    //     n = nil
-    // end
+        // if G then
+        //     n = {}
+        // else
+        //     n = nil
+        // end
 
-    // local t = {
-    //     x = n,
-    // }
-    //             "#
-    //         ));
-
-    //         // 类型匹配没有解决类继承的情况
-    //         assert!(ws.check_code_for_namespace(
-    //             DiagnosticCode::AssignTypeMismatch,
-    //             r#"
-    // ---@class Option: string
-
-    // ---@param x Option
-    // local function f(x) end
-
-    // ---@type Option
-    // local x = 'aaa'
-
-    // f(x)
-    //             "#
-    //         ));
-
-    //         // 类型匹配没有解决类继承的情况
-    //         assert!(ws.check_code_for_namespace(
-    //             DiagnosticCode::AssignTypeMismatch,
-    //             r#"
-    // ---@class A
-    // local a = {}
-
-    // ---@class B: A
-    // local b = a
-    //             "#
-    //         ));
-
-    //         // 数组类型匹配中不允许可空, 但luals中允许的
-    //         assert!(ws.check_code_for_namespace(
-    //             DiagnosticCode::AssignTypeMismatch,
-    //             r#"
-    // ---@type boolean[]
-    // local t = { true, false, nil }
-    //             "#
-    //         ));
-    //     }
+        // local t = {
+        //     x = n,
+        // }
+        //             "#
+        // ));
+    }
 
     #[test]
     fn test_valid_cases() {
@@ -176,7 +139,6 @@ local t = {
             "#
         ));
 
-        let mut ws = VirtualWorkspace::new();
         assert!(ws.check_code_for_namespace(
             DiagnosticCode::AssignTypeMismatch,
             r#"
@@ -437,6 +399,49 @@ t.a = 1
 t.a = 2
 return t
             "#
+        ));
+    }
+
+    // 可能需要处理的
+    #[test]
+    fn test_pending() {
+        let mut ws = VirtualWorkspace::new();
+        // 不能直接向下转型.
+        // TODO 可以考虑允许向下转型, 转型时匹配类型字段是子集即可
+        assert!(!ws.check_code_for_namespace(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            ---@class A
+            local a = {}
+
+            ---@class B: A
+            local b = a
+                "#
+        ));
+
+        // 不能直接向下转型.
+        assert!(!ws.check_code_for_namespace(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            ---@class Option: string
+        
+            ---@param x Option
+            local function f(x) end
+        
+            ---@type Option
+            local x = 'aaa'
+        
+            f(x)
+                        "#
+        ));
+
+        // 数组类型匹配允许可空, 但在初始化赋值时, 不允许直接赋值`nil`(其实是偷懒了, table_expr 推断没有处理边缘情况, 可能后续会做处理允许)
+        assert!(!ws.check_code_for_namespace(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+        ---@type boolean[]
+        local t = { true, false, nil }
+                    "#
         ));
     }
 }

@@ -165,7 +165,7 @@ Cannot use `...` outside a vararg function.:
   en: 'Incomplete signature. Missing @return annotation at index `%{index}`.'
   zh_CN: '不完整的签名。第 `%{index}` 个返回值缺少 @return 注解。'
   zh_HK: '不完整的簽名。第 `%{index}` 個回傳值缺少 @return 註釋。'
-'Cannot assign `%{value}` to `%{source}`.':
-  en: 'Cannot assign `%{value}` to `%{source}`. '
-  zh_CN: '不能将 `%{value}` 赋值给 `%{source}`。'
-  zh_HK: '不能將 `%{value}` 賦值給 `%{source}`。'
+'Cannot assign `%{value}` to `%{source}`. %{reason}':
+  en: 'Cannot assign `%{value}` to `%{source}`. %{reason}'
+  zh_CN: '不能将 `%{value}` 赋值给 `%{source}`。%{reason}'
+  zh_HK: '不能將 `%{value}` 賦值給 `%{source}`。%{reason}'
