@@ -400,19 +400,6 @@ fn parse_suffixed_type(p: &mut LuaDocParser, cm: CompleteMarker) -> ParseResult 
                 cm = m.complete(p);
                 return Ok(cm);
             }
-            LuaTokenKind::TkStringTemplateType => {
-                if only_continue_array {
-                    return Ok(cm);
-                }
-                if cm.kind != LuaSyntaxKind::TypeName {
-                    return Ok(cm);
-                }
-
-                let m = cm.precede(p, LuaSyntaxKind::TypeStringTemplate);
-                p.bump();
-                cm = m.complete(p);
-                return Ok(cm);
-            }
             _ => return Ok(cm),
         }
     }

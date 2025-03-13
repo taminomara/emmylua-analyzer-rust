@@ -28,11 +28,8 @@ pub fn tpl_pattern_match(
         LuaType::StrTplRef(str_tpl) => match target {
             LuaType::StringConst(s) => {
                 let prefix = str_tpl.get_prefix();
-                let type_name = if prefix.is_empty() {
-                    s.deref().clone()
-                } else {
-                    SmolStr::new(format!("{}{}", prefix, s))
-                };
+                let suffix = str_tpl.get_suffix();
+                let type_name = SmolStr::new(format!("{}{}{}", prefix, s, suffix));
                 substitutor.insert_type(str_tpl.get_tpl_id(), type_name.into());
             }
             _ => {}

@@ -2319,4 +2319,63 @@ Syntax(Chunk)@0..61
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_str_tpl() {
+        let code = r#"
+        ---@param a aaa.`T`.bbbb
+        ---@param a aaa.`T`
+        ---@param a `T`.bbbb
+        ---@param a `T`
+        "#;
+        let result = r#"
+Syntax(Chunk)@0..123
+  Syntax(Block)@0..123
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..114
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagParam)@13..33
+        Token(TkTagParam)@13..18 "param"
+        Token(TkWhitespace)@18..19 " "
+        Token(TkName)@19..20 "a"
+        Token(TkWhitespace)@20..21 " "
+        Syntax(TypeStringTemplate)@21..33
+          Token(TkStringTemplateType)@21..33 "aaa.`T`.bbbb"
+      Token(TkEndOfLine)@33..34 "\n"
+      Token(TkWhitespace)@34..42 "        "
+      Token(TkDocStart)@42..46 "---@"
+      Syntax(DocTagParam)@46..61
+        Token(TkTagParam)@46..51 "param"
+        Token(TkWhitespace)@51..52 " "
+        Token(TkName)@52..53 "a"
+        Token(TkWhitespace)@53..54 " "
+        Syntax(TypeStringTemplate)@54..61
+          Token(TkStringTemplateType)@54..61 "aaa.`T`"
+      Token(TkEndOfLine)@61..62 "\n"
+      Token(TkWhitespace)@62..70 "        "
+      Token(TkDocStart)@70..74 "---@"
+      Syntax(DocTagParam)@74..90
+        Token(TkTagParam)@74..79 "param"
+        Token(TkWhitespace)@79..80 " "
+        Token(TkName)@80..81 "a"
+        Token(TkWhitespace)@81..82 " "
+        Syntax(TypeStringTemplate)@82..90
+          Token(TkStringTemplateType)@82..90 "`T`.bbbb"
+      Token(TkEndOfLine)@90..91 "\n"
+      Token(TkWhitespace)@91..99 "        "
+      Token(TkDocStart)@99..103 "---@"
+      Syntax(DocTagParam)@103..114
+        Token(TkTagParam)@103..108 "param"
+        Token(TkWhitespace)@108..109 " "
+        Token(TkName)@109..110 "a"
+        Token(TkWhitespace)@110..111 " "
+        Syntax(TypeStringTemplate)@111..114
+          Token(TkStringTemplateType)@111..114 "`T`"
+    Token(TkEndOfLine)@114..115 "\n"
+    Token(TkWhitespace)@115..123 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
 }

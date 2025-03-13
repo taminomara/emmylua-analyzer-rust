@@ -2,6 +2,7 @@ mod closure_param_infer_test;
 mod closure_return_test;
 mod flow;
 mod for_range_var_infer_test;
+mod infer_str_tpl_test;
 mod inherit_type;
 mod mathlib_test;
 mod multi_return;

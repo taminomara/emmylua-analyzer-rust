@@ -910,14 +910,16 @@ pub struct LuaStringTplType {
     prefix: ArcIntern<String>,
     tpl_id: GenericTplId,
     name: ArcIntern<String>,
+    suffix: ArcIntern<String>,
 }
 
 impl LuaStringTplType {
-    pub fn new(prefix: &str, name: &str, tpl_id: GenericTplId) -> Self {
+    pub fn new(prefix: &str, name: &str, tpl_id: GenericTplId, suffix: &str) -> Self {
         Self {
             prefix: ArcIntern::new(prefix.to_string()),
             tpl_id,
             name: ArcIntern::new(name.to_string()),
+            suffix: ArcIntern::new(suffix.to_string()),
         }
     }
 
@@ -931,6 +933,10 @@ impl LuaStringTplType {
 
     pub fn get_name(&self) -> &str {
         &self.name
+    }
+
+    pub fn get_suffix(&self) -> &str {
+        &self.suffix
     }
 }
 

@@ -466,24 +466,20 @@ fn infer_object_type(analyzer: &mut DocAnalyzer, object_type: LuaDocObjectType) 
 }
 
 fn infer_str_tpl(analyzer: &mut DocAnalyzer, str_tpl: LuaDocStrTplType) -> LuaType {
-    let prefix = match str_tpl.get_prefix() {
-        Some(prefix) => prefix,
-        None => "".to_string(),
-    };
-
-    let name = match str_tpl.get_tpl_name() {
-        Some(name) => name,
-        None => return LuaType::Unknown,
-    };
-
-    let typ = infer_buildin_or_ref_type(analyzer, &name, str_tpl.get_range());
-    if let LuaType::TplRef(tpl) = typ {
-        let tpl_id = tpl.get_tpl_id();
-        if tpl_id.is_func() {
-            let str_tpl_type = LuaStringTplType::new(&prefix, &tpl.get_name(), tpl_id);
-            return LuaType::StrTplRef(str_tpl_type.into());
+    let (prefix, tpl_name, suffix) = str_tpl.get_name();
+    if let Some(tpl) = tpl_name {
+        let typ = infer_buildin_or_ref_type(analyzer, &tpl, str_tpl.get_range());
+        if let LuaType::TplRef(tpl) = typ {
+            let tpl_id = tpl.get_tpl_id();
+            let prefix = prefix.unwrap_or("".to_string());
+            let suffix = suffix.unwrap_or("".to_string());
+            if tpl_id.is_func() {
+                let str_tpl_type = LuaStringTplType::new(&prefix, &tpl.get_name(), tpl_id, &suffix);
+                return LuaType::StrTplRef(str_tpl_type.into());
+            }
         }
     }
+
     LuaType::Unknown
 }
 

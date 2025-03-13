@@ -12,6 +12,18 @@
 
 `NEW` Aliases and overloads of iterator functions (i.e `fun(v: any): (K, V)` where `K` is the key type and `V` is the value type) are now used to infer types in `for` loops
 
+`NEW` Compact luals string template syntax like: xxx`T`, `T`, `T`XXX, usage:
+```lua
+
+---@generic T
+---@class aaa.`T`.bbb
+---@return T
+function get_type(a)
+end
+
+local d = get_type('xxx') --- aaa.xxx.bbb
+```
+
 # 0.5.4
 
 `Fix` Fix generic dots params type check

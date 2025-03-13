@@ -636,15 +636,20 @@ impl LuaAstNode for LuaDocStrTplType {
 }
 
 impl LuaDocStrTplType {
-    pub fn get_prefix(&self) -> Option<String> {
-        let name_type = self.child::<LuaDocNameType>()?;
-        Some(name_type.get_name_token()?.get_name_text().to_string())
-    }
+    /// `T` or  xxx.`T` or xxx.`T`.xxxx
+    pub fn get_name(&self) -> (Option<String>, Option<String>, Option<String>) {
+        let str_tpl = self.token_by_kind(LuaTokenKind::TkStringTemplateType);
+        if str_tpl.is_none() {
+            return (None, None, None);
+        }
+        let str_tpl = str_tpl.unwrap();
+        let text = str_tpl.get_text();
+        let mut iter = text.split('`');
+        let first = iter.next().map(|it| it.to_string());
+        let second = iter.next().map(|it| it.to_string());
+        let third = iter.next().map(|it| it.to_string());
 
-    pub fn get_tpl_name(&self) -> Option<String> {
-        let str_tpl = self.token_by_kind(LuaTokenKind::TkStringTemplateType)?;
-
-        Some(str_tpl.syntax().text().trim_matches('`').to_string())
+        (first, second, third)
     }
 }
 

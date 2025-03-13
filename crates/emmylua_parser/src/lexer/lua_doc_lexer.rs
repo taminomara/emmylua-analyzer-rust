@@ -288,17 +288,11 @@ impl LuaDocLexer<'_> {
 
                 LuaTokenKind::TkString
             }
-            '`' => {
-                reader.bump();
-                reader.eat_while(|c| c != '`');
-                if reader.current_char() == '`' {
-                    reader.bump();
+            ch if is_name_start(ch) || ch == '`' => {
+                let (text, str_tpl) = read_doc_name(reader);
+                if str_tpl {
+                    return LuaTokenKind::TkStringTemplateType;
                 }
-
-                LuaTokenKind::TkStringTemplateType
-            }
-            ch if is_name_start(ch) => {
-                let text = read_doc_name(reader);
                 to_token_or_name(text)
             }
             _ => {
@@ -312,7 +306,7 @@ impl LuaDocLexer<'_> {
         let reader = self.reader.as_mut().unwrap();
         match reader.current_char() {
             ch if is_name_start(ch) => {
-                let text = read_doc_name(reader);
+                let (text, _) = read_doc_name(reader);
                 to_modification_or_name(text)
             }
             _ => self.lex_normal(),
@@ -416,7 +410,7 @@ impl LuaDocLexer<'_> {
                 LuaTokenKind::TkDocVersionNumber
             }
             ch if is_name_start(ch) => {
-                let text = read_doc_name(reader);
+                let (text, _) = read_doc_name(reader);
                 match text {
                     "JIT" => LuaTokenKind::TkDocVersionNumber,
                     _ => LuaTokenKind::TkName,
@@ -533,15 +527,15 @@ fn is_doc_whitespace(ch: char) -> bool {
     ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'
 }
 
-fn read_doc_name<'a>(reader: &'a mut Reader) -> &'a str {
+fn read_doc_name<'a>(reader: &'a mut Reader) -> (&'a str, bool /* str tpl */) {
     reader.bump();
-
+    let mut str_tpl = false;
     while !reader.is_eof() {
         match reader.current_char() {
             ch if is_name_continue(ch) => {
                 reader.bump();
             }
-            // donot continue if next char is '.' or '-' or '*'
+            // donot continue if next char is '.' or '-' or '*' or '`'
             '.' | '-' | '*' => {
                 let next = reader.next_char();
                 if next == '.' || next == '-' || next == '*' {
@@ -550,10 +544,15 @@ fn read_doc_name<'a>(reader: &'a mut Reader) -> &'a str {
 
                 reader.bump();
             }
+            '`' => {
+                str_tpl = true;
+                reader.bump();
+            }
             _ => break,
         }
     }
-    reader.current_saved_text()
+
+    (reader.current_saved_text(), str_tpl)
 }
 
 fn is_source_continue(ch: char) -> bool {
