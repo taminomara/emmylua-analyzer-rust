@@ -1347,9 +1347,7 @@ Syntax(Chunk)@0..33
       Syntax(DocTagSee)@13..24
         Token(TkTagSee)@13..16 "see"
         Token(TkWhitespace)@16..17 " "
-        Token(TkName)@17..20 "aaa"
-        Token(TkLen)@20..21 "#"
-        Token(TkName)@21..24 "bbb"
+        Token(TkDocSeeContent)@17..24 "aaa#bbb"
     Token(TkEndOfLine)@24..25 "\n"
     Token(TkWhitespace)@25..33 "        "
         "##;

@@ -359,7 +359,7 @@ fn parse_tag_generic(p: &mut LuaDocParser) -> ParseResult {
 
 // ---@see <name>
 // ---@see <name>#<name>
-// ---@see <any conent>
+// ---@see <any content>
 fn parse_tag_see(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::See);
     let m = p.mark(LuaSyntaxKind::DocTagSee);

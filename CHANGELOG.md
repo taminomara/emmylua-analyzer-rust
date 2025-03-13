@@ -24,6 +24,8 @@ end
 local d = get_type('xxx') --- aaa.xxx.bbb
 ```
 
+`NEW` Support `@see` any thing
+
 # 0.5.4
 
 `Fix` Fix generic dots params type check
