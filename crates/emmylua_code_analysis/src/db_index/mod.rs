@@ -1,4 +1,5 @@
 mod declaration;
+mod dependency;
 mod diagnostic;
 mod flow;
 mod member;
@@ -15,6 +16,7 @@ use std::sync::Arc;
 
 use crate::{Emmyrc, FileId, Vfs};
 pub use declaration::*;
+use dependency::LuaDenpendencyIndex;
 pub use diagnostic::{AnalyzeError, DiagnosticAction, DiagnosticActionKind, DiagnosticIndex};
 pub use flow::{LuaFlowChain, LuaFlowId, LuaFlowIndex};
 pub use member::{LuaMember, LuaMemberId, LuaMemberIndex, LuaMemberKey, LuaMemberOwner};
@@ -42,6 +44,7 @@ pub struct DbIndex {
     operator_index: LuaOperatorIndex,
     flow_index: LuaFlowIndex,
     vfs: Vfs,
+    file_dependencies_index: LuaDenpendencyIndex,
     emmyrc: Arc<Emmyrc>,
 }
 
@@ -61,6 +64,7 @@ impl DbIndex {
             operator_index: LuaOperatorIndex::new(),
             flow_index: LuaFlowIndex::new(),
             vfs: Vfs::new(),
+            file_dependencies_index: LuaDenpendencyIndex::new(),
             emmyrc: Arc::new(Emmyrc::default()),
         }
     }
@@ -167,6 +171,14 @@ impl DbIndex {
         &mut self.vfs
     }
 
+    pub fn get_file_dependencies_index(&self) -> &LuaDenpendencyIndex {
+        &self.file_dependencies_index
+    }
+
+    pub fn get_file_dependencies_index_mut(&mut self) -> &mut LuaDenpendencyIndex {
+        &mut self.file_dependencies_index
+    }
+
     pub fn update_config(&mut self, config: Arc<Emmyrc>) {
         self.vfs.update_config(config.clone());
         self.modules_index.update_config(config.clone());
@@ -191,6 +203,7 @@ impl LuaIndex for DbIndex {
         self.diagnostic_index.remove(file_id);
         self.operator_index.remove(file_id);
         self.flow_index.remove(file_id);
+        self.file_dependencies_index.remove(file_id);
     }
 
     fn clear(&mut self) {
@@ -205,5 +218,6 @@ impl LuaIndex for DbIndex {
         self.diagnostic_index.clear();
         self.operator_index.clear();
         self.flow_index.clear();
+        self.file_dependencies_index.clear();
     }
 }

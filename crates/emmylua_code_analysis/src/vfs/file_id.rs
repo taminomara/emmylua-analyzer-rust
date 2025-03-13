@@ -27,11 +27,17 @@ impl<'de> Deserialize<'de> for FileId {
 }
 
 impl FileId {
-    pub fn new() -> Self {
-        FileId { id: 0 }
+    pub fn new(id: u32) -> Self {
+        FileId { id }
     }
 
     pub const VIRTUAL: FileId = FileId { id: u32::MAX };
+}
+
+impl From<u32> for FileId {
+    fn from(id: u32) -> Self {
+        FileId { id }
+    }
 }
 
 impl cmp::Ord for FileId {
@@ -69,7 +75,7 @@ mod tests {
 
     #[test]
     fn test_file_id_new_and_virtual() {
-        let new_file_id = FileId::new();
+        let new_file_id = FileId::new(0);
         assert_eq!(new_file_id.id, 0);
 
         let virtual_id = FileId::VIRTUAL;

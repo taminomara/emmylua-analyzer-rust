@@ -3,6 +3,8 @@ mod func_body;
 mod module;
 mod stats;
 
+use std::collections::HashMap;
+
 use closure::analyze_closure;
 use emmylua_parser::{LuaAst, LuaAstNode, LuaExpr};
 pub use func_body::LuaReturnPoint;
@@ -24,17 +26,26 @@ use super::{unresolve::UnResolve, AnalyzeContext};
 pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     let _p = Profile::cond_new("lua analyze", context.tree_list.len() > 1);
     let tree_list = context.tree_list.clone();
-    for in_filed_tree in &tree_list {
-        let root = &in_filed_tree.value;
-        let cache = LuaInferCache::new(in_filed_tree.file_id);
-        let mut analyzer = LuaAnalyzer::new(db, in_filed_tree.file_id, cache);
-        for node in root.descendants::<LuaAst>() {
-            analyze_node(&mut analyzer, node);
-        }
-        analyze_chunk_return(&mut analyzer, root.clone());
-        let unresolved = analyzer.move_unresolved();
-        for unresolve in unresolved {
-            context.add_unresolve(unresolve);
+    let file_ids = tree_list.iter().map(|x| x.file_id).collect::<Vec<_>>();
+    let tree_map = tree_list
+        .iter()
+        .map(|x| (x.file_id, x.value.clone()))
+        .collect::<HashMap<_, _>>();
+    let file_denpendency = db.get_file_dependencies_index().get_file_dependencies();
+    let order = file_denpendency.get_best_analysis_order(file_ids);
+
+    for file_id in order {
+        if let Some(root) = tree_map.get(&file_id) {
+            let cache = LuaInferCache::new(file_id);
+            let mut analyzer = LuaAnalyzer::new(db, file_id, cache);
+            for node in root.descendants::<LuaAst>() {
+                analyze_node(&mut analyzer, node);
+            }
+            analyze_chunk_return(&mut analyzer, root.clone());
+            let unresolved = analyzer.move_unresolved();
+            for unresolve in unresolved {
+                context.add_unresolve(unresolve);
+            }
         }
     }
 }
