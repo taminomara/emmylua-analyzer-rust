@@ -74,6 +74,12 @@ pub enum DiagnosticCode {
     MissingFields,
     /// Inject Field
     InjectField,
+    /// Circle Doc Class
+    CircleDocClass,
+    /// Incomplete signature doc
+    IncompleteSignatureDoc,
+    /// Missing global doc
+    MissingGlobalDoc,
 
     #[serde(other)]
     None,
@@ -111,6 +117,8 @@ pub fn is_code_default_enable(code: &DiagnosticCode) -> bool {
         // DiagnosticCode::UndefinedField => false,
         DiagnosticCode::IterVariableReassign => false,
         DiagnosticCode::CodeStyleCheck => false,
+        DiagnosticCode::IncompleteSignatureDoc => false,
+        DiagnosticCode::MissingGlobalDoc => false,
         // ... handle other variants
         _ => true,
     }

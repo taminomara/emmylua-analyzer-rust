@@ -4,7 +4,7 @@ use emmylua_parser::{LuaAstNode, LuaTableExpr};
 
 use crate::{DiagnosticCode, LuaMemberOwner, LuaType, LuaTypeDeclId, SemanticModel};
 
-use super::{get_lint_type_name, DiagnosticContext};
+use super::{humanize_lint_type, DiagnosticContext};
 use itertools::Itertools;
 
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::MissingFields];
@@ -64,7 +64,7 @@ fn check_table_expr(
             expr.get_range(),
             t!(
                 "Missing required fields in type `%{typ}`: %{fields}",
-                typ = get_lint_type_name(&db, &table_type),
+                typ = humanize_lint_type(&db, &table_type),
                 fields = missing_fields
             )
             .to_string(),

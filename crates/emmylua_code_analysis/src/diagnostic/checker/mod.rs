@@ -2,9 +2,11 @@ mod access_invisible;
 mod analyze_error;
 mod await_in_sync;
 mod check_field;
+mod circle_doc_class;
 mod code_style_check;
 mod deprecated;
 mod discard_returns;
+mod incomplete_signature_doc;
 mod local_const_reassign;
 mod missing_fields;
 mod missing_parameter;
@@ -68,6 +70,8 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(redefined_local);
     check!(missing_fields);
     check!(check_field);
+    check!(circle_doc_class);
+    check!(incomplete_signature_doc);
 
     Some(())
 }
@@ -230,13 +234,20 @@ pub fn get_closure_expr_comment(closure_expr: &LuaClosureExpr) -> Option<LuaComm
     }
 }
 
-pub fn get_lint_type_name(db: &DbIndex, typ: &LuaType) -> String {
+pub fn humanize_lint_type(db: &DbIndex, typ: &LuaType) -> String {
     match typ {
         LuaType::Ref(type_decl_id) => type_decl_id.get_simple_name().to_string(),
         LuaType::Generic(generic_type) => generic_type
             .get_base_type_id()
             .get_simple_name()
             .to_string(),
+        LuaType::IntegerConst(_) => "integer".to_string(),
+        LuaType::FloatConst(_) => "number".to_string(),
+        LuaType::BooleanConst(_) => "boolean".to_string(),
+        LuaType::StringConst(_) => "string".to_string(),
+        LuaType::DocStringConst(_) => "string".to_string(),
+        LuaType::DocIntegerConst(_) => "integer".to_string(),
+        LuaType::DocBooleanConst(_) => "boolean".to_string(),
         _ => humanize_type(db, typ, RenderLevel::Simple),
     }
 }

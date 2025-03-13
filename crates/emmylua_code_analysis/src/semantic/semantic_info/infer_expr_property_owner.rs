@@ -1,4 +1,7 @@
-use emmylua_parser::{LuaAstNode, LuaExpr, LuaIndexExpr, LuaNameExpr, LuaSyntaxKind};
+use emmylua_parser::{
+    LuaAstNode, LuaAstToken, LuaClosureExpr, LuaExpr, LuaIndexExpr, LuaNameExpr, LuaStat,
+    LuaSyntaxKind,
+};
 
 use crate::{
     semantic::member::{get_buildin_type_map_type_id, without_members},
@@ -6,7 +9,7 @@ use crate::{
     LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId, LuaType, LuaTypeDeclId, LuaUnionType,
 };
 
-use super::{infer_expr, owner_guard::OwnerGuard};
+use super::{infer_expr, infer_token_property_owner, owner_guard::OwnerGuard};
 
 pub fn infer_expr_property_owner(
     db: &DbIndex,
@@ -27,6 +30,12 @@ pub fn infer_expr_property_owner(
         LuaExpr::IndexExpr(index_expr) => {
             infer_index_expr_property_owner(db, infer_config, index_expr, owner_guard.next_level()?)
         }
+        LuaExpr::ClosureExpr(closure_expr) => infer_closure_expr_property_owner(
+            db,
+            infer_config,
+            closure_expr,
+            owner_guard.next_level()?,
+        ),
         _ => {
             let member_id = LuaMemberId::new(expr.get_syntax_id(), file_id);
             if let Some(_) = db.get_member_index().get_member(&member_id) {
@@ -146,6 +155,32 @@ fn infer_index_expr_property_owner(
     }
 
     None
+}
+
+fn infer_closure_expr_property_owner(
+    db: &DbIndex,
+    infer_config: &mut LuaInferCache,
+    closure_expr: LuaClosureExpr,
+    owner_guard: OwnerGuard,
+) -> Option<LuaPropertyOwnerId> {
+    let parent = closure_expr.get_parent::<LuaStat>()?;
+    match parent {
+        LuaStat::LocalFuncStat(local_func_stat) => {
+            let local_name = local_func_stat.get_local_name()?;
+            let name_token = local_name.get_name_token()?;
+            infer_token_property_owner(db, infer_config, name_token.syntax().clone())
+        }
+        LuaStat::FuncStat(func_stat) => {
+            let func_name = func_stat.get_func_name()?;
+            infer_expr_property_owner(
+                db,
+                infer_config,
+                func_name.into(),
+                owner_guard.next_level()?,
+            )
+        }
+        _ => None,
+    }
 }
 
 fn infer_member_property_owner_by_member_key(
