@@ -3,16 +3,13 @@ use std::sync::Arc;
 use emmylua_parser::{LuaAstNode, LuaCallExpr};
 
 use crate::{
-    DbIndex, LuaFunctionType, LuaGenericType, LuaOperatorMetaMethod, LuaSignatureId, LuaType,
-    LuaTypeDeclId, LuaUnionType,
+    CacheEntry, CacheKey, DbIndex, LuaFunctionType, LuaGenericType, LuaOperatorMetaMethod,
+    LuaSignatureId, LuaType, LuaTypeDeclId, LuaUnionType,
 };
 
-use super::{
-    super::{
-        instantiate::{instantiate_func_generic, TypeSubstitutor},
-        instantiate_type, resolve_signature, InferGuard, LuaInferCache,
-    },
-    infer_cache::CallCache,
+use super::super::{
+    instantiate::{instantiate_func_generic, TypeSubstitutor},
+    instantiate_type, resolve_signature, InferGuard, LuaInferCache,
 };
 
 pub fn infer_call_expr_func(
@@ -24,16 +21,16 @@ pub fn infer_call_expr_func(
     args_count: Option<usize>,
 ) -> Option<Arc<LuaFunctionType>> {
     let syntax_id = call_expr.get_syntax_id();
-    let key = (syntax_id, args_count);
-    match cache.get_cache_call_expr(&key) {
+    let key = CacheKey::Call(syntax_id, args_count);
+    match cache.get(&key) {
         Some(cache) => match cache {
-            CallCache::Cache(ty) => return Some(ty.clone()),
-            CallCache::ReadyCache => return None,
+            CacheEntry::CallCache(ty) => return Some(ty.clone()),
+            _ => return None,
         },
         None => {}
     }
 
-    cache.mark_call_expr_ready_cache(key);
+    cache.ready_cache(&key);
     let result = match call_expr_type {
         LuaType::DocFunction(func) => Some(func),
         LuaType::Signature(signature_id) => infer_signature_doc_function(
@@ -84,9 +81,9 @@ pub fn infer_call_expr_func(
     };
 
     if let Some(result_type) = &result {
-        cache.cache_call_expr(key, result_type.clone());
+        cache.add_cache(&key, CacheEntry::CallCache(result_type.clone()));
     } else {
-        cache.clear_call_expr_cache(&key);
+        cache.remove(&key);
     }
 
     result

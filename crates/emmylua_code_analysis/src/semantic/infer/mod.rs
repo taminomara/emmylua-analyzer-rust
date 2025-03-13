@@ -1,5 +1,4 @@
 mod infer_binary;
-mod infer_cache;
 mod infer_call;
 mod infer_call_func;
 mod infer_index;
@@ -10,8 +9,6 @@ mod test;
 
 use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLiteralToken};
 use infer_binary::infer_binary_expr;
-use infer_cache::ExprCache;
-pub use infer_cache::LuaInferCache;
 use infer_call::infer_call_expr;
 pub use infer_call_func::infer_call_expr_func;
 use infer_index::infer_index_expr;
@@ -26,13 +23,18 @@ use crate::{
     InFiled, LuaMultiReturn,
 };
 
+use super::{CacheEntry, CacheKey, LuaInferCache};
+
 pub type InferResult = Option<LuaType>;
 
 pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> InferResult {
     let syntax_id = expr.get_syntax_id();
-    match cache.get_cache_expr_type(&syntax_id) {
-        Some(ExprCache::Cache(ty)) => return Some(ty.clone()),
-        Some(ExprCache::ReadyCache) => return Some(LuaType::Unknown),
+    let key = CacheKey::Expr(syntax_id);
+    match cache.get(&key) {
+        Some(cache) => match cache {
+            CacheEntry::ExprCache(ty) => return Some(ty.clone()),
+            _ => return Some(LuaType::Unknown),
+        },
         None => {}
     }
 
@@ -40,11 +42,11 @@ pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> Inf
     let file_id = cache.get_file_id();
     let in_filed_syntax_id = InFiled::new(file_id, syntax_id);
     if let Some(force_type) = db.get_type_index().get_as_force_type(&in_filed_syntax_id) {
-        cache.cache_expr_type(syntax_id, force_type.clone());
+        cache.add_cache(&key, CacheEntry::ExprCache(force_type.clone()));
         return Some(force_type.clone());
     }
 
-    cache.mark_expr_ready_cache(syntax_id);
+    cache.ready_cache(&key);
     let result_type = match expr {
         LuaExpr::CallExpr(call_expr) => infer_call_expr(db, cache, call_expr),
         LuaExpr::TableExpr(table_expr) => infer_table_expr(db, cache, table_expr),
@@ -58,9 +60,9 @@ pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> Inf
     };
 
     if let Some(result_type) = &result_type {
-        cache.cache_expr_type(syntax_id, result_type.clone());
+        cache.add_cache(&key, CacheEntry::ExprCache(result_type.clone()));
     } else {
-        cache.clear_expr_cache(&syntax_id);
+        cache.remove(&key);
     }
 
     result_type

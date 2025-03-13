@@ -5,12 +5,13 @@ use emmylua_parser::{
 
 use crate::{
     db_index::{DbIndex, LuaType},
-    infer_call_expr_func, infer_expr, InferGuard, LuaDeclId, LuaMemberId, LuaTupleType,
+    infer_call_expr_func, infer_expr, InferGuard, LuaDeclId, LuaInferCache, LuaMemberId,
+    LuaTupleType,
 };
 
 use super::{
     infer_index::{infer_member_by_member_key, infer_member_by_operator},
-    InferResult, LuaInferCache,
+    InferResult,
 };
 
 pub fn infer_table_expr(
