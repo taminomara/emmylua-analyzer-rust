@@ -115,3 +115,11 @@
 ---
 --- built-in type for Unpack function
 ---@alias std.Unpack<T, Start, End> unknown
+
+--- compact luals
+
+---@alias type std.type
+
+---@alias collectgarbage_opt std.collectgarbage_opt
+
+---@alias metatable std.metatable
