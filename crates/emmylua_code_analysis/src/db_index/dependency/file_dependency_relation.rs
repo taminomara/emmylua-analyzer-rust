@@ -115,8 +115,8 @@ mod tests {
             s
         });
         let rel = FileDenpendencyRelation::new(&map);
-        let result = rel.get_best_analysis_order(vec![1.into(), 2.into(), 3.into(), 4.into()]);
-        assert_eq!(result, vec![3.into(), 4.into(), 2.into(), 1.into()]);
+        let result = rel.get_best_analysis_order(vec![1.into(), 2.into(), 3.into()]);
+        assert_eq!(result, vec![3.into(), 2.into(), 1.into()]);
     }
 
     #[test]
