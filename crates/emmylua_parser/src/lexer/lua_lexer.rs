@@ -531,6 +531,16 @@ impl LuaLexer<'_> {
             }
         }
 
+        if self.reader.current_char().is_alphabetic() {
+            self.errors.push(LuaParseError::from_source_range(
+                &format!(
+                    "unexpected character '{}' after number literal",
+                    self.reader.current_char()
+                ),
+                self.reader.saved_range(),
+            ));
+        }
+
         match state {
             NumberState::Int | NumberState::Hex => LuaTokenKind::TkInt,
             _ => LuaTokenKind::TkFloat,
