@@ -81,6 +81,7 @@ fn merge_def_type_with_table(
     let def_owner = LuaMemberOwner::Type(def_id);
     for table_member_id in expr_member_ids {
         member_index.set_member_owner(def_owner.clone(), table_member_id);
+        member_index.add_member_to_owner(def_owner.clone(), table_member_id);
     }
 
     Some(())
