@@ -7,7 +7,7 @@ use smol_str::SmolStr;
 
 use crate::{
     db_index::{
-        DbIndex, LuaGenericType, LuaIntersectionType, LuaMemberKey, LuaMemberOwner, LuaObjectType,
+        DbIndex, LuaGenericType, LuaIntersectionType, LuaMemberKey, LuaObjectType,
         LuaOperatorMetaMethod, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType,
     },
     semantic::{
@@ -83,10 +83,7 @@ pub fn infer_member_by_member_key(
 
     match &prefix_type {
         LuaType::Table | LuaType::Any | LuaType::Unknown => Some(LuaType::Any),
-        LuaType::TableConst(id) => {
-            let member_owner = LuaMemberOwner::Element(id.clone());
-            infer_table_member(db, member_owner, index_expr)
-        }
+        LuaType::TableConst(id) => infer_table_member(db, cache, id.clone(), index_expr),
         LuaType::String | LuaType::Io | LuaType::StringConst(_) => {
             let decl_id = get_buildin_type_map_type_id(&prefix_type)?;
             infer_custom_type_member(db, cache, decl_id, index_expr, infer_guard)
@@ -117,19 +114,24 @@ pub fn infer_member_by_member_key(
 
 fn infer_table_member(
     db: &DbIndex,
-    table_owner: LuaMemberOwner,
+    cache: &mut LuaInferCache,
+    inst: InFiled<TextRange>,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
-    let member_index = db.get_member_index();
-    let members = member_index.get_members(&table_owner)?;
+    let typ = LuaType::TableConst(inst.clone());
+    let members = infer_member_map(db, cache, &typ)?;
     let key: LuaMemberKey = index_expr.get_index_key()?.into();
-    for member in members {
-        if member.get_key() == &key {
-            return Some(member.get_decl_type());
+    let member_infos = members.get(&key)?;
+    if member_infos.len() == 1 {
+        Some(member_infos[0].typ.clone())
+    } else {
+        let mut typ = LuaType::Unknown;
+        for member_info in member_infos {
+            typ = TypeOps::Union.apply(&typ, &member_info.typ);
         }
-    }
 
-    None
+        Some(typ)
+    }
 }
 
 fn infer_custom_type_member(
@@ -313,12 +315,7 @@ fn infer_instance_member(
         return Some(result);
     }
 
-    let member_owner = LuaMemberOwner::Element(range.clone());
-    if let Some(result) = infer_table_member(db, member_owner, index_expr.clone()) {
-        return Some(result);
-    }
-
-    None
+    infer_table_member(db, cache, range.clone(), index_expr.clone())
 }
 
 pub fn infer_member_by_operator(

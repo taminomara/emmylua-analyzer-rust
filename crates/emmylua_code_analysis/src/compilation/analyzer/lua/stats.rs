@@ -10,7 +10,7 @@ use crate::{
     db_index::{LuaDeclId, LuaMemberId, LuaMemberOwner, LuaOperatorMetaMethod, LuaType},
 };
 
-use super::LuaAnalyzer;
+use super::{add_member_and_clear_cache, LuaAnalyzer};
 
 pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) -> Option<()> {
     let name_list: Vec<_> = local_stat.get_local_name_list().collect();
@@ -33,7 +33,7 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
                 }
 
                 let decl_id = LuaDeclId::new(analyzer.file_id, position);
-                merge_decl_expr_type(analyzer.db, decl_id, expr_type);
+                merge_decl_expr_type(analyzer.db, &mut analyzer.infer_cache, decl_id, expr_type);
             }
             None => {
                 let decl_id = LuaDeclId::new(analyzer.file_id, position);
@@ -63,7 +63,12 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
                         let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
                         let ret_type = multi.get_type(i - expr_count + 1);
                         if let Some(ty) = ret_type {
-                            merge_decl_expr_type(analyzer.db, decl_id, ty.clone());
+                            merge_decl_expr_type(
+                                analyzer.db,
+                                &mut analyzer.infer_cache,
+                                decl_id,
+                                ty.clone(),
+                            );
                         } else {
                             decl.set_decl_type(LuaType::Unknown);
                         }
@@ -168,14 +173,13 @@ fn get_var_type_owner(
                             return None;
                         }
                     };
-                    analyzer
-                        .db
-                        .get_member_index_mut()
-                        .set_member_owner(member_owner.clone(), member_id);
-                    analyzer
-                        .db
-                        .get_member_index_mut()
-                        .add_member_to_owner(member_owner, member_id);
+
+                    add_member_and_clear_cache(
+                        analyzer.db,
+                        &mut analyzer.infer_cache,
+                        member_owner,
+                        member_id,
+                    );
                     return Some(TypeOwner::Member(member_id));
                 }
                 None => {
@@ -329,7 +333,7 @@ fn merge_type_owner_and_expr_type(
             if decl_type.is_none() {
                 decl.set_decl_type(expr_type);
             } else {
-                merge_decl_expr_type(analyzer.db, decl_id, expr_type);
+                merge_decl_expr_type(analyzer.db, &mut analyzer.infer_cache, decl_id, expr_type);
             }
         }
         TypeOwner::Member(member_id) => {
@@ -340,7 +344,7 @@ fn merge_type_owner_and_expr_type(
             if member.get_decl_type().is_unknown() {
                 member.set_decl_type(expr_type);
             } else {
-                merge_member_type(analyzer.db, member_id, expr_type);
+                merge_member_type(analyzer.db, &mut analyzer.infer_cache, member_id, expr_type);
             }
         }
     }
@@ -544,7 +548,12 @@ pub fn analyze_table_field(analyzer: &mut LuaAnalyzer, field: LuaTableField) -> 
     if decl_type.is_unknown() {
         member.set_decl_type(value_type);
     } else if decl_type.is_def() {
-        merge_member_type(analyzer.db, member_id, value_type);
+        merge_member_type(
+            analyzer.db,
+            &mut analyzer.infer_cache,
+            member_id,
+            value_type,
+        );
     }
 
     Some(())

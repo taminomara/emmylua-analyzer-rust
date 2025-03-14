@@ -1,12 +1,14 @@
 use rowan::TextRange;
 
 use crate::{
+    compilation::analyzer::lua::add_member_and_clear_cache,
     db_index::{DbIndex, LuaDeclId, LuaMemberId, LuaMemberOwner, LuaType, LuaTypeDeclId},
-    InFiled,
+    InFiled, LuaInferCache,
 };
 
 pub fn merge_decl_expr_type(
     db: &mut DbIndex,
+    cache: &mut LuaInferCache,
     decl_id: LuaDeclId,
     expr_type: LuaType,
 ) -> Option<()> {
@@ -17,7 +19,7 @@ pub fn merge_decl_expr_type(
         decl.set_decl_type(expr_type);
     } else {
         let decl_type = decl_type.unwrap();
-        let new_type = merge_type(db, decl_type.clone(), expr_type);
+        let new_type = merge_type(db, cache, decl_type.clone(), expr_type);
         let decl = db.get_decl_index_mut().get_decl_mut(&decl_id)?;
         decl.set_decl_type(new_type);
     }
@@ -27,32 +29,43 @@ pub fn merge_decl_expr_type(
 
 pub fn merge_member_type(
     db: &mut DbIndex,
+    cache: &mut LuaInferCache,
     member_id: LuaMemberId,
     expr_type: LuaType,
 ) -> Option<()> {
     let member = db.get_member_index().get_member(&member_id)?;
     let member_type = member.get_decl_type();
-    let new_type = merge_type(db, member_type.clone(), expr_type);
+    let new_type = merge_type(db, cache, member_type.clone(), expr_type);
     let member = db.get_member_index_mut().get_member_mut(&member_id)?;
     member.set_decl_type(new_type);
 
     Some(())
 }
 
-fn merge_type(db: &mut DbIndex, decl_type: LuaType, expr_type: LuaType) -> LuaType {
+fn merge_type(
+    db: &mut DbIndex,
+    cache: &mut LuaInferCache,
+    decl_type: LuaType,
+    expr_type: LuaType,
+) -> LuaType {
     match &decl_type {
         LuaType::Unknown => expr_type,
         LuaType::Nil => LuaType::Nullable(expr_type.into()),
         LuaType::Def(def) => {
             match expr_type {
                 LuaType::TableConst(in_filed_range) => {
-                    merge_def_type_with_table(db, def.clone(), in_filed_range);
+                    merge_def_type_with_table(db, cache, def.clone(), in_filed_range);
                 }
                 LuaType::Instance(instance) => {
                     let base_ref = instance.get_base();
                     match base_ref {
                         LuaType::TableConst(in_filed_range) => {
-                            merge_def_type_with_table(db, def.clone(), in_filed_range.clone());
+                            merge_def_type_with_table(
+                                db,
+                                cache,
+                                def.clone(),
+                                in_filed_range.clone(),
+                            );
                         }
                         _ => {}
                     }
@@ -68,6 +81,7 @@ fn merge_type(db: &mut DbIndex, decl_type: LuaType, expr_type: LuaType) -> LuaTy
 
 fn merge_def_type_with_table(
     db: &mut DbIndex,
+    cache: &mut LuaInferCache,
     def_id: LuaTypeDeclId,
     table_range: InFiled<TextRange>,
 ) -> Option<()> {
@@ -80,8 +94,7 @@ fn merge_def_type_with_table(
         .collect::<Vec<_>>();
     let def_owner = LuaMemberOwner::Type(def_id);
     for table_member_id in expr_member_ids {
-        member_index.set_member_owner(def_owner.clone(), table_member_id);
-        member_index.add_member_to_owner(def_owner.clone(), table_member_id);
+        add_member_and_clear_cache(db, cache, def_owner.clone(), table_member_id);
     }
 
     Some(())

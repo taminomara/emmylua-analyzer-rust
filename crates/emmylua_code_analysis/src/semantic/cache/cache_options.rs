@@ -1,12 +1,13 @@
 #[derive(Debug)]
 pub struct CacheOptions {
-    pub allow_cache_members: bool,
+    #[allow(unused)]
+    pub analysis_phase: bool,
 }
 
 impl Default for CacheOptions {
     fn default() -> Self {
         Self {
-            allow_cache_members: true,
+            analysis_phase: true,
         }
     }
 }

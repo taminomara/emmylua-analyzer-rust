@@ -19,7 +19,7 @@ impl InferCacheManager {
             LuaInferCache::new(
                 file_id,
                 crate::CacheOptions {
-                    allow_cache_members: false,
+                    analysis_phase: false,
                 },
             )
         })

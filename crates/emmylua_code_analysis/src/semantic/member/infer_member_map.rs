@@ -29,10 +29,9 @@ pub fn infer_member_map(
     }
 
     let arc_member_map = Arc::new(member_map);
-    if cache.get_config().allow_cache_members {
-        let entry = CacheEntry::TypeMemberOwnerCache(arc_member_map.clone());
-        cache.add_cache(&key, entry);
-    }
+
+    let entry = CacheEntry::TypeMemberOwnerCache(arc_member_map.clone());
+    cache.add_cache(&key, entry);
 
     Some(arc_member_map)
 }

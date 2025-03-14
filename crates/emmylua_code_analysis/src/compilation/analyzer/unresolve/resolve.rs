@@ -12,11 +12,11 @@ use super::{
 
 pub fn try_resolve_decl(
     db: &mut DbIndex,
-    config: &mut LuaInferCache,
+    cache: &mut LuaInferCache,
     decl: &UnResolveDecl,
 ) -> Option<bool> {
     let expr = decl.expr.clone();
-    let expr_type = infer_expr(db, config, expr)?;
+    let expr_type = infer_expr(db, cache, expr)?;
     let decl_id = decl.decl_id;
     let expr_type = match &expr_type {
         LuaType::MuliReturn(multi) => multi
@@ -26,17 +26,17 @@ pub fn try_resolve_decl(
         _ => expr_type,
     };
 
-    merge_decl_expr_type(db, decl_id, expr_type);
+    merge_decl_expr_type(db, cache, decl_id, expr_type);
     Some(true)
 }
 
 pub fn try_resolve_member(
     db: &mut DbIndex,
-    config: &mut LuaInferCache,
+    cache: &mut LuaInferCache,
     unresolve_member: &mut UnResolveMember,
 ) -> Option<bool> {
     if let Some(prefix_expr) = &unresolve_member.prefix {
-        let prefix_type = infer_expr(db, config, prefix_expr.clone())?;
+        let prefix_type = infer_expr(db, cache, prefix_expr.clone())?;
         let member_owner = match prefix_type {
             LuaType::TableConst(in_file_range) => LuaMemberOwner::Element(in_file_range),
             LuaType::Def(def_id) => {
@@ -62,7 +62,7 @@ pub fn try_resolve_member(
     }
 
     let expr = unresolve_member.expr.clone();
-    let expr_type = infer_expr(db, config, expr)?;
+    let expr_type = infer_expr(db, cache, expr)?;
     let expr_type = match &expr_type {
         LuaType::MuliReturn(multi) => multi
             .get_type(unresolve_member.ret_idx)
@@ -72,17 +72,17 @@ pub fn try_resolve_member(
     };
 
     let member_id = unresolve_member.member_id;
-    merge_member_type(db, member_id, expr_type);
+    merge_member_type(db, cache, member_id, expr_type);
     Some(true)
 }
 
 pub fn try_resolve_module(
     db: &mut DbIndex,
-    config: &mut LuaInferCache,
+    cache: &mut LuaInferCache,
     module: &UnResolveModule,
 ) -> Option<bool> {
     let expr = module.expr.clone();
-    let expr_type = infer_expr(db, config, expr)?;
+    let expr_type = infer_expr(db, cache, expr)?;
     let expr_type = match &expr_type {
         LuaType::MuliReturn(multi) => multi.get_type(0).cloned().unwrap_or(LuaType::Unknown),
         _ => expr_type,
@@ -94,7 +94,7 @@ pub fn try_resolve_module(
 
 pub fn try_resolve_return_point(
     db: &mut DbIndex,
-    config: &mut LuaInferCache,
+    cache: &mut LuaInferCache,
     return_: &UnResolveReturn,
 ) -> Option<bool> {
     let mut is_nullable = false;
@@ -102,7 +102,7 @@ pub fn try_resolve_return_point(
     for return_point in &return_.return_points {
         match return_point {
             LuaReturnPoint::Expr(expr) => {
-                let expr_type = infer_expr(db, config, expr.clone())?;
+                let expr_type = infer_expr(db, cache, expr.clone())?;
                 if return_docs.is_empty() {
                     return_docs.push(LuaDocReturnInfo {
                         name: None,
@@ -117,7 +117,7 @@ pub fn try_resolve_return_point(
             LuaReturnPoint::MuliExpr(exprs) => {
                 if return_docs.is_empty() {
                     for expr in exprs {
-                        let expr_type = infer_expr(db, config, expr.clone())?;
+                        let expr_type = infer_expr(db, cache, expr.clone())?;
 
                         return_docs.push(LuaDocReturnInfo {
                             name: None,
@@ -152,10 +152,10 @@ pub fn try_resolve_return_point(
 
 pub fn try_resolve_iter_var(
     db: &mut DbIndex,
-    config: &mut LuaInferCache,
+    cache: &mut LuaInferCache,
     iter_var: &UnResolveIterVar,
 ) -> Option<bool> {
-    let expr_type = infer_expr(db, config, iter_var.iter_expr.clone())?;
+    let expr_type = infer_expr(db, cache, iter_var.iter_expr.clone())?;
     let func = match expr_type {
         LuaType::DocFunction(func) => func,
         _ => return Some(true),
@@ -166,6 +166,6 @@ pub fn try_resolve_iter_var(
         .get(iter_var.ret_idx)
         .unwrap_or(&LuaType::Nil);
     let decl_id = iter_var.decl_id;
-    merge_decl_expr_type(db, decl_id, iter_type.clone());
+    merge_decl_expr_type(db, cache, decl_id, iter_type.clone());
     Some(true)
 }
