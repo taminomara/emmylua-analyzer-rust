@@ -118,8 +118,10 @@ pub fn infer_param(db: &DbIndex, decl: &LuaDecl) -> InferResult {
         _ => return None,
     };
 
+    let mut colon_define = false;
     // find local annotation
     if let Some(signature) = db.get_signature_index().get(&signature_id) {
+        colon_define = signature.is_colon_define;
         if let Some(param_info) = signature.get_param_info_by_id(param_idx) {
             let mut typ = param_info.type_ref.clone();
             if param_info.nullable && !typ.is_nullable() {
@@ -133,7 +135,7 @@ pub fn infer_param(db: &DbIndex, decl: &LuaDecl) -> InferResult {
     let current_member_id = member_id?;
     let member = find_decl_member(db, current_member_id)?;
     let member_decl_type = member.get_decl_type();
-    let param_type = find_param_type_from_type(db, member_decl_type, param_idx);
+    let param_type = find_param_type_from_type(db, member_decl_type, param_idx, colon_define);
     if let Some(param_type) = param_type {
         return Some(param_type);
     }
@@ -160,10 +162,25 @@ fn find_param_type_from_type(
     db: &DbIndex,
     source_type: LuaType,
     param_idx: usize,
+    current_colon_define: bool,
 ) -> Option<LuaType> {
     match source_type {
         LuaType::Signature(signature_id) => {
             let signature = db.get_signature_index().get(&signature_id)?;
+            let decl_colon_defined = signature.is_colon_define;
+            let mut param_idx = param_idx;
+            match (current_colon_define, decl_colon_defined) {
+                (true, false) => {
+                    param_idx += 1;
+                }
+                (false, true) => {
+                    if param_idx > 0 {
+                        param_idx -= 1;
+                    }
+                }
+                _ => {}
+            }
+
             if let Some(param_info) = signature.get_param_info_by_id(param_idx) {
                 let mut typ = param_info.type_ref.clone();
                 if param_info.nullable && !typ.is_nullable() {
@@ -174,16 +191,37 @@ fn find_param_type_from_type(
             }
         }
         LuaType::DocFunction(f) => {
+            let mut param_idx = param_idx;
+            let decl_colon_defined = f.is_colon_define();
+            match (current_colon_define, decl_colon_defined) {
+                (true, false) => {
+                    param_idx += 1;
+                }
+                (false, true) => {
+                    if param_idx > 0 {
+                        param_idx -= 1;
+                    }
+                }
+                _ => {}
+            }
+
             if let Some((_, typ)) = f.get_params().get(param_idx) {
                 return typ.clone();
             }
         }
         LuaType::Nullable(base) => {
-            return find_param_type_from_type(db, base.deref().clone(), param_idx);
+            return find_param_type_from_type(
+                db,
+                base.deref().clone(),
+                param_idx,
+                current_colon_define,
+            );
         }
         LuaType::Union(union_types) => {
             for ty in union_types.get_types() {
-                if let Some(ty) = find_param_type_from_type(db, ty.clone(), param_idx) {
+                if let Some(ty) =
+                    find_param_type_from_type(db, ty.clone(), param_idx, current_colon_define)
+                {
                     return Some(ty);
                 }
             }

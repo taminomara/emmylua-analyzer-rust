@@ -26,4 +26,29 @@ mod test {
         let expected = ws.ty("EventData");
         assert_eq!(ty, expected);
     }
+
+    #[test]
+    fn test_function_param_inherit() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+        ---@alias Outfit_t table
+
+        ---@class Creature
+        ---@field onChangeOutfit fun(self:Creature, outfit:Outfit_t):boolean
+        ---@overload fun(id:integer):Creature?
+        Creature = {}
+
+        function Creature:onChangeOutfit(outfit)
+            a = outfit
+        end
+ 
+        "#,
+        );
+
+        let ty = ws.expr_ty("a");
+        let expected = ws.ty("Outfit_t");
+        assert_eq!(ty, expected);
+    }
 }
