@@ -73,17 +73,14 @@ fn merge_def_type_with_table(
 ) -> Option<()> {
     let expr_member_owner = LuaMemberOwner::Element(table_range);
     let member_index = db.get_member_index_mut();
-    let expr_members = member_index
-        .get_member_map(&expr_member_owner)?
-        .values()
-        .cloned()
+    let expr_member_ids = member_index
+        .get_members(&expr_member_owner)?
+        .iter()
+        .map(|member| member.get_id())
         .collect::<Vec<_>>();
     let def_owner = LuaMemberOwner::Type(def_id);
-    for member_id in expr_members {
-        let member = member_index
-            .get_member(&member_id)?
-            .with_owner(def_owner.clone());
-        member_index.add_member(member);
+    for table_member_id in expr_member_ids {
+        member_index.set_member_owner(def_owner.clone(), table_member_id);
     }
 
     Some(())

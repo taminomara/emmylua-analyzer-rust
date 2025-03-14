@@ -7,7 +7,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{semantic::LuaInferCache, FileId};
 pub use config_loader::load_configs;
 use configs::EmmyrcDocumentColor;
 pub use configs::EmmyrcFilenameConvention;
@@ -58,10 +57,6 @@ pub struct Emmyrc {
 }
 
 impl Emmyrc {
-    pub fn get_infer_config(&self, file_id: FileId) -> LuaInferCache {
-        LuaInferCache::new(file_id)
-    }
-
     pub fn get_parse_config<'cache>(
         &self,
         node_cache: &'cache mut NodeCache,

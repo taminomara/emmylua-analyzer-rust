@@ -201,8 +201,8 @@ pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, expr: LuaTableExpr) -> Op
                     field.get_syntax_id(),
                 );
 
-                let member =
-                    LuaMember::new(owner_id.clone(), key, file_id, field.get_syntax_id(), None);
+                let member_id = LuaMemberId::new(field.get_syntax_id(), file_id);
+                let member = LuaMember::new(owner_id.clone(), member_id, key, true, None);
                 analyzer.db.get_member_index_mut().add_member(member);
             }
         }

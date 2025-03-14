@@ -10,26 +10,26 @@ use crate::{
 
 #[derive(Debug)]
 pub struct LuaMember {
-    pub(super) owner: LuaMemberOwner,
+    owner: LuaMemberOwner,
+    member_id: LuaMemberId,
     key: LuaMemberKey,
-    file_id: FileId,
-    syntax_id: LuaSyntaxId,
+    is_decl: bool,
     decl_type: Option<LuaType>,
 }
 
 impl LuaMember {
     pub fn new(
         owner: LuaMemberOwner,
+        member_id: LuaMemberId,
         key: LuaMemberKey,
-        file_id: FileId,
-        id: LuaSyntaxId,
+        is_decl: bool,
         decl_type: Option<LuaType>,
     ) -> Self {
         Self {
             owner,
+            member_id,
             key,
-            file_id,
-            syntax_id: id,
+            is_decl,
             decl_type,
         }
     }
@@ -43,15 +43,15 @@ impl LuaMember {
     }
 
     pub fn get_file_id(&self) -> FileId {
-        self.file_id
+        self.member_id.file_id
     }
 
     pub fn get_range(&self) -> TextRange {
-        self.syntax_id.get_range()
+        self.member_id.get_syntax_id().get_range()
     }
 
     pub fn get_syntax_id(&self) -> LuaSyntaxId {
-        self.syntax_id
+        *self.member_id.get_syntax_id()
     }
 
     pub fn get_decl_type(&self) -> LuaType {
@@ -62,26 +62,30 @@ impl LuaMember {
         self.decl_type = Some(decl_type);
     }
 
+    pub(super) fn set_owner(&mut self, owner: LuaMemberOwner) {
+        self.owner = owner;
+    }
+
     pub fn get_id(&self) -> LuaMemberId {
-        LuaMemberId::new(self.syntax_id, self.file_id)
+        self.member_id
     }
 
     pub fn with_owner(&self, owner: LuaMemberOwner) -> Self {
         Self {
             owner,
             key: self.key.clone(),
-            file_id: self.file_id,
-            syntax_id: self.syntax_id,
+            member_id: self.member_id,
+            is_decl: self.is_decl,
             decl_type: self.decl_type.clone(),
         }
     }
 
-    pub fn is_field(&self) -> Option<()> {
-        if let LuaSyntaxKind::DocTagField = self.syntax_id.get_kind() {
-            Some(())
-        } else {
-            None
-        }
+    pub fn is_field(&self) -> bool {
+        LuaSyntaxKind::DocTagField == self.member_id.get_syntax_id().get_kind().into()
+    }
+
+    pub fn is_decl(&self) -> bool {
+        self.is_decl
     }
 }
 

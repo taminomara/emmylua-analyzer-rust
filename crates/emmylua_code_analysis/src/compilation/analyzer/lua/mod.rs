@@ -18,7 +18,7 @@ use crate::{
     db_index::{DbIndex, LuaType},
     profile::Profile,
     semantic::{infer_expr, LuaInferCache},
-    FileId,
+    CacheOptions, FileId,
 };
 
 use super::{unresolve::UnResolve, AnalyzeContext};
@@ -36,7 +36,12 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
 
     for file_id in order {
         if let Some(root) = tree_map.get(&file_id) {
-            let cache = LuaInferCache::new(file_id);
+            let cache = LuaInferCache::new(
+                file_id,
+                CacheOptions {
+                    allow_cache_members: false,
+                },
+            );
             let mut analyzer = LuaAnalyzer::new(db, file_id, cache);
             for node in root.descendants::<LuaAst>() {
                 analyze_node(&mut analyzer, node);

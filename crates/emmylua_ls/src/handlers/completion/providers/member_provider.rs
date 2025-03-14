@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use emmylua_parser::{LuaAstNode, LuaAstToken, LuaIndexExpr, LuaStringToken};
 
 use crate::handlers::completion::{
@@ -26,14 +24,8 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
 
     let prefix_expr = index_expr.get_prefix_expr()?;
     let prefix_type = builder.semantic_model.infer_expr(prefix_expr.into())?;
-    let mut duplicated_set = HashSet::new();
     let member_infos = builder.semantic_model.infer_member_infos(&prefix_type)?;
     for member_info in member_infos {
-        if duplicated_set.contains(&member_info.key) {
-            continue;
-        }
-
-        duplicated_set.insert(member_info.key.clone());
         add_member_completion(builder, member_info, completion_status);
     }
 

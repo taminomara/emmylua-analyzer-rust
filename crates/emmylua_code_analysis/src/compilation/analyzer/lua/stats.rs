@@ -160,7 +160,7 @@ fn get_var_type_owner(
                             analyzer
                                 .db
                                 .get_member_index_mut()
-                                .add_member_owner(member_owner, member_id);
+                                .set_member_owner(member_owner, member_id);
                             return None;
                         }
                         // is ref need extend field?
@@ -171,7 +171,7 @@ fn get_var_type_owner(
                     analyzer
                         .db
                         .get_member_index_mut()
-                        .add_member_owner(member_owner.clone(), member_id);
+                        .set_member_owner(member_owner.clone(), member_id);
                     analyzer
                         .db
                         .get_member_index_mut()

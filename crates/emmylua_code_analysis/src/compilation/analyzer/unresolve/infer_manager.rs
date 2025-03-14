@@ -3,20 +3,25 @@ use std::collections::HashMap;
 use crate::{semantic::LuaInferCache, FileId};
 
 #[derive(Debug)]
-pub struct InferManager {
+pub struct InferCacheManager {
     infer_map: HashMap<FileId, LuaInferCache>,
 }
 
-impl InferManager {
+impl InferCacheManager {
     pub fn new() -> Self {
-        InferManager {
+        InferCacheManager {
             infer_map: HashMap::new(),
         }
     }
 
     pub fn get_infer_cache(&mut self, file_id: FileId) -> &mut LuaInferCache {
-        self.infer_map
-            .entry(file_id)
-            .or_insert_with(|| LuaInferCache::new(file_id))
+        self.infer_map.entry(file_id).or_insert_with(|| {
+            LuaInferCache::new(
+                file_id,
+                crate::CacheOptions {
+                    allow_cache_members: false,
+                },
+            )
+        })
     }
 }

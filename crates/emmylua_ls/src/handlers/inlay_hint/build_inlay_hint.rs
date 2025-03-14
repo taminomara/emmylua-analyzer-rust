@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use emmylua_code_analysis::{
-    FileId, InferGuard, LuaFunctionType, LuaMemberId, LuaMemberKey, LuaMemberOwner, LuaSignatureId,
-    LuaType, RenderLevel, SemanticModel,
+    FileId, InferGuard, LuaFunctionType, LuaMemberId, LuaMemberKey, LuaPropertyOwnerId,
+    LuaSignatureId, LuaType, RenderLevel, SemanticModel,
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaCallExpr, LuaClosureExpr, LuaExpr, LuaFuncStat, LuaIndexExpr,
@@ -360,24 +360,11 @@ fn get_super_member_id(
 ) -> Option<LuaMemberId> {
     if let LuaType::Ref(super_type_id) = &super_type {
         infer_guard.check(super_type_id)?;
-        let member_owner = LuaMemberOwner::Type(super_type_id.clone());
-        let member_map = semantic_model
-            .get_db()
-            .get_member_index()
-            .get_member_map(&member_owner)?;
+        let member_map = semantic_model.infer_member_map(&super_type)?;
 
-        if let Some(member_id) = member_map.get(&member_key) {
-            return Some(member_id.clone());
-        }
-
-        let super_types = semantic_model
-            .get_db()
-            .get_type_index()
-            .get_super_types(super_type_id)?;
-        for super_type in super_types {
-            if let Some(member_id) =
-                get_super_member_id(semantic_model, super_type, member_key, infer_guard)
-            {
+        if let Some(member_infos) = member_map.get(&member_key) {
+            let first_property = member_infos.first()?.property_owner_id.clone()?;
+            if let LuaPropertyOwnerId::Member(member_id) = first_property {
                 return Some(member_id);
             }
         }

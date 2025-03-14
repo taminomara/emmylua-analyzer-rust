@@ -107,7 +107,7 @@ fn hover_doc_function_type(
             } else {
                 name.push_str(ty.get_simple_name());
             }
-            if owner_member.is_field().is_some() {
+            if owner_member.is_field() {
                 type_label = "(field) ";
             }
         }

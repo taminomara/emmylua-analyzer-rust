@@ -52,12 +52,8 @@ pub fn add_member_completion(
         },
     };
 
-    let display = get_call_show(
-        builder.semantic_model.get_db(),
-        member_info.get_origin_type(),
-        status,
-    )
-    .unwrap_or(CallDisplay::None);
+    let display = get_call_show(builder.semantic_model.get_db(), &member_info.typ, status)
+        .unwrap_or(CallDisplay::None);
 
     let typ = member_info.typ;
     if status == CompletionTriggerStatus::Colon && !typ.is_function() {

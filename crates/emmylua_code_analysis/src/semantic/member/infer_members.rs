@@ -14,12 +14,11 @@ use crate::{
 
 use super::{get_buildin_type_map_type_id, InferMembersResult, LuaMemberInfo};
 
-#[allow(unused)]
 pub fn infer_members(db: &DbIndex, prefix_type: &LuaType) -> InferMembersResult {
     infer_members_guard(db, prefix_type, &mut InferGuard::new())
 }
 
-fn infer_members_guard(
+pub fn infer_members_guard(
     db: &DbIndex,
     prefix_type: &LuaType,
     infer_guard: &mut InferGuard,
@@ -54,14 +53,12 @@ fn infer_members_guard(
 fn infer_normal_members(db: &DbIndex, member_owner: LuaMemberOwner) -> InferMembersResult {
     let mut members = Vec::new();
     let member_index = db.get_member_index();
-    let member_map = member_index.get_member_map(&member_owner)?;
-    for member_id in member_map.values() {
-        let member = member_index.get_member(member_id)?;
+    let owner_members = member_index.get_members(&member_owner)?;
+    for member in owner_members {
         members.push(LuaMemberInfo {
-            property_owner_id: Some(LuaPropertyOwnerId::Member(*member_id)),
+            property_owner_id: Some(LuaPropertyOwnerId::Member(member.get_id())),
             key: member.get_key().clone(),
-            typ: member.get_decl_type().clone(),
-            origin_typ: None,
+            typ: member.get_decl_type(),
         });
     }
 
@@ -86,15 +83,14 @@ fn infer_custom_type_members(
 
     let mut members = Vec::new();
     let member_index = db.get_member_index();
-    let member_map = member_index.get_member_map(&LuaMemberOwner::Type(type_decl_id.clone()));
-    if let Some(member_map) = member_map {
-        for member_id in member_map.values() {
-            let member = member_index.get_member(member_id)?;
+    if let Some(type_members) =
+        member_index.get_members(&LuaMemberOwner::Type(type_decl_id.clone()))
+    {
+        for member in type_members {
             members.push(LuaMemberInfo {
-                property_owner_id: Some(LuaPropertyOwnerId::Member(*member_id)),
+                property_owner_id: Some(LuaPropertyOwnerId::Member(member.get_id())),
                 key: member.get_key().clone(),
-                typ: member.get_decl_type().clone(),
-                origin_typ: None,
+                typ: member.get_decl_type(),
             });
         }
     }
@@ -119,7 +115,6 @@ fn infer_tuple_members(tuple_type: &LuaTupleType) -> InferMembersResult {
             property_owner_id: None,
             key: LuaMemberKey::Integer((idx + 1) as i64),
             typ: typ.clone(),
-            origin_typ: None,
         });
     }
 
@@ -133,7 +128,6 @@ fn infer_object_members(object_type: &LuaObjectType) -> InferMembersResult {
             property_owner_id: None,
             key: key.clone(),
             typ: typ.clone(),
-            origin_typ: None,
         });
     }
 
@@ -190,7 +184,6 @@ fn infer_intersection_members(
                     property_owner_id: None,
                     key,
                     typ,
-                    origin_typ: None,
                 });
             }
         }
@@ -210,9 +203,7 @@ fn infer_generic_members(
     let generic_params = generic_type.get_params();
     let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
     for info in members.iter_mut() {
-        let origin_typ = info.typ.clone();
         info.typ = instantiate_type(db, &info.typ, &substitutor);
-        info.origin_typ = Some(origin_typ);
     }
 
     Some(members)
@@ -228,7 +219,6 @@ fn infer_global_members(db: &DbIndex) -> InferMembersResult {
             property_owner_id: Some(LuaPropertyOwnerId::LuaDecl(decl_id)),
             key: LuaMemberKey::Name(decl.get_name().to_string().into()),
             typ: decl.get_type().cloned().unwrap_or(LuaType::Unknown),
-            origin_typ: None,
         });
     }
 
@@ -269,14 +259,12 @@ fn infer_namespace_members(db: &DbIndex, ns: &str) -> InferMembersResult {
                 property_owner_id: Some(property_owner_id),
                 key: LuaMemberKey::Name(name.into()),
                 typ,
-                origin_typ: None,
             });
         } else {
             members.push(LuaMemberInfo {
                 property_owner_id: None,
                 key: LuaMemberKey::Name(name.clone().into()),
                 typ: LuaType::Namespace(SmolStr::new(format!("{}.{}", ns, &name)).into()),
-                origin_typ: None,
             });
         }
     }

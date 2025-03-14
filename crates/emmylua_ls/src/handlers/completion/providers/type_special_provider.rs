@@ -1,6 +1,6 @@
 use emmylua_code_analysis::{
-    InferGuard, LuaDeclLocation, LuaFunctionType, LuaMemberId, LuaMemberKey, LuaMemberOwner,
-    LuaMultiLineUnion, LuaPropertyOwnerId, LuaType, LuaTypeDeclId, LuaUnionType, RenderLevel,
+    InferGuard, LuaDeclLocation, LuaFunctionType, LuaMemberKey, LuaMemberOwner, LuaMultiLineUnion,
+    LuaPropertyOwnerId, LuaType, LuaTypeDeclId, LuaUnionType, RenderLevel,
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaComment, LuaExpr,
@@ -77,15 +77,16 @@ fn add_type_ref_completion(
         builder.stop_here();
     } else if type_decl.is_enum() {
         let owner_id = LuaMemberOwner::Type(type_ref_id.clone());
-        let member_map = builder
-            .semantic_model
-            .get_db()
-            .get_member_index()
-            .get_member_map(&owner_id)?;
 
         if type_decl.is_enum_key() {
+            let members = builder
+                .semantic_model
+                .get_db()
+                .get_member_index()
+                .get_members(&owner_id)?;
             let mut completion_items = Vec::new();
-            for member_key in member_map.keys() {
+            for member in members {
+                let member_key = member.get_key();
                 let label = match member_key {
                     LuaMemberKey::Name(str) => to_enum_label(builder, str.as_str()),
                     LuaMemberKey::Integer(i) => i.to_string(),
@@ -109,8 +110,7 @@ fn add_type_ref_completion(
                 .iter()
                 .map(|it| it.clone())
                 .collect::<Vec<_>>();
-            let member_ids = member_map.values().map(|it| it.clone()).collect::<Vec<_>>();
-            add_enum_members_completion(builder, member_ids, &type_ref_id, locations);
+            add_enum_members_completion(builder, &type_ref_id, locations);
         }
 
         builder.stop_here();
@@ -357,20 +357,22 @@ fn add_lambda_completion(builder: &mut CompletionBuilder, func: &LuaFunctionType
 
 fn add_enum_members_completion(
     builder: &mut CompletionBuilder,
-    member_ids: Vec<LuaMemberId>,
     type_id: &LuaTypeDeclId,
     locations: Vec<LuaDeclLocation>,
 ) -> Option<()> {
+    let owner_id = LuaMemberOwner::Type(type_id.clone());
+    let members = builder
+        .semantic_model
+        .get_db()
+        .get_member_index()
+        .get_members(&owner_id)?
+        .iter()
+        .map(|it| (it.get_key().clone(), it.get_decl_type()))
+        .collect::<Vec<_>>();
     let file_id = builder.semantic_model.get_file_id();
     let is_same_file = locations.iter().all(|it| it.file_id == file_id);
     if let Some(variable_name) = get_enum_decl_variable_name(builder, locations, is_same_file) {
-        for member_id in member_ids {
-            let member = builder
-                .semantic_model
-                .get_db()
-                .get_member_index()
-                .get_member(&member_id)?;
-            let key = member.get_key();
+        for (key, _) in members {
             let label = match key {
                 LuaMemberKey::Name(str) => format!("{}.{}", variable_name, str.to_string()),
                 LuaMemberKey::Integer(i) => format!("{}[{}]", variable_name, i),
@@ -391,17 +393,8 @@ fn add_enum_members_completion(
             builder.add_completion_item(completion_item);
         }
     } else {
-        for member_id in member_ids {
-            let member = builder
-                .semantic_model
-                .get_db()
-                .get_member_index()
-                .get_member(&member_id)?;
-            let label = humanize_type(
-                builder.semantic_model.get_db(),
-                &member.get_decl_type(),
-                RenderLevel::Minimal,
-            );
+        for (_, typ) in members {
+            let label = humanize_type(builder.semantic_model.get_db(), &typ, RenderLevel::Minimal);
             let description = format!("{}", type_id.get_name());
             let completion_item = CompletionItem {
                 label,

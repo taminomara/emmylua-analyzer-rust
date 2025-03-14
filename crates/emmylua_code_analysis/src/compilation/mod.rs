@@ -25,7 +25,7 @@ impl LuaCompilation {
     }
 
     pub fn get_semantic_model(&self, file_id: FileId) -> Option<SemanticModel> {
-        let cache = LuaInferCache::new(file_id);
+        let cache = LuaInferCache::new(file_id, Default::default());
         let tree = self.db.get_vfs().get_syntax_tree(&file_id)?;
         Some(SemanticModel::new(
             file_id,

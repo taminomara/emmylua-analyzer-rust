@@ -9,13 +9,14 @@ mod type_check;
 mod visibility;
 
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::{collections::HashSet, sync::Arc};
 
-pub use cache::{CacheEntry, CacheKey, LuaInferCache};
+pub use cache::{CacheEntry, CacheKey, CacheOptions, LuaInferCache};
 use emmylua_parser::{LuaCallExpr, LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken, LuaTableExpr};
 use infer::{infer_table_should_be, InferResult};
-use member::infer_members;
 pub use member::LuaMemberInfo;
+use member::{infer_member_map, infer_members};
 use reference::is_reference_to;
 use rowan::{NodeOrToken, TextRange};
 pub use semantic_info::SemanticInfo;
@@ -27,12 +28,12 @@ pub(crate) use type_check::check_type_compact;
 use type_check::is_sub_type_of;
 use visibility::check_visibility;
 
-use crate::LuaFunctionType;
 use crate::{db_index::LuaTypeDeclId, Emmyrc, LuaDocument, LuaPropertyOwnerId};
 use crate::{
     db_index::{DbIndex, LuaType},
     FileId,
 };
+use crate::{LuaFunctionType, LuaMemberKey};
 pub(crate) use infer::{infer_call_expr_func, infer_expr};
 pub use instantiate::{instantiate_type, TypeSubstitutor};
 use overload_resolve::resolve_signature;
@@ -98,6 +99,13 @@ impl<'a> SemanticModel<'a> {
 
     pub fn infer_member_infos(&self, prefix_type: &LuaType) -> Option<Vec<LuaMemberInfo>> {
         infer_members(self.db, prefix_type)
+    }
+
+    pub fn infer_member_map(
+        &self,
+        prefix_type: &LuaType,
+    ) -> Option<Arc<HashMap<LuaMemberKey, Vec<LuaMemberInfo>>>> {
+        infer_member_map(self.db, &mut self.infer_cache.borrow_mut(), prefix_type)
     }
 
     pub fn type_check(&self, source: &LuaType, compact_type: &LuaType) -> TypeCheckResult {

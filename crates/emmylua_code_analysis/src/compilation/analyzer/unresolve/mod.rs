@@ -9,7 +9,7 @@ use crate::{
     FileId,
 };
 use emmylua_parser::{LuaCallExpr, LuaExpr};
-use infer_manager::InferManager;
+use infer_manager::InferCacheManager;
 pub use merge_type::{merge_decl_expr_type, merge_member_type};
 use resolve::{
     try_resolve_decl, try_resolve_iter_var, try_resolve_member, try_resolve_module,
@@ -22,7 +22,7 @@ use super::{lua::LuaReturnPoint, AnalyzeContext};
 pub fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     let _p = Profile::cond_new("resolve analyze", context.tree_list.len() > 1);
     let mut unresolves = std::mem::take(&mut context.unresolves);
-    let mut infer_manager = InferManager::new();
+    let mut infer_manager = InferCacheManager::new();
     while try_resolve(db, &mut infer_manager, &mut unresolves) {
         unresolves.retain(|un_resolve| match un_resolve {
             UnResolve::None => false,
@@ -35,7 +35,7 @@ pub fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
 
 fn try_resolve(
     db: &mut DbIndex,
-    infer_manager: &mut InferManager,
+    infer_manager: &mut InferCacheManager,
     unresolves: &mut Vec<UnResolve>,
 ) -> bool {
     let mut changed = false;

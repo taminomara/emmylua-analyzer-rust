@@ -5,7 +5,7 @@ use emmylua_parser::{
 
 use crate::{
     db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner},
-    LuaDeclExtra, LuaPropertyOwnerId, LuaSignatureId, LuaType,
+    LuaDeclExtra, LuaMemberId, LuaPropertyOwnerId, LuaSignatureId, LuaType,
 };
 
 use super::DeclAnalyzer;
@@ -102,13 +102,9 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
                 }
 
                 let file_id = analyzer.get_file_id();
-                let member = LuaMember::new(
-                    LuaMemberOwner::None,
-                    key.clone(),
-                    file_id,
-                    index_expr.get_syntax_id(),
-                    None,
-                );
+                let member_id = LuaMemberId::new(index_expr.get_syntax_id(), file_id);
+                let member =
+                    LuaMember::new(LuaMemberOwner::None, member_id, key.clone(), false, None);
 
                 analyzer.db.get_member_index_mut().add_member(member);
                 if let LuaMemberKey::Name(name) = &key {
@@ -249,14 +245,8 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
             }
 
             let file_id = analyzer.get_file_id();
-            let member = LuaMember::new(
-                LuaMemberOwner::None,
-                key.clone(),
-                file_id,
-                index_expr.get_syntax_id(),
-                None,
-            );
-
+            let member_id = LuaMemberId::new(index_expr.get_syntax_id(), file_id);
+            let member = LuaMember::new(LuaMemberOwner::None, member_id, key.clone(), true, None);
             let member_id = analyzer.db.get_member_index_mut().add_member(member);
 
             if let LuaMemberKey::Name(name) = &key {

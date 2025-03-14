@@ -33,6 +33,12 @@ pub fn build_signature_helper(
         LuaType::Def(type_decl_id) => {
             build_type_signature_help(semantic_model, &type_decl_id, colon_call, current_idx)
         }
+        LuaType::Union(union_types) => build_union_type_signature_help(
+            semantic_model,
+            union_types.get_types(),
+            colon_call,
+            current_idx,
+        ),
         _ => None,
     }
 }
@@ -269,4 +275,73 @@ fn build_type_signature_help(
     }
 
     None
+}
+
+fn build_union_type_signature_help(
+    semantic_model: &SemanticModel,
+    union_types: &[LuaType],
+    colon_call: bool,
+    current_idx: usize,
+) -> Option<SignatureHelp> {
+    let mut signatures = vec![];
+    let active_parameter = current_idx as u32;
+    for typ in union_types {
+        match typ {
+            LuaType::DocFunction(func_type) => {
+                let sig = build_doc_function_signature_help(
+                    semantic_model,
+                    &func_type,
+                    colon_call,
+                    current_idx,
+                );
+
+                if let Some(sig) = sig {
+                    signatures.push(sig.signatures[0].clone());
+                }
+            }
+            LuaType::Signature(signature_id) => {
+                let sig = build_sig_id_signature_help(
+                    semantic_model,
+                    *signature_id,
+                    colon_call,
+                    current_idx,
+                );
+
+                if let Some(sig) = sig {
+                    signatures.extend(sig.signatures);
+                }
+            }
+            LuaType::Ref(type_decl_id) => {
+                let sig = build_type_signature_help(
+                    semantic_model,
+                    &type_decl_id,
+                    colon_call,
+                    current_idx,
+                );
+
+                if let Some(sig) = sig {
+                    signatures.extend(sig.signatures);
+                }
+            }
+            LuaType::Def(type_decl_id) => {
+                let sig = build_type_signature_help(
+                    semantic_model,
+                    &type_decl_id,
+                    colon_call,
+                    current_idx,
+                );
+
+                if let Some(sig) = sig {
+                    signatures.extend(sig.signatures);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    Some(SignatureHelp {
+        signatures,
+        active_signature: Some(0),
+        active_parameter: Some(active_parameter),
+    })
 }

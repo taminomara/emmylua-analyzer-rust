@@ -55,7 +55,7 @@ pub fn try_resolve_member(
         };
         let member_id = unresolve_member.member_id.clone();
         db.get_member_index_mut()
-            .add_member_owner(member_owner.clone(), member_id);
+            .set_member_owner(member_owner.clone(), member_id);
         db.get_member_index_mut()
             .add_member_to_owner(member_owner, member_id);
         unresolve_member.prefix = None;

@@ -232,7 +232,8 @@ function next(table, index) end
 --- See function `next` for the caveats of modifying the table during its
 --- traversal.
 ---@generic K, V
----@param t table<K, V> | V[]
+---@overload fun(arr: V[]):fun(tbl: any):integer, std.NotNull<V>
+---@param t table<K, V>
 ---@return fun(tbl: any):K, std.NotNull<V>
 function pairs(t) end
 ---

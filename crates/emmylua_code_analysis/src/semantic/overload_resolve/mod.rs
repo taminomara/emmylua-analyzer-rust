@@ -11,7 +11,7 @@ use super::{
 
 pub fn resolve_signature(
     db: &DbIndex,
-    infer_config: &mut LuaInferCache,
+    cache: &mut LuaInferCache,
     overloads: Vec<Arc<LuaFunctionType>>,
     call_expr: LuaCallExpr,
     is_generic: bool,
@@ -20,16 +20,11 @@ pub fn resolve_signature(
     let args = call_expr.get_args_list()?;
     let mut expr_types = Vec::new();
     for arg in args.get_args() {
-        expr_types.push(infer_expr(db, infer_config, arg)?);
+        expr_types.push(infer_expr(db, cache, arg)?);
     }
     if is_generic {
         return resolve_signature_by_generic(
-            db,
-            infer_config,
-            overloads,
-            call_expr,
-            expr_types,
-            arg_count,
+            db, cache, overloads, call_expr, expr_types, arg_count,
         );
     } else {
         return resolve_signature_by_args(
@@ -44,7 +39,7 @@ pub fn resolve_signature(
 
 fn resolve_signature_by_generic(
     db: &DbIndex,
-    infer_config: &mut LuaInferCache,
+    cache: &mut LuaInferCache,
     overloads: Vec<Arc<LuaFunctionType>>,
     call_expr: LuaCallExpr,
     expr_types: Vec<LuaType>,
@@ -54,8 +49,7 @@ fn resolve_signature_by_generic(
     let mut matched_func: Option<Arc<LuaFunctionType>> = None;
     let mut instantiate_funcs = Vec::new();
     for func in overloads {
-        let instantiate_func =
-            instantiate_func_generic(db, infer_config, &func, call_expr.clone())?;
+        let instantiate_func = instantiate_func_generic(db, cache, &func, call_expr.clone())?;
         instantiate_funcs.push(Arc::new(instantiate_func));
     }
 

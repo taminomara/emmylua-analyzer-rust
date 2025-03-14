@@ -1,4 +1,4 @@
-use emmylua_code_analysis::{LuaMemberKey, LuaMemberOwner, SemanticModel};
+use emmylua_code_analysis::{LuaMemberKey, LuaPropertyOwnerId, LuaType, SemanticModel};
 use emmylua_parser::{LuaAstToken, LuaGeneralToken};
 use lsp_types::GotoDefinitionResponse;
 
@@ -53,20 +53,20 @@ fn goto_type_member(
         .get_type_index()
         .find_type_decl(file_id, type_name)?;
     let type_id = type_decl.get_id();
-    let member_owner = LuaMemberOwner::Type(type_id);
-    let member_map = semantic_model
-        .get_db()
-        .get_member_index()
-        .get_member_map(&member_owner)?;
-    let member_id = member_map.get(&LuaMemberKey::Name(member_name.to_string().into()))?;
-    let member = semantic_model
-        .get_db()
-        .get_member_index()
-        .get_member(member_id)?;
-    let file_id = member.get_file_id();
-    let member_range = member.get_range();
-    let document = semantic_model.get_document_by_file_id(file_id)?;
-    let lsp_location = document.to_lsp_location(member_range)?;
+    let typ = LuaType::Ref(type_id);
+    let member_map = semantic_model.infer_member_map(&typ)?;
+    let member_infos = member_map.get(&LuaMemberKey::Name(member_name.to_string().into()))?;
 
-    Some(GotoDefinitionResponse::Scalar(lsp_location))
+    let mut result = Vec::new();
+    for member_info in member_infos {
+        if let Some(LuaPropertyOwnerId::Member(member_id)) = &member_info.property_owner_id {
+            let file_id = member_id.file_id;
+            let member_range = member_id.get_syntax_id().get_range();
+            let document = semantic_model.get_document_by_file_id(file_id)?;
+            let lsp_location = document.to_lsp_location(member_range)?;
+            result.push(lsp_location);
+        }
+    }
+
+    Some(GotoDefinitionResponse::Array(result))
 }

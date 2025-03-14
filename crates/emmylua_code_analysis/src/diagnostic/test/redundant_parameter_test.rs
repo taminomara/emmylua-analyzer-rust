@@ -23,7 +23,7 @@ mod test {
         assert!(!ws.check_code_for(
             DiagnosticCode::RedundantParameter,
             r#"
-            ---@class Test
+            ---@class Test2
             local Test = {}
 
             ---@param a string

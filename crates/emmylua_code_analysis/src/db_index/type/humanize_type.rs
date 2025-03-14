@@ -126,10 +126,10 @@ fn humanize_simple_type(
 
     let member_owner = LuaMemberOwner::Type(id.clone());
     let member_index = db.get_member_index();
-    let member_map = member_index.get_member_map(&member_owner)?;
+    let members = member_index.get_members(&member_owner)?;
     let mut member_vec = Vec::new();
-    for (member_key, member_id) in member_map {
-        let member = member_index.get_member(member_id)?;
+    for member in members {
+        let member_key = member.get_key();
         let typ = member.get_decl_type();
         if !typ.is_signature() {
             member_vec.push((member_key, typ));
@@ -141,8 +141,6 @@ fn humanize_simple_type(
     }
 
     let mut member_strings = String::new();
-    member_vec.sort_by(|a, b| a.0.cmp(&b.0));
-
     let mut count = 0;
     for (member_key, typ) in member_vec {
         let member_string = build_table_member_string(
@@ -454,23 +452,16 @@ fn humanize_table_const_type_detail_and_simple(
     level: RenderLevel,
 ) -> Option<String> {
     let member_index = db.get_member_index();
-    let member_map = member_index.get_member_map(&member_owned)?;
-
-    // sort by key
-    let mut member_vec = member_map.into_iter().collect::<Vec<_>>();
-    member_vec.sort_by(|a, b| a.0.cmp(&b.0));
+    let members = member_index.get_members(&member_owned)?;
 
     let mut total_length = 0;
     let mut total_line = 0;
     let mut members_string = String::new();
-    for (member_key, member_id) in member_vec {
-        let member_value = match member_index.get_member(member_id) {
-            Some(value) => value,
-            None => continue,
-        };
-        let typ = member_value.get_decl_type();
+    for member in members {
+        let key = member.get_key();
+        let typ = member.get_decl_type();
         let member_string = build_table_member_string(
-            member_key,
+            key,
             &typ,
             humanize_type(db, &typ, level.next_level()),
             level,
@@ -487,8 +478,9 @@ fn humanize_table_const_type_detail_and_simple(
             }
             RenderLevel::Simple => {
                 let member_string_len = member_string.chars().count();
-
-                if total_length + member_string_len > 54 {
+                total_length += member_string_len;
+                members_string.push_str(&member_string);
+                if total_length > 54 {
                     members_string.push_str(", ...");
                     break;
                 }
@@ -497,8 +489,6 @@ fn humanize_table_const_type_detail_and_simple(
                     members_string.push_str(", ");
                     total_length += 2; // account for ", "
                 }
-                total_length += member_string_len;
-                members_string.push_str(&member_string);
             }
             _ => return None,
         }

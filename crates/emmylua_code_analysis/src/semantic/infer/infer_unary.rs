@@ -9,12 +9,12 @@ use super::{get_custom_type_operator, infer_expr, InferResult};
 
 pub fn infer_unary_expr(
     db: &DbIndex,
-    config: &mut LuaInferCache,
+    cache: &mut LuaInferCache,
     unary_expr: LuaUnaryExpr,
 ) -> InferResult {
     let op = unary_expr.get_op_token()?.get_op();
     let inner_expr = unary_expr.get_expr()?;
-    let inner_type = infer_expr(db, config, inner_expr)?;
+    let inner_type = infer_expr(db, cache, inner_expr)?;
     match op {
         UnaryOperator::OpNot => infer_unary_expr_not(inner_type),
         UnaryOperator::OpLen => Some(LuaType::Integer),

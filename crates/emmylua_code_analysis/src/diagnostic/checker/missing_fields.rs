@@ -121,17 +121,15 @@ fn get_required_fields(
         required_fields: &mut HashSet<String>,
         optional_type: &mut HashSet<String>,
         type_decl_id: LuaTypeDeclId,
-    ) {
-        if let Some(member_map) = member_index.get_member_map(&LuaMemberOwner::Type(type_decl_id)) {
-            for (key, member_id) in member_map {
-                let Some(member) = member_index.get_member(&member_id) else {
-                    continue;
-                };
-                let name = key.to_path();
-                let decl_type = member.get_decl_type();
-                record_required_fields(required_fields, optional_type, name, decl_type);
-            }
+    ) -> Option<()> {
+        let members = member_index.get_members(&LuaMemberOwner::Type(type_decl_id))?;
+        for member in members {
+            let name = member.get_key().to_path();
+            let decl_type = member.get_decl_type();
+            record_required_fields(required_fields, optional_type, name, decl_type);
         }
+
+        Some(())
     }
 
     Some(required_fields)

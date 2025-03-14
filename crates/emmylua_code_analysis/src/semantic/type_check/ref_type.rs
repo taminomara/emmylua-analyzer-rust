@@ -51,14 +51,15 @@ pub fn check_ref_type_compact(
         };
 
         let enum_member_owner = LuaMemberOwner::Type(source_id.clone());
-        let member_map = db
+        let enum_members = db
             .get_member_index()
-            .get_member_map(&enum_member_owner)
+            .get_members(&enum_member_owner)
             .ok_or(TypeCheckFailReason::TypeNotMatch)?;
 
         let mut union_types = Vec::new();
         if type_decl.is_enum_key() {
-            for member_key in member_map.keys() {
+            for enum_member in enum_members {
+                let member_key = enum_member.get_key();
                 let fake_type = match member_key {
                     LuaMemberKey::Name(name) => LuaType::DocStringConst(name.clone().into()),
                     LuaMemberKey::Integer(i) => LuaType::IntegerConst(i.clone()),
@@ -68,11 +69,7 @@ pub fn check_ref_type_compact(
                 union_types.push(fake_type);
             }
         } else {
-            for member_id in member_map.values() {
-                let member = db
-                    .get_member_index()
-                    .get_member(member_id)
-                    .ok_or(TypeCheckFailReason::TypeNotMatch)?;
+            for member in enum_members {
                 let member_type = member.get_decl_type();
                 let member_fake_type = match member_type {
                     LuaType::StringConst(s) => &LuaType::DocStringConst(s.clone().into()),
@@ -126,24 +123,27 @@ fn check_ref_type_compact_table(
     check_guard: TypeCheckGuard,
 ) -> TypeCheckResult {
     let member_index = db.get_member_index();
-    let table_member_map = match member_index.get_member_map(&table_owner) {
-        Some(map) => map,
-        None => &HashMap::new(),
+    let table_member_map = match member_index.get_members(&table_owner) {
+        Some(members) => {
+            let mut map = HashMap::new();
+            for member in members {
+                map.insert(member.get_key().clone(), member.get_id().clone());
+            }
+            map
+        }
+        None => HashMap::new(),
     };
 
     let source_type_owner = LuaMemberOwner::Type(source_type_id.clone());
-    let source_type_members = match member_index.get_member_map(&source_type_owner) {
-        Some(map) => map,
+    let source_type_members = match member_index.get_members(&source_type_owner) {
+        Some(members) => members,
         // empty member donot need check
         None => return Ok(()),
     };
 
-    for (key, type_member_id) in source_type_members {
-        let source_type_member = member_index
-            .get_member(type_member_id)
-            .ok_or(TypeCheckFailReason::TypeNotMatch)?;
-
-        let source_member_type = source_type_member.get_decl_type();
+    for source_member in source_type_members {
+        let source_member_type = source_member.get_decl_type();
+        let key = source_member.get_key();
 
         if let Some(table_member_id) = table_member_map.get(key) {
             let table_member = member_index

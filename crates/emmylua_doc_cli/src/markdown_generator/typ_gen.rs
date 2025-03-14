@@ -82,16 +82,13 @@ fn generate_class_type_markdown(
     }
 
     let member_owner = LuaMemberOwner::Type(typ_id);
-    let member_map = db.get_member_index().get_member_map(&member_owner);
+    let members = db.get_member_index().get_members(&member_owner);
     let mut method_members: Vec<MemberDisplay> = Vec::new();
     let mut field_members: Vec<MemberDisplay> = Vec::new();
-    if let Some(member_map) = member_map {
-        let mut member_vecs = member_map.iter().map(|(k, v)| (k, v)).collect::<Vec<_>>();
-        member_vecs.sort_by(|a, b| a.0.cmp(b.0));
-
-        for (member_name, member_id) in member_vecs {
-            let member = db.get_member_index().get_member(member_id)?;
+    if let Some(members) = members {
+        for member in members {
             let member_typ = member.get_decl_type();
+            let member_id = member.get_id();
             let member_property_id = LuaPropertyOwnerId::Member(member_id.clone());
             let member_property = db.get_property_index().get_property(&member_property_id);
             if let Some(member_property) = member_property {
@@ -111,7 +108,8 @@ fn generate_class_type_markdown(
                 "".to_string()
             };
 
-            let name = match member_name {
+            let member_key = member.get_key();
+            let name = match member_key {
                 LuaMemberKey::Name(name) => name.to_string(),
                 LuaMemberKey::Integer(i) => format!("[{}]", i),
                 _ => continue,
@@ -202,14 +200,12 @@ fn generate_enum_type_markdown(
     }
 
     let member_owner = LuaMemberOwner::Type(typ_id);
-    let member_map = db.get_member_index().get_member_map(&member_owner);
+    let members = db.get_member_index().get_members(&member_owner);
     let mut field_members: Vec<EnumMember> = Vec::new();
-    if let Some(member_map) = member_map {
-        let mut member_vecs = member_map.iter().map(|(k, v)| (k, v)).collect::<Vec<_>>();
-        member_vecs.sort_by(|a, b| a.0.cmp(b.0));
-        for (member_name, member_id) in member_vecs {
-            let member = db.get_member_index().get_member(member_id)?;
+    if let Some(members) = members {
+        for member in members {
             let member_typ = member.get_decl_type();
+            let member_id = member.get_id();
             let member_property_id = LuaPropertyOwnerId::Member(member_id.clone());
             let member_property = db.get_property_index().get_property(&member_property_id);
             if let Some(member_property) = member_property {
@@ -229,7 +225,8 @@ fn generate_enum_type_markdown(
                 "".to_string()
             };
 
-            let name = match member_name {
+            let member_key = member.get_key();
+            let name = match member_key {
                 LuaMemberKey::Name(name) => name,
                 _ => continue,
             };

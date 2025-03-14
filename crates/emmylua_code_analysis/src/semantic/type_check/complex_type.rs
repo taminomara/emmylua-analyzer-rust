@@ -316,10 +316,16 @@ fn check_array_type_compact_table(
     check_guard: TypeCheckGuard,
 ) -> TypeCheckResult {
     let member_index = db.get_member_index();
-    let default_map = HashMap::new();
-    let member_map = member_index
-        .get_member_map(&table_owner)
-        .unwrap_or(&default_map);
+    let member_map = match member_index.get_members(&table_owner) {
+        Some(members) => {
+            let mut map = HashMap::new();
+            for member in members {
+                map.insert(member.get_key().clone(), member.get_id().clone());
+            }
+            map
+        }
+        None => HashMap::new(),
+    };
 
     let size = member_map.len();
     for i in 0..size {
@@ -399,9 +405,16 @@ fn check_tuple_type_compact_table(
 ) -> TypeCheckResult {
     let member_index = db.get_member_index();
     let default_map = HashMap::new();
-    let member_map = member_index
-        .get_member_map(&table_owner)
-        .unwrap_or(&default_map);
+    let member_map = match member_index.get_members(&table_owner) {
+        Some(members) => {
+            let mut map = HashMap::new();
+            for member in members {
+                map.insert(member.get_key().clone(), member.get_id().clone());
+            }
+            map
+        }
+        None => default_map,
+    };
 
     let tuple_members = source_tuple.get_types();
     let size = tuple_members.len();
@@ -523,14 +536,20 @@ fn check_object_type_compact_member_owner(
     check_guard: TypeCheckGuard,
 ) -> TypeCheckResult {
     let member_index = db.get_member_index();
-    let default_map = HashMap::new();
-    let members = member_index
-        .get_member_map(&member_owner)
-        .unwrap_or(&default_map);
+    let member_map = match member_index.get_members(&member_owner) {
+        Some(members) => {
+            let mut map = HashMap::new();
+            for member in members {
+                map.insert(member.get_key().clone(), member);
+            }
+            map
+        }
+        None => return Ok(()),
+    };
 
     for (key, source_type) in source_object.get_fields() {
-        let member_id = match members.get(key) {
-            Some(id) => id,
+        let member = match member_map.get(key) {
+            Some(member) => member,
             None => {
                 if source_type.is_optional() || source_type.is_any() {
                     continue;
@@ -541,9 +560,6 @@ fn check_object_type_compact_member_owner(
                 }
             }
         };
-        let member = member_index
-            .get_member(member_id)
-            .ok_or(TypeCheckFailReason::TypeNotMatch)?;
         let member_type = member.get_decl_type();
         if check_general_type_compact(db, source_type, &member_type, check_guard.next_level()?)
             .is_err()
@@ -624,24 +640,22 @@ fn check_table_generic_compact_member_owner(
     }
 
     let member_index = db.get_member_index();
-    let default_map = HashMap::new();
-    let members = member_index
-        .get_member_map(&member_owner)
-        .unwrap_or(&default_map);
+    let members = match member_index.get_members(&member_owner) {
+        Some(members) => members,
+        None => return Ok(()),
+    };
 
     let source_key = &source_generic_params[0];
     let source_value = &source_generic_params[1];
 
-    for (key, value) in members {
+    for member in members {
+        let key = member.get_key();
         let key_type = match key {
             LuaMemberKey::Integer(i) => LuaType::IntegerConst(*i),
             LuaMemberKey::Name(s) => LuaType::StringConst(s.clone().into()),
             _ => LuaType::Any,
         };
 
-        let member = member_index
-            .get_member(value)
-            .ok_or(TypeCheckFailReason::TypeNotMatch)?;
         let member_type = member.get_decl_type();
         if check_general_type_compact(db, source_key, &key_type, check_guard.next_level()?).is_err()
             || check_general_type_compact(db, source_value, &member_type, check_guard.next_level()?)
