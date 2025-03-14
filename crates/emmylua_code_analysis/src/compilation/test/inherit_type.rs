@@ -13,7 +13,7 @@ mod test {
 
             local a ---@type A
 
-            function a:aaa(a)
+            function a.aaa(a)
                 d = a
             end
             "#,
