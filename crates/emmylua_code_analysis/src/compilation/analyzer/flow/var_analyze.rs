@@ -1,6 +1,6 @@
 use emmylua_parser::{
     BinaryOperator, LuaAssignStat, LuaAst, LuaAstNode, LuaBinaryExpr, LuaBlock, LuaCallArgList,
-    LuaCallExpr, LuaExpr, LuaLiteralToken, LuaStat, LuaVarExpr, UnaryOperator,
+    LuaCallExpr, LuaCallExprStat, LuaExpr, LuaLiteralToken, LuaStat, LuaVarExpr, UnaryOperator,
 };
 use rowan::TextRange;
 use smol_str::SmolStr;
@@ -143,6 +143,14 @@ fn broadcast_up(
                             flow_chain.add_type_assert(path, ne, right.get_range(), actual_range);
                         }
                     }
+                    broadcast_up(
+                        db,
+                        flow_chain,
+                        path,
+                        binary_expr.get_parent::<LuaAst>()?,
+                        LuaAst::LuaBinaryExpr(binary_expr),
+                        type_assert,
+                    );
                 }
                 BinaryOperator::OpEq => {
                     let (left, right) = binary_expr.get_exprs()?;
@@ -428,9 +436,9 @@ fn infer_lua_assert(
         db,
         flow_chain,
         path,
-        LuaAst::LuaCallExpr(call_expr),
-        type_assert,
-        false,
+        LuaAst::LuaCallExprStat(call_expr.get_parent::<LuaCallExprStat>()?),
+        type_assert.clone(),
+        true,
     );
     Some(())
 }

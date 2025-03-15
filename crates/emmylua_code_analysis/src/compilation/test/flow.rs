@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod test {
+
     use crate::{DiagnosticCode, VirtualWorkspace};
 
     #[test]
@@ -196,6 +197,41 @@ mod test {
             local a
 
             print(a.b)
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_issue_165() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::NeedCheckNil,
+            r#"
+local a --- @type table?
+if not a or #a == 0 then
+    return
+end
+
+print(a.h)
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_issue_160() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::NeedCheckNil,
+            r#"
+local a --- @type table?
+
+if not a then
+    assert(a)
+end
+
+print(a.field)
             "#
         ));
     }
