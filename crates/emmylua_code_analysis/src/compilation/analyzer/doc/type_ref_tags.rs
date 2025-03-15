@@ -270,6 +270,7 @@ fn analyze_cast_with_name_token(
 ) -> Option<()> {
     let path = name_token.get_name_text();
     let effect_range = tag.ancestors::<LuaBlock>().next()?.get_range();
+    let actual_range = tag.get_range();
     let flow_id = LuaFlowId::from_node(tag.syntax());
     for cast_op_type in tag.get_op_types() {
         let action = match cast_op_type.get_op() {
@@ -294,6 +295,7 @@ fn analyze_cast_with_name_token(
                         path,
                         TypeAssertion::Add(LuaType::Nil),
                         effect_range,
+                        actual_range,
                     );
                 }
                 CastAction::Remove => {
@@ -301,6 +303,7 @@ fn analyze_cast_with_name_token(
                         path,
                         TypeAssertion::Remove(LuaType::Nil),
                         effect_range,
+                        actual_range,
                     );
                 }
                 _ => {}
@@ -314,13 +317,28 @@ fn analyze_cast_with_name_token(
 
             match action {
                 CastAction::Add => {
-                    flow_chain.add_type_assert(path, TypeAssertion::Add(typ), effect_range);
+                    flow_chain.add_type_assert(
+                        path,
+                        TypeAssertion::Add(typ),
+                        effect_range,
+                        actual_range,
+                    );
                 }
                 CastAction::Remove => {
-                    flow_chain.add_type_assert(path, TypeAssertion::Remove(typ), effect_range);
+                    flow_chain.add_type_assert(
+                        path,
+                        TypeAssertion::Remove(typ),
+                        effect_range,
+                        actual_range,
+                    );
                 }
                 CastAction::Force => {
-                    flow_chain.add_type_assert(path, TypeAssertion::Narrow(typ), effect_range);
+                    flow_chain.add_type_assert(
+                        path,
+                        TypeAssertion::Narrow(typ),
+                        effect_range,
+                        actual_range,
+                    );
                 }
             }
         }
