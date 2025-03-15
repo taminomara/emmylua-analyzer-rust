@@ -25,6 +25,17 @@ pub fn generate_module_markdown(
 
     let mut context = tera::Context::new();
     context.insert("module_name", &module.full_module_name);
+    let property_owner_id = module.property_owner_id.clone();
+    if let Some(property_owner_id) = property_owner_id {
+        if let Some(property) = db.get_property_index().get_property(&property_owner_id) {
+            let description = property
+                .description
+                .clone()
+                .unwrap_or("".to_string().into())
+                .to_string();
+            context.insert("description", &description);
+        }
+    }
 
     let export_typ = module.export_type.clone()?;
     match &export_typ {

@@ -4,7 +4,8 @@
 
 `NEW` Disable re-index in default, need to enable by `workspace.enableReindex`
 
-`NEW` Add New Diagnostics `inject_field`, `missing_fields`, `redefined_local`, `undefined_field`
+`NEW` Add New Diagnostics `inject_field`, `missing_fields`, `redefined_local`, `undefined_field`, `inject-field`, `missing-global-doc`, 
+`incomplete-signature-doc`, `circle-doc-class`, `assign-type-mismatch`
 
 `NEW` Support `true` and `false` as type
 
@@ -25,6 +26,8 @@ local d = get_type('xxx') --- aaa.xxx.bbb
 ```
 
 `NEW` Support `@see` any thing
+
+`NEW` Enhance module documentation export
 
 # 0.5.4
 

@@ -1,6 +1,6 @@
 use emmylua_parser::{LuaVersionCondition, LuaVersionNumber};
 
-use crate::{db_index::LuaType, FileId};
+use crate::{db_index::LuaType, FileId, LuaPropertyOwnerId};
 
 use super::{module_node::ModuleNodeId, workspace::WorkspaceId};
 
@@ -14,6 +14,7 @@ pub struct ModuleInfo {
     pub export_type: Option<LuaType>,
     pub version_conds: Option<Box<Vec<LuaVersionCondition>>>,
     pub workspace_id: WorkspaceId,
+    pub property_owner_id: Option<LuaPropertyOwnerId>,
 }
 
 impl ModuleInfo {

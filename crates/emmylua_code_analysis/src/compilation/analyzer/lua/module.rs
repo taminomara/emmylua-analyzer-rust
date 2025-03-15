@@ -1,6 +1,9 @@
-use emmylua_parser::LuaChunk;
+use emmylua_parser::{LuaAstNode, LuaChunk, LuaExpr};
 
-use crate::{compilation::analyzer::unresolve::UnResolveModule, db_index::LuaType};
+use crate::{
+    compilation::analyzer::unresolve::UnResolveModule, db_index::LuaType, LuaPropertyOwnerId,
+    LuaSignatureId,
+};
 
 use super::{func_body::analyze_func_body_returns, LuaAnalyzer, LuaReturnPoint};
 
@@ -23,6 +26,8 @@ pub fn analyze_chunk_return(analyzer: &mut LuaAnalyzer, chunk: LuaChunk) -> Opti
                     }
                 };
 
+                let property_owner_id = get_property_owner_id(analyzer, expr.clone());
+
                 let module_info = analyzer
                     .db
                     .get_module_index_mut()
@@ -36,7 +41,7 @@ pub fn analyze_chunk_return(analyzer: &mut LuaAnalyzer, chunk: LuaChunk) -> Opti
                         module_info.export_type = Some(expr_type);
                     }
                 }
-
+                module_info.property_owner_id = property_owner_id;
                 break;
             }
             // Other cases are stupid code
@@ -45,4 +50,23 @@ pub fn analyze_chunk_return(analyzer: &mut LuaAnalyzer, chunk: LuaChunk) -> Opti
     }
 
     Some(())
+}
+
+fn get_property_owner_id(analyzer: &LuaAnalyzer, expr: LuaExpr) -> Option<LuaPropertyOwnerId> {
+    match expr {
+        LuaExpr::NameExpr(name_expr) => {
+            let name = name_expr.get_name_text()?;
+            let tree = analyzer
+                .db
+                .get_decl_index()
+                .get_decl_tree(&analyzer.file_id)?;
+            let decl = tree.find_local_decl(&name, name_expr.get_position())?;
+
+            Some(LuaPropertyOwnerId::LuaDecl(decl.get_id()))
+        }
+        LuaExpr::ClosureExpr(closure) => Some(LuaPropertyOwnerId::Signature(
+            LuaSignatureId::from_closure(analyzer.file_id, &closure),
+        )),
+        _ => None,
+    }
 }

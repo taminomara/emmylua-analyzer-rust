@@ -166,6 +166,7 @@ impl LuaModuleIndex {
             export_type: None,
             version_conds: None,
             workspace_id,
+            property_owner_id: None,
         };
 
         self.file_module_map.insert(file_id, module_info);
