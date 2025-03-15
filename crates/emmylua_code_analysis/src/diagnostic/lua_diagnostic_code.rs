@@ -82,6 +82,8 @@ pub enum DiagnosticCode {
     MissingGlobalDoc,
     /// Assign type mismatch
     AssignTypeMismatch,
+    /// Duplicate require
+    DuplicateRequire,
 
     #[serde(other)]
     None,
