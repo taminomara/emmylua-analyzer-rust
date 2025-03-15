@@ -2376,4 +2376,62 @@ Syntax(Chunk)@0..123
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_comment() {
+        let code = r#"
+        --- Note: ajfioiof
+        ---  |enenen|
+        ---  |enenen|
+        ---  |enenen|
+        local d: number | string
+        "#;
+        let result = r#"
+Syntax(Chunk)@0..135
+  Syntax(Block)@0..135
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..93
+      Token(TkNormalStart)@9..13 "--- "
+      Syntax(DocDescription)@13..93
+        Token(TkDocDetail)@13..27 "Note: ajfioiof"
+        Token(TkEndOfLine)@27..28 "\n"
+        Token(TkWhitespace)@28..36 "        "
+        Token(TkNormalStart)@36..41 "---  "
+        Token(TkDocDetail)@41..49 "|enenen|"
+        Token(TkEndOfLine)@49..50 "\n"
+        Token(TkWhitespace)@50..58 "        "
+        Token(TkNormalStart)@58..63 "---  "
+        Token(TkDocDetail)@63..71 "|enenen|"
+        Token(TkEndOfLine)@71..72 "\n"
+        Token(TkWhitespace)@72..80 "        "
+        Token(TkNormalStart)@80..85 "---  "
+        Token(TkDocDetail)@85..93 "|enenen|"
+    Token(TkEndOfLine)@93..94 "\n"
+    Token(TkWhitespace)@94..102 "        "
+    Syntax(LocalStat)@102..109
+      Token(TkLocal)@102..107 "local"
+      Token(TkWhitespace)@107..108 " "
+      Syntax(LocalName)@108..109
+        Token(TkName)@108..109 "d"
+    Syntax(AssignStat)@109..109
+    Syntax(AssignStat)@109..109
+    Syntax(UnknownStat)@109..110
+      Token(TkColon)@109..110 ":"
+    Token(TkWhitespace)@110..111 " "
+    Syntax(AssignStat)@111..126
+      Syntax(BinaryExpr)@111..126
+        Syntax(NameExpr)@111..117
+          Token(TkName)@111..117 "number"
+        Token(TkWhitespace)@117..118 " "
+        Token(TkBitOr)@118..119 "|"
+        Token(TkWhitespace)@119..120 " "
+        Syntax(NameExpr)@120..126
+          Token(TkName)@120..126 "string"
+    Token(TkEndOfLine)@126..127 "\n"
+    Token(TkWhitespace)@127..135 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
 }

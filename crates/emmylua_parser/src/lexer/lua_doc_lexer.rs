@@ -109,15 +109,6 @@ impl LuaDocLexer<'_> {
                                 reader.bump();
                                 LuaTokenKind::TkDocStart
                             }
-                            '|' => {
-                                reader.bump();
-                                // compact luals
-                                if matches!(reader.current_char(), '+' | '>') {
-                                    reader.bump();
-                                }
-
-                                LuaTokenKind::TkDocContinueOr
-                            }
                             _ => LuaTokenKind::TkNormalStart,
                         }
                     }
@@ -325,7 +316,57 @@ impl LuaDocLexer<'_> {
                     reader.eat_while(|_| true);
                     return LuaTokenKind::TkDocDetail;
                 }
-                self.lex_init()
+                match reader.current_char() {
+                    '-' => {
+                        let count = reader.eat_when('-');
+                        match count {
+                            2 => {
+                                if self.origin_token_kind == LuaTokenKind::TkLongComment {
+                                    reader.bump();
+                                    reader.eat_when('=');
+                                    reader.bump();
+
+                                    match reader.current_char() {
+                                        '@' => {
+                                            reader.bump();
+                                            return LuaTokenKind::TkDocLongStart;
+                                        }
+                                        _ => return LuaTokenKind::TkLongCommentStart,
+                                    }
+                                } else {
+                                    return LuaTokenKind::TkNormalStart;
+                                }
+                            }
+                            3 => {
+                                reader.eat_while(is_doc_whitespace);
+                                match reader.current_char() {
+                                    '@' => {
+                                        reader.bump();
+                                        LuaTokenKind::TkDocStart
+                                    }
+                                    '|' => {
+                                        reader.bump();
+                                        // compact luals
+                                        if matches!(reader.current_char(), '+' | '>') {
+                                            reader.bump();
+                                        }
+
+                                        LuaTokenKind::TkDocContinueOr
+                                    }
+                                    _ => LuaTokenKind::TkNormalStart,
+                                }
+                            }
+                            _ => {
+                                reader.eat_while(|_| true);
+                                LuaTokenKind::TKDocTriviaStart
+                            }
+                        }
+                    }
+                    _ => {
+                        reader.eat_while(|_| true);
+                        LuaTokenKind::TkDocTrivia
+                    }
+                }
             }
             _ => {
                 reader.eat_while(|_| true);
@@ -467,7 +508,46 @@ impl LuaDocLexer<'_> {
                     }
                 };
             }
-            _ => self.lex_description(),
+            '-' => {
+                let count = reader.eat_when('-');
+                match count {
+                    2 => {
+                        if self.origin_token_kind == LuaTokenKind::TkLongComment {
+                            reader.bump();
+                            reader.eat_when('=');
+                            reader.bump();
+
+                            match reader.current_char() {
+                                '@' => {
+                                    reader.bump();
+                                    return LuaTokenKind::TkDocLongStart;
+                                }
+                                _ => return LuaTokenKind::TkLongCommentStart,
+                            }
+                        } else {
+                            return LuaTokenKind::TkNormalStart;
+                        }
+                    }
+                    3 => {
+                        reader.eat_while(is_doc_whitespace);
+                        match reader.current_char() {
+                            '@' => {
+                                reader.bump();
+                                LuaTokenKind::TkDocStart
+                            }
+                            _ => LuaTokenKind::TkNormalStart,
+                        }
+                    }
+                    _ => {
+                        reader.eat_while(|_| true);
+                        LuaTokenKind::TKDocTriviaStart
+                    }
+                }
+            }
+            _ => {
+                reader.eat_while(|_| true);
+                LuaTokenKind::TkDocDetail
+            }
         }
     }
 }
