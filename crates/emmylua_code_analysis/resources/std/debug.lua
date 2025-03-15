@@ -174,7 +174,7 @@ function debug.setcstacklimit(limit) end
 ---
 ---Sets the environment of the given `object` to the given `table` .
 ---
----@version 5.1
+---@version 5.1, JIT
 ---@generic T
 ---@param object T
 ---@param env    table
@@ -258,16 +258,19 @@ function debug.setupvalue(f, up, value) end
 ---@return userdata
 function debug.setuservalue(udata, value, n) end
 
---- If `message` is present but is neither a string nor **nil**, this function
---- returns `message` without further processing. Otherwise, it returns a string
---- with a traceback of the call stack. The optional `message` string is
---- appended at the beginning of the traceback. An optional level number
---- `tells` at which level to start the traceback (default is 1, the function
---- c alling `traceback`).
----@overload fun():string
----@param thread thread
----@param message string
----@param level? integer
+--- Generates a traceback of the call stack.
+--- When called with no arguments, returns a traceback of the current thread.
+--- When the first argument is a thread, the traceback is generated for that thread;
+--- the optional second argument (if a string) is prepended to the traceback, and the
+--- optional third argument sets the level where the traceback should start (default is 1).
+--- When the first argument is not a thread and not nil, it is treated as an optional message.
+--- In that case, the traceback is generated for the current thread and the second argument,
+--- if provided, specifies the starting level.
+---@overload fun(): string
+---@overload fun(message?: string, level?: integer): string
+---@param thread? thread|integer  Optional thread or nil. If not a thread, it is interpreted as the message.
+---@param message? string Optional message to prepend to the traceback. If not a string (or nil), it is returned as is.
+---@param level? integer  Optional level from which to start the traceback (default is 1).
 ---@return string
 function debug.traceback(thread, message, level) end
 
