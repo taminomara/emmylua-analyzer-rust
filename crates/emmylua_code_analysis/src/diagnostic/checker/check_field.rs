@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use emmylua_parser::{LuaAst, LuaAstNode, LuaIndexExpr, LuaVarExpr};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaIndexExpr, LuaIndexKey, LuaVarExpr};
 
 use crate::{DiagnosticCode, LuaType, SemanticModel};
 
@@ -64,6 +64,20 @@ fn check_index_expr(
     }
 
     let index_key = index_expr.get_index_key()?;
+    if let LuaIndexKey::Expr(expr) = &index_key {
+        let expr_typ = semantic_model.infer_expr(expr.clone())?;
+        match &expr_typ {
+            LuaType::Any
+            | LuaType::Unknown
+            | LuaType::Table
+            | LuaType::TplRef(_)
+            | LuaType::StrTplRef(_) => {
+                return Some(());
+            }
+            _ => {}
+        }
+    }
+
     let index_name = index_key.get_path_part();
     let member_info =
         semantic_model.get_semantic_info(rowan::NodeOrToken::Node(index_expr.syntax().clone()));
