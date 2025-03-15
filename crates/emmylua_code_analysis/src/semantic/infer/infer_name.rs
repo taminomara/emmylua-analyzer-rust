@@ -42,7 +42,9 @@ pub fn infer_name_expr(
         let flow_chain = db.get_flow_index().get_flow_chain(file_id, flow_id);
         let root = name_expr.get_root();
         if let Some(flow_chain) = flow_chain {
-            for type_assert in flow_chain.get_type_asserts(name, name_expr.get_position()) {
+            for type_assert in
+                flow_chain.get_type_asserts(name, name_expr.get_position(), Some(decl_id.position))
+            {
                 decl_type = type_assert.tighten_type(db, config, &root, decl_type)?;
             }
         }
@@ -89,7 +91,11 @@ fn infer_self(db: &DbIndex, config: &mut LuaInferCache, name_expr: LuaNameExpr) 
             let flow_chain = db.get_flow_index().get_flow_chain(file_id, flow_id);
             let root = name_expr.get_root();
             if let Some(flow_chain) = flow_chain {
-                for type_assert in flow_chain.get_type_asserts("self", name_expr.get_position()) {
+                for type_assert in flow_chain.get_type_asserts(
+                    "self",
+                    name_expr.get_position(),
+                    Some(decl_id.position),
+                ) {
                     decl_type = type_assert.tighten_type(db, config, &root, decl_type)?;
                 }
             }

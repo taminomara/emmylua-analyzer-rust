@@ -9,7 +9,14 @@ use crate::db_index::TypeAssertion;
 #[derive(Debug)]
 pub struct LuaFlowChain {
     flow_id: LuaFlowId,
-    type_asserts: HashMap<SmolStr, Vec<(TypeAssertion, TextRange)>>,
+    type_asserts: HashMap<SmolStr, Vec<LuaFlowChainEntry>>,
+}
+
+#[derive(Debug)]
+pub struct LuaFlowChainEntry {
+    pub type_assert: TypeAssertion,
+    pub block_range: TextRange,
+    pub actual_range: TextRange,
 }
 
 impl LuaFlowChain {
@@ -24,27 +31,48 @@ impl LuaFlowChain {
         self.flow_id
     }
 
-    pub fn add_type_assert(&mut self, path: &str, type_assert: TypeAssertion, range: TextRange) {
+    pub fn add_type_assert(
+        &mut self,
+        path: &str,
+        type_assert: TypeAssertion,
+        block_range: TextRange,
+        actual_range: TextRange,
+    ) {
         self.type_asserts
             .entry(SmolStr::new(path))
             .or_insert_with(Vec::new)
-            .push((type_assert, range));
+            .push(LuaFlowChainEntry {
+                type_assert,
+                block_range,
+                actual_range,
+            });
     }
 
     pub fn get_type_asserts(
         &self,
         path: &str,
         position: TextSize,
+        start_position: Option<TextSize>,
     ) -> impl Iterator<Item = &TypeAssertion> {
         self.type_asserts
             .get(path)
             .into_iter()
             .flat_map(move |asserts| {
-                asserts.iter().filter_map(move |(assert, range)| {
-                    if range.contains(position) {
-                        Some(assert)
+                asserts.iter().filter_map(move |entry| {
+                    if !entry.block_range.contains(position)
+                        || position < entry.actual_range.start()
+                    {
+                        return None;
+                    }
+                    // 变量可能被重定义, 需要抛弃之前的声明
+                    if let Some(start_pos) = start_position {
+                        if entry.actual_range.start() >= start_pos {
+                            Some(&entry.type_assert)
+                        } else {
+                            None
+                        }
                     } else {
-                        None
+                        Some(&entry.type_assert)
                     }
                 })
             })

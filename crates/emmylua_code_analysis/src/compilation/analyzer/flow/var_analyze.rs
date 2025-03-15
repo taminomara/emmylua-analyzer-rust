@@ -75,24 +75,30 @@ fn broadcast_up(
     origin: LuaAst,
     type_assert: TypeAssertion,
 ) -> Option<()> {
+    let actual_range = origin.get_range();
     match parent {
         LuaAst::LuaIfStat(if_stat) => {
             // this mean the name_expr is a condition and the name_expr is not nil and is not false
             if let Some(block) = if_stat.get_block() {
-                flow_chain.add_type_assert(path, type_assert.clone(), block.get_range());
+                flow_chain.add_type_assert(
+                    path,
+                    type_assert.clone(),
+                    block.get_range(),
+                    actual_range,
+                );
             }
 
             if let Some(ne_type_assert) = type_assert.get_negation() {
                 if let Some(else_stat) = if_stat.get_else_clause() {
-                    let range = else_stat.get_range();
-                    flow_chain.add_type_assert(path, ne_type_assert, range);
+                    let block_range = else_stat.get_range();
+                    flow_chain.add_type_assert(path, ne_type_assert, block_range, actual_range);
                 } else if is_block_has_return(if_stat.get_block()?).unwrap_or(false) {
                     let parent_block = if_stat.get_parent::<LuaBlock>()?;
                     let parent_range = parent_block.get_range();
                     let if_range = if_stat.get_range();
                     if if_range.end() < parent_range.end() {
                         let range = TextRange::new(if_range.end(), parent_range.end());
-                        flow_chain.add_type_assert(path, ne_type_assert, range);
+                        flow_chain.add_type_assert(path, ne_type_assert, range, actual_range);
                     }
                 }
             }
@@ -100,12 +106,12 @@ fn broadcast_up(
         LuaAst::LuaWhileStat(while_stat) => {
             // this mean the name_expr is a condition and the name_expr is not nil and is not false
             let block = while_stat.get_block()?;
-            flow_chain.add_type_assert(path, type_assert, block.get_range());
+            flow_chain.add_type_assert(path, type_assert, block.get_range(), actual_range);
         }
         LuaAst::LuaElseIfClauseStat(else_if_clause_stat) => {
             // this mean the name_expr is a condition and the name_expr is not nil and is not false
             let block = else_if_clause_stat.get_block()?;
-            flow_chain.add_type_assert(path, type_assert, block.get_range());
+            flow_chain.add_type_assert(path, type_assert, block.get_range(), actual_range);
         }
         LuaAst::LuaBinaryExpr(binary_expr) => {
             let op = binary_expr.get_op_token()?;
@@ -113,7 +119,12 @@ fn broadcast_up(
                 BinaryOperator::OpAnd => {
                     let (left, right) = binary_expr.get_exprs()?;
                     if left.get_position() == origin.get_position() {
-                        flow_chain.add_type_assert(path, type_assert.clone(), right.get_range());
+                        flow_chain.add_type_assert(
+                            path,
+                            type_assert.clone(),
+                            right.get_range(),
+                            actual_range,
+                        );
                     }
 
                     broadcast_up(
@@ -129,7 +140,7 @@ fn broadcast_up(
                     let (left, right) = binary_expr.get_exprs()?;
                     if left.get_position() == origin.get_position() {
                         if let Some(ne) = type_assert.get_negation() {
-                            flow_chain.add_type_assert(path, ne, right.get_range());
+                            flow_chain.add_type_assert(path, ne, right.get_range(), actual_range);
                         }
                     }
                 }
@@ -258,7 +269,7 @@ fn broadcast_down(
     let range = node.get_range();
     if range.end() < parent_range.end() {
         let range = TextRange::new(range.end(), parent_range.end());
-        flow_chain.add_type_assert(path, type_assert.clone(), range);
+        flow_chain.add_type_assert(path, type_assert.clone(), range, range);
     }
 
     if continue_broadcast_outside {

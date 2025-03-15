@@ -54,7 +54,9 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
             let db = semantic_model.get_db();
             let root = semantic_model.get_root().syntax();
             let config = semantic_model.get_config();
-            for type_assert in chain.get_type_asserts(&name, name_expr.get_position()) {
+            for type_assert in
+                chain.get_type_asserts(&name, name_expr.get_position(), Some(decl_id.position))
+            {
                 typ = type_assert.tighten_type(db, &mut config.borrow_mut(), root, typ)?;
             }
         }

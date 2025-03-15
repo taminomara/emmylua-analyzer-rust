@@ -59,7 +59,7 @@ pub fn infer_index_expr(
     if let Some(flow_chain) = flow_chain {
         let root = index_expr.get_root();
         if let Some(path) = index_expr.get_access_path() {
-            for type_assert in flow_chain.get_type_asserts(&path, index_expr.get_position()) {
+            for type_assert in flow_chain.get_type_asserts(&path, index_expr.get_position(), None) {
                 member_type = type_assert
                     .tighten_type(db, cache, &root, member_type)
                     .unwrap_or(LuaType::Unknown);
