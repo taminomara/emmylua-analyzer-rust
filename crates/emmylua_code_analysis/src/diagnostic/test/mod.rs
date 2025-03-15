@@ -2,6 +2,7 @@ mod assign_type_mismatch_test;
 mod await_in_sync_test;
 mod disable_line_test;
 mod duplicate_doc_field_test;
+mod duplicate_require_test;
 mod incomplete_signature_doc_test;
 mod inject_field_test;
 mod missing_fields_test;
