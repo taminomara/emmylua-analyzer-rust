@@ -80,6 +80,8 @@ pub enum DiagnosticCode {
     IncompleteSignatureDoc,
     /// Missing global doc
     MissingGlobalDoc,
+    /// Assign type mismatch
+    AssignTypeMismatch,
 
     #[serde(other)]
     None,

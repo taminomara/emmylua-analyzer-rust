@@ -1,8 +1,6 @@
-
 #[cfg(test)]
 mod tests {
     use crate::{DiagnosticCode, VirtualWorkspace};
-
 
     #[test]
     fn test_undefined_doc_param() {

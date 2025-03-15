@@ -198,9 +198,14 @@ fn infer_table_type_by_assign_stat(
         .find(|(_, expr)| expr.get_position() == table_expr.get_position())?
         .0;
     let name = vars.get(num)?;
+
     let decl_id = LuaDeclId::new(cache.get_file_id(), name.get_position());
-    let decl = db.get_decl_index().get_decl(&decl_id)?;
-    let typ = decl.get_type()?;
+    let decl = db.get_decl_index().get_decl(&decl_id);
+    let typ = if let Some(decl) = decl {
+        decl.get_type()?.clone()
+    } else {
+        infer_expr(db, cache, LuaExpr::cast(name.syntax().clone())?)?
+    };
     match typ {
         LuaType::TableConst(_) => None,
         _ => Some(typ.clone()),

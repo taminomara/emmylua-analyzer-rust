@@ -26,6 +26,7 @@ fn check_table_expr(
     type_cache: &mut HashMap<LuaType, HashSet<String>>,
 ) -> Option<()> {
     let db = context.db;
+    // TODO 前缀为 idnex expr 的表推断异常
     let table_type = semantic_model.infer_table_should_be(expr.clone())?;
 
     let current_fields = expr

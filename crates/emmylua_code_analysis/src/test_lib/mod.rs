@@ -149,6 +149,20 @@ impl VirtualWorkspace {
         true
     }
 
+    pub fn check_code_for_namespace(
+        &mut self,
+        diagnostic_code: DiagnosticCode,
+        block_str: &str,
+    ) -> bool {
+        self.check_code_for(
+            diagnostic_code,
+            &format!(
+                "---@namespace TestNamespace{}\n{}",
+                self.id_counter, block_str
+            ),
+        )
+    }
+
     pub fn enable_full_diagnostic(&mut self) {
         let mut emmyrc = Emmyrc::default();
         let mut enables = emmyrc.diagnostics.enables;
