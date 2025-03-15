@@ -1,3 +1,4 @@
+mod closure_generic;
 mod closure_param_infer_test;
 mod closure_return_test;
 mod flow;

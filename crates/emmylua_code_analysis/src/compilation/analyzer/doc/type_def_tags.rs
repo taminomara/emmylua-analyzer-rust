@@ -330,54 +330,46 @@ fn get_global_reference_ranges(
 }
 
 pub fn analyze_func_generic(analyzer: &mut DocAnalyzer, tag: LuaDocTagGeneric) -> Option<()> {
-    if let Some(comment_owner) = analyzer.comment.get_owner() {
-        if !matches!(
-            comment_owner.syntax().kind().into(),
-            LuaSyntaxKind::LocalFuncStat | LuaSyntaxKind::FuncStat
-        ) {
-            return None;
+    let comment_owner = analyzer.comment.get_owner()?;
+    let mut params_result = HashMap::new();
+    let mut param_info = Vec::new();
+    if let Some(params_list) = tag.get_generic_decl_list() {
+        let mut count = 0;
+        for param in params_list.get_generic_decl() {
+            let name = if let Some(param) = param.get_name_token() {
+                param.get_name_text().to_string()
+            } else {
+                continue;
+            };
+
+            let type_ref = if let Some(type_ref) = param.get_type() {
+                Some(infer_type(analyzer, type_ref))
+            } else {
+                None
+            };
+
+            params_result.insert(name.clone(), count);
+            param_info.push((name, type_ref));
+            count += 1;
         }
-
-        let mut params_result = HashMap::new();
-        let mut param_info = Vec::new();
-        if let Some(params_list) = tag.get_generic_decl_list() {
-            let mut count = 0;
-            for param in params_list.get_generic_decl() {
-                let name = if let Some(param) = param.get_name_token() {
-                    param.get_name_text().to_string()
-                } else {
-                    continue;
-                };
-
-                let type_ref = if let Some(type_ref) = param.get_type() {
-                    Some(infer_type(analyzer, type_ref))
-                } else {
-                    None
-                };
-
-                params_result.insert(name.clone(), count);
-                param_info.push((name, type_ref));
-                count += 1;
-            }
-        }
-
-        let mut ranges = Vec::new();
-        let range = analyzer.comment.get_range();
-        ranges.push(range);
-        let range = comment_owner.get_range();
-        ranges.push(range);
-        analyzer
-            .generic_index
-            .add_generic_scope(ranges, params_result, true);
-
-        let closure = find_owner_closure(analyzer)?;
-        let signature_id = LuaSignatureId::from_closure(analyzer.file_id, &closure);
-        let signature = analyzer
-            .db
-            .get_signature_index_mut()
-            .get_or_create(signature_id);
-        signature.generic_params = param_info;
     }
+
+    let mut ranges = Vec::new();
+    let range = analyzer.comment.get_range();
+    ranges.push(range);
+    let range = comment_owner.get_range();
+    ranges.push(range);
+    analyzer
+        .generic_index
+        .add_generic_scope(ranges, params_result, true);
+
+    let closure = find_owner_closure(analyzer)?;
+    let signature_id = LuaSignatureId::from_closure(analyzer.file_id, &closure);
+    let signature = analyzer
+        .db
+        .get_signature_index_mut()
+        .get_or_create(signature_id);
+    signature.generic_params = param_info;
 
     Some(())
 }
