@@ -7,6 +7,7 @@ mod circle_doc_class;
 mod code_style_check;
 mod deprecated;
 mod discard_returns;
+mod duplicate_require;
 mod incomplete_signature_doc;
 mod local_const_reassign;
 mod missing_fields;
@@ -74,6 +75,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(circle_doc_class);
     check!(incomplete_signature_doc);
     check!(assign_type_mismatch);
+    check!(duplicate_require);
 
     Some(())
 }
