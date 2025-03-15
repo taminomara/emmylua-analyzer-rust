@@ -466,3 +466,16 @@ arg = {}
 ---@version > 5.3
 ---@type global
 _ENV = {}
+
+
+---@version 5.1, JIT
+--- Sets the environment for the specified function.
+---@param f function|integer The function for which the environment is to be set.
+---@param env table The environment table to assign to the function.
+function setfenv(f, env) end
+
+---@version 5.1, JIT
+--- Retrieves the environment table of the specified function.
+---@param f function|integer The function whose environment is to be retrieved.
+---@return table The environment table associated with the given function.
+function getfenv(f) end
