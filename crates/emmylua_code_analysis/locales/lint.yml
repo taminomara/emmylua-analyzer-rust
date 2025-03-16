@@ -197,3 +197,7 @@ Cannot use `...` outside a vararg function.:
   en: "Duplicate alias '{name}'. Alias definitions cannot be partial."
   zh_CN: '重复的别名 "{name}"。别名定义不能是部分定义。'
   zh_HK: '重複的別名 "{name}"。別名定義不能是部分定義。'
+"The value is assigned as `nil` because the number of values is not enough.":
+  en: "The value is assigned as `nil` because the number of values is not enough."
+  zh_CN: "由于值的数量不够而被赋值为了 `nil` 。"
+  zh_HK: "由于值的数量不够而被赋值为了 `nil` 。"

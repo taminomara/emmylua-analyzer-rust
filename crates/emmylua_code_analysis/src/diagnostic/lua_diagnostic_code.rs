@@ -86,6 +86,8 @@ pub enum DiagnosticCode {
     DuplicateRequire,
     /// non-literal-expressions-in-assert
     NonLiteralExpressionsInAssert,
+    /// Unbalanced assignments
+    UnbalancedAssignments,
 
     #[serde(other)]
     None,

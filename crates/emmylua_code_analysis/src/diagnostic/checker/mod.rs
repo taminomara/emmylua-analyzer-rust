@@ -21,6 +21,7 @@ mod redefined_local;
 mod redundant_parameter;
 mod return_type_mismatch;
 mod syntax_error;
+mod unbalanced_assignments;
 mod undefined_doc_param;
 mod undefined_global;
 mod unused;
@@ -80,6 +81,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(duplicate_require);
     check!(duplicate_type);
     check!(check_return_count);
+    check!(unbalanced_assignments);
 
     check_file_code_style(context, semantic_model);
     Some(())
