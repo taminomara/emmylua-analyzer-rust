@@ -271,21 +271,23 @@ pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignSta
         if let Some(last_expr) = last_expr.clone() {
             let last_expr_type = analyzer.infer_expr(last_expr);
             if let Some(last_expr_type) = last_expr_type {
-                for i in expr_count..var_count {
-                    let var = var_list.get(i)?;
-                    let type_owner =
-                        match get_var_type_owner(analyzer, var.clone(), last_expr.clone()) {
-                            Some(type_owner) => type_owner,
-                            None => {
-                                continue;
-                            }
-                        };
-                    merge_type_owner_and_expr_type(
-                        analyzer,
-                        type_owner,
-                        &last_expr_type,
-                        i - expr_count + 1,
-                    );
+                if last_expr_type.is_multi_return() {
+                    for i in expr_count..var_count {
+                        let var = var_list.get(i)?;
+                        let type_owner =
+                            match get_var_type_owner(analyzer, var.clone(), last_expr.clone()) {
+                                Some(type_owner) => type_owner,
+                                None => {
+                                    continue;
+                                }
+                            };
+                        merge_type_owner_and_expr_type(
+                            analyzer,
+                            type_owner,
+                            &last_expr_type,
+                            i - expr_count + 1,
+                        );
+                    }
                 }
                 return Some(());
             } else {
