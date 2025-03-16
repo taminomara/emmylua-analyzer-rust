@@ -99,7 +99,11 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
             let decl_id = LuaDeclId::new(analyzer.file_id, position);
             let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
             if decl.get_type().is_none() {
-                decl.set_decl_type(LuaType::Unknown);
+                if expr_count == 0 {
+                    decl.set_decl_type(LuaType::Unknown);
+                } else {
+                    decl.set_decl_type(LuaType::Nil);
+                }
             }
         }
     }
