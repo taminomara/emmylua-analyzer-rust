@@ -201,3 +201,7 @@ Cannot use `...` outside a vararg function.:
   en: "The value is assigned as `nil` because the number of values is not enough."
   zh_CN: "由于值的数量不够而被赋值为了 `nil` 。"
   zh_HK: "由于值的数量不够而被赋值为了 `nil` 。"
+"Async function can only be called in async function.":
+  en: "Async function can only be called in async function."
+  zh_CN: "只能在标记为异步的函数中调用异步函数。"
+  zh_HK: "只能在標記為非同步的函式中呼叫非同步函式。"

@@ -30,7 +30,7 @@ fn check_call_expr(
             context.add_diagnostic(
                 DiagnosticCode::AwaitInSync,
                 prefix_expr.get_range(),
-                "await in sync function".to_string(),
+                t!("Async function can only be called in async function.").to_string(),
                 None,
             );
         }
@@ -66,7 +66,7 @@ fn check_pcall_or_xpcall(
                     context.add_diagnostic(
                         DiagnosticCode::AwaitInSync,
                         range,
-                        "await in sync function".to_string(),
+                        t!("Async function can only be called in async function.").to_string(),
                         None,
                     );
                 }
