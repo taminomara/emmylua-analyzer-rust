@@ -1,12 +1,10 @@
 use std::collections::HashSet;
 
-use emmylua_parser::{
-    LuaAstNode, LuaClosureExpr, LuaDocTagParam, LuaDocTagReturn, LuaReturnStat, LuaStat,
-};
+use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaDocTagParam, LuaDocTagReturn, LuaStat};
 
 use crate::{DiagnosticCode, LuaPropertyOwnerId, LuaType, SemanticModel};
 
-use super::{get_closure_expr_comment, DiagnosticContext};
+use super::{get_closure_expr_comment, get_own_return_stats, DiagnosticContext};
 
 pub const CODES: &[DiagnosticCode] = &[
     DiagnosticCode::IncompleteSignatureDoc,
@@ -154,7 +152,7 @@ fn check_returns(
     is_global: bool,
     function_name: &str,
 ) {
-    for return_stat in get_return_stats(closure_expr) {
+    for return_stat in get_own_return_stats(closure_expr) {
         let mut return_stat_len: usize = 0;
 
         for (i, expr) in return_stat.get_expr_list().enumerate() {
@@ -187,14 +185,4 @@ fn check_returns(
             }
         }
     }
-}
-
-fn get_return_stats(closure_expr: &LuaClosureExpr) -> impl Iterator<Item = LuaReturnStat> + '_ {
-    closure_expr
-        .descendants::<LuaReturnStat>()
-        .filter(move |stat| {
-            stat.ancestors::<LuaClosureExpr>()
-                .next()
-                .map_or(false, |expr| &expr == closure_expr)
-        })
 }

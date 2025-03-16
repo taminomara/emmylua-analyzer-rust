@@ -59,12 +59,12 @@ pub fn server_capabilities(client_capabilities: &ClientCapabilities) -> ServerCa
     capabilities!(signature_helper);
     capabilities!(hover);
     capabilities!(fold_range);
-    capabilities!(semantic_token);
     capabilities!(command);
     capabilities!(code_actions);
     capabilities!(inline_values);
     capabilities!(workspace_symbol);
     capabilities!(configuration);
+    capabilities!(semantic_token);
 
     server_capabilities
 }

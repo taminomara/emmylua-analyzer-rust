@@ -173,4 +173,7 @@ Cannot use `...` outside a vararg function.:
   en: 'The same file is duplicate requires.'
   zh_CN: '同一个文件被重复 require。'
   zh_HK: '同一個文件被重複 require。'
-
+'Annotations specify that a return value is required here.':
+  en: 'Annotations specify that a return value is required here.'
+  zh_CN: '此处需要返回值。'
+  zh_HK: '此處需要回傳值。'

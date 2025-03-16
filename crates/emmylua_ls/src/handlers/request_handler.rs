@@ -87,8 +87,6 @@ pub async fn on_req_handler(
         .await
         .on_parallel::<DocumentHighlightRequest, _, _>(on_document_highlight_handler)
         .await
-        .on_parallel::<SemanticTokensFullRequest, _, _>(on_semantic_token_handler)
-        .await
         .on_parallel::<ExecuteCommand, _, _>(on_execute_command_handler)
         .await
         .on_parallel::<CodeActionRequest, _, _>(on_code_action_handler)
@@ -100,6 +98,8 @@ pub async fn on_req_handler(
         .on_parallel::<Formatting, _, _>(on_formatting_handler)
         .await
         .on_parallel::<RangeFormatting, _, _>(on_range_formatting_handler)
+        .await
+        .on_parallel::<SemanticTokensFullRequest, _, _>(on_semantic_token_handler)
         .await
         .finish();
     Ok(())
