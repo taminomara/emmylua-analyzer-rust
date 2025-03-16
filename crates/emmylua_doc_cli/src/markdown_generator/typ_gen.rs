@@ -233,7 +233,7 @@ fn generate_enum_type_markdown(
 
             let typ_display = humanize_type(db, &member_typ, RenderLevel::Simple);
             let description = if !description.is_empty() {
-                format!("-- {}", &description)
+                description.to_string()
             } else {
                 "".to_string()
             };
