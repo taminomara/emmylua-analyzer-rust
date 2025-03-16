@@ -78,6 +78,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(incomplete_signature_doc);
     check!(assign_type_mismatch);
     check!(duplicate_require);
+    check!(duplicate_type);
     check!(check_return_count);
 
     check_file_code_style(context, semantic_model);

@@ -140,10 +140,11 @@ fn check_duplicate_alias(context: &mut DiagnosticContext, alias_tag: LuaDocTagAl
             context.add_diagnostic(
                 DiagnosticCode::DuplicateType,
                 range,
-                format!(
-                    "Duplicate alias '{}'. Alias definitions cannot be partial.",
-                    name
-                ),
+                t!(
+                    "Duplicate alias '{name}'. Alias definitions cannot be partial.",
+                    name = name
+                )
+                .to_string(),
                 None,
             );
         }
