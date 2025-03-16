@@ -1,3 +1,4 @@
+use emmylua_code_analysis::LuaMemberInfo;
 use emmylua_parser::{LuaAstNode, LuaAstToken, LuaIndexExpr, LuaStringToken};
 
 use crate::handlers::completion::{
@@ -24,10 +25,71 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
 
     let prefix_expr = index_expr.get_prefix_expr()?;
     let prefix_type = builder.semantic_model.infer_expr(prefix_expr.into())?;
-    let member_infos = builder.semantic_model.infer_member_infos(&prefix_type)?;
-    for member_info in member_infos {
-        add_member_completion(builder, member_info, completion_status);
+    let member_info_map = builder.semantic_model.infer_member_map(&prefix_type)?;
+    for (_, member_infos) in member_info_map.iter() {
+        add_resolve_member_infos(builder, &member_infos, completion_status);
     }
 
     Some(())
+}
+
+fn add_resolve_member_infos(
+    builder: &mut CompletionBuilder,
+    member_infos: &Vec<LuaMemberInfo>,
+    completion_status: CompletionTriggerStatus,
+) -> Option<()> {
+    if member_infos.len() == 1 {
+        let member_info = &member_infos[0];
+        add_member_completion(builder, member_info.clone(), completion_status);
+        return Some(());
+    }
+
+    let mut resolve_state = MemberResolveState::All;
+    for member_info in member_infos {
+        match member_info.feature {
+            Some(feature) => {
+                if feature.is_meta_decl() {
+                    resolve_state = MemberResolveState::Meta;
+                    break;
+                } else if feature.is_file_decl() {
+                    resolve_state = MemberResolveState::FileDecl;
+                }
+            }
+            None => {}
+        }
+    }
+
+    match resolve_state {
+        MemberResolveState::All => {
+            for member_info in member_infos {
+                add_member_completion(builder, member_info.clone(), completion_status);
+            }
+        }
+        MemberResolveState::Meta => {
+            for member_info in member_infos {
+                if let Some(feature) = member_info.feature {
+                    if feature.is_meta_decl() {
+                        add_member_completion(builder, member_info.clone(), completion_status);
+                    }
+                }
+            }
+        }
+        MemberResolveState::FileDecl => {
+            for member_info in member_infos {
+                if let Some(feature) = member_info.feature {
+                    if feature.is_file_decl() {
+                        add_member_completion(builder, member_info.clone(), completion_status);
+                    }
+                }
+            }
+        }
+    }
+
+    Some(())
+}
+
+enum MemberResolveState {
+    All,
+    Meta,
+    FileDecl,
 }

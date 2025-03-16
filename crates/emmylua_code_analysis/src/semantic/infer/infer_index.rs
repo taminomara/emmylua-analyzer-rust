@@ -18,10 +18,10 @@ use crate::{
         type_check::check_type_compact,
         InferGuard,
     },
-    InFiled, LuaFlowId, LuaInferCache, LuaInstanceType, TypeOps,
+    InFiled, LuaFlowId, LuaInferCache, LuaInstanceType,
 };
 
-use super::{infer_expr, InferResult};
+use super::{infer_expr, resolve_member_type, InferResult};
 
 pub fn infer_index_expr(
     db: &DbIndex,
@@ -125,16 +125,7 @@ fn infer_table_member(
     let members = infer_member_map(db, cache, &typ)?;
     let key: LuaMemberKey = index_expr.get_index_key()?.into();
     let member_infos = members.get(&key)?;
-    if member_infos.len() == 1 {
-        Some(member_infos[0].typ.clone())
-    } else {
-        let mut typ = LuaType::Unknown;
-        for member_info in member_infos {
-            typ = TypeOps::Union.apply(&typ, &member_info.typ);
-        }
-
-        Some(typ)
-    }
+    resolve_member_type::resolve_member_type(member_infos)
 }
 
 fn infer_custom_type_member(
@@ -165,16 +156,7 @@ fn infer_custom_type_member(
     // find member by key in self
     let member_map = infer_member_map(db, cache, &LuaType::Ref(prefix_type_id))?;
     let member_infos = member_map.get(&key)?;
-    if member_infos.len() == 1 {
-        Some(member_infos[0].typ.clone())
-    } else {
-        let mut typ = LuaType::Unknown;
-        for member_info in member_infos {
-            typ = TypeOps::Union.apply(&typ, &member_info.typ);
-        }
-
-        return Some(typ);
-    }
+    resolve_member_type::resolve_member_type(member_infos)
 }
 
 fn infer_tuple_member(tuple_type: &LuaTupleType, index_expr: LuaIndexMemberExpr) -> InferResult {

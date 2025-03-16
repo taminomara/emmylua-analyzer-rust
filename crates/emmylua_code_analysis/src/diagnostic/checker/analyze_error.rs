@@ -4,7 +4,6 @@ use super::DiagnosticContext;
 
 pub const CODES: &[DiagnosticCode] = &[
     DiagnosticCode::TypeNotFound,
-    DiagnosticCode::DuplicateType,
     DiagnosticCode::AnnotationUsageError,
 ];
 

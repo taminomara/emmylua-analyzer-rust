@@ -167,6 +167,7 @@ impl LuaModuleIndex {
             version_conds: None,
             workspace_id,
             property_owner_id: None,
+            is_meta: false,
         };
 
         self.file_module_map.insert(file_id, module_info);
@@ -409,6 +410,20 @@ impl LuaModuleIndex {
         }
 
         file_ids
+    }
+
+    pub fn set_meta(&mut self, file_id: FileId) {
+        if let Some(module_info) = self.file_module_map.get_mut(&file_id) {
+            module_info.is_meta = true;
+        }
+    }
+
+    pub fn is_meta_file(&self, file_id: &FileId) -> bool {
+        if let Some(module_info) = self.file_module_map.get(&file_id) {
+            return module_info.is_meta;
+        }
+
+        false
     }
 }
 

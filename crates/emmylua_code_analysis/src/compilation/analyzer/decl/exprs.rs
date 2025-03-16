@@ -5,7 +5,7 @@ use emmylua_parser::{
 
 use crate::{
     db_index::{LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner},
-    FileId, InFiled, LuaDeclExtra, LuaDeclId, LuaMemberId, LuaSignatureId,
+    FileId, InFiled, LuaDeclExtra, LuaDeclId, LuaMemberFeature, LuaMemberId, LuaSignatureId,
 };
 
 use super::DeclAnalyzer;
@@ -201,8 +201,14 @@ pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, expr: LuaTableExpr) -> Op
                     field.get_syntax_id(),
                 );
 
+                let decl_feature = if analyzer.is_meta {
+                    LuaMemberFeature::MetaDecl
+                } else {
+                    LuaMemberFeature::FileDecl
+                };
+
                 let member_id = LuaMemberId::new(field.get_syntax_id(), file_id);
-                let member = LuaMember::new(owner_id.clone(), member_id, key, true, None);
+                let member = LuaMember::new(owner_id.clone(), member_id, key, decl_feature, None);
                 analyzer.db.get_member_index_mut().add_member(member);
             }
         }

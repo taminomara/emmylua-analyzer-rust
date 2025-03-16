@@ -9,9 +9,7 @@ use emmylua_parser::{
 use rowan::TextRange;
 
 use crate::{
-    db_index::{
-        LuaDeclId, LuaDeclTypeKind, LuaMemberId, LuaPropertyOwnerId, LuaSignatureId, LuaType,
-    },
+    db_index::{LuaDeclId, LuaMemberId, LuaPropertyOwnerId, LuaSignatureId, LuaType},
     LuaTypeDeclId,
 };
 
@@ -28,9 +26,6 @@ pub fn analyze_class(analyzer: &mut DocAnalyzer, tag: LuaDocTagClass) -> Option<
         .get_type_index_mut()
         .find_type_decl(file_id, &name)?;
 
-    if class_decl.get_kind() != LuaDeclTypeKind::Class {
-        return None;
-    }
     let class_decl_id = class_decl.get_id();
     analyzer.current_type_id = Some(class_decl_id.clone());
     if let Some(generic_params) = tag.get_generic_decl() {

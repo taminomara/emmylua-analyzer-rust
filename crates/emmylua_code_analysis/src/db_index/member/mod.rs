@@ -3,7 +3,7 @@ mod lua_member;
 use std::collections::HashMap;
 
 use crate::FileId;
-pub use lua_member::{LuaMember, LuaMemberId, LuaMemberKey, LuaMemberOwner};
+pub use lua_member::{LuaMember, LuaMemberFeature, LuaMemberId, LuaMemberKey, LuaMemberOwner};
 
 use super::traits::LuaIndex;
 
@@ -43,13 +43,15 @@ impl LuaMemberIndex {
         let member = self.members.get(&id)?;
         let key = member.get_key().clone();
         let member_vec = self.owner_members.entry(owner).or_insert_with(Vec::new);
-        if member.is_decl() {
+        if member.get_feature().is_decl() {
             member_vec.push(id);
         } else {
             // check exist
             for member_id in member_vec.iter() {
-                if self.members.get(member_id)?.get_key() == &key {
-                    return Some(());
+                let old_member = self.members.get(member_id)?;
+                if old_member.get_key() == &key && old_member.get_file_id() == member.get_file_id()
+                {
+                    return None;
                 }
             }
 

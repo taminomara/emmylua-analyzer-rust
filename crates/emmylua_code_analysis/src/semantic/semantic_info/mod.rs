@@ -1,5 +1,6 @@
 mod infer_expr_property_owner;
 mod owner_guard;
+mod resolve_member_property;
 
 use emmylua_parser::{
     LuaAstNode, LuaAstToken, LuaDocNameType, LuaDocTag, LuaExpr, LuaLocalName, LuaSyntaxKind,

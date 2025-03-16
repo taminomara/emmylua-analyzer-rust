@@ -4,12 +4,14 @@ use emmylua_parser::{
 };
 
 use crate::{
-    semantic::member::{get_buildin_type_map_type_id, infer_member_map, without_members},
+    semantic::member::{get_buildin_type_map_type_id, infer_member_map},
     DbIndex, LuaDeclId, LuaDeclOrMemberId, LuaInferCache, LuaInstanceType, LuaMemberId,
     LuaMemberKey, LuaPropertyOwnerId, LuaType, LuaTypeDeclId, LuaUnionType,
 };
 
-use super::{infer_expr, infer_token_property_owner, owner_guard::OwnerGuard};
+use super::{
+    infer_expr, infer_token_property_owner, owner_guard::OwnerGuard, resolve_member_property,
+};
 
 pub fn infer_expr_property_owner(
     db: &DbIndex,
@@ -138,22 +140,15 @@ fn infer_index_expr_property_owner(
     owner_guard: OwnerGuard,
 ) -> Option<LuaPropertyOwnerId> {
     let prefix_expr = index_expr.get_prefix_expr()?;
-    let mut prefix_type = infer_expr(db, cache, prefix_expr.into())?;
-    if let LuaType::DocStringConst(_) = &prefix_type {
-        prefix_type = LuaType::String;
-    }
+    let prefix_type = infer_expr(db, cache, prefix_expr.into())?;
     let member_key = index_expr.get_index_key()?.into();
-    if let Some(member_info) = infer_member_property_owner_by_member_key(
+    infer_member_property_owner_by_member_key(
         db,
         cache,
         &prefix_type,
         &member_key,
         owner_guard.next_level()?,
-    ) {
-        return Some(member_info);
-    }
-
-    None
+    )
 }
 
 fn infer_closure_expr_property_owner(
@@ -184,16 +179,12 @@ fn infer_member_property_owner_by_member_key(
     member_key: &LuaMemberKey,
     owner_guard: OwnerGuard,
 ) -> Option<LuaPropertyOwnerId> {
-    if without_members(prefix_type) {
-        return None;
-    }
-
     match &prefix_type {
         LuaType::TableConst(id) => {
             let table_type = LuaType::TableConst(id.clone());
             infer_table_member_property_owner(db, cache, table_type, member_key)
         }
-        LuaType::String | LuaType::Io | LuaType::StringConst(_) => {
+        LuaType::String | LuaType::Io | LuaType::StringConst(_) | LuaType::DocStringConst(_) => {
             let decl_id = get_buildin_type_map_type_id(&prefix_type)?;
             infer_custom_type_member_property_owner(
                 db,
@@ -263,7 +254,7 @@ fn infer_table_member_property_owner(
 ) -> Option<LuaPropertyOwnerId> {
     let member_map = infer_member_map(db, cache, &table_type)?;
     let member_infos = member_map.get(&member_key)?;
-    member_infos.first()?.property_owner_id.clone()
+    resolve_member_property::resolve_member_property(member_infos)
 }
 
 fn infer_custom_type_member_property_owner(
@@ -296,9 +287,8 @@ fn infer_custom_type_member_property_owner(
     }
 
     let member_map = infer_member_map(db, cache, &&LuaType::Ref(prefix_type_id))?;
-
     let member_infos = member_map.get(&member_key)?;
-    member_infos.first()?.property_owner_id.clone()
+    resolve_member_property::resolve_member_property(member_infos)
 }
 
 fn infer_union_member_semantic_info(

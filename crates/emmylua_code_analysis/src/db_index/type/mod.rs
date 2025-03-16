@@ -8,9 +8,7 @@ mod types;
 use super::traits::LuaIndex;
 use crate::{FileId, InFiled};
 use emmylua_parser::LuaSyntaxId;
-use flagset::FlagSet;
 pub use humanize_type::{humanize_type, RenderLevel};
-use rowan::TextRange;
 use std::collections::HashMap;
 pub use type_assert::TypeAssertion;
 pub use type_decl::{
@@ -62,55 +60,18 @@ impl LuaTypeIndex {
         self.file_using_namespace.get(file_id)
     }
 
-    pub fn add_type_decl(
-        &mut self,
-        file_id: FileId,
-        range: TextRange,
-        name: String,
-        kind: LuaDeclTypeKind,
-        attrib: Option<FlagSet<LuaTypeAttribute>>,
-    ) -> Result<(), String> {
-        let basic_name = name;
-        let ns = self.get_file_namespace(&file_id);
-        let full_name = ns
-            .map(|ns| format!("{}.{}", ns, basic_name))
-            .unwrap_or(basic_name.to_string());
-        let id = LuaTypeDeclId::new(&full_name);
+    pub fn add_type_decl(&mut self, file_id: FileId, type_decl: LuaTypeDecl) {
+        let id = type_decl.get_id();
         self.file_types
             .entry(file_id)
             .or_insert_with(Vec::new)
             .push(id.clone());
 
-        if let Some(decls) = self.full_name_type_map.get_mut(&id) {
-            let can_add = match (decls.get_attrib(), attrib) {
-                (Some(a), Some(b)) => {
-                    a.contains(LuaTypeAttribute::Partial) && b.contains(LuaTypeAttribute::Partial)
-                }
-                _ => false,
-            };
-
-            if !can_add {
-                return Err(t!("Type '%{name}' already defined", name = full_name).to_string());
-            }
-
-            if let Some(decl_attrib) = &mut decls.attrib {
-                *decl_attrib |= attrib.unwrap();
-            }
-
-            let location = LuaDeclLocation { file_id, range };
-            decls.locations.push(location);
+        if let Some(old_decl) = self.full_name_type_map.get_mut(&id) {
+            old_decl.merge_decl(type_decl);
         } else {
-            let just_name = if let Some(i) = basic_name.rfind('.') {
-                basic_name[i + 1..].to_string()
-            } else {
-                basic_name.clone()
-            };
-
-            let decl = LuaTypeDecl::new(file_id, range, just_name, kind, attrib, id.clone());
-            self.full_name_type_map.insert(id, decl);
+            self.full_name_type_map.insert(id, type_decl);
         }
-
-        Ok(())
     }
 
     pub fn find_type_decl(&self, file_id: FileId, name: &str) -> Option<&LuaTypeDecl> {

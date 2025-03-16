@@ -8,6 +8,7 @@ mod code_style_check;
 mod deprecated;
 mod discard_returns;
 mod duplicate_require;
+mod duplicate_type;
 mod incomplete_signature_doc;
 mod local_const_reassign;
 mod missing_fields;
@@ -76,6 +77,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(incomplete_signature_doc);
     check!(assign_type_mismatch);
     check!(duplicate_require);
+    check!(duplicate_type);
 
     Some(())
 }
@@ -202,9 +204,9 @@ impl<'a> DiagnosticContext<'a> {
             return false;
         }
 
-        let meta_index = db.get_meta_file();
+        let module_index = db.get_module_index();
         // ignore meta file diagnostic
-        if meta_index.is_meta_file(&file_id) {
+        if module_index.is_meta_file(&file_id) {
             return false;
         }
 

@@ -353,7 +353,7 @@ fn build_node_semantic_token(
                             LuaType::Signature(signature) => {
                                 if semantic_model
                                     .get_db()
-                                    .get_meta_file()
+                                    .get_module_index()
                                     .is_meta_file(&signature.get_file_id())
                                 {
                                     builder.push_with_modifier(
@@ -531,7 +531,7 @@ fn handle_name_node(
                     Some(LuaType::Signature(signature)) => {
                         let is_meta = semantic_model
                             .get_db()
-                            .get_meta_file()
+                            .get_module_index()
                             .is_meta_file(&signature.get_file_id());
                         (
                             SemanticTokenType::FUNCTION,

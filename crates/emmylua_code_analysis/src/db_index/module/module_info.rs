@@ -15,6 +15,7 @@ pub struct ModuleInfo {
     pub version_conds: Option<Box<Vec<LuaVersionCondition>>>,
     pub workspace_id: WorkspaceId,
     pub property_owner_id: Option<LuaPropertyOwnerId>,
+    pub is_meta: bool,
 }
 
 impl ModuleInfo {

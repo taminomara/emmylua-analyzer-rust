@@ -137,6 +137,7 @@ pub struct DeclAnalyzer<'a> {
     root: LuaChunk,
     decl: LuaDeclarationTree,
     scopes: Vec<LuaScopeId>,
+    is_meta: bool,
 }
 
 impl<'a> DeclAnalyzer<'a> {
@@ -146,6 +147,7 @@ impl<'a> DeclAnalyzer<'a> {
             root,
             decl: LuaDeclarationTree::new(file_id),
             scopes: Vec::new(),
+            is_meta: false,
         }
     }
 

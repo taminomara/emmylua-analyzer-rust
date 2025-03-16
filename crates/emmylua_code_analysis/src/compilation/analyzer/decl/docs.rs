@@ -3,10 +3,11 @@ use emmylua_parser::{
     LuaDocTagClass, LuaDocTagEnum, LuaDocTagMeta, LuaDocTagNamespace, LuaDocTagUsing,
 };
 use flagset::FlagSet;
+use rowan::TextRange;
 
 use crate::{
-    db_index::{AnalyzeError, LuaDeclTypeKind, LuaTypeAttribute},
-    DiagnosticCode,
+    db_index::{LuaDeclTypeKind, LuaTypeAttribute},
+    LuaTypeDecl, LuaTypeDeclId,
 };
 
 use super::DeclAnalyzer;
@@ -15,74 +16,52 @@ pub fn analyze_doc_tag_class(analyzer: &mut DeclAnalyzer, class: LuaDocTagClass)
     let name_token = class.get_name_token()?;
     let name = name_token.get_name_text().to_string();
     let range = name_token.syntax().text_range();
+    let attrib = get_attrib_value(analyzer, class.get_attrib());
 
-    let attrib = get_attrib_value(class.get_attrib());
-
-    let file_id = analyzer.get_file_id();
-    let r = analyzer.db.get_type_index_mut().add_type_decl(
-        file_id,
-        range,
-        name,
-        LuaDeclTypeKind::Class,
-        attrib,
-    );
-
-    if let Err(e) = r {
-        analyzer.db.get_diagnostic_index_mut().add_diagnostic(
-            file_id,
-            AnalyzeError::new(DiagnosticCode::DuplicateType, &e, range),
-        );
-    }
-
+    add_type_decl(analyzer, &name, range, LuaDeclTypeKind::Class, attrib);
     Some(())
 }
 
-fn get_attrib_value(attrib: Option<LuaDocAttribute>) -> Option<FlagSet<LuaTypeAttribute>> {
-    let mut attr: FlagSet<LuaTypeAttribute> = LuaTypeAttribute::None.into();
+fn get_attrib_value(
+    analyzer: &mut DeclAnalyzer,
+    attrib: Option<LuaDocAttribute>,
+) -> FlagSet<LuaTypeAttribute> {
+    let mut attr: FlagSet<LuaTypeAttribute> = if analyzer.is_meta {
+        LuaTypeAttribute::Meta.into()
+    } else {
+        LuaTypeAttribute::None.into()
+    };
 
-    for token in attrib?.get_attrib_tokens() {
-        match token.get_name_text() {
-            "partial" => {
-                attr |= LuaTypeAttribute::Partial;
+    if let Some(attrib) = attrib {
+        for token in attrib.get_attrib_tokens() {
+            match token.get_name_text() {
+                "partial" => {
+                    attr |= LuaTypeAttribute::Partial;
+                }
+                "key" => {
+                    attr |= LuaTypeAttribute::Key;
+                }
+                // "global" => {
+                //     attr |= LuaTypeAttribute::Global;
+                // }
+                "exact" => {
+                    attr |= LuaTypeAttribute::Exact;
+                }
+                _ => {}
             }
-            "key" => {
-                attr |= LuaTypeAttribute::Key;
-            }
-            // "global" => {
-            //     attr |= LuaTypeAttribute::Global;
-            // }
-            "exact" => {
-                attr |= LuaTypeAttribute::Exact;
-            }
-            _ => {}
         }
     }
-    Some(attr)
+
+    attr
 }
 
 pub fn analyze_doc_tag_enum(analyzer: &mut DeclAnalyzer, enum_: LuaDocTagEnum) -> Option<()> {
     let name_token = enum_.get_name_token()?;
     let name = name_token.get_name_text().to_string();
     let range = name_token.syntax().text_range();
+    let attrib = get_attrib_value(analyzer, enum_.get_attrib());
 
-    let attrib = get_attrib_value(enum_.get_attrib());
-
-    let file_id = analyzer.get_file_id();
-    let r = analyzer.db.get_type_index_mut().add_type_decl(
-        file_id,
-        range,
-        name,
-        LuaDeclTypeKind::Enum,
-        attrib,
-    );
-
-    if let Err(e) = r {
-        analyzer.db.get_diagnostic_index_mut().add_diagnostic(
-            file_id,
-            AnalyzeError::new(DiagnosticCode::DuplicateType, &e, range),
-        );
-    }
-
+    add_type_decl(analyzer, &name, range, LuaDeclTypeKind::Enum, attrib);
     Some(())
 }
 
@@ -91,22 +70,13 @@ pub fn analyze_doc_tag_alias(analyzer: &mut DeclAnalyzer, alias: LuaDocTagAlias)
     let name = name_token.get_name_text().to_string();
     let range = name_token.syntax().text_range();
 
-    let file_id = analyzer.get_file_id();
-    let r = analyzer.db.get_type_index_mut().add_type_decl(
-        file_id,
+    add_type_decl(
+        analyzer,
+        &name,
         range,
-        name,
         LuaDeclTypeKind::Alias,
-        None,
+        LuaTypeAttribute::None.into(),
     );
-
-    if let Err(e) = r {
-        analyzer.db.get_diagnostic_index_mut().add_diagnostic(
-            file_id,
-            AnalyzeError::new(DiagnosticCode::DuplicateType, &e, range),
-        );
-    }
-
     Some(())
 }
 
@@ -139,7 +109,8 @@ pub fn analyze_doc_tag_using(analyzer: &mut DeclAnalyzer, using: LuaDocTagUsing)
 
 pub fn analyze_doc_tag_meta(analyzer: &mut DeclAnalyzer, tag: LuaDocTagMeta) -> Option<()> {
     let file_id = analyzer.get_file_id();
-    analyzer.db.get_meta_file_mut().add_meta_file(file_id);
+    analyzer.db.get_module_index_mut().set_meta(file_id);
+    analyzer.is_meta = true;
 
     if let Some(name_token) = tag.get_name_token() {
         if name_token.get_name_text() == "no-require" {
@@ -186,4 +157,27 @@ pub fn analyze_doc_tag_meta(analyzer: &mut DeclAnalyzer, tag: LuaDocTagMeta) -> 
         .set_module_version_conds(file_id, version_conds);
 
     Some(())
+}
+
+fn add_type_decl(
+    analyzer: &mut DeclAnalyzer,
+    name: &str,
+    range: TextRange,
+    kind: LuaDeclTypeKind,
+    attrib: FlagSet<LuaTypeAttribute>,
+) {
+    let file_id = analyzer.get_file_id();
+    let type_index = analyzer.db.get_type_index_mut();
+
+    let basic_name = name;
+    let option_namespace = type_index.get_file_namespace(&file_id);
+    let full_name = option_namespace
+        .map(|ns| format!("{}.{}", ns, basic_name))
+        .unwrap_or(basic_name.to_string());
+    let id = LuaTypeDeclId::new(&full_name);
+    let simple_name = id.get_simple_name();
+    type_index.add_type_decl(
+        file_id,
+        LuaTypeDecl::new(file_id, range, simple_name.to_string(), kind, attrib, id),
+    );
 }

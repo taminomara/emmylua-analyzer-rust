@@ -13,7 +13,7 @@ pub struct LuaMember {
     owner: LuaMemberOwner,
     member_id: LuaMemberId,
     key: LuaMemberKey,
-    is_decl: bool,
+    feature: LuaMemberFeature,
     decl_type: Option<LuaType>,
 }
 
@@ -22,14 +22,14 @@ impl LuaMember {
         owner: LuaMemberOwner,
         member_id: LuaMemberId,
         key: LuaMemberKey,
-        is_decl: bool,
+        decl_feature: LuaMemberFeature,
         decl_type: Option<LuaType>,
     ) -> Self {
         Self {
             owner,
             member_id,
             key,
-            is_decl,
+            feature: decl_feature,
             decl_type,
         }
     }
@@ -70,22 +70,12 @@ impl LuaMember {
         self.member_id
     }
 
-    pub fn with_owner(&self, owner: LuaMemberOwner) -> Self {
-        Self {
-            owner,
-            key: self.key.clone(),
-            member_id: self.member_id,
-            is_decl: self.is_decl,
-            decl_type: self.decl_type.clone(),
-        }
-    }
-
     pub fn is_field(&self) -> bool {
         LuaSyntaxKind::DocTagField == self.member_id.get_syntax_id().get_kind().into()
     }
 
-    pub fn is_decl(&self) -> bool {
-        self.is_decl
+    pub fn get_feature(&self) -> LuaMemberFeature {
+        self.feature
     }
 }
 
@@ -262,5 +252,33 @@ impl From<i64> for LuaMemberKey {
 impl From<&str> for LuaMemberKey {
     fn from(name: &str) -> Self {
         LuaMemberKey::Name(name.to_string().into())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum LuaMemberFeature {
+    FileDecl,
+    FirstDefine,
+    MetaDecl,
+}
+
+impl LuaMemberFeature {
+    pub fn is_file_decl(&self) -> bool {
+        matches!(self, LuaMemberFeature::FileDecl)
+    }
+
+    pub fn is_first_define(&self) -> bool {
+        matches!(self, LuaMemberFeature::FirstDefine)
+    }
+
+    pub fn is_meta_decl(&self) -> bool {
+        matches!(self, LuaMemberFeature::MetaDecl)
+    }
+
+    pub fn is_decl(&self) -> bool {
+        matches!(
+            self,
+            LuaMemberFeature::FileDecl | LuaMemberFeature::MetaDecl
+        )
     }
 }

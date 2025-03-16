@@ -3,7 +3,6 @@ mod dependency;
 mod diagnostic;
 mod flow;
 mod member;
-mod meta;
 mod module;
 mod operators;
 mod property;
@@ -19,8 +18,9 @@ pub use declaration::*;
 use dependency::LuaDenpendencyIndex;
 pub use diagnostic::{AnalyzeError, DiagnosticAction, DiagnosticActionKind, DiagnosticIndex};
 pub use flow::{LuaFlowChain, LuaFlowId, LuaFlowIndex};
-pub use member::{LuaMember, LuaMemberId, LuaMemberIndex, LuaMemberKey, LuaMemberOwner};
-use meta::MetaFile;
+pub use member::{
+    LuaMember, LuaMemberFeature, LuaMemberId, LuaMemberIndex, LuaMemberKey, LuaMemberOwner,
+};
 use module::LuaModuleIndex;
 pub use module::{ModuleInfo, WorkspaceId};
 pub use operators::{LuaOperator, LuaOperatorId, LuaOperatorIndex, LuaOperatorMetaMethod};
@@ -36,7 +36,6 @@ pub struct DbIndex {
     references_index: LuaReferenceIndex,
     types_index: LuaTypeIndex,
     modules_index: LuaModuleIndex,
-    meta_files_index: MetaFile,
     members_index: LuaMemberIndex,
     property_index: LuaPropertyIndex,
     signature_index: LuaSignatureIndex,
@@ -56,7 +55,6 @@ impl DbIndex {
             references_index: LuaReferenceIndex::new(),
             types_index: LuaTypeIndex::new(),
             modules_index: LuaModuleIndex::new(),
-            meta_files_index: MetaFile::new(),
             members_index: LuaMemberIndex::new(),
             property_index: LuaPropertyIndex::new(),
             signature_index: LuaSignatureIndex::new(),
@@ -89,10 +87,6 @@ impl DbIndex {
 
     pub fn get_module_index_mut(&mut self) -> &mut LuaModuleIndex {
         &mut self.modules_index
-    }
-
-    pub fn get_meta_file_mut(&mut self) -> &mut MetaFile {
-        &mut self.meta_files_index
     }
 
     pub fn get_member_index_mut(&mut self) -> &mut LuaMemberIndex {
@@ -133,10 +127,6 @@ impl DbIndex {
 
     pub fn get_module_index(&self) -> &LuaModuleIndex {
         &self.modules_index
-    }
-
-    pub fn get_meta_file(&self) -> &MetaFile {
-        &self.meta_files_index
     }
 
     pub fn get_member_index(&self) -> &LuaMemberIndex {
@@ -196,7 +186,6 @@ impl LuaIndex for DbIndex {
         self.references_index.remove(file_id);
         self.types_index.remove(file_id);
         self.modules_index.remove(file_id);
-        self.meta_files_index.remove(file_id);
         self.members_index.remove(file_id);
         self.property_index.remove(file_id);
         self.signature_index.remove(file_id);
@@ -211,7 +200,6 @@ impl LuaIndex for DbIndex {
         self.references_index.clear();
         self.types_index.clear();
         self.modules_index.clear();
-        self.meta_files_index.clear();
         self.members_index.clear();
         self.property_index.clear();
         self.signature_index.clear();

@@ -5,7 +5,7 @@ mod test {
     use crate::db_index::r#type::LuaTypeIndex;
     use crate::db_index::traits::LuaIndex;
     use crate::db_index::{LuaDeclTypeKind, LuaTypeAttribute};
-    use crate::FileId;
+    use crate::{FileId, LuaTypeDecl, LuaTypeDeclId};
 
     fn create_type_index() -> LuaTypeIndex {
         LuaTypeIndex::new()
@@ -21,20 +21,20 @@ mod test {
 
         let _ = index.add_type_decl(
             file_id,
-            TextRange::new(0.into(), 4.into()),
-            "new_type".to_string(),
-            LuaDeclTypeKind::Alias,
-            Some(LuaTypeAttribute::Partial.into()),
+            LuaTypeDecl::new(
+                file_id,
+                TextRange::new(0.into(), 4.into()),
+                "new_type".to_string(),
+                LuaDeclTypeKind::Alias,
+                LuaTypeAttribute::Partial.into(),
+                LuaTypeDeclId::new("test.new_type"),
+            ),
         );
 
         let decl = index.find_type_decl(file_id, "new_type");
         assert!(decl.is_some());
         assert_eq!(decl.unwrap().get_name(), "new_type");
-        assert_eq!(decl.unwrap().get_kind(), LuaDeclTypeKind::Alias);
-        assert_eq!(
-            decl.unwrap().get_attrib(),
-            Some(LuaTypeAttribute::Partial.into())
-        );
+        assert!(decl.unwrap().is_alias());
         assert_eq!(decl.unwrap().get_id().get_name(), "test.new_type");
 
         let file_id2 = FileId { id: 2 };
@@ -57,20 +57,20 @@ mod test {
 
         let _ = index.add_type_decl(
             file_id,
-            TextRange::new(0.into(), 4.into()),
-            "test.new_type".to_string(),
-            LuaDeclTypeKind::Alias,
-            Some(LuaTypeAttribute::Partial.into()),
+            LuaTypeDecl::new(
+                file_id,
+                TextRange::new(0.into(), 4.into()),
+                "new_type".to_string(),
+                LuaDeclTypeKind::Alias,
+                LuaTypeAttribute::Partial.into(),
+                LuaTypeDeclId::new("test.new_type"),
+            ),
         );
 
         let decl = index.find_type_decl(file_id, "new_type");
         assert!(decl.is_some());
         assert_eq!(decl.unwrap().get_name(), "new_type");
-        assert_eq!(decl.unwrap().get_kind(), LuaDeclTypeKind::Alias);
-        assert_eq!(
-            decl.unwrap().get_attrib(),
-            Some(LuaTypeAttribute::Partial.into())
-        );
+        assert!(decl.unwrap().is_alias());
 
         let decl2 = index.find_type_decl(file_id, "test.new_type");
         assert!(decl2.is_some());
@@ -87,10 +87,14 @@ mod test {
 
         let _ = index.add_type_decl(
             file_id,
-            TextRange::new(0.into(), 4.into()),
-            "new_type".to_string(),
-            LuaDeclTypeKind::Class,
-            None,
+            LuaTypeDecl::new(
+                file_id,
+                TextRange::new(0.into(), 4.into()),
+                "new_type".to_string(),
+                LuaDeclTypeKind::Class,
+                LuaTypeAttribute::Partial.into(),
+                LuaTypeDeclId::new("new_type"),
+            ),
         );
 
         let decl = index.find_type_decl(file_id, "new_type");
@@ -101,19 +105,27 @@ mod test {
 
         let _ = index.add_type_decl(
             file_id,
-            TextRange::new(0.into(), 4.into()),
-            "new_type".to_string(),
-            LuaDeclTypeKind::Class,
-            Some(LuaTypeAttribute::Partial.into()),
+            LuaTypeDecl::new(
+                file_id,
+                TextRange::new(0.into(), 4.into()),
+                "new_type".to_string(),
+                LuaDeclTypeKind::Class,
+                LuaTypeAttribute::Partial.into(),
+                LuaTypeDeclId::new(".new_type"),
+            ),
         );
 
         let file_id2 = FileId { id: 2 };
         let _ = index.add_type_decl(
             file_id2,
-            TextRange::new(0.into(), 4.into()),
-            "new_type".to_string(),
-            LuaDeclTypeKind::Class,
-            Some(LuaTypeAttribute::Partial.into()),
+            LuaTypeDecl::new(
+                file_id2,
+                TextRange::new(0.into(), 4.into()),
+                "new_type".to_string(),
+                LuaDeclTypeKind::Class,
+                LuaTypeAttribute::Partial.into(),
+                LuaTypeDeclId::new("new_type"),
+            ),
         );
 
         let decl = index.find_type_decl(file_id, "new_type");
@@ -133,16 +145,19 @@ mod test {
 
         let _ = index.add_type_decl(
             file_id,
-            TextRange::new(0.into(), 4.into()),
-            "test.new_type".to_string(),
-            LuaDeclTypeKind::Class,
-            Some(LuaTypeAttribute::Partial.into()),
+            LuaTypeDecl::new(
+                file_id,
+                TextRange::new(0.into(), 4.into()),
+                "new_type".to_string(),
+                LuaDeclTypeKind::Class,
+                LuaTypeAttribute::Partial.into(),
+                LuaTypeDeclId::new("test.new_type"),
+            ),
         );
 
         let decl = index.find_type_decl(file_id, "test.new_type").unwrap();
         assert_eq!(decl.get_name(), "new_type");
-        assert_eq!(decl.get_kind(), LuaDeclTypeKind::Class);
-        assert_eq!(decl.get_attrib(), Some(LuaTypeAttribute::Partial.into()));
+        assert!(decl.is_class());
         assert_eq!(decl.get_namespace(), "test".into());
         assert_eq!(decl.get_full_name(), "test.new_type");
     }

@@ -8,7 +8,7 @@ use crate::{
         LuaMember, LuaMemberKey, LuaMemberOwner, LuaOperator, LuaOperatorMetaMethod,
         LuaPropertyOwnerId, LuaType,
     },
-    AnalyzeError, DiagnosticCode, LuaMemberId, LuaSignatureId,
+    AnalyzeError, DiagnosticCode, LuaMemberFeature, LuaMemberId, LuaSignatureId,
 };
 
 use super::{infer_type::infer_type, DocAnalyzer};
@@ -89,7 +89,19 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
         }
     };
 
-    let member = LuaMember::new(member_owner, member_id, key.clone(), true, Some(field_type));
+    let decl_feature = if analyzer.is_meta {
+        LuaMemberFeature::MetaDecl
+    } else {
+        LuaMemberFeature::FileDecl
+    };
+
+    let member = LuaMember::new(
+        member_owner,
+        member_id,
+        key.clone(),
+        decl_feature,
+        Some(field_type),
+    );
 
     analyzer.db.get_reference_index_mut().add_index_reference(
         key,

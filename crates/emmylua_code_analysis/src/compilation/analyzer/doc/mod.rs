@@ -62,6 +62,7 @@ pub struct DocAnalyzer<'a> {
     current_type_id: Option<LuaTypeDeclId>,
     comment: LuaComment,
     root: LuaSyntaxNode,
+    is_meta: bool,
 }
 
 impl<'a> DocAnalyzer<'a> {
@@ -72,6 +73,7 @@ impl<'a> DocAnalyzer<'a> {
         comment: LuaComment,
         root: LuaSyntaxNode,
     ) -> DocAnalyzer<'a> {
+        let is_meta = db.get_module_index().is_meta_file(&file_id);
         DocAnalyzer {
             file_id,
             db,
@@ -79,6 +81,7 @@ impl<'a> DocAnalyzer<'a> {
             current_type_id: None,
             comment,
             root,
+            is_meta,
         }
     }
 }
