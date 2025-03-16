@@ -1,6 +1,7 @@
 use emmylua_parser::{
     BinaryOperator, LuaAssignStat, LuaAst, LuaAstNode, LuaBinaryExpr, LuaBlock, LuaCallArgList,
-    LuaCallExpr, LuaCallExprStat, LuaExpr, LuaLiteralToken, LuaStat, LuaVarExpr, UnaryOperator,
+    LuaCallExpr, LuaCallExprStat, LuaCommentOwner, LuaDocTag, LuaExpr, LuaLiteralToken, LuaStat,
+    LuaVarExpr, UnaryOperator,
 };
 use rowan::TextRange;
 use smol_str::SmolStr;
@@ -36,6 +37,10 @@ pub fn analyze_ref_assign(
     path: &str,
 ) -> Option<()> {
     let assign_stat = var_expr.get_parent::<LuaAssignStat>()?;
+    if is_decl_assign_stat(assign_stat.clone()).unwrap_or(false) {
+        return None;
+    }
+
     let (var_exprs, value_exprs) = assign_stat.get_var_and_expr_list();
     let index = var_exprs
         .iter()
@@ -65,6 +70,23 @@ pub fn analyze_ref_assign(
     );
 
     Some(())
+}
+
+fn is_decl_assign_stat(assign_stat: LuaAssignStat) -> Option<bool> {
+    for comment in assign_stat.get_comments() {
+        for tag in comment.get_doc_tags() {
+            match tag {
+                LuaDocTag::Type(_)
+                | LuaDocTag::Class(_)
+                | LuaDocTag::Module(_)
+                | LuaDocTag::Enum(_) => {
+                    return Some(true);
+                }
+                _ => {}
+            }
+        }
+    }
+    Some(false)
 }
 
 fn broadcast_up(
