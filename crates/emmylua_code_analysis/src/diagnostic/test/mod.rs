@@ -1,5 +1,6 @@
 mod assign_type_mismatch_test;
 mod await_in_sync_test;
+mod code_style;
 mod disable_line_test;
 mod duplicate_doc_field_test;
 mod duplicate_require_test;

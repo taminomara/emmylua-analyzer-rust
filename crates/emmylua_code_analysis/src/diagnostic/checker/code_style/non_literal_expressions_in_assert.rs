@@ -19,7 +19,7 @@ pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) ->
 
 fn check_assert_rule(
     context: &mut DiagnosticContext,
-    _: &SemanticModel,
+    semantic_model: &SemanticModel,
     call_expr: LuaCallExpr,
 ) -> Option<()> {
     // only check local a = assert(b, msg)
@@ -30,17 +30,31 @@ fn check_assert_rule(
     if arg_exprs.len() > 1 {
         let second_expr = &arg_exprs[1];
         match second_expr {
-            LuaExpr::LiteralExpr(_) => {}
-            _ => {
-                let range = second_expr.get_range();
-                context.add_diagnostic(
-                    DiagnosticCode::NonLiteralExpressionsInAssert,
-                    range,
-                    t!("codestyle.NonLiteralExpressionsInAssert").to_string(),
-                    None,
-                );
+            LuaExpr::LiteralExpr(_) | LuaExpr::IndexExpr(_) => {
+                return Some(());
             }
+            LuaExpr::NameExpr(name_expr) => {
+                let name = name_expr.get_name_text()?;
+                let decl_tree = semantic_model
+                    .get_db()
+                    .get_decl_index()
+                    .get_decl_tree(&semantic_model.get_file_id())?;
+                if let Some(decl) = decl_tree.find_local_decl(&name, name_expr.get_position()) {
+                    if decl.is_local() {
+                        return Some(());
+                    }
+                }
+            }
+            _ => {}
         }
+
+        let range = second_expr.get_range();
+        context.add_diagnostic(
+            DiagnosticCode::NonLiteralExpressionsInAssert,
+            range,
+            t!("codestyle.NonLiteralExpressionsInAssert").to_string(),
+            None,
+        );
     }
 
     Some(())

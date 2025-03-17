@@ -130,6 +130,12 @@ impl VirtualWorkspace {
         check_type_compact(db, source, compact_type).is_ok()
     }
 
+    pub fn enable_check(&mut self, diagnostic_code: DiagnosticCode) {
+        let mut emmyrc = Emmyrc::default();
+        emmyrc.diagnostics.enables.push(diagnostic_code);
+        self.analysis.diagnostic.update_config(Arc::new(emmyrc));
+    }
+
     pub fn check_code_for(&mut self, diagnostic_code: DiagnosticCode, block_str: &str) -> bool {
         let file_id = self.def(block_str);
         let result = self
