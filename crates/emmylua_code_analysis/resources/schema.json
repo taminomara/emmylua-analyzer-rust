@@ -430,6 +430,34 @@
           "enum": [
             "missing-global-doc"
           ]
+        },
+        {
+          "description": "Assign type mismatch",
+          "type": "string",
+          "enum": [
+            "assign-type-mismatch"
+          ]
+        },
+        {
+          "description": "Duplicate require",
+          "type": "string",
+          "enum": [
+            "duplicate-require"
+          ]
+        },
+        {
+          "description": "non-literal-expressions-in-assert",
+          "type": "string",
+          "enum": [
+            "non-literal-expressions-in-assert"
+          ]
+        },
+        {
+          "description": "unnecessary-assert",
+          "type": "string",
+          "enum": [
+            "unnecessary-assert"
+          ]
         }
       ]
     },

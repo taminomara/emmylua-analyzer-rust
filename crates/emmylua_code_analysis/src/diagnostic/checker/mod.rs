@@ -24,6 +24,7 @@ mod syntax_error;
 mod unbalanced_assignments;
 mod undefined_doc_param;
 mod undefined_global;
+mod unnecessary_assert;
 mod unused;
 
 use code_style::check_file_code_style;
@@ -61,6 +62,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(unused);
     check!(deprecated);
     check!(undefined_global);
+    check!(unnecessary_assert);
     check!(access_invisible);
     check!(missing_parameter);
     check!(redundant_parameter);

@@ -88,6 +88,8 @@ pub enum DiagnosticCode {
     NonLiteralExpressionsInAssert,
     /// Unbalanced assignments
     UnbalancedAssignments,
+    /// unnecessary-assert
+    UnnecessaryAssert,
 
     #[serde(other)]
     None,
