@@ -4,9 +4,9 @@ use emmylua_parser::{
 };
 
 use crate::{
-    semantic::member::{get_buildin_type_map_type_id, infer_member_map},
-    DbIndex, LuaDeclId, LuaDeclOrMemberId, LuaInferCache, LuaInstanceType, LuaMemberId,
-    LuaMemberKey, LuaPropertyOwnerId, LuaType, LuaTypeDeclId, LuaUnionType,
+    semantic::member::get_buildin_type_map_type_id, DbIndex, LuaDeclId, LuaDeclOrMemberId,
+    LuaInferCache, LuaInstanceType, LuaMemberId, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId,
+    LuaType, LuaTypeDeclId, LuaUnionType,
 };
 
 use super::{
@@ -181,8 +181,8 @@ fn infer_member_property_owner_by_member_key(
 ) -> Option<LuaPropertyOwnerId> {
     match &prefix_type {
         LuaType::TableConst(id) => {
-            let table_type = LuaType::TableConst(id.clone());
-            infer_table_member_property_owner(db, cache, table_type, member_key)
+            let owner = LuaMemberOwner::Element(id.clone());
+            infer_table_member_property_owner(db, owner, member_key)
         }
         LuaType::String | LuaType::Io | LuaType::StringConst(_) | LuaType::DocStringConst(_) => {
             let decl_id = get_buildin_type_map_type_id(&prefix_type)?;
@@ -248,13 +248,11 @@ fn infer_member_property_owner_by_member_key(
 
 fn infer_table_member_property_owner(
     db: &DbIndex,
-    cache: &mut LuaInferCache,
-    table_type: LuaType,
+    owner: LuaMemberOwner,
     member_key: &LuaMemberKey,
 ) -> Option<LuaPropertyOwnerId> {
-    let member_map = infer_member_map(db, cache, &table_type)?;
-    let member_infos = member_map.get(&member_key)?;
-    resolve_member_property::resolve_member_property(member_infos)
+    let member_item = db.get_member_index().get_member_item(&owner, member_key)?;
+    resolve_member_property::resolve_member_property(db, member_item)
 }
 
 fn infer_custom_type_member_property_owner(
@@ -286,9 +284,27 @@ fn infer_custom_type_member_property_owner(
         }
     }
 
-    let member_map = infer_member_map(db, cache, &&LuaType::Ref(prefix_type_id))?;
-    let member_infos = member_map.get(&member_key)?;
-    resolve_member_property::resolve_member_property(member_infos)
+    let owner = LuaMemberOwner::Type(prefix_type_id.clone());
+    if let Some(member_item) = db.get_member_index().get_member_item(&owner, member_key) {
+        return resolve_member_property::resolve_member_property(db, &member_item);
+    }
+
+    if type_decl.is_class() {
+        let super_types = type_index.get_super_types(&prefix_type_id)?;
+        for super_type in super_types {
+            if let Some(property) = infer_member_property_owner_by_member_key(
+                db,
+                cache,
+                &super_type,
+                member_key,
+                owner_guard.next_level()?,
+            ) {
+                return Some(property);
+            }
+        }
+    }
+
+    None
 }
 
 fn infer_union_member_semantic_info(
@@ -333,8 +349,8 @@ fn infer_instance_member_property_by_member_key(
         return Some(result);
     }
 
-    let table_type = LuaType::TableConst(range.clone());
-    infer_table_member_property_owner(db, cache, table_type, member_key)
+    let owner = LuaMemberOwner::Element(range.clone());
+    infer_table_member_property_owner(db, owner, member_key)
 }
 
 fn infer_global_member_property_by_member_key(

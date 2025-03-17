@@ -8,30 +8,6 @@ use crate::{
 pub use infer_member_map::infer_member_map;
 pub use infer_members::infer_members;
 
-pub fn without_members(type_: &LuaType) -> bool {
-    match type_ {
-        LuaType::Nil
-        | LuaType::Boolean
-        | LuaType::BooleanConst(_)
-        | LuaType::Integer
-        | LuaType::IntegerConst(_)
-        | LuaType::Number
-        | LuaType::FloatConst(_)
-        | LuaType::Function
-        | LuaType::DocFunction(_)
-        | LuaType::TableGeneric(_)
-        | LuaType::Userdata
-        | LuaType::Thread
-        | LuaType::Unknown
-        | LuaType::SelfInfer
-        | LuaType::StrTplRef(_)
-        | LuaType::TplRef(_)
-        | LuaType::Array(_)
-        | LuaType::MuliReturn(_) => true,
-        _ => false,
-    }
-}
-
 pub fn without_index_operator(type_: &LuaType) -> bool {
     match type_ {
         LuaType::Nil

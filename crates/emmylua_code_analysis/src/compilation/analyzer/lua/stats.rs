@@ -10,7 +10,7 @@ use crate::{
     db_index::{LuaDeclId, LuaMemberId, LuaMemberOwner, LuaOperatorMetaMethod, LuaType},
 };
 
-use super::{add_member_and_clear_cache, LuaAnalyzer};
+use super::{set_owner_and_add_member, LuaAnalyzer};
 
 pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) -> Option<()> {
     let name_list: Vec<_> = local_stat.get_local_name_list().collect();
@@ -175,12 +175,7 @@ fn get_var_type_owner(
                         }
                     };
 
-                    add_member_and_clear_cache(
-                        analyzer.db,
-                        &mut analyzer.infer_cache,
-                        member_owner,
-                        member_id,
-                    );
+                    set_owner_and_add_member(analyzer.db, member_owner, member_id);
                     return Some(TypeOwner::Member(member_id));
                 }
                 None => {

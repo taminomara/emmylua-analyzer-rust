@@ -4,15 +4,12 @@ pub use cache_options::CacheOptions;
 use emmylua_parser::LuaSyntaxId;
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{db_index::LuaType, FileId, LuaFunctionType, LuaMemberKey};
-
-use super::LuaMemberInfo;
+use crate::{db_index::LuaType, FileId, LuaFunctionType};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum CacheKey {
     Expr(LuaSyntaxId),
     Call(LuaSyntaxId, Option<usize>),
-    TypeMemberOwner(LuaType),
 }
 
 #[derive(Debug)]
@@ -20,7 +17,6 @@ pub enum CacheEntry {
     ReadyCache,
     ExprCache(LuaType),
     CallCache(Arc<LuaFunctionType>),
-    TypeMemberOwnerCache(Arc<HashMap<LuaMemberKey, Vec<LuaMemberInfo>>>),
 }
 
 #[derive(Debug)]

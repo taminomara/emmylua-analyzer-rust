@@ -12,13 +12,11 @@ use crate::{
     },
     semantic::{
         instantiate::{instantiate_type, TypeSubstitutor},
-        member::{
-            get_buildin_type_map_type_id, infer_member_map, without_index_operator, without_members,
-        },
+        member::{get_buildin_type_map_type_id, without_index_operator},
         type_check::check_type_compact,
         InferGuard,
     },
-    InFiled, LuaFlowId, LuaInferCache, LuaInstanceType,
+    InFiled, LuaFlowId, LuaInferCache, LuaInstanceType, LuaMemberOwner,
 };
 
 use super::{infer_expr, resolve_member_type, InferResult};
@@ -80,13 +78,9 @@ pub fn infer_member_by_member_key(
     index_expr: LuaIndexMemberExpr,
     infer_guard: &mut InferGuard,
 ) -> InferResult {
-    if without_members(prefix_type) {
-        return None;
-    }
-
     match &prefix_type {
         LuaType::Table | LuaType::Any | LuaType::Unknown => Some(LuaType::Any),
-        LuaType::TableConst(id) => infer_table_member(db, cache, id.clone(), index_expr),
+        LuaType::TableConst(id) => infer_table_member(db, id.clone(), index_expr),
         LuaType::String | LuaType::Io | LuaType::StringConst(_) => {
             let decl_id = get_buildin_type_map_type_id(&prefix_type)?;
             infer_custom_type_member(db, cache, decl_id, index_expr, infer_guard)
@@ -117,15 +111,13 @@ pub fn infer_member_by_member_key(
 
 fn infer_table_member(
     db: &DbIndex,
-    cache: &mut LuaInferCache,
     inst: InFiled<TextRange>,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
-    let typ = LuaType::TableConst(inst.clone());
-    let members = infer_member_map(db, cache, &typ)?;
+    let owner = LuaMemberOwner::Element(inst);
     let key: LuaMemberKey = index_expr.get_index_key()?.into();
-    let member_infos = members.get(&key)?;
-    resolve_member_type::resolve_member_type(member_infos)
+    let member_item = db.get_member_index().get_member_item(&owner, &key)?;
+    resolve_member_type::resolve_member_type(db, member_item)
 }
 
 fn infer_custom_type_member(
@@ -152,11 +144,24 @@ fn infer_custom_type_member(
         }
     }
 
+    let owner = LuaMemberOwner::Type(prefix_type_id.clone());
     let key: LuaMemberKey = index_expr.get_index_key()?.into();
-    // find member by key in self
-    let member_map = infer_member_map(db, cache, &LuaType::Ref(prefix_type_id))?;
-    let member_infos = member_map.get(&key)?;
-    resolve_member_type::resolve_member_type(member_infos)
+    if let Some(member_item) = db.get_member_index().get_member_item(&owner, &key) {
+        return resolve_member_type::resolve_member_type(db, member_item);
+    }
+
+    if type_decl.is_class() {
+        let super_types = type_index.get_super_types(&prefix_type_id)?;
+        for super_type in super_types {
+            if let Some(member_type) =
+                infer_member_by_member_key(db, cache, &super_type, index_expr.clone(), infer_guard)
+            {
+                return Some(member_type);
+            }
+        }
+    }
+
+    None
 }
 
 fn infer_tuple_member(tuple_type: &LuaTupleType, index_expr: LuaIndexMemberExpr) -> InferResult {
@@ -300,7 +305,7 @@ fn infer_instance_member(
         return Some(result);
     }
 
-    infer_table_member(db, cache, range.clone(), index_expr.clone())
+    infer_table_member(db, range.clone(), index_expr.clone())
 }
 
 pub fn infer_member_by_operator(

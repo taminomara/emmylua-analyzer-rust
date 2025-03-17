@@ -11,13 +11,19 @@ use super::traits::LuaIndex;
 pub struct LuaMemberIndex {
     members: HashMap<LuaMemberId, LuaMember>,
     in_filed: HashMap<FileId, HashSet<MemberOrOwner>>,
-    owner_members: HashMap<LuaMemberOwner, Vec<LuaMemberId>>,
+    owner_members: HashMap<LuaMemberOwner, HashMap<LuaMemberKey, LuaMemberIndexItem>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum MemberOrOwner {
     Member(LuaMemberId),
     Owner(LuaMemberOwner),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum LuaMemberIndexItem {
+    One(LuaMemberId),
+    Many(Vec<LuaMemberId>),
 }
 
 impl LuaMemberIndex {
@@ -33,8 +39,8 @@ impl LuaMemberIndex {
         let id = member.get_id();
         let owner = member.get_owner();
         let file_id = member.get_file_id();
-        self.add_in_file_object(file_id, MemberOrOwner::Member(id));
         self.members.insert(id, member);
+        self.add_in_file_object(file_id, MemberOrOwner::Member(id));
         if !owner.is_none() {
             self.add_in_file_object(file_id, MemberOrOwner::Owner(owner.clone()));
             self.add_member_to_owner(owner, id);
@@ -50,23 +56,34 @@ impl LuaMemberIndex {
     }
 
     pub fn add_member_to_owner(&mut self, owner: LuaMemberOwner, id: LuaMemberId) -> Option<()> {
-        let member = self.members.get(&id)?;
+        let member = self.get_member(&id)?;
         let key = member.get_key().clone();
-        let member_vec = self.owner_members.entry(owner).or_insert_with(Vec::new);
-        if member.get_feature().is_decl() {
-            member_vec.push(id);
-        } else {
-            // check exist
-            for member_id in member_vec.iter() {
-                let old_member = self.members.get(member_id)?;
-                if old_member.get_key() == &key && old_member.get_file_id() == member.get_file_id()
-                {
-                    return None;
+        let feature = member.get_feature();
+        let member_map = self.owner_members.entry(owner).or_insert_with(HashMap::new);
+        if feature.is_decl() {
+            if let Some(item) = member_map.get_mut(&key) {
+                match item {
+                    LuaMemberIndexItem::One(old_id) => {
+                        if old_id != &id {
+                            let ids = vec![old_id.clone(), id];
+                            *item = LuaMemberIndexItem::Many(ids);
+                        }
+                    }
+                    LuaMemberIndexItem::Many(ids) => {
+                        if !ids.contains(&id) {
+                            ids.push(id);
+                        }
+                    }
                 }
+            } else {
+                member_map.insert(key, LuaMemberIndexItem::One(id));
             }
-
-            member_vec.push(id);
+        } else {
+            if !member_map.contains_key(&key) {
+                member_map.insert(key, LuaMemberIndexItem::One(id));
+            }
         }
+
         Some(())
     }
 
@@ -76,7 +93,7 @@ impl LuaMemberIndex {
         file_id: FileId,
         id: LuaMemberId,
     ) -> Option<()> {
-        let member = self.members.get_mut(&id)?;
+        let member = self.get_member_mut(&id)?;
         member.set_owner(owner.clone());
         self.add_in_file_object(file_id, MemberOrOwner::Owner(owner));
 
@@ -92,13 +109,34 @@ impl LuaMemberIndex {
     }
 
     pub fn get_members(&self, owner: &LuaMemberOwner) -> Option<Vec<&LuaMember>> {
-        let member_ids = self.owner_members.get(owner)?;
-        Some(
-            member_ids
-                .iter()
-                .filter_map(|id| self.members.get(id))
-                .collect(),
-        )
+        let member_items = self.owner_members.get(owner)?;
+        let mut members = Vec::new();
+        for (_, item) in member_items {
+            match item {
+                LuaMemberIndexItem::One(id) => {
+                    if let Some(member) = self.get_member(id) {
+                        members.push(member);
+                    }
+                }
+                LuaMemberIndexItem::Many(ids) => {
+                    for id in ids {
+                        if let Some(member) = self.get_member(id) {
+                            members.push(member);
+                        }
+                    }
+                }
+            }
+        }
+
+        Some(members)
+    }
+
+    pub fn get_member_item(
+        &self,
+        owner: &LuaMemberOwner,
+        key: &LuaMemberKey,
+    ) -> Option<&LuaMemberIndexItem> {
+        self.owner_members.get(owner).and_then(|map| map.get(key))
     }
 }
 
@@ -122,9 +160,29 @@ impl LuaIndex for LuaMemberIndex {
 
             let mut need_removed_owner = Vec::new();
             for owner in owners {
-                if let Some(member_ids) = self.owner_members.get_mut(&owner) {
-                    member_ids.retain(|it| it.file_id != file_id);
-                    if member_ids.is_empty() {
+                if let Some(member_items) = self.owner_members.get_mut(&owner) {
+                    let mut need_removed_key = Vec::new();
+                    for (key, item) in member_items.iter_mut() {
+                        match item {
+                            LuaMemberIndexItem::One(id) => {
+                                if id.file_id == file_id {
+                                    need_removed_key.push(key.clone());
+                                }
+                            }
+                            LuaMemberIndexItem::Many(ids) => {
+                                ids.retain(|id| id.file_id != file_id);
+                                if ids.is_empty() {
+                                    need_removed_key.push(key.clone());
+                                }
+                            }
+                        }
+                    }
+
+                    for key in need_removed_key {
+                        member_items.remove(&key);
+                    }
+
+                    if member_items.is_empty() {
                         need_removed_owner.push(owner);
                     }
                 }

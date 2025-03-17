@@ -1,7 +1,7 @@
 use rowan::TextRange;
 
 use crate::{
-    compilation::analyzer::lua::add_member_and_clear_cache,
+    compilation::analyzer::lua::set_owner_and_add_member,
     db_index::{DbIndex, LuaDeclId, LuaMemberId, LuaMemberOwner, LuaType, LuaTypeDeclId},
     InFiled, LuaInferCache,
 };
@@ -81,7 +81,7 @@ fn merge_type(
 
 fn merge_def_type_with_table(
     db: &mut DbIndex,
-    cache: &mut LuaInferCache,
+    _: &mut LuaInferCache,
     def_id: LuaTypeDeclId,
     table_range: InFiled<TextRange>,
 ) -> Option<()> {
@@ -94,7 +94,7 @@ fn merge_def_type_with_table(
         .collect::<Vec<_>>();
     let def_owner = LuaMemberOwner::Type(def_id);
     for table_member_id in expr_member_ids {
-        add_member_and_clear_cache(db, cache, def_owner.clone(), table_member_id);
+        set_owner_and_add_member(db, def_owner.clone(), table_member_id);
     }
 
     Some(())

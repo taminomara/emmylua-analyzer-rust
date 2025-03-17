@@ -18,7 +18,7 @@ use crate::{
     db_index::{DbIndex, LuaType},
     profile::Profile,
     semantic::{infer_expr, LuaInferCache},
-    CacheKey, CacheOptions, FileId, LuaMemberId, LuaMemberOwner,
+    CacheOptions, FileId, LuaMemberId, LuaMemberOwner,
 };
 
 use super::{unresolve::UnResolve, AnalyzeContext};
@@ -82,9 +82,8 @@ fn analyze_node(analyzer: &mut LuaAnalyzer, node: LuaAst) {
     }
 }
 
-pub fn add_member_and_clear_cache(
+pub fn set_owner_and_add_member(
     db: &mut DbIndex,
-    cache: &mut LuaInferCache,
     owner: LuaMemberOwner,
     member_id: LuaMemberId,
 ) -> Option<()> {
@@ -93,15 +92,6 @@ pub fn add_member_and_clear_cache(
     db.get_member_index_mut()
         .add_member_to_owner(owner.clone(), member_id);
 
-    let key = match owner {
-        LuaMemberOwner::Element(in_file_range) => {
-            CacheKey::TypeMemberOwner(LuaType::TableConst(in_file_range))
-        }
-        LuaMemberOwner::Type(def_id) => CacheKey::TypeMemberOwner(LuaType::Ref(def_id)),
-        _ => return None,
-    };
-
-    cache.remove(&key);
     Some(())
 }
 

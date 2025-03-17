@@ -104,8 +104,8 @@ impl<'a> SemanticModel<'a> {
     pub fn infer_member_map(
         &self,
         prefix_type: &LuaType,
-    ) -> Option<Arc<HashMap<LuaMemberKey, Vec<LuaMemberInfo>>>> {
-        infer_member_map(self.db, &mut self.infer_cache.borrow_mut(), prefix_type)
+    ) -> Option<HashMap<LuaMemberKey, Vec<LuaMemberInfo>>> {
+        infer_member_map(self.db, prefix_type)
     }
 
     pub fn type_check(&self, source: &LuaType, compact_type: &LuaType) -> TypeCheckResult {

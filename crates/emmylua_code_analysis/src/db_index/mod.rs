@@ -19,7 +19,8 @@ use dependency::LuaDenpendencyIndex;
 pub use diagnostic::{AnalyzeError, DiagnosticAction, DiagnosticActionKind, DiagnosticIndex};
 pub use flow::{LuaFlowChain, LuaFlowId, LuaFlowIndex};
 pub use member::{
-    LuaMember, LuaMemberFeature, LuaMemberId, LuaMemberIndex, LuaMemberKey, LuaMemberOwner,
+    LuaMember, LuaMemberFeature, LuaMemberId, LuaMemberIndex, LuaMemberIndexItem, LuaMemberKey,
+    LuaMemberOwner,
 };
 use module::LuaModuleIndex;
 pub use module::{ModuleInfo, WorkspaceId};

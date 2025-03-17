@@ -1,15 +1,20 @@
-use crate::{LuaMemberInfo, LuaPropertyOwnerId};
+use crate::{DbIndex, LuaMemberIndexItem, LuaPropertyOwnerId};
 
 // need support multi
-pub fn resolve_member_property(member_infos: &Vec<LuaMemberInfo>) -> Option<LuaPropertyOwnerId> {
-    if member_infos.len() == 1 {
-        return member_infos[0].property_owner_id.clone();
-    }
-
-    let mut resolve_state = MemberResolveState::MetaOrNone;
-    for member_info in member_infos {
-        match member_info.feature {
-            Some(feature) => {
+pub fn resolve_member_property(
+    db: &DbIndex,
+    member_item: &LuaMemberIndexItem,
+) -> Option<LuaPropertyOwnerId> {
+    match member_item {
+        LuaMemberIndexItem::One(member_id) => Some(LuaPropertyOwnerId::Member(*member_id)),
+        LuaMemberIndexItem::Many(member_ids) => {
+            let mut resolve_state = MemberResolveState::MetaOrNone;
+            let members = member_ids
+                .iter()
+                .map(|id| db.get_member_index().get_member(id))
+                .collect::<Option<Vec<_>>>()?;
+            for member in &members {
+                let feature = member.get_feature();
                 if feature.is_first_define() {
                     resolve_state = MemberResolveState::FirstDefine;
                 } else if feature.is_file_decl() {
@@ -17,41 +22,39 @@ pub fn resolve_member_property(member_infos: &Vec<LuaMemberInfo>) -> Option<LuaP
                     break;
                 }
             }
-            None => {}
-        }
-    }
 
-    match resolve_state {
-        MemberResolveState::MetaOrNone => {
-            for member_info in member_infos {
-                if member_info.property_owner_id.is_some() {
-                    return member_info.property_owner_id.clone();
-                }
-            }
-
-            None
-        }
-        MemberResolveState::FirstDefine => {
-            for member_info in member_infos {
-                if let Some(feature) = member_info.feature {
-                    if feature.is_first_define() {
-                        return member_info.property_owner_id.clone();
+            match resolve_state {
+                MemberResolveState::MetaOrNone => {
+                    for member in &members {
+                        let feature = member.get_feature();
+                        if feature.is_meta_decl() {
+                            return Some(LuaPropertyOwnerId::Member(member.get_id()));
+                        }
                     }
-                }
-            }
 
-            None
-        }
-        MemberResolveState::FileDecl => {
-            for member_info in member_infos {
-                if let Some(feature) = member_info.feature {
-                    if feature.is_file_decl() {
-                        return member_info.property_owner_id.clone();
+                    Some(LuaPropertyOwnerId::Member(members.first()?.get_id()))
+                }
+                MemberResolveState::FirstDefine => {
+                    for member in &members {
+                        let feature = member.get_feature();
+                        if feature.is_first_define() {
+                            return Some(LuaPropertyOwnerId::Member(member.get_id()));
+                        }
                     }
+
+                    None
+                }
+                MemberResolveState::FileDecl => {
+                    for member in &members {
+                        let feature = member.get_feature();
+                        if feature.is_file_decl() {
+                            return Some(LuaPropertyOwnerId::Member(member.get_id()));
+                        }
+                    }
+
+                    None
                 }
             }
-
-            None
         }
     }
 }
