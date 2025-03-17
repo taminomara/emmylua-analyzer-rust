@@ -1,4 +1,6 @@
-use emmylua_code_analysis::{LuaDeclExtra, LuaPropertyOwnerId, LuaType, SemanticModel};
+use emmylua_code_analysis::{
+    LuaDeclExtra, LuaMemberId, LuaMemberOwner, LuaPropertyOwnerId, LuaType, SemanticModel,
+};
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr,
     LuaLiteralToken, LuaNameToken, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
@@ -437,11 +439,50 @@ fn build_node_semantic_token(
                         builder.push(name.syntax(), SemanticTokenType::FUNCTION);
                         return Some(());
                     }
+
+                    let owner_id = member.get_owner();
+                    if let LuaMemberOwner::Type(type_id) = owner_id {
+                        if let Some(type_decl) = semantic_model
+                            .get_db()
+                            .get_type_index()
+                            .get_type_decl(&type_id)
+                        {
+                            if type_decl.is_enum() {
+                                builder.push(name.syntax(), SemanticTokenType::ENUM_MEMBER);
+                                return Some(());
+                            }
+                        }
+                    }
                 }
             }
             builder.push(name.syntax(), SemanticTokenType::PROPERTY);
         }
         LuaAst::LuaTableField(table_field) => {
+            let owner_id =
+                LuaMemberId::new(table_field.get_syntax_id(), semantic_model.get_file_id());
+            if let Some(member) = semantic_model
+                .get_db()
+                .get_member_index()
+                .get_member(&owner_id)
+            {
+                let owner_id = member.get_owner();
+                if let LuaMemberOwner::Type(type_id) = owner_id {
+                    if let Some(type_decl) = semantic_model
+                        .get_db()
+                        .get_type_index()
+                        .get_type_decl(&type_id)
+                    {
+                        if type_decl.is_enum() {
+                            builder.push(
+                                table_field.get_field_key()?.get_name()?.syntax(),
+                                SemanticTokenType::ENUM_MEMBER,
+                            );
+                            return Some(());
+                        }
+                    }
+                }
+            }
+
             let value_type = semantic_model.infer_expr(table_field.get_value_expr()?.clone())?;
             match value_type {
                 LuaType::Signature(_) | LuaType::DocFunction(_) => {
