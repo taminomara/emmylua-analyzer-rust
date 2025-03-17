@@ -274,7 +274,11 @@ fn unwrapp_return_type(
     call_expr: LuaCallExpr,
 ) -> Option<LuaType> {
     match &return_type {
-        LuaType::Table | LuaType::TableConst(_) | LuaType::Any | LuaType::Unknown | LuaType::Instance(_) => {
+        LuaType::Table
+        | LuaType::TableConst(_)
+        | LuaType::Any
+        | LuaType::Unknown
+        | LuaType::Instance(_) => {
             let id = InFiled {
                 file_id: cache.get_file_id(),
                 value: call_expr.get_range(),
