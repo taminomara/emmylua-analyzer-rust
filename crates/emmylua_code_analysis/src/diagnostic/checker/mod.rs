@@ -4,6 +4,7 @@ mod assign_type_mismatch;
 mod await_in_sync;
 mod check_field;
 mod circle_doc_class;
+mod code_style;
 mod code_style_check;
 mod deprecated;
 mod discard_returns;
@@ -25,6 +26,7 @@ mod undefined_doc_param;
 mod undefined_global;
 mod unused;
 
+use code_style::check_file_code_style;
 use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaComment, LuaStat, LuaSyntaxKind};
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
@@ -79,6 +81,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(duplicate_require);
     check!(duplicate_type);
 
+    check_file_code_style(context, semantic_model);
     Some(())
 }
 

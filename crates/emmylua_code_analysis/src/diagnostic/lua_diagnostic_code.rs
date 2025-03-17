@@ -84,6 +84,8 @@ pub enum DiagnosticCode {
     AssignTypeMismatch,
     /// Duplicate require
     DuplicateRequire,
+    /// non-literal-expressions-in-assert
+    NonLiteralExpressionsInAssert,
 
     #[serde(other)]
     None,
@@ -123,7 +125,12 @@ pub fn is_code_default_enable(code: &DiagnosticCode) -> bool {
         DiagnosticCode::CodeStyleCheck => false,
         DiagnosticCode::IncompleteSignatureDoc => false,
         DiagnosticCode::MissingGlobalDoc => false,
+
         // ... handle other variants
+
+        // neovim-code-style
+        DiagnosticCode::NonLiteralExpressionsInAssert => false,
+
         _ => true,
     }
 }
