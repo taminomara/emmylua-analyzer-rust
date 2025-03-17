@@ -16,6 +16,7 @@ pub struct LuaProperty {
     pub deprecated_message: Option<Box<String>>,
     pub version_conds: Option<Box<Vec<LuaVersionCondition>>>,
     pub see_content: Option<Box<String>>,
+    pub other_content: Option<Box<String>>,
 }
 
 impl LuaProperty {
@@ -29,6 +30,7 @@ impl LuaProperty {
             deprecated_message: None,
             version_conds: None,
             see_content: None,
+            other_content: None,
         }
     }
 }

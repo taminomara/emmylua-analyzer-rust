@@ -1,7 +1,7 @@
 use emmylua_parser::{
     BinaryOperator, LuaAst, LuaAstNode, LuaAstToken, LuaBlock, LuaDocDescriptionOwner, LuaDocTagAs,
-    LuaDocTagCast, LuaDocTagModule, LuaDocTagOverload, LuaDocTagParam, LuaDocTagReturn,
-    LuaDocTagSee, LuaDocTagType, LuaExpr, LuaLocalName, LuaNameToken, LuaVarExpr,
+    LuaDocTagCast, LuaDocTagModule, LuaDocTagOther, LuaDocTagOverload, LuaDocTagParam,
+    LuaDocTagReturn, LuaDocTagSee, LuaDocTagType, LuaExpr, LuaLocalName, LuaNameToken, LuaVarExpr,
 };
 use smol_str::SmolStr;
 
@@ -356,6 +356,24 @@ pub fn analyze_see(analyzer: &mut DocAnalyzer, tag: LuaDocTagSee) -> Option<()> 
         .db
         .get_property_index_mut()
         .add_see(analyzer.file_id, owner, text.to_string());
+
+    Some(())
+}
+
+pub fn analyze_other(analyzer: &mut DocAnalyzer, other: LuaDocTagOther) -> Option<()> {
+    let owner = get_owner_id(analyzer)?;
+    let tag_name = other.get_tag_name()?;
+    let description = if let Some(des) = other.get_description() {
+        let description = preprocess_description(&des.get_description_text());
+        format!("@*{}* {}", tag_name, description)
+    } else {
+        format!("@*{}*", tag_name)
+    };
+
+    analyzer
+        .db
+        .get_property_index_mut()
+        .add_other(analyzer.file_id, owner, description);
 
     Some(())
 }

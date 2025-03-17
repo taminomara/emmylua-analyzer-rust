@@ -1057,6 +1057,13 @@ impl LuaAstNode for LuaDocTagOther {
 
 impl LuaDocDescriptionOwner for LuaDocTagOther {}
 
+impl LuaDocTagOther {
+    pub fn get_tag_name(&self) -> Option<String> {
+        let token = self.token_by_kind(LuaTokenKind::TkTagOther)?;
+        Some(token.get_text().to_string())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaDocTagNamespace {
     syntax: LuaSyntaxNode,

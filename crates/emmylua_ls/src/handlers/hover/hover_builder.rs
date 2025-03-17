@@ -25,6 +25,8 @@ pub struct HoverBuilder<'a> {
     pub type_expansion: Option<Vec<String>>,
     /// see
     pub see_content: Option<String>,
+    /// other
+    pub other_content: Option<String>,
 
     pub is_completion: bool,
     trigger_token: Option<LuaSyntaxToken>,
@@ -47,6 +49,7 @@ impl<'a> HoverBuilder<'a> {
             trigger_token: token,
             type_expansion: None,
             see_content: None,
+            other_content: None,
         }
     }
 
@@ -168,6 +171,10 @@ impl<'a> HoverBuilder<'a> {
         if let Some(see) = &property.see_content {
             self.see_content = Some(see.to_string());
         }
+        if let Some(other) = &property.other_content {
+            self.other_content = Some(other.to_string());
+        }
+
         Some(())
     }
 
@@ -288,7 +295,12 @@ impl<'a> HoverBuilder<'a> {
         }
 
         if let Some(see_content) = &self.see_content {
-            result.push_str(&format!("\nSee: {}\n", see_content));
+            result.push_str(&format!("\n@*see* {}\n", see_content));
+        }
+
+        if let Some(other) = &self.other_content {
+            result.push_str("\n\n");
+            result.push_str(other);
         }
 
         if let Some(signature_overload) = &self.signature_overload {
