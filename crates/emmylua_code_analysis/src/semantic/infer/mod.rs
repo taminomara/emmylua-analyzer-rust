@@ -17,6 +17,7 @@ use infer_name::{infer_name_expr, infer_param};
 use infer_table::infer_table_expr;
 pub use infer_table::infer_table_should_be;
 use infer_unary::infer_unary_expr;
+use rowan::TextRange;
 use smol_str::SmolStr;
 
 use crate::{
@@ -136,4 +137,44 @@ fn get_custom_type_operator(
     } else {
         None
     }
+}
+
+/// 获取赋值时所有右值类型或调用时所有参数类型或返回时所有返回值类型
+pub fn infer_value_expr_infos(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
+    exprs: &[LuaExpr],
+) -> Option<Vec<(LuaType, TextRange)>> {
+    let mut value_types = Vec::new();
+    // 倒序处理最后一个表达式是多返回值的情况
+    for (idx, expr) in exprs.iter().rev().enumerate() {
+        let expr_type = infer_expr(db, cache, expr.clone())?;
+        match expr_type {
+            LuaType::MuliReturn(multi) => {
+                match &*multi {
+                    LuaMultiReturn::Multi(types) => {
+                        // 如果不是最后一个表达式, 则只取第一个
+                        if idx != 0 {
+                            value_types.push((types[0].clone(), expr.get_range()));
+                        }
+                        // 如果是最后一个表达式, 则取所有
+                        else {
+                            for typ in types.iter().rev() {
+                                value_types.push((typ.clone(), expr.get_range()));
+                            }
+                        }
+                    }
+                    LuaMultiReturn::Base(typ) => {
+                        value_types.push((typ.clone(), expr.get_range()));
+                    }
+                }
+            }
+            _ => {
+                value_types.push((expr_type.clone(), expr.get_range()));
+            }
+        }
+    }
+    // 倒转
+    value_types.reverse();
+    Some(value_types)
 }

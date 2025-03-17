@@ -5,8 +5,8 @@ use emmylua_parser::{
 use rowan::TextRange;
 
 use crate::{
-    DiagnosticCode, LuaDeclId, LuaMultiReturn, LuaPropertyOwnerId, LuaType, SemanticModel,
-    TypeCheckFailReason, TypeCheckResult,
+    DiagnosticCode, LuaDeclId, LuaPropertyOwnerId, LuaType, SemanticModel, TypeCheckFailReason,
+    TypeCheckResult,
 };
 
 use super::{humanize_lint_type, DiagnosticContext};
@@ -35,7 +35,7 @@ fn check_assign_stat(
     assign: &LuaAssignStat,
 ) -> Option<()> {
     let (vars, exprs) = assign.get_var_and_expr_list();
-    let value_types = get_all_value_expr_type(semantic_model, &exprs)?;
+    let value_types = semantic_model.infer_value_expr_infos(&exprs)?;
 
     for (idx, var) in vars.iter().enumerate() {
         match var {
@@ -45,7 +45,7 @@ fn check_assign_stat(
                     semantic_model,
                     index_expr,
                     exprs.get(idx).map(|expr| expr.clone()),
-                    value_types.get(idx)?.clone(),
+                    value_types.get(idx)?.0.clone(),
                 );
             }
             LuaVarExpr::NameExpr(name_expr) => {
@@ -54,7 +54,7 @@ fn check_assign_stat(
                     semantic_model,
                     name_expr,
                     exprs.get(idx).map(|expr| expr.clone()),
-                    value_types.get(idx)?.clone(),
+                    value_types.get(idx)?.0.clone(),
                 );
             }
         }
@@ -125,7 +125,7 @@ fn check_local_stat(
 ) -> Option<()> {
     let vars = local.get_local_name_list().collect::<Vec<_>>();
     let value_exprs = local.get_value_exprs().collect::<Vec<_>>();
-    let value_types = get_all_value_expr_type(semantic_model, &value_exprs)?;
+    let value_types = semantic_model.infer_value_expr_infos(&value_exprs)?;
 
     for (idx, var) in vars.iter().enumerate() {
         let name_token = var.get_name_token()?;
@@ -140,7 +140,7 @@ fn check_local_stat(
             semantic_model,
             decl.get_range(),
             Some(name_type.clone()),
-            Some(value_types.get(idx)?.clone()),
+            Some(value_types.get(idx)?.0.clone()),
             false,
         );
         if let Some(expr) = value_exprs.get(idx).map(|expr| expr.clone()) {
@@ -281,44 +281,4 @@ fn add_type_check_diagnostic(
             }
         },
     }
-}
-
-/// 获取所有右值的类型
-fn get_all_value_expr_type(
-    semantic_model: &SemanticModel,
-    exprs: &[LuaExpr],
-) -> Option<Vec<LuaType>> {
-    let mut value_types = Vec::new();
-    // 倒序处理最后一个表达式是多返回值的情况
-    for (idx, expr) in exprs.iter().rev().enumerate() {
-        let expr_type = semantic_model.infer_expr(expr.clone())?;
-        match expr_type {
-            LuaType::MuliReturn(multi) => {
-                match &*multi {
-                    LuaMultiReturn::Multi(types) => {
-                        // 如果不是最后一个表达式, 则只取第一个
-                        if idx != 0 {
-                            value_types.push(types[0].clone());
-                        }
-                        // 如果是最后一个表达式, 则取所有
-                        else {
-                            for typ in types.iter().rev() {
-                                value_types.push(typ.clone());
-                            }
-                        }
-                    }
-                    LuaMultiReturn::Base(typ) => {
-                        value_types.push(typ.clone());
-                    }
-                }
-            }
-            _ => {
-                value_types.push(expr_type);
-                break;
-            }
-        }
-    }
-    // 倒转
-    value_types.reverse();
-    Some(value_types)
 }
