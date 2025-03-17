@@ -162,10 +162,11 @@ fn get_var_type_owner(
                         }
                         LuaType::Ref(ref_id) => {
                             let member_owner = LuaMemberOwner::Type(ref_id);
-                            analyzer
-                                .db
-                                .get_member_index_mut()
-                                .set_member_owner(member_owner, member_id);
+                            analyzer.db.get_member_index_mut().set_member_owner(
+                                member_owner,
+                                member_id.file_id,
+                                member_id,
+                            );
                             return None;
                         }
                         // is ref need extend field?

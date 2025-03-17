@@ -89,7 +89,7 @@ pub fn add_member_and_clear_cache(
     member_id: LuaMemberId,
 ) -> Option<()> {
     db.get_member_index_mut()
-        .set_member_owner(owner.clone(), member_id);
+        .set_member_owner(owner.clone(), member_id.file_id, member_id);
     db.get_member_index_mut()
         .add_member_to_owner(owner.clone(), member_id);
 
