@@ -6,7 +6,7 @@ use crate::{DiagnosticCode, LuaTypeAttribute, SemanticModel};
 
 use super::DiagnosticContext;
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::DuplicateRequire];
+pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::DuplicateType];
 
 pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
     let root = semantic_model.get_root().clone();
