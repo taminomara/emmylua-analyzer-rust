@@ -14,6 +14,8 @@ pub struct CompletionBuilder<'a> {
     stopped: bool,
     // 主动触发补全
     pub is_invoke_completion: bool,
+    pub env_start_index: i32,
+    pub env_end_index: i32,
 }
 
 impl<'a> CompletionBuilder<'a> {
@@ -31,6 +33,8 @@ impl<'a> CompletionBuilder<'a> {
             cancel_token,
             stopped: false,
             is_invoke_completion,
+            env_start_index: -1,
+            env_end_index: -1,
         }
     }
 
@@ -57,5 +61,19 @@ impl<'a> CompletionBuilder<'a> {
 
     pub fn get_trigger_text(&self) -> String {
         self.trigger_token.text().trim_end().to_string()
+    }
+
+    pub fn remove_env_completion_items(&mut self) {
+        if self.env_start_index == -1 || self.env_end_index == -1 {
+            return;
+        }
+        if self.env_start_index <= self.env_end_index
+            && self.env_end_index < self.completion_items.len() as i32
+        {
+            self.completion_items
+                .drain(self.env_start_index as usize..=self.env_end_index as usize);
+        }
+        self.env_start_index = -1;
+        self.env_end_index = -1;
     }
 }

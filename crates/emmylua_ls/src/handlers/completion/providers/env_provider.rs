@@ -17,17 +17,16 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         LuaAst::LuaNameExpr(_) => {}
         LuaAst::LuaBlock(_) => {}
         LuaAst::LuaCallArgList(_) => {}
-        // 在表中无键时主动触发的补全, 不在这里处理
-        // TODO 如果左值类型不是类而是纯表则允许
-        LuaAst::LuaTableExpr(_)|
         // 字符串中触发的补全
-        LuaAst::LuaLiteralExpr(_)  => return None,
-        _ => {},
+        LuaAst::LuaLiteralExpr(_) => return None,
+        _ => {}
     };
 
     let mut duplicated_name = HashSet::new();
+    builder.env_start_index = builder.get_completion_items_mut().len() as i32;
     add_local_env(builder, &mut duplicated_name, &node);
     add_global_env(builder, &mut duplicated_name);
+    builder.env_end_index = builder.get_completion_items_mut().len() as i32 - 1;
 
     builder.env_duplicate_name.extend(duplicated_name);
 
