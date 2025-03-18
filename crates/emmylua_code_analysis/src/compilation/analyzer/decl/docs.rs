@@ -113,7 +113,9 @@ pub fn analyze_doc_tag_meta(analyzer: &mut DeclAnalyzer, tag: LuaDocTagMeta) -> 
     analyzer.is_meta = true;
 
     if let Some(name_token) = tag.get_name_token() {
-        if name_token.get_name_text() == "no-require" {
+        let text = name_token.get_name_text();
+        // compact luals
+        if text == "no-require" || text == "_" {
             analyzer
                 .db
                 .get_module_index_mut()
@@ -128,11 +130,8 @@ pub fn analyze_doc_tag_meta(analyzer: &mut DeclAnalyzer, tag: LuaDocTagMeta) -> 
             analyzer
                 .db
                 .get_module_index_mut()
-                .add_module_by_module_path(
-                    file_id,
-                    name_token.get_name_text().to_string(),
-                    workspace_id,
-                );
+                .add_module_by_module_path(file_id, text.to_string(), workspace_id);
+            analyzer.db.get_module_index_mut().set_meta(file_id);
         }
     }
 
