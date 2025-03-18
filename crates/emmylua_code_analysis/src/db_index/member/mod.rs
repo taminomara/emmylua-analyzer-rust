@@ -59,7 +59,10 @@ impl LuaMemberIndex {
         let member = self.get_member(&id)?;
         let key = member.get_key().clone();
         let feature = member.get_feature();
-        let member_map = self.owner_members.entry(owner).or_insert_with(HashMap::new);
+        let member_map = self
+            .owner_members
+            .entry(owner.clone())
+            .or_insert_with(HashMap::new);
         if feature.is_decl() {
             if let Some(item) = member_map.get_mut(&key) {
                 match item {
@@ -81,10 +84,51 @@ impl LuaMemberIndex {
         } else {
             if !member_map.contains_key(&key) {
                 member_map.insert(key, LuaMemberIndexItem::One(id));
+                return Some(());
             }
+
+            let item = member_map.get(&key)?.clone();
+            let new_items = if self.is_item_only_meta(&item) {
+                match item {
+                    LuaMemberIndexItem::One(old_id) => LuaMemberIndexItem::Many(vec![id, old_id]),
+                    LuaMemberIndexItem::Many(mut ids) => {
+                        ids.push(id);
+                        LuaMemberIndexItem::Many(ids)
+                    }
+                }
+            } else {
+                return Some(());
+            };
+
+            self.owner_members
+                .entry(owner)
+                .or_insert_with(HashMap::new)
+                .insert(key, new_items);
         }
 
         Some(())
+    }
+
+    fn is_item_only_meta(&self, item: &LuaMemberIndexItem) -> bool {
+        match item {
+            LuaMemberIndexItem::One(id) => {
+                if let Some(member) = self.get_member(id) {
+                    return member.get_feature().is_meta_decl();
+                }
+            }
+            LuaMemberIndexItem::Many(ids) => {
+                for id in ids {
+                    if let Some(member) = self.get_member(id) {
+                        if !member.get_feature().is_meta_decl() {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+
+        false
     }
 
     pub fn set_member_owner(
