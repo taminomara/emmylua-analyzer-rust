@@ -8,7 +8,9 @@ mod infer_unary;
 mod resolve_member_type;
 mod test;
 
-use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLiteralToken};
+use emmylua_parser::{
+    LuaAst, LuaAstNode, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLiteralToken, LuaTableExpr,
+};
 use infer_binary::infer_binary_expr;
 use infer_call::infer_call_expr;
 pub use infer_call_func::infer_call_expr_func;
@@ -25,7 +27,7 @@ use crate::{
     InFiled, LuaMultiReturn,
 };
 
-use super::{CacheEntry, CacheKey, LuaInferCache};
+use super::{member::infer_members, CacheEntry, CacheKey, LuaInferCache};
 
 pub type InferResult = Option<LuaType>;
 
@@ -140,7 +142,7 @@ fn get_custom_type_operator(
 }
 
 /// 获取赋值时所有右值类型或调用时所有参数类型或返回时所有返回值类型
-pub fn infer_value_expr_infos(
+pub fn infer_multi_value_adjusted_expression_types(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     exprs: &[LuaExpr],
@@ -177,4 +179,45 @@ pub fn infer_value_expr_infos(
     // 倒转
     value_types.reverse();
     Some(value_types)
+}
+
+/// 从右值推断左值已绑定的类型
+pub fn infer_left_value_type_from_right_value(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
+    expr: LuaExpr,
+) -> Option<LuaType> {
+    let ast = expr.syntax().parent().map(LuaAst::cast).flatten()?;
+
+    let typ = match ast {
+        LuaAst::LuaAssignStat(assign) => {
+            let (vars, exprs) = assign.get_var_and_expr_list();
+            let mut typ = None;
+            for (idx, assign_expr) in exprs.iter().enumerate() {
+                if expr == *assign_expr {
+                    let var = vars.get(idx);
+                    if let Some(var) = var {
+                        typ = Some(infer_expr(db, cache, var.clone().into())?);
+                    }
+                }
+            }
+            typ
+        }
+        LuaAst::LuaTableField(table_field) => {
+            let field_key = table_field.get_field_key()?;
+            let table_expr = table_field.get_parent::<LuaTableExpr>()?;
+            let table_type = infer_table_should_be(db, cache, table_expr.clone())?;
+            let member_infos = infer_members(db, &table_type)?;
+            let mut typ = None;
+            for member_info in member_infos.iter() {
+                if member_info.key.to_path() == field_key.get_path_part() {
+                    typ = Some(member_info.typ.clone());
+                }
+            }
+            typ
+        }
+        _ => None,
+    };
+
+    typ
 }

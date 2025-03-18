@@ -3,6 +3,26 @@ mod tests {
     use crate::{DiagnosticCode, VirtualWorkspace};
 
     #[test]
+    fn test_1() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::RedundantReturnValue,
+            r#"
+            ---@class Completion2.A
+            ---@field event fun()
+
+            ---@type Completion2.A
+            local a = {
+                event = function(aaa)
+                    return aaa
+                end,
+            }
+        "#
+        ));
+    }
+
+    #[test]
     fn test_missing_return_value() {
         let mut ws = VirtualWorkspace::new();
 

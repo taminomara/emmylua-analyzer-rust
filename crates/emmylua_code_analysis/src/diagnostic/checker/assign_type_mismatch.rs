@@ -35,7 +35,7 @@ fn check_assign_stat(
     assign: &LuaAssignStat,
 ) -> Option<()> {
     let (vars, exprs) = assign.get_var_and_expr_list();
-    let value_types = semantic_model.infer_value_expr_infos(&exprs)?;
+    let value_types = semantic_model.infer_multi_value_adjusted_expression_types(&exprs)?;
 
     for (idx, var) in vars.iter().enumerate() {
         match var {
@@ -125,7 +125,7 @@ fn check_local_stat(
 ) -> Option<()> {
     let vars = local.get_local_name_list().collect::<Vec<_>>();
     let value_exprs = local.get_value_exprs().collect::<Vec<_>>();
-    let value_types = semantic_model.infer_value_expr_infos(&value_exprs)?;
+    let value_types = semantic_model.infer_multi_value_adjusted_expression_types(&value_exprs)?;
 
     for (idx, var) in vars.iter().enumerate() {
         let name_token = var.get_name_token()?;

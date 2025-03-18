@@ -22,20 +22,55 @@ pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) ->
     Some(())
 }
 
+// 获取(是否doc标注过返回值, 返回值类型)
+fn get_function_return_info(
+    context: &mut DiagnosticContext,
+    semantic_model: &SemanticModel,
+    closure_expr: &LuaClosureExpr,
+) -> Option<(bool, Vec<LuaType>)> {
+    let typ = semantic_model
+        .infer_left_value_type_from_right_value(closure_expr.clone().into())
+        .unwrap_or(LuaType::Unknown);
+
+    match typ {
+        LuaType::DocFunction(func_type) => {
+            return Some((
+                true,
+                func_type.get_ret().iter().map(|ty| ty.clone()).collect(),
+            ));
+        }
+        LuaType::Signature(signature) => {
+            let signature = context.db.get_signature_index().get(&signature)?;
+            return Some((
+                signature.resolve_return == SignatureReturnStatus::DocResolve,
+                signature.get_return_types(),
+            ));
+        }
+        _ => {}
+    };
+
+    let signature_id = LuaSignatureId::from_closure(semantic_model.get_file_id(), &closure_expr);
+    let signature = context.db.get_signature_index().get(&signature_id)?;
+
+    Some((
+        signature.resolve_return == SignatureReturnStatus::DocResolve,
+        signature.get_return_types(),
+    ))
+}
+
 fn check_missing_return(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
     closure_expr: &LuaClosureExpr,
 ) -> Option<()> {
-    // 获取签名
-    let signature_id = LuaSignatureId::from_closure(semantic_model.get_file_id(), &closure_expr);
-    let signature = context.db.get_signature_index().get(&signature_id)?;
+    let (is_doc_resolve_return, return_types) =
+        get_function_return_info(context, semantic_model, closure_expr)?;
 
     // 如果返回状态不是 DocResolve, 则跳过检查
-    if signature.resolve_return != SignatureReturnStatus::DocResolve {
+    if !is_doc_resolve_return {
         return None;
     }
-    let return_types = signature.get_return_types();
+
     // 如果包含可变参数, 则跳过检查
     if return_types.iter().any(|ty| ty.is_variadic()) {
         return Some(());
@@ -212,7 +247,9 @@ fn check_return_count(
     let mut redundant_ranges = Vec::new();
 
     for expr in expr_list {
-        let expr_type = semantic_model.infer_expr(expr.clone())?;
+        let expr_type = semantic_model
+            .infer_expr(expr.clone())
+            .unwrap_or(LuaType::Unknown);
         match expr_type {
             LuaType::MuliReturn(types) => {
                 total_return_count += types.get_len().unwrap_or(1) as usize;
