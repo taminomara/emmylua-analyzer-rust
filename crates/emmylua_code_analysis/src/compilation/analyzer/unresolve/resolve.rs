@@ -2,12 +2,12 @@ use crate::{
     compilation::analyzer::lua::LuaReturnPoint,
     db_index::{DbIndex, LuaDocReturnInfo, LuaMemberOwner, LuaType},
     semantic::{infer_expr, LuaInferCache},
-    SignatureReturnStatus,
+    LuaPropertyOwnerId, SignatureReturnStatus,
 };
 
 use super::{
     merge_decl_expr_type, merge_member_type, UnResolveDecl, UnResolveIterVar, UnResolveMember,
-    UnResolveModule, UnResolveReturn,
+    UnResolveModule, UnResolveModuleRef, UnResolveReturn,
 };
 
 pub fn try_resolve_decl(
@@ -170,5 +170,28 @@ pub fn try_resolve_iter_var(
         .unwrap_or(&LuaType::Nil);
     let decl_id = iter_var.decl_id;
     merge_decl_expr_type(db, cache, decl_id, iter_type.clone());
+    Some(true)
+}
+
+pub fn try_resolve_module_ref(
+    db: &mut DbIndex,
+    _: &mut LuaInferCache,
+    module_ref: &UnResolveModuleRef,
+) -> Option<bool> {
+    let module_index = db.get_module_index();
+    let module = module_index.get_module(module_ref.module_file_id)?;
+    let export_type = module.export_type.clone()?;
+    match &module_ref.owner_id {
+        LuaPropertyOwnerId::LuaDecl(decl_id) => {
+            let decl = db.get_decl_index_mut().get_decl_mut(decl_id)?;
+            decl.set_decl_type(export_type);
+        }
+        LuaPropertyOwnerId::Member(member_id) => {
+            let member = db.get_member_index_mut().get_member_mut(member_id)?;
+            member.set_decl_type(export_type);
+        }
+        _ => {}
+    }
+
     Some(true)
 }

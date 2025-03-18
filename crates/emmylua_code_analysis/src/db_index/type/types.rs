@@ -34,7 +34,6 @@ pub enum LuaType {
     TableConst(InFiled<TextRange>),
     Ref(LuaTypeDeclId),
     Def(LuaTypeDeclId),
-    Module(ArcIntern<SmolStr>),
     Array(Arc<LuaType>),
     Nullable(Arc<LuaType>),
     Tuple(Arc<LuaTupleType>),
@@ -82,7 +81,6 @@ impl PartialEq for LuaType {
             (LuaType::TableConst(a), LuaType::TableConst(b)) => a == b,
             (LuaType::Ref(a), LuaType::Ref(b)) => a == b,
             (LuaType::Def(a), LuaType::Def(b)) => a == b,
-            (LuaType::Module(a), LuaType::Module(b)) => a == b,
             (LuaType::Array(a), LuaType::Array(b)) => a == b,
             (LuaType::Call(a), LuaType::Call(b)) => a == b,
             (LuaType::Nullable(a), LuaType::Nullable(b)) => a == b,
@@ -135,7 +133,6 @@ impl Hash for LuaType {
             LuaType::TableConst(a) => (18, a).hash(state),
             LuaType::Ref(a) => (19, a).hash(state),
             LuaType::Def(a) => (20, a).hash(state),
-            LuaType::Module(a) => (21, a).hash(state),
             LuaType::Array(a) => (22, a).hash(state),
             LuaType::Call(a) => (23, a).hash(state),
             LuaType::Nullable(a) => (24, a).hash(state),
@@ -355,10 +352,6 @@ impl LuaType {
                 | LuaType::DocStringConst(_)
                 | LuaType::DocIntegerConst(_)
         )
-    }
-
-    pub fn is_module(&self) -> bool {
-        matches!(self, LuaType::Module(_))
     }
 
     pub fn is_multi_return(&self) -> bool {

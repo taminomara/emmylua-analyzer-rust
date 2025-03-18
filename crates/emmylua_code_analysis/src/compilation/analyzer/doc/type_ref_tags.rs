@@ -3,9 +3,9 @@ use emmylua_parser::{
     LuaDocTagCast, LuaDocTagModule, LuaDocTagOther, LuaDocTagOverload, LuaDocTagParam,
     LuaDocTagReturn, LuaDocTagSee, LuaDocTagType, LuaExpr, LuaLocalName, LuaNameToken, LuaVarExpr,
 };
-use smol_str::SmolStr;
 
 use crate::{
+    compilation::analyzer::unresolve::UnResolveModuleRef,
     db_index::{
         LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaPropertyOwnerId,
         LuaSignatureId, LuaType,
@@ -219,16 +219,34 @@ pub fn analyze_overload(analyzer: &mut DocAnalyzer, tag: LuaDocTagOverload) -> O
 
 pub fn analyze_module(analyzer: &mut DocAnalyzer, tag: LuaDocTagModule) -> Option<()> {
     let module_path = tag.get_string_token()?.get_value();
-    let decl_type = LuaType::Module(SmolStr::new(module_path).into());
-    if let Some(owner) = get_owner_id(analyzer) {
-        match owner {
+    let module_info = analyzer.db.get_module_index().find_module(&module_path)?;
+    let export_type = module_info.export_type.clone();
+    let module_file_id = module_info.file_id;
+    let owner_id = get_owner_id(analyzer)?;
+    if let Some(export_type) = export_type {
+        match &owner_id {
             LuaPropertyOwnerId::LuaDecl(decl_id) => {
                 let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-                decl.set_decl_type(decl_type);
+                decl.set_decl_type(export_type);
+            }
+            LuaPropertyOwnerId::Member(member_id) => {
+                let member = analyzer
+                    .db
+                    .get_member_index_mut()
+                    .get_member_mut(&member_id)?;
+                member.set_decl_type(export_type);
             }
             _ => {}
         }
+    } else {
+        let unresolve = UnResolveModuleRef {
+            module_file_id,
+            owner_id,
+        };
+
+        analyzer.context.add_unresolve(unresolve.into());
     }
+
     Some(())
 }
 

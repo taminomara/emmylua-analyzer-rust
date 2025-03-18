@@ -67,7 +67,6 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
                 id.get_name().to_string()
             }
         }
-        LuaType::Module(module_path) => humanize_module_type(db, module_path, level),
         LuaType::Array(arr_inner) => humanize_array_type(db, arr_inner, level),
         LuaType::Call(alias_call) => humanize_call_type(db, alias_call, level),
         LuaType::Nullable(inner) => humanize_nullable_type(db, inner, level),
@@ -249,20 +248,6 @@ fn humanize_tuple_type(db: &DbIndex, tuple: &LuaTupleType, level: RenderLevel) -
         .collect::<Vec<_>>()
         .join(",");
     format!("({}{})", type_str, dots)
-}
-
-fn humanize_module_type(db: &DbIndex, module_path: &str, level: RenderLevel) -> String {
-    let module = db.get_module_index().find_module(module_path);
-    if module.is_none() {
-        return format!("module({})", module_path);
-    }
-
-    let module = module.unwrap();
-    if module.export_type.is_none() {
-        return format!("module({})", module_path);
-    }
-
-    humanize_type(db, &module.export_type.clone().unwrap(), level)
 }
 
 fn humanize_array_type(db: &DbIndex, inner: &LuaType, level: RenderLevel) -> String {

@@ -6,14 +6,14 @@ mod resolve_closure;
 use crate::{
     db_index::{DbIndex, LuaDeclId, LuaMemberId, LuaSignatureId},
     profile::Profile,
-    FileId,
+    FileId, LuaPropertyOwnerId,
 };
 use emmylua_parser::{LuaCallExpr, LuaExpr};
 use infer_manager::InferCacheManager;
 pub use merge_type::{merge_decl_expr_type, merge_member_type};
 use resolve::{
     try_resolve_decl, try_resolve_iter_var, try_resolve_member, try_resolve_module,
-    try_resolve_return_point,
+    try_resolve_module_ref, try_resolve_return_point,
 };
 use resolve_closure::{try_resolve_closure_params, try_resolve_closure_return};
 
@@ -65,6 +65,9 @@ fn try_resolve(
             UnResolve::IterDecl(un_resolve_iter_var) => {
                 try_resolve_iter_var(db, config, un_resolve_iter_var).unwrap_or(false)
             }
+            UnResolve::ModuleRef(module_ref) => {
+                try_resolve_module_ref(db, config, module_ref).unwrap_or(false)
+            }
             UnResolve::None => continue,
         };
 
@@ -87,6 +90,7 @@ pub enum UnResolve {
     Return(Box<UnResolveReturn>),
     ClosureParams(Box<UnResolveClosureParams>),
     ClosureReturn(Box<UnResolveClosureReturn>),
+    ModuleRef(Box<UnResolveModuleRef>),
 }
 
 #[allow(dead_code)]
@@ -108,6 +112,7 @@ impl UnResolve {
             UnResolve::ClosureReturn(un_resolve_closure_return) => {
                 Some(un_resolve_closure_return.file_id)
             }
+            UnResolve::ModuleRef(_) => None,
             UnResolve::None => None,
         }
     }
@@ -207,5 +212,17 @@ pub struct UnResolveClosureReturn {
 impl From<UnResolveClosureReturn> for UnResolve {
     fn from(un_resolve_closure_return: UnResolveClosureReturn) -> Self {
         UnResolve::ClosureReturn(Box::new(un_resolve_closure_return))
+    }
+}
+
+#[derive(Debug)]
+pub struct UnResolveModuleRef {
+    pub owner_id: LuaPropertyOwnerId,
+    pub module_file_id: FileId,
+}
+
+impl From<UnResolveModuleRef> for UnResolve {
+    fn from(un_resolve_module_ref: UnResolveModuleRef) -> Self {
+        UnResolve::ModuleRef(Box::new(un_resolve_module_ref))
     }
 }

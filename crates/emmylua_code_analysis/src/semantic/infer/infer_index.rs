@@ -27,11 +27,8 @@ pub fn infer_index_expr(
     index_expr: LuaIndexExpr,
 ) -> InferResult {
     let prefix_expr = index_expr.get_prefix_expr()?;
-    let mut prefix_type = infer_expr(db, cache, prefix_expr)?;
+    let prefix_type = infer_expr(db, cache, prefix_expr)?;
     let index_member_expr = LuaIndexMemberExpr::IndexExpr(index_expr.clone());
-    if let LuaType::DocStringConst(_) = &prefix_type {
-        prefix_type = LuaType::String;
-    }
 
     let mut member_type = if let Some(member_type) = infer_member_by_member_key(
         db,
@@ -90,7 +87,7 @@ pub fn infer_member_by_member_key(
     match &prefix_type {
         LuaType::Table | LuaType::Any | LuaType::Unknown => Some(LuaType::Any),
         LuaType::TableConst(id) => infer_table_member(db, id.clone(), index_expr),
-        LuaType::String | LuaType::Io | LuaType::StringConst(_) => {
+        LuaType::String | LuaType::Io | LuaType::StringConst(_) | LuaType::DocStringConst(_) => {
             let decl_id = get_buildin_type_map_type_id(&prefix_type)?;
             infer_custom_type_member(db, cache, decl_id, index_expr, infer_guard)
         }

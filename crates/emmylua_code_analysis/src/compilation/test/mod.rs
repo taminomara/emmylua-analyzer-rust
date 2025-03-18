@@ -11,3 +11,4 @@ mod out_of_order;
 mod overload_field;
 mod overload_test;
 mod syntax_error_test;
+mod module_annotation;
