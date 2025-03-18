@@ -14,7 +14,7 @@ use std::{collections::HashSet, sync::Arc};
 
 pub use cache::{CacheEntry, CacheKey, CacheOptions, LuaInferCache};
 use emmylua_parser::{LuaCallExpr, LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken, LuaTableExpr};
-use infer::{infer_table_should_be, InferResult};
+use infer::{infer_table_should_be, infer_value_expr_infos, InferResult};
 pub use member::LuaMemberInfo;
 use member::{infer_member_map, infer_members};
 use reference::is_reference_to;
@@ -131,6 +131,11 @@ impl<'a> SemanticModel<'a> {
             &mut InferGuard::new(),
             arg_count,
         )
+    }
+
+    /// 获取赋值时所有右值类型或调用时所有参数类型或返回时所有返回值类型
+    pub fn infer_value_expr_infos(&self, exprs: &[LuaExpr]) -> Option<Vec<(LuaType, TextRange)>> {
+        infer_value_expr_infos(self.db, &mut self.infer_cache.borrow_mut(), exprs)
     }
 
     pub fn get_semantic_info(

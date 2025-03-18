@@ -443,6 +443,17 @@ t.a = 2
 return t
             "#
         ));
+
+        assert!(ws.check_code_for_namespace(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            local function name()
+                return 1, 2
+            end
+            local x, y
+            x, y = name()
+            "#
+        ));
     }
 
     // 可能需要处理的

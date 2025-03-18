@@ -3,6 +3,7 @@ mod analyze_error;
 mod assign_type_mismatch;
 mod await_in_sync;
 mod check_field;
+mod check_return_count;
 mod circle_doc_class;
 mod code_style;
 mod code_style_check;
@@ -14,20 +15,21 @@ mod incomplete_signature_doc;
 mod local_const_reassign;
 mod missing_fields;
 mod missing_parameter;
-mod missing_return_value;
 mod need_check_nil;
 mod param_type_check;
 mod redefined_local;
 mod redundant_parameter;
-mod redundant_return_value;
 mod return_type_mismatch;
 mod syntax_error;
+mod unbalanced_assignments;
 mod undefined_doc_param;
 mod undefined_global;
 mod unused;
 
 use code_style::check_file_code_style;
-use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaComment, LuaStat, LuaSyntaxKind};
+use emmylua_parser::{
+    LuaAstNode, LuaClosureExpr, LuaComment, LuaReturnStat, LuaStat, LuaSyntaxKind,
+};
 use lsp_types::{Diagnostic, DiagnosticSeverity, DiagnosticTag, NumberOrString};
 use rowan::TextRange;
 use std::sync::Arc;
@@ -68,8 +70,6 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(param_type_check);
     check!(need_check_nil);
     check!(code_style_check);
-    check!(redundant_return_value);
-    check!(missing_return_value);
     check!(return_type_mismatch);
     check!(undefined_doc_param);
     check!(redefined_local);
@@ -80,6 +80,8 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(assign_type_mismatch);
     check!(duplicate_require);
     check!(duplicate_type);
+    check!(check_return_count);
+    check!(unbalanced_assignments);
 
     check_file_code_style(context, semantic_model);
     Some(())
@@ -241,6 +243,19 @@ pub fn get_closure_expr_comment(closure_expr: &LuaClosureExpr) -> Option<LuaComm
         }
         _ => None,
     }
+}
+
+/// 获取属于自身的返回语句
+pub fn get_own_return_stats(
+    closure_expr: &LuaClosureExpr,
+) -> impl Iterator<Item = LuaReturnStat> + '_ {
+    closure_expr
+        .descendants::<LuaReturnStat>()
+        .filter(move |stat| {
+            stat.ancestors::<LuaClosureExpr>()
+                .next()
+                .map_or(false, |expr| &expr == closure_expr)
+        })
 }
 
 pub fn humanize_lint_type(db: &DbIndex, typ: &LuaType) -> String {

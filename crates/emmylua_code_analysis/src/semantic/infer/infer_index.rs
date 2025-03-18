@@ -53,6 +53,15 @@ pub fn infer_index_expr(
         LuaType::Unknown
     };
 
+    // 临时修复, 应该处理 flow
+    // TODO: flow 分析时若前置类型是数组, 则不应生成对应的`flow_chain`
+    match &prefix_type {
+        LuaType::Array(_) => {
+            return Some(member_type.clone());
+        }
+        _ => {}
+    }
+
     let flow_id = LuaFlowId::from_node(index_expr.syntax());
     let flow_chain = db
         .get_flow_index()

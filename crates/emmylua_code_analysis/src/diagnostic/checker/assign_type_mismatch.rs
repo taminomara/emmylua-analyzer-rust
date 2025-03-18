@@ -1,12 +1,12 @@
 use emmylua_parser::{
-    LuaAssignStat, LuaAst, LuaAstNode, LuaAstToken, LuaExpr, LuaIndexExpr, LuaLocalName,
-    LuaLocalStat, LuaNameExpr, LuaTableExpr, LuaVarExpr,
+    LuaAssignStat, LuaAst, LuaAstNode, LuaAstToken, LuaExpr, LuaIndexExpr, LuaLocalStat,
+    LuaNameExpr, LuaTableExpr, LuaVarExpr,
 };
 use rowan::TextRange;
 
 use crate::{
-    DiagnosticCode, LuaDeclId, LuaMultiReturn, LuaPropertyOwnerId, LuaType, SemanticModel,
-    TypeCheckFailReason, TypeCheckResult,
+    DiagnosticCode, LuaDeclId, LuaPropertyOwnerId, LuaType, SemanticModel, TypeCheckFailReason,
+    TypeCheckResult,
 };
 
 use super::{humanize_lint_type, DiagnosticContext};
@@ -35,13 +35,27 @@ fn check_assign_stat(
     assign: &LuaAssignStat,
 ) -> Option<()> {
     let (vars, exprs) = assign.get_var_and_expr_list();
-    for (var, expr) in vars.iter().zip(exprs.iter()) {
+    let value_types = semantic_model.infer_value_expr_infos(&exprs)?;
+
+    for (idx, var) in vars.iter().enumerate() {
         match var {
             LuaVarExpr::IndexExpr(index_expr) => {
-                check_index_expr(context, semantic_model, index_expr, expr.clone());
+                check_index_expr(
+                    context,
+                    semantic_model,
+                    index_expr,
+                    exprs.get(idx).map(|expr| expr.clone()),
+                    value_types.get(idx)?.0.clone(),
+                );
             }
             LuaVarExpr::NameExpr(name_expr) => {
-                check_name_expr(context, semantic_model, name_expr, expr.clone());
+                check_name_expr(
+                    context,
+                    semantic_model,
+                    name_expr,
+                    exprs.get(idx).map(|expr| expr.clone()),
+                    value_types.get(idx)?.0.clone(),
+                );
             }
         }
     }
@@ -52,7 +66,8 @@ fn check_name_expr(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
     name_expr: &LuaNameExpr,
-    expr: LuaExpr,
+    expr: Option<LuaExpr>,
+    value_type: LuaType,
 ) -> Option<()> {
     let property_owner_id = semantic_model
         .get_property_owner_id(rowan::NodeOrToken::Node(name_expr.syntax().clone()))?;
@@ -66,36 +81,41 @@ fn check_name_expr(
         }
         _ => None,
     };
-    let expr_type = semantic_model.infer_expr(expr.clone());
     check_assign_type_mismatch(
         context,
         semantic_model,
         name_expr.get_range(),
         origin_type.clone(),
-        expr_type,
+        Some(value_type),
         false,
     );
-    handle_value_is_table_expr(context, semantic_model, origin_type, &expr)
+    if let Some(expr) = expr {
+        handle_value_is_table_expr(context, semantic_model, origin_type, &expr);
+    }
+    Some(())
 }
 
 fn check_index_expr(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
     index_expr: &LuaIndexExpr,
-    expr: LuaExpr,
+    expr: Option<LuaExpr>,
+    value_type: LuaType,
 ) -> Option<()> {
     let member_info =
         semantic_model.get_semantic_info(rowan::NodeOrToken::Node(index_expr.syntax().clone()))?;
-    let expr_type = semantic_model.infer_expr(expr.clone());
     check_assign_type_mismatch(
         context,
         semantic_model,
         index_expr.get_range(),
         Some(member_info.typ.clone()),
-        expr_type,
+        Some(value_type),
         true,
     );
-    handle_value_is_table_expr(context, semantic_model, Some(member_info.typ), &expr)
+    if let Some(expr) = expr {
+        handle_value_is_table_expr(context, semantic_model, Some(member_info.typ), &expr);
+    }
+    Some(())
 }
 
 fn check_local_stat(
@@ -103,88 +123,30 @@ fn check_local_stat(
     semantic_model: &SemanticModel,
     local: &LuaLocalStat,
 ) -> Option<()> {
-    fn process_single_assignment(
-        context: &mut DiagnosticContext,
-        semantic_model: &SemanticModel,
-        name_list: &[LuaLocalName],
-        value_expr: &LuaExpr,
-        typ: &LuaType,
-        current_idx: usize,
-    ) -> Option<()> {
-        if current_idx >= name_list.len() {
-            return Some(());
-        }
+    let vars = local.get_local_name_list().collect::<Vec<_>>();
+    let value_exprs = local.get_value_exprs().collect::<Vec<_>>();
+    let value_types = semantic_model.infer_value_expr_infos(&value_exprs)?;
 
-        let name_token = name_list[current_idx].get_name_token()?;
+    for (idx, var) in vars.iter().enumerate() {
+        let name_token = var.get_name_token()?;
         let decl_id = LuaDeclId::new(semantic_model.get_file_id(), name_token.get_position());
         let decl = semantic_model
             .get_db()
             .get_decl_index()
             .get_decl(&decl_id)?;
         let name_type = decl.get_type()?;
-
         check_assign_type_mismatch(
             context,
             semantic_model,
             decl.get_range(),
             Some(name_type.clone()),
-            Some(typ.clone()),
+            Some(value_types.get(idx)?.0.clone()),
             false,
         );
-
-        handle_value_is_table_expr(context, semantic_model, Some(name_type.clone()), value_expr);
-
-        Some(())
-    }
-
-    let name_list = local.get_local_name_list().collect::<Vec<_>>();
-    let value_exprs = local.get_value_exprs();
-
-    let mut current_index = 0;
-    for value_expr in value_exprs {
-        let expr_type = semantic_model.infer_expr(value_expr.clone())?;
-
-        match expr_type {
-            LuaType::MuliReturn(multi) => match &*multi {
-                LuaMultiReturn::Multi(types) => {
-                    for typ in types {
-                        process_single_assignment(
-                            context,
-                            semantic_model,
-                            &name_list,
-                            &value_expr,
-                            typ,
-                            current_index,
-                        )?;
-                        current_index += 1;
-                    }
-                }
-                LuaMultiReturn::Base(typ) => {
-                    process_single_assignment(
-                        context,
-                        semantic_model,
-                        &name_list,
-                        &value_expr,
-                        typ,
-                        current_index,
-                    )?;
-                    current_index += 1;
-                }
-            },
-            _ => {
-                process_single_assignment(
-                    context,
-                    semantic_model,
-                    &name_list,
-                    &value_expr,
-                    &expr_type,
-                    current_index,
-                )?;
-                current_index += 1;
-            }
+        if let Some(expr) = value_exprs.get(idx).map(|expr| expr.clone()) {
+            handle_value_is_table_expr(context, semantic_model, Some(name_type.clone()), &expr);
         }
     }
-
     Some(())
 }
 

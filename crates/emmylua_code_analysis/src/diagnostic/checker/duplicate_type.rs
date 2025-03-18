@@ -6,7 +6,7 @@ use crate::{DiagnosticCode, LuaTypeAttribute, SemanticModel};
 
 use super::DiagnosticContext;
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::DuplicateRequire];
+pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::DuplicateType];
 
 pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
     let root = semantic_model.get_root().clone();
@@ -140,10 +140,11 @@ fn check_duplicate_alias(context: &mut DiagnosticContext, alias_tag: LuaDocTagAl
             context.add_diagnostic(
                 DiagnosticCode::DuplicateType,
                 range,
-                format!(
-                    "Duplicate alias '{}'. Alias definitions cannot be partial.",
-                    name
-                ),
+                t!(
+                    "Duplicate alias '{name}'. Alias definitions cannot be partial.",
+                    name = name
+                )
+                .to_string(),
                 None,
             );
         }
