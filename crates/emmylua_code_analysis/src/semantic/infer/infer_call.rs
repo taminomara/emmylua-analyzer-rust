@@ -66,7 +66,12 @@ fn infer_call_result(
         &mut funcs,
     );
 
-    let resolve_func = resolve_signature(db, cache, funcs, call_expr.clone(), false, None)?;
+    let resolve_func = match funcs.len() {
+        0 => return None,
+        1 => funcs[0].clone(),
+        _ => resolve_signature(db, cache, funcs, call_expr.clone(), false, None)?,
+    };
+
     let rets = resolve_func.get_ret();
     let return_type = match rets.len() {
         0 => LuaType::Nil,
