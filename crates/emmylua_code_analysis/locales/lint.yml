@@ -208,4 +208,4 @@ Cannot use `...` outside a vararg function.:
 'Unnecessary assert: this expression is always truthy':
   en: 'Unnecessary assert: this expression is always truthy'
   zh_CN: '不必要的断言: 这个表达式始终为真'
-  zh_HK: '唔需要嘅斷言: 呢個表達式永遠都係真'
+  zh_HK: '不必要的斷言: 這個表達式始終為真'
