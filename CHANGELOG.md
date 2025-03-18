@@ -29,6 +29,8 @@ local d = get_type('xxx') --- aaa.xxx.bbb
 
 `NEW` Enhance module documentation export
 
+`NEW` Support `@module` usage: `---@module "module path"`
+
 # 0.5.4
 
 `Fix` Fix generic dots params type check
