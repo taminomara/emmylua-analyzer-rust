@@ -205,3 +205,7 @@ Cannot use `...` outside a vararg function.:
   en: "Async function can only be called in async function."
   zh_CN: "只能在标记为异步的函数中调用异步函数。"
   zh_HK: "只能在標記為非同步的函式中呼叫非同步函式。"
+'Unnecessary assert: this expression is always truthy':
+  en: 'Unnecessary assert: this expression is always truthy'
+  zh_CN: '不必要的断言: 这个表达式始终为真'
+  zh_HK: '唔需要嘅斷言: 呢個表達式永遠都係真'
