@@ -18,11 +18,11 @@
 --- **false**); otherwise, returns all its arguments. In case of error,
 --- `message` is the error object; when absent, it defaults to "assertion
 --- failed!"
----@generic T
+---@generic T, T1
 ---@param v T
----@param message? string
----@return std.NotNull<T>
-function assert(v, message) end
+---@param ... T1...
+---@return std.NotNull<T>, T1...
+function assert(v, ...) end
 
 ---@alias std.collectgarbage_opt
 ---|>"collect" # performs a full garbage-collection cycle. This is the default option.

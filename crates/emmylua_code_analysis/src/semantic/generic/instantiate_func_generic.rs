@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxNode};
+use emmylua_parser::{LuaAstNode, LuaCallExpr};
 
 use crate::{
     db_index::{DbIndex, LuaType},
@@ -8,11 +8,7 @@ use crate::{
     LuaFunctionType,
 };
 
-use super::{
-    instantiate_type_generic::instantiate_doc_function,
-    tpl_pattern::{tpl_pattern_match, variadic_tpl_pattern_match},
-    type_substitutor::TypeSubstitutor,
-};
+use super::{instantiate_type_generic::instantiate_doc_function, tpl_pattern::tpl_pattern_match_args, TypeSubstitutor};
 
 pub fn instantiate_func_generic(
     db: &DbIndex,
@@ -42,12 +38,14 @@ pub fn instantiate_func_generic(
         }
     }
 
-    let substitutor = match_tpl_args(
+    let mut substitutor = TypeSubstitutor::new();
+    tpl_pattern_match_args(
         db,
         config,
         &func_param_types,
         &arg_types,
         &call_expr.get_root(),
+        &mut substitutor
     );
 
     if let LuaType::DocFunction(f) = instantiate_doc_function(db, func, &substitutor) {
@@ -70,40 +68,6 @@ fn collect_arg_types(
     }
 
     Some(arg_types)
-}
-
-fn match_tpl_args(
-    db: &DbIndex,
-    infer_config: &mut LuaInferCache,
-    func_param_types: &Vec<LuaType>,
-    arg_types: &Vec<LuaType>,
-    root: &LuaSyntaxNode,
-) -> TypeSubstitutor {
-    let mut substitutor = TypeSubstitutor::new();
-    for (i, func_param_type) in func_param_types.iter().enumerate() {
-        let arg_type = if i < arg_types.len() {
-            &arg_types[i]
-        } else {
-            continue;
-        };
-
-        if let LuaType::Variadic(inner) = func_param_type {
-            let rest_arg_types = &arg_types[i..];
-            variadic_tpl_pattern_match(&inner, rest_arg_types, &mut substitutor);
-            break;
-        }
-
-        tpl_pattern_match(
-            db,
-            infer_config,
-            root,
-            func_param_type,
-            arg_type,
-            &mut substitutor,
-        );
-    }
-
-    substitutor
 }
 
 // fn instantiate_func_by_return(
