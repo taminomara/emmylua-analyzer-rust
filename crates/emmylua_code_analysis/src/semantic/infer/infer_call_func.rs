@@ -8,8 +8,8 @@ use crate::{
 };
 
 use super::super::{
-    instantiate::{instantiate_func_generic, TypeSubstitutor},
-    instantiate_type, resolve_signature, InferGuard, LuaInferCache,
+    generic::{instantiate_func_generic, TypeSubstitutor},
+    instantiate_type_generic, resolve_signature, InferGuard, LuaInferCache,
 };
 
 pub fn infer_call_expr_func(
@@ -232,7 +232,7 @@ fn infer_generic_type_doc_function(
     for overload_id in operator_ids {
         let operator = operator_index.get_operator(overload_id)?;
         let func = operator.get_call_operator_type()?;
-        let new_f = instantiate_type(db, func, &substitutor);
+        let new_f = instantiate_type_generic(db, func, &substitutor);
         match new_f {
             LuaType::DocFunction(f) => {
                 overloads.push(f.clone());

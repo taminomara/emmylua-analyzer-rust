@@ -9,7 +9,7 @@ use crate::{
 };
 
 use super::{
-    instantiate_class_generic::instantiate_doc_function,
+    instantiate_type_generic::instantiate_doc_function,
     tpl_pattern::{tpl_pattern_match, variadic_tpl_pattern_match},
     type_substitutor::TypeSubstitutor,
 };

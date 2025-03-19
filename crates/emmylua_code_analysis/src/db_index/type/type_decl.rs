@@ -4,7 +4,7 @@ use rowan::TextRange;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
 
-use crate::{instantiate_type, DbIndex, FileId, TypeSubstitutor};
+use crate::{instantiate_type_generic, DbIndex, FileId, TypeSubstitutor};
 
 use super::LuaType;
 
@@ -138,7 +138,7 @@ impl LuaTypeDecl {
                 }
 
                 let substitutor = substitutor.unwrap();
-                Some(instantiate_type(db, &origin, substitutor))
+                Some(instantiate_type_generic(db, &origin, substitutor))
             }
             _ => None,
         }

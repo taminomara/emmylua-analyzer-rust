@@ -5,7 +5,7 @@ use emmylua_parser::LuaCallExpr;
 use crate::db_index::{DbIndex, LuaFunctionType, LuaType};
 
 use super::{
-    infer_expr, instantiate::instantiate_func_generic, type_check::check_type_compact,
+    infer_expr, generic::instantiate_func_generic, type_check::check_type_compact,
     LuaInferCache,
 };
 

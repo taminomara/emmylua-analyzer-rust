@@ -11,7 +11,7 @@ use crate::{
         LuaOperatorMetaMethod, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType,
     },
     semantic::{
-        instantiate::{instantiate_type, TypeSubstitutor},
+        generic::{instantiate_type_generic, TypeSubstitutor},
         member::{get_buildin_type_map_type_id, without_index_operator},
         type_check::check_type_compact,
         InferGuard,
@@ -292,7 +292,7 @@ fn infer_generic_member(
 
     let generic_params = generic_type.get_params();
     let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
-    Some(instantiate_type(db, &member_type, &substitutor))
+    Some(instantiate_type_generic(db, &member_type, &substitutor))
 }
 
 fn infer_instance_member(
@@ -564,7 +564,7 @@ fn infer_member_by_index_generic(
             return infer_member_by_operator(
                 db,
                 cache,
-                &instantiate_type(db, &origin_type, &substitutor),
+                &instantiate_type_generic(db, &origin_type, &substitutor),
                 index_expr.clone(),
                 &mut InferGuard::new(),
             );
@@ -579,10 +579,10 @@ fn infer_member_by_index_generic(
         for index_operator_id in index_operator_ids {
             let index_operator = operator_index.get_operator(index_operator_id)?;
             let operand_type = index_operator.get_operands().first()?;
-            let instianted_operand_type = instantiate_type(db, &operand_type, &substitutor);
+            let instianted_operand_type = instantiate_type_generic(db, &operand_type, &substitutor);
             if instianted_operand_type.is_string() {
                 if member_key.is_string() || member_key.is_name() {
-                    return Some(instantiate_type(
+                    return Some(instantiate_type_generic(
                         db,
                         index_operator.get_result(),
                         &substitutor,
@@ -591,7 +591,7 @@ fn infer_member_by_index_generic(
                     let expr = member_key.get_expr()?;
                     let expr_type = infer_expr(db, cache, expr.clone())?;
                     if expr_type.is_string() {
-                        return Some(instantiate_type(
+                        return Some(instantiate_type_generic(
                             db,
                             index_operator.get_result(),
                             &substitutor,
@@ -600,7 +600,7 @@ fn infer_member_by_index_generic(
                 }
             } else if instianted_operand_type.is_number() {
                 if member_key.is_integer() {
-                    return Some(instantiate_type(
+                    return Some(instantiate_type_generic(
                         db,
                         index_operator.get_result(),
                         &substitutor,
@@ -609,7 +609,7 @@ fn infer_member_by_index_generic(
                     let expr = member_key.get_expr()?;
                     let expr_type = infer_expr(db, cache, expr.clone())?;
                     if expr_type.is_number() {
-                        return Some(instantiate_type(
+                        return Some(instantiate_type_generic(
                             db,
                             index_operator.get_result(),
                             &substitutor,
@@ -619,7 +619,7 @@ fn infer_member_by_index_generic(
             } else if let Some(expr) = member_key.get_expr() {
                 let expr_type = infer_expr(db, cache, expr.clone())?;
                 if expr_type == *operand_type {
-                    return Some(instantiate_type(
+                    return Some(instantiate_type_generic(
                         db,
                         index_operator.get_result(),
                         &substitutor,
@@ -635,7 +635,7 @@ fn infer_member_by_index_generic(
         let member_type = infer_member_by_operator(
             db,
             cache,
-            &instantiate_type(db, &super_type, &substitutor),
+            &instantiate_type_generic(db, &super_type, &substitutor),
             index_expr.clone(),
             &mut InferGuard::new(),
         );

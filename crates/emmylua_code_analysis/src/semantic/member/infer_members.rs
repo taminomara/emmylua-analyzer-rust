@@ -4,7 +4,7 @@ use smol_str::SmolStr;
 
 use crate::{
     semantic::{
-        instantiate::{instantiate_type, TypeSubstitutor},
+        generic::{instantiate_type_generic, TypeSubstitutor},
         InferGuard,
     },
     DbIndex, FileId, LuaGenericType, LuaInstanceType, LuaIntersectionType, LuaMemberKey,
@@ -208,7 +208,7 @@ fn infer_generic_members(
     let generic_params = generic_type.get_params();
     let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
     for info in members.iter_mut() {
-        info.typ = instantiate_type(db, &info.typ, &substitutor);
+        info.typ = instantiate_type_generic(db, &info.typ, &substitutor);
     }
 
     Some(members)

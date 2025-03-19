@@ -11,7 +11,7 @@ use crate::{
 
 use super::type_substitutor::{SubstitutorValue, TypeSubstitutor};
 
-pub fn instantiate_type(db: &DbIndex, ty: &LuaType, substitutor: &TypeSubstitutor) -> LuaType {
+pub fn instantiate_type_generic(db: &DbIndex, ty: &LuaType, substitutor: &TypeSubstitutor) -> LuaType {
     match ty {
         LuaType::Array(base) => instantiate_array(db, base, substitutor),
         LuaType::Nullable(base) => instantiate_nullable(db, base, substitutor),
@@ -36,12 +36,12 @@ pub fn instantiate_type(db: &DbIndex, ty: &LuaType, substitutor: &TypeSubstituto
 }
 
 fn instantiate_array(db: &DbIndex, base: &LuaType, substitutor: &TypeSubstitutor) -> LuaType {
-    let base = instantiate_type(db, base, substitutor);
+    let base = instantiate_type_generic(db, base, substitutor);
     LuaType::Array(base.into())
 }
 
 fn instantiate_nullable(db: &DbIndex, inner: &LuaType, substitutor: &TypeSubstitutor) -> LuaType {
-    let base = instantiate_type(db, inner, substitutor);
+    let base = instantiate_type_generic(db, inner, substitutor);
     LuaType::Nullable(base.into())
 }
 
@@ -72,7 +72,7 @@ fn instantiate_tuple(db: &DbIndex, tuple: &LuaTupleType, substitutor: &TypeSubst
             break;
         }
 
-        let t = instantiate_type(db, t, substitutor);
+        let t = instantiate_type_generic(db, t, substitutor);
         new_types.push(t);
     }
     LuaType::Tuple(LuaTupleType::new(new_types).into())
@@ -118,7 +118,7 @@ pub fn instantiate_doc_function(
                 }
             }
             _ => {
-                let new_type = instantiate_type(db, &origin_param_type, &substitutor);
+                let new_type = instantiate_type_generic(db, &origin_param_type, &substitutor);
                 new_params.push((origin_param.0.clone(), Some(new_type)));
             }
         }
@@ -153,7 +153,7 @@ pub fn instantiate_doc_function(
                 }
             }
             _ => {
-                let new_type = instantiate_type(db, &ret_type, &substitutor);
+                let new_type = instantiate_type_generic(db, &ret_type, &substitutor);
                 new_returns.push(new_type);
             }
         }
@@ -173,14 +173,14 @@ fn instantiate_object(
 
     let mut new_fields = HashMap::new();
     for (key, field) in fields {
-        let new_field = instantiate_type(db, field, substitutor);
+        let new_field = instantiate_type_generic(db, field, substitutor);
         new_fields.insert(key.clone(), new_field);
     }
 
     let mut new_index_access = Vec::new();
     for (key, value) in index_access {
-        let key = instantiate_type(db, &key, substitutor);
-        let value = instantiate_type(db, &value, substitutor);
+        let key = instantiate_type_generic(db, &key, substitutor);
+        let value = instantiate_type_generic(db, &value, substitutor);
         new_index_access.push((key, value));
     }
 
@@ -191,7 +191,7 @@ fn instantiate_union(db: &DbIndex, union: &LuaUnionType, substitutor: &TypeSubst
     let types = union.get_types();
     let mut new_types = Vec::new();
     for t in types {
-        let t = instantiate_type(db, t, substitutor);
+        let t = instantiate_type_generic(db, t, substitutor);
         new_types.push(t);
     }
 
@@ -206,7 +206,7 @@ fn instantiate_intersection(
     let types = intersection.get_types();
     let mut new_types = Vec::new();
     for t in types {
-        let t = instantiate_type(db, t, substitutor);
+        let t = instantiate_type_generic(db, t, substitutor);
         new_types.push(t);
     }
 
@@ -221,7 +221,7 @@ fn instantiate_generic(
     let generic_params = generic.get_params();
     let mut new_params = Vec::new();
     for param in generic_params {
-        let new_param = instantiate_type(db, param, substitutor);
+        let new_param = instantiate_type_generic(db, param, substitutor);
         new_params.push(new_param);
     }
 
@@ -254,7 +254,7 @@ fn instantiate_table_generic(
 ) -> LuaType {
     let mut new_params = Vec::new();
     for param in table_params {
-        let new_param = instantiate_type(db, param, substitutor);
+        let new_param = instantiate_type_generic(db, param, substitutor);
         new_params.push(new_param);
     }
 
@@ -290,13 +290,13 @@ fn instantiate_multi_return(
 ) -> LuaType {
     match multi_returns {
         LuaMultiReturn::Base(base) => {
-            let new_base = instantiate_type(db, base, substitutor);
+            let new_base = instantiate_type_generic(db, base, substitutor);
             LuaType::MuliReturn(LuaMultiReturn::Base(new_base).into())
         }
         LuaMultiReturn::Multi(types) => {
             let mut new_types = Vec::new();
             for t in types {
-                let t = instantiate_type(db, t, substitutor);
+                let t = instantiate_type_generic(db, t, substitutor);
                 new_types.push(t);
             }
             LuaType::MuliReturn(LuaMultiReturn::Multi(new_types).into())
@@ -352,7 +352,7 @@ fn instantiate_alias_call(
     let operands = alias_call
         .get_operands()
         .iter()
-        .map(|it| instantiate_type(db, it, substitutor))
+        .map(|it| instantiate_type_generic(db, it, substitutor))
         .collect::<Vec<_>>();
 
     match alias_call.get_call_kind() {
@@ -507,5 +507,5 @@ fn instantiate_variadic_type(
         }
     }
 
-    instantiate_type(db, inner, substitutor)
+    instantiate_type_generic(db, inner, substitutor)
 }
