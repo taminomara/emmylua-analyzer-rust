@@ -208,8 +208,8 @@ fn check_assign_type_mismatch(
     }
 
     match (&source_type, &value_type) {
-        // 如果源类型是定义类型, 则不进行类型检查, 除非源类型是定义类型
-        (LuaType::Def(_), LuaType::Def(_)) => {}
+        // 如果源类型是定义类型, 则仅在目标类型是定义类型或引用类型时进行类型检查
+        (LuaType::Def(_), LuaType::Def(_) | LuaType::Ref(_)) => {}
         (LuaType::Def(_), _) => return Some(()),
         // 此时检查交给 table_field
         (LuaType::Ref(_) | LuaType::Tuple(_), LuaType::TableConst(_)) => return Some(()),
@@ -223,7 +223,6 @@ fn check_assign_type_mismatch(
         }
         _ => {}
     }
-
     let result = semantic_model.type_check(&source_type, &value_type);
     if !result.is_ok() {
         add_type_check_diagnostic(

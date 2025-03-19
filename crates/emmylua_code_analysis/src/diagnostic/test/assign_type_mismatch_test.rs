@@ -3,6 +3,25 @@ mod tests {
     use crate::{DiagnosticCode, VirtualWorkspace};
 
     #[test]
+    fn test_1() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(!ws.check_code_for_namespace(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            ---@generic T: string
+            ---@param name  `T` 类名
+            ---@return T
+            local function meta(name)
+                return name
+            end
+
+            ---@class Class
+            local class = meta("class")
+            "#
+        ));
+    }
+
+    #[test]
     fn test_issue_193() {
         let mut ws = VirtualWorkspace::new();
         assert!(ws.check_code_for_namespace(

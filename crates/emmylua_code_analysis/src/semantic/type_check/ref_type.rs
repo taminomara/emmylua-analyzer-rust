@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{any::Any, collections::HashMap};
 
 use crate::{
     humanize_type, DbIndex, LuaMemberKey, LuaMemberOwner, LuaType, LuaTypeDeclId, LuaUnionType,
@@ -20,7 +20,9 @@ pub fn check_ref_type_compact(
         .get_type_index()
         .get_type_decl(source_id)
         // unreachable!
-        .ok_or(TypeCheckFailReason::TypeNotMatch)?;
+        .ok_or(TypeCheckFailReason::TypeNotMatchWithReason(
+            t!("type `%{name}` not found.", name = source_id.get_name()).to_string(),
+        ))?;
 
     if type_decl.is_alias() {
         if let Some(origin_type) = type_decl.get_alias_origin(db, None) {
