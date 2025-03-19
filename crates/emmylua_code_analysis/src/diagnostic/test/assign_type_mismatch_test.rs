@@ -22,6 +22,27 @@ mod tests {
     }
 
     #[test]
+    fn test_2() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for_namespace(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            ---@class Diagnostic.Test7
+            Diagnostic = {}
+
+            ---@param a Diagnostic.Test7
+            ---@param b number
+            ---@return number
+            function Diagnostic:add(a, b)
+                return a + b
+            end
+
+            local add = Diagnostic.add
+            "#
+        ));
+    }
+
+    #[test]
     fn test_issue_193() {
         let mut ws = VirtualWorkspace::new();
         assert!(ws.check_code_for_namespace(

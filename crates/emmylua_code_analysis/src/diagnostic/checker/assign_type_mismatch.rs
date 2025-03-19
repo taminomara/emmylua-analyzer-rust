@@ -202,6 +202,11 @@ fn check_assign_type_mismatch(
     let source_type = source_type.unwrap_or(LuaType::Any);
     let value_type = value_type.unwrap_or(LuaType::Any);
 
+    // 如果一致, 则不进行类型检查
+    if source_type == value_type {
+        return Some(());
+    }
+
     // 某些情况下我们应允许可空, 例如: boolean[]
     if allow_nil && value_type.is_optional() {
         return Some(());
@@ -223,6 +228,7 @@ fn check_assign_type_mismatch(
         }
         _ => {}
     }
+
     let result = semantic_model.type_check(&source_type, &value_type);
     if !result.is_ok() {
         add_type_check_diagnostic(
