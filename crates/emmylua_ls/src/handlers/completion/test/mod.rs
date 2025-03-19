@@ -107,6 +107,15 @@ impl CompletionVirtualWorkspace {
         block_str: &str,
         expect: Vec<VirtualCompletionItem>,
     ) -> bool {
+        self.check_completion_with_kind(block_str, expect, CompletionTriggerKind::INVOKED)
+    }
+
+    pub fn check_completion_with_kind(
+        &mut self,
+        block_str: &str,
+        expect: Vec<VirtualCompletionItem>,
+        trigger_kind: CompletionTriggerKind,
+    ) -> bool {
         let content = Self::handle_file_content(block_str);
         let Some((content, position)) = content else {
             return false;
@@ -116,7 +125,7 @@ impl CompletionVirtualWorkspace {
             &self.analysis,
             file_id,
             position,
-            CompletionTriggerKind::INVOKED,
+            trigger_kind,
             CancellationToken::new(),
         );
         let Some(result) = result else {
