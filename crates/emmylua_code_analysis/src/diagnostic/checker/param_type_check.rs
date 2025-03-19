@@ -60,6 +60,10 @@ fn check_call_expr(
 
     for (idx, param) in params.iter().enumerate() {
         if param.0 == "..." {
+            if arg_types.len() < idx {
+                break;
+            }
+
             if let Some(variadic_type) = param.1.clone() {
                 check_variadic_param_match_args(
                     context,
