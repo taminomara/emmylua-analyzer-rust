@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use emmylua_code_analysis::SemanticModel;
 use emmylua_parser::LuaSyntaxToken;
-use lsp_types::CompletionItem;
+use lsp_types::{CompletionItem, CompletionTriggerKind};
 use tokio_util::sync::CancellationToken;
 
 pub struct CompletionBuilder<'a> {
@@ -12,8 +12,7 @@ pub struct CompletionBuilder<'a> {
     completion_items: Vec<CompletionItem>,
     cancel_token: CancellationToken,
     stopped: bool,
-    // 主动触发补全
-    pub is_invoke_completion: bool,
+    pub trigger_kind: CompletionTriggerKind,
     pub env_start_index: i32,
     pub env_end_index: i32,
 }
@@ -23,7 +22,7 @@ impl<'a> CompletionBuilder<'a> {
         trigger_token: LuaSyntaxToken,
         semantic_model: SemanticModel<'a>,
         cancel_token: CancellationToken,
-        is_invoke_completion: bool,
+        trigger_kind: CompletionTriggerKind,
     ) -> Self {
         Self {
             trigger_token,
@@ -32,7 +31,7 @@ impl<'a> CompletionBuilder<'a> {
             completion_items: Vec::new(),
             cancel_token,
             stopped: false,
-            is_invoke_completion,
+            trigger_kind,
             env_start_index: -1,
             env_end_index: -1,
         }

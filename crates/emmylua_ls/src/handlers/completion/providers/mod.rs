@@ -12,29 +12,26 @@ mod table_field_provider;
 mod type_special_provider;
 
 use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaStringToken};
+use lsp_types::CompletionTriggerKind;
 use rowan::TextRange;
 
 use super::completion_builder::CompletionBuilder;
 
 pub fn add_completions(builder: &mut CompletionBuilder) -> Option<()> {
-    // 空格补全只允许在非主动且位于函数调用参数列表中触发
-    if builder.get_trigger_text().is_empty() && !builder.is_invoke_completion {
-        let node = LuaAst::cast(builder.trigger_token.parent()?)?;
-        match node {
-            LuaAst::LuaCallArgList(_) => {
-                type_special_provider::add_completion(builder);
-                return Some(());
-            }
-            _ => return Some(()),
-        }
+    if is_space_completion_in_call_arg_list(builder).is_some() {
+        type_special_provider::add_completion(builder);
+        return Some(());
     }
+
     postfix_provider::add_completion(builder);
+    type_special_provider::add_completion(builder);
+    // `env_provider` 在某些情况下是不需要的, 但有些补全功能依赖于他, 因在一些补全中可能会移除掉`env_provider` 的补全.
+    // 目前可能移除掉他的补全为: `table_field_provider`
     env_provider::add_completion(builder);
     // 只有具有类型定义的表才会成功返回, 此时我们不需要处理其他补全
     if table_field_provider::add_completion(builder).is_some() {
         return Some(());
     }
-    type_special_provider::add_completion(builder);
     member_provider::add_completion(builder);
     keywords_provider::add_completion(builder);
 
@@ -47,12 +44,27 @@ pub fn add_completions(builder: &mut CompletionBuilder) -> Option<()> {
 
     for (index, item) in builder.get_completion_items_mut().iter_mut().enumerate() {
         if item.sort_text.is_none() {
-            item.sort_text = Some(format!("{:04}", index));
+            item.sort_text = Some(format!("{:04}", index + 1));
         }
     }
     // dbg!(&builder.get_completion_items_mut());
 
     Some(())
+}
+
+// 空格补全只允许位于函数调用参数列表时非主动触发
+fn is_space_completion_in_call_arg_list(builder: &CompletionBuilder) -> Option<()> {
+    if builder.get_trigger_text().is_empty()
+        && builder.trigger_kind == CompletionTriggerKind::TRIGGER_CHARACTER
+    {
+        let node = LuaAst::cast(builder.trigger_token.parent()?)?;
+        match node {
+            LuaAst::LuaCallArgList(_) => Some(()),
+            _ => None,
+        }
+    } else {
+        None
+    }
 }
 
 fn get_text_edit_range_in_string(
