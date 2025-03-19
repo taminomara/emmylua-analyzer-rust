@@ -3,6 +3,7 @@ mod analyze_error;
 mod assign_type_mismatch;
 mod await_in_sync;
 mod check_field;
+mod check_param_count;
 mod check_return_count;
 mod circle_doc_class;
 mod code_style;
@@ -14,11 +15,9 @@ mod duplicate_type;
 mod incomplete_signature_doc;
 mod local_const_reassign;
 mod missing_fields;
-mod missing_parameter;
 mod need_check_nil;
 mod param_type_check;
 mod redefined_local;
-mod redundant_parameter;
 mod return_type_mismatch;
 mod syntax_error;
 mod unbalanced_assignments;
@@ -64,8 +63,6 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(undefined_global);
     check!(unnecessary_assert);
     check!(access_invisible);
-    check!(missing_parameter);
-    check!(redundant_parameter);
     check!(local_const_reassign);
     check!(discard_returns);
     check!(await_in_sync);
@@ -84,6 +81,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     check!(duplicate_type);
     check!(check_return_count);
     check!(unbalanced_assignments);
+    check!(check_param_count);
 
     check_file_code_style(context, semantic_model);
     Some(())
