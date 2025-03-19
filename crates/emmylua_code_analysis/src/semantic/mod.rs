@@ -1,6 +1,6 @@
 mod cache;
-mod infer;
 mod generic;
+mod infer;
 mod member;
 mod overload_resolve;
 mod reference;
@@ -34,8 +34,8 @@ use crate::{
     FileId,
 };
 use crate::{LuaFunctionType, LuaMemberKey};
-pub(crate) use infer::{infer_call_expr_func, infer_expr};
 pub use generic::{instantiate_type_generic, TypeSubstitutor};
+pub(crate) use infer::{infer_call_expr_func, infer_expr};
 use overload_resolve::resolve_signature;
 pub use type_check::{TypeCheckFailReason, TypeCheckResult};
 

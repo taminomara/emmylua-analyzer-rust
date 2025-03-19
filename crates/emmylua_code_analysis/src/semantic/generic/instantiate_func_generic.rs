@@ -8,7 +8,10 @@ use crate::{
     LuaFunctionType,
 };
 
-use super::{instantiate_type_generic::instantiate_doc_function, tpl_pattern::tpl_pattern_match_args, TypeSubstitutor};
+use super::{
+    instantiate_type_generic::instantiate_doc_function, tpl_pattern::tpl_pattern_match_args,
+    TypeSubstitutor,
+};
 
 pub fn instantiate_func_generic(
     db: &DbIndex,
@@ -45,7 +48,7 @@ pub fn instantiate_func_generic(
         &func_param_types,
         &arg_types,
         &call_expr.get_root(),
-        &mut substitutor
+        &mut substitutor,
     );
 
     if let LuaType::DocFunction(f) = instantiate_doc_function(db, func, &substitutor) {

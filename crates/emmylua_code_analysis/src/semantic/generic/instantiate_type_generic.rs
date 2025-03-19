@@ -11,7 +11,11 @@ use crate::{
 
 use super::type_substitutor::{SubstitutorValue, TypeSubstitutor};
 
-pub fn instantiate_type_generic(db: &DbIndex, ty: &LuaType, substitutor: &TypeSubstitutor) -> LuaType {
+pub fn instantiate_type_generic(
+    db: &DbIndex,
+    ty: &LuaType,
+    substitutor: &TypeSubstitutor,
+) -> LuaType {
     match ty {
         LuaType::Array(base) => instantiate_array(db, base, substitutor),
         LuaType::Nullable(base) => instantiate_nullable(db, base, substitutor),
