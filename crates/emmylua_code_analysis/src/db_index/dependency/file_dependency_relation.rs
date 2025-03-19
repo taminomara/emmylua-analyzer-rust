@@ -53,6 +53,13 @@ impl<'a> FileDenpendencyRelation<'a> {
                 }
             }
         }
+
+        let processed: HashSet<_> = order.iter().copied().collect();
+        for file in file_ids {
+            if !processed.contains(&file) {
+                order.push(file);
+            }
+        }
         order
     }
 
