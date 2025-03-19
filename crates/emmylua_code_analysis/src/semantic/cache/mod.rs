@@ -1,6 +1,6 @@
 mod cache_options;
 
-pub use cache_options::CacheOptions;
+pub use cache_options::{CacheOptions, LuaAnalysisPhase};
 use emmylua_parser::LuaSyntaxId;
 use std::{collections::HashMap, sync::Arc};
 
@@ -58,5 +58,9 @@ impl LuaInferCache {
 
     pub fn remove(&mut self, key: &CacheKey) {
         self.cache.remove(key);
+    }
+
+    pub fn set_phase(&mut self, phase: LuaAnalysisPhase) {
+        self.config.analysis_phase = phase;
     }
 }

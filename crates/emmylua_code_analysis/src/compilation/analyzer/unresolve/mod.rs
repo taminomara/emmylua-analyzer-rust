@@ -30,7 +30,16 @@ pub fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
         });
     }
 
-    // force_resolve(db, &mut unresolves);
+    if !unresolves.is_empty() {
+        infer_manager.set_force();
+
+        while try_resolve(db, &mut infer_manager, &mut unresolves) {
+            unresolves.retain(|un_resolve| match un_resolve {
+                UnResolve::None => false,
+                _ => true,
+            });
+        }
+    }
 }
 
 fn try_resolve(
@@ -136,7 +145,7 @@ impl From<UnResolveDecl> for UnResolve {
 pub struct UnResolveMember {
     pub file_id: FileId,
     pub member_id: LuaMemberId,
-    pub expr: LuaExpr,
+    pub expr: Option<LuaExpr>,
     pub prefix: Option<LuaExpr>,
     pub ret_idx: usize,
 }

@@ -18,7 +18,7 @@ use crate::{
     db_index::{DbIndex, LuaType},
     profile::Profile,
     semantic::{infer_expr, LuaInferCache},
-    CacheOptions, FileId, LuaMemberId, LuaMemberOwner,
+    CacheOptions, FileId, LuaAnalysisPhase, LuaMemberId, LuaMemberOwner,
 };
 
 use super::{unresolve::UnResolve, AnalyzeContext};
@@ -39,7 +39,7 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
             let cache = LuaInferCache::new(
                 file_id,
                 CacheOptions {
-                    analysis_phase: false,
+                    analysis_phase: LuaAnalysisPhase::Ordered,
                 },
             );
             let mut analyzer = LuaAnalyzer::new(db, file_id, cache);

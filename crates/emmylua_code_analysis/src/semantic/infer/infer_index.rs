@@ -46,8 +46,10 @@ pub fn infer_index_expr(
         &mut InferGuard::new(),
     ) {
         member_type
-    } else {
+    } else if cache.get_config().analysis_phase.is_force() {
         LuaType::Unknown
+    } else {
+        return None;
     };
 
     // 临时修复, 应该处理 flow

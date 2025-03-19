@@ -64,18 +64,19 @@ pub fn try_resolve_member(
         unresolve_member.prefix = None;
     }
 
-    let expr = unresolve_member.expr.clone();
-    let expr_type = infer_expr(db, cache, expr)?;
-    let expr_type = match &expr_type {
-        LuaType::MuliReturn(multi) => multi
-            .get_type(unresolve_member.ret_idx)
-            .cloned()
-            .unwrap_or(LuaType::Unknown),
-        _ => expr_type,
-    };
+    if let Some(expr) = unresolve_member.expr.clone() {
+        let expr_type = infer_expr(db, cache, expr)?;
+        let expr_type = match &expr_type {
+            LuaType::MuliReturn(multi) => multi
+                .get_type(unresolve_member.ret_idx)
+                .cloned()
+                .unwrap_or(LuaType::Unknown),
+            _ => expr_type,
+        };
 
-    let member_id = unresolve_member.member_id;
-    merge_member_type(db, cache, member_id, expr_type);
+        let member_id = unresolve_member.member_id;
+        merge_member_type(db, cache, member_id, expr_type);
+    }
     Some(true)
 }
 

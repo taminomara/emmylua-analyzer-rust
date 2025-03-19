@@ -11,33 +11,33 @@ use super::InferResult;
 
 pub fn infer_name_expr(
     db: &DbIndex,
-    config: &mut LuaInferCache,
+    cache: &mut LuaInferCache,
     name_expr: LuaNameExpr,
 ) -> InferResult {
     let name_token = name_expr.get_name_token()?;
     let name = name_token.get_name_text();
-    if name == "self" {
-        return infer_self(db, config, name_expr);
+    match name {
+        "self" => return infer_self(db, cache, name_expr),
+        "_G" => return Some(LuaType::Global),
+        _ => {}
     }
 
-    let file_id = config.get_file_id();
+    let file_id = cache.get_file_id();
     let references_index = db.get_reference_index();
     let range = name_expr.get_range();
     let file_ref = references_index.get_local_reference(&file_id)?;
     let decl_id = file_ref.get_decl_id(&range);
     if let Some(decl_id) = decl_id {
         let decl = db.get_decl_index().get_decl(&decl_id)?;
-        let mut decl_type = if decl.is_global() {
-            db.get_decl_index()
-                .get_global_decl_type(&LuaMemberKey::Name(name.into()))?
-                .clone()
-        } else if let Some(typ) = decl.get_type() {
-            typ.clone()
-        } else if decl.is_param() {
-            infer_param(db, decl).unwrap_or(LuaType::Unknown)
-        } else {
+        let opt_decl_type = get_decl_type(db, decl);
+        let mut decl_type = if let Some(decl_type) = opt_decl_type {
+            decl_type
+        } else if cache.get_config().analysis_phase.is_force() {
             LuaType::Unknown
+        } else {
+            return None;
         };
+
         let flow_id = LuaFlowId::from_node(name_expr.syntax());
         let flow_chain = db.get_flow_index().get_flow_chain(file_id, flow_id);
         let root = name_expr.get_root();
@@ -45,12 +45,8 @@ pub fn infer_name_expr(
             for type_assert in
                 flow_chain.get_type_asserts(name, name_expr.get_position(), Some(decl_id.position))
             {
-                decl_type = type_assert.tighten_type(db, config, &root, decl_type)?;
+                decl_type = type_assert.tighten_type(db, cache, &root, decl_type)?;
             }
-        }
-
-        if decl_type.is_unknown() {
-            return None;
         }
 
         Some(decl_type)
@@ -63,24 +59,39 @@ pub fn infer_name_expr(
     }
 }
 
-fn infer_self(db: &DbIndex, config: &mut LuaInferCache, name_expr: LuaNameExpr) -> InferResult {
-    let file_id = config.get_file_id();
+fn get_decl_type(db: &DbIndex, decl: &LuaDecl) -> Option<LuaType> {
+    if decl.is_global() {
+        let name = decl.get_name();
+        return db
+            .get_decl_index()
+            .get_global_decl_type(&LuaMemberKey::Name(name.into()));
+    }
+
+    if let Some(typ) = decl.get_type() {
+        return Some(typ.clone());
+    }
+
+    if decl.is_param() {
+        return infer_param(db, decl);
+    }
+
+    None
+}
+
+fn infer_self(db: &DbIndex, cache: &mut LuaInferCache, name_expr: LuaNameExpr) -> InferResult {
+    let file_id = cache.get_file_id();
     let tree = db.get_decl_index().get_decl_tree(&file_id)?;
     let id = tree.find_self_decl(db, name_expr.clone())?;
     match id {
         LuaDeclOrMemberId::Decl(decl_id) => {
             let decl = db.get_decl_index().get_decl(&decl_id)?;
-            let name = decl.get_name();
-            let mut decl_type = if decl.is_global() {
-                db.get_decl_index()
-                    .get_global_decl_type(&LuaMemberKey::Name(name.into()))?
-                    .clone()
-            } else if let Some(typ) = decl.get_type() {
-                typ.clone()
-            } else if decl.is_param() {
-                infer_param(db, decl).unwrap_or(LuaType::Unknown)
-            } else {
+            let opt_decl_type = get_decl_type(db, decl);
+            let mut decl_type = if let Some(decl_type) = opt_decl_type {
+                decl_type
+            } else if cache.get_config().analysis_phase.is_force() {
                 LuaType::Unknown
+            } else {
+                return None;
             };
 
             if let LuaType::Ref(id) = decl_type {
@@ -96,7 +107,7 @@ fn infer_self(db: &DbIndex, config: &mut LuaInferCache, name_expr: LuaNameExpr) 
                     name_expr.get_position(),
                     Some(decl_id.position),
                 ) {
-                    decl_type = type_assert.tighten_type(db, config, &root, decl_type)?;
+                    decl_type = type_assert.tighten_type(db, cache, &root, decl_type)?;
                 }
             }
 

@@ -1,6 +1,6 @@
 use emmylua_parser::{
     BinaryOperator, LuaAssignStat, LuaAstNode, LuaAstToken, LuaExpr, LuaForRangeStat, LuaFuncStat,
-    LuaLocalFuncStat, LuaLocalStat, LuaTableField, LuaVarExpr, PathTrait,
+    LuaIndexExpr, LuaLocalFuncStat, LuaLocalStat, LuaTableField, LuaVarExpr, PathTrait,
 };
 
 use crate::{
@@ -17,6 +17,19 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
     let expr_list: Vec<_> = local_stat.get_value_exprs().collect();
     let name_count = name_list.len();
     let expr_count = expr_list.len();
+    if expr_count == 0 {
+        for local_name in name_list {
+            let position = local_name.get_position();
+            let decl_id = LuaDeclId::new(analyzer.file_id, position);
+            let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
+            if decl.get_type().is_none() {
+                decl.set_decl_type(LuaType::Nil);
+            }
+        }
+
+        return Some(());
+    }
+
     for i in 0..name_count {
         let name = name_list.get(i)?;
         let position = name.get_position();
@@ -117,87 +130,77 @@ enum TypeOwner {
     Member(LuaMemberId),
 }
 
-fn get_var_type_owner(
-    analyzer: &mut LuaAnalyzer,
-    var: LuaVarExpr,
-    expr: LuaExpr,
-) -> Option<TypeOwner> {
+fn get_var_owner(analyzer: &mut LuaAnalyzer, var: LuaVarExpr) -> TypeOwner {
     let file_id = analyzer.file_id;
     match var {
         LuaVarExpr::NameExpr(var_name) => {
             let position = var_name.get_position();
             let decl_id = LuaDeclId::new(file_id, position);
-            let mut decl = analyzer.db.get_decl_index().get_decl(&decl_id);
-            if decl.is_none() {
-                let decl_tree = analyzer.db.get_decl_index().get_decl_tree(&file_id)?;
-                let name = var_name.get_name_text()?;
-                decl = decl_tree.find_local_decl(&name, position);
-            }
-
-            if decl.is_some() {
-                return Some(TypeOwner::Decl(decl.unwrap().get_id()));
-            }
+            TypeOwner::Decl(decl_id)
         }
-        LuaVarExpr::IndexExpr(var_index) => {
-            let prefix_expr = var_index.get_prefix_expr()?;
-            let prefix_type = analyzer.infer_expr(&prefix_expr.clone().into());
-            match prefix_type {
-                Some(prefix_type) => {
-                    var_index.get_index_key()?;
-                    let member_id = LuaMemberId::new(var_index.get_syntax_id(), file_id);
-                    let member_owner = match prefix_type {
-                        LuaType::TableConst(in_file_range) => {
-                            LuaMemberOwner::Element(in_file_range)
-                        }
-                        LuaType::Def(def_id) => {
-                            let type_decl = analyzer.db.get_type_index().get_type_decl(&def_id)?;
-                            // if is exact type, no need to extend field
-                            if type_decl.is_exact() {
-                                return None;
-                            }
-                            LuaMemberOwner::Type(def_id)
-                        }
-                        LuaType::Instance(instance) => {
-                            LuaMemberOwner::Element(instance.get_range().clone())
-                        }
-                        LuaType::Global => {
-                            let decl_id = LuaDeclId::new(file_id, prefix_expr.get_position());
-                            return Some(TypeOwner::Decl(decl_id));
-                        }
-                        LuaType::Ref(ref_id) => {
-                            let member_owner = LuaMemberOwner::Type(ref_id);
-                            analyzer.db.get_member_index_mut().set_member_owner(
-                                member_owner,
-                                member_id.file_id,
-                                member_id,
-                            );
-                            return None;
-                        }
-                        // is ref need extend field?
-                        _ => {
-                            return None;
-                        }
-                    };
-
-                    set_owner_and_add_member(analyzer.db, member_owner, member_id);
-                    return Some(TypeOwner::Member(member_id));
-                }
-                None => {
-                    // record unresolve
-                    let unresolve_member = UnResolveMember {
-                        file_id: analyzer.file_id,
-                        member_id: LuaMemberId::new(var_index.get_syntax_id(), file_id),
-                        expr: expr.clone(),
-                        prefix: Some(prefix_expr.into()),
-                        ret_idx: 0,
-                    };
-                    analyzer.add_unresolved(unresolve_member.into());
-                }
+        LuaVarExpr::IndexExpr(index_expr) => {
+            let maybe_decl_id = LuaDeclId::new(file_id, index_expr.get_position());
+            if analyzer
+                .db
+                .get_decl_index()
+                .get_decl(&maybe_decl_id)
+                .is_some()
+            {
+                return TypeOwner::Decl(maybe_decl_id);
             }
+
+            let member_id = LuaMemberId::new(index_expr.get_syntax_id(), file_id);
+            TypeOwner::Member(member_id)
+        }
+    }
+}
+
+fn set_index_expr_owner(analyzer: &mut LuaAnalyzer, var_expr: LuaVarExpr) -> Option<()> {
+    let file_id = analyzer.file_id;
+    let index_expr = LuaIndexExpr::cast(var_expr.syntax().clone())?;
+    let prefix_expr = index_expr.get_prefix_expr()?;
+    let prefix_type = analyzer.infer_expr(&prefix_expr.clone().into());
+    match prefix_type {
+        Some(prefix_type) => {
+            index_expr.get_index_key()?;
+            let member_id = LuaMemberId::new(index_expr.get_syntax_id(), file_id);
+            let member_owner = match prefix_type {
+                LuaType::TableConst(in_file_range) => LuaMemberOwner::Element(in_file_range),
+                LuaType::Def(def_id) => LuaMemberOwner::Type(def_id),
+                LuaType::Instance(instance) => {
+                    LuaMemberOwner::Element(instance.get_range().clone())
+                }
+                LuaType::Ref(ref_id) => {
+                    let member_owner = LuaMemberOwner::Type(ref_id);
+                    analyzer.db.get_member_index_mut().set_member_owner(
+                        member_owner,
+                        member_id.file_id,
+                        member_id,
+                    );
+                    return Some(());
+                }
+                // is ref need extend field?
+                _ => {
+                    return None;
+                }
+            };
+
+            set_owner_and_add_member(analyzer.db, member_owner, member_id);
+        }
+        None => {
+            // record unresolve
+            let unresolve_member = UnResolveMember {
+                file_id: analyzer.file_id,
+                member_id: LuaMemberId::new(var_expr.get_syntax_id(), file_id),
+                expr: None,
+                prefix: Some(prefix_expr.into()),
+                ret_idx: 0,
+            };
+            analyzer.add_unresolved(unresolve_member.into());
         }
     }
 
-    None
+    Some(())
 }
 
 // assign stat is toooooooooo complex
@@ -212,12 +215,8 @@ pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignSta
             break;
         }
         let expr = expr.unwrap();
-        let type_owner = match get_var_type_owner(analyzer, var.clone(), expr.clone()) {
-            Some(type_owner) => type_owner,
-            None => {
-                continue;
-            }
-        };
+        let type_owner = get_var_owner(analyzer, var.clone());
+        set_index_expr_owner(analyzer, var.clone());
 
         match special_assign_pattern(analyzer, type_owner.clone(), var.clone(), expr.clone()) {
             Some(_) => {
@@ -251,7 +250,7 @@ pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignSta
                         let unresolve_member = UnResolveMember {
                             file_id: analyzer.file_id,
                             member_id,
-                            expr: expr.clone(),
+                            expr: Some(expr.clone()),
                             prefix: None,
                             ret_idx: 0,
                         };
@@ -274,13 +273,8 @@ pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignSta
                 if last_expr_type.is_multi_return() {
                     for i in expr_count..var_count {
                         let var = var_list.get(i)?;
-                        let type_owner =
-                            match get_var_type_owner(analyzer, var.clone(), last_expr.clone()) {
-                                Some(type_owner) => type_owner,
-                                None => {
-                                    continue;
-                                }
-                            };
+                        let type_owner = get_var_owner(analyzer, var.clone());
+                        set_index_expr_owner(analyzer, var.clone());
                         merge_type_owner_and_expr_type(
                             analyzer,
                             type_owner,
@@ -293,13 +287,8 @@ pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignSta
             } else {
                 for i in expr_count..var_count {
                     let var = var_list.get(i)?;
-                    let type_owner =
-                        match get_var_type_owner(analyzer, var.clone(), last_expr.clone()) {
-                            Some(type_owner) => type_owner,
-                            None => {
-                                continue;
-                            }
-                        };
+                    let type_owner = get_var_owner(analyzer, var.clone());
+                    set_index_expr_owner(analyzer, var.clone());
                     merge_type_owner_and_expr(
                         analyzer,
                         type_owner,
@@ -379,7 +368,7 @@ fn merge_type_owner_and_expr(
             let unresolve_member = UnResolveMember {
                 file_id: analyzer.file_id,
                 member_id,
-                expr,
+                expr: Some(expr),
                 prefix: None,
                 ret_idx: idx,
             };
@@ -487,7 +476,8 @@ pub fn analyze_func_stat(analyzer: &mut LuaAnalyzer, func_stat: LuaFuncStat) -> 
     let closure = func_stat.get_closure()?;
     let func_name = func_stat.get_func_name()?;
     let signature_type = analyzer.infer_expr(&closure.clone().into())?;
-    let type_owner = get_var_type_owner(analyzer, func_name, closure.into())?;
+    let type_owner = get_var_owner(analyzer, func_name.clone());
+    set_index_expr_owner(analyzer, func_name.clone());
     match type_owner {
         TypeOwner::Decl(decl_id) => {
             let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
@@ -531,7 +521,7 @@ pub fn analyze_table_field(analyzer: &mut LuaAnalyzer, field: LuaTableField) -> 
             let unresolve = UnResolveMember {
                 file_id: analyzer.file_id,
                 member_id,
-                expr: value_expr.clone(),
+                expr: Some(value_expr.clone()),
                 prefix: None,
                 ret_idx: 0,
             };
