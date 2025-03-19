@@ -209,3 +209,8 @@ Cannot use `...` outside a vararg function.:
   en: 'Unnecessary assert: this expression is always truthy'
   zh_CN: '不必要的断言: 这个表达式始终为真'
   zh_HK: '不必要的斷言: 這個表達式始終為真'
+"`...` should be the last arg.":
+  en: "`...` should be the last arg."
+  zh_CN: "`...`必须是最后一个参数。"
+  zh_HK: "`...`必須是最後一個引數。"
+

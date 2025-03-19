@@ -8,7 +8,11 @@ mod infer_unary;
 mod resolve_member_type;
 mod test;
 
-use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLiteralToken};
+use std::sync::Arc;
+
+use emmylua_parser::{
+    LuaAst, LuaAstNode, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLiteralToken, LuaTableExpr,
+};
 use infer_binary::infer_binary_expr;
 use infer_call::infer_call_expr;
 pub use infer_call_func::infer_call_expr_func;
@@ -25,7 +29,7 @@ use crate::{
     InFiled, LuaMultiReturn,
 };
 
-use super::{CacheEntry, CacheKey, LuaInferCache};
+use super::{member::infer_members, CacheEntry, CacheKey, LuaInferCache};
 
 pub type InferResult = Option<LuaType>;
 
@@ -140,41 +144,109 @@ fn get_custom_type_operator(
 }
 
 /// 获取赋值时所有右值类型或调用时所有参数类型或返回时所有返回值类型
-pub fn infer_value_expr_infos(
+pub fn infer_multi_value_adjusted_expression_types(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     exprs: &[LuaExpr],
 ) -> Option<Vec<(LuaType, TextRange)>> {
+    fn handle_multi_return(
+        value_types: &mut Vec<(LuaType, TextRange)>,
+        multi: Arc<LuaMultiReturn>,
+        is_last: bool,
+        range: TextRange,
+    ) -> Option<()> {
+        match &*multi {
+            LuaMultiReturn::Multi(types) => {
+                if is_last {
+                    // 展开所有类型
+                    for (idx, typ) in types.iter().enumerate() {
+                        let is_last_in_loop = idx == types.len() - 1;
+                        handle_type(value_types, typ, is_last_in_loop, range)?;
+                    }
+                } else if let Some(first) = types.first() {
+                    // 只处理第一个类型
+                    handle_type(value_types, first, is_last, range)?;
+                }
+            }
+            LuaMultiReturn::Base(typ) => {
+                handle_type(value_types, typ, is_last, range)?;
+            }
+        }
+        Some(())
+    }
+
+    fn handle_type(
+        value_types: &mut Vec<(LuaType, TextRange)>,
+        typ: &LuaType,
+        is_last: bool,
+        range: TextRange,
+    ) -> Option<()> {
+        match typ {
+            LuaType::MuliReturn(multi) => {
+                handle_multi_return(value_types, multi.clone(), is_last, range)?;
+            }
+            _ => {
+                value_types.push((typ.clone(), range));
+            }
+        }
+        Some(())
+    }
+
     let mut value_types = Vec::new();
-    // 倒序处理最后一个表达式是多返回值的情况
-    for (idx, expr) in exprs.iter().rev().enumerate() {
+    // 处理最后一个表达式是多返回值的情况
+    for (idx, expr) in exprs.iter().enumerate() {
+        let is_last = idx == exprs.len() - 1;
         let expr_type = infer_expr(db, cache, expr.clone())?;
         match expr_type {
             LuaType::MuliReturn(multi) => {
-                match &*multi {
-                    LuaMultiReturn::Multi(types) => {
-                        // 如果不是最后一个表达式, 则只取第一个
-                        if idx != 0 {
-                            value_types.push((types[0].clone(), expr.get_range()));
-                        }
-                        // 如果是最后一个表达式, 则取所有
-                        else {
-                            for typ in types.iter().rev() {
-                                value_types.push((typ.clone(), expr.get_range()));
-                            }
-                        }
-                    }
-                    LuaMultiReturn::Base(typ) => {
-                        value_types.push((typ.clone(), expr.get_range()));
-                    }
-                }
+                handle_multi_return(&mut value_types, multi.clone(), is_last, expr.get_range())?;
             }
             _ => {
-                value_types.push((expr_type.clone(), expr.get_range()));
+                handle_type(&mut value_types, &expr_type, is_last, expr.get_range())?;
             }
         }
     }
-    // 倒转
-    value_types.reverse();
+
     Some(value_types)
+}
+
+/// 从右值推断左值已绑定的类型
+pub fn infer_left_value_type_from_right_value(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
+    expr: LuaExpr,
+) -> Option<LuaType> {
+    let ast = expr.syntax().parent().map(LuaAst::cast).flatten()?;
+
+    let typ = match ast {
+        LuaAst::LuaAssignStat(assign) => {
+            let (vars, exprs) = assign.get_var_and_expr_list();
+            let mut typ = None;
+            for (idx, assign_expr) in exprs.iter().enumerate() {
+                if expr == *assign_expr {
+                    let var = vars.get(idx);
+                    if let Some(var) = var {
+                        typ = Some(infer_expr(db, cache, var.clone().into())?);
+                    }
+                }
+            }
+            typ
+        }
+        LuaAst::LuaTableField(table_field) => {
+            let field_key = table_field.get_field_key()?;
+            let table_expr = table_field.get_parent::<LuaTableExpr>()?;
+            let table_type = infer_table_should_be(db, cache, table_expr.clone())?;
+            let member_infos = infer_members(db, &table_type)?;
+            let mut typ = None;
+            for member_info in member_infos.iter() {
+                if member_info.key.to_path() == field_key.get_path_part() {
+                    typ = Some(member_info.typ.clone());
+                }
+            }
+            typ
+        }
+        _ => None,
+    };
+
+    typ
 }

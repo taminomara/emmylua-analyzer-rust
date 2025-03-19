@@ -14,8 +14,7 @@ use super::{humanize_lint_type, DiagnosticContext};
 pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::AssignTypeMismatch];
 
 pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
-    for node in root.descendants::<LuaAst>() {
+    for node in semantic_model.get_root().descendants::<LuaAst>() {
         match node {
             LuaAst::LuaAssignStat(assign) => {
                 check_assign_stat(context, semantic_model, &assign);
@@ -35,7 +34,7 @@ fn check_assign_stat(
     assign: &LuaAssignStat,
 ) -> Option<()> {
     let (vars, exprs) = assign.get_var_and_expr_list();
-    let value_types = semantic_model.infer_value_expr_infos(&exprs)?;
+    let value_types = semantic_model.infer_multi_value_adjusted_expression_types(&exprs)?;
 
     for (idx, var) in vars.iter().enumerate() {
         match var {
@@ -125,7 +124,7 @@ fn check_local_stat(
 ) -> Option<()> {
     let vars = local.get_local_name_list().collect::<Vec<_>>();
     let value_exprs = local.get_value_exprs().collect::<Vec<_>>();
-    let value_types = semantic_model.infer_value_expr_infos(&value_exprs)?;
+    let value_types = semantic_model.infer_multi_value_adjusted_expression_types(&value_exprs)?;
 
     for (idx, var) in vars.iter().enumerate() {
         let name_token = var.get_name_token()?;
@@ -159,36 +158,36 @@ fn handle_value_is_table_expr(
 ) -> Option<()> {
     let table_type = table_type?;
     let member_infos = semantic_model.infer_member_infos(&table_type)?;
-    LuaTableExpr::cast(value_expr.syntax().clone())?
-        .get_fields()
-        .for_each(|field| {
-            let field_key = field.get_field_key();
-            if let Some(field_key) = field_key {
-                let field_path_part = field_key.get_path_part();
-                let source_type = member_infos
-                    .iter()
-                    .find(|info| info.key.to_path() == field_path_part)
-                    .map(|info| info.typ.clone());
-                let expr = field.get_value_expr();
-                if let Some(expr) = expr {
-                    let expr_type = semantic_model.infer_expr(expr);
+    let fields = LuaTableExpr::cast(value_expr.syntax().clone())?.get_fields();
+    for field in fields {
+        let field_key = field.get_field_key();
+        if let Some(field_key) = field_key {
+            let field_path_part = field_key.get_path_part();
+            let source_type = member_infos
+                .iter()
+                .find(|info| info.key.to_path() == field_path_part)
+                .map(|info| info.typ.clone());
+            let expr = field.get_value_expr();
+            if let Some(expr) = expr {
+                let expr_type = semantic_model.infer_expr(expr);
 
-                    let allow_nil = match table_type {
-                        LuaType::Array(_) => true,
-                        _ => false,
-                    };
+                let allow_nil = match table_type {
+                    LuaType::Array(_) => true,
+                    _ => false,
+                };
 
-                    check_assign_type_mismatch(
-                        context,
-                        semantic_model,
-                        field.get_range(),
-                        source_type,
-                        expr_type,
-                        allow_nil,
-                    );
-                }
+                check_assign_type_mismatch(
+                    context,
+                    semantic_model,
+                    field.get_range(),
+                    source_type,
+                    expr_type,
+                    allow_nil,
+                );
             }
-        });
+        }
+    }
+
     Some(())
 }
 

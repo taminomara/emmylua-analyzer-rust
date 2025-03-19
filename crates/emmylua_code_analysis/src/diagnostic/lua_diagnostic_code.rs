@@ -99,6 +99,7 @@ pub enum DiagnosticCode {
 pub fn get_default_severity(code: DiagnosticCode) -> DiagnosticSeverity {
     match code {
         DiagnosticCode::SyntaxError => DiagnosticSeverity::ERROR,
+        DiagnosticCode::LuaSyntaxError => DiagnosticSeverity::ERROR,
         DiagnosticCode::TypeNotFound => DiagnosticSeverity::WARNING,
         DiagnosticCode::MissingReturn => DiagnosticSeverity::WARNING,
         DiagnosticCode::ParamTypeNotMatch => DiagnosticSeverity::WARNING,

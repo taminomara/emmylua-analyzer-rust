@@ -13,6 +13,7 @@ mod param_type_check_test;
 mod redefined_local_test;
 mod redundant_parameter_test;
 mod return_type_mismatch_test;
+mod syntax_error_test;
 mod unbalanced_assignments_test;
 mod undefined_doc_param_test;
 mod undefined_field_test;

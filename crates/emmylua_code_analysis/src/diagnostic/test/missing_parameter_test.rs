@@ -3,6 +3,25 @@ mod test {
     use crate::{DiagnosticCode, VirtualWorkspace};
 
     #[test]
+    fn test_1() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::MissingParameter,
+            r#"
+            ---@class A
+            ---@field event fun(aaa: integer)
+
+            ---@type A
+            local a = {
+                event = function()
+                end,
+            }
+        "#
+        ));
+    }
+
+    #[test]
     fn test_issue_98() {
         let mut ws = VirtualWorkspace::new();
 

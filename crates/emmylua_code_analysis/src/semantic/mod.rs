@@ -14,7 +14,10 @@ use std::{collections::HashSet, sync::Arc};
 
 pub use cache::{CacheEntry, CacheKey, CacheOptions, LuaInferCache};
 use emmylua_parser::{LuaCallExpr, LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken, LuaTableExpr};
-use infer::{infer_table_should_be, infer_value_expr_infos, InferResult};
+use infer::{
+    infer_left_value_type_from_right_value, infer_multi_value_adjusted_expression_types,
+    infer_table_should_be, InferResult,
+};
 pub use member::LuaMemberInfo;
 use member::{infer_member_map, infer_members};
 use reference::is_reference_to;
@@ -134,8 +137,20 @@ impl<'a> SemanticModel<'a> {
     }
 
     /// 获取赋值时所有右值类型或调用时所有参数类型或返回时所有返回值类型
-    pub fn infer_value_expr_infos(&self, exprs: &[LuaExpr]) -> Option<Vec<(LuaType, TextRange)>> {
-        infer_value_expr_infos(self.db, &mut self.infer_cache.borrow_mut(), exprs)
+    pub fn infer_multi_value_adjusted_expression_types(
+        &self,
+        exprs: &[LuaExpr],
+    ) -> Option<Vec<(LuaType, TextRange)>> {
+        infer_multi_value_adjusted_expression_types(
+            self.db,
+            &mut self.infer_cache.borrow_mut(),
+            exprs,
+        )
+    }
+
+    /// 从右值推断左值已绑定的类型
+    pub fn infer_left_value_type_from_right_value(&self, expr: LuaExpr) -> Option<LuaType> {
+        infer_left_value_type_from_right_value(self.db, &mut self.infer_cache.borrow_mut(), expr)
     }
 
     pub fn get_semantic_info(
