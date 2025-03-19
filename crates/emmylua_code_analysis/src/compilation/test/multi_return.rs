@@ -38,4 +38,26 @@ mod test {
         assert_eq!(b_ty, b_expected);
         assert_eq!(c_ty, c_expected);
     }
+
+    #[test]
+    fn test_assert_return() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.def(
+            r#"
+        ---@return string?
+        ---@return string?
+        function cwd() end
+
+        a, b = assert(cwd())
+        "#,
+        );
+
+        let a_ty = ws.expr_ty("a");
+        let b_ty = ws.expr_ty("b");
+        let a_expected = ws.ty("string");
+        let b_expected = ws.ty("string?");
+        assert_eq!(a_ty, a_expected);
+        assert_eq!(b_ty, b_expected);
+    }
 }
