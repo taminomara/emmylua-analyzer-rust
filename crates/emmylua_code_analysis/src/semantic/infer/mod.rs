@@ -8,6 +8,8 @@ mod infer_unary;
 mod resolve_member_type;
 mod test;
 
+use std::sync::Arc;
+
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLiteralToken, LuaTableExpr,
 };
@@ -147,37 +149,64 @@ pub fn infer_multi_value_adjusted_expression_types(
     cache: &mut LuaInferCache,
     exprs: &[LuaExpr],
 ) -> Option<Vec<(LuaType, TextRange)>> {
+    fn handle_multi_return(
+        value_types: &mut Vec<(LuaType, TextRange)>,
+        multi: Arc<LuaMultiReturn>,
+        is_last: bool,
+        range: TextRange,
+    ) -> Option<()> {
+        match &*multi {
+            LuaMultiReturn::Multi(types) => {
+                if is_last {
+                    // 展开所有类型
+                    for (idx, typ) in types.iter().enumerate() {
+                        let is_last_in_loop = idx == types.len() - 1;
+                        handle_type(value_types, typ, is_last_in_loop, range)?;
+                    }
+                } else if let Some(first) = types.first() {
+                    // 只处理第一个类型
+                    handle_type(value_types, first, is_last, range)?;
+                }
+            }
+            LuaMultiReturn::Base(typ) => {
+                handle_type(value_types, typ, is_last, range)?;
+            }
+        }
+        Some(())
+    }
+
+    fn handle_type(
+        value_types: &mut Vec<(LuaType, TextRange)>,
+        typ: &LuaType,
+        is_last: bool,
+        range: TextRange,
+    ) -> Option<()> {
+        match typ {
+            LuaType::MuliReturn(multi) => {
+                handle_multi_return(value_types, multi.clone(), is_last, range)?;
+            }
+            _ => {
+                value_types.push((typ.clone(), range));
+            }
+        }
+        Some(())
+    }
+
     let mut value_types = Vec::new();
-    // 倒序处理最后一个表达式是多返回值的情况
-    for (idx, expr) in exprs.iter().rev().enumerate() {
+    // 处理最后一个表达式是多返回值的情况
+    for (idx, expr) in exprs.iter().enumerate() {
+        let is_last = idx == exprs.len() - 1;
         let expr_type = infer_expr(db, cache, expr.clone())?;
         match expr_type {
             LuaType::MuliReturn(multi) => {
-                match &*multi {
-                    LuaMultiReturn::Multi(types) => {
-                        // 如果不是最后一个表达式, 则只取第一个
-                        if idx != 0 {
-                            value_types.push((types[0].clone(), expr.get_range()));
-                        }
-                        // 如果是最后一个表达式, 则取所有
-                        else {
-                            for typ in types.iter().rev() {
-                                value_types.push((typ.clone(), expr.get_range()));
-                            }
-                        }
-                    }
-                    LuaMultiReturn::Base(typ) => {
-                        value_types.push((typ.clone(), expr.get_range()));
-                    }
-                }
+                handle_multi_return(&mut value_types, multi.clone(), is_last, expr.get_range())?;
             }
             _ => {
-                value_types.push((expr_type.clone(), expr.get_range()));
+                handle_type(&mut value_types, &expr_type, is_last, expr.get_range())?;
             }
         }
     }
-    // 倒转
-    value_types.reverse();
+
     Some(value_types)
 }
 
