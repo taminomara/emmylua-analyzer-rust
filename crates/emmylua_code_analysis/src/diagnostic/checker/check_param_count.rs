@@ -1,8 +1,9 @@
 use emmylua_parser::{
-    LuaAstNode, LuaAstToken, LuaCallExpr, LuaExpr, LuaGeneralToken, LuaLiteralToken,
+    LuaAst, LuaAstNode, LuaAstToken, LuaCallExpr, LuaClosureExpr, LuaExpr, LuaGeneralToken,
+    LuaLiteralToken,
 };
 
-use crate::{DiagnosticCode, LuaType, SemanticModel};
+use crate::{DiagnosticCode, LuaSignatureId, LuaType, SemanticModel};
 
 use super::DiagnosticContext;
 
@@ -12,8 +13,66 @@ pub const CODES: &[DiagnosticCode] = &[
 ];
 
 pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    for call_expr in semantic_model.get_root().descendants::<LuaCallExpr>() {
-        check_call_expr(context, semantic_model, call_expr);
+    for node in semantic_model.get_root().descendants::<LuaAst>() {
+        match node {
+            LuaAst::LuaCallExpr(call_expr) => {
+                check_call_expr(context, semantic_model, call_expr);
+            }
+            LuaAst::LuaClosureExpr(closure_expr) => {
+                check_closure_expr(context, semantic_model, &closure_expr);
+            }
+            _ => {}
+        }
+    }
+
+    Some(())
+}
+
+/// 处理左值已绑定类型但右值为匿名函数的情况
+fn check_closure_expr(
+    context: &mut DiagnosticContext,
+    semantic_model: &SemanticModel,
+    closure_expr: &LuaClosureExpr,
+) -> Option<()> {
+    let source_typ =
+        semantic_model.infer_left_value_type_from_right_value(closure_expr.clone().into())?;
+    let right_value = context
+        .db
+        .get_signature_index()
+        .get(&LuaSignatureId::from_closure(
+            semantic_model.get_file_id(),
+            &closure_expr,
+        ))?;
+    let source_params_len = match source_typ {
+        LuaType::DocFunction(func_type) => func_type.get_params().len(),
+        LuaType::Signature(signature_id) => {
+            let signature = context.db.get_signature_index().get(&signature_id)?;
+            signature.get_type_params().len()
+        }
+        _ => return Some(()),
+    };
+
+    // 只检查右值参数多于左值参数的情况, 右值参数少于左值参数的情况是能够接受的
+    if source_params_len > right_value.params.len() {
+        return Some(());
+    }
+    let params = closure_expr
+        .get_params_list()?
+        .get_params()
+        .collect::<Vec<_>>();
+
+    for param in params[source_params_len..].iter() {
+        context.add_diagnostic(
+            DiagnosticCode::RedundantParameter,
+            param.get_range(),
+            t!(
+                "expected %{num} parameters but found %{found_num}",
+                num = source_params_len,
+                found_num = right_value.params.len(),
+            )
+            .to_string(),
+            None,
+        );
     }
 
     Some(())

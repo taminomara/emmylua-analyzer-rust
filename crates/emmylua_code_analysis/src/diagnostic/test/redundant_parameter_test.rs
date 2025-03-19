@@ -33,6 +33,20 @@ mod test {
             Test.name("", "")
         "#
         ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::RedundantParameter,
+            r#"
+            ---@class A
+            ---@field event fun()
+
+            ---@type A
+            local a = {
+                event = function(aaa)
+                end,
+            }
+        "#
+        ));
     }
 
     #[test]
