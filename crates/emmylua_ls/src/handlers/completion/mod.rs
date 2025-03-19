@@ -54,7 +54,6 @@ pub fn completion(
     trigger_kind: CompletionTriggerKind,
     cancel_token: CancellationToken,
 ) -> Option<CompletionResponse> {
-    dbg!(position);
     let semantic_model = analysis.compilation.get_semantic_model(file_id)?;
     if !semantic_model.get_emmyrc().completion.enable {
         return None;
