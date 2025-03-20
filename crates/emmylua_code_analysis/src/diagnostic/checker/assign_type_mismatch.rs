@@ -202,14 +202,19 @@ fn check_assign_type_mismatch(
     let source_type = source_type.unwrap_or(LuaType::Any);
     let value_type = value_type.unwrap_or(LuaType::Any);
 
+    // 如果一致, 则不进行类型检查
+    if source_type == value_type {
+        return Some(());
+    }
+
     // 某些情况下我们应允许可空, 例如: boolean[]
     if allow_nil && value_type.is_optional() {
         return Some(());
     }
 
     match (&source_type, &value_type) {
-        // 如果源类型是定义类型, 则不进行类型检查, 除非源类型是定义类型
-        (LuaType::Def(_), LuaType::Def(_)) => {}
+        // 如果源类型是定义类型, 则仅在目标类型是定义类型或引用类型时进行类型检查
+        (LuaType::Def(_), LuaType::Def(_) | LuaType::Ref(_)) => {}
         (LuaType::Def(_), _) => return Some(()),
         // 此时检查交给 table_field
         (LuaType::Ref(_) | LuaType::Tuple(_), LuaType::TableConst(_)) => return Some(()),

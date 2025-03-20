@@ -25,6 +25,7 @@ pub fn infer_call_expr_func(
     match cache.get(&key) {
         Some(cache) => match cache {
             CacheEntry::CallCache(ty) => return Some(ty.clone()),
+            CacheEntry::ReadyCache => {}
             _ => return None,
         },
         None => {}

@@ -3,6 +3,24 @@ mod test {
     use crate::{DiagnosticCode, VirtualWorkspace};
 
     #[test]
+    fn test_issue_216() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            ---@alias F1 fun(x: integer):integer
+            do
+                ---@type F1
+                local test = function(x) return x + 1 end
+                
+                test("wrong type")
+            end
+        "#
+        ));
+    }
+
+    #[test]
     fn test_issue_82() {
         let mut ws = VirtualWorkspace::new();
 
