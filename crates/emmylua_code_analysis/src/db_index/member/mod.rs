@@ -1,5 +1,6 @@
 mod lua_member;
 mod lua_member_item;
+mod migrate_members;
 
 use std::collections::{HashMap, HashSet};
 
@@ -59,6 +60,7 @@ impl LuaMemberIndex {
             .owner_members
             .entry(owner.clone())
             .or_insert_with(HashMap::new);
+        let mut need_check_migrate = false;
         if feature.is_decl() {
             if let Some(item) = member_map.get_mut(&key) {
                 match item {
@@ -74,8 +76,10 @@ impl LuaMemberIndex {
                         }
                     }
                 }
+
+                need_check_migrate = true;
             } else {
-                member_map.insert(key, LuaMemberIndexItem::One(id));
+                member_map.insert(key.clone(), LuaMemberIndexItem::One(id));
             }
         } else {
             if !member_map.contains_key(&key) {
@@ -97,9 +101,13 @@ impl LuaMemberIndex {
             };
 
             self.owner_members
-                .entry(owner)
+                .entry(owner.clone())
                 .or_insert_with(HashMap::new)
-                .insert(key, new_items);
+                .insert(key.clone(), new_items);
+        }
+
+        if need_check_migrate {
+            migrate_members::migrate_members(self, owner, &key, id);
         }
 
         Some(())

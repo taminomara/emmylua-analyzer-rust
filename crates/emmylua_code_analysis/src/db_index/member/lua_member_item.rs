@@ -1,6 +1,6 @@
 use crate::{DbIndex, LuaPropertyOwnerId, LuaType, TypeOps};
 
-use super::LuaMemberId;
+use super::{LuaMemberId, LuaMemberIndex};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LuaMemberIndexItem {
@@ -15,6 +15,17 @@ impl LuaMemberIndexItem {
 
     pub fn resolve_property_owner(&self, db: &DbIndex) -> Option<LuaPropertyOwnerId> {
         resolve_member_property(db, &self)
+    }
+
+    pub(super) fn resolve_member_id(&self, member_index: &LuaMemberIndex) -> Option<LuaMemberId> {
+        resolve_member_id(member_index, &self)
+    }
+
+    pub fn get_member_ids(&self) -> Vec<LuaMemberId> {
+        match self {
+            LuaMemberIndexItem::One(member_id) => vec![*member_id],
+            LuaMemberIndexItem::Many(member_ids) => member_ids.clone(),
+        }
     }
 }
 
@@ -68,6 +79,63 @@ fn resolve_member_type(db: &DbIndex, member_item: &LuaMemberIndexItem) -> Option
                         }
                     }
                     Some(typ)
+                }
+            }
+        }
+    }
+}
+
+fn resolve_member_id(
+    member_index: &LuaMemberIndex,
+    member_item: &LuaMemberIndexItem,
+) -> Option<LuaMemberId> {
+    match member_item {
+        LuaMemberIndexItem::One(member_id) => Some(*member_id),
+        LuaMemberIndexItem::Many(member_ids) => {
+            let mut resolve_state = MemberTypeResolveState::All;
+            let members = member_ids
+                .iter()
+                .map(|id| member_index.get_member(id))
+                .collect::<Option<Vec<_>>>()?;
+            for member in &members {
+                let feature = member.get_feature();
+                if feature.is_meta_decl() {
+                    resolve_state = MemberTypeResolveState::Meta;
+                    break;
+                } else if feature.is_file_decl() {
+                    resolve_state = MemberTypeResolveState::FileDecl;
+                }
+            }
+
+            match resolve_state {
+                MemberTypeResolveState::All => {
+                    for member in members {
+                        if member.get_decl_type().is_member_owner() {
+                            return Some(member.get_id());
+                        }
+                    }
+
+                    None
+                }
+                MemberTypeResolveState::Meta => {
+                    for member in &members {
+                        let feature = member.get_feature();
+                        if feature.is_meta_decl() {
+                            return Some(member.get_id());
+                        }
+                    }
+
+                    None
+                }
+                MemberTypeResolveState::FileDecl => {
+                    for member in &members {
+                        let feature = member.get_feature();
+                        if feature.is_file_decl() {
+                            return Some(member.get_id());
+                        }
+                    }
+
+                    None
                 }
             }
         }

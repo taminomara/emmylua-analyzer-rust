@@ -399,6 +399,10 @@ impl LuaType {
     pub fn is_variadic(&self) -> bool {
         matches!(self, LuaType::Variadic(_))
     }
+
+    pub fn is_member_owner(&self) -> bool {
+        matches!(self, LuaType::Ref(_) | LuaType::TableConst(_))
+    }
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
