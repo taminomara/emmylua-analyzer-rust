@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use emmylua_parser::{LuaAstNode, LuaAstToken, LuaBlock, LuaChunk, LuaDocTagDiagnostic};
+use rowan::TextRange;
 
 use crate::{
     db_index::{DiagnosticAction, DiagnosticActionKind},
@@ -74,7 +75,8 @@ fn analyze_diagnostic_disable_next_line(
     let comment_range = comment.get_range();
     let document = analyzer.db.get_vfs().get_document(&analyzer.file_id)?;
     let comment_end_line = document.get_line(comment_range.end().into())?;
-    let valid_range = document.get_line_range(comment_end_line + 1)?;
+    let line_range = document.get_line_range(comment_end_line + 1)?;
+    let valid_range = TextRange::new(comment_range.start(), line_range.end());
 
     let diagnostic_index = analyzer.db.get_diagnostic_index_mut();
     let diagnostic_code_list = diagnostic.get_code_list()?;

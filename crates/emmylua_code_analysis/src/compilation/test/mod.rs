@@ -13,3 +13,4 @@ mod overload_field;
 mod overload_test;
 mod static_cal_cmp;
 mod syntax_error_test;
+mod diagnostic_disable_test;
