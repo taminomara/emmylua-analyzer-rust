@@ -15,27 +15,9 @@ pub fn infer_binary_expr(
     expr: LuaBinaryExpr,
 ) -> InferResult {
     let op = expr.get_op_token()?.get_op();
-    // fast binary infer
-    match op {
-        BinaryOperator::OpLt
-        | BinaryOperator::OpLe
-        | BinaryOperator::OpGt
-        | BinaryOperator::OpGe
-        | BinaryOperator::OpEq
-        | BinaryOperator::OpNe => return Some(LuaType::Boolean),
-        _ => {}
-    }
-
     let (left, right) = expr.get_exprs()?;
     let left_type = infer_expr(db, cache, left);
     let right_type = infer_expr(db, cache, right);
-
-    // fast infer
-    match op {
-        BinaryOperator::OpAnd => return right_type,
-        _ => {}
-    }
-
     let left_type = left_type?;
     let right_type = right_type?;
 
@@ -54,6 +36,13 @@ pub fn infer_binary_expr(
         BinaryOperator::OpShr => infer_binary_expr_shr(db, left_type, right_type),
         BinaryOperator::OpConcat => infer_binary_expr_concat(db, left_type, right_type),
         BinaryOperator::OpOr => infer_binary_expr_or(left_type, right_type),
+        BinaryOperator::OpAnd => infer_binary_expr_and(left_type, right_type),
+        BinaryOperator::OpLt
+        | BinaryOperator::OpLe
+        | BinaryOperator::OpGt
+        | BinaryOperator::OpGe
+        | BinaryOperator::OpEq
+        | BinaryOperator::OpNe => infer_cmp_expr(db, left_type, right_type, op),
         _ => Some(left_type),
     }
 }
@@ -364,5 +353,102 @@ fn infer_binary_expr_concat(db: &DbIndex, left: LuaType, right: LuaType) -> Infe
 }
 
 fn infer_binary_expr_or(left: LuaType, right: LuaType) -> InferResult {
-    Some(TypeOps::Narrow.apply(&left, &right))
+    if left.is_always_truthy() {
+        return Some(left);
+    } else if left.is_always_falsy() {
+        return Some(right);
+    }
+
+    Some(TypeOps::Union.apply(&left, &right))
+}
+
+fn infer_binary_expr_and(left: LuaType, right: LuaType) -> InferResult {
+    if left.is_always_falsy() {
+        return Some(left);
+    }
+
+    Some(right)
+}
+
+fn infer_cmp_expr(_: &DbIndex, left: LuaType, right: LuaType, op: BinaryOperator) -> InferResult {
+    match (left, right) {
+        (LuaType::IntegerConst(i), LuaType::IntegerConst(j)) => {
+            Some(LuaType::BooleanConst(integer_cmp(i, j, op)))
+        }
+        (LuaType::IntegerConst(i), LuaType::DocIntegerConst(j)) => {
+            Some(LuaType::BooleanConst(integer_cmp(i, j, op)))
+        }
+        (LuaType::DocIntegerConst(i), LuaType::IntegerConst(j)) => {
+            Some(LuaType::BooleanConst(integer_cmp(i, j, op)))
+        }
+        (LuaType::DocIntegerConst(i), LuaType::DocIntegerConst(j)) => {
+            Some(LuaType::BooleanConst(integer_cmp(i, j, op)))
+        }
+        (LuaType::FloatConst(i), LuaType::FloatConst(j)) => {
+            Some(LuaType::BooleanConst(float_cmp(i, j, op)))
+        }
+        (LuaType::IntegerConst(i), LuaType::FloatConst(j)) => {
+            Some(LuaType::BooleanConst(float_cmp(i as f64, j, op)))
+        }
+        (LuaType::FloatConst(i), LuaType::IntegerConst(j)) => {
+            Some(LuaType::BooleanConst(float_cmp(i, j as f64, op)))
+        }
+        (LuaType::DocIntegerConst(i), LuaType::FloatConst(j)) => {
+            Some(LuaType::BooleanConst(float_cmp(i as f64, j, op)))
+        }
+        (LuaType::FloatConst(i), LuaType::DocIntegerConst(j)) => {
+            Some(LuaType::BooleanConst(float_cmp(i, j as f64, op)))
+        }
+        (LuaType::DocBooleanConst(i), LuaType::DocBooleanConst(j)) => match op {
+            BinaryOperator::OpEq => Some(LuaType::BooleanConst(i == j)),
+            BinaryOperator::OpNe => Some(LuaType::BooleanConst(i != j)),
+            _ => Some(LuaType::Boolean),
+        },
+        (LuaType::BooleanConst(i), LuaType::BooleanConst(j)) => match op {
+            BinaryOperator::OpEq => Some(LuaType::BooleanConst(i == j)),
+            BinaryOperator::OpNe => Some(LuaType::BooleanConst(i != j)),
+            _ => Some(LuaType::Boolean),
+        },
+        (LuaType::DocStringConst(i), LuaType::DocStringConst(j)) => match op {
+            BinaryOperator::OpEq => Some(LuaType::BooleanConst(i == j)),
+            BinaryOperator::OpNe => Some(LuaType::BooleanConst(i != j)),
+            _ => Some(LuaType::Boolean),
+        },
+        (LuaType::StringConst(i), LuaType::StringConst(j)) => match op {
+            BinaryOperator::OpEq => Some(LuaType::BooleanConst(i == j)),
+            BinaryOperator::OpNe => Some(LuaType::BooleanConst(i != j)),
+            _ => Some(LuaType::Boolean),
+        },
+        (LuaType::TableConst(i), LuaType::TableConst(j)) => match op {
+            BinaryOperator::OpEq => Some(LuaType::BooleanConst(i == j)),
+            BinaryOperator::OpNe => Some(LuaType::BooleanConst(i != j)),
+            _ => Some(LuaType::Boolean),
+        },
+        (left, right) if left.is_const() && right.is_const() => Some(LuaType::BooleanConst(false)),
+        _ => Some(LuaType::Boolean),
+    }
+}
+
+fn integer_cmp(left: i64, right: i64, op: BinaryOperator) -> bool {
+    match op {
+        BinaryOperator::OpGt => left > right,
+        BinaryOperator::OpGe => left >= right,
+        BinaryOperator::OpLt => left < right,
+        BinaryOperator::OpLe => left <= right,
+        BinaryOperator::OpEq => left == right,
+        BinaryOperator::OpNe => left != right,
+        _ => false,
+    }
+}
+
+fn float_cmp(left: f64, right: f64, op: BinaryOperator) -> bool {
+    match op {
+        BinaryOperator::OpGt => left > right,
+        BinaryOperator::OpGe => left >= right,
+        BinaryOperator::OpLt => left < right,
+        BinaryOperator::OpLe => left <= right,
+        BinaryOperator::OpEq => left == right,
+        BinaryOperator::OpNe => left != right,
+        _ => false,
+    }
 }

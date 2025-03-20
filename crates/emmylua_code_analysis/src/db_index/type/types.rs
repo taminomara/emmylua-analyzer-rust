@@ -282,6 +282,15 @@ impl LuaType {
         }
     }
 
+    pub fn is_always_falsy(&self) -> bool {
+        match self {
+            LuaType::Nil | LuaType::BooleanConst(false) | LuaType::DocBooleanConst(false) => true,
+            LuaType::Nullable(inner) => inner.is_always_falsy(),
+            LuaType::Union(u) => u.types.iter().all(|t| t.is_always_falsy()),
+            _ => false,
+        }
+    }
+
     pub fn is_tuple(&self) -> bool {
         matches!(self, LuaType::Tuple(_))
     }

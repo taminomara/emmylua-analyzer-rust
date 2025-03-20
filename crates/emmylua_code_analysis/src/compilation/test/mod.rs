@@ -11,4 +11,5 @@ mod multi_return;
 mod out_of_order;
 mod overload_field;
 mod overload_test;
+mod static_cal_cmp;
 mod syntax_error_test;
