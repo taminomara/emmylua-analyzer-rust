@@ -5,7 +5,6 @@ mod infer_index;
 mod infer_name;
 mod infer_table;
 mod infer_unary;
-mod resolve_member_type;
 mod test;
 
 use std::sync::Arc;

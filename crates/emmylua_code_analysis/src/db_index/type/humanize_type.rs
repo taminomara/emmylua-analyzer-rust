@@ -125,7 +125,7 @@ fn humanize_simple_type(
 
     let member_owner = LuaMemberOwner::Type(id.clone());
     let member_index = db.get_member_index();
-    let members = member_index.get_members(&member_owner)?;
+    let members = member_index.get_sorted_members(&member_owner)?;
     let mut member_vec = Vec::new();
     for member in members {
         let member_key = member.get_key();
@@ -437,7 +437,7 @@ fn humanize_table_const_type_detail_and_simple(
     level: RenderLevel,
 ) -> Option<String> {
     let member_index = db.get_member_index();
-    let members = member_index.get_members(&member_owned)?;
+    let members = member_index.get_sorted_members(&member_owned)?;
 
     let mut total_length = 0;
     let mut total_line = 0;

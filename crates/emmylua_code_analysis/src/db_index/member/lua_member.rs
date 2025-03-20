@@ -50,6 +50,12 @@ impl LuaMember {
         self.member_id.get_syntax_id().get_range()
     }
 
+    pub fn get_sort_key(&self) -> u64 {
+        let file_id = self.member_id.file_id.id;
+        let pos = u32::from(self.member_id.id.get_range().start());
+        (file_id as u64) << 32 | pos as u64
+    }
+
     pub fn get_syntax_id(&self) -> LuaSyntaxId {
         *self.member_id.get_syntax_id()
     }

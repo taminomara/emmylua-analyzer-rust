@@ -9,9 +9,7 @@ use crate::{
     LuaType, LuaTypeDeclId, LuaUnionType,
 };
 
-use super::{
-    infer_expr, infer_token_property_owner, owner_guard::OwnerGuard, resolve_member_property,
-};
+use super::{infer_expr, infer_token_property_owner, owner_guard::OwnerGuard};
 
 pub fn infer_expr_property_owner(
     db: &DbIndex,
@@ -252,7 +250,7 @@ fn infer_table_member_property_owner(
     member_key: &LuaMemberKey,
 ) -> Option<LuaPropertyOwnerId> {
     let member_item = db.get_member_index().get_member_item(&owner, member_key)?;
-    resolve_member_property::resolve_member_property(db, member_item)
+    member_item.resolve_property_owner(db)
 }
 
 fn infer_custom_type_member_property_owner(
@@ -286,7 +284,7 @@ fn infer_custom_type_member_property_owner(
 
     let owner = LuaMemberOwner::Type(prefix_type_id.clone());
     if let Some(member_item) = db.get_member_index().get_member_item(&owner, member_key) {
-        return resolve_member_property::resolve_member_property(db, &member_item);
+        return member_item.resolve_property_owner(db);
     }
 
     if type_decl.is_class() {

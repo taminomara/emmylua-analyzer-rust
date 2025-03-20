@@ -19,7 +19,7 @@ use crate::{
     InFiled, LuaFlowId, LuaInferCache, LuaInstanceType, LuaMemberOwner,
 };
 
-use super::{infer_expr, resolve_member_type, InferResult};
+use super::{infer_expr, InferResult};
 
 pub fn infer_index_expr(
     db: &DbIndex,
@@ -125,7 +125,7 @@ fn infer_table_member(
     let owner = LuaMemberOwner::Element(inst);
     let key: LuaMemberKey = index_expr.get_index_key()?.into();
     let member_item = db.get_member_index().get_member_item(&owner, &key)?;
-    resolve_member_type::resolve_member_type(db, member_item)
+    member_item.resolve_type(db)
 }
 
 fn infer_custom_type_member(
@@ -155,7 +155,7 @@ fn infer_custom_type_member(
     let owner = LuaMemberOwner::Type(prefix_type_id.clone());
     let key: LuaMemberKey = index_expr.get_index_key()?.into();
     if let Some(member_item) = db.get_member_index().get_member_item(&owner, &key) {
-        return resolve_member_type::resolve_member_type(db, member_item);
+        return member_item.resolve_type(db);
     }
 
     if type_decl.is_class() {

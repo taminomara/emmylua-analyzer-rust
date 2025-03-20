@@ -4,7 +4,7 @@ use emmylua_parser::{LuaAstNode, LuaNameExpr};
 
 use crate::{
     db_index::{DbIndex, LuaDeclOrMemberId, LuaMemberKey},
-    LuaDecl, LuaDeclExtra, LuaFlowId, LuaInferCache, LuaMember, LuaMemberId, LuaType, TypeOps,
+    LuaDecl, LuaDeclExtra, LuaFlowId, LuaInferCache, LuaMemberId, LuaType, TypeOps,
 };
 
 use super::InferResult;
@@ -150,8 +150,7 @@ pub fn infer_param(db: &DbIndex, decl: &LuaDecl) -> InferResult {
     }
 
     let current_member_id = member_id?;
-    let member = find_decl_member(db, current_member_id)?;
-    let member_decl_type = member.get_decl_type();
+    let member_decl_type = find_decl_member_type(db, current_member_id)?;
     let param_type = find_param_type_from_type(db, member_decl_type, param_idx, colon_define);
     if let Some(param_type) = param_type {
         return Some(param_type);
@@ -161,18 +160,12 @@ pub fn infer_param(db: &DbIndex, decl: &LuaDecl) -> InferResult {
     None
 }
 
-fn find_decl_member(db: &DbIndex, member_id: LuaMemberId) -> Option<&LuaMember> {
+fn find_decl_member_type(db: &DbIndex, member_id: LuaMemberId) -> Option<LuaType> {
     let member = db.get_member_index().get_member(&member_id)?;
     let key = member.get_key();
     let owner = member.get_owner();
-    let owner_members = db.get_member_index().get_members(&owner)?;
-    for owner_member in owner_members {
-        if owner_member.get_key() == key {
-            return Some(owner_member);
-        }
-    }
-
-    None
+    let member_item = db.get_member_index().get_member_item(&owner, key)?;
+    member_item.resolve_type(db)
 }
 
 fn find_param_type_from_type(

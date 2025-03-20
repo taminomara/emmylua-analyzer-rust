@@ -1,9 +1,11 @@
 mod lua_member;
+mod lua_member_item;
 
 use std::collections::{HashMap, HashSet};
 
 use crate::FileId;
 pub use lua_member::{LuaMember, LuaMemberFeature, LuaMemberId, LuaMemberKey, LuaMemberOwner};
+pub use lua_member_item::LuaMemberIndexItem;
 
 use super::traits::LuaIndex;
 
@@ -18,12 +20,6 @@ pub struct LuaMemberIndex {
 enum MemberOrOwner {
     Member(LuaMemberId),
     Owner(LuaMemberOwner),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum LuaMemberIndexItem {
-    One(LuaMemberId),
-    Many(Vec<LuaMemberId>),
 }
 
 impl LuaMemberIndex {
@@ -175,12 +171,22 @@ impl LuaMemberIndex {
         Some(members)
     }
 
+    pub fn get_sorted_members(&self, owner: &LuaMemberOwner) -> Option<Vec<&LuaMember>> {
+        let mut members = self.get_members(owner)?;
+        members.sort_by_key(|member| member.get_sort_key());
+        Some(members)
+    }
+
     pub fn get_member_item(
         &self,
         owner: &LuaMemberOwner,
         key: &LuaMemberKey,
     ) -> Option<&LuaMemberIndexItem> {
         self.owner_members.get(owner).and_then(|map| map.get(key))
+    }
+
+    pub fn get_member_len(&self, owner: &LuaMemberOwner) -> usize {
+        self.owner_members.get(owner).map_or(0, |map| map.len())
     }
 }
 

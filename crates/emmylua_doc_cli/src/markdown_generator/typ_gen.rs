@@ -82,7 +82,7 @@ fn generate_class_type_markdown(
     }
 
     let member_owner = LuaMemberOwner::Type(typ_id);
-    let members = db.get_member_index().get_members(&member_owner);
+    let members = db.get_member_index().get_sorted_members(&member_owner);
     let mut method_members: Vec<MemberDisplay> = Vec::new();
     let mut field_members: Vec<MemberDisplay> = Vec::new();
     if let Some(members) = members {
@@ -200,7 +200,7 @@ fn generate_enum_type_markdown(
     }
 
     let member_owner = LuaMemberOwner::Type(typ_id);
-    let members = db.get_member_index().get_members(&member_owner);
+    let members = db.get_member_index().get_sorted_members(&member_owner);
     let mut field_members: Vec<EnumMember> = Vec::new();
     if let Some(members) = members {
         for member in members {

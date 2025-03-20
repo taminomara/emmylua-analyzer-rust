@@ -96,7 +96,7 @@ pub fn generate_member_owner_module(
     owner_name: &str,
     context: &mut Context,
 ) -> Option<()> {
-    let members = db.get_member_index().get_members(&member_owner);
+    let members = db.get_member_index().get_sorted_members(&member_owner);
     let mut method_members: Vec<MemberDisplay> = Vec::new();
     let mut field_members: Vec<MemberDisplay> = Vec::new();
 
