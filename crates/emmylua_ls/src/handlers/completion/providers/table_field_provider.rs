@@ -35,6 +35,8 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
 
     // 删除env补全项
     builder.remove_env_completion_items();
+    // 中止补全
+    builder.stop_here();
     Some(())
 }
 

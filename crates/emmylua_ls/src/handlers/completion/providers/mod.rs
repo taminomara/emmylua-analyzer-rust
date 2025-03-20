@@ -24,10 +24,8 @@ pub fn add_completions(builder: &mut CompletionBuilder) -> Option<()> {
     // `env_provider`在某些情况下是不需要的, 但有些补全功能依赖于他, 因此我们先添加`env_provider`的补全, 再在某些补全中移除掉他的补全.
     // 目前可能移除掉他的补全为: `table_field_provider`
     env_provider::add_completion(builder);
-    // 只有具有类型定义的表才会成功返回, 此时我们不需要处理其他补全
-    if table_field_provider::add_completion(builder).is_some() {
-        return Some(());
-    }
+    // 如果`table_field_provider`执行成功会中止补全
+    table_field_provider::add_completion(builder);
     keywords_provider::add_completion(builder);
     member_provider::add_completion(builder);
 
