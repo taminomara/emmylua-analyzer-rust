@@ -1,6 +1,7 @@
 mod closure_generic;
 mod closure_param_infer_test;
 mod closure_return_test;
+mod diagnostic_disable_test;
 mod flow;
 mod for_range_var_infer_test;
 mod infer_str_tpl_test;
@@ -13,4 +14,3 @@ mod overload_field;
 mod overload_test;
 mod static_cal_cmp;
 mod syntax_error_test;
-mod diagnostic_disable_test;
