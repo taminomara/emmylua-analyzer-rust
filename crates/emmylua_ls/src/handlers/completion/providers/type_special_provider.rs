@@ -1,6 +1,6 @@
 use emmylua_code_analysis::{
-    InferGuard, LuaDeclLocation, LuaFunctionType, LuaMemberKey, LuaMemberOwner, LuaMultiLineUnion,
-    LuaPropertyOwnerId, LuaType, LuaTypeDeclId, LuaUnionType, RenderLevel,
+    InferGuard, LuaDeclLocation, LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner,
+    LuaMultiLineUnion, LuaPropertyOwnerId, LuaType, LuaTypeDeclId, LuaUnionType, RenderLevel,
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaComment, LuaNameToken,
@@ -198,34 +198,37 @@ fn infer_call_arg_list(
     let typ = call_expr_func.get_params().get(param_idx)?.1.clone()?;
     let mut types = Vec::new();
     types.push(typ);
-    infer_call_arg_list_overload(builder, &call_expr, &call_expr_func, param_idx, &mut types);
+    push_function_overloads_param(
+        builder,
+        &call_expr,
+        call_expr_func.get_params(),
+        param_idx,
+        &mut types,
+    );
     Some(types.into_iter().unique().collect()) // 需要去重
 }
 
-fn infer_call_arg_list_overload(
+fn push_function_overloads_param(
     builder: &mut CompletionBuilder,
     call_expr: &LuaCallExpr,
-    call_expr_func: &LuaFunctionType,
+    call_params: &[(String, Option<LuaType>)],
     param_idx: usize,
     types: &mut Vec<LuaType>,
 ) -> Option<()> {
+    let member_index = builder.semantic_model.get_db().get_member_index();
     let prefix_expr = call_expr.get_prefix_expr()?;
     let property_owner_id = builder
         .semantic_model
         .get_property_owner_id(prefix_expr.syntax().clone().into())?;
 
-    let signature_id = match property_owner_id {
+    // 收集函数类型
+    let functions = match property_owner_id {
         LuaPropertyOwnerId::Member(member_id) => {
-            let member = builder
-                .semantic_model
-                .get_db()
-                .get_member_index()
-                .get_member(&member_id)?;
-            if let LuaType::Signature(signature_id) = member.get_decl_type() {
-                Some(signature_id)
-            } else {
-                None
-            }
+            let member = member_index.get_member(&member_id)?;
+            let key = member.get_key().to_path();
+            let members = member_index.get_members(&member.get_owner())?;
+            let functions = filter_function_members(members, key);
+            Some(functions)
         }
         LuaPropertyOwnerId::LuaDecl(decl_id) => {
             let decl = builder
@@ -233,46 +236,90 @@ fn infer_call_arg_list_overload(
                 .get_db()
                 .get_decl_index()
                 .get_decl(&decl_id)?;
-            if let LuaType::Signature(signature_id) = &decl.get_type()? {
-                Some(signature_id.clone())
-            } else {
-                None
+
+            let typ = decl.get_type()?;
+            match typ {
+                LuaType::Signature(_) | LuaType::DocFunction(_) => Some(vec![typ.clone()]),
+                _ => {
+                    let key = decl.get_name();
+                    let type_id = LuaTypeDeclId::new(decl.get_name());
+                    let members = member_index.get_members(&LuaMemberOwner::Type(type_id))?;
+                    let functions = filter_function_members(members, key.to_string());
+                    Some(functions)
+                }
             }
         }
         _ => None,
     }?;
 
-    let signature = builder
-        .semantic_model
-        .get_db()
-        .get_signature_index()
-        .get(&signature_id)?;
+    // 获取重载函数列表
+    let signature_index = builder.semantic_model.get_db().get_signature_index();
+    let mut overloads = Vec::new();
+    for function in functions {
+        match function {
+            LuaType::Signature(signature_id) => {
+                if let Some(signature) = signature_index.get(&signature_id) {
+                    overloads.extend(signature.overloads.iter().cloned());
+                }
+            }
+            LuaType::DocFunction(doc_function) => {
+                overloads.push(doc_function);
+            }
+            _ => {}
+        }
+    }
 
-    let call_params = call_expr_func.get_params();
-    for overload in signature.overloads.iter() {
-        let overload_param = overload.get_params();
-        // 前面的参数必须相同
-        let mut is_match = true;
-        if param_idx != 0 {
-            for (i, param) in call_params.iter().enumerate() {
-                if i < param_idx {
-                    if let Some(overload_param_type) = overload_param.get(i) {
-                        if param.1 != overload_param_type.1 {
-                            is_match = false;
-                            break;
-                        }
-                    }
-                } else {
-                    break;
+    // 筛选匹配的参数类型并添加到结果中
+    for overload in overloads.iter() {
+        let overload_params = overload.get_params();
+
+        // 检查前面的参数是否匹配
+        if !params_match_prefix(call_params, overload_params, param_idx) {
+            continue;
+        }
+
+        // 添加匹配的参数类型
+        if let Some(param_type) = overload_params.get(param_idx).and_then(|p| p.1.clone()) {
+            types.push(param_type);
+        }
+    }
+
+    /// 过滤出函数类型的成员
+    fn filter_function_members(members: Vec<&LuaMember>, key: String) -> Vec<LuaType> {
+        members
+            .into_iter()
+            .filter(|it| {
+                it.get_key().to_path() == key
+                    && matches!(
+                        it.get_decl_type(),
+                        LuaType::Signature(_) | LuaType::DocFunction(_)
+                    )
+            })
+            .map(|it| it.get_decl_type())
+            .collect()
+    }
+
+    /// 判断前面的参数是否匹配
+    fn params_match_prefix(
+        call_params: &[(String, Option<LuaType>)],
+        overload_params: &[(String, Option<LuaType>)],
+        param_idx: usize,
+    ) -> bool {
+        if param_idx == 0 {
+            return true;
+        }
+
+        for i in 0..param_idx {
+            if let (Some(call_param), Some(overload_param)) =
+                (call_params.get(i), overload_params.get(i))
+            {
+                if call_param.1 != overload_param.1 {
+                    return false;
                 }
             }
         }
-        if !is_match {
-            continue;
-        }
-        if let Some(param_type) = overload.get_params().get(param_idx)?.1.clone() {
-            types.push(param_type);
-        }
+
+        true
     }
 
     Some(())
