@@ -263,9 +263,25 @@ fn parse_index_struct(p: &mut LuaParser) -> Result<(), LuaParseError> {
             parse_expr(p)?;
             expect_token(p, LuaTokenKind::TkRightBracket)?;
         }
-        LuaTokenKind::TkDot | LuaTokenKind::TkColon => {
+        LuaTokenKind::TkDot => {
             p.bump();
             expect_token(p, LuaTokenKind::TkName)?;
+        }
+        LuaTokenKind::TkColon => {
+            p.bump();
+            expect_token(p, LuaTokenKind::TkName)?;
+            if !matches!(
+                p.current_token(),
+                LuaTokenKind::TkLeftParen
+                    | LuaTokenKind::TkLeftBrace
+                    | LuaTokenKind::TkString
+                    | LuaTokenKind::TkLongString
+            ) {
+                return Err(LuaParseError::from_source_range(
+                    &t!("colon accessor must be followed by a function call or table constructor or string literal"),
+                    p.current_token_range(),
+                ));
+            }
         }
         _ => {
             return Err(LuaParseError::from_source_range(

@@ -184,3 +184,8 @@ unfinished string:
   zh_CN: 未完成的字符串
   zh_HK: 未完成的字符串
   zh_TW: 未完成的字符串
+colon accessor must be followed by a function call or table constructor or string literal:
+  en: colon accessor must be followed by a function call or table constructor or string literal
+  zh_CN: 冒号访问器后必须跟随函数调用、表构造或字符串字面量
+  zh_HK: 冒號訪問器後必須跟隨函數調用、表構造或字符串字面量
+  zh_TW: 冒號存取器後必須跟隨函數呼叫、表建構或字串字面量
