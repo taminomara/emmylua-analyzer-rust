@@ -1,10 +1,12 @@
 use emmylua_code_analysis::{
-    InferGuard, LuaDeclLocation, LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner,
-    LuaMultiLineUnion, LuaPropertyOwnerId, LuaType, LuaTypeDeclId, LuaUnionType, RenderLevel,
+    get_closure_expr_comment, InferGuard, LuaDeclLocation, LuaFunctionType, LuaMember,
+    LuaMemberKey, LuaMemberOwner, LuaMultiLineUnion, LuaPropertyOwnerId, LuaType, LuaTypeDeclId,
+    LuaUnionType, RenderLevel,
 };
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaComment, LuaNameToken,
-    LuaSyntaxId, LuaSyntaxKind, LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
+    LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaClosureExpr, LuaComment,
+    LuaDocTagParam, LuaNameToken, LuaParamList, LuaSyntaxId, LuaSyntaxKind, LuaSyntaxToken,
+    LuaTokenKind, LuaVarExpr,
 };
 use itertools::Itertools;
 use lsp_types::{CompletionItem, Documentation};
@@ -168,12 +170,64 @@ fn get_token_should_type(builder: &mut CompletionBuilder) -> Option<Vec<LuaType>
         LuaSyntaxKind::CallArgList => {
             return infer_call_arg_list(builder, LuaCallArgList::cast(parent_node)?, token);
         }
+        LuaSyntaxKind::ParamList => {
+            return infer_param_list(builder, LuaParamList::cast(parent_node)?);
+        }
         LuaSyntaxKind::BinaryExpr => {
             // infer_binary_expr(builder, binary_expr)?;
         }
         _ => {}
     }
 
+    None
+}
+
+fn infer_param_list(
+    builder: &mut CompletionBuilder,
+    param_list: LuaParamList,
+) -> Option<Vec<LuaType>> {
+    let closure_expr = param_list.get_parent::<LuaClosureExpr>()?;
+
+    let doc_params = get_closure_expr_comment(&closure_expr)?.children::<LuaDocTagParam>();
+    let mut names = Vec::new();
+    for doc_param in doc_params {
+        let name = doc_param.get_name_token()?.get_name_text().to_string();
+        if !names.contains(&name) {
+            // 不在这里添加补全项, 拼接的优先级应在单独添加之上
+            names.push(name.clone());
+        }
+    }
+    let params = param_list
+        .get_params()
+        .map(|it| {
+            if let Some(name_token) = it.get_name_token() {
+                name_token.get_name_text().to_string()
+            } else {
+                "".to_string()
+            }
+        })
+        .filter(|it| !it.is_empty())
+        .collect::<Vec<_>>();
+
+    // names 去掉 params 已有的
+    names.retain(|name| !params.contains(&name));
+    if names.len() > 1 {
+        builder.add_completion_item(CompletionItem {
+            label: format!("{}", names.iter().join(", ")),
+            kind: Some(lsp_types::CompletionItemKind::INTERFACE),
+            ..Default::default()
+        });
+    }
+
+    for name in names {
+        builder.add_completion_item(CompletionItem {
+            label: name,
+            kind: Some(lsp_types::CompletionItemKind::INTERFACE),
+            ..Default::default()
+        });
+    }
+
+    // 不返回类型, 因为字符串类型会被加上双引号, 但这里需要的是不带双引号的字符串, 我们选择直接在这里添加
     None
 }
 

@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use emmylua_code_analysis::{LuaFlowId, LuaType};
-use emmylua_parser::{LuaAst, LuaAstNode, LuaCallArgList};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaCallArgList, LuaParamList};
 use lsp_types::CompletionTriggerKind;
 
 use crate::handlers::completion::{
@@ -40,17 +40,28 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
 }
 
 fn allow_add_env_completion(builder: &CompletionBuilder) -> Option<()> {
+    let trigger_text = builder.get_trigger_text();
     if builder.trigger_kind == CompletionTriggerKind::TRIGGER_CHARACTER {
-        let trigger_text = builder.get_trigger_text();
         // 由字符触发的空格补全不允许添加
         if trigger_text.is_empty() {
             return None;
         }
-        // 如果触发字符是`(`且位于`CallArgList`中, 那么不允许添加
-        if trigger_text == "("
-            && LuaCallArgList::can_cast(builder.trigger_token.parent()?.kind().into())
-        {
-            return None;
+        let parent = builder.trigger_token.parent()?;
+
+        if trigger_text == "(" {
+            if LuaCallArgList::can_cast(parent.kind().into())
+                || LuaParamList::can_cast(parent.kind().into())
+            {
+                return None;
+            }
+        }
+    } else if builder.trigger_kind == CompletionTriggerKind::INVOKED {
+        let parent = builder.trigger_token.parent()?;
+        // 即时是主动触发, 也不允许在函数定义的参数列表中添加
+        if trigger_text == "(" {
+            if LuaParamList::can_cast(parent.kind().into()) {
+                return None;
+            }
         }
     }
 
@@ -167,8 +178,8 @@ fn add_global_env(
 
 fn env_check_match_word(trigger_text: &str, name: &str) -> bool {
     // 如果首字母是`(`或者`,`则允许, 用于在函数参数调用处触发补全
-    if trigger_text.starts_with('(') || trigger_text.starts_with(',') {
-        return true;
+    match trigger_text.chars().next() {
+        Some('(') | Some(',') => true,
+        _ => check_match_word(trigger_text, name),
     }
-    check_match_word(trigger_text, name)
 }
