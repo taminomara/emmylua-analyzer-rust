@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 
 use emmylua_code_analysis::{LuaFlowId, LuaType};
-use emmylua_parser::{LuaAst, LuaAstNode};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaCallArgList};
+use lsp_types::CompletionTriggerKind;
 
 use crate::handlers::completion::{
     add_completions::{add_decl_completion, check_match_word},
@@ -12,6 +13,11 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     if builder.is_cancelled() {
         return None;
     }
+
+    if allow_add_env_completion(builder).is_none() {
+        return Some(());
+    }
+
     let node = LuaAst::cast(builder.trigger_token.parent()?)?;
     match node {
         LuaAst::LuaNameExpr(_) => {}
@@ -29,6 +35,24 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     builder.env_end_index = builder.get_completion_items_mut().len() as i32 - 1;
 
     builder.env_duplicate_name.extend(duplicated_name);
+
+    Some(())
+}
+
+fn allow_add_env_completion(builder: &CompletionBuilder) -> Option<()> {
+    if builder.trigger_kind == CompletionTriggerKind::TRIGGER_CHARACTER {
+        let trigger_text = builder.get_trigger_text();
+        // 由字符触发的空格补全不允许添加
+        if trigger_text.is_empty() {
+            return None;
+        }
+        // 如果触发字符是`(`且位于`CallArgList`中, 那么不允许添加
+        if trigger_text == "("
+            && LuaCallArgList::can_cast(builder.trigger_token.parent()?.kind().into())
+        {
+            return None;
+        }
+    }
 
     Some(())
 }

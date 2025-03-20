@@ -3,8 +3,8 @@ use emmylua_code_analysis::{
     LuaPropertyOwnerId, LuaType, LuaTypeDeclId, LuaUnionType, RenderLevel,
 };
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaComment, LuaExpr,
-    LuaNameToken, LuaSyntaxId, LuaSyntaxKind, LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
+    LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaComment, LuaNameToken,
+    LuaSyntaxId, LuaSyntaxKind, LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
 };
 use itertools::Itertools;
 use lsp_types::{CompletionItem, Documentation};
@@ -159,10 +159,10 @@ fn add_string_completion(builder: &mut CompletionBuilder, str: &str) -> Option<(
 
 fn get_token_should_type(builder: &mut CompletionBuilder) -> Option<Vec<LuaType>> {
     let token = builder.trigger_token.clone();
-    let mut parent_node = token.parent()?;
-    if LuaExpr::can_cast(parent_node.kind().into()) {
-        parent_node = parent_node.parent()?;
-    }
+    let parent_node = token.parent()?;
+    // if LuaExpr::can_cast(parent_node.kind().into()) {
+    //     parent_node = parent_node.parent()?;
+    // }
 
     match parent_node.kind().into() {
         LuaSyntaxKind::CallArgList => {

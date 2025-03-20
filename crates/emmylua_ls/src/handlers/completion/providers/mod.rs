@@ -11,35 +11,25 @@ mod postfix_provider;
 mod table_field_provider;
 mod type_special_provider;
 
-use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaStringToken};
-use lsp_types::CompletionTriggerKind;
+use emmylua_parser::LuaAstToken;
+use emmylua_parser::LuaStringToken;
 use rowan::TextRange;
 
 use super::completion_builder::CompletionBuilder;
 
 pub fn add_completions(builder: &mut CompletionBuilder) -> Option<()> {
-    // 空格补全只允许位于函数调用参数列表时非主动触发
-    if is_space_completion(builder).is_some() {
-        match LuaAst::cast(builder.trigger_token.parent()?)? {
-            LuaAst::LuaCallArgList(_) => {
-                type_special_provider::add_completion(builder);
-                return Some(());
-            }
-            _ => return Some(()),
-        }
-    }
-
     postfix_provider::add_completion(builder);
+    // `type_special_provider`优先级必须高于`env_provider`
     type_special_provider::add_completion(builder);
-    // `env_provider` 在某些情况下是不需要的, 但有些补全功能依赖于他, 因在一些补全中可能会移除掉`env_provider` 的补全.
+    // `env_provider`在某些情况下是不需要的, 但有些补全功能依赖于他, 因此我们先添加`env_provider`的补全, 再在某些补全中移除掉他的补全.
     // 目前可能移除掉他的补全为: `table_field_provider`
     env_provider::add_completion(builder);
     // 只有具有类型定义的表才会成功返回, 此时我们不需要处理其他补全
     if table_field_provider::add_completion(builder).is_some() {
         return Some(());
     }
-    member_provider::add_completion(builder);
     keywords_provider::add_completion(builder);
+    member_provider::add_completion(builder);
 
     module_path_provider::add_completion(builder);
     file_path_provider::add_completion(builder);
@@ -53,19 +43,8 @@ pub fn add_completions(builder: &mut CompletionBuilder) -> Option<()> {
             item.sort_text = Some(format!("{:04}", index + 1));
         }
     }
-    // dbg!(&builder.get_completion_items_mut());
 
     Some(())
-}
-
-fn is_space_completion(builder: &CompletionBuilder) -> Option<()> {
-    if builder.get_trigger_text().is_empty()
-        && builder.trigger_kind == CompletionTriggerKind::TRIGGER_CHARACTER
-    {
-        Some(())
-    } else {
-        None
-    }
 }
 
 fn get_text_edit_range_in_string(
