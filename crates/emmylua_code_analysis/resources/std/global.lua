@@ -20,7 +20,6 @@
 --- failed!"
 ---@generic T, T1
 ---@param v T
----@param message? T1
 ---@param ... T1...
 ---@return std.NotNull<T>, T1...
 function assert(v, ...) end
