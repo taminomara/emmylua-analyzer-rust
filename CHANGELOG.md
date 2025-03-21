@@ -1,6 +1,8 @@
 # CHANGELOG
 
-# 0.6.0 (unreleased)
+# 0.6.1 (unreleased)
+
+# 0.6.0
 
 `NEW` Disable re-index in default, need to enable by `workspace.enableReindex`
 
