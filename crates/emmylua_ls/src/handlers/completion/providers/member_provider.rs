@@ -1,4 +1,4 @@
-use emmylua_code_analysis::LuaMemberInfo;
+use emmylua_code_analysis::{LuaMemberInfo, LuaType};
 use emmylua_parser::{LuaAstNode, LuaAstToken, LuaIndexExpr, LuaStringToken};
 
 use crate::handlers::completion::{
@@ -59,23 +59,28 @@ fn add_resolve_member_infos(
         }
     }
 
-    match resolve_state {
-        MemberResolveState::All => {
-            for member_info in member_infos {
+    // 所有 DocFunction 只取第一个作为补全项
+    let mut find_doc_function = false;
+    for member_info in member_infos {
+        if matches!(member_info.typ, LuaType::DocFunction(_)) {
+            if find_doc_function {
+                continue;
+            }
+            find_doc_function = true;
+        }
+
+        match resolve_state {
+            MemberResolveState::All => {
                 add_member_completion(builder, member_info.clone(), completion_status);
             }
-        }
-        MemberResolveState::Meta => {
-            for member_info in member_infos {
+            MemberResolveState::Meta => {
                 if let Some(feature) = member_info.feature {
                     if feature.is_meta_decl() {
                         add_member_completion(builder, member_info.clone(), completion_status);
                     }
                 }
             }
-        }
-        MemberResolveState::FileDecl => {
-            for member_info in member_infos {
+            MemberResolveState::FileDecl => {
                 if let Some(feature) = member_info.feature {
                     if feature.is_file_decl() {
                         add_member_completion(builder, member_info.clone(), completion_status);

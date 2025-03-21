@@ -105,11 +105,11 @@ mod tests {
         // 被动触发补全
         assert!(ws.check_completion_with_kind(
             r#"
-            ---@class Completion.Test4
+            ---@class Test
             ---@field event fun(a: "A", b: number)
             ---@field event fun(a: "B", b: string)
-            local Test4 = {}
-            Test4.event(<??>)
+            local Test = {}
+            Test.event(<??>)
         "#,
             vec![
                 VirtualCompletionItem {
@@ -127,11 +127,11 @@ mod tests {
         // 主动触发补全
         assert!(ws.check_completion(
             r#"
-                    ---@class Completion.Test4
+                    ---@class Test
                     ---@field event fun(a: "A", b: number)
                     ---@field event fun(a: "B", b: string)
-                    local Test4 = {}
-                    Test4.event(<??>)
+                    local Test = {}
+                    Test.event(<??>)
                 "#,
             vec![
                 VirtualCompletionItem {
@@ -143,10 +143,28 @@ mod tests {
                     kind: CompletionItemKind::ENUM_MEMBER,
                 },
                 VirtualCompletionItem {
-                    label: "Test4".to_string(),
+                    label: "Test".to_string(),
                     kind: CompletionItemKind::CLASS,
                 },
             ],
         ));
+
+        assert!(ws.check_completion(
+            r#"
+                    ---@class Test
+                    ---@field event fun(a: "A", b: number)
+                    ---@field event fun(a: "B", b: string)
+                    local Test = {}
+                    Test.<??>
+                "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "event".to_string(),
+                    kind: CompletionItemKind::FUNCTION,
+                },
+            ],
+        ));
     }
+
+
 }
