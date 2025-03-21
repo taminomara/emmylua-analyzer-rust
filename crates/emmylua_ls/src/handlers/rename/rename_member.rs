@@ -1,11 +1,7 @@
 use std::collections::HashMap;
 
-use emmylua_code_analysis::{
-    LuaCompilation, LuaMemberId, LuaPropertyOwnerId, SemanticModel,
-};
-use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaNameToken, LuaSyntaxNode,
-};
+use emmylua_code_analysis::{LuaCompilation, LuaMemberId, LuaPropertyOwnerId, SemanticModel};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaNameToken, LuaSyntaxNode};
 use lsp_types::Uri;
 
 pub fn rename_member_references(
