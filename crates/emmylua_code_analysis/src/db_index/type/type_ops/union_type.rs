@@ -24,6 +24,13 @@ pub fn union_type(source: LuaType, target: LuaType) -> LuaType {
         // boolean | boolean const
         (LuaType::Boolean, LuaType::BooleanConst(_)) => LuaType::Boolean,
         (LuaType::BooleanConst(_), LuaType::Boolean) => LuaType::Boolean,
+        (LuaType::BooleanConst(left), LuaType::BooleanConst(right)) => {
+            if left == right {
+                LuaType::BooleanConst(left.clone())
+            } else {
+                LuaType::Boolean
+            }
+        }
         // table | table const
         (LuaType::Table, LuaType::TableConst(_)) => LuaType::Table,
         (LuaType::TableConst(_), LuaType::Table) => LuaType::Table,

@@ -88,6 +88,7 @@ pub fn narrow_down_type(source: LuaType, target: LuaType) -> Option<LuaType> {
             | LuaType::TableGeneric(_) => return Some(source),
             _ => {}
         },
+        LuaType::Instance(base) => return narrow_down_type(source, base.get_base().clone()),
         LuaType::Unknown => return Some(source),
         _ => {
             if target.is_unknown() {
@@ -100,12 +101,13 @@ pub fn narrow_down_type(source: LuaType, target: LuaType) -> Option<LuaType> {
 
     match &source {
         LuaType::Union(union) => {
-            let union_types = union
+            let mut union_types = union
                 .get_types()
                 .iter()
                 .filter_map(|t| narrow_down_type(t.clone(), target.clone()))
                 .collect::<Vec<_>>();
 
+            union_types.dedup();
             return match union_types.len() {
                 0 => Some(target),
                 1 => Some(union_types[0].clone()),
@@ -113,11 +115,12 @@ pub fn narrow_down_type(source: LuaType, target: LuaType) -> Option<LuaType> {
             };
         }
         LuaType::Nullable(inner) => {
-            let union_types = vec![LuaType::Nil, (**inner).clone()]
+            let mut union_types = vec![LuaType::Nil, (**inner).clone()]
                 .iter()
                 .filter_map(|t| narrow_down_type(t.clone(), target.clone()))
                 .collect::<Vec<_>>();
 
+            union_types.dedup();
             return match union_types.len() {
                 0 => Some(target),
                 1 => Some(union_types[0].clone()),

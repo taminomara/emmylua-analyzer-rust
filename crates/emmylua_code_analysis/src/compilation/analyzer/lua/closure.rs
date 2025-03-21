@@ -7,7 +7,7 @@ use crate::{
         UnResolveClosureParams, UnResolveClosureReturn, UnResolveReturn,
     },
     db_index::{LuaDocReturnInfo, LuaSignatureId},
-    SignatureReturnStatus,
+    infer_expr, DbIndex, LuaInferCache, LuaMultiReturn, LuaType, SignatureReturnStatus, TypeOps,
 };
 
 use super::{func_body::analyze_func_body_returns, LuaAnalyzer, LuaReturnPoint};
@@ -86,19 +86,20 @@ fn analyze_return(
 
     let block = closure.get_block()?;
     let return_points = analyze_func_body_returns(block);
-    let returns = match analyze_return_point(analyzer, &return_points) {
-        Some(returns) => returns,
-        None => {
-            let unresolve = UnResolveReturn {
-                file_id: analyzer.file_id,
-                signature_id: signature_id.clone(),
-                return_points,
-            };
+    let returns =
+        match analyze_return_point(&analyzer.db, &mut analyzer.infer_cache, &return_points) {
+            Some(returns) => returns,
+            None => {
+                let unresolve = UnResolveReturn {
+                    file_id: analyzer.file_id,
+                    signature_id: signature_id.clone(),
+                    return_points,
+                };
 
-            analyzer.add_unresolved(unresolve.into());
-            return None;
-        }
-    };
+                analyzer.add_unresolved(unresolve.into());
+                return None;
+            }
+        };
     let signature = analyzer
         .db
         .get_signature_index_mut()
@@ -134,43 +135,37 @@ fn analyze_lambda_returns(
     Some(())
 }
 
-fn analyze_return_point(
-    analyzer: &mut LuaAnalyzer,
+pub fn analyze_return_point(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
     return_points: &Vec<LuaReturnPoint>,
 ) -> Option<Vec<LuaDocReturnInfo>> {
-    let mut return_infos = Vec::new();
+    let mut return_type = LuaType::Unknown;
     for point in return_points {
         match point {
             LuaReturnPoint::Expr(expr) => {
-                let expr_type = analyzer.infer_expr(&expr)?;
-                if return_infos.is_empty() {
-                    return_infos.push(LuaDocReturnInfo {
-                        name: None,
-                        type_ref: expr_type,
-                        description: None,
-                    });
-                } else {
-                    // todo merge two type
-                    // let has_return = return_infos[0].type_ref.clone();
-                    return_infos[0].type_ref = expr_type;
-                }
+                let expr_type = infer_expr(db, cache, expr.clone())?;
+                return_type = TypeOps::Union.apply(&return_type, &expr_type);
             }
             LuaReturnPoint::MuliExpr(exprs) => {
-                // todo merge type
-                if return_infos.is_empty() {
-                    for expr in exprs {
-                        let expr_type = analyzer.infer_expr(&expr)?;
-                        return_infos.push(LuaDocReturnInfo {
-                            name: None,
-                            type_ref: expr_type,
-                            description: None,
-                        });
-                    }
+                let mut multi_return = vec![];
+                for expr in exprs {
+                    let expr_type = infer_expr(db, cache, expr.clone())?;
+                    multi_return.push(expr_type);
                 }
+                let typ = LuaType::MuliReturn(LuaMultiReturn::Multi(multi_return).into());
+                return_type = TypeOps::Union.apply(&return_type, &typ);
+            }
+            LuaReturnPoint::Nil => {
+                return_type = TypeOps::Union.apply(&return_type, &LuaType::Nil);
             }
             _ => {}
         }
     }
 
-    Some(return_infos)
+    Some(vec![LuaDocReturnInfo {
+        type_ref: return_type,
+        description: None,
+        name: None,
+    }])
 }

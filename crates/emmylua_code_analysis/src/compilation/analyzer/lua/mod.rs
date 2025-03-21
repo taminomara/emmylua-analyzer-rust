@@ -6,6 +6,7 @@ mod stats;
 use std::collections::HashMap;
 
 use closure::analyze_closure;
+pub use closure::analyze_return_point;
 use emmylua_parser::{LuaAst, LuaAstNode, LuaExpr};
 pub use func_body::LuaReturnPoint;
 use module::analyze_chunk_return;

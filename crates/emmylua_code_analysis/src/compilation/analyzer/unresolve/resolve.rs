@@ -1,6 +1,6 @@
 use crate::{
-    compilation::analyzer::lua::LuaReturnPoint,
-    db_index::{DbIndex, LuaDocReturnInfo, LuaMemberOwner, LuaType},
+    compilation::analyzer::lua::analyze_return_point,
+    db_index::{DbIndex, LuaMemberOwner, LuaType},
     semantic::{infer_expr, LuaInferCache},
     LuaPropertyOwnerId, SignatureReturnStatus,
 };
@@ -101,51 +101,7 @@ pub fn try_resolve_return_point(
     cache: &mut LuaInferCache,
     return_: &UnResolveReturn,
 ) -> Option<bool> {
-    let mut is_nullable = false;
-    let mut return_docs = Vec::new();
-    for return_point in &return_.return_points {
-        match return_point {
-            LuaReturnPoint::Expr(expr) => {
-                let expr_type = infer_expr(db, cache, expr.clone())?;
-                if return_docs.is_empty() {
-                    return_docs.push(LuaDocReturnInfo {
-                        name: None,
-                        type_ref: expr_type,
-                        description: None,
-                    });
-                } else {
-                    let last = return_docs.first_mut()?;
-                    last.type_ref = expr_type;
-                }
-            }
-            LuaReturnPoint::MuliExpr(exprs) => {
-                if return_docs.is_empty() {
-                    for expr in exprs {
-                        let expr_type = infer_expr(db, cache, expr.clone())?;
-
-                        return_docs.push(LuaDocReturnInfo {
-                            name: None,
-                            type_ref: expr_type,
-                            description: None,
-                        });
-                    }
-                }
-            }
-            LuaReturnPoint::Nil => {
-                is_nullable = true;
-            }
-            LuaReturnPoint::Error => {}
-        }
-    }
-
-    if is_nullable {
-        for doc in &mut return_docs {
-            if !doc.type_ref.is_nullable() {
-                doc.type_ref = LuaType::Nullable(doc.type_ref.clone().into());
-            }
-        }
-    }
-
+    let return_docs = analyze_return_point(&db, cache, &return_.return_points)?;
     let signature = db
         .get_signature_index_mut()
         .get_mut(&return_.signature_id)?;
