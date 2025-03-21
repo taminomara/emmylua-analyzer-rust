@@ -59,14 +59,20 @@ fn add_resolve_member_infos(
         }
     }
 
-    // 所有 DocFunction 只取第一个作为补全项
-    let mut find_doc_function = false;
+    // 当`DocFunction`超过5个时只取第一个作为补全项
+    let doc_function_count = member_infos
+        .iter()
+        .filter(|info| matches!(info.typ, LuaType::DocFunction(_)))
+        .count();
+    let limit_doc_functions = doc_function_count > 5;
+    let mut first_doc_function = false;
+
     for member_info in member_infos {
-        if matches!(member_info.typ, LuaType::DocFunction(_)) {
-            if find_doc_function {
+        if limit_doc_functions && matches!(member_info.typ, LuaType::DocFunction(_)) {
+            if first_doc_function {
                 continue;
             }
-            find_doc_function = true;
+            first_doc_function = true;
         }
 
         match resolve_state {
