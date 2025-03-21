@@ -72,7 +72,8 @@ pub async fn on_prepare_rename_handler(
     let semantic_model = analysis.compilation.get_semantic_model(file_id)?;
     let root = semantic_model.get_root();
     let document = semantic_model.get_document();
-    let position_offset = document.get_offset(position.line as usize, position.character as usize)?;
+    let position_offset =
+        document.get_offset(position.line as usize, position.character as usize)?;
 
     if position_offset > root.syntax().text_range().end() {
         return None;
