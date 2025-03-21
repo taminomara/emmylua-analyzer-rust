@@ -42,18 +42,37 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                         let position = name_token.get_position();
                         let file_id = analyzer.file_id;
                         let decl_id = LuaDeclId::new(file_id, position);
-                        let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-
-                        decl.set_decl_type(type_ref.clone());
+                        if let Some(decl) = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)
+                        {
+                            decl.set_decl_type(type_ref.clone());
+                        } else {
+                            analyzer.context.type_flow.insert(
+                                InFiled {
+                                    file_id: analyzer.file_id,
+                                    value: name_expr.get_syntax_id(),
+                                },
+                                type_ref.clone(),
+                            );
+                        }
                     }
                     LuaVarExpr::IndexExpr(index_expr) => {
                         let member_id =
                             LuaMemberId::new(index_expr.get_syntax_id(), analyzer.file_id);
-                        let member = analyzer
+                        if let Some(member) = analyzer
                             .db
                             .get_member_index_mut()
-                            .get_member_mut(&member_id)?;
-                        member.set_decl_type(type_ref.clone());
+                            .get_member_mut(&member_id)
+                        {
+                            member.set_decl_type(type_ref.clone());
+                        } else {
+                            analyzer.context.type_flow.insert(
+                                InFiled {
+                                    file_id: analyzer.file_id,
+                                    value: index_expr.get_syntax_id(),
+                                },
+                                type_ref.clone(),
+                            );
+                        }
                     }
                 }
             }

@@ -6,8 +6,8 @@ mod unresolve;
 
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{db_index::DbIndex, profile::Profile, Emmyrc, InFiled, WorkspaceId};
-use emmylua_parser::LuaChunk;
+use crate::{db_index::DbIndex, profile::Profile, Emmyrc, InFiled, LuaType, WorkspaceId};
+use emmylua_parser::{LuaChunk, LuaSyntaxId};
 use unresolve::UnResolve;
 
 pub fn analyze(db: &mut DbIndex, need_analyzed_files: Vec<InFiled<LuaChunk>>, config: Arc<Emmyrc>) {
@@ -79,6 +79,7 @@ pub struct AnalyzeContext {
     tree_list: Vec<InFiled<LuaChunk>>,
     #[allow(unused)]
     config: Arc<Emmyrc>,
+    type_flow: HashMap<InFiled<LuaSyntaxId>, LuaType>,
     unresolves: Vec<UnResolve>,
 }
 
@@ -87,6 +88,7 @@ impl AnalyzeContext {
         Self {
             tree_list: Vec::new(),
             config: emmyrc,
+            type_flow: HashMap::new(),
             unresolves: Vec::new(),
         }
     }
