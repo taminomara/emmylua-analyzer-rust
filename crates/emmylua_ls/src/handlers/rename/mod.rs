@@ -1,11 +1,18 @@
-mod rename_references;
+mod rename_decl;
+mod rename_member;
+mod rename_type;
 
-use emmylua_parser::{LuaAstNode, LuaTokenKind};
+use std::collections::HashMap;
+
+use emmylua_code_analysis::{LuaCompilation, LuaPropertyOwnerId, SemanticModel};
+use emmylua_parser::{LuaAstNode, LuaSyntaxToken, LuaTokenKind};
 use lsp_types::{
     ClientCapabilities, OneOf, PrepareRenameResponse, RenameOptions, RenameParams,
     ServerCapabilities, TextDocumentPositionParams, WorkspaceEdit,
 };
-use rename_references::rename_references;
+use rename_decl::rename_decl_references;
+use rename_member::rename_member_references;
+use rename_type::rename_type_references;
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
 
@@ -97,6 +104,51 @@ pub async fn on_prepare_rename_handler(
     } else {
         None
     }
+}
+
+fn rename_references(
+    semantic_model: &SemanticModel,
+    compilation: &LuaCompilation,
+    token: LuaSyntaxToken,
+    new_name: String,
+) -> Option<WorkspaceEdit> {
+    let mut result = HashMap::new();
+    let semantic_info = semantic_model.get_semantic_info(token.into())?;
+    match semantic_info.property_owner? {
+        LuaPropertyOwnerId::LuaDecl(decl_id) => {
+            rename_decl_references(semantic_model, compilation, decl_id, new_name, &mut result);
+        }
+        LuaPropertyOwnerId::Member(member_id) => {
+            rename_member_references(
+                semantic_model,
+                compilation,
+                member_id,
+                new_name,
+                &mut result,
+            );
+        }
+        LuaPropertyOwnerId::TypeDecl(type_decl_id) => {
+            rename_type_references(semantic_model, type_decl_id, new_name, &mut result);
+        }
+        _ => {}
+    }
+
+    let changes = result
+        .into_iter()
+        .map(|(uri, ranges)| {
+            let text_edits = ranges
+                .into_iter()
+                .map(|(range, new_text)| lsp_types::TextEdit { range, new_text })
+                .collect();
+            (uri, text_edits)
+        })
+        .collect();
+
+    Some(WorkspaceEdit {
+        changes: Some(changes),
+        document_changes: None,
+        change_annotations: None,
+    })
 }
 
 pub fn register_capabilities(

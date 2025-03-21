@@ -137,25 +137,36 @@ fn infer_buildin_or_ref_type(analyzer: &mut DocAnalyzer, name: &str, range: Text
                 )));
             }
 
-            if let Some(name_type_decl) = analyzer
+            let mut founded = false;
+            let type_id = if let Some(name_type_decl) = analyzer
                 .db
                 .get_type_index_mut()
                 .find_type_decl(analyzer.file_id, name)
             {
-                return LuaType::Ref(name_type_decl.get_id());
+                founded = true;
+                name_type_decl.get_id()
+            } else {
+                LuaTypeDeclId::new(name)
+            };
+
+            if !founded {
+                analyzer.db.get_diagnostic_index_mut().add_diagnostic(
+                    analyzer.file_id,
+                    AnalyzeError::new(
+                        DiagnosticCode::TypeNotFound,
+                        &t!("Type '%{name}' not found", name = name),
+                        range,
+                    ),
+                );
             }
 
-            analyzer.db.get_diagnostic_index_mut().add_diagnostic(
+            analyzer.db.get_reference_index_mut().add_type_reference(
                 analyzer.file_id,
-                AnalyzeError::new(
-                    DiagnosticCode::TypeNotFound,
-                    &t!("Type '%{name}' not found", name = name),
-                    range,
-                ),
+                type_id.clone(),
+                range,
             );
 
-            // not found type, keep the name
-            LuaType::Ref(LuaTypeDeclId::new(name))
+            LuaType::Ref(type_id)
         }
     }
 }

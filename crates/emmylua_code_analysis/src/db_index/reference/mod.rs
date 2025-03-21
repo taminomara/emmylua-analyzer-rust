@@ -11,7 +11,7 @@ use string_reference::StringReference;
 
 use crate::{FileId, InFiled};
 
-use super::{traits::LuaIndex, LuaDeclId, LuaMemberKey};
+use super::{traits::LuaIndex, LuaDeclId, LuaMemberKey, LuaTypeDeclId};
 
 #[derive(Debug)]
 pub struct LuaReferenceIndex {
@@ -19,6 +19,7 @@ pub struct LuaReferenceIndex {
     index_reference: HashMap<LuaMemberKey, HashMap<FileId, HashSet<LuaSyntaxId>>>,
     global_references: HashMap<SmolStr, HashMap<FileId, HashSet<LuaSyntaxId>>>,
     string_references: HashMap<FileId, StringReference>,
+    type_references: HashMap<FileId, HashMap<LuaTypeDeclId, HashSet<TextRange>>>,
 }
 
 impl LuaReferenceIndex {
@@ -28,6 +29,7 @@ impl LuaReferenceIndex {
             index_reference: HashMap::new(),
             global_references: HashMap::new(),
             string_references: HashMap::new(),
+            type_references: HashMap::new(),
         }
     }
 
@@ -73,6 +75,20 @@ impl LuaReferenceIndex {
             .entry(file_id)
             .or_insert_with(StringReference::new)
             .add_string_reference(string, range);
+    }
+
+    pub fn add_type_reference(
+        &mut self,
+        file_id: FileId,
+        type_decl_id: LuaTypeDeclId,
+        range: TextRange,
+    ) {
+        self.type_references
+            .entry(file_id)
+            .or_insert_with(HashMap::new)
+            .entry(type_decl_id)
+            .or_insert_with(HashSet::new)
+            .insert(range);
     }
 
     pub fn get_local_reference(&self, file_id: &FileId) -> Option<&FileReference> {
@@ -174,12 +190,33 @@ impl LuaReferenceIndex {
 
         results
     }
+
+    pub fn get_type_references(
+        &self,
+        type_decl_id: &LuaTypeDeclId,
+    ) -> Option<Vec<InFiled<TextRange>>> {
+        let results = self
+            .type_references
+            .iter()
+            .map(|(file_id, type_references)| {
+                type_references
+                    .get(type_decl_id)
+                    .into_iter()
+                    .flatten()
+                    .map(|range| InFiled::new(*file_id, range.clone()))
+            })
+            .flatten()
+            .collect();
+
+        Some(results)
+    }
 }
 
 impl LuaIndex for LuaReferenceIndex {
     fn remove(&mut self, file_id: FileId) {
         self.file_references.remove(&file_id);
         self.string_references.remove(&file_id);
+        self.type_references.remove(&file_id);
         let mut to_be_remove = Vec::new();
         for (key, references) in self.index_reference.iter_mut() {
             references.remove(&file_id);

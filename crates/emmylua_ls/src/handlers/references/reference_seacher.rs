@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 use emmylua_code_analysis::{
-    LuaCompilation, LuaDeclId, LuaMemberId, LuaMemberKey, LuaPropertyOwnerId, SemanticModel,
+    LuaCompilation, LuaDeclId, LuaMemberId, LuaMemberKey, LuaPropertyOwnerId, LuaTypeDeclId,
+    SemanticModel,
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaNameToken, LuaStringToken, LuaSyntaxNode, LuaSyntaxToken,
@@ -21,6 +22,9 @@ pub fn search_references(
             }
             LuaPropertyOwnerId::Member(member_id) => {
                 search_member_references(semantic_model, compilation, member_id, &mut result);
+            }
+            LuaPropertyOwnerId::TypeDecl(type_decl_id) => {
+                search_type_decl_references(semantic_model, type_decl_id, &mut result);
             }
             _ => {}
         }
@@ -195,6 +199,33 @@ fn fuzzy_search_references(
         let document = semantic_model.get_document();
         let range = in_filed_syntax_id.value.get_range();
         let location = document.to_lsp_location(range)?;
+        result.push(location);
+    }
+
+    Some(())
+}
+
+fn search_type_decl_references(
+    semantic_model: &SemanticModel,
+    type_decl_id: LuaTypeDeclId,
+    result: &mut Vec<Location>,
+) -> Option<()> {
+    let refs = semantic_model
+        .get_db()
+        .get_reference_index()
+        .get_type_references(&type_decl_id)?;
+    let mut document_cache = HashMap::new();
+    for in_filed_reference_range in refs {
+        let document = if let Some(document) = document_cache.get(&in_filed_reference_range.file_id)
+        {
+            document
+        } else {
+            let document =
+                semantic_model.get_document_by_file_id(in_filed_reference_range.file_id)?;
+            document_cache.insert(in_filed_reference_range.file_id, document);
+            document_cache.get(&in_filed_reference_range.file_id)?
+        };
+        let location = document.to_lsp_location(in_filed_reference_range.value)?;
         result.push(location);
     }
 
