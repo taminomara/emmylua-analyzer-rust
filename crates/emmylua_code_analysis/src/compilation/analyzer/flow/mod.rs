@@ -20,7 +20,7 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     // build decl and ref flow chain
     for in_filed_tree in &tree_list {
         let flow_trees = build_flow_cache(db, in_filed_tree.file_id, in_filed_tree.value.clone());
-        analyze_flow(db, in_filed_tree.file_id, flow_trees);
+        analyze_flow(db, in_filed_tree.file_id, flow_trees, context);
     }
 }
 
@@ -120,8 +120,12 @@ fn build_index_expr_flow(
     Some(())
 }
 
-#[allow(unused)]
-fn analyze_flow(db: &mut DbIndex, file_id: FileId, flow_caches: Vec<(LuaFlowId, FlowNodes)>) {
+fn analyze_flow(
+    db: &mut DbIndex,
+    file_id: FileId,
+    flow_caches: Vec<(LuaFlowId, FlowNodes)>,
+    context: &mut AnalyzeContext,
+) {
     for (flow_id, cache) in flow_caches {
         let nodes = cache.get_var_flow_nodes();
         let mut flow_chain = LuaFlowChain::new(flow_id);
@@ -141,7 +145,14 @@ fn analyze_flow(db: &mut DbIndex, file_id: FileId, flow_caches: Vec<(LuaFlowId, 
                             FlowRef::NameExpr(expr) => LuaVarExpr::NameExpr(expr.clone()),
                             FlowRef::IndexExpr(expr) => LuaVarExpr::IndexExpr(expr.clone()),
                         };
-                        analyze_ref_assign(db, &mut flow_chain, var_expr, var_path);
+                        analyze_ref_assign(
+                            db,
+                            &mut flow_chain,
+                            var_expr,
+                            var_path,
+                            file_id,
+                            context,
+                        );
                     }
                 }
             }

@@ -21,8 +21,8 @@ pub fn analyze(db: &mut DbIndex, need_analyzed_files: Vec<InFiled<LuaChunk>>, co
         let profile_log = format!("analyze workspace {}", workspace_id);
         let _p = Profile::cond_new(&profile_log, context.tree_list.len() > 1);
         decl::analyze(db, &mut context);
-        flow::analyze(db, &mut context);
         doc::analyze(db, &mut context);
+        flow::analyze(db, &mut context);
         lua::analyze(db, &mut context);
         unresolve::analyze(db, &mut context);
     }

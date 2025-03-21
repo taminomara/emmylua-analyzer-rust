@@ -7,8 +7,9 @@ use rowan::TextRange;
 use smol_str::SmolStr;
 
 use crate::{
+    compilation::analyzer::AnalyzeContext,
     db_index::{LuaType, TypeAssertion},
-    DbIndex, LuaFlowChain, LuaTypeDeclId,
+    DbIndex, FileId, InFiled, LuaFlowChain, LuaTypeDeclId,
 };
 
 pub fn analyze_ref_expr(
@@ -35,9 +36,27 @@ pub fn analyze_ref_assign(
     flow_chain: &mut LuaFlowChain,
     var_expr: LuaVarExpr,
     path: &str,
+    file_id: FileId,
+    context: &AnalyzeContext,
 ) -> Option<()> {
     let assign_stat = var_expr.get_parent::<LuaAssignStat>()?;
     if is_decl_assign_stat(assign_stat.clone()).unwrap_or(false) {
+        let key = InFiled {
+            file_id,
+            value: var_expr.get_syntax_id(),
+        };
+        if let Some(typ) = context.type_flow.get(&key) {
+            let type_assert = TypeAssertion::Narrow(typ.clone());
+            broadcast_down(
+                db,
+                flow_chain,
+                path,
+                LuaAst::LuaAssignStat(assign_stat),
+                type_assert,
+                true,
+            );
+        }
+
         return None;
     }
 

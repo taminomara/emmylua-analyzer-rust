@@ -235,4 +235,27 @@ print(a.field)
             "#
         ));
     }
+
+    #[test]
+    fn test_issue_210() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+        --- @class A
+        --- @field b integer
+
+        local a = {}
+
+        --- @type A
+        a = { b = 1 }
+
+        --- @param _a A
+        local function foo(_a) end
+
+        foo(a)
+        "#
+        ));
+    }
 }
