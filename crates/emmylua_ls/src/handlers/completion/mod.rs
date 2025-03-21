@@ -3,15 +3,16 @@ mod completion_builder;
 mod data;
 mod providers;
 mod resolve_completion;
+mod test;
 
 use add_completions::CompletionData;
 use completion_builder::CompletionBuilder;
-use emmylua_code_analysis::LuaPropertyOwnerId;
+use emmylua_code_analysis::{EmmyLuaAnalysis, FileId, LuaPropertyOwnerId};
 use emmylua_parser::LuaAstNode;
 use log::error;
 use lsp_types::{
     ClientCapabilities, CompletionItem, CompletionOptions, CompletionOptionsCompletionItem,
-    CompletionParams, CompletionResponse, ServerCapabilities,
+    CompletionParams, CompletionResponse, CompletionTriggerKind, Position, ServerCapabilities,
 };
 use providers::add_completions;
 use resolve_completion::resolve_completion;
@@ -29,6 +30,30 @@ pub async fn on_completion_handler(
     let position = params.text_document_position.position;
     let analysis = context.analysis.read().await;
     let file_id = analysis.get_file_id(&uri)?;
+    let semantic_model = analysis.compilation.get_semantic_model(file_id)?;
+    if !semantic_model.get_emmyrc().completion.enable {
+        return None;
+    }
+
+    completion(
+        &analysis,
+        file_id,
+        position,
+        params
+            .context
+            .map(|context| context.trigger_kind)
+            .unwrap_or(CompletionTriggerKind::INVOKED),
+        cancel_token,
+    )
+}
+
+pub fn completion(
+    analysis: &EmmyLuaAnalysis,
+    file_id: FileId,
+    position: Position,
+    trigger_kind: CompletionTriggerKind,
+    cancel_token: CancellationToken,
+) -> Option<CompletionResponse> {
     let semantic_model = analysis.compilation.get_semantic_model(file_id)?;
     if !semantic_model.get_emmyrc().completion.enable {
         return None;
@@ -52,7 +77,7 @@ pub async fn on_completion_handler(
         }
     };
 
-    let mut builder = CompletionBuilder::new(token, semantic_model, cancel_token);
+    let mut builder = CompletionBuilder::new(token, semantic_model, cancel_token, trigger_kind);
     add_completions(&mut builder);
     Some(CompletionResponse::Array(builder.get_completion_items()))
 }
@@ -117,12 +142,10 @@ pub fn register_capabilities(
     server_capabilities.completion_provider = Some(CompletionOptions {
         resolve_provider: Some(true),
         trigger_characters: Some(
-            vec![
-                ".", ":", "(", "[", "\"", "\'", " ", "@", "\\", "/", " ", "|",
-            ]
-            .iter()
-            .map(|s| s.to_string())
-            .collect(),
+            vec![".", ":", "(", "[", "\"", "\'", " ", "@", "\\", "/", "|"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
         ),
         work_done_progress_options: Default::default(),
         completion_item: Some(CompletionOptionsCompletionItem {

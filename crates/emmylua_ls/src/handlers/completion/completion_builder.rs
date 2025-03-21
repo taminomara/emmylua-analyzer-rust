@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use emmylua_code_analysis::SemanticModel;
 use emmylua_parser::LuaSyntaxToken;
-use lsp_types::CompletionItem;
+use lsp_types::{CompletionItem, CompletionTriggerKind};
 use tokio_util::sync::CancellationToken;
 
 pub struct CompletionBuilder<'a> {
@@ -12,6 +12,8 @@ pub struct CompletionBuilder<'a> {
     completion_items: Vec<CompletionItem>,
     cancel_token: CancellationToken,
     stopped: bool,
+    pub trigger_kind: CompletionTriggerKind,
+    pub env_range: (usize, usize),
 }
 
 impl<'a> CompletionBuilder<'a> {
@@ -19,6 +21,7 @@ impl<'a> CompletionBuilder<'a> {
         trigger_token: LuaSyntaxToken,
         semantic_model: SemanticModel<'a>,
         cancel_token: CancellationToken,
+        trigger_kind: CompletionTriggerKind,
     ) -> Self {
         Self {
             trigger_token,
@@ -27,6 +30,8 @@ impl<'a> CompletionBuilder<'a> {
             completion_items: Vec::new(),
             cancel_token,
             stopped: false,
+            trigger_kind,
+            env_range: (0, 0),
         }
     }
 
@@ -49,5 +54,20 @@ impl<'a> CompletionBuilder<'a> {
 
     pub fn stop_here(&mut self) {
         self.stopped = true;
+    }
+
+    pub fn get_trigger_text(&self) -> String {
+        self.trigger_token.text().trim_end().to_string()
+    }
+
+    pub fn remove_env_completion_items(&mut self) {
+        if self.env_range == (0, 0) {
+            return;
+        }
+        if self.env_range.0 <= self.env_range.1 && self.env_range.1 < self.completion_items.len() {
+            self.completion_items
+                .drain(self.env_range.0..=self.env_range.1 - 1);
+        }
+        self.env_range = (0, 0);
     }
 }

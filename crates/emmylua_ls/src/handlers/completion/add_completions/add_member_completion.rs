@@ -1,4 +1,4 @@
-use emmylua_code_analysis::{DbIndex, LuaMemberInfo, LuaMemberKey, LuaType};
+use emmylua_code_analysis::{DbIndex, LuaMemberInfo, LuaMemberKey, LuaPropertyOwnerId, LuaType};
 use emmylua_parser::LuaTokenKind;
 use lsp_types::CompletionItem;
 
@@ -60,8 +60,12 @@ pub fn add_member_completion(
         return None;
     }
 
-    let data = if let Some(id) = &property_owner {
-        CompletionData::from_property_owner_id(id.clone().into())
+    let completion_data = if let Some(id) = &property_owner {
+        if let Some(index) = member_info.overload_index {
+            CompletionData::from_overload(id.clone().into(), index)
+        } else {
+            CompletionData::from_property_owner_id(id.clone().into())
+        }
     } else {
         None
     };
@@ -80,7 +84,7 @@ pub fn add_member_completion(
     let mut completion_item = CompletionItem {
         label: label.clone(),
         kind: Some(get_completion_kind(&typ)),
-        data,
+        data: completion_data,
         label_details: Some(lsp_types::CompletionItemLabelDetails {
             detail,
             description,
@@ -105,6 +109,19 @@ pub fn add_member_completion(
     builder.add_completion_item(completion_item)?;
 
     // add overloads if the type is function
+    add_signature_overloads(builder, property_owner, &typ, display, deprecated, label)?;
+
+    Some(())
+}
+
+fn add_signature_overloads(
+    builder: &mut CompletionBuilder,
+    property_owner: &Option<LuaPropertyOwnerId>,
+    typ: &LuaType,
+    display: CallDisplay,
+    deprecated: Option<bool>,
+    label: String,
+) -> Option<()> {
     if let LuaType::Signature(signature_id) = typ {
         let overloads = builder
             .semantic_model
@@ -141,7 +158,6 @@ pub fn add_member_completion(
                 builder.add_completion_item(completion_item);
             });
     };
-
     Some(())
 }
 

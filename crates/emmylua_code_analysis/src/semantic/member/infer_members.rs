@@ -60,6 +60,7 @@ fn infer_normal_members(db: &DbIndex, member_owner: LuaMemberOwner) -> InferMemb
             key: member.get_key().clone(),
             typ: member.get_decl_type(),
             feature: Some(member.get_feature()),
+            overload_index: None,
         });
     }
 
@@ -93,6 +94,7 @@ fn infer_custom_type_members(
                 key: member.get_key().clone(),
                 typ: member.get_decl_type(),
                 feature: Some(member.get_feature()),
+                overload_index: None,
             });
         }
     }
@@ -118,6 +120,7 @@ fn infer_tuple_members(tuple_type: &LuaTupleType) -> InferMembersResult {
             key: LuaMemberKey::Integer((idx + 1) as i64),
             typ: typ.clone(),
             feature: None,
+            overload_index: None,
         });
     }
 
@@ -132,6 +135,7 @@ fn infer_object_members(object_type: &LuaObjectType) -> InferMembersResult {
             key: key.clone(),
             typ: typ.clone(),
             feature: None,
+            overload_index: None,
         });
     }
 
@@ -189,6 +193,7 @@ fn infer_intersection_members(
                     key,
                     typ,
                     feature: None,
+                    overload_index: None,
                 });
             }
         }
@@ -225,6 +230,7 @@ fn infer_global_members(db: &DbIndex) -> InferMembersResult {
             key: LuaMemberKey::Name(decl.get_name().to_string().into()),
             typ: decl.get_type().cloned().unwrap_or(LuaType::Unknown),
             feature: None,
+            overload_index: None,
         });
     }
 
@@ -266,6 +272,7 @@ fn infer_namespace_members(db: &DbIndex, ns: &str) -> InferMembersResult {
                 key: LuaMemberKey::Name(name.into()),
                 typ,
                 feature: None,
+                overload_index: None,
             });
         } else {
             members.push(LuaMemberInfo {
@@ -273,6 +280,7 @@ fn infer_namespace_members(db: &DbIndex, ns: &str) -> InferMembersResult {
                 key: LuaMemberKey::Name(name.clone().into()),
                 typ: LuaType::Namespace(SmolStr::new(format!("{}.{}", ns, &name)).into()),
                 feature: None,
+                overload_index: None,
             });
         }
     }
