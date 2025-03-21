@@ -22,10 +22,11 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     match node {
         LuaAst::LuaNameExpr(_) => {}
         LuaAst::LuaBlock(_) => {}
+        LuaAst::LuaClosureExpr(_) => {}
         LuaAst::LuaCallArgList(_) => {}
         // 字符串中触发的补全
         LuaAst::LuaLiteralExpr(_) => return None,
-        _ => {}
+        _ => return None,
     };
 
     let mut duplicated_name = HashSet::new();
