@@ -415,9 +415,6 @@ fn humanize_generic_type(db: &DbIndex, generic: &LuaGenericType, level: RenderLe
                 }
             }
         }
-        RenderLevel::Minimal => {
-            return format!("{}<...>", simple_name);
-        }
         _ => {}
     }
 

@@ -71,10 +71,8 @@ pub async fn on_prepare_rename_handler(
     let position = params.position;
     let semantic_model = analysis.compilation.get_semantic_model(file_id)?;
     let root = semantic_model.get_root();
-    let position_offset = {
-        let document = semantic_model.get_document();
-        document.get_offset(position.line as usize, position.character as usize)?
-    };
+    let document = semantic_model.get_document();
+    let position_offset = document.get_offset(position.line as usize, position.character as usize)?;
 
     if position_offset > root.syntax().text_range().end() {
         return None;
@@ -98,9 +96,9 @@ pub async fn on_prepare_rename_handler(
         token.kind().into(),
         LuaTokenKind::TkName | LuaTokenKind::TkInt | LuaTokenKind::TkString
     ) {
-        Some(PrepareRenameResponse::DefaultBehavior {
-            default_behavior: true,
-        })
+        let range = document.to_lsp_range(token.text_range())?;
+        let placeholder = token.text().to_string();
+        Some(PrepareRenameResponse::RangeWithPlaceholder { range, placeholder })
     } else {
         None
     }

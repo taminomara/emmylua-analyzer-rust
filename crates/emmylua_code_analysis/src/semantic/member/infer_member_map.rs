@@ -16,6 +16,25 @@ pub fn infer_member_map(
     let mut member_map = HashMap::new();
     for member in members {
         let key = member.key.clone();
+        let typ = &member.typ;
+        if let LuaType::Union(u) = typ {
+            if u.get_types().iter().all(|f| f.is_function()) {
+                for f in u.get_types() {
+                    let new_member = LuaMemberInfo {
+                        key: key.clone(),
+                        typ: f.clone(),
+                        property_owner_id: member.property_owner_id.clone(),
+                        feature: member.feature.clone(),
+                    };
+
+                    member_map
+                        .entry(key.clone())
+                        .or_insert_with(Vec::new)
+                        .push(new_member);
+                }
+                continue;
+            }
+        }
         member_map.entry(key).or_insert_with(Vec::new).push(member);
     }
 
