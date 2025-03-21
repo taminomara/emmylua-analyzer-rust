@@ -1,12 +1,11 @@
 use emmylua_code_analysis::{
-    get_closure_expr_comment, InferGuard, LuaDeclLocation, LuaFunctionType, LuaMember,
-    LuaMemberKey, LuaMemberOwner, LuaMultiLineUnion, LuaPropertyOwnerId, LuaType, LuaTypeDeclId,
-    LuaUnionType, RenderLevel,
+    InferGuard, LuaDeclLocation, LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner,
+    LuaMultiLineUnion, LuaPropertyOwnerId, LuaType, LuaTypeDeclId, LuaUnionType, RenderLevel,
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaClosureExpr, LuaComment,
-    LuaDocTagParam, LuaNameToken, LuaParamList, LuaSyntaxId, LuaSyntaxKind, LuaSyntaxToken,
-    LuaTokenKind, LuaVarExpr,
+    LuaDocTagParam, LuaNameToken, LuaParamList, LuaStat, LuaSyntaxId, LuaSyntaxKind,
+    LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
 };
 use itertools::Itertools;
 use lsp_types::{CompletionItem, Documentation};
@@ -578,4 +577,19 @@ fn get_enum_decl_variable_name(
     }
 
     None
+}
+
+fn get_closure_expr_comment(closure_expr: &LuaClosureExpr) -> Option<LuaComment> {
+    let comment = closure_expr
+        .ancestors::<LuaStat>()
+        .next()?
+        .syntax()
+        .prev_sibling()?;
+    match comment.kind().into() {
+        LuaSyntaxKind::Comment => {
+            let comment = LuaComment::cast(comment)?;
+            Some(comment)
+        }
+        _ => None,
+    }
 }

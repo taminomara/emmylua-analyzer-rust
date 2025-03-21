@@ -230,7 +230,7 @@ impl<'a> DiagnosticContext<'a> {
     }
 }
 
-pub fn get_closure_expr_comment(closure_expr: &LuaClosureExpr) -> Option<LuaComment> {
+fn get_closure_expr_comment(closure_expr: &LuaClosureExpr) -> Option<LuaComment> {
     let comment = closure_expr
         .ancestors::<LuaStat>()
         .next()?

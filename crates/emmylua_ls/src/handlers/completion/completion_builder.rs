@@ -13,8 +13,7 @@ pub struct CompletionBuilder<'a> {
     cancel_token: CancellationToken,
     stopped: bool,
     pub trigger_kind: CompletionTriggerKind,
-    pub env_start_index: i32,
-    pub env_end_index: i32,
+    pub env_range: (usize, usize),
 }
 
 impl<'a> CompletionBuilder<'a> {
@@ -32,8 +31,7 @@ impl<'a> CompletionBuilder<'a> {
             cancel_token,
             stopped: false,
             trigger_kind,
-            env_start_index: -1,
-            env_end_index: -1,
+            env_range: (0, 0),
         }
     }
 
@@ -63,16 +61,13 @@ impl<'a> CompletionBuilder<'a> {
     }
 
     pub fn remove_env_completion_items(&mut self) {
-        if self.env_start_index == -1 || self.env_end_index == -1 {
+        if self.env_range == (0, 0) {
             return;
         }
-        if self.env_start_index <= self.env_end_index
-            && self.env_end_index < self.completion_items.len() as i32
-        {
+        if self.env_range.0 <= self.env_range.1 && self.env_range.1 < self.completion_items.len() {
             self.completion_items
-                .drain(self.env_start_index as usize..=self.env_end_index as usize);
+                .drain(self.env_range.0..=self.env_range.1 - 1);
         }
-        self.env_start_index = -1;
-        self.env_end_index = -1;
+        self.env_range = (0, 0);
     }
 }

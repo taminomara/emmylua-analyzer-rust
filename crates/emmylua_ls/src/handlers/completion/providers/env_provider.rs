@@ -29,10 +29,10 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     };
 
     let mut duplicated_name = HashSet::new();
-    builder.env_start_index = builder.get_completion_items_mut().len() as i32;
+    builder.env_range.0 = builder.get_completion_items_mut().len();
     add_local_env(builder, &mut duplicated_name, &node);
     add_global_env(builder, &mut duplicated_name);
-    builder.env_end_index = builder.get_completion_items_mut().len() as i32 - 1;
+    builder.env_range.1 = builder.get_completion_items_mut().len();
 
     builder.env_duplicate_name.extend(duplicated_name);
 

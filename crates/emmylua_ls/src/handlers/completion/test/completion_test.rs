@@ -157,14 +157,10 @@ mod tests {
                     local Test = {}
                     Test.<??>
                 "#,
-            vec![
-                VirtualCompletionItem {
-                    label: "event".to_string(),
-                    kind: CompletionItemKind::FUNCTION,
-                },
-            ],
+            vec![VirtualCompletionItem {
+                label: "event".to_string(),
+                kind: CompletionItemKind::FUNCTION,
+            },],
         ));
     }
-
-
 }
