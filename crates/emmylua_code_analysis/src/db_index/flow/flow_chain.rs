@@ -77,6 +77,20 @@ impl LuaFlowChain {
                 })
             })
     }
+
+    pub fn merge_chain(&mut self, chain: LuaFlowChain) {
+        if self.type_asserts.is_empty() {
+            self.type_asserts = chain.type_asserts;
+            return;
+        }
+
+        for (path, entries) in chain.type_asserts {
+            self.type_asserts
+                .entry(path)
+                .or_insert_with(Vec::new)
+                .extend(entries);
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]

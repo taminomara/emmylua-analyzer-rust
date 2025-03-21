@@ -2,6 +2,10 @@ use crate::{LuaType, LuaUnionType};
 
 // need to be optimized
 pub fn narrow_down_type(source: LuaType, target: LuaType) -> Option<LuaType> {
+    if source == target {
+        return Some(source);
+    }
+
     match &target {
         LuaType::Number => {
             if source.is_number() {
