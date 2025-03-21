@@ -60,8 +60,12 @@ pub fn add_member_completion(
         return None;
     }
 
-    let data = if let Some(id) = &property_owner {
-        CompletionData::from_property_owner_id(id.clone().into())
+    let completion_data = if let Some(id) = &property_owner {
+        if let Some(index) = member_info.overload_index {
+            CompletionData::from_overload(id.clone().into(), index)
+        } else {
+            CompletionData::from_property_owner_id(id.clone().into())
+        }
     } else {
         None
     };
@@ -80,7 +84,7 @@ pub fn add_member_completion(
     let mut completion_item = CompletionItem {
         label: label.clone(),
         kind: Some(get_completion_kind(&typ)),
-        data,
+        data: completion_data,
         label_details: Some(lsp_types::CompletionItemLabelDetails {
             detail,
             description,

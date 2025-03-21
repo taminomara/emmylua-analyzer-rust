@@ -17,14 +17,16 @@ pub fn infer_member_map(
     for member in members {
         let key = member.key.clone();
         let typ = &member.typ;
+        // 通常是泛型实例化推断结果
         if let LuaType::Union(u) = typ {
             if u.get_types().iter().all(|f| f.is_function()) {
-                for f in u.get_types() {
+                for (index, f) in u.get_types().iter().enumerate() {
                     let new_member = LuaMemberInfo {
                         key: key.clone(),
                         typ: f.clone(),
                         property_owner_id: member.property_owner_id.clone(),
                         feature: member.feature.clone(),
+                        overload_index: Some(index),
                     };
 
                     member_map

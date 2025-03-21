@@ -50,6 +50,7 @@ pub struct LuaMemberInfo {
     pub key: LuaMemberKey,
     pub typ: LuaType,
     pub feature: Option<LuaMemberFeature>,
+    pub overload_index: Option<usize>,
 }
 
 type InferMembersResult = Option<Vec<LuaMemberInfo>>;
