@@ -71,25 +71,23 @@ fn check_missing_return(
         return None;
     }
 
-    // 如果包含可变参数, 则跳过检查
-    if return_types.iter().any(|ty| ty.is_variadic()) {
-        return Some(());
-    }
+    // 如果包含可变参数, 则跳过检查最大值
+    let skip_check_max = return_types.iter().any(|ty| ty.is_variadic());
 
     // 最小返回值数
     let min_expected_return_count = return_types
         .iter()
-        .filter(|ty| !ty.is_nullable() && !ty.is_unknown() && !ty.is_any())
+        .filter(|ty| !ty.is_nullable() && !ty.is_unknown() && !ty.is_any() && !ty.is_variadic())
         .count();
 
-    let return_stats = get_own_return_stats(closure_expr).collect::<Vec<_>>();
-    for return_stat in return_stats.iter() {
+    for return_stat in get_own_return_stats(closure_expr) {
         check_return_count(
             context,
             semantic_model,
             &return_stat,
             &return_types,
             min_expected_return_count,
+            skip_check_max,
         );
     }
 
@@ -238,6 +236,7 @@ fn check_return_count(
     return_stat: &LuaReturnStat,
     return_types: &[LuaType],
     min_expected_return_count: usize,
+    skip_check_max: bool,
 ) -> Option<()> {
     let max_return_count = return_types.len();
 
@@ -276,10 +275,10 @@ fn check_return_count(
             None,
         );
     }
-
     // 检查多余的返回值
-    for range in redundant_ranges {
-        context.add_diagnostic(
+    if !skip_check_max {
+        for range in redundant_ranges {
+            context.add_diagnostic(
             DiagnosticCode::RedundantReturnValue,
             range,
             t!(
@@ -290,6 +289,7 @@ fn check_return_count(
             .to_string(),
             None,
         );
+        }
     }
 
     Some(())

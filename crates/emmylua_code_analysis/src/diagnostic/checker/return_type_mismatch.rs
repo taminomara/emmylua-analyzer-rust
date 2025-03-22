@@ -55,6 +55,10 @@ fn check_return_stat(
 
     for (index, return_type) in return_types.iter().enumerate() {
         if let LuaType::Variadic(variadic) = return_type {
+            if return_expr_types.len() < index {
+                break;
+            }
+
             check_variadic_return_type_match(
                 context,
                 semantic_model,
