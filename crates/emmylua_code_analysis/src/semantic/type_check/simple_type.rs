@@ -58,7 +58,7 @@ pub fn check_simple_type_compact(
             }
         }
         LuaType::Boolean | LuaType::BooleanConst(_) => {
-            if matches!(compact_type, LuaType::Boolean | LuaType::BooleanConst(_)) {
+            if compact_type.is_boolean() {
                 return Ok(());
             }
         }
