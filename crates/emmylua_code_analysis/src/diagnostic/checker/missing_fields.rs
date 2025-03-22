@@ -146,7 +146,7 @@ fn record_required_fields(
         return;
     }
 
-    if decl_type.is_optional() {
+    if decl_type.is_nullable() {
         optional_type.insert(name);
         return;
     }

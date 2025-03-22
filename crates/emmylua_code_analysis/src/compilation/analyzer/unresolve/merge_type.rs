@@ -3,7 +3,7 @@ use rowan::TextRange;
 use crate::{
     compilation::analyzer::lua::set_owner_and_add_member,
     db_index::{DbIndex, LuaDeclId, LuaMemberId, LuaMemberOwner, LuaType, LuaTypeDeclId},
-    InFiled, LuaInferCache,
+    InFiled, LuaInferCache, TypeOps,
 };
 
 pub fn merge_decl_expr_type(
@@ -50,7 +50,7 @@ fn merge_type(
 ) -> LuaType {
     match &decl_type {
         LuaType::Unknown => expr_type,
-        LuaType::Nil => LuaType::Nullable(expr_type.into()),
+        LuaType::Nil => TypeOps::Union.apply(&expr_type, &LuaType::Nil),
         LuaType::Def(def) => {
             match expr_type {
                 LuaType::TableConst(in_filed_range) => {

@@ -64,29 +64,6 @@ pub fn check_complex_type_compact(
             LuaType::Table => return Ok(()),
             _ => {}
         },
-        LuaType::Nullable(source_base) => match compact_type {
-            LuaType::Nil => return Ok(()),
-            LuaType::Nullable(compact_base) => {
-                return check_general_type_compact(
-                    db,
-                    &source_base,
-                    compact_base,
-                    check_guard.next_level()?,
-                );
-            }
-            _ => {
-                if check_general_type_compact(
-                    db,
-                    &source_base,
-                    compact_type,
-                    check_guard.next_level()?,
-                )
-                .is_ok()
-                {
-                    return Ok(());
-                }
-            }
-        },
         LuaType::Tuple(tuple) => {
             match compact_type {
                 LuaType::Tuple(compact_tuple) => {
@@ -349,7 +326,7 @@ fn check_tuple_type_compact_tuple(
     for i in 0..source_size {
         let source_tuple_member_type = &source_tuple_members[i];
         if i >= compact_size {
-            if source_tuple_member_type.is_optional() || source_tuple_member_type.is_any() {
+            if source_tuple_member_type.is_nullable() || source_tuple_member_type.is_any() {
                 continue;
             } else {
                 return Err(TypeCheckFailReason::TypeNotMatchWithReason(
@@ -416,7 +393,7 @@ fn check_tuple_type_compact_table(
                     .to_string(),
                 ));
             }
-        } else if source_tuple_member_type.is_optional() || source_tuple_member_type.is_any() {
+        } else if source_tuple_member_type.is_nullable() || source_tuple_member_type.is_any() {
             continue;
         } else {
             return Err(TypeCheckFailReason::TypeNotMatchWithReason(
@@ -460,7 +437,7 @@ fn check_tuple_type_compact_object_type(
                     .to_string(),
                 ));
             }
-        } else if source_tuple_member_type.is_optional() || source_tuple_member_type.is_any() {
+        } else if source_tuple_member_type.is_nullable() || source_tuple_member_type.is_any() {
             continue;
         } else {
             return Err(TypeCheckFailReason::TypeNotMatchWithReason(
@@ -485,7 +462,7 @@ fn check_object_type_compact_object_type(
         let compact_type = match compact_members.get(key) {
             Some(t) => t,
             None => {
-                if source_type.is_optional() || source_type.is_any() {
+                if source_type.is_nullable() || source_type.is_any() {
                     continue;
                 } else {
                     return Err(TypeCheckFailReason::TypeNotMatch);
@@ -514,7 +491,7 @@ fn check_object_type_compact_member_owner(
         let member_item = match member_index.get_member_item(&member_owner, key) {
             Some(member_item) => member_item,
             None => {
-                if source_type.is_optional() || source_type.is_any() {
+                if source_type.is_nullable() || source_type.is_any() {
                     continue;
                 } else {
                     return Err(TypeCheckFailReason::TypeNotMatchWithReason(
@@ -559,7 +536,7 @@ fn check_object_type_compact_tuple(
         let idx = match source_key {
             LuaMemberKey::Integer(i) => i - 1,
             _ => {
-                if source_type.is_optional() || source_type.is_any() {
+                if source_type.is_nullable() || source_type.is_any() {
                     continue;
                 } else {
                     return Err(TypeCheckFailReason::TypeNotMatch);
@@ -575,7 +552,7 @@ fn check_object_type_compact_tuple(
         let tuple_member_type = match tuple_type.get_type(idx) {
             Some(t) => t,
             None => {
-                if source_type.is_optional() || source_type.is_any() {
+                if source_type.is_nullable() || source_type.is_any() {
                     continue;
                 } else {
                     return Err(TypeCheckFailReason::TypeNotMatch);

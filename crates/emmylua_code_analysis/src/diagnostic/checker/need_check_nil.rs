@@ -35,7 +35,7 @@ fn check_call_expr(
 ) -> Option<()> {
     let prefix = call_expr.get_prefix_expr()?;
     let func = semantic_model.infer_expr(prefix.clone())?;
-    if func.is_optional() {
+    if func.is_nullable() {
         context.add_diagnostic(
             DiagnosticCode::NeedCheckNil,
             prefix.get_range(),
@@ -54,7 +54,7 @@ fn check_index_expr(
 ) -> Option<()> {
     let prefix = index_expr.get_prefix_expr()?;
     let prefix_type = semantic_model.infer_expr(prefix.clone())?;
-    if prefix_type.is_optional() {
+    if prefix_type.is_nullable() {
         context.add_diagnostic(
             DiagnosticCode::NeedCheckNil,
             prefix.get_range(),
@@ -83,7 +83,7 @@ fn check_binary_expr(
         let (left, right) = binary_expr.get_exprs()?;
         let left_type = semantic_model.infer_expr(left.clone())?;
 
-        if left_type.is_optional() {
+        if left_type.is_nullable() {
             context.add_diagnostic(
                 DiagnosticCode::NeedCheckNil,
                 left.get_range(),
@@ -93,7 +93,7 @@ fn check_binary_expr(
         }
 
         let right_type = semantic_model.infer_expr(right.clone())?;
-        if right_type.is_optional() {
+        if right_type.is_nullable() {
             context.add_diagnostic(
                 DiagnosticCode::NeedCheckNil,
                 right.get_range(),

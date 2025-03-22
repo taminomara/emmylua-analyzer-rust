@@ -10,7 +10,7 @@ use crate::{
         LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaPropertyOwnerId,
         LuaSignatureId, LuaType,
     },
-    InFiled, LuaFlowId, SignatureReturnStatus, TypeAssertion,
+    InFiled, LuaFlowId, SignatureReturnStatus, TypeAssertion, TypeOps,
 };
 
 use super::{
@@ -125,7 +125,7 @@ pub fn analyze_param(analyzer: &mut DocAnalyzer, tag: LuaDocTagParam) -> Option<
     };
 
     if nullable && !type_ref.is_nullable() {
-        type_ref = LuaType::Nullable(type_ref.into());
+        type_ref = TypeOps::Union.apply(&type_ref, &LuaType::Nil);
     }
 
     let description = if let Some(des) = tag.get_description() {

@@ -135,7 +135,7 @@ fn check_call_expr(
 
             let typ = param_info.1.clone();
             if let Some(typ) = typ {
-                if !typ.is_any() && !typ.is_unknown() && !typ.is_optional() {
+                if !typ.is_any() && !typ.is_unknown() && !typ.is_nullable() {
                     miss_parameter_info
                         .push(t!("missing parameter: %{name}", name = param_info.0,));
                 }

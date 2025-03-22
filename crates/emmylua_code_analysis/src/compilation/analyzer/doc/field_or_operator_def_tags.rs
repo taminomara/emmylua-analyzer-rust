@@ -8,7 +8,7 @@ use crate::{
         LuaMember, LuaMemberKey, LuaMemberOwner, LuaOperator, LuaOperatorMetaMethod,
         LuaPropertyOwnerId, LuaType,
     },
-    AnalyzeError, DiagnosticCode, LuaMemberFeature, LuaMemberId, LuaSignatureId,
+    AnalyzeError, DiagnosticCode, LuaMemberFeature, LuaMemberId, LuaSignatureId, TypeOps,
 };
 
 use super::{infer_type::infer_type, DocAnalyzer};
@@ -53,7 +53,7 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
     };
 
     if nullable && !field_type.is_nullable() {
-        field_type = LuaType::Nullable(field_type.into());
+        field_type = TypeOps::Union.apply(&field_type, &LuaType::Nil);
     }
 
     let description = if let Some(description) = tag.get_description() {

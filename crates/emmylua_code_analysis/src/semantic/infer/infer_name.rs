@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use emmylua_parser::{LuaAstNode, LuaNameExpr};
 
 use crate::{
@@ -142,7 +140,7 @@ pub fn infer_param(db: &DbIndex, decl: &LuaDecl) -> InferResult {
         if let Some(param_info) = signature.get_param_info_by_id(param_idx) {
             let mut typ = param_info.type_ref.clone();
             if param_info.nullable && !typ.is_nullable() {
-                typ = LuaType::Nullable(typ.into());
+                typ = TypeOps::Union.apply(&typ, &LuaType::Nil);
             }
 
             return Some(typ);
@@ -218,14 +216,6 @@ fn find_param_type_from_type(
             if let Some((_, typ)) = f.get_params().get(param_idx) {
                 return typ.clone();
             }
-        }
-        LuaType::Nullable(base) => {
-            return find_param_type_from_type(
-                db,
-                base.deref().clone(),
-                param_idx,
-                current_colon_define,
-            );
         }
         LuaType::Union(union_types) => {
             for ty in union_types.get_types() {

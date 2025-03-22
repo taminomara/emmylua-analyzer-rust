@@ -365,9 +365,11 @@ fn infer_binary_expr_or(left: LuaType, right: LuaType) -> InferResult {
 fn infer_binary_expr_and(left: LuaType, right: LuaType) -> InferResult {
     if left.is_always_falsy() {
         return Some(left);
+    } else if left.is_always_truthy() {
+        return Some(right);
     }
 
-    Some(right)
+    Some(TypeOps::Union.apply(&left, &right))
 }
 
 fn infer_cmp_expr(_: &DbIndex, left: LuaType, right: LuaType, op: BinaryOperator) -> InferResult {

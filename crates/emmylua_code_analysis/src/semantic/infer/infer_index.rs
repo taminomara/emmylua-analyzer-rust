@@ -100,9 +100,6 @@ pub fn infer_member_by_member_key(
             infer_custom_type_member(db, cache, decl_id.clone(), index_expr, infer_guard)
         }
         // LuaType::Module(_) => todo!(),
-        LuaType::Nullable(inner_type) => {
-            infer_member_by_member_key(db, cache, &inner_type, index_expr, infer_guard)
-        }
         LuaType::Tuple(tuple_type) => infer_tuple_member(tuple_type, index_expr),
         LuaType::Object(object_type) => infer_object_member(db, cache, object_type, index_expr),
         LuaType::Union(union_type) => infer_union_member(db, cache, union_type, index_expr),
@@ -339,9 +336,6 @@ pub fn infer_member_by_operator(
         }
         // LuaType::Module(arc) => todo!(),
         LuaType::Array(base) => infer_member_by_index_array(db, cache, base, index_expr),
-        LuaType::Nullable(base) => {
-            infer_member_by_operator(db, cache, base, index_expr, infer_guard)
-        }
         LuaType::Object(object) => infer_member_by_index_object(db, cache, object, index_expr),
         LuaType::Union(union) => infer_member_by_index_union(db, cache, union, index_expr),
         LuaType::Intersection(intersection) => {

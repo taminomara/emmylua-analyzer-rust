@@ -208,7 +208,7 @@ fn check_assign_type_mismatch(
     }
 
     // 某些情况下我们应允许可空, 例如: boolean[]
-    if allow_nil && value_type.is_optional() {
+    if allow_nil && value_type.is_nullable() {
         return Some(());
     }
 

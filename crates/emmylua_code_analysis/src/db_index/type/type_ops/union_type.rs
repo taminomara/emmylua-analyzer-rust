@@ -37,15 +37,6 @@ pub fn union_type(source: LuaType, target: LuaType) -> LuaType {
         // function | function const
         (LuaType::Function, LuaType::DocFunction(_) | LuaType::Signature(_)) => LuaType::Function,
         (LuaType::DocFunction(_) | LuaType::Signature(_), LuaType::Function) => LuaType::Function,
-        // nullable
-        (LuaType::Nullable(left), LuaType::Nil) => LuaType::Nullable(left.clone()),
-        (LuaType::Nil, LuaType::Nullable(right)) => LuaType::Nullable(right.clone()),
-        (LuaType::Nullable(left), right) if !right.is_optional() => {
-            union_type(left.deref().clone(), right.clone())
-        }
-        (left, LuaType::Nullable(right)) if !left.is_optional() => {
-            union_type(left.clone(), right.deref().clone())
-        }
         // union
         (LuaType::Union(left), right) if !right.is_union() => {
             let left = left.deref().clone();

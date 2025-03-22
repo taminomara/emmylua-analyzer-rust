@@ -15,10 +15,6 @@ pub fn remove_type(source: LuaType, removed_type: LuaType) -> LuaType {
                 LuaType::Union(LuaUnionType::new(types).into())
             }
         }
-        LuaType::Nullable(inner) => {
-            let inner = remove_type((*inner).clone(), removed_type);
-            LuaType::Nullable(inner.into())
-        }
         _ => source,
     }
 }
@@ -40,7 +36,6 @@ fn remove_nil_and_not_false(t: LuaType) -> LuaType {
                 LuaType::Union(LuaUnionType::new(new_types).into())
             }
         }
-        LuaType::Nullable(t) => remove_nil_and_not_false((*t).clone()),
         LuaType::Boolean | LuaType::BooleanConst(_) => LuaType::BooleanConst(true),
         t => t,
     }

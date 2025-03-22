@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::VirtualWorkspace;
+    use crate::{DiagnosticCode, VirtualWorkspace};
 
     #[test]
     fn test_cmp() {
@@ -49,5 +49,18 @@ mod test {
         let left = ws.expr_ty("d");
         let right = ws.expr_ty("nil");
         assert_eq!(left, right);
+    }
+
+    #[test]
+    fn test_issue_219() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::UnnecessaryAssert,
+            r#"
+        local a --- @type integer?
+        assert(a and 1)
+        "#,
+        ));
     }
 }

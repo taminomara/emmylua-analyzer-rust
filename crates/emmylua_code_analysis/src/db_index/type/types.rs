@@ -35,7 +35,6 @@ pub enum LuaType {
     Ref(LuaTypeDeclId),
     Def(LuaTypeDeclId),
     Array(Arc<LuaType>),
-    Nullable(Arc<LuaType>),
     Tuple(Arc<LuaTupleType>),
     DocFunction(Arc<LuaFunctionType>),
     Object(Arc<LuaObjectType>),
@@ -83,7 +82,6 @@ impl PartialEq for LuaType {
             (LuaType::Def(a), LuaType::Def(b)) => a == b,
             (LuaType::Array(a), LuaType::Array(b)) => a == b,
             (LuaType::Call(a), LuaType::Call(b)) => a == b,
-            (LuaType::Nullable(a), LuaType::Nullable(b)) => a == b,
             (LuaType::Tuple(a), LuaType::Tuple(b)) => a == b,
             (LuaType::DocFunction(a), LuaType::DocFunction(b)) => a == b,
             (LuaType::Object(a), LuaType::Object(b)) => a == b,
@@ -135,7 +133,6 @@ impl Hash for LuaType {
             LuaType::Def(a) => (20, a).hash(state),
             LuaType::Array(a) => (22, a).hash(state),
             LuaType::Call(a) => (23, a).hash(state),
-            LuaType::Nullable(a) => (24, a).hash(state),
             LuaType::Tuple(a) => (25, a).hash(state),
             LuaType::DocFunction(a) => (26, a).hash(state),
             LuaType::Object(a) => {
@@ -258,24 +255,16 @@ impl LuaType {
     }
 
     pub fn is_nullable(&self) -> bool {
-        matches!(self, LuaType::Nullable(_))
-    }
-
-    pub fn is_optional(&self) -> bool {
         match self {
-            LuaType::Nullable(_) | LuaType::Nil => true,
-            LuaType::Union(u) => u.types.iter().any(|t| t.is_optional()),
+            LuaType::Nil => true,
+            LuaType::Union(u) => u.types.iter().any(|t| t.is_nullable()),
             _ => false,
         }
     }
 
     pub fn is_always_truthy(&self) -> bool {
         match self {
-            LuaType::Nullable(_)
-            | LuaType::Nil
-            | LuaType::Boolean
-            | LuaType::Any
-            | LuaType::Unknown => false,
+            LuaType::Nil | LuaType::Boolean | LuaType::Any | LuaType::Unknown => false,
             LuaType::BooleanConst(boolean) | LuaType::DocBooleanConst(boolean) => boolean.clone(),
             LuaType::Union(u) => u.types.iter().all(|t| t.is_always_truthy()),
             _ => true,
@@ -285,7 +274,6 @@ impl LuaType {
     pub fn is_always_falsy(&self) -> bool {
         match self {
             LuaType::Nil | LuaType::BooleanConst(false) | LuaType::DocBooleanConst(false) => true,
-            LuaType::Nullable(inner) => inner.is_always_falsy(),
             LuaType::Union(u) => u.types.iter().all(|t| t.is_always_falsy()),
             _ => false,
         }
@@ -375,7 +363,6 @@ impl LuaType {
         match self {
             LuaType::Array(base) => base.contain_tpl(),
             LuaType::Call(base) => base.contain_tpl(),
-            LuaType::Nullable(base) => base.contain_tpl(),
             LuaType::Tuple(base) => base.contain_tpl(),
             LuaType::DocFunction(base) => base.contain_tpl(),
             LuaType::Object(base) => base.contain_tpl(),

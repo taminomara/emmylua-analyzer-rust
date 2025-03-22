@@ -88,7 +88,6 @@ fn check_general_type_compact(
 
         // complex type
         LuaType::Array(_)
-        | LuaType::Nullable(_)
         | LuaType::Tuple(_)
         | LuaType::Object(_)
         | LuaType::Union(_)

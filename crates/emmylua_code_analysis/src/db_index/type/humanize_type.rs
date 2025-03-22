@@ -69,7 +69,6 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
         }
         LuaType::Array(arr_inner) => humanize_array_type(db, arr_inner, level),
         LuaType::Call(alias_call) => humanize_call_type(db, alias_call, level),
-        LuaType::Nullable(inner) => humanize_nullable_type(db, inner, level),
         LuaType::DocFunction(lua_func) => humanize_doc_function_type(db, lua_func, level),
         LuaType::Object(object) => humanize_object_type(db, object, level),
         LuaType::Intersection(inter) => humanize_intersect_type(db, inter, level),
@@ -263,11 +262,6 @@ fn humanize_call_type(db: &DbIndex, inner: &LuaAliasCallType, level: RenderLevel
     // let element_type = humanize_type(db, inner, level.next_level());
     // format!("keyof {}", element_type)
     "(call)".to_string()
-}
-
-fn humanize_nullable_type(db: &DbIndex, inner: &LuaType, level: RenderLevel) -> String {
-    let element_type = humanize_type(db, inner, level.next_level());
-    format!("{}?", element_type)
 }
 
 fn humanize_doc_function_type(

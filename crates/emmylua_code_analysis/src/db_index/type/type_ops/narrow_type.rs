@@ -118,19 +118,6 @@ pub fn narrow_down_type(source: LuaType, target: LuaType) -> Option<LuaType> {
                 _ => Some(LuaType::Union(LuaUnionType::new(union_types).into())),
             };
         }
-        LuaType::Nullable(inner) => {
-            let mut union_types = vec![LuaType::Nil, (**inner).clone()]
-                .iter()
-                .filter_map(|t| narrow_down_type(t.clone(), target.clone()))
-                .collect::<Vec<_>>();
-
-            union_types.dedup();
-            return match union_types.len() {
-                0 => Some(target),
-                1 => Some(union_types[0].clone()),
-                _ => Some(LuaType::Union(LuaUnionType::new(union_types).into())),
-            };
-        }
         _ => {}
     }
 

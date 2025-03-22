@@ -33,11 +33,11 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
                     return LuaType::Unknown;
                 }
 
-                if let LuaType::Nullable(_) = t {
-                    return t;
-                } else {
-                    return LuaType::Nullable(t.into());
+                if !t.is_nullable() {
+                    return TypeOps::Union.apply(&t, &LuaType::Nil);
                 }
+
+                return t;
             }
         }
         LuaDocType::Array(array_type) => {
@@ -377,7 +377,7 @@ fn infer_func_type(analyzer: &mut DocAnalyzer, func: LuaDocFuncType) -> LuaType 
 
         let type_ref = if let Some(type_ref) = param.get_type() {
             let mut typ = infer_type(analyzer, type_ref);
-            if nullable && !typ.is_optional() {
+            if nullable && !typ.is_nullable() {
                 typ = TypeOps::Union.apply(&typ, &LuaType::Nil);
             }
             Some(typ)

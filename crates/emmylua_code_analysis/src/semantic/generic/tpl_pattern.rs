@@ -139,9 +139,6 @@ fn tpl_pattern_match(
         LuaType::TableGeneric(table_generic_params) => {
             table_tpl_pattern_match(db, cache, root, table_generic_params, target, substitutor);
         }
-        LuaType::Nullable(origin) => {
-            tpl_pattern_match(db, cache, root, &origin, target, substitutor);
-        }
         LuaType::Generic(generic) => {
             generic_tpl_pattern_match(db, cache, root, generic, target, substitutor);
         }

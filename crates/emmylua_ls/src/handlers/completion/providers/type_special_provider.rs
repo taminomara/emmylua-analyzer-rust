@@ -39,9 +39,6 @@ fn dispatch_type(
         LuaType::Union(union_typ) => {
             add_union_member_completion(builder, &union_typ, infer_guard);
         }
-        LuaType::Nullable(typ) => {
-            dispatch_type(builder, (*typ).clone(), infer_guard);
-        }
         LuaType::DocFunction(func) => {
             add_lambda_completion(builder, &func);
         }

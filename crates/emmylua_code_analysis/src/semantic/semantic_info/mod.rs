@@ -8,7 +8,7 @@ use emmylua_parser::{
 use infer_expr_property_owner::infer_expr_property_owner;
 use owner_guard::OwnerGuard;
 
-use crate::{DbIndex, LuaDeclExtra, LuaDeclId, LuaMemberId, LuaPropertyOwnerId, LuaType};
+use crate::{DbIndex, LuaDeclExtra, LuaDeclId, LuaMemberId, LuaPropertyOwnerId, LuaType, TypeOps};
 
 use super::{infer_expr, LuaInferCache};
 
@@ -47,7 +47,7 @@ pub fn infer_token_semantic_info(
                     let param_info = signature.get_param_info_by_id(*idx)?;
                     let mut typ = param_info.type_ref.clone();
                     if param_info.nullable && !typ.is_nullable() {
-                        typ = LuaType::Nullable(typ.into());
+                        typ = TypeOps::Union.apply(&typ, &LuaType::Nil);
                     }
 
                     Some(SemanticInfo {

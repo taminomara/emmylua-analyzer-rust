@@ -35,7 +35,6 @@ pub fn infer_members_guard(
         LuaType::Ref(type_decl_id) => infer_custom_type_members(db, type_decl_id, infer_guard),
         LuaType::Def(type_decl_id) => infer_custom_type_members(db, type_decl_id, infer_guard),
         // // LuaType::Module(_) => todo!(),
-        LuaType::Nullable(inner_type) => infer_members_guard(db, inner_type, infer_guard),
         LuaType::Tuple(tuple_type) => infer_tuple_members(tuple_type),
         LuaType::Object(object_type) => infer_object_members(object_type),
         LuaType::Union(union_type) => infer_union_members(db, union_type, infer_guard),

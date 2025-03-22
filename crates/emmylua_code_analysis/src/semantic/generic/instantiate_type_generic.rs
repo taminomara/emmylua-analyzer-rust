@@ -18,7 +18,6 @@ pub fn instantiate_type_generic(
 ) -> LuaType {
     match ty {
         LuaType::Array(base) => instantiate_array(db, base, substitutor),
-        LuaType::Nullable(base) => instantiate_nullable(db, base, substitutor),
         LuaType::Tuple(tuple) => instantiate_tuple(db, tuple, substitutor),
         LuaType::DocFunction(doc_func) => instantiate_doc_function(db, doc_func, substitutor),
         LuaType::Object(object) => instantiate_object(db, object, substitutor),
@@ -42,11 +41,6 @@ pub fn instantiate_type_generic(
 fn instantiate_array(db: &DbIndex, base: &LuaType, substitutor: &TypeSubstitutor) -> LuaType {
     let base = instantiate_type_generic(db, base, substitutor);
     LuaType::Array(base.into())
-}
-
-fn instantiate_nullable(db: &DbIndex, inner: &LuaType, substitutor: &TypeSubstitutor) -> LuaType {
-    let base = instantiate_type_generic(db, inner, substitutor);
-    LuaType::Nullable(base.into())
 }
 
 fn instantiate_tuple(db: &DbIndex, tuple: &LuaTupleType, substitutor: &TypeSubstitutor) -> LuaType {

@@ -206,13 +206,6 @@ fn infer_member_property_owner_by_member_key(
             member_key,
             owner_guard.next_level()?,
         ),
-        LuaType::Nullable(inner_type) => infer_member_property_owner_by_member_key(
-            db,
-            cache,
-            &inner_type,
-            member_key,
-            owner_guard.next_level()?,
-        ),
         LuaType::Union(union_type) => infer_union_member_semantic_info(
             db,
             cache,

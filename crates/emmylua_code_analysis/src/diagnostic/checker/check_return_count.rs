@@ -79,7 +79,7 @@ fn check_missing_return(
     // 最小返回值数
     let min_expected_return_count = return_types
         .iter()
-        .filter(|ty| !ty.is_optional() && !ty.is_unknown() && !ty.is_any())
+        .filter(|ty| !ty.is_nullable() && !ty.is_unknown() && !ty.is_any())
         .count();
 
     let return_stats = get_own_return_stats(closure_expr).collect::<Vec<_>>();
