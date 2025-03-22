@@ -8,7 +8,7 @@ use crate::{
         InferGuard,
     },
     DbIndex, FileId, LuaGenericType, LuaInstanceType, LuaIntersectionType, LuaMemberKey,
-    LuaMemberOwner, LuaObjectType, LuaPropertyOwnerId, LuaTupleType, LuaType, LuaTypeDeclId,
+    LuaMemberOwner, LuaObjectType, LuaSemanticDeclId, LuaTupleType, LuaType, LuaTypeDeclId,
     LuaUnionType,
 };
 
@@ -55,7 +55,7 @@ fn infer_normal_members(db: &DbIndex, member_owner: LuaMemberOwner) -> InferMemb
     let owner_members = member_index.get_members(&member_owner)?;
     for member in owner_members {
         members.push(LuaMemberInfo {
-            property_owner_id: Some(LuaPropertyOwnerId::Member(member.get_id())),
+            property_owner_id: Some(LuaSemanticDeclId::Member(member.get_id())),
             key: member.get_key().clone(),
             typ: member.get_decl_type(),
             feature: Some(member.get_feature()),
@@ -89,7 +89,7 @@ fn infer_custom_type_members(
     {
         for member in type_members {
             members.push(LuaMemberInfo {
-                property_owner_id: Some(LuaPropertyOwnerId::Member(member.get_id())),
+                property_owner_id: Some(LuaSemanticDeclId::Member(member.get_id())),
                 key: member.get_key().clone(),
                 typ: member.get_decl_type(),
                 feature: Some(member.get_feature()),
@@ -225,7 +225,7 @@ fn infer_global_members(db: &DbIndex) -> InferMembersResult {
     for decl_id in global_decls {
         let decl = decl_index.get_decl(&decl_id)?;
         members.push(LuaMemberInfo {
-            property_owner_id: Some(LuaPropertyOwnerId::LuaDecl(decl_id)),
+            property_owner_id: Some(LuaSemanticDeclId::LuaDecl(decl_id)),
             key: LuaMemberKey::Name(decl.get_name().to_string().into()),
             typ: decl.get_type().cloned().unwrap_or(LuaType::Unknown),
             feature: None,
@@ -265,7 +265,7 @@ fn infer_namespace_members(db: &DbIndex, ns: &str) -> InferMembersResult {
     for (name, type_decl_id) in type_decl_id_map {
         if let Some(type_decl_id) = type_decl_id {
             let typ = LuaType::Def(type_decl_id.clone());
-            let property_owner_id = LuaPropertyOwnerId::TypeDecl(type_decl_id);
+            let property_owner_id = LuaSemanticDeclId::TypeDecl(type_decl_id);
             members.push(LuaMemberInfo {
                 property_owner_id: Some(property_owner_id),
                 key: LuaMemberKey::Name(name.into()),

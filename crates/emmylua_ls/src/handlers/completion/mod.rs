@@ -7,7 +7,7 @@ mod test;
 
 use add_completions::CompletionData;
 use completion_builder::CompletionBuilder;
-use emmylua_code_analysis::{EmmyLuaAnalysis, FileId, LuaPropertyOwnerId};
+use emmylua_code_analysis::{EmmyLuaAnalysis, FileId, LuaSemanticDeclId};
 use emmylua_parser::LuaAstNode;
 use log::error;
 use lsp_types::{
@@ -105,11 +105,11 @@ pub async fn on_completion_resolve_handler(
             CompletionData::PropertyOwnerId(property_id)
             | CompletionData::Overload((property_id, _)) => {
                 let semantic_model_opt = match property_id {
-                    LuaPropertyOwnerId::LuaDecl(decl_id) => db
+                    LuaSemanticDeclId::LuaDecl(decl_id) => db
                         .get_decl_index()
                         .get_decl(&decl_id)
                         .map(|decl| decl.get_file_id()),
-                    LuaPropertyOwnerId::Member(member_id) => db
+                    LuaSemanticDeclId::Member(member_id) => db
                         .get_member_index()
                         .get_member(&member_id)
                         .map(|member| member.get_file_id()),

@@ -1,21 +1,22 @@
 mod property;
+
 use std::collections::{HashMap, HashSet};
 
 use emmylua_parser::{LuaVersionCondition, VisibilityKind};
-use property::LuaProperty;
-pub use property::{LuaPropertyId, LuaPropertyOwnerId};
+use property::LuaDeclProperty;
+pub use property::LuaPropertyId;
 
 use crate::FileId;
 
-use super::traits::LuaIndex;
+use super::{traits::LuaIndex, LuaSemanticDeclId};
 
 #[derive(Debug)]
 pub struct LuaPropertyIndex {
-    properties: HashMap<LuaPropertyId, LuaProperty>,
-    property_owners_map: HashMap<LuaPropertyOwnerId, LuaPropertyId>,
+    properties: HashMap<LuaPropertyId, LuaDeclProperty>,
+    property_owners_map: HashMap<LuaSemanticDeclId, LuaPropertyId>,
 
     id_count: u32,
-    in_filed_owner: HashMap<FileId, HashSet<LuaPropertyOwnerId>>,
+    in_filed_owner: HashMap<FileId, HashSet<LuaSemanticDeclId>>,
 }
 
 impl LuaPropertyIndex {
@@ -28,22 +29,25 @@ impl LuaPropertyIndex {
         }
     }
 
-    fn get_or_create_property(&mut self, owner_id: LuaPropertyOwnerId) -> Option<&mut LuaProperty> {
+    fn get_or_create_property(
+        &mut self,
+        owner_id: LuaSemanticDeclId,
+    ) -> Option<&mut LuaDeclProperty> {
         if let Some(property_id) = self.property_owners_map.get(&owner_id) {
             self.properties.get_mut(property_id)
         } else {
             let id = LuaPropertyId::new(self.id_count);
             self.id_count += 1;
             self.property_owners_map.insert(owner_id.clone(), id);
-            self.properties.insert(id, LuaProperty::new(id.clone()));
+            self.properties.insert(id, LuaDeclProperty::new(id.clone()));
             self.properties.get_mut(&id)
         }
     }
 
     pub fn add_owner_map(
         &mut self,
-        source_owner_id: LuaPropertyOwnerId,
-        same_property_owner_id: LuaPropertyOwnerId,
+        source_owner_id: LuaSemanticDeclId,
+        same_property_owner_id: LuaSemanticDeclId,
         file_id: FileId,
     ) -> Option<()> {
         let property_id = self
@@ -64,7 +68,7 @@ impl LuaPropertyIndex {
     pub fn add_description(
         &mut self,
         file_id: FileId,
-        owner_id: LuaPropertyOwnerId,
+        owner_id: LuaSemanticDeclId,
         description: String,
     ) -> Option<()> {
         let property = self.get_or_create_property(owner_id.clone())?;
@@ -81,7 +85,7 @@ impl LuaPropertyIndex {
     pub fn add_visibility(
         &mut self,
         file_id: FileId,
-        owner_id: LuaPropertyOwnerId,
+        owner_id: LuaSemanticDeclId,
         visibility: VisibilityKind,
     ) -> Option<()> {
         let property = self.get_or_create_property(owner_id.clone())?;
@@ -98,7 +102,7 @@ impl LuaPropertyIndex {
     pub fn add_source(
         &mut self,
         file_id: FileId,
-        owner_id: LuaPropertyOwnerId,
+        owner_id: LuaSemanticDeclId,
         source: String,
     ) -> Option<()> {
         let property = self.get_or_create_property(owner_id.clone())?;
@@ -115,7 +119,7 @@ impl LuaPropertyIndex {
     pub fn add_deprecated(
         &mut self,
         file_id: FileId,
-        owner_id: LuaPropertyOwnerId,
+        owner_id: LuaSemanticDeclId,
         message: Option<String>,
     ) -> Option<()> {
         let property = self.get_or_create_property(owner_id.clone())?;
@@ -133,7 +137,7 @@ impl LuaPropertyIndex {
     pub fn add_version(
         &mut self,
         file_id: FileId,
-        owner_id: LuaPropertyOwnerId,
+        owner_id: LuaSemanticDeclId,
         version_conds: Vec<LuaVersionCondition>,
     ) -> Option<()> {
         let property = self.get_or_create_property(owner_id.clone())?;
@@ -150,7 +154,7 @@ impl LuaPropertyIndex {
     pub fn add_see(
         &mut self,
         file_id: FileId,
-        owner_id: LuaPropertyOwnerId,
+        owner_id: LuaSemanticDeclId,
         see_content: String,
     ) -> Option<()> {
         let property = self.get_or_create_property(owner_id.clone())?;
@@ -167,7 +171,7 @@ impl LuaPropertyIndex {
     pub fn add_other(
         &mut self,
         file_id: FileId,
-        owner_id: LuaPropertyOwnerId,
+        owner_id: LuaSemanticDeclId,
         other_content: String,
     ) -> Option<()> {
         let property = self.get_or_create_property(owner_id.clone())?;
@@ -188,7 +192,7 @@ impl LuaPropertyIndex {
         Some(())
     }
 
-    pub fn get_property(&self, owner_id: &LuaPropertyOwnerId) -> Option<&LuaProperty> {
+    pub fn get_property(&self, owner_id: &LuaSemanticDeclId) -> Option<&LuaDeclProperty> {
         self.property_owners_map
             .get(&owner_id)
             .and_then(|id| self.properties.get(id))

@@ -1,5 +1,6 @@
 use emmylua_code_analysis::{
-    LuaFunctionType, LuaMember, LuaMemberOwner, LuaPropertyOwnerId, LuaType, SemanticModel,
+    LuaFunctionType, LuaMember, LuaMemberOwner, LuaSemanticDeclId, LuaType, SemanticDeclLevel,
+    SemanticModel,
 };
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaIndexExpr, LuaSyntaxKind, LuaSyntaxToken};
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
@@ -116,7 +117,7 @@ impl<'a> HoverBuilder<'a> {
             .push(MarkedString::from_markdown(annotation_description));
     }
 
-    pub fn add_description(&mut self, property_owner: LuaPropertyOwnerId) -> Option<()> {
+    pub fn add_description(&mut self, property_owner: LuaSemanticDeclId) -> Option<()> {
         let property = self
             .semantic_model
             .get_db()
@@ -127,7 +128,7 @@ impl<'a> HoverBuilder<'a> {
             let mut description = detail.to_string();
 
             match property_owner {
-                LuaPropertyOwnerId::Member(id) => {
+                LuaSemanticDeclId::Member(id) => {
                     if let Some(member) = self
                         .semantic_model
                         .get_db()
@@ -147,7 +148,7 @@ impl<'a> HoverBuilder<'a> {
                         }
                     }
                 }
-                LuaPropertyOwnerId::LuaDecl(id) => {
+                LuaSemanticDeclId::LuaDecl(id) => {
                     if let Some(decl) = self.semantic_model.get_db().get_decl_index().get_decl(&id)
                     {
                         if decl.is_global()
@@ -239,16 +240,17 @@ impl<'a> HoverBuilder<'a> {
         match cur_node.kind().into() {
             LuaSyntaxKind::IndexExpr => {
                 let index_expr = LuaIndexExpr::cast(cur_node)?;
-                let property_owner = self.semantic_model.get_property_owner_id(
+                let semantic_decl = self.semantic_model.find_decl(
                     index_expr
                         .get_prefix_expr()?
                         .get_syntax_id()
                         .to_node_from_root(&root)
                         .unwrap()
                         .into(),
+                    SemanticDeclLevel::default(),
                 );
-                if let Some(property_owner) = property_owner {
-                    if let LuaPropertyOwnerId::LuaDecl(id) = property_owner {
+                if let Some(property_owner) = semantic_decl {
+                    if let LuaSemanticDeclId::LuaDecl(id) = property_owner {
                         if let Some(decl) =
                             self.semantic_model.get_db().get_decl_index().get_decl(&id)
                         {

@@ -1,7 +1,7 @@
 use emmylua_parser::{LuaAstNode, LuaCallExprStat};
 use rowan::NodeOrToken;
 
-use crate::{DiagnosticCode, LuaPropertyOwnerId, SemanticModel};
+use crate::{DiagnosticCode, LuaSemanticDeclId, SemanticDeclLevel, SemanticModel};
 
 use super::DiagnosticContext;
 
@@ -23,10 +23,12 @@ fn check_call_expr(
 ) -> Option<()> {
     let call_expr = call_expr_stat.get_call_expr()?;
     let prefix_node = call_expr.get_prefix_expr()?.syntax().clone();
-    let property_owner =
-        semantic_model.get_property_owner_id(NodeOrToken::Node(prefix_node.clone()))?;
+    let semantic_decl = semantic_model.find_decl(
+        NodeOrToken::Node(prefix_node.clone()),
+        SemanticDeclLevel::default(),
+    )?;
 
-    if let LuaPropertyOwnerId::Signature(signature_id) = property_owner {
+    if let LuaSemanticDeclId::Signature(signature_id) = semantic_decl {
         let signature = semantic_model
             .get_db()
             .get_signature_index()

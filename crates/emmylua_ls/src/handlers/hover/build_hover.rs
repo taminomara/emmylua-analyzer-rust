@@ -1,6 +1,7 @@
 use emmylua_code_analysis::{
-    DbIndex, LuaDeclId, LuaDocument, LuaMember, LuaMemberId, LuaMemberKey, LuaPropertyOwnerId,
-    LuaSignatureId, LuaType, LuaTypeDeclId, RenderLevel, SemanticInfo, SemanticModel,
+    DbIndex, LuaDeclId, LuaDocument, LuaMember, LuaMemberId, LuaMemberKey, LuaSemanticDeclId,
+    LuaSignatureId, LuaType, LuaTypeDeclId, RenderLevel, SemanticDeclLevel, SemanticInfo,
+    SemanticModel,
 };
 use emmylua_parser::{LuaAssignStat, LuaAstNode, LuaSyntaxKind, LuaSyntaxToken, LuaTableField};
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
@@ -22,14 +23,14 @@ pub fn build_semantic_info_hover(
     semantic_info: SemanticInfo,
 ) -> Option<Hover> {
     let typ = semantic_info.clone().typ;
-    if semantic_info.property_owner.is_none() {
+    if semantic_info.semantic_decl.is_none() {
         return build_hover_without_property(db, document, token, typ);
     }
     let hover_builder = build_hover_content(
         Some(semantic_model),
         db,
         Some(typ),
-        semantic_info.property_owner.unwrap(),
+        semantic_info.semantic_decl.unwrap(),
         false,
         Some(token.clone()),
     );
@@ -60,14 +61,14 @@ pub fn build_hover_content<'a>(
     semantic_model: Option<&'a SemanticModel>,
     db: &DbIndex,
     typ: Option<LuaType>,
-    property_id: LuaPropertyOwnerId,
+    property_id: LuaSemanticDeclId,
     is_completion: bool,
     token: Option<LuaSyntaxToken>,
 ) -> Option<HoverBuilder<'a>> {
     let semantic_model = semantic_model?;
     let mut builder = HoverBuilder::new(semantic_model, token, is_completion);
     match property_id {
-        LuaPropertyOwnerId::LuaDecl(decl_id) => {
+        LuaSemanticDeclId::LuaDecl(decl_id) => {
             let effective_typ = match typ {
                 Some(t) => t,
                 None => {
@@ -77,7 +78,7 @@ pub fn build_hover_content<'a>(
             };
             build_decl_hover(&mut builder, db, effective_typ, decl_id);
         }
-        LuaPropertyOwnerId::Member(member_id) => {
+        LuaSemanticDeclId::Member(member_id) => {
             let effective_typ = match typ {
                 Some(t) => t,
                 None => {
@@ -87,7 +88,7 @@ pub fn build_hover_content<'a>(
             };
             build_member_hover(&mut builder, db, effective_typ, member_id);
         }
-        LuaPropertyOwnerId::TypeDecl(type_decl_id) => {
+        LuaSemanticDeclId::TypeDecl(type_decl_id) => {
             build_type_decl_hover(&mut builder, db, type_decl_id);
         }
         _ => return None,
@@ -110,10 +111,10 @@ fn build_decl_hover(
     if typ.is_function() {
         let property_owner = get_decl_owner(builder.semantic_model, decl_id.clone());
         match property_owner {
-            Some(LuaPropertyOwnerId::Member(member_id)) => {
+            Some(LuaSemanticDeclId::Member(member_id)) => {
                 owner_member = Some(db.get_member_index().get_member(&member_id).unwrap());
             }
-            Some(LuaPropertyOwnerId::LuaDecl(decl_id)) => {
+            Some(LuaSemanticDeclId::LuaDecl(decl_id)) => {
                 owner_decl = Some(db.get_decl_index().get_decl(&decl_id).unwrap());
             }
             _ => {}
@@ -164,15 +165,14 @@ fn build_decl_hover(
 
     // 如果`decl`没有描述, 则尝试从`owner_member/owner_decl`获取描述
     builder
-        .add_description(LuaPropertyOwnerId::LuaDecl(decl_id))
+        .add_description(LuaSemanticDeclId::LuaDecl(decl_id))
         .or_else(|| {
             owner_member.and_then(|m: &LuaMember| {
-                builder.add_description(LuaPropertyOwnerId::Member(m.get_id()))
+                builder.add_description(LuaSemanticDeclId::Member(m.get_id()))
             })
         })
         .or_else(|| {
-            owner_decl
-                .and_then(|d| builder.add_description(LuaPropertyOwnerId::LuaDecl(d.get_id())))
+            owner_decl.and_then(|d| builder.add_description(LuaSemanticDeclId::LuaDecl(d.get_id())))
         });
 
     builder.add_signature_params_rets_description(typ);
@@ -208,10 +208,10 @@ fn build_member_hover(
     {
         let property_owner = get_member_owner(&builder.semantic_model, member_id);
         match property_owner {
-            Some(LuaPropertyOwnerId::Member(member_id)) => {
+            Some(LuaSemanticDeclId::Member(member_id)) => {
                 function_member = Some(db.get_member_index().get_member(&member_id).unwrap());
             }
-            Some(LuaPropertyOwnerId::LuaDecl(decl_id)) => {
+            Some(LuaSemanticDeclId::LuaDecl(decl_id)) => {
                 owner_decl = Some(db.get_decl_index().get_decl(&decl_id).unwrap());
             }
             _ => {}
@@ -255,10 +255,10 @@ fn build_member_hover(
 
     // 如果`decl`没有描述, 则从`owner_member`获取描述
     builder
-        .add_description(LuaPropertyOwnerId::Member(member_id))
+        .add_description(LuaSemanticDeclId::Member(member_id))
         .or_else(|| {
             function_member
-                .and_then(|m| builder.add_description(LuaPropertyOwnerId::Member(m.get_id())))
+                .and_then(|m| builder.add_description(LuaSemanticDeclId::Member(m.get_id())))
         });
 
     builder.add_signature_params_rets_description(typ);
@@ -290,7 +290,7 @@ fn build_type_decl_hover(
     };
 
     builder.set_type_description(type_description);
-    builder.add_description(LuaPropertyOwnerId::TypeDecl(type_decl_id));
+    builder.add_description(LuaSemanticDeclId::TypeDecl(type_decl_id));
     Some(())
 }
 
@@ -347,10 +347,7 @@ pub fn add_signature_ret_description(
 }
 
 // 获取`decl`可能的来源
-fn get_decl_owner(
-    semantic_model: &SemanticModel,
-    decl_id: LuaDeclId,
-) -> Option<LuaPropertyOwnerId> {
+fn get_decl_owner(semantic_model: &SemanticModel, decl_id: LuaDeclId) -> Option<LuaSemanticDeclId> {
     let root = semantic_model
         .get_db()
         .get_vfs()
@@ -362,13 +359,13 @@ fn get_decl_owner(
         .get_decl(&decl_id)?
         .get_value_syntax_id()?
         .to_node_from_root(&root)?;
-    let property_owner = semantic_model.get_property_owner_id(node.into());
+    let semantic_decl = semantic_model.find_decl(node.into(), SemanticDeclLevel::default());
     // 似乎在`get_property_owner_id`推断时就已递归处理了, 但还是再处理一次
-    match property_owner {
-        Some(LuaPropertyOwnerId::Member(member_id)) => {
-            get_member_owner(semantic_model, member_id).or(property_owner)
+    match semantic_decl {
+        Some(LuaSemanticDeclId::Member(member_id)) => {
+            get_member_owner(semantic_model, member_id).or(semantic_decl)
         }
-        Some(LuaPropertyOwnerId::LuaDecl(_)) => property_owner,
+        Some(LuaSemanticDeclId::LuaDecl(_)) => semantic_decl,
         _ => None,
     }
 }
@@ -377,11 +374,11 @@ fn get_decl_owner(
 fn get_member_owner(
     semantic_model: &SemanticModel,
     member_id: LuaMemberId,
-) -> Option<LuaPropertyOwnerId> {
+) -> Option<LuaSemanticDeclId> {
     fn resolve_owner(
         semantic_model: &SemanticModel,
         member_id: LuaMemberId,
-    ) -> Option<LuaPropertyOwnerId> {
+    ) -> Option<LuaSemanticDeclId> {
         let root = semantic_model
             .get_db()
             .get_vfs()
@@ -395,7 +392,7 @@ fn get_member_owner(
                     let table_field = LuaTableField::cast(table_field_node)?;
                     let value_expr_syntax_id = table_field.get_value_expr()?.get_syntax_id();
                     let expr = value_expr_syntax_id.to_node_from_root(&root)?;
-                    semantic_model.get_property_owner_id(expr.clone().into())
+                    semantic_model.find_decl(expr.clone().into(), SemanticDeclLevel::default())
                 }
                 _ => None,
             },
@@ -405,17 +402,17 @@ fn get_member_owner(
                     assign_node if LuaAssignStat::can_cast(assign_node.kind().into()) => {
                         let assign_stat = LuaAssignStat::cast(assign_node)?;
                         let (vars, exprs) = assign_stat.get_var_and_expr_list();
-                        let mut property_owner = None;
+                        let mut semantic_decl = None;
                         for (var, expr) in vars.iter().zip(exprs.iter()) {
                             if var.syntax().text_range() == cur_node.text_range() {
                                 let expr = expr.get_syntax_id().to_node_from_root(&root)?;
-                                property_owner =
-                                    semantic_model.get_property_owner_id(expr.clone().into())
+                                semantic_decl = semantic_model
+                                    .find_decl(expr.clone().into(), SemanticDeclLevel::default())
                             } else {
-                                property_owner = None;
+                                semantic_decl = None;
                             }
                         }
-                        property_owner
+                        semantic_decl
                     }
                     _ => None,
                 }
@@ -428,7 +425,7 @@ fn get_member_owner(
     let mut resolved_property_owner = current_property_owner.clone();
     while let Some(property_owner) = &current_property_owner {
         match property_owner {
-            LuaPropertyOwnerId::Member(member_id) => {
+            LuaSemanticDeclId::Member(member_id) => {
                 if let Some(next_property_owner) = resolve_owner(semantic_model, member_id.clone())
                 {
                     resolved_property_owner = Some(next_property_owner.clone());

@@ -1,5 +1,5 @@
 use emmylua_code_analysis::{
-    LuaFunctionType, LuaOperatorMetaMethod, LuaPropertyOwnerId, LuaSignatureId, LuaType,
+    LuaFunctionType, LuaOperatorMetaMethod, LuaSemanticDeclId, LuaSignatureId, LuaType,
     LuaTypeDeclId, RenderLevel, SemanticModel,
 };
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxToken, LuaTokenKind};
@@ -206,7 +206,7 @@ fn build_sig_id_signature_help(
         .collect::<Vec<_>>();
 
     let label = format!("{}", params_str.join(", "));
-    let property_owner = LuaPropertyOwnerId::Signature(signature_id);
+    let property_owner = LuaSemanticDeclId::Signature(signature_id);
     let documentation =
         if let Some(property) = db.get_property_index().get_property(&property_owner) {
             if let Some(description) = &property.description {

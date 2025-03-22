@@ -84,7 +84,7 @@ fn check_index_expr(
 
     let mut need_add_diagnostic = false;
     if let Some(member_info) = member_info {
-        if member_info.property_owner.is_none() && member_info.typ.is_unknown() {
+        if member_info.semantic_decl.is_none() && member_info.typ.is_unknown() {
             need_add_diagnostic = true;
         }
     } else {

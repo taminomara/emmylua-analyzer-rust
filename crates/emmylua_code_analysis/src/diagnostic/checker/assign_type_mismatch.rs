@@ -5,8 +5,8 @@ use emmylua_parser::{
 use rowan::TextRange;
 
 use crate::{
-    DiagnosticCode, LuaDeclId, LuaPropertyOwnerId, LuaType, SemanticModel, TypeCheckFailReason,
-    TypeCheckResult,
+    DiagnosticCode, LuaDeclId, LuaSemanticDeclId, LuaType, SemanticDeclLevel, SemanticModel,
+    TypeCheckFailReason, TypeCheckResult,
 };
 
 use super::{humanize_lint_type, DiagnosticContext};
@@ -68,10 +68,12 @@ fn check_name_expr(
     expr: Option<LuaExpr>,
     value_type: LuaType,
 ) -> Option<()> {
-    let property_owner_id = semantic_model
-        .get_property_owner_id(rowan::NodeOrToken::Node(name_expr.syntax().clone()))?;
-    let origin_type = match property_owner_id {
-        LuaPropertyOwnerId::LuaDecl(decl_id) => {
+    let semantic_decl = semantic_model.find_decl(
+        rowan::NodeOrToken::Node(name_expr.syntax().clone()),
+        SemanticDeclLevel::default(),
+    )?;
+    let origin_type = match semantic_decl {
+        LuaSemanticDeclId::LuaDecl(decl_id) => {
             let decl = semantic_model
                 .get_db()
                 .get_decl_index()

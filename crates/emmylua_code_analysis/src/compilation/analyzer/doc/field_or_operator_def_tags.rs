@@ -6,7 +6,7 @@ use emmylua_parser::{
 use crate::{
     db_index::{
         LuaMember, LuaMemberKey, LuaMemberOwner, LuaOperator, LuaOperatorMetaMethod,
-        LuaPropertyOwnerId, LuaType,
+        LuaSemanticDeclId, LuaType,
     },
     AnalyzeError, DiagnosticCode, LuaMemberFeature, LuaMemberId, LuaSignatureId, TypeOps,
 };
@@ -44,11 +44,11 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
         LuaDocType::Func(doc_func) => {
             let typ = infer_type(analyzer, type_node.clone());
             let signature_id = LuaSignatureId::from_doc_func(analyzer.file_id, &doc_func);
-            (typ, LuaPropertyOwnerId::Signature(signature_id))
+            (typ, LuaSemanticDeclId::Signature(signature_id))
         }
         _ => (
             infer_type(analyzer, type_node),
-            LuaPropertyOwnerId::Member(member_id),
+            LuaSemanticDeclId::Member(member_id),
         ),
     };
 

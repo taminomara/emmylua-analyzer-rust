@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use emmylua_code_analysis::{
-    humanize_type, DbIndex, LuaDecl, LuaDeclId, LuaMemberOwner, LuaPropertyOwnerId, LuaType,
+    humanize_type, DbIndex, LuaDecl, LuaDeclId, LuaMemberOwner, LuaSemanticDeclId, LuaType,
     RenderLevel,
 };
 use tera::{Context, Tera};
@@ -85,7 +85,7 @@ fn check_filter(db: &DbIndex, decl_id: &LuaDeclId) -> Option<()> {
 }
 
 fn generate_simple_global(db: &DbIndex, decl: &LuaDecl, context: &mut Context) -> Option<()> {
-    let property_owner_id = LuaPropertyOwnerId::LuaDecl(decl.get_id());
+    let property_owner_id = LuaSemanticDeclId::LuaDecl(decl.get_id());
     let property = db.get_property_index().get_property(&property_owner_id);
 
     let description = if let Some(property) = property {

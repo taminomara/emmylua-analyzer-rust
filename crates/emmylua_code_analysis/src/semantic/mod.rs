@@ -24,14 +24,14 @@ use reference::is_reference_to;
 use rowan::{NodeOrToken, TextRange};
 pub use semantic_info::SemanticInfo;
 use semantic_info::{
-    infer_node_property_owner, infer_node_semantic_info, infer_token_property_owner,
+    infer_node_semantic_decl, infer_node_semantic_info, infer_token_semantic_decl,
     infer_token_semantic_info,
 };
 pub(crate) use type_check::check_type_compact;
 use type_check::is_sub_type_of;
 use visibility::check_visibility;
 
-use crate::{db_index::LuaTypeDeclId, Emmyrc, LuaDocument, LuaPropertyOwnerId};
+use crate::{db_index::LuaTypeDeclId, Emmyrc, LuaDocument, LuaSemanticDeclId};
 use crate::{
     db_index::{DbIndex, LuaType},
     FileId,
@@ -40,6 +40,7 @@ use crate::{LuaFunctionType, LuaMemberKey};
 pub use generic::{instantiate_type_generic, TypeSubstitutor};
 pub(crate) use infer::{infer_call_expr_func, infer_expr};
 use overload_resolve::resolve_signature;
+pub use semantic_info::SemanticDeclLevel;
 pub use type_check::{TypeCheckFailReason, TypeCheckResult};
 
 #[derive(Debug)]
@@ -167,26 +168,33 @@ impl<'a> SemanticModel<'a> {
         }
     }
 
-    pub fn get_property_owner_id(
+    pub fn find_decl(
         &self,
         node_or_token: NodeOrToken<LuaSyntaxNode, LuaSyntaxToken>,
-    ) -> Option<LuaPropertyOwnerId> {
+        level: SemanticDeclLevel,
+    ) -> Option<LuaSemanticDeclId> {
         match node_or_token {
             NodeOrToken::Node(node) => {
-                infer_node_property_owner(self.db, &mut self.infer_cache.borrow_mut(), node)
+                infer_node_semantic_decl(self.db, &mut self.infer_cache.borrow_mut(), node, level)
             }
             NodeOrToken::Token(token) => {
-                infer_token_property_owner(self.db, &mut self.infer_cache.borrow_mut(), token)
+                infer_token_semantic_decl(self.db, &mut self.infer_cache.borrow_mut(), token, level)
             }
         }
     }
 
-    pub fn is_reference_to(&self, node: LuaSyntaxNode, property_owner: LuaPropertyOwnerId) -> bool {
+    pub fn is_reference_to(
+        &self,
+        node: LuaSyntaxNode,
+        semantic_decl_id: LuaSemanticDeclId,
+        level: SemanticDeclLevel,
+    ) -> bool {
         is_reference_to(
             self.db,
             &mut self.infer_cache.borrow_mut(),
             node,
-            property_owner,
+            semantic_decl_id,
+            level,
         )
         .unwrap_or(false)
     }
@@ -194,7 +202,7 @@ impl<'a> SemanticModel<'a> {
     pub fn is_property_visible(
         &self,
         token: LuaSyntaxToken,
-        property_owner: LuaPropertyOwnerId,
+        property_owner: LuaSemanticDeclId,
     ) -> bool {
         check_visibility(
             self.db,

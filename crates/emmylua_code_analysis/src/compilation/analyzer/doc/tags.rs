@@ -3,7 +3,7 @@ use emmylua_parser::{
 };
 
 use crate::{
-    db_index::{LuaMemberId, LuaPropertyOwnerId, LuaSignatureId},
+    db_index::{LuaMemberId, LuaSemanticDeclId, LuaSignatureId},
     LuaDeclId,
 };
 
@@ -129,7 +129,7 @@ pub fn find_owner_closure(analyzer: &DocAnalyzer) -> Option<LuaClosureExpr> {
     None
 }
 
-pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaPropertyOwnerId> {
+pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaSemanticDeclId> {
     let owner = analyzer.comment.get_owner()?;
     match owner {
         LuaAst::LuaAssignStat(assign) => {
@@ -138,29 +138,29 @@ pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaPropertyOwnerId> {
                 LuaVarExpr::NameExpr(name_expr) => {
                     let decl_id = LuaDeclId::new(analyzer.file_id, name_expr.get_position());
                     let _ = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-                    return Some(LuaPropertyOwnerId::LuaDecl(decl_id));
+                    return Some(LuaSemanticDeclId::LuaDecl(decl_id));
                 }
                 LuaVarExpr::IndexExpr(index_expr) => {
                     let member_id = LuaMemberId::new(index_expr.get_syntax_id(), analyzer.file_id);
-                    return Some(LuaPropertyOwnerId::Member(member_id));
+                    return Some(LuaSemanticDeclId::Member(member_id));
                 } // _ => None,
             }
         }
         LuaAst::LuaLocalStat(local_stat) => {
             let local_name = local_stat.child::<LuaLocalName>()?;
             let decl_id = LuaDeclId::new(analyzer.file_id, local_name.get_position());
-            return Some(LuaPropertyOwnerId::LuaDecl(decl_id));
+            return Some(LuaSemanticDeclId::LuaDecl(decl_id));
         }
         LuaAst::LuaTableField(field) => {
             let member_id = LuaMemberId::new(field.get_syntax_id(), analyzer.file_id);
-            return Some(LuaPropertyOwnerId::Member(member_id));
+            return Some(LuaSemanticDeclId::Member(member_id));
         }
         LuaAst::LuaCallExprStat(call_expr_stat) => {
             let call_expr = call_expr_stat.get_call_expr()?;
             let call_args = call_expr.get_args_list()?;
             for call_arg in call_args.get_args() {
                 if let LuaExpr::ClosureExpr(closure) = call_arg {
-                    return Some(LuaPropertyOwnerId::Signature(LuaSignatureId::from_closure(
+                    return Some(LuaSemanticDeclId::Signature(LuaSignatureId::from_closure(
                         analyzer.file_id,
                         &closure,
                     )));
@@ -168,12 +168,12 @@ pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaPropertyOwnerId> {
             }
             None
         }
-        LuaAst::LuaClosureExpr(closure) => Some(LuaPropertyOwnerId::Signature(
+        LuaAst::LuaClosureExpr(closure) => Some(LuaSemanticDeclId::Signature(
             LuaSignatureId::from_closure(analyzer.file_id, &closure),
         )),
         _ => {
             let closure = find_owner_closure(analyzer)?;
-            Some(LuaPropertyOwnerId::Signature(LuaSignatureId::from_closure(
+            Some(LuaSemanticDeclId::Signature(LuaSignatureId::from_closure(
                 analyzer.file_id,
                 &closure,
             )))

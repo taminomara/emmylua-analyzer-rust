@@ -1,4 +1,4 @@
-use emmylua_code_analysis::{DbIndex, LuaCompilation, LuaPropertyOwnerId, LuaType};
+use emmylua_code_analysis::{DbIndex, LuaCompilation, LuaSemanticDeclId, LuaType};
 use lsp_types::{OneOf, SymbolKind, SymbolTag, WorkspaceSymbol, WorkspaceSymbolResponse};
 use tokio_util::sync::CancellationToken;
 
@@ -34,7 +34,7 @@ fn add_global_variable_symbols(
 
         if decl.get_name().contains(query) {
             let typ = decl.get_type().unwrap_or(&LuaType::Unknown);
-            let property_owner_id = LuaPropertyOwnerId::LuaDecl(decl_id);
+            let property_owner_id = LuaSemanticDeclId::LuaDecl(decl_id);
             let document = db.get_vfs().get_document(&decl.get_file_id())?;
             let location = document.to_lsp_location(decl.get_range())?;
             let symbol = WorkspaceSymbol {
@@ -75,7 +75,7 @@ fn add_type_symbols(
         }
 
         if typ.get_full_name().contains(query) {
-            let property_owner_id = LuaPropertyOwnerId::TypeDecl(typ.get_id());
+            let property_owner_id = LuaSemanticDeclId::TypeDecl(typ.get_id());
             let location = typ.get_locations().first()?;
             let document = db.get_vfs().get_document(&location.file_id)?;
             let location = document.to_lsp_location(location.range)?;
@@ -110,7 +110,7 @@ fn get_symbol_kind(typ: &LuaType) -> SymbolKind {
     SymbolKind::VARIABLE
 }
 
-fn is_deprecated(db: &DbIndex, id: LuaPropertyOwnerId) -> bool {
+fn is_deprecated(db: &DbIndex, id: LuaSemanticDeclId) -> bool {
     let property = db.get_property_index().get_property(&id);
     if property.is_none() {
         return false;

@@ -1,11 +1,11 @@
 use std::str::FromStr;
 
-use emmylua_code_analysis::{LuaPropertyOwnerId, SemanticModel};
+use emmylua_code_analysis::{LuaSemanticDeclId, SemanticModel};
 use lsp_types::{GotoDefinitionResponse, Location, Position, Range, Uri};
 
 pub fn goto_def_definition(
     semantic_model: &SemanticModel,
-    property_owner: LuaPropertyOwnerId,
+    property_owner: LuaSemanticDeclId,
 ) -> Option<GotoDefinitionResponse> {
     if let Some(property) = semantic_model
         .get_db()
@@ -20,7 +20,7 @@ pub fn goto_def_definition(
     }
 
     match property_owner {
-        LuaPropertyOwnerId::LuaDecl(decl_id) => {
+        LuaSemanticDeclId::LuaDecl(decl_id) => {
             let decl = semantic_model
                 .get_db()
                 .get_decl_index()
@@ -29,7 +29,7 @@ pub fn goto_def_definition(
             let location = document.to_lsp_location(decl.get_range())?;
             return Some(GotoDefinitionResponse::Scalar(location));
         }
-        LuaPropertyOwnerId::Member(member_id) => {
+        LuaSemanticDeclId::Member(member_id) => {
             let member = semantic_model
                 .get_db()
                 .get_member_index()
@@ -38,7 +38,7 @@ pub fn goto_def_definition(
             let location = document.to_lsp_location(member.get_range())?;
             return Some(GotoDefinitionResponse::Scalar(location));
         }
-        LuaPropertyOwnerId::TypeDecl(type_decl_id) => {
+        LuaSemanticDeclId::TypeDecl(type_decl_id) => {
             let type_decl = semantic_model
                 .get_db()
                 .get_type_index()

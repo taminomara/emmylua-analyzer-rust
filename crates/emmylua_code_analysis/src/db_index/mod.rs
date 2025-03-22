@@ -7,6 +7,7 @@ mod module;
 mod operators;
 mod property;
 mod reference;
+mod semantic_decl;
 mod signature;
 mod traits;
 mod r#type;
@@ -25,9 +26,10 @@ pub use member::{
 use module::LuaModuleIndex;
 pub use module::{ModuleInfo, WorkspaceId};
 pub use operators::{LuaOperator, LuaOperatorId, LuaOperatorIndex, LuaOperatorMetaMethod};
-pub use property::{LuaPropertyId, LuaPropertyIndex, LuaPropertyOwnerId};
+pub use property::{LuaPropertyId, LuaPropertyIndex};
 pub use r#type::*;
 pub use reference::{DeclReference, LuaReferenceIndex};
+pub use semantic_decl::LuaSemanticDeclId;
 pub use signature::*;
 pub use traits::LuaIndex;
 

@@ -1,4 +1,4 @@
-use emmylua_code_analysis::{LuaMemberKey, LuaPropertyOwnerId, LuaType, SemanticModel};
+use emmylua_code_analysis::{LuaMemberKey, LuaSemanticDeclId, LuaType, SemanticModel};
 use emmylua_parser::{LuaAstToken, LuaGeneralToken};
 use lsp_types::GotoDefinitionResponse;
 
@@ -59,7 +59,7 @@ fn goto_type_member(
 
     let mut result = Vec::new();
     for member_info in member_infos {
-        if let Some(LuaPropertyOwnerId::Member(member_id)) = &member_info.property_owner_id {
+        if let Some(LuaSemanticDeclId::Member(member_id)) = &member_info.property_owner_id {
             let file_id = member_id.file_id;
             let member_range = member_id.get_syntax_id().get_range();
             let document = semantic_model.get_document_by_file_id(file_id)?;

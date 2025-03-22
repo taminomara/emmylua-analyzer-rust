@@ -9,7 +9,7 @@ use emmylua_parser::{
 use rowan::TextRange;
 
 use crate::{
-    db_index::{LuaDeclId, LuaMemberId, LuaPropertyOwnerId, LuaSignatureId, LuaType},
+    db_index::{LuaDeclId, LuaMemberId, LuaSemanticDeclId, LuaSignatureId, LuaType},
     LuaTypeDeclId,
 };
 
@@ -94,7 +94,7 @@ fn add_description_for_type_decl(
 
     analyzer.db.get_property_index_mut().add_description(
         analyzer.file_id,
-        LuaPropertyOwnerId::TypeDecl(type_decl_id.clone()),
+        LuaSemanticDeclId::TypeDecl(type_decl_id.clone()),
         description_text,
     );
 }

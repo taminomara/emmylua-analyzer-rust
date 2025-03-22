@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use emmylua_code_analysis::{
-    LuaCompilation, LuaDeclId, LuaMemberId, LuaMemberKey, LuaPropertyOwnerId, LuaTypeDeclId,
-    SemanticModel,
+    LuaCompilation, LuaDeclId, LuaMemberId, LuaMemberKey, LuaSemanticDeclId, LuaTypeDeclId,
+    SemanticDeclLevel, SemanticModel,
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaNameToken, LuaStringToken, LuaSyntaxNode, LuaSyntaxToken,
@@ -15,15 +15,17 @@ pub fn search_references(
     token: LuaSyntaxToken,
 ) -> Option<Vec<Location>> {
     let mut result = Vec::new();
-    if let Some(property_owner) = semantic_model.get_property_owner_id(token.clone().into()) {
-        match property_owner {
-            LuaPropertyOwnerId::LuaDecl(decl_id) => {
+    if let Some(semantic_decl) =
+        semantic_model.find_decl(token.clone().into(), SemanticDeclLevel::default())
+    {
+        match semantic_decl {
+            LuaSemanticDeclId::LuaDecl(decl_id) => {
                 search_decl_references(semantic_model, decl_id, &mut result);
             }
-            LuaPropertyOwnerId::Member(member_id) => {
+            LuaSemanticDeclId::Member(member_id) => {
                 search_member_references(semantic_model, compilation, member_id, &mut result);
             }
-            LuaPropertyOwnerId::TypeDecl(type_decl_id) => {
+            LuaSemanticDeclId::TypeDecl(type_decl_id) => {
                 search_type_decl_references(semantic_model, type_decl_id, &mut result);
             }
             _ => {}
@@ -92,7 +94,7 @@ pub fn search_member_references(
 
     let mut semantic_cache = HashMap::new();
 
-    let property_owner = LuaPropertyOwnerId::Member(member_id);
+    let property_owner = LuaSemanticDeclId::Member(member_id);
     for in_filed_syntax_id in index_references {
         let semantic_model =
             if let Some(semantic_model) = semantic_cache.get_mut(&in_filed_syntax_id.file_id) {
@@ -104,7 +106,11 @@ pub fn search_member_references(
             };
         let root = semantic_model.get_root();
         let node = in_filed_syntax_id.value.to_node_from_root(root.syntax())?;
-        if semantic_model.is_reference_to(node.clone(), property_owner.clone()) {
+        if semantic_model.is_reference_to(
+            node.clone(),
+            property_owner.clone(),
+            SemanticDeclLevel::default(),
+        ) {
             let document = semantic_model.get_document();
             let range = in_filed_syntax_id.value.get_range();
             let location = document.to_lsp_location(range)?;

@@ -7,7 +7,7 @@ use emmylua_parser::{
 use crate::{
     compilation::analyzer::unresolve::UnResolveModuleRef,
     db_index::{
-        LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaPropertyOwnerId,
+        LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaSemanticDeclId,
         LuaSignatureId, LuaType,
     },
     InFiled, SignatureReturnStatus, TypeOps,
@@ -244,11 +244,11 @@ pub fn analyze_module(analyzer: &mut DocAnalyzer, tag: LuaDocTagModule) -> Optio
     let owner_id = get_owner_id(analyzer)?;
     if let Some(export_type) = export_type {
         match &owner_id {
-            LuaPropertyOwnerId::LuaDecl(decl_id) => {
+            LuaSemanticDeclId::LuaDecl(decl_id) => {
                 let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
                 decl.set_decl_type(export_type);
             }
-            LuaPropertyOwnerId::Member(member_id) => {
+            LuaSemanticDeclId::Member(member_id) => {
                 let member = analyzer
                     .db
                     .get_member_index_mut()

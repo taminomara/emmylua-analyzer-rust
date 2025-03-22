@@ -1,6 +1,8 @@
 use emmylua_parser::{LuaAst, LuaAstNode, LuaIndexExpr, LuaNameExpr};
 
-use crate::{DiagnosticCode, LuaDeclId, LuaMemberId, LuaPropertyOwnerId, SemanticModel};
+use crate::{
+    DiagnosticCode, LuaDeclId, LuaMemberId, LuaSemanticDeclId, SemanticDeclLevel, SemanticModel,
+};
 
 use super::DiagnosticContext;
 
@@ -28,11 +30,13 @@ fn check_name_expr(
     semantic_model: &SemanticModel,
     name_expr: LuaNameExpr,
 ) -> Option<()> {
-    let property_owner = semantic_model
-        .get_property_owner_id(rowan::NodeOrToken::Node(name_expr.syntax().clone()))?;
+    let semantic_decl = semantic_model.find_decl(
+        rowan::NodeOrToken::Node(name_expr.syntax().clone()),
+        SemanticDeclLevel::default(),
+    )?;
 
     let decl_id = LuaDeclId::new(semantic_model.get_file_id(), name_expr.get_position());
-    if let LuaPropertyOwnerId::LuaDecl(id) = &property_owner {
+    if let LuaSemanticDeclId::LuaDecl(id) = &semantic_decl {
         if *id == decl_id {
             return Some(());
         }
@@ -41,7 +45,7 @@ fn check_name_expr(
     let property = semantic_model
         .get_db()
         .get_property_index()
-        .get_property(&property_owner)?;
+        .get_property(&semantic_decl)?;
     if property.is_deprecated {
         let depreacated_message = if let Some(message) = &property.deprecated_message {
             message.to_string()
@@ -64,10 +68,12 @@ fn check_index_expr(
     semantic_model: &SemanticModel,
     index_expr: LuaIndexExpr,
 ) -> Option<()> {
-    let property_owner = semantic_model
-        .get_property_owner_id(rowan::NodeOrToken::Node(index_expr.syntax().clone()))?;
+    let semantic_decl = semantic_model.find_decl(
+        rowan::NodeOrToken::Node(index_expr.syntax().clone()),
+        SemanticDeclLevel::default(),
+    )?;
     let member_id = LuaMemberId::new(index_expr.get_syntax_id(), semantic_model.get_file_id());
-    if let LuaPropertyOwnerId::Member(id) = &property_owner {
+    if let LuaSemanticDeclId::Member(id) = &semantic_decl {
         if *id == member_id {
             return Some(());
         }
@@ -75,7 +81,7 @@ fn check_index_expr(
     let property = semantic_model
         .get_db()
         .get_property_index()
-        .get_property(&property_owner)?;
+        .get_property(&semantic_decl)?;
     if property.is_deprecated {
         let depreacated_message = if let Some(message) = &property.deprecated_message {
             message.to_string()

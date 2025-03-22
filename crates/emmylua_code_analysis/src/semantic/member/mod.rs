@@ -3,7 +3,7 @@ mod infer_members;
 
 use crate::{
     db_index::{LuaType, LuaTypeDeclId},
-    LuaMemberFeature, LuaMemberKey, LuaPropertyOwnerId,
+    LuaMemberFeature, LuaMemberKey, LuaSemanticDeclId,
 };
 pub use infer_member_map::infer_member_map;
 pub use infer_members::infer_members;
@@ -46,7 +46,7 @@ pub fn get_buildin_type_map_type_id(type_: &LuaType) -> Option<LuaTypeDeclId> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaMemberInfo {
-    pub property_owner_id: Option<LuaPropertyOwnerId>,
+    pub property_owner_id: Option<LuaSemanticDeclId>,
     pub key: LuaMemberKey,
     pub typ: LuaType,
     pub feature: Option<LuaMemberFeature>,

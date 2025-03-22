@@ -6,7 +6,7 @@ mod resolve_closure;
 use crate::{
     db_index::{DbIndex, LuaDeclId, LuaMemberId, LuaSignatureId},
     profile::Profile,
-    FileId, LuaPropertyOwnerId,
+    FileId, LuaSemanticDeclId,
 };
 use emmylua_parser::{LuaCallExpr, LuaExpr};
 use infer_manager::InferCacheManager;
@@ -226,7 +226,7 @@ impl From<UnResolveClosureReturn> for UnResolve {
 
 #[derive(Debug)]
 pub struct UnResolveModuleRef {
-    pub owner_id: LuaPropertyOwnerId,
+    pub owner_id: LuaSemanticDeclId,
     pub module_file_id: FileId,
 }
 

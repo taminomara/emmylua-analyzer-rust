@@ -1,5 +1,6 @@
 use emmylua_code_analysis::{
-    LuaDeclExtra, LuaMemberId, LuaMemberOwner, LuaPropertyOwnerId, LuaType, SemanticModel,
+    LuaDeclExtra, LuaMemberId, LuaMemberOwner, LuaSemanticDeclId, LuaType, SemanticDeclLevel,
+    SemanticModel,
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr,
@@ -427,9 +428,10 @@ fn build_node_semantic_token(
         }
         LuaAst::LuaIndexExpr(index_expr) => {
             let name = index_expr.get_name_token()?;
-            let property_owner = semantic_model.get_property_owner_id(name.syntax().clone().into());
-            if let Some(property_owner) = property_owner {
-                if let LuaPropertyOwnerId::Member(member_id) = property_owner {
+            let semantic_decl = semantic_model
+                .find_decl(name.syntax().clone().into(), SemanticDeclLevel::default());
+            if let Some(property_owner) = semantic_decl {
+                if let LuaSemanticDeclId::Member(member_id) = property_owner {
                     let member = semantic_model
                         .get_db()
                         .get_member_index()
@@ -511,8 +513,8 @@ fn build_node_semantic_token(
 }
 
 fn is_class_def(semantic_model: &SemanticModel, node: LuaSyntaxNode) -> Option<()> {
-    let property_owner = semantic_model.get_property_owner_id(node.into())?;
-    if let LuaPropertyOwnerId::LuaDecl(decl_id) = property_owner {
+    let semantic_decl = semantic_model.find_decl(node.into(), SemanticDeclLevel::default())?;
+    if let LuaSemanticDeclId::LuaDecl(decl_id) = semantic_decl {
         let decl = semantic_model
             .get_db()
             .get_decl_index()
@@ -539,10 +541,11 @@ fn handle_name_node(
         return Some(());
     }
 
-    let owner_id = semantic_model.get_property_owner_id(node.clone().into())?;
+    let semantic_decl =
+        semantic_model.find_decl(node.clone().into(), SemanticDeclLevel::default())?;
 
-    match owner_id {
-        LuaPropertyOwnerId::Member(member_id) => {
+    match semantic_decl {
+        LuaSemanticDeclId::Member(member_id) => {
             let member = semantic_model
                 .get_db()
                 .get_member_index()
@@ -553,7 +556,7 @@ fn handle_name_node(
             }
         }
 
-        LuaPropertyOwnerId::LuaDecl(decl_id) => {
+        LuaSemanticDeclId::LuaDecl(decl_id) => {
             let decl = semantic_model
                 .get_db()
                 .get_decl_index()

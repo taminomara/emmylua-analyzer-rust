@@ -5,7 +5,7 @@ use emmylua_parser::{
 
 use crate::{
     db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner},
-    LuaDeclExtra, LuaMemberFeature, LuaMemberId, LuaPropertyOwnerId, LuaSignatureId, LuaType,
+    LuaDeclExtra, LuaMemberFeature, LuaMemberId, LuaSemanticDeclId, LuaSignatureId, LuaType,
 };
 
 use super::DeclAnalyzer;
@@ -243,7 +243,7 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
                 );
 
                 let decl_id = analyzer.add_decl(decl);
-                LuaPropertyOwnerId::LuaDecl(decl_id)
+                LuaSemanticDeclId::LuaDecl(decl_id)
             } else {
                 return Some(());
             }
@@ -275,14 +275,14 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
             if let LuaMemberKey::Name(name) = &key {
                 analyze_maybe_global_index_expr(analyzer, &index_expr, &name, None, None);
             }
-            LuaPropertyOwnerId::Member(member_id)
+            LuaSemanticDeclId::Member(member_id)
         }
     };
 
     let closure = stat.get_closure()?;
     let file_id = analyzer.get_file_id();
     let closure_owner_id =
-        LuaPropertyOwnerId::Signature(LuaSignatureId::from_closure(file_id, &closure));
+        LuaSemanticDeclId::Signature(LuaSignatureId::from_closure(file_id, &closure));
     analyzer.db.get_property_index_mut().add_owner_map(
         property_owner_id,
         closure_owner_id,
@@ -313,8 +313,8 @@ pub fn analyze_local_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalFuncSt
     let decl_id = analyzer.add_decl(decl);
     let closure = stat.get_closure()?;
     let closure_owner_id =
-        LuaPropertyOwnerId::Signature(LuaSignatureId::from_closure(file_id, &closure));
-    let property_decl_id = LuaPropertyOwnerId::LuaDecl(decl_id);
+        LuaSemanticDeclId::Signature(LuaSignatureId::from_closure(file_id, &closure));
+    let property_decl_id = LuaSemanticDeclId::LuaDecl(decl_id);
     analyzer
         .db
         .get_property_index_mut()

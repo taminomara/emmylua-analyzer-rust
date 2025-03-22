@@ -1,10 +1,10 @@
 #[derive(Debug, Copy, Clone)]
-pub struct OwnerGuard {
+pub struct SemanticDeclGuard {
     level: i32,
     limit: i32,
 }
 
-impl OwnerGuard {
+impl SemanticDeclGuard {
     pub fn new(limit: i32) -> Self {
         Self { level: 0, limit }
     }
@@ -26,7 +26,7 @@ impl OwnerGuard {
     }
 }
 
-impl Default for OwnerGuard {
+impl Default for SemanticDeclGuard {
     fn default() -> Self {
         Self::new(50)
     }

@@ -1,7 +1,7 @@
 use emmylua_parser::{LuaAstNode, LuaChunk, LuaExpr};
 
 use crate::{
-    compilation::analyzer::unresolve::UnResolveModule, db_index::LuaType, LuaPropertyOwnerId,
+    compilation::analyzer::unresolve::UnResolveModule, db_index::LuaType, LuaSemanticDeclId,
     LuaSignatureId,
 };
 
@@ -52,7 +52,7 @@ pub fn analyze_chunk_return(analyzer: &mut LuaAnalyzer, chunk: LuaChunk) -> Opti
     Some(())
 }
 
-fn get_property_owner_id(analyzer: &LuaAnalyzer, expr: LuaExpr) -> Option<LuaPropertyOwnerId> {
+fn get_property_owner_id(analyzer: &LuaAnalyzer, expr: LuaExpr) -> Option<LuaSemanticDeclId> {
     match expr {
         LuaExpr::NameExpr(name_expr) => {
             let name = name_expr.get_name_text()?;
@@ -62,9 +62,9 @@ fn get_property_owner_id(analyzer: &LuaAnalyzer, expr: LuaExpr) -> Option<LuaPro
                 .get_decl_tree(&analyzer.file_id)?;
             let decl = tree.find_local_decl(&name, name_expr.get_position())?;
 
-            Some(LuaPropertyOwnerId::LuaDecl(decl.get_id()))
+            Some(LuaSemanticDeclId::LuaDecl(decl.get_id()))
         }
-        LuaExpr::ClosureExpr(closure) => Some(LuaPropertyOwnerId::Signature(
+        LuaExpr::ClosureExpr(closure) => Some(LuaSemanticDeclId::Signature(
             LuaSignatureId::from_closure(analyzer.file_id, &closure),
         )),
         _ => None,

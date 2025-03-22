@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use emmylua_code_analysis::{
-    FileId, InferGuard, LuaFunctionType, LuaMemberId, LuaMemberKey, LuaPropertyOwnerId,
+    FileId, InferGuard, LuaFunctionType, LuaMemberId, LuaMemberKey, LuaSemanticDeclId,
     LuaSignatureId, LuaType, RenderLevel, SemanticModel,
 };
 use emmylua_parser::{
@@ -364,7 +364,7 @@ fn get_super_member_id(
 
         if let Some(member_infos) = member_map.get(&member_key) {
             let first_property = member_infos.first()?.property_owner_id.clone()?;
-            if let LuaPropertyOwnerId::Member(member_id) = first_property {
+            if let LuaSemanticDeclId::Member(member_id) = first_property {
                 return Some(member_id);
             }
         }

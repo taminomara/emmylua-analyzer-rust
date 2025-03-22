@@ -1,4 +1,6 @@
-use emmylua_code_analysis::{LuaDeclId, LuaDocument, LuaPropertyOwnerId, SemanticModel};
+use emmylua_code_analysis::{
+    LuaDeclId, LuaDocument, LuaSemanticDeclId, SemanticDeclLevel, SemanticModel,
+};
 use emmylua_parser::{LuaAstNode, LuaSyntaxKind, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind};
 use lsp_types::{DocumentHighlight, DocumentHighlightKind};
 use rowan::NodeOrToken;
@@ -10,9 +12,10 @@ pub fn highlight_tokens(
     let mut result = Vec::new();
     match token.kind().into() {
         LuaTokenKind::TkName => {
-            let property_owner = semantic_model.get_property_owner_id(token.clone().into());
-            match property_owner {
-                Some(LuaPropertyOwnerId::LuaDecl(decl_id)) => {
+            let semantic_decl =
+                semantic_model.find_decl(token.clone().into(), SemanticDeclLevel::default());
+            match semantic_decl {
+                Some(LuaSemanticDeclId::LuaDecl(decl_id)) => {
                     highlight_decl_references(&semantic_model, decl_id, token, &mut result);
                 }
                 _ => {

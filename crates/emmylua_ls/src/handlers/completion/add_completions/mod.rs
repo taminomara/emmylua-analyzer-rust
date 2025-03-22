@@ -5,7 +5,7 @@ mod check_match_word;
 pub use add_decl_completion::add_decl_completion;
 pub use add_member_completion::{add_member_completion, CompletionTriggerStatus};
 pub use check_match_word::check_match_word;
-use emmylua_code_analysis::{LuaPropertyOwnerId, LuaType, RenderLevel};
+use emmylua_code_analysis::{LuaSemanticDeclId, LuaType, RenderLevel};
 use lsp_types::CompletionItemKind;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -14,10 +14,10 @@ use emmylua_code_analysis::humanize_type;
 
 use super::completion_builder::CompletionBuilder;
 
-pub fn check_visibility(builder: &mut CompletionBuilder, id: LuaPropertyOwnerId) -> Option<()> {
+pub fn check_visibility(builder: &mut CompletionBuilder, id: LuaSemanticDeclId) -> Option<()> {
     match id {
-        LuaPropertyOwnerId::Member(_) => {}
-        LuaPropertyOwnerId::LuaDecl(_) => {}
+        LuaSemanticDeclId::Member(_) => {}
+        LuaSemanticDeclId::LuaDecl(_) => {}
         _ => return Some(()),
     }
 
@@ -45,7 +45,7 @@ fn get_completion_kind(typ: &LuaType) -> CompletionItemKind {
     CompletionItemKind::VARIABLE
 }
 
-pub fn is_deprecated(builder: &CompletionBuilder, id: LuaPropertyOwnerId) -> bool {
+pub fn is_deprecated(builder: &CompletionBuilder, id: LuaSemanticDeclId) -> bool {
     let property = builder
         .semantic_model
         .get_db()
@@ -179,19 +179,19 @@ fn get_description(builder: &CompletionBuilder, typ: &LuaType) -> Option<String>
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CompletionData {
-    PropertyOwnerId(LuaPropertyOwnerId),
+    PropertyOwnerId(LuaSemanticDeclId),
     Module(String),
-    Overload((LuaPropertyOwnerId, usize)),
+    Overload((LuaSemanticDeclId, usize)),
 }
 
 #[allow(unused)]
 impl CompletionData {
-    pub fn from_property_owner_id(id: LuaPropertyOwnerId) -> Option<Value> {
+    pub fn from_property_owner_id(id: LuaSemanticDeclId) -> Option<Value> {
         let data = Self::PropertyOwnerId(id);
         Some(serde_json::to_value(data).unwrap())
     }
 
-    pub fn from_overload(id: LuaPropertyOwnerId, index: usize) -> Option<Value> {
+    pub fn from_overload(id: LuaSemanticDeclId, index: usize) -> Option<Value> {
         let data = Self::Overload((id, index));
         Some(serde_json::to_value(data).unwrap())
     }

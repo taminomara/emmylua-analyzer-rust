@@ -2,6 +2,7 @@ mod goto_def_definition;
 mod goto_doc_see;
 mod goto_module_file;
 
+use emmylua_code_analysis::SemanticDeclLevel;
 use emmylua_parser::{
     LuaAstNode, LuaAstToken, LuaDocTagSee, LuaGeneralToken, LuaStringToken, LuaTokenKind,
 };
@@ -50,8 +51,10 @@ pub async fn on_goto_definition_handler(
         }
     };
 
-    if let Some(property_owner) = semantic_model.get_property_owner_id(token.clone().into()) {
-        return goto_def_definition(&semantic_model, property_owner);
+    if let Some(semantic_decl) =
+        semantic_model.find_decl(token.clone().into(), SemanticDeclLevel::default())
+    {
+        return goto_def_definition(&semantic_model, semantic_decl);
     } else if let Some(string_token) = LuaStringToken::cast(token.clone()) {
         if let Some(module_response) = goto_module_file(&semantic_model, string_token) {
             return Some(module_response);

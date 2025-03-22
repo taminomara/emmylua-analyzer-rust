@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use emmylua_code_analysis::{
-    humanize_type, DbIndex, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId, LuaTypeDecl,
+    humanize_type, DbIndex, LuaMemberKey, LuaMemberOwner, LuaSemanticDeclId, LuaTypeDecl,
     RenderLevel,
 };
 use emmylua_parser::VisibilityKind;
@@ -63,7 +63,7 @@ fn generate_class_type_markdown(
     let namespace = typ.get_namespace();
     context.insert("namespace", &namespace);
 
-    let type_property_id = LuaPropertyOwnerId::TypeDecl(typ_id.clone());
+    let type_property_id = LuaSemanticDeclId::TypeDecl(typ_id.clone());
     let typ_property = db.get_property_index().get_property(&type_property_id);
     if let Some(typ_property) = typ_property {
         if let Some(property_text) = &typ_property.description {
@@ -89,7 +89,7 @@ fn generate_class_type_markdown(
         for member in members {
             let member_typ = member.get_decl_type();
             let member_id = member.get_id();
-            let member_property_id = LuaPropertyOwnerId::Member(member_id.clone());
+            let member_property_id = LuaSemanticDeclId::Member(member_id.clone());
             let member_property = db.get_property_index().get_property(&member_property_id);
             if let Some(member_property) = member_property {
                 if member_property.visibility.unwrap_or(VisibilityKind::Public)
@@ -191,7 +191,7 @@ fn generate_enum_type_markdown(
     let namespace = typ.get_namespace();
     context.insert("namespace", &namespace);
 
-    let type_property_id = LuaPropertyOwnerId::TypeDecl(typ_id.clone());
+    let type_property_id = LuaSemanticDeclId::TypeDecl(typ_id.clone());
     let typ_property = db.get_property_index().get_property(&type_property_id);
     if let Some(typ_property) = typ_property {
         if let Some(property_text) = &typ_property.description {
@@ -206,7 +206,7 @@ fn generate_enum_type_markdown(
         for member in members {
             let member_typ = member.get_decl_type();
             let member_id = member.get_id();
-            let member_property_id = LuaPropertyOwnerId::Member(member_id.clone());
+            let member_property_id = LuaSemanticDeclId::Member(member_id.clone());
             let member_property = db.get_property_index().get_property(&member_property_id);
             if let Some(member_property) = member_property {
                 if member_property.visibility.unwrap_or(VisibilityKind::Public)
@@ -296,7 +296,7 @@ fn generate_alias_type_markdown(
     let namespace = typ.get_namespace();
     context.insert("namespace", &namespace);
 
-    let type_property_id = LuaPropertyOwnerId::TypeDecl(typ_id.clone());
+    let type_property_id = LuaSemanticDeclId::TypeDecl(typ_id.clone());
     let typ_property = db.get_property_index().get_property(&type_property_id);
     if let Some(typ_property) = typ_property {
         if let Some(property_text) = &typ_property.description {

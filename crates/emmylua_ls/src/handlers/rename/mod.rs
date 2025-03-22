@@ -4,7 +4,7 @@ mod rename_type;
 
 use std::collections::HashMap;
 
-use emmylua_code_analysis::{LuaCompilation, LuaPropertyOwnerId, SemanticModel};
+use emmylua_code_analysis::{LuaCompilation, LuaSemanticDeclId, SemanticDeclLevel, SemanticModel};
 use emmylua_parser::{LuaAstNode, LuaSyntaxToken, LuaTokenKind};
 use lsp_types::{
     ClientCapabilities, OneOf, PrepareRenameResponse, RenameOptions, RenameParams,
@@ -112,12 +112,12 @@ fn rename_references(
     new_name: String,
 ) -> Option<WorkspaceEdit> {
     let mut result = HashMap::new();
-    let semantic_info = semantic_model.get_semantic_info(token.into())?;
-    match semantic_info.property_owner? {
-        LuaPropertyOwnerId::LuaDecl(decl_id) => {
+    let semantic_decl = semantic_model.find_decl(token.into(), SemanticDeclLevel::NoTrace)?;
+    match semantic_decl {
+        LuaSemanticDeclId::LuaDecl(decl_id) => {
             rename_decl_references(semantic_model, compilation, decl_id, new_name, &mut result);
         }
-        LuaPropertyOwnerId::Member(member_id) => {
+        LuaSemanticDeclId::Member(member_id) => {
             rename_member_references(
                 semantic_model,
                 compilation,
@@ -126,7 +126,7 @@ fn rename_references(
                 &mut result,
             );
         }
-        LuaPropertyOwnerId::TypeDecl(type_decl_id) => {
+        LuaSemanticDeclId::TypeDecl(type_decl_id) => {
             rename_type_references(semantic_model, type_decl_id, new_name, &mut result);
         }
         _ => {}

@@ -1,4 +1,4 @@
-use crate::{DbIndex, LuaPropertyOwnerId, LuaType, TypeOps};
+use crate::{DbIndex, LuaSemanticDeclId, LuaType, TypeOps};
 
 use super::{LuaMemberId, LuaMemberIndex};
 
@@ -13,7 +13,7 @@ impl LuaMemberIndexItem {
         resolve_member_type(db, &self)
     }
 
-    pub fn resolve_property_owner(&self, db: &DbIndex) -> Option<LuaPropertyOwnerId> {
+    pub fn resolve_semantic_decl(&self, db: &DbIndex) -> Option<LuaSemanticDeclId> {
         resolve_member_property(db, &self)
     }
 
@@ -152,9 +152,9 @@ enum MemberTypeResolveState {
 fn resolve_member_property(
     db: &DbIndex,
     member_item: &LuaMemberIndexItem,
-) -> Option<LuaPropertyOwnerId> {
+) -> Option<LuaSemanticDeclId> {
     match member_item {
-        LuaMemberIndexItem::One(member_id) => Some(LuaPropertyOwnerId::Member(*member_id)),
+        LuaMemberIndexItem::One(member_id) => Some(LuaSemanticDeclId::Member(*member_id)),
         LuaMemberIndexItem::Many(member_ids) => {
             let mut resolve_state = MemberPropertyResolveState::MetaOrNone;
             let members = member_ids
@@ -176,17 +176,17 @@ fn resolve_member_property(
                     for member in &members {
                         let feature = member.get_feature();
                         if feature.is_meta_decl() {
-                            return Some(LuaPropertyOwnerId::Member(member.get_id()));
+                            return Some(LuaSemanticDeclId::Member(member.get_id()));
                         }
                     }
 
-                    Some(LuaPropertyOwnerId::Member(members.first()?.get_id()))
+                    Some(LuaSemanticDeclId::Member(members.first()?.get_id()))
                 }
                 MemberPropertyResolveState::FirstDefine => {
                     for member in &members {
                         let feature = member.get_feature();
                         if feature.is_first_define() {
-                            return Some(LuaPropertyOwnerId::Member(member.get_id()));
+                            return Some(LuaSemanticDeclId::Member(member.get_id()));
                         }
                     }
 
@@ -196,7 +196,7 @@ fn resolve_member_property(
                     for member in &members {
                         let feature = member.get_feature();
                         if feature.is_file_decl() {
-                            return Some(LuaPropertyOwnerId::Member(member.get_id()));
+                            return Some(LuaSemanticDeclId::Member(member.get_id()));
                         }
                     }
 

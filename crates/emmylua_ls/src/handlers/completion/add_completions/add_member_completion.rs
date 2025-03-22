@@ -1,4 +1,4 @@
-use emmylua_code_analysis::{DbIndex, LuaMemberInfo, LuaMemberKey, LuaPropertyOwnerId, LuaType};
+use emmylua_code_analysis::{DbIndex, LuaMemberInfo, LuaMemberKey, LuaSemanticDeclId, LuaType};
 use emmylua_parser::LuaTokenKind;
 use lsp_types::CompletionItem;
 
@@ -116,7 +116,7 @@ pub fn add_member_completion(
 
 fn add_signature_overloads(
     builder: &mut CompletionBuilder,
-    property_owner: &Option<LuaPropertyOwnerId>,
+    property_owner: &Option<LuaSemanticDeclId>,
     typ: &LuaType,
     display: CallDisplay,
     deprecated: Option<bool>,

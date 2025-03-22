@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaDocTagParam, LuaDocTagReturn, LuaStat};
 
-use crate::{DiagnosticCode, LuaPropertyOwnerId, LuaType, SemanticModel};
+use crate::{DiagnosticCode, LuaSemanticDeclId, LuaType, SemanticDeclLevel, SemanticModel};
 
 use super::{get_closure_expr_comment, get_own_return_stats, DiagnosticContext};
 
@@ -24,10 +24,12 @@ fn check_doc(
     semantic_model: &SemanticModel,
     closure_expr: &LuaClosureExpr,
 ) -> Option<()> {
-    let property_owner = semantic_model
-        .get_property_owner_id(rowan::NodeOrToken::Node(closure_expr.syntax().clone()))?;
-    let (is_global, function_name) = match property_owner {
-        LuaPropertyOwnerId::LuaDecl(decl_id) => {
+    let semantic_decl = semantic_model.find_decl(
+        rowan::NodeOrToken::Node(closure_expr.syntax().clone()),
+        SemanticDeclLevel::default(),
+    )?;
+    let (is_global, function_name) = match semantic_decl {
+        LuaSemanticDeclId::LuaDecl(decl_id) => {
             let decl = semantic_model
                 .get_db()
                 .get_decl_index()

@@ -5,38 +5,49 @@ use emmylua_parser::{
 
 use crate::{
     semantic::member::get_buildin_type_map_type_id, DbIndex, LuaDeclId, LuaDeclOrMemberId,
-    LuaInferCache, LuaInstanceType, LuaMemberId, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId,
+    LuaInferCache, LuaInstanceType, LuaMemberId, LuaMemberKey, LuaMemberOwner, LuaSemanticDeclId,
     LuaType, LuaTypeDeclId, LuaUnionType,
 };
 
-use super::{infer_expr, infer_token_property_owner, owner_guard::OwnerGuard};
+use super::{
+    infer_expr, infer_token_semantic_decl, semantic_guard::SemanticDeclGuard, SemanticDeclLevel,
+};
 
-pub fn infer_expr_property_owner(
+pub fn infer_expr_semantic_decl(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     expr: LuaExpr,
-    owner_guard: OwnerGuard,
-) -> Option<LuaPropertyOwnerId> {
+    semantic_guard: SemanticDeclGuard,
+    level: SemanticDeclLevel,
+) -> Option<LuaSemanticDeclId> {
     let file_id = cache.get_file_id();
     let maybe_decl_id = LuaDeclId::new(file_id, expr.get_position());
     if let Some(_) = db.get_decl_index().get_decl(&maybe_decl_id) {
-        return Some(LuaPropertyOwnerId::LuaDecl(maybe_decl_id));
+        return Some(LuaSemanticDeclId::LuaDecl(maybe_decl_id));
     };
 
     match expr {
-        LuaExpr::NameExpr(name_expr) => {
-            infer_name_expr_property_owner(db, cache, name_expr, owner_guard.next_level()?)
-        }
+        LuaExpr::NameExpr(name_expr) => infer_name_expr_property_owner(
+            db,
+            cache,
+            name_expr,
+            semantic_guard.next_level()?,
+            level,
+        ),
         LuaExpr::IndexExpr(index_expr) => {
-            infer_index_expr_property_owner(db, cache, index_expr, owner_guard.next_level()?)
+            infer_index_expr_semantic_decl(db, cache, index_expr, semantic_guard.next_level()?)
         }
-        LuaExpr::ClosureExpr(closure_expr) => {
-            infer_closure_expr_property_owner(db, cache, closure_expr, owner_guard.next_level()?)
-        }
+        LuaExpr::ClosureExpr(closure_expr) => infer_closure_expr_semantic_decl(
+            db,
+            cache,
+            closure_expr,
+            semantic_guard.next_level()?,
+            level,
+        ),
         _ => {
             let member_id = LuaMemberId::new(expr.get_syntax_id(), file_id);
             if let Some(_) = db.get_member_index().get_member(&member_id) {
-                return Some(LuaPropertyOwnerId::Member(member_id));
+                return Some(LuaSemanticDeclId::Member(member_id));
             };
 
             None
@@ -48,23 +59,28 @@ fn infer_name_expr_property_owner(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     name_expr: LuaNameExpr,
-    owner_guard: OwnerGuard,
-) -> Option<LuaPropertyOwnerId> {
+    semantic_guard: SemanticDeclGuard,
+    level: SemanticDeclLevel,
+) -> Option<LuaSemanticDeclId> {
     let name_token = name_expr.get_name_token()?;
     let name = name_token.get_name_text().to_string();
     if name == "self" {
-        return infer_self_property_owner(db, cache, name_expr);
+        return infer_self_semantic_decl(db, cache, name_expr);
     }
 
     let decl_id = get_name_decl_id(db, cache, &name, name_expr.clone())?;
     let decl = db.get_decl_index().get_decl(&decl_id)?;
-    if owner_guard.reached_limit() {
-        return Some(LuaPropertyOwnerId::LuaDecl(decl_id));
+    if semantic_guard.reached_limit() {
+        return Some(LuaSemanticDeclId::LuaDecl(decl_id));
     }
 
     let is_function = decl.get_type().map_or(false, |typ| typ.is_function());
     if decl.is_local() && !is_function {
-        return Some(LuaPropertyOwnerId::LuaDecl(decl_id));
+        return Some(LuaSemanticDeclId::LuaDecl(decl_id));
+    }
+
+    if level.reached_limit() {
+        return Some(LuaSemanticDeclId::LuaDecl(decl_id));
     }
 
     if let Some(value_expr_id) = decl.get_value_syntax_id() {
@@ -76,15 +92,19 @@ fn infer_name_expr_property_owner(
             let tree = db.get_vfs().get_syntax_tree(&file_id)?;
             // second infer
             let value_expr = LuaExpr::cast(value_expr_id.to_node(tree)?)?;
-            if let Some(property_owner_id) =
-                infer_expr_property_owner(db, cache, value_expr, owner_guard.next_level()?)
-            {
+            if let Some(property_owner_id) = infer_expr_semantic_decl(
+                db,
+                cache,
+                value_expr,
+                semantic_guard.next_level()?,
+                level.next_level()?,
+            ) {
                 return Some(property_owner_id);
             }
         }
     }
 
-    Some(LuaPropertyOwnerId::LuaDecl(decl_id))
+    Some(LuaSemanticDeclId::LuaDecl(decl_id))
 }
 
 fn get_name_decl_id(
@@ -113,182 +133,189 @@ fn get_name_decl_id(
     decl_id
 }
 
-fn infer_self_property_owner(
+fn infer_self_semantic_decl(
     db: &DbIndex,
     cache: &LuaInferCache,
     name_expr: LuaNameExpr,
-) -> Option<LuaPropertyOwnerId> {
+) -> Option<LuaSemanticDeclId> {
     let file_id = cache.get_file_id();
     let tree = db.get_decl_index().get_decl_tree(&file_id)?;
     let id = tree.find_self_decl(db, name_expr)?;
     match id {
         LuaDeclOrMemberId::Decl(decl_id) => {
-            return Some(LuaPropertyOwnerId::LuaDecl(decl_id));
+            return Some(LuaSemanticDeclId::LuaDecl(decl_id));
         }
         LuaDeclOrMemberId::Member(member_id) => {
-            return Some(LuaPropertyOwnerId::Member(member_id));
+            return Some(LuaSemanticDeclId::Member(member_id));
         }
     }
 }
 
-fn infer_index_expr_property_owner(
+fn infer_index_expr_semantic_decl(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     index_expr: LuaIndexExpr,
-    owner_guard: OwnerGuard,
-) -> Option<LuaPropertyOwnerId> {
+    semantic_guard: SemanticDeclGuard,
+) -> Option<LuaSemanticDeclId> {
     let prefix_expr = index_expr.get_prefix_expr()?;
     let prefix_type = infer_expr(db, cache, prefix_expr.into())?;
     let member_key = index_expr.get_index_key()?.into();
-    infer_member_property_owner_by_member_key(
+    infer_member_semantic_decl_by_member_key(
         db,
         cache,
         &prefix_type,
         &member_key,
-        owner_guard.next_level()?,
+        semantic_guard.next_level()?,
     )
 }
 
-fn infer_closure_expr_property_owner(
+fn infer_closure_expr_semantic_decl(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     closure_expr: LuaClosureExpr,
-    owner_guard: OwnerGuard,
-) -> Option<LuaPropertyOwnerId> {
+    semantic_guard: SemanticDeclGuard,
+    level: SemanticDeclLevel,
+) -> Option<LuaSemanticDeclId> {
     let parent = closure_expr.get_parent::<LuaStat>()?;
     match parent {
         LuaStat::LocalFuncStat(local_func_stat) => {
             let local_name = local_func_stat.get_local_name()?;
             let name_token = local_name.get_name_token()?;
-            infer_token_property_owner(db, cache, name_token.syntax().clone())
+            infer_token_semantic_decl(db, cache, name_token.syntax().clone(), level)
         }
         LuaStat::FuncStat(func_stat) => {
             let func_name = func_stat.get_func_name()?;
-            infer_expr_property_owner(db, cache, func_name.into(), owner_guard.next_level()?)
+            infer_expr_semantic_decl(
+                db,
+                cache,
+                func_name.into(),
+                semantic_guard.next_level()?,
+                level,
+            )
         }
         _ => None,
     }
 }
 
-fn infer_member_property_owner_by_member_key(
+fn infer_member_semantic_decl_by_member_key(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     prefix_type: &LuaType,
     member_key: &LuaMemberKey,
-    owner_guard: OwnerGuard,
-) -> Option<LuaPropertyOwnerId> {
+    semantic_guard: SemanticDeclGuard,
+) -> Option<LuaSemanticDeclId> {
     match &prefix_type {
         LuaType::TableConst(id) => {
             let owner = LuaMemberOwner::Element(id.clone());
-            infer_table_member_property_owner(db, owner, member_key)
+            infer_table_member_semantic_decl(db, owner, member_key)
         }
         LuaType::String | LuaType::Io | LuaType::StringConst(_) | LuaType::DocStringConst(_) => {
             let decl_id = get_buildin_type_map_type_id(&prefix_type)?;
-            infer_custom_type_member_property_owner(
+            infer_custom_type_member_semantic_decl(
                 db,
                 cache,
                 decl_id,
                 member_key,
-                owner_guard.next_level()?,
+                semantic_guard.next_level()?,
             )
         }
-        LuaType::Ref(decl_id) => infer_custom_type_member_property_owner(
+        LuaType::Ref(decl_id) => infer_custom_type_member_semantic_decl(
             db,
             cache,
             decl_id.clone(),
             member_key,
-            owner_guard.next_level()?,
+            semantic_guard.next_level()?,
         ),
-        LuaType::Def(decl_id) => infer_custom_type_member_property_owner(
+        LuaType::Def(decl_id) => infer_custom_type_member_semantic_decl(
             db,
             cache,
             decl_id.clone(),
             member_key,
-            owner_guard.next_level()?,
+            semantic_guard.next_level()?,
         ),
         LuaType::Union(union_type) => infer_union_member_semantic_info(
             db,
             cache,
             &union_type,
             member_key,
-            owner_guard.next_level()?,
+            semantic_guard.next_level()?,
         ),
-        LuaType::Generic(generic_type) => infer_custom_type_member_property_owner(
+        LuaType::Generic(generic_type) => infer_custom_type_member_semantic_decl(
             db,
             cache,
             generic_type.get_base_type_id(),
             member_key,
-            owner_guard.next_level()?,
+            semantic_guard.next_level()?,
         ),
-        LuaType::Instance(inst) => infer_instance_member_property_by_member_key(
+        LuaType::Instance(inst) => infer_instance_member_semantic_decl_by_member_key(
             db,
             cache,
             inst,
             member_key,
-            owner_guard.next_level()?,
+            semantic_guard.next_level()?,
         ),
-        LuaType::Global => infer_global_member_property_by_member_key(
+        LuaType::Global => infer_global_member_semantic_decl_by_member_key(
             db,
             cache,
             member_key,
-            owner_guard.next_level()?,
+            semantic_guard.next_level()?,
         ),
         _ => None,
     }
 }
 
-fn infer_table_member_property_owner(
+fn infer_table_member_semantic_decl(
     db: &DbIndex,
     owner: LuaMemberOwner,
     member_key: &LuaMemberKey,
-) -> Option<LuaPropertyOwnerId> {
+) -> Option<LuaSemanticDeclId> {
     let member_item = db.get_member_index().get_member_item(&owner, member_key)?;
-    member_item.resolve_property_owner(db)
+    member_item.resolve_semantic_decl(db)
 }
 
-fn infer_custom_type_member_property_owner(
+fn infer_custom_type_member_semantic_decl(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     prefix_type_id: LuaTypeDeclId,
     member_key: &LuaMemberKey,
-    owner_guard: OwnerGuard,
-) -> Option<LuaPropertyOwnerId> {
+    semantic_guard: SemanticDeclGuard,
+) -> Option<LuaSemanticDeclId> {
     let type_index = db.get_type_index();
     let type_decl = type_index.get_type_decl(&prefix_type_id)?;
     if type_decl.is_alias() {
         if let Some(origin_type) = type_decl.get_alias_origin(db, None) {
-            return infer_member_property_owner_by_member_key(
+            return infer_member_semantic_decl_by_member_key(
                 db,
                 cache,
                 &origin_type,
                 member_key,
-                owner_guard.next_level()?,
+                semantic_guard.next_level()?,
             );
         } else {
-            return infer_member_property_owner_by_member_key(
+            return infer_member_semantic_decl_by_member_key(
                 db,
                 cache,
                 &LuaType::String,
                 member_key,
-                owner_guard.next_level()?,
+                semantic_guard.next_level()?,
             );
         }
     }
 
     let owner = LuaMemberOwner::Type(prefix_type_id.clone());
     if let Some(member_item) = db.get_member_index().get_member_item(&owner, member_key) {
-        return member_item.resolve_property_owner(db);
+        return member_item.resolve_semantic_decl(db);
     }
 
     if type_decl.is_class() {
         let super_types = type_index.get_super_types(&prefix_type_id)?;
         for super_type in super_types {
-            if let Some(property) = infer_member_property_owner_by_member_key(
+            if let Some(property) = infer_member_semantic_decl_by_member_key(
                 db,
                 cache,
                 &super_type,
                 member_key,
-                owner_guard.next_level()?,
+                semantic_guard.next_level()?,
             ) {
                 return Some(property);
             }
@@ -303,15 +330,15 @@ fn infer_union_member_semantic_info(
     cache: &mut LuaInferCache,
     union_type: &LuaUnionType,
     member_key: &LuaMemberKey,
-    owner_guard: OwnerGuard,
-) -> Option<LuaPropertyOwnerId> {
+    semantic_guard: SemanticDeclGuard,
+) -> Option<LuaSemanticDeclId> {
     for typ in union_type.get_types() {
-        if let Some(property_owner_id) = infer_member_property_owner_by_member_key(
+        if let Some(property_owner_id) = infer_member_semantic_decl_by_member_key(
             db,
             cache,
             typ,
             member_key,
-            owner_guard.next_level()?,
+            semantic_guard.next_level()?,
         ) {
             return Some(property_owner_id);
         }
@@ -320,40 +347,40 @@ fn infer_union_member_semantic_info(
     None
 }
 
-fn infer_instance_member_property_by_member_key(
+fn infer_instance_member_semantic_decl_by_member_key(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     inst: &LuaInstanceType,
     member_key: &LuaMemberKey,
-    owner_guard: OwnerGuard,
-) -> Option<LuaPropertyOwnerId> {
+    semantic_guard: SemanticDeclGuard,
+) -> Option<LuaSemanticDeclId> {
     let range = inst.get_range();
 
     let origin_type = inst.get_base();
-    if let Some(result) = infer_member_property_owner_by_member_key(
+    if let Some(result) = infer_member_semantic_decl_by_member_key(
         db,
         cache,
         origin_type,
         member_key,
-        owner_guard.next_level()?,
+        semantic_guard.next_level()?,
     ) {
         return Some(result);
     }
 
     let owner = LuaMemberOwner::Element(range.clone());
-    infer_table_member_property_owner(db, owner, member_key)
+    infer_table_member_semantic_decl(db, owner, member_key)
 }
 
-fn infer_global_member_property_by_member_key(
+fn infer_global_member_semantic_decl_by_member_key(
     db: &DbIndex,
     _: &LuaInferCache,
     member_key: &LuaMemberKey,
-    _: OwnerGuard,
-) -> Option<LuaPropertyOwnerId> {
+    _: SemanticDeclGuard,
+) -> Option<LuaSemanticDeclId> {
     let decl_id = db.get_decl_index().get_global_decl_id(member_key);
 
     if decl_id.is_some() {
-        Some(LuaPropertyOwnerId::LuaDecl(decl_id.unwrap()))
+        Some(LuaSemanticDeclId::LuaDecl(decl_id.unwrap()))
     } else {
         None
     }

@@ -2,7 +2,7 @@ use crate::{
     compilation::analyzer::lua::analyze_return_point,
     db_index::{DbIndex, LuaMemberOwner, LuaType},
     semantic::{infer_expr, LuaInferCache},
-    LuaPropertyOwnerId, SignatureReturnStatus,
+    LuaSemanticDeclId, SignatureReturnStatus,
 };
 
 use super::{
@@ -139,11 +139,11 @@ pub fn try_resolve_module_ref(
     let module = module_index.get_module(module_ref.module_file_id)?;
     let export_type = module.export_type.clone()?;
     match &module_ref.owner_id {
-        LuaPropertyOwnerId::LuaDecl(decl_id) => {
+        LuaSemanticDeclId::LuaDecl(decl_id) => {
             let decl = db.get_decl_index_mut().get_decl_mut(decl_id)?;
             decl.set_decl_type(export_type);
         }
-        LuaPropertyOwnerId::Member(member_id) => {
+        LuaSemanticDeclId::Member(member_id) => {
             let member = db.get_member_index_mut().get_member_mut(member_id)?;
             member.set_decl_type(export_type);
         }

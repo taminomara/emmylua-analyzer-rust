@@ -1,4 +1,4 @@
-use emmylua_code_analysis::{LuaDeclId, LuaPropertyOwnerId, LuaType};
+use emmylua_code_analysis::{LuaDeclId, LuaSemanticDeclId, LuaType};
 use lsp_types::CompletionItem;
 
 use crate::handlers::completion::completion_builder::CompletionBuilder;
@@ -14,7 +14,7 @@ pub fn add_decl_completion(
     name: &str,
     typ: &LuaType,
 ) -> Option<()> {
-    let property_owner = LuaPropertyOwnerId::LuaDecl(decl_id);
+    let property_owner = LuaSemanticDeclId::LuaDecl(decl_id);
     check_visibility(builder, property_owner.clone())?;
 
     let mut completion_item = CompletionItem {

@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use emmylua_code_analysis::{
-    humanize_type, DbIndex, FileId, LuaMemberKey, LuaMemberOwner, LuaPropertyOwnerId, LuaType,
+    humanize_type, DbIndex, FileId, LuaMemberKey, LuaMemberOwner, LuaSemanticDeclId, LuaType,
     ModuleInfo, RenderLevel,
 };
 use emmylua_parser::VisibilityKind;
@@ -104,7 +104,7 @@ pub fn generate_member_owner_module(
         for member in members {
             let member_typ = member.get_decl_type();
             let member_id = member.get_id();
-            let member_property_id = LuaPropertyOwnerId::Member(member_id.clone());
+            let member_property_id = LuaSemanticDeclId::Member(member_id.clone());
             let member_property = db.get_property_index().get_property(&member_property_id);
             if let Some(member_property) = member_property {
                 if member_property.visibility.unwrap_or(VisibilityKind::Public)

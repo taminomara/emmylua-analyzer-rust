@@ -3,7 +3,7 @@ use emmylua_parser::{
     LuaSyntaxToken, LuaVarExpr, VisibilityKind,
 };
 
-use crate::{DbIndex, Emmyrc, FileId, LuaMemberOwner, LuaPropertyOwnerId, LuaType};
+use crate::{DbIndex, Emmyrc, FileId, LuaMemberOwner, LuaSemanticDeclId, LuaType};
 
 use super::{infer_expr, type_check::is_sub_type_of, LuaInferCache};
 
@@ -13,7 +13,7 @@ pub fn check_visibility(
     emmyrc: &Emmyrc,
     infer_config: &mut LuaInferCache,
     token: LuaSyntaxToken,
-    property_owner: LuaPropertyOwnerId,
+    property_owner: LuaSemanticDeclId,
 ) -> Option<bool> {
     let property = db.get_property_index().get_property(&property_owner)?;
     if let Some(version_conds) = &property.version_conds {
@@ -46,12 +46,12 @@ pub fn check_visibility(
 fn check_visibility_by_visibility(
     db: &DbIndex,
     infer_config: &mut LuaInferCache,
-    property_owner: LuaPropertyOwnerId,
+    property_owner: LuaSemanticDeclId,
     token: LuaSyntaxToken,
     visibility: VisibilityKind,
 ) -> Option<bool> {
     let member_owner = match property_owner {
-        LuaPropertyOwnerId::Member(member_id) => {
+        LuaSemanticDeclId::Member(member_id) => {
             db.get_member_index().get_member(&member_id)?.get_owner()
         }
         _ => return Some(true),

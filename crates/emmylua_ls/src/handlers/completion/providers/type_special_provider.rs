@@ -1,6 +1,7 @@
 use emmylua_code_analysis::{
     InferGuard, LuaDeclLocation, LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner,
-    LuaMultiLineUnion, LuaPropertyOwnerId, LuaType, LuaTypeDeclId, LuaUnionType, RenderLevel,
+    LuaMultiLineUnion, LuaSemanticDeclId, LuaType, LuaTypeDeclId, LuaUnionType, RenderLevel,
+    SemanticDeclLevel,
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaClosureExpr, LuaComment,
@@ -267,20 +268,21 @@ fn push_function_overloads_param(
 ) -> Option<()> {
     let member_index = builder.semantic_model.get_db().get_member_index();
     let prefix_expr = call_expr.get_prefix_expr()?;
-    let property_owner_id = builder
-        .semantic_model
-        .get_property_owner_id(prefix_expr.syntax().clone().into())?;
+    let semantic_decl = builder.semantic_model.find_decl(
+        prefix_expr.syntax().clone().into(),
+        SemanticDeclLevel::default(),
+    )?;
 
     // 收集函数类型
-    let functions = match property_owner_id {
-        LuaPropertyOwnerId::Member(member_id) => {
+    let functions = match semantic_decl {
+        LuaSemanticDeclId::Member(member_id) => {
             let member = member_index.get_member(&member_id)?;
             let key = member.get_key().to_path();
             let members = member_index.get_members(&member.get_owner())?;
             let functions = filter_function_members(members, key);
             Some(functions)
         }
-        LuaPropertyOwnerId::LuaDecl(decl_id) => {
+        LuaSemanticDeclId::LuaDecl(decl_id) => {
             let decl = builder
                 .semantic_model
                 .get_db()
