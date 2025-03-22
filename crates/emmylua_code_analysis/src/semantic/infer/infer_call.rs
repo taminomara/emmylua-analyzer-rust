@@ -294,26 +294,19 @@ fn unwrapp_return_type(
             ));
         }
         LuaType::MuliReturn(multi) => {
-            let parent = call_expr.syntax().parent();
-            if let Some(parent) = parent {
-                match parent.kind().into() {
-                    LuaSyntaxKind::AssignStat
-                    | LuaSyntaxKind::LocalStat
-                    | LuaSyntaxKind::ReturnStat
-                    | LuaSyntaxKind::TableArrayExpr
-                    | LuaSyntaxKind::CallArgList => {
-                        let next_expr = call_expr.syntax().next_sibling();
-                        if next_expr.is_none() {
-                            return Some(return_type);
-                        }
-                    }
-                    _ => {}
-                }
+            if is_last_expr(&call_expr) {
+                return Some(return_type);
             }
 
             return multi.get_type(0).cloned();
         }
         LuaType::Variadic(inner) => {
+            if is_last_expr(&call_expr) {
+                return Some(LuaType::MuliReturn(
+                    LuaMultiReturn::Base(inner.deref().clone()).into(),
+                ));
+            }
+
             return Some(inner.deref().clone());
         }
         LuaType::SelfInfer => {
@@ -332,6 +325,27 @@ fn unwrapp_return_type(
     }
 
     Some(return_type)
+}
+
+fn is_last_expr(call_expr: &LuaCallExpr) -> bool {
+    let parent = call_expr.syntax().parent();
+    if let Some(parent) = parent {
+        match parent.kind().into() {
+            LuaSyntaxKind::AssignStat
+            | LuaSyntaxKind::LocalStat
+            | LuaSyntaxKind::ReturnStat
+            | LuaSyntaxKind::TableArrayExpr
+            | LuaSyntaxKind::CallArgList => {
+                let next_expr = call_expr.syntax().next_sibling();
+                if next_expr.is_none() {
+                    return true;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    false
 }
 
 fn infer_require_call(

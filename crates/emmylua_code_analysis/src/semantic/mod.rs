@@ -141,11 +141,13 @@ impl<'a> SemanticModel<'a> {
     pub fn infer_multi_value_adjusted_expression_types(
         &self,
         exprs: &[LuaExpr],
+        var_count: Option<usize>,
     ) -> Option<Vec<(LuaType, TextRange)>> {
         infer_multi_value_adjusted_expression_types(
             self.db,
             &mut self.infer_cache.borrow_mut(),
             exprs,
+            var_count,
         )
     }
 

@@ -84,7 +84,18 @@ fn analyze_return(
         _ => {}
     };
 
-    let block = closure.get_block()?;
+    let block = match closure.get_block() {
+        Some(block) => block,
+        None => {
+            let signature = analyzer
+                .db
+                .get_signature_index_mut()
+                .get_or_create(signature_id.clone());
+            signature.resolve_return = SignatureReturnStatus::InferResolve;
+            return Some(());
+        }
+    };
+
     let return_points = analyze_func_body_returns(block);
     let returns =
         match analyze_return_point(&analyzer.db, &mut analyzer.infer_cache, &return_points) {

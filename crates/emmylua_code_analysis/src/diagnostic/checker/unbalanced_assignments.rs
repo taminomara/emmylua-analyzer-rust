@@ -1,6 +1,6 @@
 use emmylua_parser::{LuaAssignStat, LuaAstNode, LuaExpr, LuaLocalStat, LuaStat};
 
-use crate::{DiagnosticCode, LuaType, SemanticModel};
+use crate::{DiagnosticCode, SemanticModel};
 
 use super::DiagnosticContext;
 
@@ -52,12 +52,10 @@ fn check_unbalanced_assignment(
         return Some(());
     }
 
-    let mut value_len = value_exprs.len();
-    // 需要处理最后一个表达式是多返回值的情况
-    if let Some(LuaType::MuliReturn(types)) = semantic_model.infer_expr(value_exprs.last()?.clone())
-    {
-        value_len += types.get_len().unwrap_or(1) as usize - 1;
-    }
+    let value_types = semantic_model
+        .infer_multi_value_adjusted_expression_types(value_exprs, Some(vars.len()))?;
+
+    let value_len = value_types.len();
 
     if vars.len() > value_len {
         for var in vars[value_len..].iter() {

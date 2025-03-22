@@ -4,7 +4,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let mut ws = VirtualWorkspace::new();
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
 
         assert!(!ws.check_code_for(
             DiagnosticCode::UnbalancedAssignments,
@@ -64,6 +64,17 @@ mod tests {
             T = {}
             T['x'], T['y'], T['z'] = 1
         "#
+        ));
+    }
+
+    #[test]
+    fn test_issue_232() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::UnbalancedAssignments,
+            r#"
+            local a, b, c = string.match("hello world", "(%w+) (%w+)")
+            "#
         ));
     }
 }

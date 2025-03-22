@@ -44,6 +44,7 @@ fn check_return_stat(
     let (return_expr_types, return_expr_ranges) = {
         let infos = semantic_model.infer_multi_value_adjusted_expression_types(
             &return_stat.get_expr_list().collect::<Vec<_>>(),
+            None,
         )?;
         let return_expr_types = infos.iter().map(|(typ, _)| typ.clone()).collect::<Vec<_>>();
         let return_expr_ranges = infos

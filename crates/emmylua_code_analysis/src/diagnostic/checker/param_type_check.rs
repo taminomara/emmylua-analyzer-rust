@@ -34,7 +34,7 @@ fn check_call_expr(
     let mut params = func.get_params().to_vec();
     let arg_exprs: Vec<LuaExpr> = call_expr.get_args_list()?.get_args().collect::<Vec<_>>();
     let (mut arg_types, mut arg_ranges) = {
-        let infos = semantic_model.infer_multi_value_adjusted_expression_types(&arg_exprs)?;
+        let infos = semantic_model.infer_multi_value_adjusted_expression_types(&arg_exprs, None)?;
         let arg_types = infos.iter().map(|(typ, _)| typ.clone()).collect::<Vec<_>>();
         let arg_ranges = infos
             .iter()

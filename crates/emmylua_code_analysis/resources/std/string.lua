@@ -219,11 +219,10 @@ function string.lower(s) end
 --- it returns **nil**. If `pattern` specifies no captures, then the whole match
 --- is returned. A third, optional numerical argument `init` specifies where
 --- to start the search; its default value is 1 and can be negative.
----@overload fun(s:string, pattern:string):any
 ---@param s string
 ---@param pattern string
 ---@param init? integer
----@return any
+---@return string...
 function string.match(s, pattern, init) end
 
 ---@version >5.3
