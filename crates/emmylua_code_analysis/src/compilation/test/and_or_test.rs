@@ -39,4 +39,22 @@ mod test {
             "#,
         ));
     }
+
+    #[test]
+    fn test_issue_230() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+            local b = true ---@type boolean
+            a = b and 2 or nil
+            "#,
+        );
+
+        let a_ty = ws.expr_ty("a");
+        assert_eq!(
+            format!("{:?}", a_ty).to_string(),
+            "Union(LuaUnionType { types: [IntegerConst(2), Nil] })"
+        );
+    }
 }

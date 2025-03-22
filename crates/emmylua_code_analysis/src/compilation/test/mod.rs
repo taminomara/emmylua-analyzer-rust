@@ -1,3 +1,4 @@
+mod and_or_test;
 mod annotation_test;
 mod closure_generic;
 mod closure_param_infer_test;
@@ -10,7 +11,6 @@ mod inherit_type;
 mod mathlib_test;
 mod module_annotation;
 mod multi_return;
-mod or_test;
 mod out_of_order;
 mod overload_field;
 mod overload_test;

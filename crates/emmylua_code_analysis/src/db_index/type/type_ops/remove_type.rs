@@ -6,10 +6,21 @@ pub fn remove_type(source: LuaType, removed_type: LuaType) -> Option<LuaType> {
     }
 
     match (&source, &removed_type) {
-        (
-            LuaType::Boolean | LuaType::BooleanConst(_) | LuaType::DocBooleanConst(_),
-            LuaType::Nil,
-        ) => Some(LuaType::BooleanConst(true)),
+        (LuaType::Boolean, LuaType::Nil) => Some(LuaType::BooleanConst(true)),
+        (LuaType::BooleanConst(b), LuaType::Nil) => {
+            if *b {
+                Some(LuaType::BooleanConst(true))
+            } else {
+                None
+            }
+        }
+        (LuaType::DocBooleanConst(b), LuaType::Nil) => {
+            if *b {
+                Some(LuaType::DocBooleanConst(true))
+            } else {
+                None
+            }
+        }
         (LuaType::TableConst(_) | LuaType::TableGeneric(_), LuaType::Table) => None,
         (left, LuaType::Boolean) if left.is_boolean() => None,
         (left, LuaType::Integer) if left.is_integer() => None,
