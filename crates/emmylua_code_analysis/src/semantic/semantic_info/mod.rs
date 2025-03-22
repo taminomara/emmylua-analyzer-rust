@@ -177,7 +177,7 @@ pub fn infer_node_semantic_decl(
                 cache,
                 expr,
                 SemanticDeclGuard::default(),
-                SemanticDeclLevel::default(),
+                level
             )
         }
         table_field_node if LuaTableField::can_cast(table_field_node.kind().into()) => {

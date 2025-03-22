@@ -13,7 +13,7 @@ pub fn highlight_tokens(
     match token.kind().into() {
         LuaTokenKind::TkName => {
             let semantic_decl =
-                semantic_model.find_decl(token.clone().into(), SemanticDeclLevel::default());
+                semantic_model.find_decl(token.clone().into(), SemanticDeclLevel::NoTrace);
             match semantic_decl {
                 Some(LuaSemanticDeclId::LuaDecl(decl_id)) => {
                     highlight_decl_references(&semantic_model, decl_id, token, &mut result);

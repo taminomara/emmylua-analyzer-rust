@@ -27,7 +27,7 @@ pub fn infer_expr_semantic_decl(
     };
 
     match expr {
-        LuaExpr::NameExpr(name_expr) => infer_name_expr_property_owner(
+        LuaExpr::NameExpr(name_expr) => infer_name_expr_semantic_decl(
             db,
             cache,
             name_expr,
@@ -55,7 +55,7 @@ pub fn infer_expr_semantic_decl(
     }
 }
 
-fn infer_name_expr_property_owner(
+fn infer_name_expr_semantic_decl(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     name_expr: LuaNameExpr,
