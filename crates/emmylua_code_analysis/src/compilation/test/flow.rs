@@ -258,4 +258,24 @@ print(a.field)
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_224() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+        --- @class A
+
+        --- @param opts? A
+        --- @return A
+        function foo(opts)
+            opts = opts or {}
+            --- @cast opts -table
+            return opts
+        end
+        "#
+        ));
+    }
 }

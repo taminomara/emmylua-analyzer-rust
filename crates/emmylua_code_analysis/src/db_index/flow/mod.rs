@@ -21,27 +21,16 @@ impl LuaFlowIndex {
     }
 
     pub fn add_flow_chain(&mut self, file_id: FileId, chain: LuaFlowChain) {
-        let id = chain.get_flow_id();
-        let old_chain = self.get_or_create_flow_chain(file_id, id);
-        old_chain.merge_chain(chain);
+        self.chains_map
+            .entry(file_id)
+            .or_insert_with(HashMap::new)
+            .insert(chain.get_flow_id(), chain);
     }
 
     pub fn get_flow_chain(&self, file_id: FileId, flow_id: LuaFlowId) -> Option<&LuaFlowChain> {
         self.chains_map
             .get(&file_id)
             .and_then(|map| map.get(&flow_id))
-    }
-
-    pub fn get_or_create_flow_chain(
-        &mut self,
-        file_id: FileId,
-        flow_id: LuaFlowId,
-    ) -> &mut LuaFlowChain {
-        self.chains_map
-            .entry(file_id)
-            .or_insert_with(HashMap::new)
-            .entry(flow_id)
-            .or_insert_with(|| LuaFlowChain::new(flow_id))
     }
 }
 

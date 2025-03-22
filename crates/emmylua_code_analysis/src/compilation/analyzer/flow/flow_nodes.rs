@@ -1,19 +1,20 @@
 use std::collections::HashMap;
 
-use emmylua_parser::{LuaIndexExpr, LuaNameExpr};
+use emmylua_parser::{LuaDocTagCast, LuaIndexExpr, LuaNameExpr};
 use smol_str::SmolStr;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum FlowRef {
     NameExpr(LuaNameExpr),
     IndexExpr(LuaIndexExpr),
+    Cast(LuaDocTagCast),
 }
 
-#[allow(unused)]
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum FlowNode {
     UseRef(FlowRef),
     AssignRef(FlowRef),
+    CastRef(FlowRef),
 }
 
 #[derive(Debug)]

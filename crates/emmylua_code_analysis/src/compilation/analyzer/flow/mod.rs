@@ -1,11 +1,13 @@
+mod cast_analyze;
 mod flow_builder;
 mod flow_nodes;
 mod var_analyze;
 
 use crate::{db_index::DbIndex, profile::Profile, FileId, LuaDeclId, LuaFlowChain, LuaFlowId};
+use cast_analyze::analyze_cast;
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaChunk, LuaExpr, LuaIndexExpr, LuaNameExpr, LuaTokenKind,
-    LuaVarExpr, PathTrait,
+    LuaAst, LuaAstNode, LuaAstToken, LuaChunk, LuaDocTagCast, LuaExpr, LuaIndexExpr, LuaNameExpr,
+    LuaTokenKind, LuaVarExpr, PathTrait,
 };
 use flow_builder::FlowBuilder;
 use flow_nodes::{FlowNode, FlowNodes, FlowRef};
@@ -37,6 +39,9 @@ fn build_flow_cache(db: &DbIndex, file_id: FileId, root: LuaChunk) -> Vec<(LuaFl
                 }
                 LuaAst::LuaIndexExpr(index_expr) => {
                     build_index_expr_flow(db, &mut builder, file_id, index_expr);
+                }
+                LuaAst::LuaDocTagCast(cast) => {
+                    build_cast_flow(&mut builder, cast);
                 }
                 _ => {}
             },
@@ -120,6 +125,16 @@ fn build_index_expr_flow(
     Some(())
 }
 
+fn build_cast_flow(builder: &mut FlowBuilder, tag_cast: LuaDocTagCast) -> Option<()> {
+    let name_token = tag_cast.get_name_token()?;
+    builder.add_flow_node(
+        name_token.get_name_text(),
+        FlowNode::CastRef(FlowRef::Cast(tag_cast.clone())),
+    );
+
+    Some(())
+}
+
 fn analyze_flow(
     db: &mut DbIndex,
     file_id: FileId,
@@ -136,6 +151,7 @@ fn analyze_flow(
                         let expr = match ref_node {
                             FlowRef::NameExpr(expr) => LuaExpr::NameExpr(expr.clone()),
                             FlowRef::IndexExpr(expr) => LuaExpr::IndexExpr(expr.clone()),
+                            _ => continue,
                         };
 
                         analyze_ref_expr(db, &mut flow_chain, &expr, var_path);
@@ -144,6 +160,7 @@ fn analyze_flow(
                         let var_expr = match ref_node {
                             FlowRef::NameExpr(expr) => LuaVarExpr::NameExpr(expr.clone()),
                             FlowRef::IndexExpr(expr) => LuaVarExpr::IndexExpr(expr.clone()),
+                            _ => continue,
                         };
                         analyze_ref_assign(
                             db,
@@ -153,6 +170,14 @@ fn analyze_flow(
                             file_id,
                             context,
                         );
+                    }
+                    FlowNode::CastRef(ref_node) => {
+                        let tag_cast = match ref_node {
+                            FlowRef::Cast(cast) => cast.clone(),
+                            _ => continue,
+                        };
+
+                        analyze_cast(&mut flow_chain, file_id, var_path, tag_cast, context);
                     }
                 }
             }

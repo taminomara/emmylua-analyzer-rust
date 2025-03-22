@@ -1,8 +1,7 @@
 use emmylua_parser::{
-    BinaryOperator, LuaAst, LuaAstNode, LuaAstToken, LuaBlock, LuaDocDescriptionOwner, LuaDocTagAs,
-    LuaDocTagCast, LuaDocTagModule, LuaDocTagOther, LuaDocTagOverload, LuaDocTagParam,
-    LuaDocTagReturn, LuaDocTagSee, LuaDocTagType, LuaExpr, LuaLocalName, LuaNameToken,
-    LuaTokenKind, LuaVarExpr,
+    LuaAst, LuaAstNode, LuaAstToken, LuaDocDescriptionOwner, LuaDocTagAs, LuaDocTagCast,
+    LuaDocTagModule, LuaDocTagOther, LuaDocTagOverload, LuaDocTagParam, LuaDocTagReturn,
+    LuaDocTagSee, LuaDocTagType, LuaExpr, LuaLocalName, LuaTokenKind, LuaVarExpr,
 };
 
 use crate::{
@@ -11,7 +10,7 @@ use crate::{
         LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaPropertyOwnerId,
         LuaSignatureId, LuaType,
     },
-    InFiled, LuaFlowId, SignatureReturnStatus, TypeAssertion, TypeOps,
+    InFiled, SignatureReturnStatus, TypeOps,
 };
 
 use super::{
@@ -292,102 +291,18 @@ pub fn analyze_as(analyzer: &mut DocAnalyzer, tag: LuaDocTagAs) -> Option<()> {
 }
 
 pub fn analyze_cast(analyzer: &mut DocAnalyzer, tag: LuaDocTagCast) -> Option<()> {
-    let name_token = tag.get_name_token();
-    if let Some(name_token) = name_token {
-        analyze_cast_with_name_token(analyzer, name_token, tag);
-    }
-
-    Some(())
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum CastAction {
-    Force,
-    Add,
-    Remove,
-}
-
-fn analyze_cast_with_name_token(
-    analyzer: &mut DocAnalyzer,
-    name_token: LuaNameToken,
-    tag: LuaDocTagCast,
-) -> Option<()> {
-    let path = name_token.get_name_text();
-    let effect_range = tag.ancestors::<LuaBlock>().next()?.get_range();
-    let actual_range = tag.get_range();
-    let flow_id = LuaFlowId::from_node(tag.syntax());
-    for cast_op_type in tag.get_op_types() {
-        let action = match cast_op_type.get_op() {
-            Some(op) => {
-                if op.get_op() == BinaryOperator::OpAdd {
-                    CastAction::Add
-                } else {
-                    CastAction::Remove
-                }
-            }
-            None => CastAction::Force,
-        };
-
-        if cast_op_type.is_nullable() {
-            let flow_chain = analyzer
-                .db
-                .get_flow_index_mut()
-                .get_or_create_flow_chain(analyzer.file_id, flow_id);
-            match action {
-                CastAction::Add => {
-                    flow_chain.add_type_assert(
-                        path,
-                        TypeAssertion::Add(LuaType::Nil),
-                        effect_range,
-                        actual_range,
-                    );
-                }
-                CastAction::Remove => {
-                    flow_chain.add_type_assert(
-                        path,
-                        TypeAssertion::Remove(LuaType::Nil),
-                        effect_range,
-                        actual_range,
-                    );
-                }
-                _ => {}
-            }
-        } else if let Some(typ) = cast_op_type.get_type() {
-            let typ = infer_type(analyzer, typ);
-            let flow_chain = analyzer
-                .db
-                .get_flow_index_mut()
-                .get_or_create_flow_chain(analyzer.file_id, flow_id);
-
-            match action {
-                CastAction::Add => {
-                    flow_chain.add_type_assert(
-                        path,
-                        TypeAssertion::Add(typ),
-                        effect_range,
-                        actual_range,
-                    );
-                }
-                CastAction::Remove => {
-                    flow_chain.add_type_assert(
-                        path,
-                        TypeAssertion::Remove(typ),
-                        effect_range,
-                        actual_range,
-                    );
-                }
-                CastAction::Force => {
-                    flow_chain.add_type_assert(
-                        path,
-                        TypeAssertion::Narrow(typ),
-                        effect_range,
-                        actual_range,
-                    );
-                }
-            }
+    for op in tag.get_op_types() {
+        if let Some(doc_type) = op.get_type() {
+            let typ = infer_type(analyzer, doc_type.clone());
+            analyzer.context.type_flow.insert(
+                InFiled {
+                    file_id: analyzer.file_id,
+                    value: doc_type.get_syntax_id(),
+                },
+                typ,
+            );
         }
     }
-
     Some(())
 }
 
