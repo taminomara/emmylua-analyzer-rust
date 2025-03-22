@@ -19,8 +19,7 @@ io = {}
 ---
 --- Equivalent to `file:close()`. Without a file, closes the default output
 --- file.
----@overload fun():void
----@param file file
+---@param file? file
 function io.close(file) end
 
 ---
@@ -35,8 +34,7 @@ function io.flush() end
 ---
 --- In case of errors this function raises the error, instead of returning an
 --- error code.
----@overload fun():file
----@param file file | string
+---@param file? file | string
 ---@return file
 function io.input(file) end
 
@@ -53,8 +51,7 @@ function io.input(file) end
 ---
 --- In case of errors this function raises the error, instead of returning an
 --- error code.
----@overload fun():any
----@param filename string
+---@param filename? string
 ---@return fun():any
 function io.lines(filename, ...) end
 
@@ -74,16 +71,15 @@ function io.lines(filename, ...) end
 ---
 --- The `mode` string can also have a '`b`' at the end, which is needed in
 --- some systems to open the file in binary mode.
----@overload fun(filename:string):file
 ---@param filename string
 ---@param mode? OpenMode
 ---@return file
-function io.open(filename, mode) return end
+---@return string? err
+function io.open(filename, mode) end
 
 ---
 --- Similar to `io.input`, but operates over the default output file.
----@overload fun():file
----@param file file | string
+---@param file? file | string
 ---@return file
 function io.output(file) end
 
@@ -93,9 +89,8 @@ function io.output(file) end
 --- Starts program `prog` in a separated process and returns a file handle that
 --- you can use to read data from this program (if `mode` is "`r`", the default)
 --- or to write data to this program (if `mode` is "`w`").
----@overload fun(prog:string):file
 ---@param prog string
----@param mode? string | '"r"' | '"w"'
+---@param mode? string | 'r' | 'w'
 ---@return file
 function io.popen(prog, mode) end
 
@@ -106,18 +101,22 @@ function io.read(...) end
 ---
 --- In case of success, returns a handle for a temporary file. This file is
 --- opened in update mode and it is automatically removed when the program ends.
+--- @return file
 function io.tmpfile() end
 
 ---
 --- Checks whether `obj` is a valid file handle. Returns the string "`file`"
 --- if `obj` is an open file handle, "`closed file`" if `obj` is a closed file
 --- handle, or **nil** if `obj` is not a file handle.
----@param obj string|file
----@return file
+---@param obj file
+---@return 'file' | 'closed file' | nil
 function io.type(obj) end
 
 ---
 --- Equivalent to `io.output():write(···)`.
+--- @param ... string | number
+--- @return file
+--- @return string? err
 function io.write(...) end
 
 --- File object
@@ -195,8 +194,10 @@ function file:read(...) end
 --- file (and returns 0); and the call `file:seek("end")` sets the position
 --- to the end of the file, and returns its size.
 ---@overload fun()
----@param whence string | '"set"' | '"cur"' | '"end"'
+---@param whence string | 'set' | 'cur' | 'end'
 ---@param offset integer
+---@return integer? pos
+---@return string? err
 function file:seek(whence, offset) end
 
 ---
@@ -212,7 +213,7 @@ function file:seek(whence, offset) end
 --- For the last two cases, `size` specifies the size of the buffer, in
 --- bytes. The default is an appropriate size.
 ---@overload fun(mode:string)
----@param mode string | '"no"' | '"full"' | '"line"'
+---@param mode string | 'no' | 'full' | 'line'
 ---@param size integer
 function file:setvbuf(mode, size) end
 
@@ -222,6 +223,9 @@ function file:setvbuf(mode, size) end
 ---
 --- In case of success, this function returns `file`. Otherwise it returns
 --- **nil** plus a string describing the error.
+--- @param ... string | number
+--- @return file
+--- @return string? err
 function file:write(...) end
 
 --- * `io.stderr`: Standard error.
