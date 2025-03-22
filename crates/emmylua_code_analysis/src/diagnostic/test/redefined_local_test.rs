@@ -1,6 +1,21 @@
 #[cfg(test)]
 mod tests {
     use crate::{DiagnosticCode, VirtualWorkspace};
+    #[test]
+    fn test_issue_226() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::RedefinedLocal,
+            r#"
+                function foo(...)
+                local a = { ... }
+                return function(...)
+                    return { a, { ... } }
+                end
+                end
+        "#
+        ));
+    }
 
     #[test]
     fn test() {
