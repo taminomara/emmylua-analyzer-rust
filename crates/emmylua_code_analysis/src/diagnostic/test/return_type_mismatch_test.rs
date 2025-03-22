@@ -3,6 +3,27 @@ mod tests {
     use crate::{DiagnosticCode, VirtualWorkspace};
 
     #[test]
+    fn test_issue_220() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+            --- @class A
+
+            --- @return A?, integer?
+            function bar()
+            end
+
+            --- @return A?, integer?
+            function foo()
+            return bar()
+            end
+        "#
+        ));
+    }
+
+    #[test]
     fn test_return_type_mismatch() {
         let mut ws = VirtualWorkspace::new();
 

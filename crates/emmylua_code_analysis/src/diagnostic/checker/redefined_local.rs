@@ -58,7 +58,7 @@ fn check_scope_for_redefined_locals(
         if let ScopeOrDeclId::Decl(decl_id) = child {
             if let Some(decl) = decl_tree.get_decl(decl_id) {
                 let name = decl.get_name().to_string();
-                if decl.is_local() && !name.starts_with("_") {
+                if decl.is_local() && name != "..." && !name.starts_with("_") {
                     if current_locals.contains_key(&name) {
                         // 发现重定义，记录诊断
                         diagnostics.insert(*decl_id);
