@@ -1,7 +1,8 @@
 use emmylua_parser::{
     BinaryOperator, LuaAst, LuaAstNode, LuaAstToken, LuaBlock, LuaDocDescriptionOwner, LuaDocTagAs,
     LuaDocTagCast, LuaDocTagModule, LuaDocTagOther, LuaDocTagOverload, LuaDocTagParam,
-    LuaDocTagReturn, LuaDocTagSee, LuaDocTagType, LuaExpr, LuaLocalName, LuaNameToken, LuaVarExpr,
+    LuaDocTagReturn, LuaDocTagSee, LuaDocTagType, LuaExpr, LuaLocalName, LuaNameToken,
+    LuaTokenKind, LuaVarExpr,
 };
 
 use crate::{
@@ -272,8 +273,14 @@ pub fn analyze_module(analyzer: &mut DocAnalyzer, tag: LuaDocTagModule) -> Optio
 pub fn analyze_as(analyzer: &mut DocAnalyzer, tag: LuaDocTagAs) -> Option<()> {
     let as_type = tag.get_type()?;
     let type_ref = infer_type(analyzer, as_type);
-    let owner = analyzer.comment.get_owner()?;
-    let expr = LuaExpr::cast(owner.syntax().clone())?;
+    let comment = analyzer.comment.clone();
+    let mut left_token = comment.syntax().first_token()?.prev_token()?;
+    if left_token.kind() == LuaTokenKind::TkWhitespace.into() {
+        left_token = left_token.prev_token()?;
+    }
+
+    let expr = LuaExpr::cast(left_token.parent()?)?;
+
     let file_id = analyzer.file_id;
     let in_filed_syntax_id = InFiled::new(file_id, expr.get_syntax_id());
     analyzer
