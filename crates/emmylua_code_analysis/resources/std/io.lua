@@ -73,7 +73,7 @@ function io.lines(filename, ...) end
 --- some systems to open the file in binary mode.
 ---@param filename string
 ---@param mode? OpenMode
----@return file
+---@return file?
 ---@return string? err
 function io.open(filename, mode) end
 
@@ -115,7 +115,7 @@ function io.type(obj) end
 ---
 --- Equivalent to `io.output():write(···)`.
 --- @param ... string | number
---- @return file
+--- @return file?
 --- @return string? err
 function io.write(...) end
 
@@ -224,7 +224,7 @@ function file:setvbuf(mode, size) end
 --- In case of success, this function returns `file`. Otherwise it returns
 --- **nil** plus a string describing the error.
 --- @param ... string | number
---- @return file
+--- @return file?
 --- @return string? err
 function file:write(...) end
 
