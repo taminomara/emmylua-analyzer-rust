@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 
-use emmylua_parser::{LuaAstNode, LuaNameExpr};
+use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaNameExpr};
 use rowan::TextRange;
 
-use crate::{DiagnosticCode, LuaMemberKey, SemanticModel};
+use crate::{DiagnosticCode, LuaMemberKey, LuaSignatureId, SemanticModel};
 
 use super::DiagnosticContext;
 
@@ -48,7 +48,7 @@ fn check_name_expr(
     }
 
     let name_text = name_expr.get_name_text()?;
-    if name_text == "self" || name_text == "_" {
+    if name_text == "_" {
         return Some(());
     }
 
@@ -75,6 +75,12 @@ fn check_name_expr(
         return Some(());
     }
 
+    if name_text == "self" {
+        if check_self_name(semantic_model, name_expr).is_some() {
+            return Some(());
+        }
+    }
+
     context.add_diagnostic(
         DiagnosticCode::UndefinedGlobal,
         name_range,
@@ -83,4 +89,18 @@ fn check_name_expr(
     );
 
     Some(())
+}
+
+fn check_self_name(semantic_model: &SemanticModel, name_expr: LuaNameExpr) -> Option<()> {
+    let closure_expr = name_expr.ancestors::<LuaClosureExpr>().next()?;
+    let signature_id = LuaSignatureId::from_closure(semantic_model.get_file_id(), &closure_expr);
+    let signature = semantic_model
+        .get_db()
+        .get_signature_index()
+        .get(&signature_id)?;
+    if signature.is_method() {
+        return Some(());
+    } else {
+        None
+    }
 }
