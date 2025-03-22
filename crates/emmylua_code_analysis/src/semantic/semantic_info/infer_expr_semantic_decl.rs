@@ -27,13 +27,9 @@ pub fn infer_expr_semantic_decl(
     };
 
     match expr {
-        LuaExpr::NameExpr(name_expr) => infer_name_expr_semantic_decl(
-            db,
-            cache,
-            name_expr,
-            semantic_guard.next_level()?,
-            level,
-        ),
+        LuaExpr::NameExpr(name_expr) => {
+            infer_name_expr_semantic_decl(db, cache, name_expr, semantic_guard.next_level()?, level)
+        }
         LuaExpr::IndexExpr(index_expr) => {
             infer_index_expr_semantic_decl(db, cache, index_expr, semantic_guard.next_level()?)
         }

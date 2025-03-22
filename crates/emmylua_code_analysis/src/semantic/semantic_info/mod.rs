@@ -172,13 +172,7 @@ pub fn infer_node_semantic_decl(
     match node {
         expr_node if LuaExpr::can_cast(expr_node.kind().into()) => {
             let expr = LuaExpr::cast(expr_node)?;
-            infer_expr_semantic_decl(
-                db,
-                cache,
-                expr,
-                SemanticDeclGuard::default(),
-                level
-            )
+            infer_expr_semantic_decl(db, cache, expr, SemanticDeclGuard::default(), level)
         }
         table_field_node if LuaTableField::can_cast(table_field_node.kind().into()) => {
             let table_field = LuaTableField::cast(table_field_node)?;
