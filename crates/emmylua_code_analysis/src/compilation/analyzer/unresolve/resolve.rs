@@ -121,9 +121,9 @@ pub fn try_resolve_iter_var(
         _ => return Some(true),
     };
 
-    let iter_type = func
-        .get_ret()
-        .get(iter_var.ret_idx)
+    let multi_return = func.get_multi_return();
+    let iter_type = multi_return
+        .get_type(iter_var.ret_idx)
         .unwrap_or(&LuaType::Nil);
     let decl_id = iter_var.decl_id;
     merge_decl_expr_type(db, cache, decl_id, iter_type.clone());

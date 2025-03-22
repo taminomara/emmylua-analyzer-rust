@@ -114,7 +114,7 @@ function getmetatable(object) end
 --- will iterate over the key–value pairs (1,`t[1]`), (2,`t[2]`), ..., up to
 --- the first absent index.
 ---@generic V
----@param t table<any, V> | V[]
+---@param t V[] | table<any, V>
 ---@return fun(tbl: any):int, std.NotNull<V>
 function ipairs(t) end
 
@@ -232,7 +232,6 @@ function next(table, index) end
 --- See function `next` for the caveats of modifying the table during its
 --- traversal.
 ---@generic K, V
----@overload fun(arr: V[]):fun(tbl: any):integer, std.NotNull<V>
 ---@param t table<K, V>
 ---@return fun(tbl: any):K, std.NotNull<V>
 function pairs(t) end

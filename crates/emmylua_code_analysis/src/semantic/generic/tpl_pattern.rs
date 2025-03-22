@@ -1,12 +1,12 @@
 use std::ops::Deref;
 
-use emmylua_parser::{LuaAstNode, LuaSyntaxId, LuaSyntaxNode, LuaTableExpr};
+use emmylua_parser::LuaSyntaxNode;
 use smol_str::SmolStr;
 
 use crate::{
     db_index::{DbIndex, LuaGenericType, LuaType},
-    semantic::{infer_expr, LuaInferCache},
-    LuaFunctionType, LuaMultiReturn, LuaTupleType, LuaUnionType,
+    semantic::{member::infer_member_map, LuaInferCache},
+    LuaFunctionType, LuaMemberKey, LuaMemberOwner, LuaMultiReturn, LuaTupleType, LuaUnionType,
 };
 
 use super::type_substitutor::TypeSubstitutor;
@@ -137,7 +137,14 @@ fn tpl_pattern_match(
             array_tpl_pattern_match(db, cache, root, base, target, substitutor);
         }
         LuaType::TableGeneric(table_generic_params) => {
-            table_tpl_pattern_match(db, cache, root, table_generic_params, target, substitutor);
+            table_generic_tpl_pattern_match(
+                db,
+                cache,
+                root,
+                table_generic_params,
+                target,
+                substitutor,
+            );
         }
         LuaType::Generic(generic) => {
             generic_tpl_pattern_match(db, cache, root, generic, target, substitutor);
@@ -183,7 +190,7 @@ fn array_tpl_pattern_match(
     Some(())
 }
 
-fn table_tpl_pattern_match(
+fn table_generic_tpl_pattern_match(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     root: &LuaSyntaxNode,
@@ -211,24 +218,203 @@ fn table_tpl_pattern_match(
                 );
             }
         }
-        LuaType::TableConst(target_range) => {
-            let node = LuaSyntaxId::to_node_at_range(root, target_range.value)?;
-            let table_node = LuaTableExpr::cast(node)?;
-            let t1 = &table_generic_params[0];
-            let t2 = &table_generic_params[1];
-            if table_node.is_array() {
-                tpl_pattern_match(db, cache, root, &t1, &LuaType::Integer, substitutor);
-            } else {
-                tpl_pattern_match(db, cache, root, &t1, &LuaType::String, substitutor);
+        LuaType::Array(target_array_base) => {
+            tpl_pattern_match(
+                db,
+                cache,
+                root,
+                &table_generic_params[0],
+                &LuaType::Integer,
+                substitutor,
+            );
+            tpl_pattern_match(
+                db,
+                cache,
+                root,
+                &table_generic_params[1],
+                target_array_base,
+                substitutor,
+            );
+        }
+        LuaType::Tuple(target_tuple) => {
+            let len = target_tuple.get_types().len();
+            let mut keys = Vec::new();
+            for i in 0..len {
+                keys.push(LuaType::IntegerConst((i as i64) + 1));
             }
 
-            let first_field = table_node.get_fields().next()?;
-            let expr_type = infer_expr(db, cache, first_field.get_value_expr()?)?;
-            tpl_pattern_match(db, cache, root, t2, &expr_type, substitutor);
+            let key_type = LuaType::Union(LuaUnionType::new(keys).into());
+            let target_base = target_tuple.cast_down_array_base();
+            tpl_pattern_match(
+                db,
+                cache,
+                root,
+                &table_generic_params[0],
+                &key_type,
+                substitutor,
+            );
+            tpl_pattern_match(
+                db,
+                cache,
+                root,
+                &table_generic_params[1],
+                &target_base,
+                substitutor,
+            );
+        }
+        LuaType::TableConst(inst) => {
+            let owner = LuaMemberOwner::Element(inst.clone());
+            table_generic_tpl_pattern_member_owner_match(
+                db,
+                cache,
+                root,
+                table_generic_params,
+                owner,
+                substitutor,
+            );
+        }
+        LuaType::Ref(type_id) => {
+            let owner = LuaMemberOwner::Type(type_id.clone());
+            table_generic_tpl_pattern_member_owner_match(
+                db,
+                cache,
+                root,
+                table_generic_params,
+                owner,
+                substitutor,
+            );
+        }
+        LuaType::Def(type_id) => {
+            let owner = LuaMemberOwner::Type(type_id.clone());
+            table_generic_tpl_pattern_member_owner_match(
+                db,
+                cache,
+                root,
+                table_generic_params,
+                owner,
+                substitutor,
+            );
+        }
+        LuaType::Object(obj) => {
+            let mut keys = vec![];
+            let mut values = vec![];
+            for (k, v) in obj.get_fields() {
+                match k {
+                    LuaMemberKey::Integer(i) => keys.push(LuaType::IntegerConst(i.clone())),
+                    LuaMemberKey::Name(s) => keys.push(LuaType::StringConst(s.clone().into())),
+                    _ => {}
+                };
+                values.push(v.clone());
+            }
+
+            let key_type = LuaType::Union(LuaUnionType::new(keys).into());
+            let value_type = LuaType::Union(LuaUnionType::new(values).into());
+            tpl_pattern_match(
+                db,
+                cache,
+                root,
+                &table_generic_params[0],
+                &key_type,
+                substitutor,
+            );
+            tpl_pattern_match(
+                db,
+                cache,
+                root,
+                &table_generic_params[1],
+                &value_type,
+                substitutor,
+            );
+        }
+
+        LuaType::Global | LuaType::Any | LuaType::Table | LuaType::Userdata => {
+            // too many
+            tpl_pattern_match(
+                db,
+                cache,
+                root,
+                &table_generic_params[0],
+                &LuaType::Any,
+                substitutor,
+            );
+            tpl_pattern_match(
+                db,
+                cache,
+                root,
+                &table_generic_params[1],
+                &LuaType::Any,
+                substitutor,
+            );
         }
         _ => {}
     }
 
+    Some(())
+}
+
+fn table_generic_tpl_pattern_member_owner_match(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
+    root: &LuaSyntaxNode,
+    table_generic_params: &Vec<LuaType>,
+    owner: LuaMemberOwner,
+    substitutor: &mut TypeSubstitutor,
+) -> Option<()> {
+    if table_generic_params.len() != 2 {
+        return None;
+    }
+
+    let owner_type = match &owner {
+        LuaMemberOwner::Element(inst) => LuaType::TableConst(inst.clone()),
+        LuaMemberOwner::Type(type_id) => LuaType::Ref(type_id.clone()),
+        _ => {
+            return None;
+        }
+    };
+
+    let members = infer_member_map(db, &owner_type)?;
+    let mut keys = Vec::new();
+    let mut values = Vec::new();
+    for (k, v) in members {
+        match k {
+            LuaMemberKey::Integer(i) => keys.push(LuaType::IntegerConst(i.clone())),
+            LuaMemberKey::Name(s) => keys.push(LuaType::StringConst(s.clone().into())),
+            _ => {}
+        };
+
+        let resolve_type = match v.len() {
+            0 => LuaType::Any,
+            1 => v[0].typ.clone(),
+            _ => {
+                let mut types = Vec::new();
+                for m in v {
+                    types.push(m.typ.clone());
+                }
+                LuaType::Union(LuaUnionType::new(types).into())
+            }
+        };
+
+        values.push(resolve_type);
+    }
+
+    let key_type = LuaType::Union(LuaUnionType::new(keys).into());
+    let value_type = LuaType::Union(LuaUnionType::new(values).into());
+    tpl_pattern_match(
+        db,
+        cache,
+        root,
+        &table_generic_params[0],
+        &key_type,
+        substitutor,
+    );
+    tpl_pattern_match(
+        db,
+        cache,
+        root,
+        &table_generic_params[1],
+        &value_type,
+        substitutor,
+    );
     Some(())
 }
 

@@ -486,6 +486,10 @@ impl LuaFunctionType {
         &self.ret
     }
 
+    pub fn get_multi_return(&self) -> LuaMultiReturn {
+        LuaMultiReturn::Multi(self.ret.clone())
+    }
+
     pub fn contain_tpl(&self) -> bool {
         self.params
             .iter()

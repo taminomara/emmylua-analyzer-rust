@@ -423,7 +423,7 @@ pub fn analyze_for_range_stat(
         };
 
         if let Some(doc_func) = iter_doc_func {
-            let rets = doc_func.get_ret();
+            let multi_return = doc_func.get_multi_return();
             let mut idx = 0;
             for var_name in var_name_list {
                 let position = var_name.get_position();
@@ -431,7 +431,10 @@ pub fn analyze_for_range_stat(
                 let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
                 let decl_type = decl.get_type();
                 if decl_type.is_none() {
-                    let ret_type = rets.get(idx).unwrap_or(&LuaType::Unknown).clone();
+                    let ret_type = multi_return
+                        .get_type(idx)
+                        .unwrap_or(&LuaType::Unknown)
+                        .clone();
                     decl.set_decl_type(ret_type);
                 }
                 idx += 1;

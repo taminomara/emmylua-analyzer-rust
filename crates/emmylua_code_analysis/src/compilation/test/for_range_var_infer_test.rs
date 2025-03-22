@@ -37,4 +37,22 @@ mod test {
         assert_eq!(ws.expr_ty("k2"), LuaType::Number);
         assert_eq!(ws.expr_ty("v2"), LuaType::String);
     }
+
+    #[test]
+    fn test_issue_227() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.def(
+            r#"
+        local a --- @type any
+
+        for k in pairs(a) do
+            -- k should be any not integer
+            d = k
+        end
+        "#,
+        );
+
+        assert_eq!(ws.expr_ty("d"), LuaType::Any);
+    }
 }
