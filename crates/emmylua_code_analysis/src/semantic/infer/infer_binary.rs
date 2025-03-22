@@ -369,7 +369,7 @@ fn infer_binary_expr_and(left: LuaType, right: LuaType) -> InferResult {
         return Some(right);
     }
 
-    Some(TypeOps::Union.apply(&left, &right))
+    Some(TypeOps::Union.apply(&TypeOps::NarrowFalseOrNil.apply_source(&left), &right))
 }
 
 fn infer_cmp_expr(_: &DbIndex, left: LuaType, right: LuaType, op: BinaryOperator) -> InferResult {

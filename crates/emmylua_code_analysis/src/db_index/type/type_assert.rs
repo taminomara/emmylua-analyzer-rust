@@ -33,7 +33,7 @@ impl TypeAssertion {
     ) -> Option<LuaType> {
         match self {
             TypeAssertion::Exist => Some(TypeOps::Remove.apply(&source, &LuaType::Nil)),
-            TypeAssertion::NotExist => Some(force_nil_or_false(source)),
+            TypeAssertion::NotExist => Some(TypeOps::NarrowFalseOrNil.apply_source(&source)),
             TypeAssertion::Narrow(t) => Some(TypeOps::Narrow.apply(&source, t)),
             TypeAssertion::Add(lua_type) => Some(TypeOps::Union.apply(&source, lua_type)),
             TypeAssertion::Remove(lua_type) => Some(TypeOps::Remove.apply(&source, lua_type)),
@@ -51,12 +51,4 @@ impl TypeAssertion {
             _ => Some(source),
         }
     }
-}
-
-fn force_nil_or_false(t: LuaType) -> LuaType {
-    if t.is_boolean() {
-        return LuaType::BooleanConst(false);
-    }
-
-    return TypeOps::Narrow.apply(&t, &LuaType::Nil);
 }

@@ -1,3 +1,4 @@
+mod false_or_nil_type;
 mod narrow_type;
 mod remove_type;
 mod test;
@@ -13,6 +14,8 @@ pub enum TypeOps {
     Remove,
     /// Force a type to the source type
     Narrow,
+    /// Only keep the false or nil type
+    NarrowFalseOrNil,
 }
 
 impl TypeOps {
@@ -22,6 +25,14 @@ impl TypeOps {
             TypeOps::Remove => remove_type::remove_type(source.clone(), target.clone()),
             TypeOps::Narrow => narrow_type::narrow_down_type(source.clone(), target.clone())
                 .unwrap_or(target.clone()),
+            _ => source.clone(),
+        }
+    }
+
+    pub fn apply_source(&self, source: &LuaType) -> LuaType {
+        match self {
+            TypeOps::NarrowFalseOrNil => false_or_nil_type::narrow_false_or_nil(source.clone()),
+            _ => source.clone(),
         }
     }
 }
