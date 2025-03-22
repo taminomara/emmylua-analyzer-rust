@@ -359,7 +359,7 @@ fn infer_binary_expr_or(left: LuaType, right: LuaType) -> InferResult {
         return Some(right);
     }
 
-    Some(TypeOps::Union.apply(&left, &right))
+    Some(TypeOps::Union.apply(&TypeOps::Remove.apply(&left, &LuaType::Nil), &right))
 }
 
 fn infer_binary_expr_and(left: LuaType, right: LuaType) -> InferResult {

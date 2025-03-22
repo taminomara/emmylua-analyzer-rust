@@ -9,6 +9,7 @@ mod inherit_type;
 mod mathlib_test;
 mod module_annotation;
 mod multi_return;
+mod or_test;
 mod out_of_order;
 mod overload_field;
 mod overload_test;
