@@ -398,4 +398,27 @@ mod tests {
             "#
         ));
     }
+
+    #[test]
+    fn test_issue_236() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_code_for_namespace(
+            DiagnosticCode::MissingReturn,
+            r#"
+            --- @param a number
+            --- @return integer
+            function foo(a)
+            if a == 0 then
+                return 0
+            end
+
+            if a < 0 then
+                return 0
+            else
+                return 0
+            end
+            end
+            "#
+        ));
+    }
 }

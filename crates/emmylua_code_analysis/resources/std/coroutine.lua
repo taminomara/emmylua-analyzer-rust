@@ -19,8 +19,9 @@ coroutine = {}
 ---
 --- Creates a new coroutine, with body `f`. `f` must be a Lua function. Returns
 --- this new coroutine, an object with type `"thread"`.
----@param f async fun(...)
+---@param f async fun(...):...
 ---@return thread
+---@nodiscard
 function coroutine.create(f) end
 
 ---
@@ -28,7 +29,9 @@ function coroutine.create(f) end
 ---
 --- A running coroutine is yieldable if it is not the main thread and it is not
 --- inside a non-yieldable C function.
+---@param co? thread
 ---@return boolean
+---@nodiscard
 function coroutine.isyieldable() end
 
 
@@ -54,16 +57,18 @@ function coroutine.close(co) end
 --- values passed to `yield` (when the coroutine yields) or any values returned
 --- by the body function (when the coroutine terminates). If there is any error,
 --- `resume` returns **false** plus the error message.
----@overload fun(co:thread):...
 ---@param co thread
+---@param val1? any
 ---@param ... any
----@return ...
-function coroutine.resume(co, ...) end
+---@return boolean success
+---@return any ...
+function coroutine.resume(co, val1, ...) end
 
 ---
 --- Returns the running coroutine plus a boolean, true when the running
 --- coroutine is the main one.
 ---@return thread, string
+---@nodiscard
 function coroutine.running() end
 
 ---
@@ -79,6 +84,7 @@ function coroutine.running() end
 ---| "suspended" # Is suspended or not started.
 ---| "normal"    # Is active but not running.
 ---| "dead"      # Has finished or stopped with an error.
+---@nodiscard
 function coroutine.status(co) end
 
 ---
@@ -87,13 +93,15 @@ function coroutine.status(co) end
 --- passed to the function behave as the extra arguments to `resume`. Returns
 --- the same values returned by `resume`, except the first
 --- boolean. In case of error, propagates the error.
----@param f async fun()
----@return fun():any
+---@param f async fun(...):...
+---@return fun(...):...
+---@nodiscard
 function coroutine.wrap(f) end
 
 ---
 --- Suspends the execution of the calling coroutine. Any arguments to `yield`
 --- are passed as extra results to `resume`.
 ---@async
----@return ...
+---@param ... any
+---@return any ...
 function coroutine.yield(...) end

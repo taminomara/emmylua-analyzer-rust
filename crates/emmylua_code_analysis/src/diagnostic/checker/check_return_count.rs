@@ -180,13 +180,18 @@ fn check_if_stat(
         }
 
         // 检查是否存在`else`分支, 如果存在则上面已经检查过
-        if if_stat.get_else_clause().is_none() {
-            return Err(block.clone());
+        if !has_return && if_stat.get_else_clause().is_none() {
+            has_return = false;
         } else {
             has_return = true;
         }
     }
-    Ok(has_return)
+
+    if has_return {
+        Ok(has_return)
+    } else {
+        Err(block.clone())
+    }
 }
 
 fn check_while_stat(
