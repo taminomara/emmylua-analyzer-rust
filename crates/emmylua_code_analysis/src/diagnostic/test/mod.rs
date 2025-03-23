@@ -19,3 +19,4 @@ mod unbalanced_assignments_test;
 mod undefined_doc_param_test;
 mod undefined_field_test;
 mod undefined_global_test;
+mod unnecessary_assert_test;
