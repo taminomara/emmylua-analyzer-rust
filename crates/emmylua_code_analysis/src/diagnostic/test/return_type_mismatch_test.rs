@@ -3,6 +3,43 @@ mod tests {
     use crate::{DiagnosticCode, VirtualWorkspace};
 
     #[test]
+    fn test_issue_242() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for_namespace(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+                local setmetatable = setmetatable
+                --- @class A
+                local A = {}
+
+                function A:method() end
+
+                --- @return A
+                function new()
+                return setmetatable({}, { __index = A })
+                end
+        "#
+        ));
+
+        assert!(ws.check_code_for_namespace(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+                --- @class A
+                local A = {}
+                A.__index = A
+
+                function A:method() end
+
+                --- @return A
+                function new()
+                return setmetatable({}, A)
+                end
+        "#
+        ));
+    }
+
+    #[test]
     fn test_issue_220() {
         let mut ws = VirtualWorkspace::new();
 

@@ -390,6 +390,10 @@ impl LuaModuleIndex {
         file_ids
     }
 
+    pub fn is_std(&self, file_id: &FileId) -> bool {
+        self.get_std_file_ids().contains(file_id)
+    }
+
     pub fn get_main_workspace_file_ids(&self) -> Vec<FileId> {
         let mut file_ids = Vec::new();
         for module_info in self.file_module_map.values() {
