@@ -54,7 +54,7 @@ mod test {
         let a_ty = ws.expr_ty("a");
         assert_eq!(
             format!("{:?}", a_ty).to_string(),
-            "Union(LuaUnionType { types: [IntegerConst(2), Nil] })"
+            "Union(LuaUnionType { types: [Nil, IntegerConst(2)] })"
         );
     }
 }
