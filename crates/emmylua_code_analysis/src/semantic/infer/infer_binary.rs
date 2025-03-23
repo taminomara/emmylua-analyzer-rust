@@ -60,7 +60,6 @@ fn infer_binary_expr_type(
     }
 }
 
-
 fn infer_union(db: &DbIndex, u: &LuaUnionType, right: &LuaType, op: BinaryOperator) -> InferResult {
     let mut union_types = vec![];
     for ty in u.get_types() {
@@ -75,7 +74,6 @@ fn infer_union(db: &DbIndex, u: &LuaUnionType, right: &LuaType, op: BinaryOperat
         _ => Some(LuaType::Union(LuaUnionType::new(union_types).into())),
     }
 }
-
 
 fn infer_binary_custom_operator(
     db: &DbIndex,
