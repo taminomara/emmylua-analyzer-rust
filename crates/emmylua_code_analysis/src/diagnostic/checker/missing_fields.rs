@@ -4,19 +4,22 @@ use emmylua_parser::{LuaAstNode, LuaTableExpr};
 
 use crate::{DiagnosticCode, LuaMemberOwner, LuaType, LuaTypeDeclId, SemanticModel};
 
-use super::{humanize_lint_type, DiagnosticContext};
+use super::{humanize_lint_type, Checker, DiagnosticContext};
 use itertools::Itertools;
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::MissingFields];
+pub struct MissingFieldsChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
+impl Checker for MissingFieldsChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::MissingFields];
 
-    let mut type_cache = HashMap::new();
-    for expr in root.descendants::<LuaTableExpr>() {
-        check_table_expr(context, semantic_model, &expr, &mut type_cache);
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+
+        let mut type_cache = HashMap::new();
+        for expr in root.descendants::<LuaTableExpr>() {
+            check_table_expr(context, semantic_model, &expr, &mut type_cache);
+        }
     }
-    Some(())
 }
 
 fn check_table_expr(

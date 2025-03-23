@@ -2,18 +2,20 @@ use emmylua_parser::{LuaAstNode, LuaCallArgList, LuaCallExpr, LuaClosureExpr, Lu
 
 use crate::{DiagnosticCode, LuaSignatureId, LuaType, SemanticModel};
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::AwaitInSync];
+pub struct AwaitInSyncChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
-    for call_expr in root.descendants::<LuaCallExpr>() {
-        check_call_expr(context, semantic_model, call_expr.clone());
-        check_pcall_or_xpcall(context, semantic_model, call_expr);
+impl Checker for AwaitInSyncChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::AwaitInSync];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+        for call_expr in root.descendants::<LuaCallExpr>() {
+            check_call_expr(context, semantic_model, call_expr.clone());
+            check_pcall_or_xpcall(context, semantic_model, call_expr);
+        }
     }
-
-    Some(())
 }
 
 fn check_call_expr(

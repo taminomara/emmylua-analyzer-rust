@@ -2,16 +2,19 @@ use emmylua_parser::{LuaAstNode, LuaAstToken, LuaClosureExpr, LuaDocTagParam};
 
 use crate::{DiagnosticCode, LuaSignatureId, SemanticModel};
 
-use super::{get_closure_expr_comment, DiagnosticContext};
+use super::{get_closure_expr_comment, Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::UndefinedDocParam];
+pub struct UndefinedDocParamChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
-    for closure_expr in root.descendants::<LuaClosureExpr>() {
-        check_doc_param(context, semantic_model, &closure_expr);
+impl Checker for UndefinedDocParamChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::UndefinedDocParam];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+        for closure_expr in root.descendants::<LuaClosureExpr>() {
+            check_doc_param(context, semantic_model, &closure_expr);
+        }
     }
-    Some(())
 }
 
 fn check_doc_param(

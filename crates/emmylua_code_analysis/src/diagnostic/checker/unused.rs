@@ -1,24 +1,30 @@
 use crate::{DiagnosticCode, LuaDecl, LuaReferenceIndex, SemanticModel};
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::Unused];
+pub struct UnusedChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let file_id = semantic_model.get_file_id();
-    let decl_tree = semantic_model
-        .get_db()
-        .get_decl_index()
-        .get_decl_tree(&file_id)?;
+impl Checker for UnusedChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::Unused];
 
-    let ref_index = semantic_model.get_db().get_reference_index();
-    for (_, decl) in decl_tree.get_decls().iter() {
-        if !is_decl_used(decl, ref_index) {
-            let name = decl.get_name();
-            if name.starts_with('_') {
-                continue;
-            }
-            context.add_diagnostic(
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let file_id = semantic_model.get_file_id();
+        let Some(decl_tree) = semantic_model
+            .get_db()
+            .get_decl_index()
+            .get_decl_tree(&file_id)
+        else {
+            return;
+        };
+
+        let ref_index = semantic_model.get_db().get_reference_index();
+        for (_, decl) in decl_tree.get_decls().iter() {
+            if !is_decl_used(decl, ref_index) {
+                let name = decl.get_name();
+                if name.starts_with('_') {
+                    continue;
+                }
+                context.add_diagnostic(
                 DiagnosticCode::Unused,
                 decl.get_range(),
                 t!(
@@ -27,10 +33,9 @@ pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) ->
                 ).to_string(),
                 None,
             );
+            }
         }
     }
-
-    Some(())
 }
 
 fn is_decl_used(decl: &LuaDecl, local_refs: &LuaReferenceIndex) -> bool {

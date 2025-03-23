@@ -5,19 +5,21 @@ use rowan::TextRange;
 
 use crate::{DiagnosticCode, LuaMemberKey, LuaSignatureId, SemanticModel};
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::UndefinedGlobal];
+pub struct UndefinedGlobalChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
-    let mut use_range_set = HashSet::new();
-    calc_name_expr_ref(semantic_model, &mut use_range_set);
-    for name_expr in root.descendants::<LuaNameExpr>() {
-        check_name_expr(context, semantic_model, &mut use_range_set, name_expr);
+impl Checker for UndefinedGlobalChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::UndefinedGlobal];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+        let mut use_range_set = HashSet::new();
+        calc_name_expr_ref(semantic_model, &mut use_range_set);
+        for name_expr in root.descendants::<LuaNameExpr>() {
+            check_name_expr(context, semantic_model, &mut use_range_set, name_expr);
+        }
     }
-
-    Some(())
 }
 
 fn calc_name_expr_ref(

@@ -6,23 +6,25 @@ use crate::{
     TypeCheckResult,
 };
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::ParamTypeNotMatch];
+pub struct ParamTypeCheckChecker;
 
-/// a simple implementation of param type check, later we will do better
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
-    for node in root.descendants::<LuaAst>() {
-        match node {
-            LuaAst::LuaCallExpr(call_expr) => {
-                check_call_expr(context, semantic_model, call_expr);
+impl Checker for ParamTypeCheckChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::ParamTypeNotMatch];
+
+    /// a simple implementation of param type check, later we will do better
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+        for node in root.descendants::<LuaAst>() {
+            match node {
+                LuaAst::LuaCallExpr(call_expr) => {
+                    check_call_expr(context, semantic_model, call_expr);
+                }
+                _ => {}
             }
-            _ => {}
         }
     }
-
-    Some(())
 }
 
 fn check_call_expr(

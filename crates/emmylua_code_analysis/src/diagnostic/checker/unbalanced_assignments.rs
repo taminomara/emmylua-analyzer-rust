@@ -2,25 +2,27 @@ use emmylua_parser::{LuaAssignStat, LuaAstNode, LuaExpr, LuaLocalStat, LuaStat};
 
 use crate::{DiagnosticCode, SemanticModel};
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::UnbalancedAssignments];
+pub struct UnbalancedAssignmentsChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
-    for stat in root.descendants::<LuaStat>() {
-        match stat {
-            LuaStat::LocalStat(local) => {
-                check_local_stat(context, semantic_model, &local);
+impl Checker for UnbalancedAssignmentsChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::UnbalancedAssignments];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+        for stat in root.descendants::<LuaStat>() {
+            match stat {
+                LuaStat::LocalStat(local) => {
+                    check_local_stat(context, semantic_model, &local);
+                }
+                LuaStat::AssignStat(assign) => {
+                    check_assign_stat(context, semantic_model, &assign);
+                }
+                _ => {}
             }
-            LuaStat::AssignStat(assign) => {
-                check_assign_stat(context, semantic_model, &assign);
-            }
-            _ => {}
         }
     }
-
-    Some(())
 }
 
 fn check_assign_stat(

@@ -5,27 +5,29 @@ use emmylua_parser::{
 
 use crate::{DiagnosticCode, LuaSignatureId, LuaType, SemanticModel};
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[
-    DiagnosticCode::MissingParameter,
-    DiagnosticCode::RedundantParameter,
-];
+pub struct CheckParamCountChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    for node in semantic_model.get_root().descendants::<LuaAst>() {
-        match node {
-            LuaAst::LuaCallExpr(call_expr) => {
-                check_call_expr(context, semantic_model, call_expr);
+impl Checker for CheckParamCountChecker {
+    const CODES: &[DiagnosticCode] = &[
+        DiagnosticCode::MissingParameter,
+        DiagnosticCode::RedundantParameter,
+    ];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        for node in semantic_model.get_root().descendants::<LuaAst>() {
+            match node {
+                LuaAst::LuaCallExpr(call_expr) => {
+                    check_call_expr(context, semantic_model, call_expr);
+                }
+                LuaAst::LuaClosureExpr(closure_expr) => {
+                    check_closure_expr(context, semantic_model, &closure_expr);
+                }
+                _ => {}
             }
-            LuaAst::LuaClosureExpr(closure_expr) => {
-                check_closure_expr(context, semantic_model, &closure_expr);
-            }
-            _ => {}
         }
     }
-
-    Some(())
 }
 
 /// 处理左值已绑定类型但右值为匿名函数的情况

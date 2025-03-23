@@ -4,27 +4,30 @@ use emmylua_parser::{
 
 use crate::{DiagnosticCode, LuaTypeAttribute, SemanticModel};
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::DuplicateType];
+pub struct DuplicateTypeChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
-    for tag in root.descendants::<LuaDocTag>() {
-        match tag {
-            LuaDocTag::Class(class_tag) => {
-                check_duplicate_class(context, class_tag);
+impl Checker for DuplicateTypeChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::DuplicateType];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+        for tag in root.descendants::<LuaDocTag>() {
+            match tag {
+                LuaDocTag::Class(class_tag) => {
+                    check_duplicate_class(context, class_tag);
+                }
+                LuaDocTag::Enum(enum_tag) => {
+                    check_duplicate_enum(context, enum_tag);
+                }
+                LuaDocTag::Alias(alias_tag) => {
+                    check_duplicate_alias(context, alias_tag);
+                }
+                _ => {}
             }
-            LuaDocTag::Enum(enum_tag) => {
-                check_duplicate_enum(context, enum_tag);
-            }
-            LuaDocTag::Alias(alias_tag) => {
-                check_duplicate_alias(context, alias_tag);
-            }
-            _ => {}
         }
     }
-    Some(())
 }
 
 fn check_duplicate_class(context: &mut DiagnosticContext, class_tag: LuaDocTagClass) -> Option<()> {

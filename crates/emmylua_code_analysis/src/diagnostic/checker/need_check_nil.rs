@@ -4,28 +4,30 @@ use emmylua_parser::{
 
 use crate::{DiagnosticCode, SemanticModel};
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::NeedCheckNil];
+pub struct NeedCheckNilChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
-    for expr in root.descendants::<LuaExpr>() {
-        match expr {
-            LuaExpr::CallExpr(call_expr) => {
-                check_call_expr(context, semantic_model, call_expr);
+impl Checker for NeedCheckNilChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::NeedCheckNil];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+        for expr in root.descendants::<LuaExpr>() {
+            match expr {
+                LuaExpr::CallExpr(call_expr) => {
+                    check_call_expr(context, semantic_model, call_expr);
+                }
+                LuaExpr::BinaryExpr(binary_expr) => {
+                    check_binary_expr(context, semantic_model, binary_expr);
+                }
+                LuaExpr::IndexExpr(index_expr) => {
+                    check_index_expr(context, semantic_model, index_expr);
+                }
+                _ => {}
             }
-            LuaExpr::BinaryExpr(binary_expr) => {
-                check_binary_expr(context, semantic_model, binary_expr);
-            }
-            LuaExpr::IndexExpr(index_expr) => {
-                check_index_expr(context, semantic_model, index_expr);
-            }
-            _ => {}
         }
     }
-
-    Some(())
 }
 
 fn check_call_expr(

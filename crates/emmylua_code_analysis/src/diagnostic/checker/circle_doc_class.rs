@@ -3,18 +3,21 @@ use rowan::TextRange;
 
 use crate::{DiagnosticCode, LuaType, SemanticModel};
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::CircleDocClass];
+pub struct CircleDocClassChecker;
 
-/// 检查循环继承的类
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
+impl Checker for CircleDocClassChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::CircleDocClass];
 
-    for expr in root.descendants::<LuaDocTagClass>() {
-        check_doc_tag_class(context, semantic_model, &expr);
+    /// 检查循环继承的类
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+
+        for expr in root.descendants::<LuaDocTagClass>() {
+            check_doc_tag_class(context, semantic_model, &expr);
+        }
     }
-    Some(())
 }
 
 fn check_doc_tag_class(

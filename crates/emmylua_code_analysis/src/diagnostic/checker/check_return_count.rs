@@ -5,21 +5,24 @@ use emmylua_parser::{
 
 use crate::{DiagnosticCode, LuaSignatureId, LuaType, SemanticModel, SignatureReturnStatus};
 
-use super::{get_own_return_stats, DiagnosticContext};
+use super::{get_own_return_stats, Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[
-    DiagnosticCode::RedundantReturnValue,
-    DiagnosticCode::MissingReturnValue,
-    DiagnosticCode::MissingReturn,
-];
+pub struct CheckReturnCount;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
+impl Checker for CheckReturnCount {
+    const CODES: &[DiagnosticCode] = &[
+        DiagnosticCode::RedundantReturnValue,
+        DiagnosticCode::MissingReturnValue,
+        DiagnosticCode::MissingReturn,
+    ];
 
-    for closure_expr in root.descendants::<LuaClosureExpr>() {
-        check_missing_return(context, semantic_model, &closure_expr);
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+
+        for closure_expr in root.descendants::<LuaClosureExpr>() {
+            check_missing_return(context, semantic_model, &closure_expr);
+        }
     }
-    Some(())
 }
 
 // 获取(是否doc标注过返回值, 返回值类型)

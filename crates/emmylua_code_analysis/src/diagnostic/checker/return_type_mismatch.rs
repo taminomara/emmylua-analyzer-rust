@@ -6,16 +6,19 @@ use crate::{
     SignatureReturnStatus, TypeCheckFailReason, TypeCheckResult,
 };
 
-use super::{get_own_return_stats, DiagnosticContext};
+use super::{get_own_return_stats, Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::ReturnTypeMismatch];
+pub struct ReturnTypeMismatch;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
-    for closure_expr in root.descendants::<LuaClosureExpr>() {
-        check_closure_expr(context, semantic_model, &closure_expr);
+impl Checker for ReturnTypeMismatch {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::ReturnTypeMismatch];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+        for closure_expr in root.descendants::<LuaClosureExpr>() {
+            check_closure_expr(context, semantic_model, &closure_expr);
+        }
     }
-    Some(())
 }
 
 fn check_closure_expr(

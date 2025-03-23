@@ -5,65 +5,67 @@ use emmylua_parser::{
 
 use crate::{DiagnosticCode, LuaSignatureId, SemanticModel};
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::SyntaxError, DiagnosticCode::LuaSyntaxError];
+pub struct SyntaxErrorChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    if let Some(parse_errors) = semantic_model.get_file_parse_error() {
-        for parse_error in parse_errors {
-            context.add_diagnostic(
-                DiagnosticCode::SyntaxError,
-                parse_error.1,
-                parse_error.0,
-                None,
-            );
+impl Checker for SyntaxErrorChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::SyntaxError, DiagnosticCode::LuaSyntaxError];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        if let Some(parse_errors) = semantic_model.get_file_parse_error() {
+            for parse_error in parse_errors {
+                context.add_diagnostic(
+                    DiagnosticCode::SyntaxError,
+                    parse_error.1,
+                    parse_error.0,
+                    None,
+                );
+            }
         }
-    }
 
-    let root = semantic_model.get_root();
-    for node_or_token in root.syntax().descendants_with_tokens() {
-        if let Some(token) = node_or_token.into_token() {
-            match token.kind().into() {
-                LuaTokenKind::TkInt => {
-                    if let Err(err) = int_token_value(&token) {
-                        context.add_diagnostic(
-                            DiagnosticCode::SyntaxError,
-                            err.range,
-                            err.message,
-                            None,
-                        );
+        let root = semantic_model.get_root();
+        for node_or_token in root.syntax().descendants_with_tokens() {
+            if let Some(token) = node_or_token.into_token() {
+                match token.kind().into() {
+                    LuaTokenKind::TkInt => {
+                        if let Err(err) = int_token_value(&token) {
+                            context.add_diagnostic(
+                                DiagnosticCode::SyntaxError,
+                                err.range,
+                                err.message,
+                                None,
+                            );
+                        }
                     }
-                }
-                LuaTokenKind::TkFloat => {
-                    if let Err(err) = float_token_value(&token) {
-                        context.add_diagnostic(
-                            DiagnosticCode::SyntaxError,
-                            err.range,
-                            err.message,
-                            None,
-                        );
+                    LuaTokenKind::TkFloat => {
+                        if let Err(err) = float_token_value(&token) {
+                            context.add_diagnostic(
+                                DiagnosticCode::SyntaxError,
+                                err.range,
+                                err.message,
+                                None,
+                            );
+                        }
                     }
-                }
-                LuaTokenKind::TkString => {
-                    if let Err(err) = check_normal_string_error(&token) {
-                        context.add_diagnostic(
-                            DiagnosticCode::SyntaxError,
-                            token.text_range(),
-                            err,
-                            None,
-                        );
+                    LuaTokenKind::TkString => {
+                        if let Err(err) = check_normal_string_error(&token) {
+                            context.add_diagnostic(
+                                DiagnosticCode::SyntaxError,
+                                token.text_range(),
+                                err,
+                                None,
+                            );
+                        }
                     }
+                    LuaTokenKind::TkDots => {
+                        check_dots_literal_error(context, semantic_model, &token);
+                    }
+                    _ => {}
                 }
-                LuaTokenKind::TkDots => {
-                    check_dots_literal_error(context, semantic_model, &token);
-                }
-                _ => {}
             }
         }
     }
-
-    Some(())
 }
 
 // this function is like string_token_value, but optimize for performance
