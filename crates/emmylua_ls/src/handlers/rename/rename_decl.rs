@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use emmylua_code_analysis::{LuaCompilation, LuaDeclId, SemanticModel};
-use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaNameToken};
 use lsp_types::Uri;
 
 pub fn rename_decl_references(
@@ -79,9 +78,5 @@ fn get_decl_name_token_lsp_range(
         .get_decl_index()
         .get_decl(&decl_id)?;
     let document = semantic_model.get_document_by_file_id(decl_id.file_id)?;
-    let syntax_id = decl.get_syntax_id();
-    let root = semantic_model.get_root();
-    let node = LuaAst::cast(syntax_id.to_node_from_root(root.syntax())?)?;
-    let token = node.token::<LuaNameToken>()?;
-    document.to_lsp_range(token.get_range())
+    document.to_lsp_range(decl.get_range())
 }
