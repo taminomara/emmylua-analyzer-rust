@@ -4,7 +4,7 @@ use smol_str::SmolStr;
 use crate::{
     check_type_compact,
     db_index::{DbIndex, LuaOperatorMetaMethod, LuaType},
-    LuaInferCache, TypeOps,
+    LuaInferCache, LuaUnionType, TypeOps,
 };
 
 use super::{get_custom_type_operator, infer_expr, InferResult};
@@ -21,6 +21,19 @@ pub fn infer_binary_expr(
     let left_type = left_type?;
     let right_type = right_type?;
 
+    match (&left_type, &right_type) {
+        (LuaType::Union(u), right) => infer_union(db, &u, right, op),
+        (left, LuaType::Union(u)) => infer_union(db, &u, left, op),
+        _ => infer_binary_expr_type(db, left_type, right_type, op),
+    }
+}
+
+fn infer_binary_expr_type(
+    db: &DbIndex,
+    left_type: LuaType,
+    right_type: LuaType,
+    op: BinaryOperator,
+) -> InferResult {
     match op {
         BinaryOperator::OpAdd => infer_binary_expr_add(db, left_type, right_type),
         BinaryOperator::OpSub => infer_binary_expr_sub(db, left_type, right_type),
@@ -46,6 +59,23 @@ pub fn infer_binary_expr(
         _ => Some(left_type),
     }
 }
+
+
+fn infer_union(db: &DbIndex, u: &LuaUnionType, right: &LuaType, op: BinaryOperator) -> InferResult {
+    let mut union_types = vec![];
+    for ty in u.get_types() {
+        let ty = infer_binary_expr_type(db, ty.clone(), right.clone(), op)?;
+        union_types.push(ty);
+    }
+    union_types.dedup();
+
+    match union_types.len() {
+        0 => Some(LuaType::Unknown),
+        1 => Some(union_types[0].clone()),
+        _ => Some(LuaType::Union(LuaUnionType::new(union_types).into())),
+    }
+}
+
 
 fn infer_binary_custom_operator(
     db: &DbIndex,

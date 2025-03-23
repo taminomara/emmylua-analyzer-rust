@@ -538,4 +538,17 @@ return t
                     "#
         ));
     }
+
+    #[test]
+    fn test_issue_247() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+        local a --- @type boolean
+        local b --- @type integer
+        b = 1 + (a and 1 or 0)
+        "#
+        ));
+    }
 }
