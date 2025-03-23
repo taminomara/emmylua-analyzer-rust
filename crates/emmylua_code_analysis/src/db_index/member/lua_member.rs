@@ -8,6 +8,8 @@ use crate::{
     FileId, InFiled,
 };
 
+use super::lua_member_feature::LuaMemberFeature;
+
 #[derive(Debug)]
 pub struct LuaMember {
     owner: LuaMemberOwner,
@@ -258,33 +260,5 @@ impl From<i64> for LuaMemberKey {
 impl From<&str> for LuaMemberKey {
     fn from(name: &str) -> Self {
         LuaMemberKey::Name(name.to_string().into())
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub enum LuaMemberFeature {
-    FileDecl,
-    FirstDefine,
-    MetaDecl,
-}
-
-impl LuaMemberFeature {
-    pub fn is_file_decl(&self) -> bool {
-        matches!(self, LuaMemberFeature::FileDecl)
-    }
-
-    pub fn is_first_define(&self) -> bool {
-        matches!(self, LuaMemberFeature::FirstDefine)
-    }
-
-    pub fn is_meta_decl(&self) -> bool {
-        matches!(self, LuaMemberFeature::MetaDecl)
-    }
-
-    pub fn is_decl(&self) -> bool {
-        matches!(
-            self,
-            LuaMemberFeature::FileDecl | LuaMemberFeature::MetaDecl
-        )
     }
 }

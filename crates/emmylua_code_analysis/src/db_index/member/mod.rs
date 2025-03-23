@@ -1,11 +1,13 @@
 mod lua_member;
+mod lua_member_feature;
 mod lua_member_item;
 mod migrate_members;
 
 use std::collections::{HashMap, HashSet};
 
 use crate::FileId;
-pub use lua_member::{LuaMember, LuaMemberFeature, LuaMemberId, LuaMemberKey, LuaMemberOwner};
+pub use lua_member::{LuaMember, LuaMemberId, LuaMemberKey, LuaMemberOwner};
+pub use lua_member_feature::LuaMemberFeature;
 pub use lua_member_item::LuaMemberIndexItem;
 
 use super::traits::LuaIndex;

@@ -90,9 +90,9 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
     };
 
     let decl_feature = if analyzer.is_meta {
-        LuaMemberFeature::MetaDecl
+        LuaMemberFeature::MetaFieldDecl
     } else {
-        LuaMemberFeature::FileDecl
+        LuaMemberFeature::FileFieldDecl
     };
 
     let member = LuaMember::new(

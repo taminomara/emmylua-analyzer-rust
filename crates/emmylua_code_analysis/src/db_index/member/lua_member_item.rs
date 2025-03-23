@@ -156,23 +156,23 @@ fn resolve_member_property(
     match member_item {
         LuaMemberIndexItem::One(member_id) => Some(LuaSemanticDeclId::Member(*member_id)),
         LuaMemberIndexItem::Many(member_ids) => {
-            let mut resolve_state = MemberPropertyResolveState::MetaOrNone;
+            let mut resolve_state = MemberSemanticDeclResolveState::MetaOrNone;
             let members = member_ids
                 .iter()
                 .map(|id| db.get_member_index().get_member(id))
                 .collect::<Option<Vec<_>>>()?;
             for member in &members {
                 let feature = member.get_feature();
-                if feature.is_first_define() {
-                    resolve_state = MemberPropertyResolveState::FirstDefine;
+                if feature.is_file_define() {
+                    resolve_state = MemberSemanticDeclResolveState::FirstDefine;
                 } else if feature.is_file_decl() {
-                    resolve_state = MemberPropertyResolveState::FileDecl;
+                    resolve_state = MemberSemanticDeclResolveState::FileDecl;
                     break;
                 }
             }
 
             match resolve_state {
-                MemberPropertyResolveState::MetaOrNone => {
+                MemberSemanticDeclResolveState::MetaOrNone => {
                     for member in &members {
                         let feature = member.get_feature();
                         if feature.is_meta_decl() {
@@ -182,17 +182,17 @@ fn resolve_member_property(
 
                     Some(LuaSemanticDeclId::Member(members.first()?.get_id()))
                 }
-                MemberPropertyResolveState::FirstDefine => {
+                MemberSemanticDeclResolveState::FirstDefine => {
                     for member in &members {
                         let feature = member.get_feature();
-                        if feature.is_first_define() {
+                        if feature.is_file_define() {
                             return Some(LuaSemanticDeclId::Member(member.get_id()));
                         }
                     }
 
                     None
                 }
-                MemberPropertyResolveState::FileDecl => {
+                MemberSemanticDeclResolveState::FileDecl => {
                     for member in &members {
                         let feature = member.get_feature();
                         if feature.is_file_decl() {
@@ -208,7 +208,7 @@ fn resolve_member_property(
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum MemberPropertyResolveState {
+enum MemberSemanticDeclResolveState {
     MetaOrNone,
     FirstDefine,
     FileDecl,

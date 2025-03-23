@@ -104,9 +104,9 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
                 let file_id = analyzer.get_file_id();
                 let member_id = LuaMemberId::new(index_expr.get_syntax_id(), file_id);
                 let decl_feature = if analyzer.is_meta {
-                    LuaMemberFeature::MetaDecl
+                    LuaMemberFeature::MetaDefine
                 } else {
-                    LuaMemberFeature::FirstDefine
+                    LuaMemberFeature::FileDefine
                 };
 
                 let member = LuaMember::new(
@@ -258,9 +258,9 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
             let file_id = analyzer.get_file_id();
             let member_id = LuaMemberId::new(index_expr.get_syntax_id(), file_id);
             let decl_feature = if analyzer.is_meta {
-                LuaMemberFeature::MetaDecl
+                LuaMemberFeature::MetaMethodDecl
             } else {
-                LuaMemberFeature::FirstDefine
+                LuaMemberFeature::FileMethodDecl
             };
 
             let member = LuaMember::new(
