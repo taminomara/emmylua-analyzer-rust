@@ -17,4 +17,28 @@ mod test {
         "#,
         );
     }
+
+    // workaround for table
+    #[test]
+    fn test_issue_234() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.def(
+            r#"
+        GG = {} --- @type table
+
+        GG.f = {}
+
+        function GG.fun() end
+
+        function GG.f.fun() end
+        "#,
+        );
+
+        let ty = ws.expr_ty("GG.fun");
+        assert_eq!(
+            format!("{:?}", ty),
+            "Signature(LuaSignatureId { file_id: FileId { id: 20 }, position: 76 })"
+        );
+    }
 }

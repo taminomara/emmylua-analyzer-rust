@@ -14,16 +14,17 @@ use crate::{
         AnalyzeError, LuaAliasCallType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey,
         LuaIntersectionType, LuaObjectType, LuaStringTplType, LuaTupleType, LuaType, LuaUnionType,
     },
-    DiagnosticCode, GenericTpl, LuaAliasCallKind, LuaMultiLineUnion, LuaTypeDeclId, TypeOps,
+    DiagnosticCode, GenericTpl, InFiled, LuaAliasCallKind, LuaMultiLineUnion, LuaTypeDeclId,
+    TypeOps,
 };
 
 use super::{preprocess_description, DocAnalyzer};
 
 pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
-    match node {
+    match &node {
         LuaDocType::Name(name_type) => {
             if let Some(name) = name_type.get_name_text() {
-                return infer_buildin_or_ref_type(analyzer, &name, name_type.get_range());
+                return infer_buildin_or_ref_type(analyzer, &name, name_type.get_range(), &node);
             }
         }
         LuaDocType::Nullable(nullable_type) => {
@@ -99,10 +100,10 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
             return infer_object_type(analyzer, object_type);
         }
         LuaDocType::StrTpl(str_tpl) => {
-            return infer_str_tpl(analyzer, str_tpl);
+            return infer_str_tpl(analyzer, str_tpl, &node);
         }
         LuaDocType::Variadic(variadic_type) => {
-            return infer_variadic_type(analyzer, variadic_type).unwrap_or(LuaType::Unknown);
+            return infer_variadic_type(analyzer, variadic_type, &node).unwrap_or(LuaType::Unknown);
         }
         LuaDocType::MultiLineUnion(multi_union) => {
             return infer_multi_line_union_type(analyzer, multi_union);
@@ -112,13 +113,17 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
     LuaType::Unknown
 }
 
-fn infer_buildin_or_ref_type(analyzer: &mut DocAnalyzer, name: &str, range: TextRange) -> LuaType {
+fn infer_buildin_or_ref_type(
+    analyzer: &mut DocAnalyzer,
+    name: &str,
+    range: TextRange,
+    node: &LuaDocType,
+) -> LuaType {
     let position = range.start();
     match name {
         "unknown" => LuaType::Unknown,
         "nil" | "void" => LuaType::Nil,
         "any" => LuaType::Any,
-        "table" => LuaType::Table,
         "userdata" => LuaType::Userdata,
         "thread" => LuaType::Thread,
         "boolean" | "bool" => LuaType::Boolean,
@@ -129,6 +134,13 @@ fn infer_buildin_or_ref_type(analyzer: &mut DocAnalyzer, name: &str, range: Text
         "self" => LuaType::SelfInfer,
         "global" => LuaType::Global,
         "function" => LuaType::Function,
+        "table" => {
+            if let Some(inst) = infer_special_table_type(analyzer, node) {
+                return inst;
+            }
+
+            LuaType::Table
+        }
         _ => {
             if let Some(tpl_id) = analyzer.generic_index.find_generic(position, name) {
                 return LuaType::TplRef(Arc::new(GenericTpl::new(
@@ -171,7 +183,25 @@ fn infer_buildin_or_ref_type(analyzer: &mut DocAnalyzer, name: &str, range: Text
     }
 }
 
-fn infer_generic_type(analyzer: &mut DocAnalyzer, generic_type: LuaDocGenericType) -> LuaType {
+fn infer_special_table_type(
+    analyzer: &mut DocAnalyzer,
+    table_type: &LuaDocType,
+) -> Option<LuaType> {
+    let parent = table_type.syntax().parent()?;
+    if matches!(
+        parent.kind().into(),
+        LuaSyntaxKind::DocTagAs | LuaSyntaxKind::DocTagType
+    ) {
+        return Some(LuaType::TableConst(InFiled::new(
+            analyzer.file_id,
+            table_type.get_range(),
+        )));
+    }
+
+    None
+}
+
+fn infer_generic_type(analyzer: &mut DocAnalyzer, generic_type: &LuaDocGenericType) -> LuaType {
     if let Some(name_type) = generic_type.get_name_type() {
         if let Some(name) = name_type.get_name_text() {
             if let Some(typ) = infer_special_generic_type(analyzer, &name, &generic_type) {
@@ -246,7 +276,7 @@ fn infer_special_generic_type(
     None
 }
 
-fn infer_binary_type(analyzer: &mut DocAnalyzer, binary_type: LuaDocBinaryType) -> LuaType {
+fn infer_binary_type(analyzer: &mut DocAnalyzer, binary_type: &LuaDocBinaryType) -> LuaType {
     if let Some((left, right)) = binary_type.get_types() {
         let left_type = infer_type(analyzer, left);
         let right_type = infer_type(analyzer, right);
@@ -335,7 +365,7 @@ fn infer_binary_type(analyzer: &mut DocAnalyzer, binary_type: LuaDocBinaryType) 
     LuaType::Unknown
 }
 
-fn infer_unary_type(analyzer: &mut DocAnalyzer, unary_type: LuaDocUnaryType) -> LuaType {
+fn infer_unary_type(analyzer: &mut DocAnalyzer, unary_type: &LuaDocUnaryType) -> LuaType {
     if let Some(base_type) = unary_type.get_type() {
         let base = infer_type(analyzer, base_type);
         if base.is_unknown() {
@@ -362,7 +392,7 @@ fn infer_unary_type(analyzer: &mut DocAnalyzer, unary_type: LuaDocUnaryType) -> 
     LuaType::Unknown
 }
 
-fn infer_func_type(analyzer: &mut DocAnalyzer, func: LuaDocFuncType) -> LuaType {
+fn infer_func_type(analyzer: &mut DocAnalyzer, func: &LuaDocFuncType) -> LuaType {
     let mut params_result = Vec::new();
     for param in func.get_params() {
         let name = if let Some(param) = param.get_name_token() {
@@ -440,7 +470,7 @@ fn get_colon_define(analyzer: &mut DocAnalyzer) -> Option<bool> {
     None
 }
 
-fn infer_object_type(analyzer: &mut DocAnalyzer, object_type: LuaDocObjectType) -> LuaType {
+fn infer_object_type(analyzer: &mut DocAnalyzer, object_type: &LuaDocObjectType) -> LuaType {
     let mut fields = Vec::new();
     for field in object_type.get_fields() {
         let key = if let Some(field_key) = field.get_field_key() {
@@ -476,10 +506,14 @@ fn infer_object_type(analyzer: &mut DocAnalyzer, object_type: LuaDocObjectType) 
     LuaType::Object(LuaObjectType::new(fields).into())
 }
 
-fn infer_str_tpl(analyzer: &mut DocAnalyzer, str_tpl: LuaDocStrTplType) -> LuaType {
+fn infer_str_tpl(
+    analyzer: &mut DocAnalyzer,
+    str_tpl: &LuaDocStrTplType,
+    node: &LuaDocType,
+) -> LuaType {
     let (prefix, tpl_name, suffix) = str_tpl.get_name();
     if let Some(tpl) = tpl_name {
-        let typ = infer_buildin_or_ref_type(analyzer, &tpl, str_tpl.get_range());
+        let typ = infer_buildin_or_ref_type(analyzer, &tpl, str_tpl.get_range(), node);
         if let LuaType::TplRef(tpl) = typ {
             let tpl_id = tpl.get_tpl_id();
             let prefix = prefix.unwrap_or("".to_string());
@@ -496,18 +530,19 @@ fn infer_str_tpl(analyzer: &mut DocAnalyzer, str_tpl: LuaDocStrTplType) -> LuaTy
 
 fn infer_variadic_type(
     analyzer: &mut DocAnalyzer,
-    variadic_type: LuaDocVariadicType,
+    variadic_type: &LuaDocVariadicType,
+    node: &LuaDocType,
 ) -> Option<LuaType> {
     let name_type = variadic_type.get_name_type()?;
     let name = name_type.get_name_text()?;
-    let base = infer_buildin_or_ref_type(analyzer, &name, name_type.get_range());
+    let base = infer_buildin_or_ref_type(analyzer, &name, name_type.get_range(), node);
 
     Some(LuaType::Variadic(base.into()))
 }
 
 fn infer_multi_line_union_type(
     analyzer: &mut DocAnalyzer,
-    multi_union: LuaDocMultiLineUnionType,
+    multi_union: &LuaDocMultiLineUnionType,
 ) -> LuaType {
     let mut union_members = Vec::new();
     for field in multi_union.get_fields() {
