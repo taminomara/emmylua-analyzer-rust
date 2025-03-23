@@ -193,7 +193,12 @@ fn instantiate_union(db: &DbIndex, union: &LuaUnionType, substitutor: &TypeSubst
         new_types.push(t);
     }
 
-    LuaType::Union(LuaUnionType::new(new_types).into())
+    new_types.dedup();
+    match new_types.len() {
+        0 => LuaType::Unknown,
+        1 => new_types[0].clone(),
+        _ => LuaType::Union(LuaUnionType::new(new_types).into()),
+    }
 }
 
 fn instantiate_intersection(

@@ -13,8 +13,7 @@ mod test {
         );
 
         let ty = ws.expr_ty("b");
-        // work around for check
-        let expected = ws.ty("string|string");
+        let expected = ws.ty("string");
         assert_eq!(ty, expected);
     }
 
@@ -71,5 +70,23 @@ mod test {
         local scol, ecol, match, key, time_fmt = fmt:find('(<([^:>]+):?([^>]*)>)')
         "#,
         ));
+    }
+
+    #[test]
+    fn test_issue_244() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        ws.def(
+            r#"
+        ---@return string
+        local function foo()
+            return "ok"
+        end
+        ok, err = pcall(foo)
+        "#,
+        );
+
+        let err_ty = ws.expr_ty("err");
+        let expected = ws.ty("string");
+        assert_eq!(err_ty, expected);
     }
 }
