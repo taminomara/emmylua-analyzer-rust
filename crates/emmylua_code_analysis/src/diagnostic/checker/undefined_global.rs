@@ -92,15 +92,17 @@ fn check_name_expr(
 }
 
 fn check_self_name(semantic_model: &SemanticModel, name_expr: LuaNameExpr) -> Option<()> {
-    let closure_expr = name_expr.ancestors::<LuaClosureExpr>().next()?;
-    let signature_id = LuaSignatureId::from_closure(semantic_model.get_file_id(), &closure_expr);
-    let signature = semantic_model
-        .get_db()
-        .get_signature_index()
-        .get(&signature_id)?;
-    if signature.is_method() {
-        return Some(());
-    } else {
-        None
+    let closure_expr = name_expr.ancestors::<LuaClosureExpr>();
+    for closure_expr in closure_expr {
+        let signature_id =
+            LuaSignatureId::from_closure(semantic_model.get_file_id(), &closure_expr);
+        let signature = semantic_model
+            .get_db()
+            .get_signature_index()
+            .get(&signature_id)?;
+        if signature.is_method() {
+            return Some(());
+        }
     }
+    None
 }
