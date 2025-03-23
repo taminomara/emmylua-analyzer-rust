@@ -7,6 +7,8 @@ mod infer_table;
 mod infer_unary;
 mod test;
 
+use std::ops::Deref;
+
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLiteralToken, LuaTableExpr,
 };
@@ -140,7 +142,6 @@ fn get_custom_type_operator(
     }
 }
 
-/// 获取赋值时所有右值类型或调用时所有参数类型或返回时所有返回值类型
 pub fn infer_multi_value_adjusted_expression_types(
     db: &DbIndex,
     cache: &mut LuaInferCache,
@@ -148,87 +149,40 @@ pub fn infer_multi_value_adjusted_expression_types(
     var_count: Option<usize>,
 ) -> Option<Vec<(LuaType, TextRange)>> {
     let mut value_types = Vec::new();
-    // 处理最后一个表达式是多返回值的情况
     for (idx, expr) in exprs.iter().enumerate() {
-        let is_last = idx == exprs.len() - 1;
         let expr_type = infer_expr(db, cache, expr.clone())?;
         match expr_type {
             LuaType::MuliReturn(multi) => {
-                handle_multi_return(
-                    &mut value_types,
-                    &multi,
-                    is_last,
-                    expr.get_range(),
-                    var_count,
-                )?;
+                if let Some(var_count) = var_count {
+                    if idx < var_count {
+                        for i in idx..var_count {
+                            if let Some(typ) = multi.get_type(i - idx) {
+                                value_types.push((typ.clone(), expr.get_range()));
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    match multi.deref() {
+                        LuaMultiReturn::Base(base) => {
+                            value_types.push((base.clone(), expr.get_range()));
+                        }
+                        LuaMultiReturn::Multi(vecs) => {
+                            for typ in vecs {
+                                value_types.push((typ.clone(), expr.get_range()));
+                            }
+                        }
+                    }
+                }
+
+                break;
             }
-            _ => {
-                handle_type(
-                    &mut value_types,
-                    &expr_type,
-                    is_last,
-                    expr.get_range(),
-                    var_count,
-                )?;
-            }
+            _ => value_types.push((expr_type.clone(), expr.get_range())),
         }
     }
 
     Some(value_types)
-}
-
-fn handle_multi_return(
-    value_types: &mut Vec<(LuaType, TextRange)>,
-    multi: &LuaMultiReturn,
-    is_last: bool,
-    range: TextRange,
-    var_count: Option<usize>,
-) -> Option<()> {
-    match multi {
-        LuaMultiReturn::Multi(types) => {
-            if is_last {
-                // 展开所有类型
-                for (idx, typ) in types.iter().enumerate() {
-                    let is_last_in_loop = idx == types.len() - 1;
-                    handle_type(value_types, typ, is_last_in_loop, range, var_count)?;
-                }
-            } else if let Some(first) = types.first() {
-                // 只处理第一个类型
-                handle_type(value_types, first, is_last, range, var_count)?;
-            }
-        }
-        LuaMultiReturn::Base(typ) => {
-            let len = value_types.len();
-            if let Some(var_count) = var_count {
-                if len < var_count {
-                    for _ in len..var_count {
-                        value_types.push((typ.clone(), range));
-                    }
-                }
-            } else {
-                handle_type(value_types, typ, is_last, range, var_count)?;
-            }
-        }
-    }
-    Some(())
-}
-
-fn handle_type(
-    value_types: &mut Vec<(LuaType, TextRange)>,
-    typ: &LuaType,
-    is_last: bool,
-    range: TextRange,
-    var_count: Option<usize>,
-) -> Option<()> {
-    match typ {
-        LuaType::MuliReturn(multi) => {
-            handle_multi_return(value_types, &multi, is_last, range, var_count)?;
-        }
-        _ => {
-            value_types.push((typ.clone(), range));
-        }
-    }
-    Some(())
 }
 
 /// 从右值推断左值已绑定的类型

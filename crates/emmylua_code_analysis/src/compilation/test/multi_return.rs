@@ -60,4 +60,16 @@ mod test {
         assert_eq!(a_ty, a_expected);
         assert_eq!(b_ty, b_expected);
     }
+
+    #[test]
+    fn test_issue_237() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            crate::DiagnosticCode::UnbalancedAssignments,
+            r#"
+        local scol, ecol, match, key, time_fmt = fmt:find('(<([^:>]+):?([^>]*)>)')
+        "#,
+        ));
+    }
 }

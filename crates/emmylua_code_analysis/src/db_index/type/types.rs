@@ -766,6 +766,8 @@ impl LuaMultiReturn {
                     let offset = idx - last;
                     if let LuaType::MuliReturn(multi) = ty {
                         multi.get_type(offset)
+                    } else if let LuaType::Variadic(t) = ty {
+                        Some(t)
                     } else if offset == 0 {
                         Some(ty)
                     } else {

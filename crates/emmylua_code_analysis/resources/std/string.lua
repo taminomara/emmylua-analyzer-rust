@@ -75,12 +75,12 @@ function string.dump(func, strip) end
 ---
 --- If the pattern has captures, then in a successful match the captured values
 --- are also returned, after the two indices.
----@overload fun(s:string, pattern:string):integer, integer, string
+---@overload fun(s:string, pattern:string):integer, integer, string...
 ---@param s string
 ---@param pattern string
 ---@param init? integer
 ---@param plain? boolean
----@return integer, integer, string
+---@return integer, integer, string...
 function string.find(s, pattern, init, plain) end
 
 ---
