@@ -154,6 +154,16 @@ fn broadcast_up(
             let block = else_if_clause_stat.get_block()?;
             flow_chain.add_type_assert(path, type_assert, block.get_range(), actual_range);
         }
+        LuaAst::LuaParenExpr(paren_expr) => {
+            broadcast_up(
+                db,
+                flow_chain,
+                path,
+                paren_expr.get_parent::<LuaAst>()?,
+                LuaAst::LuaParenExpr(paren_expr),
+                type_assert,
+            );
+        }
         LuaAst::LuaBinaryExpr(binary_expr) => {
             let op = binary_expr.get_op_token()?;
             match op.get_op() {

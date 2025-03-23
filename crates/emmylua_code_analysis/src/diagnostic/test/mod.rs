@@ -9,6 +9,7 @@ mod incomplete_signature_doc_test;
 mod inject_field_test;
 mod missing_fields_test;
 mod missing_parameter_test;
+mod need_check_nil_test;
 mod param_type_check_test;
 mod redefined_local_test;
 mod redundant_parameter_test;
