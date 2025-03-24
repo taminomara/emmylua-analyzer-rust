@@ -55,7 +55,7 @@ function io.input(file) end
 ---@return fun():any
 function io.lines(filename, ...) end
 
----@alias OpenMode "r" | "w" | "a" | "r+" | "w+" | "a+" | "rb" | "wb" | "ab" | "rb+" | "wb+" | "ab+"
+---@alias iolib.OpenMode "r" | "w" | "a" | "r+" | "w+" | "a+" | "rb" | "wb" | "ab" | "rb+" | "wb+" | "ab+"
 ---
 --- This function opens a file, in the mode specified in the string `mode`.  In
 --- case of success, it returns a new file handle. The `mode` string can be
@@ -72,7 +72,7 @@ function io.lines(filename, ...) end
 --- The `mode` string can also have a '`b`' at the end, which is needed in
 --- some systems to open the file in binary mode.
 ---@param filename string
----@param mode? OpenMode
+---@param mode? iolib.OpenMode
 ---@return file?
 ---@return string? err
 function io.open(filename, mode) end
@@ -96,7 +96,11 @@ function io.popen(prog, mode) end
 
 ---
 --- Equivalent to `io.input():read(···)`.
-function io.read(...) end
+--- @param format '*n' | '*a' | '*l' | integer
+--- @return string | integer | nil
+--- @overload fun(format:'*n'): integer
+--- @overload fun(format:'*a' | '*l' | integer): string | nil
+function io.read(format) end
 
 ---
 --- In case of success, returns a handle for a temporary file. This file is
@@ -123,6 +127,7 @@ function io.write(...) end
 ---@class file
 local file = {}
 
+--- @version > 5.2
 ---
 --- Closes `file`. Note that files are automatically closed when their
 --- handles are garbage collected, but that takes an unpredictable amount of
@@ -130,10 +135,24 @@ local file = {}
 ---
 --- When closing a file handle created with `io.popen`, `file:close` returns the
 --- same values returned by `os.execute`.
+--- @return true|nil
+--- @return 'exit'|'signal'
+--- @return integer
+function file:close() end
+
+--- @version 5.1, JIT
+---
+--- Closes `file`. Note that files are automatically closed when their
+--- handles are garbage collected, but that takes an unpredictable amount of
+--- time to happen.
+--- @return true|nil
+--- @return string? err
 function file:close() end
 
 ---
 --- Saves any written data to `file`.
+--- @return true|nil
+--- @return string? err
 function file:flush() end
 
 ---
@@ -147,8 +166,10 @@ function file:flush() end
 ---
 --- In case of errors this function raises the error, instead of returning an
 --- error code.
----@return fun():any
+---@return fun():string | integer | nil
 function file:lines(...) end
+
+-- TODO: file:read() can accept vararg params and return varargs
 
 ---
 --- Reads the file `file`, according to the given formats, which specify
@@ -174,7 +195,11 @@ function file:lines(...) end
 --- *number*: reads a string with up to this number of bytes, returning **nil**
 --- on end of file. If `number` is zero, it reads nothing and returns an
 --- empty string, or **nil** on end of file.
-function file:read(...) end
+--- @param format '*n' | '*a' | '*l' | integer
+--- @return string | integer | nil
+--- @overload fun(format:'*n'): integer
+--- @overload fun(format:'*a' | '*l' | integer): string | nil
+function file:read(format) end
 
 ---
 --- Sets and gets the file position, measured from the beginning of the
