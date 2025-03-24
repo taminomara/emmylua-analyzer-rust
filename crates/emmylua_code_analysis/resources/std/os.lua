@@ -193,7 +193,7 @@ function os.setlocale(locale, category) end
 --- documented in the `os.date` function, so that they represent the same time
 --- as before the call but with values inside their valid ranges.
 ---@param date? std.osdateparam
----@return number
+---@return integer
 function os.time(date) end
 
 ---

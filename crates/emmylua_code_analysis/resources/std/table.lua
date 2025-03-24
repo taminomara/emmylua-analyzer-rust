@@ -98,10 +98,9 @@ function table.remove(list, pos) end
 ---
 --- The sort algorithm is not stable: elements considered equal by the given
 --- order may have their relative positions changed by the sort.
----@overload fun(list:table):integer
 ---@generic V
 ---@param list V[]
----@param comp fun(a:V, b:V):boolean
+---@param comp? fun(a:V, b:V):boolean
 ---@return integer
 function table.sort(list, comp) end
 
