@@ -18,6 +18,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
+use super::RegisterCapabilities;
+
 pub async fn on_rename_handler(
     context: ServerContextSnapshot,
     params: RenameParams,
@@ -150,13 +152,13 @@ fn rename_references(
     })
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.rename_provider = Some(OneOf::Right(RenameOptions {
-        prepare_provider: Some(true),
-        work_done_progress_options: Default::default(),
-    }));
-    Some(())
+pub struct RenameCapabilities;
+
+impl RegisterCapabilities for RenameCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.rename_provider = Some(OneOf::Right(RenameOptions {
+            prepare_provider: Some(true),
+            work_done_progress_options: Default::default(),
+        }));
+    }
 }

@@ -9,6 +9,8 @@ use lsp_types::{
 };
 use tokio_util::sync::CancellationToken;
 
+use super::RegisterCapabilities;
+
 pub async fn on_document_link_handler(
     context: ServerContextSnapshot,
     params: DocumentLinkParams,
@@ -35,13 +37,13 @@ pub async fn on_document_link_resolve_handler(
     params
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.document_link_provider = Some(DocumentLinkOptions {
-        resolve_provider: Some(false),
-        work_done_progress_options: Default::default(),
-    });
-    Some(())
+pub struct DocumentLinkCapabilities;
+
+impl RegisterCapabilities for DocumentLinkCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.document_link_provider = Some(DocumentLinkOptions {
+            resolve_provider: Some(false),
+            work_done_progress_options: Default::default(),
+        });
+    }
 }

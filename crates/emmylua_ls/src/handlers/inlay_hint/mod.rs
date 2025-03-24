@@ -9,6 +9,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
+use super::RegisterCapabilities;
+
 pub async fn on_inlay_hint_handler(
     context: ServerContextSnapshot,
     params: InlayHintParams,
@@ -30,15 +32,15 @@ pub async fn on_resolve_inlay_hint(
     inlay_hint
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.inlay_hint_provider = Some(OneOf::Right(
-        InlayHintServerCapabilities::Options(InlayHintOptions {
-            resolve_provider: Some(false),
-            work_done_progress_options: Default::default(),
-        }),
-    ));
-    Some(())
+pub struct InlayHintCapabilities;
+
+impl RegisterCapabilities for InlayHintCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.inlay_hint_provider = Some(OneOf::Right(
+            InlayHintServerCapabilities::Options(InlayHintOptions {
+                resolve_provider: Some(false),
+                work_done_progress_options: Default::default(),
+            }),
+        ));
+    }
 }

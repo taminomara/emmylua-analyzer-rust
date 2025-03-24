@@ -6,6 +6,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
+use super::RegisterCapabilities;
+
 pub async fn on_inline_values_handler(
     context: ServerContextSnapshot,
     params: InlineValueParams,
@@ -21,10 +23,10 @@ pub async fn on_inline_values_handler(
     build_inline_values(&mut semantic_model, stop_position)
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.inline_value_provider = Some(OneOf::Left(true));
-    Some(())
+pub struct InlineValuesCapabilities;
+
+impl RegisterCapabilities for InlineValuesCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.inline_value_provider = Some(OneOf::Left(true));
+    }
 }

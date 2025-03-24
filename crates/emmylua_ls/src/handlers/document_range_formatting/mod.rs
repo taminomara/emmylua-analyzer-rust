@@ -7,6 +7,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
+use super::RegisterCapabilities;
+
 pub async fn on_range_formatting_handler(
     context: ServerContextSnapshot,
     params: DocumentRangeFormattingParams,
@@ -55,11 +57,10 @@ pub async fn on_range_formatting_handler(
     Some(vec![text_edit])
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.document_range_formatting_provider = Some(OneOf::Left(true));
+pub struct DocumentRangeFormatting;
 
-    Some(())
+impl RegisterCapabilities for DocumentRangeFormatting {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.document_range_formatting_provider = Some(OneOf::Left(true));
+    }
 }

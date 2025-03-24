@@ -18,6 +18,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
+use super::RegisterCapabilities;
+
 pub async fn on_hover(
     context: ServerContextSnapshot,
     params: HoverParams,
@@ -71,10 +73,10 @@ pub async fn on_hover(
     }
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.hover_provider = Some(HoverProviderCapability::Simple(true));
-    Some(())
+pub struct HoverCapabilities;
+
+impl RegisterCapabilities for HoverCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.hover_provider = Some(HoverProviderCapability::Simple(true));
+    }
 }

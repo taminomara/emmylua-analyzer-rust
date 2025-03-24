@@ -10,6 +10,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
+use super::RegisterCapabilities;
+
 pub async fn on_document_highlight_handler(
     context: ServerContextSnapshot,
     params: DocumentHighlightParams,
@@ -47,10 +49,10 @@ pub async fn on_document_highlight_handler(
     highlight_tokens(&mut semantic_model, token)
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.document_highlight_provider = Some(OneOf::Left(true));
-    Some(())
+pub struct DocumentHighlightCapabilities;
+
+impl RegisterCapabilities for DocumentHighlightCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.document_highlight_provider = Some(OneOf::Left(true));
+    }
 }

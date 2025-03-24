@@ -23,6 +23,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
+use super::RegisterCapabilities;
+
 pub async fn on_folding_range_handler(
     context: ServerContextSnapshot,
     params: FoldingRangeParams,
@@ -81,12 +83,13 @@ fn build_folding_ranges(builder: &mut FoldingRangeBuilder, emmyrc: &Emmyrc) {
     build_imports_fold_range(builder, root, emmyrc);
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.folding_range_provider = Some(FoldingRangeProviderCapability::Simple(true));
-    Some(())
+pub struct FoldRangeCapabilities;
+
+impl RegisterCapabilities for FoldRangeCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.folding_range_provider =
+            Some(FoldingRangeProviderCapability::Simple(true));
+    }
 }
 
 fn get_block_collapsed_range(block: LuaBlock) -> TextRange {

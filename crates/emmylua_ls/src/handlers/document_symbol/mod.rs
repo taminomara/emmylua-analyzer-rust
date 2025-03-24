@@ -19,6 +19,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
+use super::RegisterCapabilities;
+
 pub async fn on_document_symbol(
     context: ServerContextSnapshot,
     params: DocumentSymbolParams,
@@ -96,13 +98,13 @@ fn build_child_document_symbols(
     Some(())
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.document_symbol_provider = Some(OneOf::Right(DocumentSymbolOptions {
-        label: Some("EmmyLua".into()),
-        work_done_progress_options: Default::default(),
-    }));
-    Some(())
+pub struct DocumentSymbolCapabilities;
+
+impl RegisterCapabilities for DocumentSymbolCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.document_symbol_provider = Some(OneOf::Right(DocumentSymbolOptions {
+            label: Some("EmmyLua".into()),
+            work_done_progress_options: Default::default(),
+        }));
+    }
 }

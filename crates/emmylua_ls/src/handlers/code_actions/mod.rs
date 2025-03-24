@@ -10,6 +10,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
+use super::RegisterCapabilities;
+
 #[allow(unused_variables)]
 pub async fn on_code_action_handler(
     context: ServerContextSnapshot,
@@ -25,10 +27,10 @@ pub async fn on_code_action_handler(
     build_actions(&mut semantic_model, diagnostics)
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.code_action_provider = Some(CodeActionProviderCapability::Simple(true));
-    Some(())
+pub struct CodeActionsCapabilities;
+
+impl RegisterCapabilities for CodeActionsCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.code_action_provider = Some(CodeActionProviderCapability::Simple(true));
+    }
 }

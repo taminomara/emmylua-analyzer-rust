@@ -34,37 +34,88 @@ pub use notification_handler::on_notification_handler;
 pub use request_handler::on_req_handler;
 pub use response_handler::on_response_handler;
 
+pub trait RegisterCapabilities {
+    fn register_capabilities(
+        server_capabilities: &mut ServerCapabilities,
+        client_capabilities: &ClientCapabilities,
+    );
+}
+
+fn register<T: RegisterCapabilities>(
+    server_capabilities: &mut ServerCapabilities,
+    client_capabilities: &ClientCapabilities,
+) {
+    T::register_capabilities(server_capabilities, client_capabilities);
+}
+
 pub fn server_capabilities(client_capabilities: &ClientCapabilities) -> ServerCapabilities {
     let mut server_capabilities = ServerCapabilities::default();
-    macro_rules! capabilities {
-        ($module:ident) => {
-            $module::register_capabilities(&mut server_capabilities, &client_capabilities);
-        };
-    }
 
-    capabilities!(text_document);
-    capabilities!(document_symbol);
-    capabilities!(document_color);
-    capabilities!(document_link);
-    capabilities!(document_selection_range);
-    capabilities!(document_highlight);
-    capabilities!(document_formatting);
-    capabilities!(document_range_formatting);
-    capabilities!(completion);
-    capabilities!(inlay_hint);
-    capabilities!(definition);
-    capabilities!(references);
-    capabilities!(rename);
-    capabilities!(code_lens);
-    capabilities!(signature_helper);
-    capabilities!(hover);
-    capabilities!(fold_range);
-    capabilities!(semantic_token);
-    capabilities!(command);
-    capabilities!(code_actions);
-    capabilities!(inline_values);
-    capabilities!(workspace_symbol);
-    capabilities!(configuration);
+    register::<text_document::TextDocumentCapabilities>(
+        &mut server_capabilities,
+        client_capabilities,
+    );
+    register::<document_symbol::DocumentSymbolCapabilities>(
+        &mut server_capabilities,
+        client_capabilities,
+    );
+    register::<document_color::DocumentColorCapabilities>(
+        &mut server_capabilities,
+        client_capabilities,
+    );
+    register::<document_link::DocumentLinkCapabilities>(
+        &mut server_capabilities,
+        client_capabilities,
+    );
+    register::<document_selection_range::DocumentSelectionRangeCapabilities>(
+        &mut server_capabilities,
+        client_capabilities,
+    );
+    register::<document_highlight::DocumentHighlightCapabilities>(
+        &mut server_capabilities,
+        client_capabilities,
+    );
+    register::<document_formatting::DocumentFormattingCapabilities>(
+        &mut server_capabilities,
+        client_capabilities,
+    );
+    register::<document_range_formatting::DocumentRangeFormatting>(
+        &mut server_capabilities,
+        client_capabilities,
+    );
+    register::<completion::CompletionCapabilities>(&mut server_capabilities, client_capabilities);
+    register::<inlay_hint::InlayHintCapabilities>(&mut server_capabilities, client_capabilities);
+    register::<definition::DefinitionCapabilities>(&mut server_capabilities, client_capabilities);
+    register::<references::ReferencesCapabilities>(&mut server_capabilities, client_capabilities);
+    register::<rename::RenameCapabilities>(&mut server_capabilities, client_capabilities);
+    register::<code_lens::CodeLensCapabilities>(&mut server_capabilities, client_capabilities);
+    register::<signature_helper::SignatureHelperCapabilities>(
+        &mut server_capabilities,
+        client_capabilities,
+    );
+    register::<hover::HoverCapabilities>(&mut server_capabilities, client_capabilities);
+    register::<fold_range::FoldRangeCapabilities>(&mut server_capabilities, client_capabilities);
+    register::<semantic_token::SemanticTokenCapabilities>(
+        &mut server_capabilities,
+        client_capabilities,
+    );
+    register::<command::CommandCapabilities>(&mut server_capabilities, client_capabilities);
+    register::<code_actions::CodeActionsCapabilities>(
+        &mut server_capabilities,
+        client_capabilities,
+    );
+    register::<inline_values::InlineValuesCapabilities>(
+        &mut server_capabilities,
+        client_capabilities,
+    );
+    register::<workspace_symbol::WorkspaceSymbolCapabilities>(
+        &mut server_capabilities,
+        client_capabilities,
+    );
+    register::<configuration::ConfigurationCapabilities>(
+        &mut server_capabilities,
+        client_capabilities,
+    );
 
     server_capabilities
 }

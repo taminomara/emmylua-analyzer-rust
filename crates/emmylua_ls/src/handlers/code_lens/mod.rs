@@ -12,6 +12,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
+use super::RegisterCapabilities;
+
 pub async fn on_code_lens_handler(
     context: ServerContextSnapshot,
     params: CodeLensParams,
@@ -52,12 +54,12 @@ pub enum CodeLensData {
     DeclId(LuaDeclId),
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.code_lens_provider = Some(CodeLensOptions {
-        resolve_provider: Some(true),
-    });
-    Some(())
+pub struct CodeLensCapabilities;
+
+impl RegisterCapabilities for CodeLensCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.code_lens_provider = Some(CodeLensOptions {
+            resolve_provider: Some(true),
+        });
+    }
 }

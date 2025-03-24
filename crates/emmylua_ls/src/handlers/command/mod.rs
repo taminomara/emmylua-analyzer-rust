@@ -10,6 +10,8 @@ use lsp_types::{
 use serde_json::Value;
 use tokio_util::sync::CancellationToken;
 
+use super::RegisterCapabilities;
+
 pub async fn on_execute_command_handler(
     context: ServerContextSnapshot,
     params: ExecuteCommandParams,
@@ -21,13 +23,13 @@ pub async fn on_execute_command_handler(
     Some(Value::Null)
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.execute_command_provider = Some(ExecuteCommandOptions {
-        commands: get_commands_list(),
-        ..Default::default()
-    });
-    Some(())
+pub struct CommandCapabilities;
+
+impl RegisterCapabilities for CommandCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.execute_command_provider = Some(ExecuteCommandOptions {
+            commands: get_commands_list(),
+            ..Default::default()
+        });
+    }
 }

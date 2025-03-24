@@ -2,6 +2,8 @@ use lsp_types::{ClientCapabilities, DidChangeConfigurationParams, ServerCapabili
 
 use crate::{context::ServerContextSnapshot, handlers::initialized::get_client_config};
 
+use super::RegisterCapabilities;
+
 pub async fn on_did_change_configuration(
     context: ServerContextSnapshot,
     params: DidChangeConfigurationParams,
@@ -24,6 +26,8 @@ pub async fn on_did_change_configuration(
     Some(())
 }
 
-pub fn register_capabilities(_: &mut ServerCapabilities, _: &ClientCapabilities) -> Option<()> {
-    Some(())
+pub struct ConfigurationCapabilities;
+
+impl RegisterCapabilities for ConfigurationCapabilities {
+    fn register_capabilities(_: &mut ServerCapabilities, _: &ClientCapabilities) {}
 }
