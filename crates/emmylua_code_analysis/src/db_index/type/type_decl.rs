@@ -21,7 +21,8 @@ flags! {
         Key,
         Partial,
         Exact,
-        Meta
+        Meta,
+        Constructor,
     }
 }
 
