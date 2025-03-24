@@ -1,20 +1,23 @@
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr, LuaLocalStat};
 
-use crate::{DiagnosticCode, SemanticModel};
+use crate::{
+    diagnostic::checker::{Checker, DiagnosticContext},
+    DiagnosticCode, SemanticModel,
+};
 
-use super::DiagnosticContext;
+pub struct NonLiteralExpressionsInAssertChecker;
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::NonLiteralExpressionsInAssert];
+impl Checker for NonLiteralExpressionsInAssertChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::NonLiteralExpressionsInAssert];
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
-    for call_expr in root.descendants::<LuaCallExpr>() {
-        if call_expr.is_assert() {
-            check_assert_rule(context, semantic_model, call_expr);
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+        for call_expr in root.descendants::<LuaCallExpr>() {
+            if call_expr.is_assert() {
+                check_assert_rule(context, semantic_model, call_expr);
+            }
         }
     }
-
-    Some(())
 }
 
 fn check_assert_rule(
