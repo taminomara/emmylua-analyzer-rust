@@ -80,6 +80,7 @@ function os.date(format, time) end
 ---@return number
 function os.difftime(t2, t1) end
 
+--- @version > 5.2
 ---
 --- This function is equivalent to the C function `system`. It passes `command`
 --- to be executed by an operating system shell. Its first result is **true** if
@@ -93,11 +94,24 @@ function os.difftime(t2, t1) end
 ---
 --- When called without a command, `os.execute` returns a boolean that is true
 --- if a shell is available.
----@overload fun():string|number
----@param command string
----@return string|number
+--- @overload fun():boolean
+--- @param command string
+--- @return true|nil
+--- @return 'exit'|'signal'
+--- @return integer
 function os.execute(command) end
 
+--- @version 5.1, JIT
+---
+--- This function is equivalent to the C function system. It passes command to
+--- be executed by an operating system shell. It returns a status code, which is
+--- system-dependent. If command is absent, then it returns nonzero if a shell
+--- is available and zero otherwise.
+--- @param command string
+--- @return integer
+function os.execute(command) end
+
+--- @version > 5.2, JIT
 ---
 --- Calls the ISO C function `exit` to terminate the host program. If `code` is
 --- **true**, the returned status is `EXIT_SUCCESS`; if `code` is **false**, the
@@ -106,11 +120,18 @@ function os.execute(command) end
 ---
 --- If the optional second argument `close` is true, closes the Lua state before
 --- exiting.
----@overload fun():number
----@param code number
----@param close boolean
----@return number
+---@param code integer
+---@param close? boolean
+---@return integer
 function os.exit(code, close) end
+
+--- @version 5.1
+---
+--- Calls the C function exit, with an optional `code`, to terminate the host
+--- program. The default value for `code` is the success code.
+---@param code integer
+---@return integer
+function os.exit(code) end
 
 ---
 --- Returns the value of the process environment variable `varname`, or
@@ -124,7 +145,8 @@ function os.getenv(varname) end
 --- If this function fails, it returns **nil**, plus a string describing the
 --- error and the error code. Otherwise, it returns true.
 ---@param filename string
----@return nil|string
+---@return true|nil result
+---@return string err
 function os.remove(filename) end
 
 ---
@@ -133,7 +155,8 @@ function os.remove(filename) end
 --- code. Otherwise, it returns true.
 ---@param oldname string
 ---@param newname string
----@return nil|string
+---@return true|nil result
+---@return string err
 function os.rename(oldname, newname) end
 
 ---

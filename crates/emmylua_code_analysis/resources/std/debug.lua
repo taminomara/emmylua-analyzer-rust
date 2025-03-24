@@ -45,7 +45,7 @@ function debug.getfenv(o) end
 ---@return thread
 function debug.gethook(thread) end
 
----@class DebugInfo
+---@class debuglib.DebugInfo
 ---@field name            string
 ---@field namewhat        string
 ---@field source          string
@@ -63,7 +63,7 @@ function debug.gethook(thread) end
 ---@field ntransfer       integer
 ---@field activelines     table
 
----@alias Infowhat
+---@alias debuglib.Infowhat
 ---|+"n"     # `name` and `namewhat`
 ---|+"S"     # `source`, `short_src`, `linedefined`, `lastlinedefined`, and `what`
 ---|+"l"     # `currentline`
@@ -93,11 +93,11 @@ function debug.gethook(thread) end
 --- with a name for the current function, if a reasonable name can be found,
 --- and the expression `debug.getinfo(print)` returns a table with all available
 --- information about the `print` function.
----@overload fun(f: int|function, what?: Infowhat):DebugInfo
+---@overload fun(f: int|function, what?: debuglib.Infowhat):debuglib.DebugInfo
 ---@param thread thread
 ---@param f function
----@param what? Infowhat
----@return DebugInfo
+---@param what? debuglib.Infowhat
+---@return debuglib.DebugInfo
 function debug.getinfo(thread, f, what) end
 
 ---
@@ -181,7 +181,7 @@ function debug.setcstacklimit(limit) end
 ---@return T object
 function debug.setfenv(object, env) end
 
----@alias Hookmask
+---@alias debuglib.Hookmask
 ---|+"c" # Calls hook when Lua calls a function.
 ---|+"r" # Calls hook when Lua returns from a function.
 ---|+"l" # Calls hook when Lua enters a new line of code.
@@ -207,10 +207,10 @@ function debug.setfenv(object, env) end
 --- call `getinfo` with level 2 to get more information about the running
 --- function (level 0 is the `getinfo` function, and level 1 is the hook
 --- function)
----@overload fun(hook:(fun():any), mask:Hookmask)
+---@overload fun(hook:(fun():any), mask:debuglib.Hookmask)
 ---@param thread thread
 ---@param hook fun():any
----@param mask? Hookmask
+---@param mask? debuglib.Hookmask
 ---@param count? integer
 function debug.sethook(thread, hook, mask, count) end
 
