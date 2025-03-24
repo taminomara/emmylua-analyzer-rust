@@ -44,44 +44,48 @@ use super::{
     DiagnosticCode,
 };
 
-pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    macro_rules! check {
-        ($module:ident) => {
-            if $module::CODES
-                .iter()
-                .any(|code| context.is_checker_enable_by_code(code))
-            {
-                $module::check(context, semantic_model);
-            }
-        };
-    }
+pub trait Checker {
+    const CODES: &[DiagnosticCode];
 
-    check!(syntax_error);
-    check!(analyze_error);
-    check!(unused);
-    check!(deprecated);
-    check!(undefined_global);
-    check!(unnecessary_assert);
-    check!(access_invisible);
-    check!(local_const_reassign);
-    check!(discard_returns);
-    check!(await_in_sync);
-    check!(param_type_check);
-    check!(need_check_nil);
-    check!(code_style_check);
-    check!(return_type_mismatch);
-    check!(undefined_doc_param);
-    check!(redefined_local);
-    check!(missing_fields);
-    check!(check_field);
-    check!(circle_doc_class);
-    check!(incomplete_signature_doc);
-    check!(assign_type_mismatch);
-    check!(duplicate_require);
-    check!(duplicate_type);
-    check!(check_return_count);
-    check!(unbalanced_assignments);
-    check!(check_param_count);
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel);
+}
+
+fn run_check<T: Checker>(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+    if T::CODES
+        .iter()
+        .any(|code| context.is_checker_enable_by_code(code))
+    {
+        T::check(context, semantic_model);
+    }
+}
+
+pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
+    run_check::<syntax_error::SyntaxErrorChecker>(context, semantic_model);
+    run_check::<analyze_error::AnalyzeErrorChecker>(context, semantic_model);
+    run_check::<unused::UnusedChecker>(context, semantic_model);
+    run_check::<deprecated::DeprecatedChecker>(context, semantic_model);
+    run_check::<undefined_global::UndefinedGlobalChecker>(context, semantic_model);
+    run_check::<unnecessary_assert::UnnecessaryAssertChecker>(context, semantic_model);
+    run_check::<access_invisible::AccessInvisibleChecker>(context, semantic_model);
+    run_check::<local_const_reassign::LocalConstReassignChecker>(context, semantic_model);
+    run_check::<discard_returns::DiscardReturnsChecker>(context, semantic_model);
+    run_check::<await_in_sync::AwaitInSyncChecker>(context, semantic_model);
+    run_check::<param_type_check::ParamTypeCheckChecker>(context, semantic_model);
+    run_check::<need_check_nil::NeedCheckNilChecker>(context, semantic_model);
+    run_check::<code_style_check::CodeStyleCheckChecker>(context, semantic_model);
+    run_check::<return_type_mismatch::ReturnTypeMismatch>(context, semantic_model);
+    run_check::<undefined_doc_param::UndefinedDocParamChecker>(context, semantic_model);
+    run_check::<redefined_local::RedefinedLocalChecker>(context, semantic_model);
+    run_check::<missing_fields::MissingFieldsChecker>(context, semantic_model);
+    run_check::<check_field::CheckFieldChecker>(context, semantic_model);
+    run_check::<circle_doc_class::CircleDocClassChecker>(context, semantic_model);
+    run_check::<incomplete_signature_doc::IncompleteSignatureDocChecker>(context, semantic_model);
+    run_check::<assign_type_mismatch::AssignTypeMismatchChecker>(context, semantic_model);
+    run_check::<duplicate_require::DuplicateRequireChecker>(context, semantic_model);
+    run_check::<duplicate_type::DuplicateTypeChecker>(context, semantic_model);
+    run_check::<check_return_count::CheckReturnCount>(context, semantic_model);
+    run_check::<unbalanced_assignments::UnbalancedAssignmentsChecker>(context, semantic_model);
+    run_check::<check_param_count::CheckParamCountChecker>(context, semantic_model);
 
     check_file_code_style(context, semantic_model);
     Some(())

@@ -1,24 +1,25 @@
 use crate::{DiagnosticCode, SemanticModel};
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[
-    DiagnosticCode::TypeNotFound,
-    DiagnosticCode::AnnotationUsageError,
-];
+pub struct AnalyzeErrorChecker;
 
-pub fn check(context: &mut DiagnosticContext, _: &SemanticModel) -> Option<()> {
-    let db = context.get_db();
-    let file_id = context.get_file_id();
-    let diagnostic_index = db.get_diagnostic_index();
-    let errors: Vec<_> = diagnostic_index
-        .get_diagnostics(&file_id)?
-        .iter()
-        .map(|e| e.clone())
-        .collect();
-    for error in errors {
-        context.add_diagnostic(error.kind, error.range, error.message, None);
+impl Checker for AnalyzeErrorChecker {
+    const CODES: &[DiagnosticCode] = &[
+        DiagnosticCode::TypeNotFound,
+        DiagnosticCode::AnnotationUsageError,
+    ];
+
+    fn check(context: &mut DiagnosticContext, _: &SemanticModel) {
+        let db = context.get_db();
+        let file_id = context.get_file_id();
+        let diagnostic_index = db.get_diagnostic_index();
+        let Some(diagnostics) = diagnostic_index.get_diagnostics(&file_id) else {
+            return;
+        };
+        let errors = diagnostics.to_vec();
+        for error in errors {
+            context.add_diagnostic(error.kind, error.range, error.message, None);
+        }
     }
-
-    Some(())
 }

@@ -6,25 +6,27 @@ use crate::{
     SemanticModel,
 };
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::AccessInvisible];
+pub struct AccessInvisibleChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
-    for node in root.descendants::<LuaAst>() {
-        match node {
-            LuaAst::LuaNameExpr(name_expr) => {
-                check_name_expr(context, semantic_model, name_expr);
+impl Checker for AccessInvisibleChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::AccessInvisible];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+        for node in root.descendants::<LuaAst>() {
+            match node {
+                LuaAst::LuaNameExpr(name_expr) => {
+                    check_name_expr(context, semantic_model, name_expr);
+                }
+                LuaAst::LuaIndexExpr(index_expr) => {
+                    check_index_expr(context, semantic_model, index_expr);
+                }
+                _ => {}
             }
-            LuaAst::LuaIndexExpr(index_expr) => {
-                check_index_expr(context, semantic_model, index_expr);
-            }
-            _ => {}
         }
     }
-
-    Some(())
 }
 
 fn check_name_expr(

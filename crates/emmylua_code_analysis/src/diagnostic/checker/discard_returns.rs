@@ -3,17 +3,19 @@ use rowan::NodeOrToken;
 
 use crate::{DiagnosticCode, LuaSemanticDeclId, SemanticDeclLevel, SemanticModel};
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::DiscardReturns];
+pub struct DiscardReturnsChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
-    for call_expr_stat in root.descendants::<LuaCallExprStat>() {
-        check_call_expr(context, semantic_model, call_expr_stat);
+impl Checker for DiscardReturnsChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::DiscardReturns];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+        for call_expr_stat in root.descendants::<LuaCallExprStat>() {
+            check_call_expr(context, semantic_model, call_expr_stat);
+        }
     }
-
-    Some(())
 }
 
 fn check_call_expr(

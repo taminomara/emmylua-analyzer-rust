@@ -4,25 +4,27 @@ use crate::{
     DiagnosticCode, LuaDeclId, LuaMemberId, LuaSemanticDeclId, SemanticDeclLevel, SemanticModel,
 };
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::Unused];
+pub struct DeprecatedChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
-    for node in root.descendants::<LuaAst>() {
-        match node {
-            LuaAst::LuaNameExpr(name_expr) => {
-                check_name_expr(context, semantic_model, name_expr);
+impl Checker for DeprecatedChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::Unused];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+        for node in root.descendants::<LuaAst>() {
+            match node {
+                LuaAst::LuaNameExpr(name_expr) => {
+                    check_name_expr(context, semantic_model, name_expr);
+                }
+                LuaAst::LuaIndexExpr(index_expr) => {
+                    check_index_expr(context, semantic_model, index_expr);
+                }
+                _ => {}
             }
-            LuaAst::LuaIndexExpr(index_expr) => {
-                check_index_expr(context, semantic_model, index_expr);
-            }
-            _ => {}
         }
     }
-
-    Some(())
 }
 
 fn check_name_expr(

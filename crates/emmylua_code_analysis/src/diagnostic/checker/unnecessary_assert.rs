@@ -2,19 +2,21 @@ use emmylua_parser::{LuaAstNode, LuaCallExpr};
 
 use crate::{DiagnosticCode, LuaType, SemanticModel};
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::UnnecessaryAssert];
+pub struct UnnecessaryAssertChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
-    for call_expr in root.descendants::<LuaCallExpr>() {
-        if call_expr.is_assert() {
-            check_assert_rule(context, semantic_model, call_expr);
+impl Checker for UnnecessaryAssertChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::UnnecessaryAssert];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+        for call_expr in root.descendants::<LuaCallExpr>() {
+            if call_expr.is_assert() {
+                check_assert_rule(context, semantic_model, call_expr);
+            }
         }
     }
-
-    Some(())
 }
 
 fn check_assert_rule(

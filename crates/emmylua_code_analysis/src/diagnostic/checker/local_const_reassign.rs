@@ -1,32 +1,37 @@
 use crate::{DiagnosticCode, LocalAttribute, LuaDeclExtra, LuaDeclId, SemanticModel};
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[
-    DiagnosticCode::LocalConstReassign,
-    DiagnosticCode::IterVariableReassign,
-];
+pub struct LocalConstReassignChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let file_id = semantic_model.get_file_id();
-    let decl_tree = semantic_model
-        .get_db()
-        .get_decl_index()
-        .get_decl_tree(&file_id)?;
-    for (decl_id, decl) in decl_tree.get_decls() {
-        match &decl.extra {
-            LuaDeclExtra::Local { attrib, .. } => {
-                if let Some(attrib) = attrib {
-                    if matches!(attrib, LocalAttribute::Const | LocalAttribute::IterConst) {
-                        check_local_const_reassign(context, semantic_model, decl_id, &attrib);
+impl Checker for LocalConstReassignChecker {
+    const CODES: &[DiagnosticCode] = &[
+        DiagnosticCode::LocalConstReassign,
+        DiagnosticCode::IterVariableReassign,
+    ];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let file_id = semantic_model.get_file_id();
+        let Some(decl_tree) = semantic_model
+            .get_db()
+            .get_decl_index()
+            .get_decl_tree(&file_id)
+        else {
+            return;
+        };
+        for (decl_id, decl) in decl_tree.get_decls() {
+            match &decl.extra {
+                LuaDeclExtra::Local { attrib, .. } => {
+                    if let Some(attrib) = attrib {
+                        if matches!(attrib, LocalAttribute::Const | LocalAttribute::IterConst) {
+                            check_local_const_reassign(context, semantic_model, decl_id, &attrib);
+                        }
                     }
                 }
+                _ => {}
             }
-            _ => {}
         }
     }
-
-    Some(())
 }
 
 fn check_local_const_reassign(

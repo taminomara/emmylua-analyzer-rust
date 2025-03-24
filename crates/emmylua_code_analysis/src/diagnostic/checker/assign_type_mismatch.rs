@@ -9,23 +9,26 @@ use crate::{
     TypeCheckFailReason, TypeCheckResult,
 };
 
-use super::{humanize_lint_type, DiagnosticContext};
+use super::{humanize_lint_type, Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::AssignTypeMismatch];
+pub struct AssignTypeMismatchChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    for node in semantic_model.get_root().descendants::<LuaAst>() {
-        match node {
-            LuaAst::LuaAssignStat(assign) => {
-                check_assign_stat(context, semantic_model, &assign);
+impl Checker for AssignTypeMismatchChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::AssignTypeMismatch];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        for node in semantic_model.get_root().descendants::<LuaAst>() {
+            match node {
+                LuaAst::LuaAssignStat(assign) => {
+                    check_assign_stat(context, semantic_model, &assign);
+                }
+                LuaAst::LuaLocalStat(local) => {
+                    check_local_stat(context, semantic_model, &local);
+                }
+                _ => {}
             }
-            LuaAst::LuaLocalStat(local) => {
-                check_local_stat(context, semantic_model, &local);
-            }
-            _ => {}
         }
     }
-    Some(())
 }
 
 fn check_assign_stat(

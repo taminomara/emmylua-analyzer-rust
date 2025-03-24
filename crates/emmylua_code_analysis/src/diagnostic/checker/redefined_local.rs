@@ -5,41 +5,49 @@ use crate::{
     SemanticModel,
 };
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::RedefinedLocal];
+pub struct RedefinedLocalChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let file_id = semantic_model.get_file_id();
-    let decl_tree = semantic_model
-        .get_db()
-        .get_decl_index()
-        .get_decl_tree(&file_id)?;
+impl Checker for RedefinedLocalChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::RedefinedLocal];
 
-    let root_scope = decl_tree.get_root_scope()?;
-    let mut diagnostics = HashSet::new();
-    let mut root_locals = HashMap::new();
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let file_id = semantic_model.get_file_id();
+        let Some(decl_tree) = semantic_model
+            .get_db()
+            .get_decl_index()
+            .get_decl_tree(&file_id)
+        else {
+            return;
+        };
 
-    check_scope_for_redefined_locals(
-        context,
-        &decl_tree,
-        root_scope,
-        &mut root_locals,
-        &mut diagnostics,
-    );
+        let Some(root_scope) = decl_tree.get_root_scope() else {
+            return;
+        };
+        let mut diagnostics = HashSet::new();
+        let mut root_locals = HashMap::new();
 
-    // 添加诊断信息
-    for decl_id in diagnostics {
-        if let Some(decl) = decl_tree.get_decl(&decl_id) {
-            context.add_diagnostic(
-                DiagnosticCode::RedefinedLocal,
-                decl.get_range(),
-                t!("Redefined local variable `%{name}`", name = decl.get_name()).to_string(),
-                None,
-            );
+        check_scope_for_redefined_locals(
+            context,
+            &decl_tree,
+            root_scope,
+            &mut root_locals,
+            &mut diagnostics,
+        );
+
+        // 添加诊断信息
+        for decl_id in diagnostics {
+            if let Some(decl) = decl_tree.get_decl(&decl_id) {
+                context.add_diagnostic(
+                    DiagnosticCode::RedefinedLocal,
+                    decl.get_range(),
+                    t!("Redefined local variable `%{name}`", name = decl.get_name()).to_string(),
+                    None,
+                );
+            }
         }
     }
-    Some(())
 }
 
 fn check_scope_for_redefined_locals(

@@ -4,19 +4,22 @@ use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaDocTagParam, LuaDocTagReturn
 
 use crate::{DiagnosticCode, LuaSemanticDeclId, LuaType, SemanticDeclLevel, SemanticModel};
 
-use super::{get_closure_expr_comment, get_own_return_stats, DiagnosticContext};
+use super::{get_closure_expr_comment, get_own_return_stats, Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[
-    DiagnosticCode::IncompleteSignatureDoc,
-    DiagnosticCode::MissingGlobalDoc,
-];
+pub struct IncompleteSignatureDocChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root();
-    for closure_expr in root.descendants::<LuaClosureExpr>() {
-        check_doc(context, semantic_model, &closure_expr);
+impl Checker for IncompleteSignatureDocChecker {
+    const CODES: &[DiagnosticCode] = &[
+        DiagnosticCode::IncompleteSignatureDoc,
+        DiagnosticCode::MissingGlobalDoc,
+    ];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root();
+        for closure_expr in root.descendants::<LuaClosureExpr>() {
+            check_doc(context, semantic_model, &closure_expr);
+        }
     }
-    Some(())
 }
 
 fn check_doc(

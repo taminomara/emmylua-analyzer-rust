@@ -3,20 +3,22 @@ use rowan::TextRange;
 
 use crate::{DiagnosticCode, LuaType, SemanticModel};
 
-use super::DiagnosticContext;
+use super::{Checker, DiagnosticContext};
 
-pub const CODES: &[DiagnosticCode] = &[DiagnosticCode::DuplicateRequire];
+pub struct DuplicateRequireChecker;
 
-pub fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) -> Option<()> {
-    let root = semantic_model.get_root().clone();
-    let mut require_calls = Vec::new();
-    for call_expr in root.descendants::<LuaCallExpr>() {
-        if call_expr.is_require() {
-            check_require_call_expr(context, semantic_model, call_expr, &mut require_calls);
+impl Checker for DuplicateRequireChecker {
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::DuplicateRequire];
+
+    fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
+        let root = semantic_model.get_root().clone();
+        let mut require_calls = Vec::new();
+        for call_expr in root.descendants::<LuaCallExpr>() {
+            if call_expr.is_require() {
+                check_require_call_expr(context, semantic_model, call_expr, &mut require_calls);
+            }
         }
     }
-
-    Some(())
 }
 
 fn check_require_call_expr(
