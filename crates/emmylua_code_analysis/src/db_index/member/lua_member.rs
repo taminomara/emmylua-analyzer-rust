@@ -66,6 +66,10 @@ impl LuaMember {
         self.decl_type.clone().unwrap_or(LuaType::Unknown)
     }
 
+    pub(crate) fn get_option_decl_type(&self) -> Option<LuaType> {
+        self.decl_type.clone()
+    }
+
     pub(crate) fn set_decl_type(&mut self, decl_type: LuaType) {
         self.decl_type = Some(decl_type);
     }

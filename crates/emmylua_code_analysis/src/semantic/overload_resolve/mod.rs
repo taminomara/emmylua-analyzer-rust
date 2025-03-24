@@ -5,7 +5,7 @@ use emmylua_parser::LuaCallExpr;
 use crate::db_index::{DbIndex, LuaFunctionType, LuaType};
 
 use super::{
-    generic::instantiate_func_generic, infer_expr, type_check::check_type_compact, LuaInferCache,
+    generic::instantiate_func_generic, infer::{InferCallFuncResult, InferFailReason}, infer_expr, type_check::check_type_compact, LuaInferCache
 };
 
 pub fn resolve_signature(
@@ -15,7 +15,7 @@ pub fn resolve_signature(
     call_expr: LuaCallExpr,
     is_generic: bool,
     arg_count: Option<usize>,
-) -> Option<Arc<LuaFunctionType>> {
+) -> InferCallFuncResult {
     let args = call_expr.get_args_list()?;
     let mut expr_types = Vec::new();
     for arg in args.get_args() {

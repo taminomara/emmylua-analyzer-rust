@@ -4,7 +4,7 @@ use emmylua_parser::{LuaAstNode, LuaCallExpr};
 
 use crate::{
     db_index::{DbIndex, LuaType},
-    semantic::{infer_expr, LuaInferCache},
+    semantic::{infer::InferFailReason, infer_expr, LuaInferCache},
     LuaFunctionType,
 };
 
@@ -18,7 +18,7 @@ pub fn instantiate_func_generic(
     config: &mut LuaInferCache,
     func: &LuaFunctionType,
     call_expr: LuaCallExpr,
-) -> Option<LuaFunctionType> {
+) -> Result<LuaFunctionType, InferFailReason> {
     let origin_params = func.get_params();
     let func_param_types: Vec<_> = origin_params
         .iter()

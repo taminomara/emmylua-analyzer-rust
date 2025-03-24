@@ -56,7 +56,7 @@ fn resolve_member_type(db: &DbIndex, member_item: &LuaMemberIndexItem) -> Option
                 MemberTypeResolveState::All => {
                     let mut typ = LuaType::Unknown;
                     for member in members {
-                        typ = TypeOps::Union.apply(&typ, &member.get_decl_type());
+                        typ = TypeOps::Union.apply(&typ, &member.get_option_decl_type()?);
                     }
                     Some(typ)
                 }
@@ -65,7 +65,7 @@ fn resolve_member_type(db: &DbIndex, member_item: &LuaMemberIndexItem) -> Option
                     for member in &members {
                         let feature = member.get_feature();
                         if feature.is_meta_decl() {
-                            typ = TypeOps::Union.apply(&typ, &member.get_decl_type());
+                            typ = TypeOps::Union.apply(&typ, &member.get_option_decl_type()?);
                         }
                     }
                     Some(typ)
@@ -75,7 +75,7 @@ fn resolve_member_type(db: &DbIndex, member_item: &LuaMemberIndexItem) -> Option
                     for member in &members {
                         let feature = member.get_feature();
                         if feature.is_file_decl() {
-                            typ = TypeOps::Union.apply(&typ, &member.get_decl_type());
+                            typ = TypeOps::Union.apply(&typ, &member.get_option_decl_type()?);
                         }
                     }
                     Some(typ)

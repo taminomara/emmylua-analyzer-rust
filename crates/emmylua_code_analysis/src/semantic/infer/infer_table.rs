@@ -10,8 +10,7 @@ use crate::{
 };
 
 use super::{
-    infer_index::{infer_member_by_member_key, infer_member_by_operator},
-    InferResult,
+    infer_index::{infer_member_by_member_key, infer_member_by_operator}, InferFailReason, InferResult
 };
 
 pub fn infer_table_expr(
@@ -23,7 +22,7 @@ pub fn infer_table_expr(
         return infer_table_tuple_or_array(db, cache, table);
     }
 
-    Some(LuaType::TableConst(crate::InFiled {
+    Ok(LuaType::TableConst(crate::InFiled {
         file_id: cache.get_file_id(),
         value: table.get_range(),
     }))
@@ -36,12 +35,12 @@ fn infer_table_tuple_or_array(
 ) -> InferResult {
     let fields = table.get_fields().collect::<Vec<_>>();
     if fields.len() > 10 {
-        let first_type = infer_expr(db, cache, fields[0].get_value_expr()?)?;
-        return Some(LuaType::Array(first_type.into()));
+        let first_type = infer_expr(db, cache, fields[0].get_value_expr().ok_or(InferFailReason::None)?)?;
+        return Ok(LuaType::Array(first_type.into()));
     }
 
     if let Some(last_field) = fields.last() {
-        let last_value_expr = last_field.get_value_expr()?;
+        let last_value_expr = last_field.get_value_expr().ok_or(InferFailReason::None)?;
         if is_dots_expr(&last_value_expr).unwrap_or(false) {
             let dots_type = infer_expr(db, cache, last_value_expr)?;
             let typ = match &dots_type {
@@ -49,7 +48,7 @@ fn infer_table_tuple_or_array(
                 _ => &dots_type,
             };
 
-            return Some(LuaType::Array(typ.clone().into()));
+            return Ok(LuaType::Array(typ.clone().into()));
         }
     }
 
@@ -60,7 +59,7 @@ fn infer_table_tuple_or_array(
         types.push(typ);
     }
 
-    Some(LuaType::Tuple(LuaTupleType::new(types).into()))
+    Ok(LuaType::Tuple(LuaTupleType::new(types).into()))
 }
 
 fn is_dots_expr(expr: &LuaExpr) -> Option<bool> {

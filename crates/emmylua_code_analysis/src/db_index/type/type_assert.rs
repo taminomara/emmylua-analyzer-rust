@@ -39,7 +39,7 @@ impl TypeAssertion {
             TypeAssertion::Remove(lua_type) => Some(TypeOps::Remove.apply(&source, lua_type)),
             TypeAssertion::Reassign((syntax_id, idx)) => {
                 let expr = LuaExpr::cast(syntax_id.to_node_from_root(root)?)?;
-                let expr_type = infer_expr(db, config, expr)?;
+                let expr_type = infer_expr(db, config, expr).ok()?;
                 let expr_type = match &expr_type {
                     LuaType::MuliReturn(multi) => {
                         multi.get_type(*idx as usize).unwrap_or(&LuaType::Nil)

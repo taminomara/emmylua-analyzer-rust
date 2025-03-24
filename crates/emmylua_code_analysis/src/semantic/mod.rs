@@ -15,8 +15,7 @@ use std::{collections::HashSet, sync::Arc};
 pub use cache::{CacheEntry, CacheKey, CacheOptions, LuaAnalysisPhase, LuaInferCache};
 use emmylua_parser::{LuaCallExpr, LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken, LuaTableExpr};
 use infer::{
-    infer_left_value_type_from_right_value, infer_multi_value_adjusted_expression_types,
-    infer_table_should_be, InferResult,
+    infer_left_value_type_from_right_value, infer_multi_value_adjusted_expression_types, infer_table_should_be, InferFailReason, InferResult
 };
 pub use member::LuaMemberInfo;
 use member::{infer_member_map, infer_members};
@@ -260,11 +259,11 @@ impl InferGuard {
         }
     }
 
-    pub fn check(&mut self, type_id: &LuaTypeDeclId) -> Option<()> {
+    pub fn check(&mut self, type_id: &LuaTypeDeclId) -> Result<(), InferFailReason> {
         if self.guard.contains(type_id) {
-            return None;
+            return Err(InferFailReason::RecursiveInfer);
         }
         self.guard.insert(type_id.clone());
-        Some(())
+        Ok(())
     }
 }
