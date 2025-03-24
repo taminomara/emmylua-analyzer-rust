@@ -3,6 +3,26 @@ mod test {
     use crate::{DiagnosticCode, VirtualWorkspace};
 
     #[test]
+    fn test_issue_249() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::MissingParameter,
+            r#"
+            ---@param path string
+            ---@return string? realpath
+            ---@overload fun(path:string, callback:function):userdata
+            function realpath(path)
+            end
+
+            local path = realpath('/', function(err, path)
+            end)
+
+        "#
+        ));
+    }
+
+    #[test]
     fn test_1() {
         let mut ws = VirtualWorkspace::new();
 

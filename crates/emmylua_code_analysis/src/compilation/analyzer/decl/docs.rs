@@ -47,6 +47,9 @@ fn get_attrib_value(
                 "exact" => {
                     attr |= LuaTypeAttribute::Exact;
                 }
+                "constructor" => {
+                    attr |= LuaTypeAttribute::Constructor;
+                }
                 _ => {}
             }
         }

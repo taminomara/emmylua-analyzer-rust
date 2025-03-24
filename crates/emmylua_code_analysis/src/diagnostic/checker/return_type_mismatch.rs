@@ -1,9 +1,9 @@
-use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaReturnStat};
-use rowan::TextRange;
+use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaExpr, LuaReturnStat};
+use rowan::{NodeOrToken, TextRange};
 
 use crate::{
-    humanize_type, DiagnosticCode, LuaSignatureId, LuaType, RenderLevel, SemanticModel,
-    SignatureReturnStatus, TypeCheckFailReason, TypeCheckResult,
+    humanize_type, DiagnosticCode, LuaSemanticDeclId, LuaSignatureId, LuaType, RenderLevel,
+    SemanticModel, SignatureReturnStatus, TypeCheckFailReason, TypeCheckResult,
 };
 
 use super::{get_own_return_stats, Checker, DiagnosticContext};
@@ -49,7 +49,12 @@ fn check_return_stat(
             &return_stat.get_expr_list().collect::<Vec<_>>(),
             None,
         )?;
-        let return_expr_types = infos.iter().map(|(typ, _)| typ.clone()).collect::<Vec<_>>();
+        let mut return_expr_types = infos.iter().map(|(typ, _)| typ.clone()).collect::<Vec<_>>();
+        // 解决 setmetatable 的返回值类型问题
+        let setmetatable_index = has_setmetatable(semantic_model, return_stat);
+        if let Some(setmetatable_index) = setmetatable_index {
+            return_expr_types[setmetatable_index] = LuaType::Any;
+        }
         let return_expr_ranges = infos
             .iter()
             .map(|(_, range)| range.clone())
@@ -62,7 +67,6 @@ fn check_return_stat(
             if return_expr_types.len() < index {
                 break;
             }
-
             check_variadic_return_type_match(
                 context,
                 semantic_model,
@@ -136,17 +140,30 @@ fn add_type_check_diagnostic(
         Ok(_) => return,
         Err(reason) => match reason {
             TypeCheckFailReason::TypeNotMatchWithReason(reason) => {
-                context.add_diagnostic(DiagnosticCode::ParamTypeNotMatch, range, reason, None);
+                context.add_diagnostic(
+                    DiagnosticCode::ReturnTypeMismatch,
+                    range,
+                    t!(
+                        "Annotations specify that return value %{index} has a type of `%{source}`, returning value of type `%{found}` here instead. %{reason}.",
+                        index = index + 1,
+                        source = humanize_type(db, &param_type, RenderLevel::Simple),
+                        found = humanize_type(db, &expr_type, RenderLevel::Simple),
+                        reason = reason
+                    )
+                    .to_string(),
+                    None,
+                );
             }
             TypeCheckFailReason::TypeNotMatch => {
                 context.add_diagnostic(
                     DiagnosticCode::ReturnTypeMismatch,
                     range,
                     t!(
-                        "Annotations specify that return value %{index} has a type of `%{source}`, returning value of type `%{found}` here instead.",
+                        "Annotations specify that return value %{index} has a type of `%{source}`, returning value of type `%{found}` here instead. %{reason}.",
                         index = index + 1,
                         source = humanize_type(db, &param_type, RenderLevel::Simple),
-                        found = humanize_type(db, &expr_type, RenderLevel::Simple)
+                        found = humanize_type(db, &expr_type, RenderLevel::Simple),
+                        reason = ""
                     )
                     .to_string(),
                     None,
@@ -154,7 +171,7 @@ fn add_type_check_diagnostic(
             }
             TypeCheckFailReason::TypeRecursion => {
                 context.add_diagnostic(
-                    DiagnosticCode::ParamTypeNotMatch,
+                    DiagnosticCode::ReturnTypeMismatch,
                     range,
                     "type recursion".into(),
                     None,
@@ -162,4 +179,32 @@ fn add_type_check_diagnostic(
             }
         },
     }
+}
+
+fn has_setmetatable(semantic_model: &SemanticModel, return_stat: &LuaReturnStat) -> Option<usize> {
+    for (index, expr) in return_stat.get_expr_list().enumerate() {
+        if let LuaExpr::CallExpr(call_expr) = expr {
+            if let Some(prefix_expr) = call_expr.get_prefix_expr() {
+                let semantic_info = semantic_model
+                    .get_semantic_info(NodeOrToken::Node(prefix_expr.syntax().clone().into()))?;
+
+                if let Some(LuaSemanticDeclId::LuaDecl(decl_id)) = semantic_info.semantic_decl {
+                    let decl = semantic_model.get_db().get_decl_index().get_decl(&decl_id);
+
+                    if let Some(decl) = decl {
+                        if decl.is_global()
+                            && semantic_model
+                                .get_db()
+                                .get_module_index()
+                                .is_std(&decl.get_file_id())
+                            && decl.get_name() == "setmetatable"
+                        {
+                            return Some(index);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    None
 }

@@ -43,6 +43,7 @@ fn check_duplicate_class(context: &mut DiagnosticContext, class_tag: LuaDocTagCl
     if locations.len() > 1 {
         let mut type_times = 0;
         let mut partial_times = 0;
+        let mut constructor_times = 0;
         for location in locations {
             let attrib = location.attrib;
             if attrib.contains(LuaTypeAttribute::Meta) {
@@ -50,6 +51,8 @@ fn check_duplicate_class(context: &mut DiagnosticContext, class_tag: LuaDocTagCl
             }
             if attrib.contains(LuaTypeAttribute::Partial) {
                 partial_times += 1;
+            } else if attrib.contains(LuaTypeAttribute::Constructor) {
+                constructor_times += 1;
             } else {
                 type_times += 1;
             }
@@ -67,6 +70,18 @@ fn check_duplicate_class(context: &mut DiagnosticContext, class_tag: LuaDocTagCl
                 DiagnosticCode::DuplicateType,
                 range,
                 t!("Duplicate class '%{name}'. The class %{name} is defined as both partial and non-partial.", name = name).to_string(),
+                None,
+            );
+        }
+        if constructor_times > 1 {
+            context.add_diagnostic(
+                DiagnosticCode::DuplicateType,
+                range,
+                t!(
+                    "Duplicate class constructor '%{name}'. constructor must have only one.",
+                    name = name
+                )
+                .to_string(),
                 None,
             );
         }
