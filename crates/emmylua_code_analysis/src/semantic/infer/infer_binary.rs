@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use emmylua_parser::{BinaryOperator, LuaBinaryExpr};
 use smol_str::SmolStr;
 
@@ -61,7 +59,7 @@ fn infer_binary_expr_type(
 }
 
 fn infer_union(db: &DbIndex, u: &LuaUnionType, right: &LuaType, op: BinaryOperator) -> InferResult {
-    let mut unique_union_types = HashSet::new();
+    let mut unique_union_types = Vec::new();
 
     for ty in u.get_types() {
         let inferred_ty = infer_binary_expr_type(db, ty.clone(), right.clone(), op)?;
@@ -71,13 +69,11 @@ fn infer_union(db: &DbIndex, u: &LuaUnionType, right: &LuaType, op: BinaryOperat
     match unique_union_types.len() {
         0 => Some(LuaType::Unknown),
         1 => Some(unique_union_types.into_iter().next().unwrap()),
-        _ => Some(LuaType::Union(
-            LuaUnionType::new(unique_union_types.into_iter().collect()).into(),
-        )),
+        _ => Some(LuaType::Union(LuaUnionType::new(unique_union_types).into())),
     }
 }
 
-fn flatten_and_insert(ty: LuaType, unique_union_types: &mut HashSet<LuaType>) {
+fn flatten_and_insert(ty: LuaType, unique_union_types: &mut Vec<LuaType>) {
     let mut stack = vec![ty];
     while let Some(current_ty) = stack.pop() {
         match current_ty {
@@ -87,7 +83,9 @@ fn flatten_and_insert(ty: LuaType, unique_union_types: &mut HashSet<LuaType>) {
                 }
             }
             _ => {
-                unique_union_types.insert(current_ty);
+                if !unique_union_types.contains(&current_ty) {
+                    unique_union_types.push(current_ty);
+                }
             }
         }
     }
