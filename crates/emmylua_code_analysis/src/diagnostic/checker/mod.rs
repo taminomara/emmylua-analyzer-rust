@@ -26,7 +26,6 @@ mod undefined_global;
 mod unnecessary_assert;
 mod unused;
 
-use code_style::check_file_code_style;
 use emmylua_parser::{
     LuaAstNode, LuaClosureExpr, LuaComment, LuaReturnStat, LuaStat, LuaSyntaxKind,
 };
@@ -87,7 +86,10 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     run_check::<unbalanced_assignments::UnbalancedAssignmentsChecker>(context, semantic_model);
     run_check::<check_param_count::CheckParamCountChecker>(context, semantic_model);
 
-    check_file_code_style(context, semantic_model);
+    run_check::<code_style::non_literal_expressions_in_assert::NonLiteralExpressionsInAssertChecker>(
+        context,
+        semantic_model,
+    );
     Some(())
 }
 
