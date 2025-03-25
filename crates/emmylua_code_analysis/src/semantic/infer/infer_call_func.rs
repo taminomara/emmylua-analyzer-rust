@@ -89,10 +89,8 @@ pub fn infer_call_expr_func(
         Ok(func_ty) => {
             cache.add_cache(&key, CacheEntry::CallCache(func_ty.clone()));
         }
-        Err(InferFailReason::UnResolveExpr(_))
-        | Err(InferFailReason::UnResolveSignatureReturn(_))
-        | Err(InferFailReason::FieldDotFound(_)) => {
-            cache.ready_cache(&key);
+        Err(r) if r.is_need_resolve() => {
+            cache.remove(&key);
         }
         _ => {}
     }

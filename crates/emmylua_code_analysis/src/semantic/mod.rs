@@ -15,7 +15,8 @@ use std::{collections::HashSet, sync::Arc};
 pub use cache::{CacheEntry, CacheKey, CacheOptions, LuaAnalysisPhase, LuaInferCache};
 use emmylua_parser::{LuaCallExpr, LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken, LuaTableExpr};
 use infer::{
-    infer_left_value_type_from_right_value, infer_multi_value_adjusted_expression_types, infer_table_should_be, InferFailReason, InferResult
+    infer_left_value_type_from_right_value, infer_multi_value_adjusted_expression_types,
+    infer_table_should_be,
 };
 pub use member::LuaMemberInfo;
 use member::{infer_member_map, infer_members};
@@ -37,6 +38,7 @@ use crate::{
 };
 use crate::{LuaFunctionType, LuaMemberKey};
 pub use generic::{instantiate_type_generic, TypeSubstitutor};
+pub use infer::InferFailReason;
 pub(crate) use infer::{infer_call_expr_func, infer_expr};
 use overload_resolve::resolve_signature;
 pub use semantic_info::SemanticDeclLevel;
@@ -92,12 +94,12 @@ impl<'a> SemanticModel<'a> {
         self.db.get_vfs().get_file_parse_error(&self.file_id)
     }
 
-    pub fn infer_expr(&self, expr: LuaExpr) -> InferResult {
-        infer_expr(self.db, &mut self.infer_cache.borrow_mut(), expr)
+    pub fn infer_expr(&self, expr: LuaExpr) -> Option<LuaType> {
+        infer_expr(self.db, &mut self.infer_cache.borrow_mut(), expr).ok()
     }
 
     pub fn infer_table_should_be(&self, table: LuaTableExpr) -> Option<LuaType> {
-        infer_table_should_be(self.db, &mut self.infer_cache.borrow_mut(), table)
+        infer_table_should_be(self.db, &mut self.infer_cache.borrow_mut(), table).ok()
     }
 
     pub fn infer_member_infos(&self, prefix_type: &LuaType) -> Option<Vec<LuaMemberInfo>> {
@@ -125,7 +127,8 @@ impl<'a> SemanticModel<'a> {
             self.db,
             &mut self.infer_cache.borrow_mut(),
             prefix_expr.into(),
-        )?;
+        )
+        .ok()?;
         infer_call_expr_func(
             self.db,
             &mut self.infer_cache.borrow_mut(),
@@ -134,6 +137,7 @@ impl<'a> SemanticModel<'a> {
             &mut InferGuard::new(),
             arg_count,
         )
+        .ok()
     }
 
     /// 获取赋值时所有右值类型或调用时所有参数类型或返回时所有返回值类型

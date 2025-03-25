@@ -16,7 +16,7 @@ pub fn try_resolve_decl(
     decl: &UnResolveDecl,
 ) -> Option<bool> {
     let expr = decl.expr.clone();
-    let expr_type = infer_expr(db, cache, expr)?;
+    let expr_type = infer_expr(db, cache, expr).ok()?;
     let decl_id = decl.decl_id;
     let expr_type = match &expr_type {
         LuaType::MuliReturn(multi) => multi
@@ -36,7 +36,7 @@ pub fn try_resolve_member(
     unresolve_member: &mut UnResolveMember,
 ) -> Option<bool> {
     if let Some(prefix_expr) = &unresolve_member.prefix {
-        let prefix_type = infer_expr(db, cache, prefix_expr.clone())?;
+        let prefix_type = infer_expr(db, cache, prefix_expr.clone()).ok()?;
         let member_owner = match prefix_type {
             LuaType::TableConst(in_file_range) => LuaMemberOwner::Element(in_file_range),
             LuaType::Def(def_id) => {
@@ -65,7 +65,7 @@ pub fn try_resolve_member(
     }
 
     if let Some(expr) = unresolve_member.expr.clone() {
-        let expr_type = infer_expr(db, cache, expr)?;
+        let expr_type = infer_expr(db, cache, expr).ok()?;
         let expr_type = match &expr_type {
             LuaType::MuliReturn(multi) => multi
                 .get_type(unresolve_member.ret_idx)
@@ -86,7 +86,7 @@ pub fn try_resolve_module(
     module: &UnResolveModule,
 ) -> Option<bool> {
     let expr = module.expr.clone();
-    let expr_type = infer_expr(db, cache, expr)?;
+    let expr_type = infer_expr(db, cache, expr).ok()?;
     let expr_type = match &expr_type {
         LuaType::MuliReturn(multi) => multi.get_type(0).cloned().unwrap_or(LuaType::Unknown),
         _ => expr_type,
@@ -101,7 +101,7 @@ pub fn try_resolve_return_point(
     cache: &mut LuaInferCache,
     return_: &UnResolveReturn,
 ) -> Option<bool> {
-    let return_docs = analyze_return_point(&db, cache, &return_.return_points)?;
+    let return_docs = analyze_return_point(&db, cache, &return_.return_points).ok()?;
     let signature = db
         .get_signature_index_mut()
         .get_mut(&return_.signature_id)?;
@@ -115,7 +115,7 @@ pub fn try_resolve_iter_var(
     cache: &mut LuaInferCache,
     iter_var: &UnResolveIterVar,
 ) -> Option<bool> {
-    let expr_type = infer_expr(db, cache, iter_var.iter_expr.clone())?;
+    let expr_type = infer_expr(db, cache, iter_var.iter_expr.clone()).ok()?;
     let func = match expr_type {
         LuaType::DocFunction(func) => func,
         _ => return Some(true),

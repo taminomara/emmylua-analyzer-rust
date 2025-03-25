@@ -1,4 +1,4 @@
-use crate::{DbIndex, LuaSemanticDeclId, LuaType, TypeOps};
+use crate::{DbIndex, InferFailReason, LuaSemanticDeclId, LuaType, TypeOps};
 
 use super::{LuaMemberId, LuaMemberIndex};
 
@@ -9,7 +9,7 @@ pub enum LuaMemberIndexItem {
 }
 
 impl LuaMemberIndexItem {
-    pub fn resolve_type(&self, db: &DbIndex) -> Option<LuaType> {
+    pub fn resolve_type(&self, db: &DbIndex) -> Result<LuaType, InferFailReason> {
         resolve_member_type(db, &self)
     }
 
@@ -29,19 +29,32 @@ impl LuaMemberIndexItem {
     }
 }
 
-fn resolve_member_type(db: &DbIndex, member_item: &LuaMemberIndexItem) -> Option<LuaType> {
+fn resolve_member_type(
+    db: &DbIndex,
+    member_item: &LuaMemberIndexItem,
+) -> Result<LuaType, InferFailReason> {
     match member_item {
         LuaMemberIndexItem::One(member_id) => {
-            let member = db.get_member_index().get_member(&member_id)?;
-            let member_type = member.get_decl_type();
-            Some(member_type)
+            let member = db
+                .get_member_index()
+                .get_member(&member_id)
+                .ok_or(InferFailReason::None)?;
+            let member_type = member.get_option_decl_type();
+            return match member_type {
+                Some(typ) => Ok(typ),
+                None => Err(InferFailReason::UnResolveMemberType(*member_id)),
+            };
         }
         LuaMemberIndexItem::Many(member_ids) => {
             let mut resolve_state = MemberTypeResolveState::All;
-            let members = member_ids
-                .iter()
-                .map(|id| db.get_member_index().get_member(id))
-                .collect::<Option<Vec<_>>>()?;
+            let mut members = vec![];
+            for member_id in member_ids {
+                if let Some(member) = db.get_member_index().get_member(member_id) {
+                    members.push(member);
+                } else {
+                    return Err(InferFailReason::None);
+                }
+            }
             for member in &members {
                 let feature = member.get_feature();
                 if feature.is_meta_decl() {
@@ -56,29 +69,38 @@ fn resolve_member_type(db: &DbIndex, member_item: &LuaMemberIndexItem) -> Option
                 MemberTypeResolveState::All => {
                     let mut typ = LuaType::Unknown;
                     for member in members {
-                        typ = TypeOps::Union.apply(&typ, &member.get_option_decl_type()?);
+                        typ = TypeOps::Union.apply(
+                            &typ,
+                            &member.get_option_decl_type().ok_or(InferFailReason::None)?,
+                        );
                     }
-                    Some(typ)
+                    Ok(typ)
                 }
                 MemberTypeResolveState::Meta => {
                     let mut typ = LuaType::Unknown;
                     for member in &members {
                         let feature = member.get_feature();
                         if feature.is_meta_decl() {
-                            typ = TypeOps::Union.apply(&typ, &member.get_option_decl_type()?);
+                            typ = TypeOps::Union.apply(
+                                &typ,
+                                &member.get_option_decl_type().ok_or(InferFailReason::None)?,
+                            );
                         }
                     }
-                    Some(typ)
+                    Ok(typ)
                 }
                 MemberTypeResolveState::FileDecl => {
                     let mut typ = LuaType::Unknown;
                     for member in &members {
                         let feature = member.get_feature();
                         if feature.is_file_decl() {
-                            typ = TypeOps::Union.apply(&typ, &member.get_option_decl_type()?);
+                            typ = TypeOps::Union.apply(
+                                &typ,
+                                &member.get_option_decl_type().ok_or(InferFailReason::None)?,
+                            );
                         }
                     }
-                    Some(typ)
+                    Ok(typ)
                 }
             }
         }

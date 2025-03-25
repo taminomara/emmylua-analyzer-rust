@@ -71,7 +71,7 @@ fn infer_custom_type_members(
     type_decl_id: &LuaTypeDeclId,
     infer_guard: &mut InferGuard,
 ) -> InferMembersResult {
-    infer_guard.check(&type_decl_id)?;
+    infer_guard.check(&type_decl_id).ok()?;
     let type_index = db.get_type_index();
     let type_decl = type_index.get_type_decl(&type_decl_id)?;
     if type_decl.is_alias() {

@@ -6,7 +6,7 @@ mod resolve_closure;
 use crate::{
     db_index::{DbIndex, LuaDeclId, LuaMemberId, LuaSignatureId},
     profile::Profile,
-    FileId, LuaSemanticDeclId,
+    FileId, InferFailReason, LuaSemanticDeclId,
 };
 use emmylua_parser::{LuaCallExpr, LuaExpr};
 use infer_manager::InferCacheManager;
@@ -133,6 +133,7 @@ pub struct UnResolveDecl {
     pub decl_id: LuaDeclId,
     pub expr: LuaExpr,
     pub ret_idx: usize,
+    pub reason: InferFailReason,
 }
 
 impl From<UnResolveDecl> for UnResolve {
@@ -148,6 +149,7 @@ pub struct UnResolveMember {
     pub expr: Option<LuaExpr>,
     pub prefix: Option<LuaExpr>,
     pub ret_idx: usize,
+    pub reason: InferFailReason,
 }
 
 impl From<UnResolveMember> for UnResolve {
@@ -160,6 +162,7 @@ impl From<UnResolveMember> for UnResolve {
 pub struct UnResolveModule {
     pub file_id: FileId,
     pub expr: LuaExpr,
+    pub reason: InferFailReason,
 }
 
 impl From<UnResolveModule> for UnResolve {
@@ -173,6 +176,7 @@ pub struct UnResolveReturn {
     pub file_id: FileId,
     pub signature_id: LuaSignatureId,
     pub return_points: Vec<LuaReturnPoint>,
+    pub reason: InferFailReason,
 }
 
 impl From<UnResolveReturn> for UnResolve {
@@ -201,6 +205,7 @@ pub struct UnResolveIterVar {
     pub decl_id: LuaDeclId,
     pub iter_expr: LuaExpr,
     pub ret_idx: usize,
+    pub reason: InferFailReason,
 }
 
 impl From<UnResolveIterVar> for UnResolve {

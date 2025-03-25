@@ -1,8 +1,8 @@
 use emmylua_parser::{LuaAstNode, LuaChunk, LuaExpr};
 
 use crate::{
-    compilation::analyzer::unresolve::UnResolveModule, db_index::LuaType, LuaSemanticDeclId,
-    LuaSignatureId,
+    compilation::analyzer::unresolve::UnResolveModule, db_index::LuaType, InferFailReason,
+    LuaSemanticDeclId, LuaSignatureId,
 };
 
 use super::{func_body::analyze_func_body_returns, LuaAnalyzer, LuaReturnPoint};
@@ -13,13 +13,14 @@ pub fn analyze_chunk_return(analyzer: &mut LuaAnalyzer, chunk: LuaChunk) -> Opti
     for point in return_exprs {
         match point {
             LuaReturnPoint::Expr(expr) => {
-                let expr_type = analyzer.infer_expr(&expr);
-                let expr_type = match expr_type {
-                    Some(expr_type) => expr_type,
-                    None => {
+                let expr_type = match analyzer.infer_expr(&expr) {
+                    Ok(expr_type) => expr_type,
+                    Err(InferFailReason::None) => LuaType::Unknown,
+                    Err(reason) => {
                         let unresolve = UnResolveModule {
                             file_id: analyzer.file_id,
                             expr,
+                            reason,
                         };
                         analyzer.add_unresolved(unresolve.into());
                         return None;

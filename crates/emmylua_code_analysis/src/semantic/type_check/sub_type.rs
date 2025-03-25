@@ -15,7 +15,7 @@ fn check_sub_type_of(
     super_type_ref_id: &LuaTypeDeclId,
     infer_guard: &mut InferGuard,
 ) -> Option<bool> {
-    infer_guard.check(super_type_ref_id)?;
+    infer_guard.check(super_type_ref_id).ok()?;
 
     let supers = db.get_type_index().get_super_types(sub_type_ref_id)?;
     for super_type in supers {

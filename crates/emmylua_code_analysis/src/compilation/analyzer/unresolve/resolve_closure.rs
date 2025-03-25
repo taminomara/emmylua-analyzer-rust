@@ -1,6 +1,6 @@
 use crate::{
-    infer_call_expr_func, infer_expr, DbIndex, InferGuard, LuaDocParamInfo, LuaDocReturnInfo,
-    LuaInferCache, LuaType, SignatureReturnStatus,
+    infer_call_expr_func, infer_expr, DbIndex, InferFailReason, InferGuard, LuaDocParamInfo,
+    LuaDocReturnInfo, LuaInferCache, LuaType, SignatureReturnStatus,
 };
 
 use super::{
@@ -15,7 +15,7 @@ pub fn try_resolve_closure_params(
 ) -> Option<bool> {
     let call_expr = closure_params.call_expr.clone();
     let prefix_expr = call_expr.get_prefix_expr()?;
-    let call_expr_type = infer_expr(db, config, prefix_expr.into())?;
+    let call_expr_type = infer_expr(db, config, prefix_expr.into()).ok()?;
 
     let call_doc_func = infer_call_expr_func(
         db,
@@ -24,7 +24,8 @@ pub fn try_resolve_closure_params(
         call_expr_type,
         &mut InferGuard::new(),
         None,
-    )?;
+    )
+    .ok()?;
 
     let colon_call = call_expr.is_colon_call();
     let colon_define = call_doc_func.is_colon_define();
@@ -92,7 +93,7 @@ pub fn try_resolve_closure_return(
 ) -> Option<bool> {
     let call_expr = closure_return.call_expr.clone();
     let prefix_expr = call_expr.get_prefix_expr()?;
-    let call_expr_type = infer_expr(db, config, prefix_expr.into())?;
+    let call_expr_type = infer_expr(db, config, prefix_expr.into()).ok()?;
     let param_idx = closure_return.param_idx;
     let call_doc_func = infer_call_expr_func(
         db,
@@ -101,7 +102,8 @@ pub fn try_resolve_closure_return(
         call_expr_type,
         &mut InferGuard::new(),
         None,
-    )?;
+    )
+    .ok()?;
 
     let expr_closure_return = if let Some(param_type) = call_doc_func.get_params().get(param_idx) {
         if let Some(LuaType::DocFunction(func)) = &param_type.1 {
@@ -142,6 +144,7 @@ fn try_convert_to_func_body_infer(
         file_id: closure_return.file_id,
         signature_id: closure_return.signature_id,
         return_points: closure_return.return_points.clone(),
+        reason: InferFailReason::None,
     };
 
     try_resolve_return_point(db, config, &unresolve)

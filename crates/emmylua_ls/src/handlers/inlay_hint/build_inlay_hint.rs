@@ -359,7 +359,7 @@ fn get_super_member_id(
     infer_guard: &mut InferGuard,
 ) -> Option<LuaMemberId> {
     if let LuaType::Ref(super_type_id) = &super_type {
-        infer_guard.check(super_type_id)?;
+        infer_guard.check(super_type_id).ok()?;
         let member_map = semantic_model.infer_member_map(&super_type)?;
 
         if let Some(member_infos) = member_map.get(&member_key) {

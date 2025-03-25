@@ -1,13 +1,14 @@
 mod infer_binary;
 mod infer_call;
 mod infer_call_func;
+mod infer_fail_reason;
 mod infer_index;
 mod infer_name;
 mod infer_table;
 mod infer_unary;
 mod test;
 
-use std::{ops::Deref, sync::Arc};
+use std::ops::Deref;
 
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLiteralToken, LuaTableExpr,
@@ -15,6 +16,7 @@ use emmylua_parser::{
 use infer_binary::infer_binary_expr;
 use infer_call::infer_call_expr;
 pub use infer_call_func::infer_call_expr_func;
+pub use infer_fail_reason::InferFailReason;
 use infer_index::infer_index_expr;
 use infer_name::{infer_name_expr, infer_param};
 use infer_table::infer_table_expr;
@@ -24,22 +26,14 @@ use rowan::TextRange;
 use smol_str::SmolStr;
 
 use crate::{
-    db_index::{DbIndex, LuaOperator, LuaOperatorMetaMethod, LuaSignatureId, LuaType}, InFiled, LuaMemberKey, LuaMemberOwner, LuaMultiReturn
+    db_index::{DbIndex, LuaOperator, LuaOperatorMetaMethod, LuaSignatureId, LuaType},
+    InFiled, LuaMultiReturn,
 };
 
 use super::{member::infer_members, CacheEntry, CacheKey, LuaInferCache};
 
 pub type InferResult = Result<LuaType, InferFailReason>;
 pub use infer_call_func::InferCallFuncResult;
-
-#[derive(Debug)]
-pub enum InferFailReason {
-    None,
-    RecursiveInfer,
-    UnResolveExpr(LuaExpr),
-    UnResolveSignatureReturn(LuaSignatureId),
-    FieldDotFound(Arc<(LuaMemberOwner, LuaMemberKey)>),
-}
 
 pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> InferResult {
     let syntax_id = expr.get_syntax_id();
@@ -80,11 +74,10 @@ pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> Inf
     match &result_type {
         Ok(result_type) => cache.add_cache(&key, CacheEntry::ExprCache(result_type.clone())),
         Err(InferFailReason::None) | Err(InferFailReason::RecursiveInfer) => {
-            cache.add_cache(&key, CacheEntry::ExprCache(LuaType::Unknown))
+            cache.add_cache(&key, CacheEntry::ExprCache(LuaType::Unknown));
+            return Ok(LuaType::Unknown);
         }
-        Err(InferFailReason::UnResolveExpr(_))
-        | Err(InferFailReason::UnResolveSignatureReturn(_))
-        | Err(InferFailReason::FieldDotFound(_)) => {
+        _ => {
             cache.remove(&key);
         }
     }

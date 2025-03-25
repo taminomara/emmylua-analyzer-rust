@@ -13,6 +13,7 @@ use super::{
     TypeSubstitutor,
 };
 
+// todo: need cache
 pub fn instantiate_func_generic(
     db: &DbIndex,
     config: &mut LuaInferCache,
@@ -52,9 +53,9 @@ pub fn instantiate_func_generic(
     );
 
     if let LuaType::DocFunction(f) = instantiate_doc_function(db, func, &substitutor) {
-        Some(f.deref().clone())
+        Ok(f.deref().clone())
     } else {
-        func.clone().into()
+        Ok(func.clone())
     }
 }
 
@@ -62,24 +63,13 @@ fn collect_arg_types(
     db: &DbIndex,
     config: &mut LuaInferCache,
     call_expr: &LuaCallExpr,
-) -> Option<Vec<LuaType>> {
-    let arg_list = call_expr.get_args_list()?;
+) -> Result<Vec<LuaType>, InferFailReason> {
+    let arg_list = call_expr.get_args_list().ok_or(InferFailReason::None)?;
     let mut arg_types = Vec::new();
     for arg in arg_list.get_args() {
         let arg_type = infer_expr(db, config, arg.clone())?;
         arg_types.push(arg_type);
     }
 
-    Some(arg_types)
+    Ok(arg_types)
 }
-
-// fn instantiate_func_by_return(
-//     db: &mut DbIndex,
-//     infer_config: &mut LuaInferConfig,
-//     file_id: FileId,
-//     func_param_types: &mut Vec<LuaType>,
-//     func_return_types: &mut Vec<LuaType>,
-//     return_types: Vec<LuaType>,
-// ) -> Option<()> {
-//     todo!()
-// }
