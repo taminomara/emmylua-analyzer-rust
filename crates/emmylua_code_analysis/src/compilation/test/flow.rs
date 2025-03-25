@@ -278,4 +278,26 @@ print(a.field)
         "#
         ));
     }
+
+    #[test]
+    fn test_elseif() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::NeedCheckNil,
+            r#"
+---@class D11
+---@field public a string
+
+---@type D11|nil
+local a
+
+if not a then
+elseif a.a then
+    print(a.a)
+end
+
+        "#
+        ));
+    }
 }

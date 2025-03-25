@@ -132,15 +132,34 @@ fn broadcast_up(
             if let Some(ne_type_assert) = type_assert.get_negation() {
                 if let Some(else_stat) = if_stat.get_else_clause() {
                     let block_range = else_stat.get_range();
-                    flow_chain.add_type_assert(path, ne_type_assert, block_range, actual_range);
-                } else if is_block_has_return(if_stat.get_block()?).unwrap_or(false) {
+                    flow_chain.add_type_assert(
+                        path,
+                        ne_type_assert.clone(),
+                        block_range,
+                        actual_range,
+                    );
+                } else if is_block_has_return(if_stat.get_block()).unwrap_or(false) {
                     let parent_block = if_stat.get_parent::<LuaBlock>()?;
                     let parent_range = parent_block.get_range();
                     let if_range = if_stat.get_range();
                     if if_range.end() < parent_range.end() {
                         let range = TextRange::new(if_range.end(), parent_range.end());
-                        flow_chain.add_type_assert(path, ne_type_assert, range, actual_range);
+                        flow_chain.add_type_assert(
+                            path,
+                            ne_type_assert.clone(),
+                            range,
+                            actual_range,
+                        );
                     }
+                }
+                for else_if_clause in if_stat.get_else_if_clause_list() {
+                    let block_range = else_if_clause.get_range();
+                    flow_chain.add_type_assert(
+                        path,
+                        ne_type_assert.clone(),
+                        block_range,
+                        actual_range,
+                    );
                 }
             }
         }
@@ -445,10 +464,12 @@ fn infer_lua_type_assert(
     Some(())
 }
 
-fn is_block_has_return(block: LuaBlock) -> Option<bool> {
-    for stat in block.get_stats() {
-        if is_stat_change_flow(stat.clone()).unwrap_or(false) {
-            return Some(true);
+fn is_block_has_return(block: Option<LuaBlock>) -> Option<bool> {
+    if let Some(block) = block {
+        for stat in block.get_stats() {
+            if is_stat_change_flow(stat.clone()).unwrap_or(false) {
+                return Some(true);
+            }
         }
     }
 
@@ -469,9 +490,7 @@ fn is_stat_change_flow(stat: LuaStat) -> Option<bool> {
             Some(false)
         }
         LuaStat::ReturnStat(_) => Some(true),
-        LuaStat::DoStat(do_stat) => {
-            Some(is_block_has_return(do_stat.get_block()?).unwrap_or(false))
-        }
+        LuaStat::DoStat(do_stat) => Some(is_block_has_return(do_stat.get_block()).unwrap_or(false)),
         _ => Some(false),
     }
 }
