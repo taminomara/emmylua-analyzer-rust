@@ -7,6 +7,7 @@ pub async fn on_did_change_watched_files(
     context: ServerContextSnapshot,
     params: DidChangeWatchedFilesParams,
 ) -> Option<()> {
+    let workspace = context.workspace_manager.read().await;
     let mut analysis = context.analysis.write().await;
     let emmyrc = analysis.get_emmyrc();
     let encoding = &emmyrc.workspace.encoding;
@@ -17,12 +18,14 @@ pub async fn on_did_change_watched_files(
         let file_type = get_file_type(&file_event.uri);
         match file_type {
             Some(WatchedFileType::Lua) => {
-                collect_lua_files(
-                    &mut watched_lua_files,
-                    file_event.uri,
-                    file_event.typ,
-                    encoding,
-                );
+                if !workspace.current_open_files.contains(&file_event.uri) {
+                    collect_lua_files(
+                        &mut watched_lua_files,
+                        file_event.uri,
+                        file_event.typ,
+                        encoding,
+                    );
+                }
             }
             Some(WatchedFileType::Editorconfig) => {
                 if file_event.typ == FileChangeType::DELETED {
