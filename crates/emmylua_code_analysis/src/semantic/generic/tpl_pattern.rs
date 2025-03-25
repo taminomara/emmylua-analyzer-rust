@@ -1,12 +1,15 @@
 use std::ops::Deref;
 
 use emmylua_parser::LuaSyntaxNode;
+use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::{
+    check_type_compact,
     db_index::{DbIndex, LuaGenericType, LuaType},
     semantic::{member::infer_member_map, LuaInferCache},
-    LuaFunctionType, LuaMemberKey, LuaMemberOwner, LuaMultiReturn, LuaTupleType, LuaUnionType,
+    LuaFunctionType, LuaMemberKey, LuaMemberOwner, LuaMultiReturn, LuaObjectType, LuaTupleType,
+    LuaUnionType,
 };
 
 use super::type_substitutor::TypeSubstitutor;
@@ -158,9 +161,47 @@ fn tpl_pattern_match(
         LuaType::Tuple(tuple) => {
             tuple_tpl_pattern_match(db, cache, root, tuple, target, substitutor);
         }
+        LuaType::Object(obj) => {
+            object_tpl_pattern_match(db, cache, root, obj, target, substitutor);
+        }
         _ => {}
     }
 
+    Some(())
+}
+
+fn object_tpl_pattern_match(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
+    root: &LuaSyntaxNode,
+    origin_obj: &LuaObjectType,
+    target: &LuaType,
+    substitutor: &mut TypeSubstitutor,
+) -> Option<()> {
+    match target {
+        LuaType::Object(target_object) => {
+            // 先匹配 fields
+            for (k, v) in origin_obj.get_fields().iter().sorted_by_key(|(k, _)| *k) {
+                let target_value = target_object.get_fields().get(k);
+                if let Some(target_value) = target_value {
+                    tpl_pattern_match(db, cache, root, v, target_value, substitutor);
+                }
+            }
+            // 再匹配索引访问
+            let target_index_access = target_object.get_index_access();
+            for (origin_key, v) in origin_obj.get_index_access() {
+                // 先匹配 key 类型进行转换
+                let target_access = target_index_access
+                    .iter()
+                    .find(|(target_key, _)| check_type_compact(db, origin_key, target_key).is_ok());
+                if let Some(target_access) = target_access {
+                    tpl_pattern_match(db, cache, root, origin_key, &target_access.0, substitutor);
+                    tpl_pattern_match(db, cache, root, v, &target_access.1, substitutor);
+                }
+            }
+        }
+        _ => {}
+    }
     Some(())
 }
 
@@ -304,6 +345,10 @@ fn table_generic_tpl_pattern_match(
                     LuaMemberKey::Name(s) => keys.push(LuaType::StringConst(s.clone().into())),
                     _ => {}
                 };
+                values.push(v.clone());
+            }
+            for (k, v) in obj.get_index_access() {
+                keys.push(k.clone());
                 values.push(v.clone());
             }
 
