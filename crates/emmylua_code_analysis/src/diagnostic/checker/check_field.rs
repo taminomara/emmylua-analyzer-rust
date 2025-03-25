@@ -92,3 +92,22 @@ fn check_index_expr(
 
     Some(())
 }
+
+#[allow(dead_code)]
+fn is_valid_prefix_type(typ: &LuaType) -> bool {
+    let mut current_typ = typ;
+    loop {
+        match current_typ {
+            LuaType::Any
+            | LuaType::Unknown
+            | LuaType::Table
+            | LuaType::TplRef(_)
+            | LuaType::StrTplRef(_)
+            | LuaType::TableConst(_) => return false,
+            LuaType::Instance(instance_typ) => {
+                current_typ = instance_typ.get_base();
+            }
+            _ => return true,
+        }
+    }
+}
