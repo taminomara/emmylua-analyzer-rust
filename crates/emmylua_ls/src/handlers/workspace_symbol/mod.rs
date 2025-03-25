@@ -8,6 +8,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
+use super::RegisterCapabilities;
+
 pub async fn on_workspace_symbol_handler(
     context: ServerContextSnapshot,
     params: WorkspaceSymbolParams,
@@ -20,11 +22,10 @@ pub async fn on_workspace_symbol_handler(
     build_workspace_symbols(compilation, query, cancel_token)
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.workspace_symbol_provider = Some(OneOf::Left(true));
+pub struct WorkspaceSymbolCapabilities;
 
-    Some(())
+impl RegisterCapabilities for WorkspaceSymbolCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.workspace_symbol_provider = Some(OneOf::Left(true));
+    }
 }

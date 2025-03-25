@@ -11,6 +11,8 @@ use lsp_types::{
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
 
+use super::RegisterCapabilities;
+
 pub async fn on_signature_helper_handler(
     context: ServerContextSnapshot,
     params: SignatureHelpParams,
@@ -87,14 +89,14 @@ pub async fn on_signature_helper_handler(
     }
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.signature_help_provider = Some(SignatureHelpOptions {
-        trigger_characters: Some(vec!["(", ","].iter().map(|s| s.to_string()).collect()),
-        retrigger_characters: Some(vec!["(", ","].iter().map(|s| s.to_string()).collect()),
-        ..Default::default()
-    });
-    Some(())
+pub struct SignatureHelperCapabilities;
+
+impl RegisterCapabilities for SignatureHelperCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.signature_help_provider = Some(SignatureHelpOptions {
+            trigger_characters: Some(vec!["(", ","].iter().map(|s| s.to_string()).collect()),
+            retrigger_characters: Some(vec!["(", ","].iter().map(|s| s.to_string()).collect()),
+            ..Default::default()
+        });
+    }
 }

@@ -8,6 +8,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
+use super::RegisterCapabilities;
+
 pub async fn on_document_selection_range_handle(
     context: ServerContextSnapshot,
     params: SelectionRangeParams,
@@ -57,11 +59,11 @@ pub async fn on_document_selection_range_handle(
     Some(result)
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.selection_range_provider =
-        Some(SelectionRangeProviderCapability::Simple(true));
-    Some(())
+pub struct DocumentSelectionRangeCapabilities;
+
+impl RegisterCapabilities for DocumentSelectionRangeCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.selection_range_provider =
+            Some(SelectionRangeProviderCapability::Simple(true));
+    }
 }

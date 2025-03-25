@@ -8,6 +8,8 @@ pub use reference_seacher::{search_decl_references, search_member_references};
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
 
+use super::RegisterCapabilities;
+
 pub async fn on_references_handler(
     context: ServerContextSnapshot,
     params: ReferenceParams,
@@ -49,10 +51,10 @@ pub async fn on_references_handler(
     search_references(&mut semantic_model, &analysis.compilation, token)
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.references_provider = Some(OneOf::Left(true));
-    Some(())
+pub struct ReferencesCapabilities;
+
+impl RegisterCapabilities for ReferencesCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.references_provider = Some(OneOf::Left(true));
+    }
 }

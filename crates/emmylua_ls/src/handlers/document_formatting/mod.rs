@@ -6,6 +6,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
+use super::RegisterCapabilities;
+
 pub async fn on_formatting_handler(
     context: ServerContextSnapshot,
     params: DocumentFormattingParams,
@@ -36,11 +38,10 @@ pub async fn on_formatting_handler(
     Some(vec![text_edit])
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.document_formatting_provider = Some(OneOf::Left(true));
+pub struct DocumentFormattingCapabilities;
 
-    Some(())
+impl RegisterCapabilities for DocumentFormattingCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.document_formatting_provider = Some(OneOf::Left(true));
+    }
 }

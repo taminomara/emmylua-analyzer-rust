@@ -11,6 +11,8 @@ use lsp_types::{
 pub use semantic_token_builder::{SEMANTIC_TOKEN_MODIFIERS, SEMANTIC_TOKEN_TYPES};
 use tokio_util::sync::CancellationToken;
 
+use super::RegisterCapabilities;
+
 static mut SEMANTIC_MULTILINE_SUPPORT: bool = false;
 
 pub async fn on_semantic_token_handler(
@@ -42,26 +44,28 @@ pub async fn on_semantic_token_handler(
     }))
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    client_capabilities: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.semantic_tokens_provider = Some(
-        SemanticTokensServerCapabilities::SemanticTokensOptions(SemanticTokensOptions {
-            legend: SemanticTokensLegend {
-                token_modifiers: SEMANTIC_TOKEN_MODIFIERS.iter().cloned().collect(),
-                token_types: SEMANTIC_TOKEN_TYPES.iter().cloned().collect(),
-            },
-            full: Some(SemanticTokensFullOptions::Bool(true)),
-            ..Default::default()
-        }),
-    );
+pub struct SemanticTokenCapabilities;
 
-    if is_support_muliline_tokens(client_capabilities) {
-        unsafe { SEMANTIC_MULTILINE_SUPPORT = true };
+impl RegisterCapabilities for SemanticTokenCapabilities {
+    fn register_capabilities(
+        server_capabilities: &mut ServerCapabilities,
+        client_capabilities: &ClientCapabilities,
+    ) {
+        server_capabilities.semantic_tokens_provider = Some(
+            SemanticTokensServerCapabilities::SemanticTokensOptions(SemanticTokensOptions {
+                legend: SemanticTokensLegend {
+                    token_modifiers: SEMANTIC_TOKEN_MODIFIERS.iter().cloned().collect(),
+                    token_types: SEMANTIC_TOKEN_TYPES.iter().cloned().collect(),
+                },
+                full: Some(SemanticTokensFullOptions::Bool(true)),
+                ..Default::default()
+            }),
+        );
+
+        if is_support_muliline_tokens(client_capabilities) {
+            unsafe { SEMANTIC_MULTILINE_SUPPORT = true };
+        }
     }
-
-    Some(())
 }
 
 fn is_support_muliline_tokens(client_capability: &ClientCapabilities) -> bool {

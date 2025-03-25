@@ -17,6 +17,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
+use super::RegisterCapabilities;
+
 pub async fn on_goto_definition_handler(
     context: ServerContextSnapshot,
     params: GotoDefinitionParams,
@@ -72,10 +74,10 @@ pub async fn on_goto_definition_handler(
     Some(GotoDefinitionResponse::Scalar(lsp_location))
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.definition_provider = Some(OneOf::Left(true));
-    Some(())
+pub struct DefinitionCapabilities;
+
+impl RegisterCapabilities for DefinitionCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.definition_provider = Some(OneOf::Left(true));
+    }
 }

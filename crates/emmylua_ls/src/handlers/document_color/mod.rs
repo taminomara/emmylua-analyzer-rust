@@ -10,6 +10,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;
 
+use super::RegisterCapabilities;
+
 pub async fn on_document_color(
     context: ServerContextSnapshot,
     params: DocumentColorParams,
@@ -80,10 +82,10 @@ pub async fn on_document_color_presentation(
     color_presentations
 }
 
-pub fn register_capabilities(
-    server_capabilities: &mut ServerCapabilities,
-    _: &ClientCapabilities,
-) -> Option<()> {
-    server_capabilities.color_provider = Some(ColorProviderCapability::Simple(true));
-    Some(())
+pub struct DocumentColorCapabilities;
+
+impl RegisterCapabilities for DocumentColorCapabilities {
+    fn register_capabilities(server_capabilities: &mut ServerCapabilities, _: &ClientCapabilities) {
+        server_capabilities.color_provider = Some(ColorProviderCapability::Simple(true));
+    }
 }
