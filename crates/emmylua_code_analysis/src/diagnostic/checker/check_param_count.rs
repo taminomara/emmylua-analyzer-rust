@@ -45,14 +45,18 @@ fn check_closure_expr(
             semantic_model.get_file_id(),
             &closure_expr,
         ))?;
-    let source_params_len = match source_typ {
-        LuaType::DocFunction(func_type) => func_type.get_params().len(),
+    let source_params_len = match &source_typ {
+        LuaType::DocFunction(func_type) => {
+            let params = func_type.get_params();
+            get_params_len(params)
+        }
         LuaType::Signature(signature_id) => {
             let signature = context.db.get_signature_index().get(&signature_id)?;
-            signature.get_type_params().len()
+            let params = signature.get_type_params();
+            get_params_len(&params)
         }
         _ => return Some(()),
-    };
+    }?;
 
     // 只检查右值参数多于左值参数的情况, 右值参数少于左值参数的情况是能够接受的
     if source_params_len > right_value.params.len() {
@@ -166,7 +170,14 @@ fn check_call_expr(
     // Check for redundant parameters
     else if call_args_count > params.len() {
         // 参数定义中最后一个参数是 `...`
-        if params.last().map_or(false, |(name, _)| name == "...") {
+        if params.last().map_or(false, |(name, typ)| {
+            name == "..."
+                || if let Some(typ) = typ {
+                    typ.is_variadic()
+                } else {
+                    false
+                }
+        }) {
             return Some(());
         }
 
@@ -197,4 +208,19 @@ fn check_call_expr(
     }
 
     Some(())
+}
+
+fn get_params_len(params: &[(String, Option<LuaType>)]) -> Option<usize> {
+    if let Some((name, typ)) = params.last() {
+        // 如果最后一个参数是可变参数, 则直接返回, 不需要检查
+        if name == "..." {
+            return None;
+        }
+        if let Some(typ) = typ {
+            if typ.is_variadic() {
+                return None;
+            }
+        }
+    }
+    Some(params.len())
 }

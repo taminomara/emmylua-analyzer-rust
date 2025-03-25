@@ -50,6 +50,22 @@ mod test {
     }
 
     #[test]
+    fn test_1() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::RedundantParameter,
+            r#"
+                ---@type fun(...)[]
+                local a = {}
+
+                a[1] = function(ccc, ...)
+                end
+        "#
+        ));
+    }
+
+    #[test]
     fn test_dots() {
         let mut ws = VirtualWorkspace::new();
 
