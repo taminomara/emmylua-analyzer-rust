@@ -458,10 +458,10 @@ fn infer_member_by_index_custom_type(
                     .get_operator(operator_id)
                     .ok_or(InferFailReason::None)?;
                 let operands = operator.get_operands();
-
-                if operands.len() == 2 {
+                let return_type = operator.get_result();
+                if operands.len() == 1 {
                     let typ =
-                        infer_index_metamethod(db, cache, &index_key, &operands[0], &operands[1])?;
+                        infer_index_metamethod(db, cache, &index_key, &operands[0], &return_type)?;
                     return Ok(typ);
                 }
             }
@@ -642,14 +642,16 @@ fn infer_member_by_index_generic(
                 .iter()
                 .map(|operand| instantiate_type_generic(db, operand, &substitutor))
                 .collect::<Vec<_>>();
+            let return_type =
+                instantiate_type_generic(db, index_operator.get_result(), &substitutor);
 
-            if instianted_operands.len() == 2 {
+            if instianted_operands.len() == 1 {
                 let result = infer_index_metamethod(
                     db,
                     cache,
                     &member_key,
                     &instianted_operands[0],
-                    &instianted_operands[1],
+                    &return_type,
                 );
 
                 match result {
