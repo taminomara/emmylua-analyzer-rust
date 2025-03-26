@@ -81,7 +81,7 @@ function string.dump(func, strip) end
 ---@param plain?  boolean
 ---@return integer|nil start
 ---@return integer|nil end
----@return any|nil ... captured
+---@return string ... captured
 ---@nodiscard
 function string.find(s, pattern, init, plain) end
 

@@ -67,9 +67,9 @@ fn infer_union(db: &DbIndex, u: &LuaUnionType, right: &LuaType, op: BinaryOperat
     }
 
     match unique_union_types.len() {
-        0 => Some(LuaType::Unknown),
-        1 => Some(unique_union_types.into_iter().next().unwrap()),
-        _ => Some(LuaType::Union(LuaUnionType::new(unique_union_types).into())),
+        0 => Ok(LuaType::Unknown),
+        1 => Ok(unique_union_types.into_iter().next().unwrap()),
+        _ => Ok(LuaType::Union(LuaUnionType::new(unique_union_types).into())),
     }
 }
 
@@ -167,8 +167,8 @@ fn infer_binary_expr_add(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
         };
     }
     match (left.is_nil(), right.is_nil()) {
-        (true, false) => return Some(right),
-        (false, true) => return Some(left),
+        (true, false) => return Ok(right),
+        (false, true) => return Ok(left),
         _ => {}
     }
 
