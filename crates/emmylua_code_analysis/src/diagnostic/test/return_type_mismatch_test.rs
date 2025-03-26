@@ -205,4 +205,24 @@ mod tests {
             "#
         ));
     }
+
+    #[test]
+    fn test_as_return_type() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+            local function dd()
+                return "11231"
+            end
+            
+            ---@return integer
+            local function f()
+            
+                return dd() ---@as integer
+            end
+        "#
+        ));
+    }
 }

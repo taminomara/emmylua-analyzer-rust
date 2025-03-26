@@ -1,5 +1,5 @@
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaDocDescriptionOwner, LuaDocTagAs, LuaDocTagCast,
+    LuaAst, LuaAstNode, LuaAstToken, LuaBlock, LuaDocDescriptionOwner, LuaDocTagAs, LuaDocTagCast,
     LuaDocTagModule, LuaDocTagOther, LuaDocTagOverload, LuaDocTagParam, LuaDocTagReturn,
     LuaDocTagSee, LuaDocTagType, LuaExpr, LuaLocalName, LuaTokenKind, LuaVarExpr,
 };
@@ -278,7 +278,16 @@ pub fn analyze_as(analyzer: &mut DocAnalyzer, tag: LuaDocTagAs) -> Option<()> {
         left_token = left_token.prev_token()?;
     }
 
-    let expr = LuaExpr::cast(left_token.parent()?)?;
+    let mut ast_node = left_token.parent()?;
+    loop {
+        if LuaExpr::can_cast(ast_node.kind().into()) {
+            break;
+        } else if LuaBlock::can_cast(ast_node.kind().into()) {
+            return None;
+        }
+        ast_node = ast_node.parent()?;
+    }
+    let expr = LuaExpr::cast(ast_node)?;
 
     let file_id = analyzer.file_id;
     let in_filed_syntax_id = InFiled::new(file_id, expr.get_syntax_id());
