@@ -83,11 +83,12 @@ fn resolve_signature_by_args(
         };
         let mut total_weight = 0; // 总权重
         let expr_len = expr_types.len();
-
         // 检查每个参数的匹配情况
         for (i, param) in params.iter().enumerate() {
             if i == 0 && jump_param > 0 {
-                continue; // 处理冒号调用时的偏移
+                // 非冒号定义但是冒号调用, 直接认为匹配
+                total_weight += 100;
+                continue;
             }
             let param_type = param.1.as_ref().unwrap_or(&LuaType::Any);
             let expr_idx = i - jump_param;

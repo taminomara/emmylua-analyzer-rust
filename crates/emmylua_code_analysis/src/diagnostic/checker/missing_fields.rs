@@ -149,7 +149,7 @@ fn record_required_fields(
         return;
     }
 
-    if decl_type.is_nullable() {
+    if decl_type.is_nullable() || decl_type.is_any() {
         optional_type.insert(name);
         return;
     }
