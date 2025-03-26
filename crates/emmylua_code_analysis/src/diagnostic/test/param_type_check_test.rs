@@ -347,4 +347,26 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_table_array() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@generic K, V
+                ---@param t table<K, V>
+                ---@return table<V, K>
+                local function revertMap(t)
+                end
+
+                ---@param arr any[]
+                local function sortCallbackOfIndex(arr)
+                    ---@type table<any, integer>
+                    local indexMap = revertMap(arr)
+                end
+        "#
+        ));
+    }
 }
