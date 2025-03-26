@@ -6,7 +6,8 @@ use crate::{
 };
 
 use super::{
-    check_reason::check_reach_reason, merge_decl_expr_type, merge_member_type, UnResolveDecl, UnResolveIterVar, UnResolveMember, UnResolveModule, UnResolveModuleRef, UnResolveReturn
+    check_reason::check_reach_reason, merge_decl_expr_type, merge_member_type, UnResolveDecl,
+    UnResolveIterVar, UnResolveMember, UnResolveModule, UnResolveModuleRef, UnResolveReturn,
 };
 
 pub fn try_resolve_decl(
@@ -24,7 +25,7 @@ pub fn try_resolve_decl(
         Err(reason) => {
             decl.reason = reason;
             return None;
-        },
+        }
     };
     let decl_id = decl.decl_id;
     let expr_type = match &expr_type {
@@ -54,7 +55,7 @@ pub fn try_resolve_member(
             Err(reason) => {
                 unresolve_member.reason = reason;
                 return None;
-            },
+            }
         };
         let member_owner = match prefix_type {
             LuaType::TableConst(in_file_range) => LuaMemberOwner::Element(in_file_range),
@@ -89,7 +90,7 @@ pub fn try_resolve_member(
             Err(reason) => {
                 unresolve_member.reason = reason;
                 return None;
-            },
+            }
         };
 
         let expr_type = match &expr_type {
@@ -121,7 +122,7 @@ pub fn try_resolve_module(
         Err(reason) => {
             module.reason = reason;
             return None;
-        },
+        }
     };
 
     let expr_type = match &expr_type {
@@ -147,7 +148,7 @@ pub fn try_resolve_return_point(
         Err(reason) => {
             return_.reason = reason;
             return None;
-        },
+        }
     };
 
     let signature = db
@@ -166,7 +167,7 @@ pub fn try_resolve_iter_var(
     if !check_reach_reason(db, cache, &iter_var.reason).unwrap_or(false) {
         return None;
     }
-    
+
     let expr_type = infer_expr(db, cache, iter_var.iter_expr.clone()).ok()?;
     let func = match expr_type {
         LuaType::DocFunction(func) => func,

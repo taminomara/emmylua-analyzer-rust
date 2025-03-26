@@ -1,6 +1,9 @@
 use emmylua_parser::LuaAstNode;
 
-use crate::{infer_expr, DbIndex, FileId, InFiled, InferFailReason, LuaDocReturnInfo, LuaInferCache, LuaSemanticDeclId, LuaType, SignatureReturnStatus};
+use crate::{
+    infer_expr, DbIndex, FileId, InFiled, InferFailReason, LuaDocReturnInfo, LuaInferCache,
+    LuaSemanticDeclId, LuaType, SignatureReturnStatus,
+};
 
 use super::{infer_manager::InferCacheManager, UnResolve};
 
@@ -73,7 +76,7 @@ fn resolve_reason(
     match reason {
         InferFailReason::None
         | InferFailReason::FieldDotFound
-        | InferFailReason::RecursiveInfer => {},
+        | InferFailReason::RecursiveInfer => {}
         InferFailReason::UnResolveDeclType(decl_id) => {
             let decl = db.get_decl_index_mut().get_decl_mut(decl_id)?;
             if decl.get_type().is_none() {
@@ -100,7 +103,7 @@ fn resolve_reason(
             let file_id = cache.get_file_id();
             let key = InFiled::new(file_id, expr.get_syntax_id());
             db.get_type_index_mut().add_as_force_type(key, LuaType::Any);
-        },
+        }
         InferFailReason::UnResolveSignatureReturn(signature_id) => {
             let signature = db.get_signature_index_mut().get_mut(signature_id)?;
             signature.return_docs = vec![LuaDocReturnInfo {
