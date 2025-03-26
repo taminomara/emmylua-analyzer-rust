@@ -42,6 +42,7 @@ pub fn check_doc_func_type_compact(
 
             Ok(())
         }
+        LuaType::Function => Ok(()),
         _ => Err(TypeCheckFailReason::TypeNotMatch),
     }
 }

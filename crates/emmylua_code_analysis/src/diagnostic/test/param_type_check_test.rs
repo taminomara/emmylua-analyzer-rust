@@ -329,4 +329,22 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_function() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            ---@param sorter function
+            ---@return string[]
+            local function getTableKeys(sorter)
+                local keys = {}
+                table.sort(keys, sorter)
+                return keys
+            end
+        "#
+        ));
+    }
 }
