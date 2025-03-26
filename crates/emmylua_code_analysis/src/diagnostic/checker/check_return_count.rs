@@ -224,7 +224,9 @@ fn is_while_condition_true(
     while_stat: &LuaWhileStat,
 ) -> Option<()> {
     let condition_expr = while_stat.get_condition_expr()?;
-    let condition_type = semantic_model.infer_expr(condition_expr.clone())?;
+    let condition_type = semantic_model
+        .infer_expr(condition_expr.clone())
+        .unwrap_or(LuaType::Any);
     match condition_type {
         LuaType::BooleanConst(value) => {
             if value {

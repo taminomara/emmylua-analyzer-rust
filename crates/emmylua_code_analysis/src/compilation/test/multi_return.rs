@@ -67,6 +67,7 @@ mod test {
         assert!(ws.check_code_for(
             crate::DiagnosticCode::UnbalancedAssignments,
             r#"
+        local fmt = ""
         local scol, ecol, match, key, time_fmt = fmt:find('(<([^:>]+):?([^>]*)>)')
         "#,
         ));

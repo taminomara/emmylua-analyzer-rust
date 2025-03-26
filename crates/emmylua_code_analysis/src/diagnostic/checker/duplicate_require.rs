@@ -30,7 +30,7 @@ fn check_require_call_expr(
     let args_list = call_expr.get_args_list()?;
     let arg_expr = args_list.get_args().next()?;
 
-    let ty = semantic_model.infer_expr(arg_expr)?;
+    let ty = semantic_model.infer_expr(arg_expr).unwrap_or(LuaType::Any);
     if let LuaType::StringConst(s) = ty {
         let parent_block = call_expr
             .ancestors::<LuaBlock>()

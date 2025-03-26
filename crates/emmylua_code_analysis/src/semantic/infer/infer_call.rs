@@ -74,7 +74,7 @@ fn infer_call_result(
         prefix_type.clone(),
         infer_guard,
         &mut funcs,
-    );
+    )?;
 
     let resolve_func = match funcs.len() {
         0 => return Err(InferFailReason::None),

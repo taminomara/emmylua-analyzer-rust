@@ -1,8 +1,6 @@
-use std::sync::Arc;
-
 use emmylua_parser::LuaExpr;
 
-use crate::{LuaDeclId, LuaMemberId, LuaMemberKey, LuaMemberOwner, LuaSignatureId};
+use crate::{LuaDeclId, LuaMemberId, LuaSignatureId};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum InferFailReason {
@@ -10,7 +8,7 @@ pub enum InferFailReason {
     RecursiveInfer,
     UnResolveExpr(LuaExpr),
     UnResolveSignatureReturn(LuaSignatureId),
-    FieldDotFound(Arc<(LuaMemberOwner, LuaMemberKey)>),
+    FieldDotFound,
     UnResolveDeclType(LuaDeclId),
     UnResolveMemberType(LuaMemberId),
 }
@@ -20,7 +18,7 @@ impl InferFailReason {
         match self {
             InferFailReason::UnResolveExpr(_)
             | InferFailReason::UnResolveSignatureReturn(_)
-            | InferFailReason::FieldDotFound(_)
+            | InferFailReason::FieldDotFound
             | InferFailReason::UnResolveDeclType(_)
             | InferFailReason::UnResolveMemberType(_) => true,
             _ => false,

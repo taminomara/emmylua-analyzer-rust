@@ -297,7 +297,7 @@ fn build_func_stat_override_hint(
     let func_name = func_stat.get_func_name()?;
     if let LuaVarExpr::IndexExpr(index_expr) = func_name {
         let prefix_expr = index_expr.get_prefix_expr()?;
-        let prefix_type = semantic_model.infer_expr(prefix_expr.into())?;
+        let prefix_type = semantic_model.infer_expr(prefix_expr.into()).ok()?;
         if let LuaType::Def(id) = prefix_type {
             let supers = semantic_model
                 .get_db()

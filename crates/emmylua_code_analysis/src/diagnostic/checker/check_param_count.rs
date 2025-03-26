@@ -118,7 +118,7 @@ fn check_call_expr(
         }
         // 参数调用中最后一个参数是多返回值
         if let Some(last_arg) = call_args.last() {
-            if let Some(LuaType::MuliReturn(types)) = semantic_model.infer_expr(last_arg.clone()) {
+            if let Ok(LuaType::MuliReturn(types)) = semantic_model.infer_expr(last_arg.clone()) {
                 let len = types.get_len().unwrap_or(0);
                 call_args_count = call_args_count + len as usize - 1;
                 if call_args_count >= params.len() {

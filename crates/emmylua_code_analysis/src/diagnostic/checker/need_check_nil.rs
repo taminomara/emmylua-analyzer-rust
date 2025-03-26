@@ -36,7 +36,7 @@ fn check_call_expr(
     call_expr: LuaCallExpr,
 ) -> Option<()> {
     let prefix = call_expr.get_prefix_expr()?;
-    let func = semantic_model.infer_expr(prefix.clone())?;
+    let func = semantic_model.infer_expr(prefix.clone()).ok()?;
     if func.is_nullable() {
         context.add_diagnostic(
             DiagnosticCode::NeedCheckNil,
@@ -55,7 +55,7 @@ fn check_index_expr(
     index_expr: LuaIndexExpr,
 ) -> Option<()> {
     let prefix = index_expr.get_prefix_expr()?;
-    let prefix_type = semantic_model.infer_expr(prefix.clone())?;
+    let prefix_type = semantic_model.infer_expr(prefix.clone()).ok()?;
     if prefix_type.is_nullable() {
         context.add_diagnostic(
             DiagnosticCode::NeedCheckNil,
@@ -83,7 +83,7 @@ fn check_binary_expr(
             | BinaryOperator::OpMod
     ) {
         let (left, right) = binary_expr.get_exprs()?;
-        let left_type = semantic_model.infer_expr(left.clone())?;
+        let left_type = semantic_model.infer_expr(left.clone()).ok()?;
 
         if left_type.is_nullable() {
             context.add_diagnostic(
@@ -94,7 +94,7 @@ fn check_binary_expr(
             );
         }
 
-        let right_type = semantic_model.infer_expr(right.clone())?;
+        let right_type = semantic_model.infer_expr(right.clone()).ok()?;
         if right_type.is_nullable() {
             context.add_diagnostic(
                 DiagnosticCode::NeedCheckNil,

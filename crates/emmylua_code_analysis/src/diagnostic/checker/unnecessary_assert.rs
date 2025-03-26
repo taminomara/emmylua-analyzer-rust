@@ -27,7 +27,7 @@ fn check_assert_rule(
     let args = call_expr.get_args_list()?;
     let arg_exprs = args.get_args().collect::<Vec<_>>();
     if let Some(first_expr) = arg_exprs.first() {
-        let expr_type = semantic_model.infer_expr(first_expr.clone())?;
+        let expr_type = semantic_model.infer_expr(first_expr.clone()).ok()?;
         let first_type = match &expr_type {
             LuaType::MuliReturn(multi) => multi.get_type(0)?.clone(),
             _ => expr_type,

@@ -64,7 +64,7 @@ fn get_decl_type(db: &DbIndex, decl: &LuaDecl) -> InferResult {
         return infer_param(db, decl);
     }
 
-    Ok(LuaType::Unknown)
+    Err(InferFailReason::UnResolveDeclType(decl.get_id()))
 }
 
 fn infer_self(db: &DbIndex, cache: &mut LuaInferCache, name_expr: LuaNameExpr) -> InferResult {
@@ -148,7 +148,7 @@ pub fn infer_param(db: &DbIndex, decl: &LuaDecl) -> InferResult {
         }
     }
 
-    Ok(LuaType::Any)
+    Err(InferFailReason::UnResolveDeclType(decl.get_id()))
 }
 
 fn find_decl_member_type(db: &DbIndex, member_id: LuaMemberId) -> InferResult {

@@ -159,7 +159,7 @@ fn infer_table_type_by_parent(
         &mut InferGuard::new(),
     ) {
         Ok(member_type) => return Ok(member_type),
-        Err(InferFailReason::FieldDotFound(err)) => InferFailReason::FieldDotFound(err),
+        Err(InferFailReason::FieldDotFound) => InferFailReason::FieldDotFound,
         Err(err) => return Err(err),
     };
 
@@ -171,7 +171,8 @@ fn infer_table_type_by_parent(
         &mut InferGuard::new(),
     ) {
         Ok(member_type) => return Ok(member_type),
-        Err(_) => {}
+        Err(InferFailReason::FieldDotFound) => {}
+        Err(err) => return Err(err),
     }
 
     Err(reason)

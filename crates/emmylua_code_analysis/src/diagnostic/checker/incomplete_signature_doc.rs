@@ -161,7 +161,7 @@ fn check_returns(
         let mut return_stat_len: usize = 0;
 
         for (i, expr) in return_stat.get_expr_list().enumerate() {
-            let Some(infer_type) = semantic_model.infer_expr(expr.clone()) else {
+            let Some(infer_type) = semantic_model.infer_expr(expr.clone()).ok() else {
                 continue;
             };
 

@@ -71,7 +71,9 @@ fn resolve_member_type(
                     for member in members {
                         typ = TypeOps::Union.apply(
                             &typ,
-                            &member.get_option_decl_type().ok_or(InferFailReason::None)?,
+                            &member
+                                .get_option_decl_type()
+                                .ok_or(InferFailReason::UnResolveMemberType(member.get_id()))?,
                         );
                     }
                     Ok(typ)
@@ -83,7 +85,9 @@ fn resolve_member_type(
                         if feature.is_meta_decl() {
                             typ = TypeOps::Union.apply(
                                 &typ,
-                                &member.get_option_decl_type().ok_or(InferFailReason::None)?,
+                                &member
+                                    .get_option_decl_type()
+                                    .ok_or(InferFailReason::UnResolveMemberType(member.get_id()))?,
                             );
                         }
                     }
@@ -96,7 +100,9 @@ fn resolve_member_type(
                         if feature.is_file_decl() {
                             typ = TypeOps::Union.apply(
                                 &typ,
-                                &member.get_option_decl_type().ok_or(InferFailReason::None)?,
+                                &member
+                                    .get_option_decl_type()
+                                    .ok_or(InferFailReason::UnResolveMemberType(member.get_id()))?,
                             );
                         }
                     }

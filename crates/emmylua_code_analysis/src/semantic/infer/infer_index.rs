@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use emmylua_parser::{
     LuaAstNode, LuaIndexExpr, LuaIndexKey, LuaIndexMemberExpr, LuaSyntaxId, LuaSyntaxKind,
     LuaTableExpr, PathTrait,
@@ -18,7 +16,7 @@ use crate::{
         type_check::{self, check_type_compact},
         InferGuard,
     },
-    InFiled, LuaFlowId, LuaInferCache, LuaInstanceType, LuaMemberOwner,
+    InFiled, LuaFlowId, LuaInferCache, LuaInstanceType, LuaMemberOwner, TypeOps,
 };
 
 use super::{infer_expr, InferFailReason, InferResult};
@@ -40,9 +38,9 @@ pub fn infer_index_expr(
         &mut InferGuard::new(),
     ) {
         Ok(member_type) => {
-            return infer_member_type_pass_flow(db, cache, index_expr, &prefix_type, member_type)
+            return infer_member_type_pass_flow(db, cache, index_expr, &prefix_type, member_type);
         }
-        Err(InferFailReason::FieldDotFound(err)) => InferFailReason::FieldDotFound(err),
+        Err(InferFailReason::FieldDotFound) => InferFailReason::FieldDotFound,
         Err(err) => return Err(err),
     };
 
@@ -56,10 +54,11 @@ pub fn infer_index_expr(
         Ok(member_type) => {
             return infer_member_type_pass_flow(db, cache, index_expr, &prefix_type, member_type)
         }
-        Err(_) => {}
+        Err(InferFailReason::FieldDotFound) => {}
+        Err(err) => return Err(err),
     }
 
-    return Err(reason);
+    Err(reason)
 }
 
 fn infer_member_type_pass_flow(
@@ -128,7 +127,7 @@ pub fn infer_member_by_member_key(
         LuaType::Global => infer_global_field_member(db, cache, index_expr),
         LuaType::Instance(inst) => infer_instance_member(db, cache, inst, index_expr, infer_guard),
         LuaType::Namespace(ns) => infer_namespace_member(db, cache, ns, index_expr),
-        _ => Ok(LuaType::Nil),
+        _ => Err(InferFailReason::FieldDotFound),
     }
 }
 
@@ -144,12 +143,7 @@ fn infer_table_member(
         .into();
     let member_item = match db.get_member_index().get_member_item(&owner, &key) {
         Some(member_item) => member_item,
-        None => {
-            return Err(InferFailReason::FieldDotFound(Arc::new((
-                owner.clone(),
-                key.clone(),
-            ))))
-        }
+        None => return Err(InferFailReason::FieldDotFound),
     };
 
     member_item.resolve_type(db)
@@ -197,18 +191,16 @@ fn infer_custom_type_member(
 
                 match result {
                     Ok(member_type) => {
-                        if !member_type.is_nil() {
-                            return Ok(member_type);
-                        }
+                        return Ok(member_type);
                     }
-                    Err(InferFailReason::FieldDotFound(_)) => {}
+                    Err(InferFailReason::FieldDotFound) => {}
                     Err(err) => return Err(err),
                 }
             }
         }
     }
 
-    Err(InferFailReason::FieldDotFound(Arc::new((owner, key))))
+    Err(InferFailReason::FieldDotFound)
 }
 
 fn infer_tuple_member(tuple_type: &LuaTupleType, index_expr: LuaIndexMemberExpr) -> InferResult {
@@ -220,11 +212,11 @@ fn infer_tuple_member(tuple_type: &LuaTupleType, index_expr: LuaIndexMemberExpr)
         let index = if i > 0 { i - 1 } else { 0 };
         return match tuple_type.get_type(index as usize) {
             Some(typ) => Ok(typ.clone()),
-            None => Ok(LuaType::Nil),
+            None => Err(InferFailReason::FieldDotFound),
         };
     }
 
-    Ok(LuaType::Nil)
+    Err(InferFailReason::FieldDotFound)
 }
 
 fn infer_object_member(
@@ -245,17 +237,16 @@ fn infer_object_member(
         let result = infer_index_metamethod(db, cache, &index_key, &key, value);
         match result {
             Ok(typ) => {
-                if !typ.is_nil() {
-                    return Ok(typ);
-                }
+                return Ok(typ);
             }
+            Err(InferFailReason::FieldDotFound) => {}
             Err(err) => {
                 return Err(err);
             }
         }
     }
 
-    Ok(LuaType::Nil)
+    Err(InferFailReason::FieldDotFound)
 }
 
 fn infer_index_metamethod(
@@ -277,7 +268,7 @@ fn infer_index_metamethod(
         return Ok(value_type.clone());
     }
 
-    Ok(LuaType::Nil)
+    Err(InferFailReason::FieldDotFound)
 }
 
 fn infer_union_member(
@@ -367,11 +358,9 @@ fn infer_instance_member(
         infer_member_by_member_key(db, cache, &origin_type, index_expr.clone(), infer_guard);
     match base_result {
         Ok(typ) => {
-            if !typ.is_nil() {
-                return Ok(typ);
-            }
+            return Ok(typ);
         }
-        Err(InferFailReason::FieldDotFound(_)) => {}
+        Err(InferFailReason::FieldDotFound) => {}
         Err(err) => return Err(err),
     }
 
@@ -406,7 +395,7 @@ pub fn infer_member_by_operator(
         LuaType::TableGeneric(table_generic) => {
             infer_member_by_index_table_generic(db, cache, table_generic, index_expr)
         }
-        _ => Err(InferFailReason::None),
+        _ => Err(InferFailReason::FieldDotFound),
     }
 }
 
@@ -432,10 +421,9 @@ fn infer_member_by_index_table(
                 .next()
                 .ok_or(InferFailReason::None)?;
             let first_expr = first_field.get_value_expr().ok_or(InferFailReason::None)?;
-            let ty = infer_expr(db, cache, first_expr)?;
-            Ok(ty)
+            infer_expr(db, cache, first_expr)
         }
-        _ => Ok(LuaType::Nil),
+        _ => Err(InferFailReason::FieldDotFound),
     }
 }
 
@@ -459,8 +447,6 @@ fn infer_member_by_index_custom_type(
     }
 
     let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
-    // find member by key in self
-    // todo: refactor the code
     if let Some(operators_map) = db
         .get_operator_index()
         .get_operators_by_type(prefix_type_id)
@@ -476,9 +462,7 @@ fn infer_member_by_index_custom_type(
                 if operands.len() == 2 {
                     let typ =
                         infer_index_metamethod(db, cache, &index_key, &operands[0], &operands[1])?;
-                    if !typ.is_nil() {
-                        return Ok(typ);
-                    }
+                    return Ok(typ);
                 }
             }
         };
@@ -497,18 +481,16 @@ fn infer_member_by_index_custom_type(
                 );
                 match result {
                     Ok(member_type) => {
-                        if !member_type.is_nil() {
-                            return Ok(member_type);
-                        }
+                        return Ok(member_type);
                     }
-                    Err(InferFailReason::FieldDotFound(_)) => {}
+                    Err(InferFailReason::FieldDotFound) => {}
                     Err(err) => return Err(err),
                 }
             }
         }
     }
 
-    Ok(LuaType::Nil)
+    Err(InferFailReason::FieldDotFound)
 }
 
 fn infer_member_by_index_array(
@@ -523,12 +505,12 @@ fn infer_member_by_index_array(
     } else if member_key.is_expr() {
         let expr = member_key.get_expr().ok_or(InferFailReason::None)?;
         let expr_type = infer_expr(db, cache, expr.clone())?;
-        if expr_type.is_number() {
+        if check_type_compact(db, &LuaType::Number, &expr_type).is_ok() {
             return Ok(base.clone());
         }
     }
 
-    Ok(LuaType::Nil)
+    Err(InferFailReason::FieldDotFound)
 }
 
 fn infer_member_by_index_object(
@@ -549,7 +531,7 @@ fn infer_member_by_index_object(
         }
     }
 
-    Ok(LuaType::Nil)
+    Err(InferFailReason::FieldDotFound)
 }
 
 fn infer_member_by_index_union(
@@ -558,7 +540,7 @@ fn infer_member_by_index_union(
     union: &LuaUnionType,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
-    let mut member_types = Vec::new();
+    let mut member_type = LuaType::Unknown;
     for member in union.get_types() {
         let result = infer_member_by_operator(
             db,
@@ -569,23 +551,20 @@ fn infer_member_by_index_union(
         );
         match result {
             Ok(typ) => {
-                if !typ.is_nil() {
-                    member_types.push(typ);
-                }
+                member_type = TypeOps::Union.apply(&member_type, &typ);
             }
-            Err(InferFailReason::FieldDotFound(_)) => {}
+            Err(InferFailReason::FieldDotFound) => {}
             Err(err) => {
                 return Err(err);
             }
         }
     }
 
-    member_types.dedup();
-    match member_types.len() {
-        0 => Ok(LuaType::Nil),
-        1 => Ok(member_types[0].clone()),
-        _ => Ok(LuaType::Union(LuaUnionType::new(member_types).into())),
+    if member_type.is_unknown() {
+        return Err(InferFailReason::FieldDotFound);
     }
+
+    Ok(member_type)
 }
 
 fn infer_member_by_index_intersection(
@@ -594,7 +573,7 @@ fn infer_member_by_index_intersection(
     intersection: &LuaIntersectionType,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
-    let mut member_type = LuaType::Nil;
+    let mut member_type = LuaType::Unknown;
     for member in intersection.get_types() {
         let sub_member_type = infer_member_by_operator(
             db,
@@ -603,11 +582,15 @@ fn infer_member_by_index_intersection(
             index_expr.clone(),
             &mut InferGuard::new(),
         )?;
-        if member_type.is_nil() {
+        if member_type.is_unknown() {
             member_type = sub_member_type;
         } else if member_type != sub_member_type {
-            return Ok(LuaType::Nil);
+            return Err(InferFailReason::FieldDotFound);
         }
+    }
+
+    if member_type.is_unknown() {
+        return Err(InferFailReason::FieldDotFound);
     }
 
     Ok(member_type)
@@ -644,7 +627,6 @@ fn infer_member_by_index_generic(
         return Err(InferFailReason::None);
     }
 
-    // todo: refactor here
     let member_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
     let operator_index = db.get_operator_index();
     if let Some(operator_maps) = operator_index.get_operators_by_type(&type_decl_id) {
@@ -676,7 +658,7 @@ fn infer_member_by_index_generic(
                             return Ok(member_type);
                         }
                     }
-                    Err(InferFailReason::FieldDotFound(_)) => {}
+                    Err(InferFailReason::FieldDotFound) => {}
                     Err(err) => return Err(err),
                 }
             }
@@ -695,17 +677,15 @@ fn infer_member_by_index_generic(
             );
             match result {
                 Ok(member_type) => {
-                    if !member_type.is_nil() {
-                        return Ok(member_type);
-                    }
+                    return Ok(member_type);
                 }
-                Err(InferFailReason::FieldDotFound(_)) => {}
+                Err(InferFailReason::FieldDotFound) => {}
                 Err(err) => return Err(err),
             }
         }
     }
 
-    Ok(LuaType::Nil)
+    Err(InferFailReason::FieldDotFound)
 }
 
 fn infer_member_by_index_table_generic(
@@ -718,7 +698,6 @@ fn infer_member_by_index_table_generic(
         return Err(InferFailReason::None);
     }
 
-    // todo: refactor
     let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
     let key_type = &table_params[0];
     let value_type = &table_params[1];

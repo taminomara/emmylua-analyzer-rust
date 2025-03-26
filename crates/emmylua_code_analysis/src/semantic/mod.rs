@@ -94,8 +94,8 @@ impl<'a> SemanticModel<'a> {
         self.db.get_vfs().get_file_parse_error(&self.file_id)
     }
 
-    pub fn infer_expr(&self, expr: LuaExpr) -> Option<LuaType> {
-        infer_expr(self.db, &mut self.infer_cache.borrow_mut(), expr).ok()
+    pub fn infer_expr(&self, expr: LuaExpr) -> Result<LuaType, InferFailReason> {
+        infer_expr(self.db, &mut self.infer_cache.borrow_mut(), expr)
     }
 
     pub fn infer_table_should_be(&self, table: LuaTableExpr) -> Option<LuaType> {
