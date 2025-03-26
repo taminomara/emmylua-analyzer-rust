@@ -7,10 +7,15 @@ use crate::{
     LuaSignatureId, LuaType, LuaTypeDeclId, LuaUnionType,
 };
 
-use super::super::{
-    generic::{instantiate_func_generic, TypeSubstitutor},
-    instantiate_type_generic, resolve_signature, InferGuard, LuaInferCache,
+use super::{
+    super::{
+        generic::{instantiate_func_generic, TypeSubstitutor},
+        instantiate_type_generic, resolve_signature, InferGuard, LuaInferCache,
+    },
+    InferFailReason,
 };
+
+pub type InferCallFuncResult = Result<Arc<LuaFunctionType>, InferFailReason>;
 
 pub fn infer_call_expr_func(
     db: &DbIndex,
@@ -19,21 +24,20 @@ pub fn infer_call_expr_func(
     call_expr_type: LuaType,
     infer_guard: &mut InferGuard,
     args_count: Option<usize>,
-) -> Option<Arc<LuaFunctionType>> {
+) -> InferCallFuncResult {
     let syntax_id = call_expr.get_syntax_id();
-    let key = CacheKey::Call(syntax_id, args_count);
+    let key = CacheKey::Call(syntax_id, args_count, call_expr_type.clone());
     match cache.get(&key) {
         Some(cache) => match cache {
-            CacheEntry::CallCache(ty) => return Some(ty.clone()),
-            CacheEntry::ReadyCache => {}
-            _ => return None,
+            CacheEntry::CallCache(ty) => return Ok(ty.clone()),
+            _ => return Err(InferFailReason::RecursiveInfer),
         },
         None => {}
     }
 
     cache.ready_cache(&key);
     let result = match call_expr_type {
-        LuaType::DocFunction(func) => Some(func),
+        LuaType::DocFunction(func) => Ok(func),
         LuaType::Signature(signature_id) => infer_signature_doc_function(
             db,
             cache,
@@ -75,16 +79,20 @@ pub fn infer_call_expr_func(
             {
                 infer_generic_doc_function_union(db, cache, &union, call_expr, args_count)
             } else {
-                None
+                Err(InferFailReason::None)
             }
         }
-        _ => return None,
+        _ => return Err(InferFailReason::None),
     };
 
-    if let Some(result_type) = &result {
-        cache.add_cache(&key, CacheEntry::CallCache(result_type.clone()));
-    } else {
-        cache.remove(&key);
+    match &result {
+        Ok(func_ty) => {
+            cache.add_cache(&key, CacheEntry::CallCache(func_ty.clone()));
+        }
+        Err(r) if r.is_need_resolve() => {
+            cache.remove(&key);
+        }
+        _ => {}
     }
 
     result
@@ -96,7 +104,7 @@ fn infer_generic_doc_function_union(
     union: &LuaUnionType,
     call_expr: LuaCallExpr,
     args_count: Option<usize>,
-) -> Option<Arc<LuaFunctionType>> {
+) -> InferCallFuncResult {
     let overloads = union
         .get_types()
         .iter()
@@ -106,9 +114,7 @@ fn infer_generic_doc_function_union(
         })
         .collect::<Vec<_>>();
 
-    let doc_func = resolve_signature(db, cache, overloads, call_expr.clone(), false, args_count)?;
-
-    Some(doc_func)
+    resolve_signature(db, cache, overloads, call_expr.clone(), false, args_count)
 }
 
 fn infer_signature_doc_function(
@@ -117,8 +123,11 @@ fn infer_signature_doc_function(
     signature_id: LuaSignatureId,
     call_expr: LuaCallExpr,
     args_count: Option<usize>,
-) -> Option<Arc<LuaFunctionType>> {
-    let signature = db.get_signature_index().get(&signature_id)?;
+) -> InferCallFuncResult {
+    let signature = db
+        .get_signature_index()
+        .get(&signature_id)
+        .ok_or(InferFailReason::None)?;
     let overloads = &signature.overloads;
     if overloads.is_empty() {
         let mut fake_doc_function = LuaFunctionType::new(
@@ -131,7 +140,7 @@ fn infer_signature_doc_function(
             fake_doc_function = instantiate_func_generic(db, cache, &fake_doc_function, call_expr)?;
         }
 
-        Some(fake_doc_function.into())
+        Ok(fake_doc_function.into())
     } else {
         let mut new_overloads = signature.overloads.clone();
         let fake_doc_function = Arc::new(LuaFunctionType::new(
@@ -142,16 +151,14 @@ fn infer_signature_doc_function(
         ));
         new_overloads.push(fake_doc_function);
 
-        let doc_func = resolve_signature(
+        resolve_signature(
             db,
             cache,
             new_overloads,
             call_expr.clone(),
             signature.is_generic(),
             args_count,
-        )?;
-
-        Some(doc_func)
+        )
     }
 }
 
@@ -162,11 +169,16 @@ fn infer_type_doc_function(
     call_expr: LuaCallExpr,
     infer_guard: &mut InferGuard,
     args_count: Option<usize>,
-) -> Option<Arc<LuaFunctionType>> {
+) -> InferCallFuncResult {
     infer_guard.check(&type_id)?;
-    let type_decl = db.get_type_index().get_type_decl(&type_id)?;
+    let type_decl = db
+        .get_type_index()
+        .get_type_decl(&type_id)
+        .ok_or(InferFailReason::None)?;
     if type_decl.is_alias() {
-        let origin_type = type_decl.get_alias_origin(db, None)?;
+        let origin_type = type_decl
+            .get_alias_origin(db, None)
+            .ok_or(InferFailReason::None)?;
         return infer_call_expr_func(
             db,
             cache,
@@ -176,16 +188,24 @@ fn infer_type_doc_function(
             args_count,
         );
     } else if type_decl.is_enum() {
-        return None;
+        return Err(InferFailReason::None);
     }
 
     let operator_index = db.get_operator_index();
-    let operator_map = operator_index.get_operators_by_type(&type_id)?;
-    let operator_ids = operator_map.get(&LuaOperatorMetaMethod::Call)?;
+    let operator_map = operator_index
+        .get_operators_by_type(&type_id)
+        .ok_or(InferFailReason::None)?;
+    let operator_ids = operator_map
+        .get(&LuaOperatorMetaMethod::Call)
+        .ok_or(InferFailReason::None)?;
     let mut overloads = Vec::new();
     for overload_id in operator_ids {
-        let operator = operator_index.get_operator(overload_id)?;
-        let func = operator.get_call_operator_type()?;
+        let operator = operator_index
+            .get_operator(overload_id)
+            .ok_or(InferFailReason::None)?;
+        let func = operator
+            .get_call_operator_type()
+            .ok_or(InferFailReason::None)?;
         match func {
             LuaType::DocFunction(f) => {
                 overloads.push(f.clone());
@@ -194,8 +214,7 @@ fn infer_type_doc_function(
         }
     }
 
-    let doc_func = resolve_signature(db, cache, overloads, call_expr.clone(), false, args_count)?;
-    Some(doc_func)
+    resolve_signature(db, cache, overloads, call_expr.clone(), false, args_count)
 }
 
 fn infer_generic_type_doc_function(
@@ -205,15 +224,20 @@ fn infer_generic_type_doc_function(
     call_expr: LuaCallExpr,
     infer_guard: &mut InferGuard,
     args_count: Option<usize>,
-) -> Option<Arc<LuaFunctionType>> {
+) -> InferCallFuncResult {
     let type_id = generic.get_base_type_id();
     infer_guard.check(&type_id)?;
     let generic_params = generic.get_params();
     let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
 
-    let type_decl = db.get_type_index().get_type_decl(&type_id)?;
+    let type_decl = db
+        .get_type_index()
+        .get_type_decl(&type_id)
+        .ok_or(InferFailReason::None)?;
     if type_decl.is_alias() {
-        let origin_type = type_decl.get_alias_origin(db, Some(&substitutor))?;
+        let origin_type = type_decl
+            .get_alias_origin(db, Some(&substitutor))
+            .ok_or(InferFailReason::None)?;
         return infer_call_expr_func(
             db,
             cache,
@@ -223,16 +247,24 @@ fn infer_generic_type_doc_function(
             args_count,
         );
     } else if type_decl.is_enum() {
-        return None;
+        return Err(InferFailReason::None);
     }
 
     let operator_index = db.get_operator_index();
-    let operator_map = operator_index.get_operators_by_type(&type_id)?;
-    let operator_ids = operator_map.get(&LuaOperatorMetaMethod::Call)?;
+    let operator_map = operator_index
+        .get_operators_by_type(&type_id)
+        .ok_or(InferFailReason::None)?;
+    let operator_ids = operator_map
+        .get(&LuaOperatorMetaMethod::Call)
+        .ok_or(InferFailReason::None)?;
     let mut overloads = Vec::new();
     for overload_id in operator_ids {
-        let operator = operator_index.get_operator(overload_id)?;
-        let func = operator.get_call_operator_type()?;
+        let operator = operator_index
+            .get_operator(overload_id)
+            .ok_or(InferFailReason::None)?;
+        let func = operator
+            .get_call_operator_type()
+            .ok_or(InferFailReason::None)?;
         let new_f = instantiate_type_generic(db, func, &substitutor);
         match new_f {
             LuaType::DocFunction(f) => {
@@ -242,6 +274,5 @@ fn infer_generic_type_doc_function(
         }
     }
 
-    let doc_func = resolve_signature(db, cache, overloads, call_expr.clone(), false, args_count)?;
-    Some(doc_func)
+    resolve_signature(db, cache, overloads, call_expr.clone(), false, args_count)
 }

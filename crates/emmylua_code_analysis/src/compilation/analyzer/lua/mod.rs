@@ -19,7 +19,7 @@ use crate::{
     db_index::{DbIndex, LuaType},
     profile::Profile,
     semantic::{infer_expr, LuaInferCache},
-    CacheOptions, FileId, LuaAnalysisPhase, LuaMemberId, LuaMemberOwner,
+    CacheOptions, FileId, InferFailReason, LuaAnalysisPhase, LuaMemberId, LuaMemberOwner,
 };
 
 use super::{unresolve::UnResolve, AnalyzeContext};
@@ -120,7 +120,7 @@ impl LuaAnalyzer<'_> {
 }
 
 impl LuaAnalyzer<'_> {
-    pub fn infer_expr(&mut self, expr: &LuaExpr) -> Option<LuaType> {
+    pub fn infer_expr(&mut self, expr: &LuaExpr) -> Result<LuaType, InferFailReason> {
         infer_expr(self.db, &mut self.infer_cache, expr.clone())
     }
 

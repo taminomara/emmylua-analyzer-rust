@@ -11,7 +11,7 @@ use crate::{
 
 use super::{
     infer_index::{infer_member_by_member_key, infer_member_by_operator},
-    InferResult,
+    InferFailReason, InferResult,
 };
 
 pub fn infer_table_expr(
@@ -23,7 +23,7 @@ pub fn infer_table_expr(
         return infer_table_tuple_or_array(db, cache, table);
     }
 
-    Some(LuaType::TableConst(crate::InFiled {
+    Ok(LuaType::TableConst(crate::InFiled {
         file_id: cache.get_file_id(),
         value: table.get_range(),
     }))
@@ -36,12 +36,16 @@ fn infer_table_tuple_or_array(
 ) -> InferResult {
     let fields = table.get_fields().collect::<Vec<_>>();
     if fields.len() > 10 {
-        let first_type = infer_expr(db, cache, fields[0].get_value_expr()?)?;
-        return Some(LuaType::Array(first_type.into()));
+        let first_type = infer_expr(
+            db,
+            cache,
+            fields[0].get_value_expr().ok_or(InferFailReason::None)?,
+        )?;
+        return Ok(LuaType::Array(first_type.into()));
     }
 
     if let Some(last_field) = fields.last() {
-        let last_value_expr = last_field.get_value_expr()?;
+        let last_value_expr = last_field.get_value_expr().ok_or(InferFailReason::None)?;
         if is_dots_expr(&last_value_expr).unwrap_or(false) {
             let dots_type = infer_expr(db, cache, last_value_expr)?;
             let typ = match &dots_type {
@@ -49,18 +53,18 @@ fn infer_table_tuple_or_array(
                 _ => &dots_type,
             };
 
-            return Some(LuaType::Array(typ.clone().into()));
+            return Ok(LuaType::Array(typ.clone().into()));
         }
     }
 
     let mut types = Vec::new();
     for field in fields {
-        let value_expr = field.get_value_expr()?;
+        let value_expr = field.get_value_expr().ok_or(InferFailReason::None)?;
         let typ = infer_expr(db, cache, value_expr)?;
         types.push(typ);
     }
 
-    Some(LuaType::Tuple(LuaTupleType::new(types).into()))
+    Ok(LuaType::Tuple(LuaTupleType::new(types).into()))
 }
 
 fn is_dots_expr(expr: &LuaExpr) -> Option<bool> {
@@ -74,13 +78,12 @@ fn is_dots_expr(expr: &LuaExpr) -> Option<bool> {
     Some(false)
 }
 
-#[allow(unused)]
 pub fn infer_table_should_be(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     table: LuaTableExpr,
 ) -> InferResult {
-    match table.get_parent::<LuaAst>()? {
+    match table.get_parent::<LuaAst>().ok_or(InferFailReason::None)? {
         LuaAst::LuaCallArgList(call_arg_list) => {
             infer_table_type_by_calleee(db, cache, call_arg_list, table)
         }
@@ -89,7 +92,7 @@ pub fn infer_table_should_be(
         LuaAst::LuaAssignStat(assign_stat) => {
             infer_table_type_by_assign_stat(db, cache, assign_stat, table)
         }
-        _ => None,
+        _ => Err(InferFailReason::None),
     }
 }
 
@@ -99,8 +102,10 @@ fn infer_table_type_by_calleee(
     call_arg_list: LuaCallArgList,
     table_expr: LuaTableExpr,
 ) -> InferResult {
-    let call_expr = call_arg_list.get_parent::<LuaCallExpr>()?;
-    let prefix_expr = call_expr.get_prefix_expr()?;
+    let call_expr = call_arg_list
+        .get_parent::<LuaCallExpr>()
+        .ok_or(InferFailReason::None)?;
+    let prefix_expr = call_expr.get_prefix_expr().ok_or(InferFailReason::None)?;
     let prefix_type = infer_expr(db, cache, prefix_expr)?;
     let func_type = infer_call_expr_func(
         db,
@@ -115,9 +120,15 @@ fn infer_table_type_by_calleee(
         .children::<LuaAst>()
         .into_iter()
         .enumerate()
-        .find(|(_, arg)| arg.get_position() == table_expr.get_position())?
+        .find(|(_, arg)| arg.get_position() == table_expr.get_position())
+        .ok_or(InferFailReason::None)?
         .0;
-    param_types.get(call_arg_number)?.1.clone()
+    Ok(param_types
+        .get(call_arg_number)
+        .ok_or(InferFailReason::None)?
+        .1
+        .clone()
+        .unwrap_or(LuaType::Any))
 }
 
 fn infer_table_type_by_parent(
@@ -127,38 +138,44 @@ fn infer_table_type_by_parent(
 ) -> InferResult {
     let member_id = LuaMemberId::new(field.get_syntax_id(), cache.get_file_id());
     if let Some(member) = db.get_member_index().get_member(&member_id) {
-        let typ = member.get_decl_type();
-        match typ {
-            LuaType::TableConst(_) => {}
-            _ => return Some(typ.clone()),
+        match member.get_option_decl_type() {
+            Some(LuaType::TableConst(_)) => {}
+            Some(typ) => return Ok(typ),
+            None => return Err(InferFailReason::UnResolveMemberType(member.get_id())),
         }
     }
 
-    let parnet_table_expr = field.get_parent::<LuaTableExpr>()?;
+    let parnet_table_expr = field
+        .get_parent::<LuaTableExpr>()
+        .ok_or(InferFailReason::None)?;
     let parent_table_expr_type = infer_table_should_be(db, cache, parnet_table_expr)?;
 
-    let index_member_expr = LuaIndexMemberExpr::TableField(field);
-    if let Some(member_type) = infer_member_by_member_key(
+    let index = LuaIndexMemberExpr::TableField(field);
+    let reason = match infer_member_by_member_key(
         db,
         cache,
         &parent_table_expr_type,
-        index_member_expr.clone(),
+        index.clone(),
         &mut InferGuard::new(),
     ) {
-        return Some(member_type);
-    }
+        Ok(member_type) => return Ok(member_type),
+        Err(InferFailReason::FieldDotFound) => InferFailReason::FieldDotFound,
+        Err(err) => return Err(err),
+    };
 
-    if let Some(member_type) = infer_member_by_operator(
+    match infer_member_by_operator(
         db,
         cache,
         &parent_table_expr_type,
-        index_member_expr,
+        index.into(),
         &mut InferGuard::new(),
     ) {
-        return Some(member_type);
+        Ok(member_type) => return Ok(member_type),
+        Err(InferFailReason::FieldDotFound) => {}
+        Err(err) => return Err(err),
     }
 
-    None
+    Err(reason)
 }
 
 fn infer_table_type_by_local(
@@ -172,16 +189,21 @@ fn infer_table_type_by_local(
     let num = values
         .iter()
         .enumerate()
-        .find(|(_, value)| value.get_position() == table_expr.get_position())?
+        .find(|(_, value)| value.get_position() == table_expr.get_position())
+        .ok_or(InferFailReason::None)?
         .0;
 
-    let local_name = local_names.get(num)?;
+    let local_name = local_names.get(num).ok_or(InferFailReason::None)?;
     let decl_id = LuaDeclId::new(cache.get_file_id(), local_name.get_position());
-    let decl = db.get_decl_index().get_decl(&decl_id)?;
-    let typ = decl.get_type()?;
+    let decl = db
+        .get_decl_index()
+        .get_decl(&decl_id)
+        .ok_or(InferFailReason::None)?;
+    let typ = decl.get_type();
     match typ {
-        LuaType::TableConst(_) => None,
-        _ => Some(typ.clone()),
+        Some(LuaType::TableConst(_)) => Err(InferFailReason::None),
+        Some(typ) => Ok(typ.clone()),
+        None => Err(InferFailReason::UnResolveDeclType(decl_id)),
     }
 }
 
@@ -195,19 +217,24 @@ fn infer_table_type_by_assign_stat(
     let num = exprs
         .iter()
         .enumerate()
-        .find(|(_, expr)| expr.get_position() == table_expr.get_position())?
+        .find(|(_, expr)| expr.get_position() == table_expr.get_position())
+        .ok_or(InferFailReason::None)?
         .0;
-    let name = vars.get(num)?;
+    let name = vars.get(num).ok_or(InferFailReason::None)?;
 
     let decl_id = LuaDeclId::new(cache.get_file_id(), name.get_position());
     let decl = db.get_decl_index().get_decl(&decl_id);
-    let typ = if let Some(decl) = decl {
-        decl.get_type()?.clone()
+    if let Some(decl) = decl {
+        match decl.get_type() {
+            Some(LuaType::TableConst(_)) => Err(InferFailReason::None),
+            Some(typ) => Ok(typ.clone()),
+            None => Err(InferFailReason::UnResolveDeclType(decl_id)),
+        }
     } else {
-        infer_expr(db, cache, LuaExpr::cast(name.syntax().clone())?)?
-    };
-    match typ {
-        LuaType::TableConst(_) => None,
-        _ => Some(typ.clone()),
+        infer_expr(
+            db,
+            cache,
+            LuaExpr::cast(name.syntax().clone()).ok_or(InferFailReason::None)?,
+        )
     }
 }

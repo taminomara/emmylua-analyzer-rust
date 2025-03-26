@@ -11,7 +11,7 @@ use std::collections::HashMap;
 
 use crate::FileId;
 
-use super::{traits::LuaIndex, LuaMemberKey, LuaType};
+use super::{traits::LuaIndex, LuaMemberKey};
 
 #[derive(Debug)]
 pub struct LuaDeclIndex {
@@ -53,31 +53,21 @@ impl LuaDeclIndex {
         tree.get_decl_mut(*decl_id)
     }
 
-    pub fn get_global_decl_type(&self, key: &LuaMemberKey) -> Option<LuaType> {
-        let decls = self.global_decl.get(key)?;
-        if decls.len() == 1 {
-            let decl = self.get_decl(&decls[0])?;
-            return Some(decl.get_type()?.clone());
+    pub fn get_global_decls(&self) -> Vec<LuaDeclId> {
+        let mut decls = Vec::new();
+        for (_, v) in &self.global_decl {
+            decls.extend(v);
         }
 
-        let mut valid_type = LuaType::Unknown;
-        for decl_id in decls {
-            let decl = self.get_decl(decl_id)?;
-            let ty = decl.get_type();
-            if let Some(ty) = ty {
-                if ty.is_def() || ty.is_ref() || ty.is_function() {
-                    return Some(ty.clone());
-                }
+        decls
+    }
 
-                if valid_type == LuaType::Unknown {
-                    valid_type = ty.clone();
-                } else if ty.is_table() {
-                    valid_type = ty.clone();
-                }
-            }
-        }
-
-        Some(valid_type)
+    pub fn get_global_decls_by_name(&self, name: &str) -> Vec<LuaDeclId> {
+        let key = SmolStr::new(name);
+        self.global_decl
+            .get(&LuaMemberKey::Name(key))
+            .cloned()
+            .unwrap_or_default()
     }
 
     pub fn get_global_decl_id(&self, key: &LuaMemberKey) -> Option<LuaDeclId> {
@@ -104,15 +94,6 @@ impl LuaDeclIndex {
         }
 
         valid_decl_id
-    }
-
-    pub fn get_global_decls(&self) -> Vec<LuaDeclId> {
-        let mut decls = Vec::new();
-        for (_, v) in &self.global_decl {
-            decls.extend(v);
-        }
-
-        decls
     }
 }
 

@@ -62,8 +62,14 @@ impl LuaMember {
         *self.member_id.get_syntax_id()
     }
 
+    // todo clean all the usage
     pub fn get_decl_type(&self) -> LuaType {
         self.decl_type.clone().unwrap_or(LuaType::Unknown)
+    }
+
+    // workaround
+    pub(crate) fn get_option_decl_type(&self) -> Option<LuaType> {
+        self.decl_type.clone()
     }
 
     pub(crate) fn set_decl_type(&mut self, decl_type: LuaType) {

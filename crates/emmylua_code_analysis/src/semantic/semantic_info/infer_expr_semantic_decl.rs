@@ -154,7 +154,7 @@ fn infer_index_expr_semantic_decl(
     semantic_guard: SemanticDeclGuard,
 ) -> Option<LuaSemanticDeclId> {
     let prefix_expr = index_expr.get_prefix_expr()?;
-    let prefix_type = infer_expr(db, cache, prefix_expr.into())?;
+    let prefix_type = infer_expr(db, cache, prefix_expr.into()).ok()?;
     let member_key = index_expr.get_index_key()?.into();
     infer_member_semantic_decl_by_member_key(
         db,

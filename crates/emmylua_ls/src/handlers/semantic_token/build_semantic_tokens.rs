@@ -346,7 +346,7 @@ fn build_node_semantic_token(
         }
         LuaAst::LuaCallExpr(call_expr) => {
             let prefix = call_expr.get_prefix_expr()?;
-            let prefix_type = semantic_model.infer_expr(prefix.clone());
+            let prefix_type = semantic_model.infer_expr(prefix.clone()).ok();
 
             match prefix {
                 LuaExpr::NameExpr(name_expr) => {
@@ -485,7 +485,9 @@ fn build_node_semantic_token(
                 }
             }
 
-            let value_type = semantic_model.infer_expr(table_field.get_value_expr()?.clone())?;
+            let value_type = semantic_model
+                .infer_expr(table_field.get_value_expr()?.clone())
+                .ok()?;
             match value_type {
                 LuaType::Signature(_) | LuaType::DocFunction(_) => {
                     builder.push(

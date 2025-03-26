@@ -1,6 +1,7 @@
 use std::{ops::Deref, sync::Arc};
 
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr, LuaSyntaxKind};
+use rowan::TextRange;
 
 use crate::{
     db_index::{
@@ -15,14 +16,14 @@ use crate::{
     InFiled, LuaInferCache,
 };
 
-use super::infer_expr;
+use super::{infer_expr, InferFailReason, InferResult};
 
 pub fn infer_call_expr(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     call_expr: LuaCallExpr,
-) -> Option<LuaType> {
-    let prefix_expr = call_expr.get_prefix_expr()?;
+) -> InferResult {
+    let prefix_expr = call_expr.get_prefix_expr().ok_or(InferFailReason::None)?;
     if call_expr.is_require() {
         return infer_require_call(db, cache, call_expr);
     }
@@ -34,19 +35,29 @@ pub fn infer_call_expr(
     infer_call_result(db, cache, prefix_type, call_expr, &mut InferGuard::new())
 }
 
-fn check_can_infer(db: &DbIndex, cache: &LuaInferCache, call_expr: &LuaCallExpr) -> Option<()> {
-    let call_args = call_expr.get_args_list()?.get_args();
+fn check_can_infer(
+    db: &DbIndex,
+    cache: &LuaInferCache,
+    call_expr: &LuaCallExpr,
+) -> Result<(), InferFailReason> {
+    let call_args = call_expr
+        .get_args_list()
+        .ok_or(InferFailReason::None)?
+        .get_args();
     for arg in call_args {
         if let LuaExpr::ClosureExpr(closure) = arg {
             let sig_id = LuaSignatureId::from_closure(cache.get_file_id(), &closure);
-            let signature = db.get_signature_index().get(&sig_id)?;
+            let signature = db
+                .get_signature_index()
+                .get(&sig_id)
+                .ok_or(InferFailReason::None)?;
             if !signature.is_resolve_return() {
-                return None;
+                return Err(InferFailReason::UnResolveSignatureReturn(sig_id));
             }
         }
     }
 
-    Some(())
+    Ok(())
 }
 
 fn infer_call_result(
@@ -55,7 +66,7 @@ fn infer_call_result(
     prefix_type: LuaType,
     call_expr: LuaCallExpr,
     infer_guard: &mut InferGuard,
-) -> Option<LuaType> {
+) -> InferResult {
     let mut funcs = Vec::new();
     collect_function_type(
         db,
@@ -64,10 +75,10 @@ fn infer_call_result(
         prefix_type.clone(),
         infer_guard,
         &mut funcs,
-    );
+    )?;
 
     let resolve_func = match funcs.len() {
-        0 => return None,
+        0 => return Err(InferFailReason::None),
         1 => funcs[0].clone(),
         _ => resolve_signature(db, cache, funcs, call_expr.clone(), false, None)?,
     };
@@ -88,7 +99,7 @@ fn collect_function_type(
     prefix_type: LuaType,
     infer_guard: &mut InferGuard,
     funcs: &mut Vec<Arc<LuaFunctionType>>,
-) -> Option<()> {
+) -> Result<(), InferFailReason> {
     match prefix_type {
         LuaType::DocFunction(func) => {
             collect_func_by_doc_function(db, cache, func.clone(), call_expr.clone(), funcs)?
@@ -129,13 +140,13 @@ fn collect_function_type(
                     sub_type.clone(),
                     infer_guard,
                     funcs,
-                );
+                )?;
             }
         }
-        _ => return None,
+        _ => {}
     };
 
-    Some(())
+    Ok(())
 }
 
 fn collect_func_by_doc_function(
@@ -144,7 +155,7 @@ fn collect_func_by_doc_function(
     func: Arc<LuaFunctionType>,
     call_expr: LuaCallExpr,
     funcs: &mut Vec<Arc<LuaFunctionType>>,
-) -> Option<()> {
+) -> Result<(), InferFailReason> {
     if func.contain_tpl() {
         let instantiate_func = instantiate_func_generic(db, cache, &func, call_expr)?;
         funcs.push(instantiate_func.into());
@@ -152,7 +163,7 @@ fn collect_func_by_doc_function(
         funcs.push(func.clone());
     };
 
-    Some(())
+    Ok(())
 }
 
 fn collect_func_by_signature(
@@ -161,10 +172,13 @@ fn collect_func_by_signature(
     signature_id: LuaSignatureId,
     call_expr: LuaCallExpr,
     funcs: &mut Vec<Arc<LuaFunctionType>>,
-) -> Option<()> {
-    let signature = db.get_signature_index().get(&signature_id)?;
+) -> Result<(), InferFailReason> {
+    let signature = db
+        .get_signature_index()
+        .get(&signature_id)
+        .ok_or(InferFailReason::None)?;
     if !signature.is_resolve_return() {
-        return None;
+        return Err(InferFailReason::UnResolveSignatureReturn(signature_id));
     }
 
     let mut overloads = signature.overloads.clone();
@@ -187,7 +201,7 @@ fn collect_func_by_signature(
         }
     }
 
-    Some(())
+    Ok(())
 }
 
 fn collect_func_by_custom_type(
@@ -197,11 +211,16 @@ fn collect_func_by_custom_type(
     call_expr: LuaCallExpr,
     infer_guard: &mut InferGuard,
     funcs: &mut Vec<Arc<LuaFunctionType>>,
-) -> Option<()> {
+) -> Result<(), InferFailReason> {
     infer_guard.check(&type_id)?;
-    let type_decl = db.get_type_index().get_type_decl(&type_id)?;
+    let type_decl = db
+        .get_type_index()
+        .get_type_decl(&type_id)
+        .ok_or(InferFailReason::None)?;
     if type_decl.is_alias() {
-        let origin_type = type_decl.get_alias_origin(db, None)?;
+        let origin_type = type_decl
+            .get_alias_origin(db, None)
+            .ok_or(InferFailReason::None)?;
         return collect_function_type(
             db,
             cache,
@@ -211,15 +230,23 @@ fn collect_func_by_custom_type(
             funcs,
         );
     } else if type_decl.is_enum() {
-        return None;
+        return Err(InferFailReason::None);
     }
 
     let operator_index = db.get_operator_index();
-    let operator_map = operator_index.get_operators_by_type(&type_id)?;
-    let operator_ids = operator_map.get(&LuaOperatorMetaMethod::Call)?;
+    let operator_map = operator_index
+        .get_operators_by_type(&type_id)
+        .ok_or(InferFailReason::None)?;
+    let operator_ids = operator_map
+        .get(&LuaOperatorMetaMethod::Call)
+        .ok_or(InferFailReason::None)?;
     for overload_id in operator_ids {
-        let operator = operator_index.get_operator(overload_id)?;
-        let func = operator.get_call_operator_type()?;
+        let operator = operator_index
+            .get_operator(overload_id)
+            .ok_or(InferFailReason::None)?;
+        let func = operator
+            .get_call_operator_type()
+            .ok_or(InferFailReason::None)?;
         match func {
             LuaType::DocFunction(f) => {
                 funcs.push(f.clone());
@@ -228,7 +255,7 @@ fn collect_func_by_custom_type(
         }
     }
 
-    Some(())
+    Ok(())
 }
 
 fn collect_call_by_custom_generic_type(
@@ -238,26 +265,39 @@ fn collect_call_by_custom_generic_type(
     call_expr: LuaCallExpr,
     infer_guard: &mut InferGuard,
     funcs: &mut Vec<Arc<LuaFunctionType>>,
-) -> Option<()> {
+) -> Result<(), InferFailReason> {
     let type_id = generic.get_base_type_id();
     infer_guard.check(&type_id)?;
     let generic_params = generic.get_params();
     let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
-    let type_decl = db.get_type_index().get_type_decl(&type_id)?;
+    let type_decl = db
+        .get_type_index()
+        .get_type_decl(&type_id)
+        .ok_or(InferFailReason::None)?;
     if type_decl.is_alias() {
-        let alias_type = type_decl.get_alias_origin(db, Some(&substitutor))?;
+        let alias_type = type_decl
+            .get_alias_origin(db, Some(&substitutor))
+            .ok_or(InferFailReason::None)?;
         return collect_function_type(db, cache, call_expr, alias_type.clone(), infer_guard, funcs);
     } else if type_decl.is_enum() {
-        return None;
+        return Err(InferFailReason::None);
     }
 
     let operator_index = db.get_operator_index();
-    let operator_map = operator_index.get_operators_by_type(&type_id)?;
-    let operator_ids = operator_map.get(&LuaOperatorMetaMethod::Call)?;
+    let operator_map = operator_index
+        .get_operators_by_type(&type_id)
+        .ok_or(InferFailReason::None)?;
+    let operator_ids = operator_map
+        .get(&LuaOperatorMetaMethod::Call)
+        .ok_or(InferFailReason::None)?;
     let mut overloads = Vec::new();
     for overload_id in operator_ids {
-        let operator = operator_index.get_operator(overload_id)?;
-        let func = operator.get_call_operator_type()?;
+        let operator = operator_index
+            .get_operator(overload_id)
+            .ok_or(InferFailReason::None)?;
+        let func = operator
+            .get_call_operator_type()
+            .ok_or(InferFailReason::None)?;
         let new_f = instantiate_type_generic(db, func, &substitutor);
         match new_f {
             LuaType::DocFunction(f) => {
@@ -269,7 +309,7 @@ fn collect_call_by_custom_generic_type(
 
     let func = resolve_signature(db, cache, overloads, call_expr, true, None)?;
     funcs.push(func);
-    Some(())
+    Ok(())
 }
 
 fn unwrapp_return_type(
@@ -277,37 +317,65 @@ fn unwrapp_return_type(
     cache: &mut LuaInferCache,
     return_type: LuaType,
     call_expr: LuaCallExpr,
-) -> Option<LuaType> {
+) -> InferResult {
     match &return_type {
-        LuaType::Table
-        | LuaType::TableConst(_)
-        | LuaType::Any
-        | LuaType::Unknown
-        | LuaType::Instance(_) => {
+        LuaType::Table | LuaType::Any | LuaType::Unknown => {
             let id = InFiled {
                 file_id: cache.get_file_id(),
                 value: call_expr.get_range(),
             };
 
-            return Some(LuaType::Instance(
+            return Ok(LuaType::Instance(
                 LuaInstanceType::new(return_type, id).into(),
             ));
         }
-        LuaType::MuliReturn(multi) => {
-            if is_last_expr(&call_expr) {
-                return Some(return_type);
+        LuaType::TableConst(inst) => {
+            if is_need_wrap_instance(cache, &call_expr, inst) {
+                let id = InFiled {
+                    file_id: cache.get_file_id(),
+                    value: call_expr.get_range(),
+                };
+
+                return Ok(LuaType::Instance(
+                    LuaInstanceType::new(return_type.clone(), id).into(),
+                ));
             }
 
-            return multi.get_type(0).cloned();
+            return Ok(return_type);
+        }
+        LuaType::Instance(inst) => {
+            if is_need_wrap_instance(cache, &call_expr, inst.get_range()) {
+                let id = InFiled {
+                    file_id: cache.get_file_id(),
+                    value: call_expr.get_range(),
+                };
+
+                return Ok(LuaType::Instance(
+                    LuaInstanceType::new(return_type.clone(), id).into(),
+                ));
+            }
+
+            return Ok(return_type);
+        }
+
+        LuaType::MuliReturn(multi) => {
+            if is_last_expr(&call_expr) {
+                return Ok(return_type);
+            }
+
+            return match multi.get_type(0) {
+                Some(ty) => Ok(ty.clone()),
+                None => Ok(LuaType::Nil),
+            };
         }
         LuaType::Variadic(inner) => {
             if is_last_expr(&call_expr) {
-                return Some(LuaType::MuliReturn(
+                return Ok(LuaType::MuliReturn(
                     LuaMultiReturn::Base(inner.deref().clone()).into(),
                 ));
             }
 
-            return Some(inner.deref().clone());
+            return Ok(inner.deref().clone());
         }
         LuaType::SelfInfer => {
             let prefix_expr = call_expr.get_prefix_expr();
@@ -324,7 +392,19 @@ fn unwrapp_return_type(
         _ => {}
     }
 
-    Some(return_type)
+    Ok(return_type)
+}
+
+fn is_need_wrap_instance(
+    cache: &mut LuaInferCache,
+    call_expr: &LuaCallExpr,
+    inst: &InFiled<TextRange>,
+) -> bool {
+    if cache.get_file_id() != inst.file_id {
+        return false;
+    }
+
+    return !call_expr.get_range().contains(inst.value.start());
 }
 
 fn is_last_expr(call_expr: &LuaCallExpr) -> bool {
@@ -352,17 +432,23 @@ fn infer_require_call(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     call_expr: LuaCallExpr,
-) -> Option<LuaType> {
-    let arg_list = call_expr.get_args_list()?;
-    let first_arg = arg_list.get_args().next()?;
+) -> InferResult {
+    let arg_list = call_expr.get_args_list().ok_or(InferFailReason::None)?;
+    let first_arg = arg_list.get_args().next().ok_or(InferFailReason::None)?;
     let require_path_type = infer_expr(db, cache, first_arg)?;
     let module_path: String = match &require_path_type {
         LuaType::StringConst(module_path) => module_path.as_ref().to_string(),
         _ => {
-            return None;
+            return Ok(LuaType::Any);
         }
     };
 
-    let module_info = db.get_module_index().find_module(&module_path)?;
-    module_info.export_type.clone()
+    let module_info = db
+        .get_module_index()
+        .find_module(&module_path)
+        .ok_or(InferFailReason::None)?;
+    match &module_info.export_type {
+        Some(ty) => Ok(ty.clone()),
+        None => Err(InferFailReason::UnResolveExpr(call_expr.into())),
+    }
 }

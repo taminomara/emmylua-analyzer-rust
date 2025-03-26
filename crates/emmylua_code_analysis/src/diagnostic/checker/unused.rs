@@ -25,14 +25,14 @@ impl Checker for UnusedChecker {
                     continue;
                 }
                 context.add_diagnostic(
-                DiagnosticCode::Unused,
-                decl.get_range(),
-                t!(
-                    "%{name} is never used, if this is intentional, prefix it with an underscore: _%{name}",
-                    name = name
-                ).to_string(),
-                None,
-            );
+                    DiagnosticCode::Unused,
+                    decl.get_range(),
+                    t!(
+                        "%{name} is never used, if this is intentional, prefix it with an underscore: _%{name}",
+                        name = name
+                    ).to_string(),
+                    None,
+                );
             }
         }
     }

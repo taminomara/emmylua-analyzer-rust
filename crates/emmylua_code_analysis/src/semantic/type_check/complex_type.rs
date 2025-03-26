@@ -298,7 +298,7 @@ fn check_array_type_compact_table(
         if let Some(member_item) = member_index.get_member_item(&table_owner, &key) {
             let member_type = member_item
                 .resolve_type(db)
-                .ok_or(TypeCheckFailReason::TypeNotMatch)?;
+                .map_err(|_| TypeCheckFailReason::TypeNotMatch)?;
             if check_general_type_compact(db, source_base, &member_type, check_guard.next_level()?)
                 .is_err()
             {
@@ -374,7 +374,7 @@ fn check_tuple_type_compact_table(
         if let Some(member_item) = member_index.get_member_item(&table_owner, &key) {
             let member_type = member_item
                 .resolve_type(db)
-                .ok_or(TypeCheckFailReason::TypeNotMatch)?;
+                .map_err(|_| TypeCheckFailReason::TypeNotMatch)?;
             if check_general_type_compact(
                 db,
                 source_tuple_member_type,
@@ -501,8 +501,8 @@ fn check_object_type_compact_member_owner(
             }
         };
         let member_type = match member_item.resolve_type(db) {
-            Some(t) => t,
-            None => {
+            Ok(t) => t,
+            _ => {
                 continue;
             }
         };

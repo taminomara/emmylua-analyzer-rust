@@ -297,7 +297,7 @@ fn build_func_stat_override_hint(
     let func_name = func_stat.get_func_name()?;
     if let LuaVarExpr::IndexExpr(index_expr) = func_name {
         let prefix_expr = index_expr.get_prefix_expr()?;
-        let prefix_type = semantic_model.infer_expr(prefix_expr.into())?;
+        let prefix_type = semantic_model.infer_expr(prefix_expr.into()).ok()?;
         if let LuaType::Def(id) = prefix_type {
             let supers = semantic_model
                 .get_db()
@@ -359,7 +359,7 @@ fn get_super_member_id(
     infer_guard: &mut InferGuard,
 ) -> Option<LuaMemberId> {
     if let LuaType::Ref(super_type_id) = &super_type {
-        infer_guard.check(super_type_id)?;
+        infer_guard.check(super_type_id).ok()?;
         let member_map = semantic_model.infer_member_map(&super_type)?;
 
         if let Some(member_infos) = member_map.get(&member_key) {

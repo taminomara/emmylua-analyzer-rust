@@ -60,7 +60,7 @@ fn add_type_ref_completion(
     type_ref_id: LuaTypeDeclId,
     infer_guard: &mut InferGuard,
 ) -> Option<()> {
-    infer_guard.check(&type_ref_id)?;
+    infer_guard.check(&type_ref_id).ok()?;
 
     let type_decl = builder
         .semantic_model

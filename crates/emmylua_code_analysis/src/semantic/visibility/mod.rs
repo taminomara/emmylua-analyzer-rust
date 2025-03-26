@@ -84,7 +84,7 @@ fn check_block_visibility(
     let func_name = func_stat.get_func_name()?;
     if let LuaVarExpr::IndexExpr(index_expr) = func_name {
         let prefix_expr = index_expr.get_prefix_expr()?;
-        let typ = infer_expr(db, infer_config, prefix_expr.into())?;
+        let typ = infer_expr(db, infer_config, prefix_expr.into()).ok()?;
         if visibility == VisibilityKind::Protected {
             match (typ, member_owner) {
                 (LuaType::Def(left), LuaMemberOwner::Type(right)) => {

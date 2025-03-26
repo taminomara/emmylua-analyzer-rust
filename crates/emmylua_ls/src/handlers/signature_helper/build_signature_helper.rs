@@ -17,7 +17,7 @@ pub fn build_signature_helper(
     token: LuaSyntaxToken,
 ) -> Option<SignatureHelp> {
     let prefix_expr = call_expr.get_prefix_expr()?;
-    let prefix_expr_type = semantic_model.infer_expr(prefix_expr.clone())?;
+    let prefix_expr_type = semantic_model.infer_expr(prefix_expr.clone()).ok()?;
     let colon_call = call_expr.is_colon_call();
     let current_idx = get_current_param_index(&call_expr, &token)?;
     match prefix_expr_type {

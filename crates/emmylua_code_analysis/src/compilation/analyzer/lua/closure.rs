@@ -7,7 +7,8 @@ use crate::{
         UnResolveClosureParams, UnResolveClosureReturn, UnResolveReturn,
     },
     db_index::{LuaDocReturnInfo, LuaSignatureId},
-    infer_expr, DbIndex, LuaInferCache, LuaMultiReturn, LuaType, SignatureReturnStatus, TypeOps,
+    infer_expr, DbIndex, InferFailReason, LuaInferCache, LuaMultiReturn, LuaType,
+    SignatureReturnStatus, TypeOps,
 };
 
 use super::{func_body::analyze_func_body_returns, LuaAnalyzer, LuaReturnPoint};
@@ -99,12 +100,20 @@ fn analyze_return(
     let return_points = analyze_func_body_returns(block);
     let returns =
         match analyze_return_point(&analyzer.db, &mut analyzer.infer_cache, &return_points) {
-            Some(returns) => returns,
-            None => {
+            Ok(returns) => returns,
+            Err(InferFailReason::None) => {
+                vec![LuaDocReturnInfo {
+                    type_ref: LuaType::Unknown,
+                    description: None,
+                    name: None,
+                }]
+            }
+            Err(reason) => {
                 let unresolve = UnResolveReturn {
                     file_id: analyzer.file_id,
                     signature_id: signature_id.clone(),
                     return_points,
+                    reason,
                 };
 
                 analyzer.add_unresolved(unresolve.into());
@@ -150,7 +159,7 @@ pub fn analyze_return_point(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     return_points: &Vec<LuaReturnPoint>,
-) -> Option<Vec<LuaDocReturnInfo>> {
+) -> Result<Vec<LuaDocReturnInfo>, InferFailReason> {
     let mut return_type = LuaType::Unknown;
     for point in return_points {
         match point {
@@ -174,7 +183,7 @@ pub fn analyze_return_point(
         }
     }
 
-    Some(vec![LuaDocReturnInfo {
+    Ok(vec![LuaDocReturnInfo {
         type_ref: return_type,
         description: None,
         name: None,

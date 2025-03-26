@@ -53,7 +53,7 @@ fn check_pcall_or_xpcall(
             let arg_list = call_expr.get_args_list()?;
             let first_arg = arg_list.get_args().next()?;
             let range = first_arg.get_range();
-            let arg_type = semantic_model.infer_expr(first_arg)?;
+            let arg_type = semantic_model.infer_expr(first_arg).unwrap_or(LuaType::Any);
             let is_async = match &arg_type {
                 LuaType::DocFunction(f) => f.is_async(),
                 LuaType::Signature(sig) => {

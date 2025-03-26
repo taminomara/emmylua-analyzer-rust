@@ -1,6 +1,7 @@
 mod infer_binary;
 mod infer_call;
 mod infer_call_func;
+mod infer_fail_reason;
 mod infer_index;
 mod infer_name;
 mod infer_table;
@@ -15,6 +16,7 @@ use emmylua_parser::{
 use infer_binary::infer_binary_expr;
 use infer_call::infer_call_expr;
 pub use infer_call_func::infer_call_expr_func;
+pub use infer_fail_reason::InferFailReason;
 use infer_index::infer_index_expr;
 use infer_name::{infer_name_expr, infer_param};
 use infer_table::infer_table_expr;
@@ -30,15 +32,16 @@ use crate::{
 
 use super::{member::infer_members, CacheEntry, CacheKey, LuaInferCache};
 
-pub type InferResult = Option<LuaType>;
+pub type InferResult = Result<LuaType, InferFailReason>;
+pub use infer_call_func::InferCallFuncResult;
 
 pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> InferResult {
     let syntax_id = expr.get_syntax_id();
     let key = CacheKey::Expr(syntax_id);
     match cache.get(&key) {
         Some(cache) => match cache {
-            CacheEntry::ExprCache(ty) => return Some(ty.clone()),
-            _ => return Some(LuaType::Unknown),
+            CacheEntry::ExprCache(ty) => return Ok(ty.clone()),
+            _ => return Err(InferFailReason::RecursiveInfer),
         },
         None => {}
     }
@@ -48,7 +51,7 @@ pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> Inf
     let in_filed_syntax_id = InFiled::new(file_id, syntax_id);
     if let Some(force_type) = db.get_type_index().get_as_force_type(&in_filed_syntax_id) {
         cache.add_cache(&key, CacheEntry::ExprCache(force_type.clone()));
-        return Some(force_type.clone());
+        return Ok(force_type.clone());
     }
 
     cache.ready_cache(&key);
@@ -59,35 +62,44 @@ pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> Inf
         LuaExpr::BinaryExpr(binary_expr) => infer_binary_expr(db, cache, binary_expr),
         LuaExpr::UnaryExpr(unary_expr) => infer_unary_expr(db, cache, unary_expr),
         LuaExpr::ClosureExpr(closure_expr) => infer_closure_expr(db, cache, closure_expr),
-        LuaExpr::ParenExpr(paren_expr) => infer_expr(db, cache, paren_expr.get_expr()?),
+        LuaExpr::ParenExpr(paren_expr) => infer_expr(
+            db,
+            cache,
+            paren_expr.get_expr().ok_or(InferFailReason::None)?,
+        ),
         LuaExpr::NameExpr(name_expr) => infer_name_expr(db, cache, name_expr),
         LuaExpr::IndexExpr(index_expr) => infer_index_expr(db, cache, index_expr),
     };
 
-    if let Some(result_type) = &result_type {
-        cache.add_cache(&key, CacheEntry::ExprCache(result_type.clone()));
-    } else {
-        cache.remove(&key);
+    match &result_type {
+        Ok(result_type) => cache.add_cache(&key, CacheEntry::ExprCache(result_type.clone())),
+        Err(InferFailReason::None) | Err(InferFailReason::RecursiveInfer) => {
+            cache.add_cache(&key, CacheEntry::ExprCache(LuaType::Unknown));
+            return Ok(LuaType::Unknown);
+        }
+        _ => {
+            cache.remove(&key);
+        }
     }
 
     result_type
 }
 
 fn infer_literal_expr(db: &DbIndex, config: &LuaInferCache, expr: LuaLiteralExpr) -> InferResult {
-    match expr.get_literal()? {
-        LuaLiteralToken::Nil(_) => Some(LuaType::Nil),
-        LuaLiteralToken::Bool(bool) => Some(LuaType::BooleanConst(bool.is_true())),
+    match expr.get_literal().ok_or(InferFailReason::None)? {
+        LuaLiteralToken::Nil(_) => Ok(LuaType::Nil),
+        LuaLiteralToken::Bool(bool) => Ok(LuaType::BooleanConst(bool.is_true())),
         LuaLiteralToken::Number(num) => {
             if num.is_int() {
-                Some(LuaType::IntegerConst(num.get_int_value()))
+                Ok(LuaType::IntegerConst(num.get_int_value()))
             } else if num.is_float() {
-                Some(LuaType::FloatConst(num.get_float_value()))
+                Ok(LuaType::FloatConst(num.get_float_value()))
             } else {
-                Some(LuaType::Number)
+                Ok(LuaType::Number)
             }
         }
         LuaLiteralToken::String(str) => {
-            Some(LuaType::StringConst(SmolStr::new(str.get_value()).into()))
+            Ok(LuaType::StringConst(SmolStr::new(str.get_value()).into()))
         }
         LuaLiteralToken::Dots(_) => {
             let file_id = config.get_file_id();
@@ -107,15 +119,16 @@ fn infer_literal_expr(db: &DbIndex, config: &LuaInferCache, expr: LuaLiteralExpr
                 _ => LuaType::Any, // 默认返回 Any
             };
 
-            Some(decl_type)
+            Ok(decl_type)
         }
-        _ => None,
+        // unreachable
+        _ => Ok(LuaType::Any),
     }
 }
 
 fn infer_closure_expr(_: &DbIndex, config: &LuaInferCache, closure: LuaClosureExpr) -> InferResult {
     let signature_id = LuaSignatureId::from_closure(config.get_file_id(), &closure);
-    Some(LuaType::Signature(signature_id))
+    Ok(LuaType::Signature(signature_id))
 }
 
 fn get_custom_type_operator(
@@ -150,7 +163,7 @@ pub fn infer_multi_value_adjusted_expression_types(
 ) -> Option<Vec<(LuaType, TextRange)>> {
     let mut value_types = Vec::new();
     for (idx, expr) in exprs.iter().enumerate() {
-        let expr_type = infer_expr(db, cache, expr.clone())?;
+        let expr_type = infer_expr(db, cache, expr.clone()).ok()?;
         match expr_type {
             LuaType::MuliReturn(multi) => {
                 if let Some(var_count) = var_count {
@@ -201,7 +214,7 @@ pub fn infer_left_value_type_from_right_value(
                 if expr == *assign_expr {
                     let var = vars.get(idx);
                     if let Some(var) = var {
-                        typ = Some(infer_expr(db, cache, var.clone().into())?);
+                        typ = Some(infer_expr(db, cache, var.clone().into()).ok()?);
                     }
                 }
             }
@@ -210,7 +223,7 @@ pub fn infer_left_value_type_from_right_value(
         LuaAst::LuaTableField(table_field) => {
             let field_key = table_field.get_field_key()?;
             let table_expr = table_field.get_parent::<LuaTableExpr>()?;
-            let table_type = infer_table_should_be(db, cache, table_expr.clone())?;
+            let table_type = infer_table_should_be(db, cache, table_expr.clone()).ok()?;
             let member_infos = infer_members(db, &table_type)?;
             let mut typ = None;
             for member_info in member_infos.iter() {

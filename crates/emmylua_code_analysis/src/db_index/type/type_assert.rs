@@ -1,4 +1,4 @@
-use crate::{infer_expr, DbIndex, LuaInferCache};
+use crate::{infer_expr, DbIndex, InferFailReason, LuaInferCache};
 use emmylua_parser::{LuaAstNode, LuaExpr, LuaSyntaxId, LuaSyntaxNode};
 
 use super::{type_ops::TypeOps, LuaType};
@@ -30,15 +30,20 @@ impl TypeAssertion {
         config: &mut LuaInferCache,
         root: &LuaSyntaxNode,
         source: LuaType,
-    ) -> Option<LuaType> {
+    ) -> Result<LuaType, InferFailReason> {
         match self {
-            TypeAssertion::Exist => Some(TypeOps::Remove.apply(&source, &LuaType::Nil)),
-            TypeAssertion::NotExist => Some(TypeOps::NarrowFalseOrNil.apply_source(&source)),
-            TypeAssertion::Narrow(t) => Some(TypeOps::Narrow.apply(&source, t)),
-            TypeAssertion::Add(lua_type) => Some(TypeOps::Union.apply(&source, lua_type)),
-            TypeAssertion::Remove(lua_type) => Some(TypeOps::Remove.apply(&source, lua_type)),
+            TypeAssertion::Exist => Ok(TypeOps::Remove.apply(&source, &LuaType::Nil)),
+            TypeAssertion::NotExist => Ok(TypeOps::NarrowFalseOrNil.apply_source(&source)),
+            TypeAssertion::Narrow(t) => Ok(TypeOps::Narrow.apply(&source, t)),
+            TypeAssertion::Add(lua_type) => Ok(TypeOps::Union.apply(&source, lua_type)),
+            TypeAssertion::Remove(lua_type) => Ok(TypeOps::Remove.apply(&source, lua_type)),
             TypeAssertion::Reassign((syntax_id, idx)) => {
-                let expr = LuaExpr::cast(syntax_id.to_node_from_root(root)?)?;
+                let expr = LuaExpr::cast(
+                    syntax_id
+                        .to_node_from_root(root)
+                        .ok_or(InferFailReason::None)?,
+                )
+                .ok_or(InferFailReason::None)?;
                 let expr_type = infer_expr(db, config, expr)?;
                 let expr_type = match &expr_type {
                     LuaType::MuliReturn(multi) => {
@@ -46,9 +51,9 @@ impl TypeAssertion {
                     }
                     t => t,
                 };
-                Some(TypeOps::Narrow.apply(&source, &expr_type))
+                Ok(TypeOps::Narrow.apply(&source, &expr_type))
             }
-            _ => Some(source),
+            _ => Ok(source),
         }
     }
 }

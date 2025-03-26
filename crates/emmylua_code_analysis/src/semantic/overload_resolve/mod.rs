@@ -5,7 +5,11 @@ use emmylua_parser::LuaCallExpr;
 use crate::db_index::{DbIndex, LuaFunctionType, LuaType};
 
 use super::{
-    generic::instantiate_func_generic, infer_expr, type_check::check_type_compact, LuaInferCache,
+    generic::instantiate_func_generic,
+    infer::{InferCallFuncResult, InferFailReason},
+    infer_expr,
+    type_check::check_type_compact,
+    LuaInferCache,
 };
 
 pub fn resolve_signature(
@@ -15,24 +19,22 @@ pub fn resolve_signature(
     call_expr: LuaCallExpr,
     is_generic: bool,
     arg_count: Option<usize>,
-) -> Option<Arc<LuaFunctionType>> {
-    let args = call_expr.get_args_list()?;
+) -> InferCallFuncResult {
+    let args = call_expr.get_args_list().ok_or(InferFailReason::None)?;
     let mut expr_types = Vec::new();
     for arg in args.get_args() {
         expr_types.push(infer_expr(db, cache, arg)?);
     }
     if is_generic {
-        return resolve_signature_by_generic(
-            db, cache, overloads, call_expr, expr_types, arg_count,
-        );
+        resolve_signature_by_generic(db, cache, overloads, call_expr, expr_types, arg_count)
     } else {
-        return resolve_signature_by_args(
+        resolve_signature_by_args(
             db,
             &overloads,
             &expr_types,
             call_expr.is_colon_call(),
             arg_count,
-        );
+        )
     }
 }
 
@@ -43,7 +45,7 @@ fn resolve_signature_by_generic(
     call_expr: LuaCallExpr,
     expr_types: Vec<LuaType>,
     arg_count: Option<usize>,
-) -> Option<Arc<LuaFunctionType>> {
+) -> InferCallFuncResult {
     let mut instantiate_funcs = Vec::new();
     for func in overloads {
         let instantiate_func = instantiate_func_generic(db, cache, &func, call_expr.clone())?;
@@ -64,7 +66,7 @@ fn resolve_signature_by_args(
     expr_types: &[LuaType],
     is_colon_call: bool,
     arg_count: Option<usize>,
-) -> Option<Arc<LuaFunctionType>> {
+) -> InferCallFuncResult {
     let arg_count = arg_count.unwrap_or(0);
     let mut opt_funcs = Vec::with_capacity(overloads.len());
     // 函数本身签名在尾部
@@ -110,4 +112,5 @@ fn resolve_signature_by_args(
         .first()
         .map(|(func, _, _)| Arc::clone(func))
         .or_else(|| overloads.last().cloned())
+        .ok_or(InferFailReason::None)
 }

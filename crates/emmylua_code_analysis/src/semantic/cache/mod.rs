@@ -9,7 +9,7 @@ use crate::{db_index::LuaType, FileId, LuaFunctionType};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum CacheKey {
     Expr(LuaSyntaxId),
-    Call(LuaSyntaxId, Option<usize>),
+    Call(LuaSyntaxId, Option<usize>, LuaType),
 }
 
 #[derive(Debug)]

@@ -7,19 +7,17 @@ use crate::{
     LuaInferCache, LuaUnionType, TypeOps,
 };
 
-use super::{get_custom_type_operator, infer_expr, InferResult};
+use super::{get_custom_type_operator, infer_expr, InferFailReason, InferResult};
 
 pub fn infer_binary_expr(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     expr: LuaBinaryExpr,
 ) -> InferResult {
-    let op = expr.get_op_token()?.get_op();
-    let (left, right) = expr.get_exprs()?;
-    let left_type = infer_expr(db, cache, left);
-    let right_type = infer_expr(db, cache, right);
-    let left_type = left_type?;
-    let right_type = right_type?;
+    let op = expr.get_op_token().ok_or(InferFailReason::None)?.get_op();
+    let (left, right) = expr.get_exprs().ok_or(InferFailReason::None)?;
+    let left_type = infer_expr(db, cache, left)?;
+    let right_type = infer_expr(db, cache, right)?;
 
     match (&left_type, &right_type) {
         (LuaType::Union(u), right) => infer_union(db, &u, right, op),
@@ -56,7 +54,7 @@ fn infer_binary_expr_type(
         | BinaryOperator::OpGe
         | BinaryOperator::OpEq
         | BinaryOperator::OpNe => infer_cmp_expr(db, left_type, right_type, op),
-        _ => Some(left_type),
+        _ => Ok(left_type),
     }
 }
 
@@ -69,9 +67,9 @@ fn infer_union(db: &DbIndex, u: &LuaUnionType, right: &LuaType, op: BinaryOperat
     union_types.dedup();
 
     match union_types.len() {
-        0 => Some(LuaType::Unknown),
-        1 => Some(union_types[0].clone()),
-        _ => Some(LuaType::Union(LuaUnionType::new(union_types).into())),
+        0 => Ok(LuaType::Unknown),
+        1 => Ok(union_types[0].clone()),
+        _ => Ok(LuaType::Union(LuaUnionType::new(union_types).into())),
     }
 }
 
@@ -84,9 +82,12 @@ fn infer_binary_custom_operator(
     let operators = get_custom_type_operator(db, left.clone(), op);
     if let Some(operators) = operators {
         for operator in operators {
-            let first_param = operator.get_operands().get(0)?;
+            let first_param = operator
+                .get_operands()
+                .get(0)
+                .ok_or(InferFailReason::None)?;
             if check_type_compact(db, first_param, right).is_ok() {
-                return Some(operator.get_result().clone());
+                return Ok(operator.get_result().clone());
             }
         }
     }
@@ -94,9 +95,12 @@ fn infer_binary_custom_operator(
     let operators = get_custom_type_operator(db, right.clone(), op);
     if let Some(operators) = operators {
         for operator in operators {
-            let first_param = operator.get_operands().get(0)?;
+            let first_param = operator
+                .get_operands()
+                .get(0)
+                .ok_or(InferFailReason::None)?;
             if check_type_compact(db, first_param, left).is_ok() {
-                return Some(operator.get_result().clone());
+                return Ok(operator.get_result().clone());
             }
         }
     }
@@ -107,16 +111,16 @@ fn infer_binary_custom_operator(
         | LuaOperatorMetaMethod::Mul
         | LuaOperatorMetaMethod::Div
         | LuaOperatorMetaMethod::Mod
-        | LuaOperatorMetaMethod::Pow => Some(LuaType::Number),
+        | LuaOperatorMetaMethod::Pow => Ok(LuaType::Number),
         LuaOperatorMetaMethod::IDiv
         | LuaOperatorMetaMethod::BAnd
         | LuaOperatorMetaMethod::BOr
         | LuaOperatorMetaMethod::BXor
         | LuaOperatorMetaMethod::Shl
-        | LuaOperatorMetaMethod::Shr => Some(LuaType::Integer),
+        | LuaOperatorMetaMethod::Shr => Ok(LuaType::Integer),
 
-        LuaOperatorMetaMethod::Concat => Some(LuaType::String),
-        _ => None,
+        LuaOperatorMetaMethod::Concat => Ok(LuaType::String),
+        _ => Err(InferFailReason::None),
     }
 }
 
@@ -124,22 +128,22 @@ fn infer_binary_expr_add(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
     if left.is_number() && right.is_number() {
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
-                Some(LuaType::IntegerConst(int1 + int2))
+                Ok(LuaType::IntegerConst(int1 + int2))
             }
             (LuaType::FloatConst(num1), LuaType::FloatConst(num2)) => {
-                Some(LuaType::FloatConst(num1 + num2))
+                Ok(LuaType::FloatConst(num1 + num2))
             }
             (LuaType::IntegerConst(int1), LuaType::FloatConst(num2)) => {
-                Some(LuaType::FloatConst((*int1 as f64 + *num2).into()))
+                Ok(LuaType::FloatConst((*int1 as f64 + *num2).into()))
             }
             (LuaType::FloatConst(num1), LuaType::IntegerConst(int2)) => {
-                Some(LuaType::FloatConst((*num1 + *int2 as f64).into()))
+                Ok(LuaType::FloatConst((*num1 + *int2 as f64).into()))
             }
             _ => {
                 if left.is_integer() && right.is_integer() {
-                    Some(LuaType::Integer)
+                    Ok(LuaType::Integer)
                 } else {
-                    Some(LuaType::Number)
+                    Ok(LuaType::Number)
                 }
             }
         };
@@ -152,22 +156,22 @@ fn infer_binary_expr_sub(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
     if left.is_number() && right.is_number() {
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
-                Some(LuaType::IntegerConst(int1 - int2))
+                Ok(LuaType::IntegerConst(int1 - int2))
             }
             (LuaType::FloatConst(num1), LuaType::FloatConst(num2)) => {
-                Some(LuaType::FloatConst(num1 - num2))
+                Ok(LuaType::FloatConst(num1 - num2))
             }
             (LuaType::IntegerConst(int1), LuaType::FloatConst(num2)) => {
-                Some(LuaType::FloatConst((*int1 as f64 - *num2).into()))
+                Ok(LuaType::FloatConst((*int1 as f64 - *num2).into()))
             }
             (LuaType::FloatConst(num1), LuaType::IntegerConst(int2)) => {
-                Some(LuaType::FloatConst((*num1 - *int2 as f64).into()))
+                Ok(LuaType::FloatConst((*num1 - *int2 as f64).into()))
             }
             _ => {
                 if left.is_integer() && right.is_integer() {
-                    Some(LuaType::Integer)
+                    Ok(LuaType::Integer)
                 } else {
-                    Some(LuaType::Number)
+                    Ok(LuaType::Number)
                 }
             }
         };
@@ -180,22 +184,22 @@ fn infer_binary_expr_mul(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
     if left.is_number() && right.is_number() {
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
-                Some(LuaType::IntegerConst(int1 * int2))
+                Ok(LuaType::IntegerConst(int1 * int2))
             }
             (LuaType::FloatConst(num1), LuaType::FloatConst(num2)) => {
-                Some(LuaType::FloatConst(num1 * num2))
+                Ok(LuaType::FloatConst(num1 * num2))
             }
             (LuaType::IntegerConst(int1), LuaType::FloatConst(num2)) => {
-                Some(LuaType::FloatConst((*int1 as f64 * *num2).into()))
+                Ok(LuaType::FloatConst((*int1 as f64 * *num2).into()))
             }
             (LuaType::FloatConst(num1), LuaType::IntegerConst(int2)) => {
-                Some(LuaType::FloatConst((*num1 * *int2 as f64).into()))
+                Ok(LuaType::FloatConst((*num1 * *int2 as f64).into()))
             }
             _ => {
                 if left.is_integer() && right.is_integer() {
-                    Some(LuaType::Integer)
+                    Ok(LuaType::Integer)
                 } else {
-                    Some(LuaType::Number)
+                    Ok(LuaType::Number)
                 }
             }
         };
@@ -209,29 +213,29 @@ fn infer_binary_expr_div(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
                 if *int2 != 0 {
-                    return Some(LuaType::FloatConst((*int1 as f64 / *int2 as f64).into()));
+                    return Ok(LuaType::FloatConst((*int1 as f64 / *int2 as f64).into()));
                 }
-                Some(LuaType::Number)
+                Ok(LuaType::Number)
             }
             (LuaType::FloatConst(num1), LuaType::FloatConst(num2)) => {
                 if *num2 != 0.0 {
-                    return Some(LuaType::FloatConst(num1 / num2));
+                    return Ok(LuaType::FloatConst(num1 / num2));
                 }
-                Some(LuaType::Number)
+                Ok(LuaType::Number)
             }
             (LuaType::IntegerConst(int1), LuaType::FloatConst(num2)) => {
                 if *num2 != 0.0 {
-                    return Some(LuaType::FloatConst((*int1 as f64 / *num2).into()));
+                    return Ok(LuaType::FloatConst((*int1 as f64 / *num2).into()));
                 }
-                Some(LuaType::Number)
+                Ok(LuaType::Number)
             }
             (LuaType::FloatConst(num1), LuaType::IntegerConst(int2)) => {
                 if *int2 != 0 {
-                    return Some(LuaType::FloatConst(*num1 / *int2 as f64));
+                    return Ok(LuaType::FloatConst(*num1 / *int2 as f64));
                 }
-                Some(LuaType::Number)
+                Ok(LuaType::Number)
             }
-            _ => Some(LuaType::Number),
+            _ => Ok(LuaType::Number),
         };
     }
 
@@ -243,11 +247,11 @@ fn infer_binary_expr_idiv(db: &DbIndex, left: LuaType, right: LuaType) -> InferR
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
                 if *int2 != 0 {
-                    return Some(LuaType::IntegerConst(int1 / int2));
+                    return Ok(LuaType::IntegerConst(int1 / int2));
                 }
-                Some(LuaType::Integer)
+                Ok(LuaType::Integer)
             }
-            _ => Some(LuaType::Integer),
+            _ => Ok(LuaType::Integer),
         };
     }
 
@@ -259,11 +263,11 @@ fn infer_binary_expr_mod(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
                 if *int2 != 0 {
-                    return Some(LuaType::IntegerConst(int1 % int2));
+                    return Ok(LuaType::IntegerConst(int1 % int2));
                 }
-                Some(LuaType::Integer)
+                Ok(LuaType::Integer)
             }
-            _ => Some(LuaType::Integer),
+            _ => Ok(LuaType::Integer),
         };
     }
 
@@ -275,15 +279,15 @@ fn infer_binary_expr_pow(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
                 if let Some(int3) = int1.checked_pow(*int2 as u32) {
-                    Some(LuaType::IntegerConst(int3))
+                    Ok(LuaType::IntegerConst(int3))
                 } else {
-                    Some(LuaType::Number)
+                    Ok(LuaType::Number)
                 }
             }
             (LuaType::FloatConst(num1), LuaType::IntegerConst(num2)) => {
-                Some(LuaType::FloatConst(num1.powf(*num2 as f64).into()))
+                Ok(LuaType::FloatConst(num1.powf(*num2 as f64).into()))
             }
-            _ => Some(LuaType::Number),
+            _ => Ok(LuaType::Number),
         };
     }
 
@@ -294,9 +298,9 @@ fn infer_binary_expr_band(db: &DbIndex, left: LuaType, right: LuaType) -> InferR
     if left.is_integer() && right.is_integer() {
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
-                Some(LuaType::IntegerConst(int1 & int2))
+                Ok(LuaType::IntegerConst(int1 & int2))
             }
-            _ => Some(LuaType::Integer),
+            _ => Ok(LuaType::Integer),
         };
     }
 
@@ -307,9 +311,9 @@ fn infer_binary_expr_bor(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
     if left.is_integer() && right.is_integer() {
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
-                Some(LuaType::IntegerConst(int1 | int2))
+                Ok(LuaType::IntegerConst(int1 | int2))
             }
-            _ => Some(LuaType::Integer),
+            _ => Ok(LuaType::Integer),
         };
     }
 
@@ -320,9 +324,9 @@ fn infer_binary_expr_bxor(db: &DbIndex, left: LuaType, right: LuaType) -> InferR
     if left.is_integer() && right.is_integer() {
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
-                Some(LuaType::IntegerConst(int1 ^ int2))
+                Ok(LuaType::IntegerConst(int1 ^ int2))
             }
-            _ => Some(LuaType::Integer),
+            _ => Ok(LuaType::Integer),
         };
     }
 
@@ -333,9 +337,9 @@ fn infer_binary_expr_shl(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
     if left.is_integer() && right.is_integer() {
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
-                Some(LuaType::IntegerConst(int1 << int2))
+                Ok(LuaType::IntegerConst(int1 << int2))
             }
-            _ => Some(LuaType::Integer),
+            _ => Ok(LuaType::Integer),
         };
     }
 
@@ -346,9 +350,9 @@ fn infer_binary_expr_shr(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
     if left.is_integer() && right.is_integer() {
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
-                Some(LuaType::IntegerConst(int1 >> int2))
+                Ok(LuaType::IntegerConst(int1 >> int2))
             }
-            _ => Some(LuaType::Integer),
+            _ => Ok(LuaType::Integer),
         };
     }
 
@@ -359,21 +363,21 @@ fn infer_binary_expr_concat(db: &DbIndex, left: LuaType, right: LuaType) -> Infe
     if left.is_number() || left.is_string() || right.is_number() || right.is_string() {
         match (&left, &right) {
             (LuaType::StringConst(s1), LuaType::StringConst(s2)) => {
-                return Some(LuaType::StringConst(
+                return Ok(LuaType::StringConst(
                     SmolStr::new(format!("{}{}", s1.as_str(), s2.as_str())).into(),
                 ));
             }
             (LuaType::StringConst(s1), LuaType::IntegerConst(i)) => {
-                return Some(LuaType::StringConst(
+                return Ok(LuaType::StringConst(
                     SmolStr::new(format!("{}{}", s1.as_str(), i)).into(),
                 ));
             }
             (LuaType::IntegerConst(i), LuaType::StringConst(s2)) => {
-                return Some(LuaType::StringConst(
+                return Ok(LuaType::StringConst(
                     SmolStr::new(format!("{}{}", i, s2.as_str())).into(),
                 ));
             }
-            _ => return Some(LuaType::String),
+            _ => return Ok(LuaType::String),
         }
     }
 
@@ -382,80 +386,80 @@ fn infer_binary_expr_concat(db: &DbIndex, left: LuaType, right: LuaType) -> Infe
 
 fn infer_binary_expr_or(left: LuaType, right: LuaType) -> InferResult {
     if left.is_always_truthy() {
-        return Some(left);
+        return Ok(left);
     } else if left.is_always_falsy() {
-        return Some(right);
+        return Ok(right);
     }
 
-    Some(TypeOps::Union.apply(&TypeOps::Remove.apply(&left, &LuaType::Nil), &right))
+    Ok(TypeOps::Union.apply(&TypeOps::Remove.apply(&left, &LuaType::Nil), &right))
 }
 
 fn infer_binary_expr_and(left: LuaType, right: LuaType) -> InferResult {
     if left.is_always_falsy() {
-        return Some(left);
+        return Ok(left);
     } else if left.is_always_truthy() {
-        return Some(right);
+        return Ok(right);
     }
 
-    Some(TypeOps::Union.apply(&TypeOps::NarrowFalseOrNil.apply_source(&left), &right))
+    Ok(TypeOps::Union.apply(&TypeOps::NarrowFalseOrNil.apply_source(&left), &right))
 }
 
 fn infer_cmp_expr(_: &DbIndex, left: LuaType, right: LuaType, op: BinaryOperator) -> InferResult {
     match (left, right) {
         (LuaType::IntegerConst(i), LuaType::IntegerConst(j)) => {
-            Some(LuaType::BooleanConst(integer_cmp(i, j, op)))
+            Ok(LuaType::BooleanConst(integer_cmp(i, j, op)))
         }
         (LuaType::IntegerConst(i), LuaType::DocIntegerConst(j)) => {
-            Some(LuaType::BooleanConst(integer_cmp(i, j, op)))
+            Ok(LuaType::BooleanConst(integer_cmp(i, j, op)))
         }
         (LuaType::DocIntegerConst(i), LuaType::IntegerConst(j)) => {
-            Some(LuaType::BooleanConst(integer_cmp(i, j, op)))
+            Ok(LuaType::BooleanConst(integer_cmp(i, j, op)))
         }
         (LuaType::DocIntegerConst(i), LuaType::DocIntegerConst(j)) => {
-            Some(LuaType::BooleanConst(integer_cmp(i, j, op)))
+            Ok(LuaType::BooleanConst(integer_cmp(i, j, op)))
         }
         (LuaType::FloatConst(i), LuaType::FloatConst(j)) => {
-            Some(LuaType::BooleanConst(float_cmp(i, j, op)))
+            Ok(LuaType::BooleanConst(float_cmp(i, j, op)))
         }
         (LuaType::IntegerConst(i), LuaType::FloatConst(j)) => {
-            Some(LuaType::BooleanConst(float_cmp(i as f64, j, op)))
+            Ok(LuaType::BooleanConst(float_cmp(i as f64, j, op)))
         }
         (LuaType::FloatConst(i), LuaType::IntegerConst(j)) => {
-            Some(LuaType::BooleanConst(float_cmp(i, j as f64, op)))
+            Ok(LuaType::BooleanConst(float_cmp(i, j as f64, op)))
         }
         (LuaType::DocIntegerConst(i), LuaType::FloatConst(j)) => {
-            Some(LuaType::BooleanConst(float_cmp(i as f64, j, op)))
+            Ok(LuaType::BooleanConst(float_cmp(i as f64, j, op)))
         }
         (LuaType::FloatConst(i), LuaType::DocIntegerConst(j)) => {
-            Some(LuaType::BooleanConst(float_cmp(i, j as f64, op)))
+            Ok(LuaType::BooleanConst(float_cmp(i, j as f64, op)))
         }
         (LuaType::DocBooleanConst(i), LuaType::DocBooleanConst(j)) => match op {
-            BinaryOperator::OpEq => Some(LuaType::BooleanConst(i == j)),
-            BinaryOperator::OpNe => Some(LuaType::BooleanConst(i != j)),
-            _ => Some(LuaType::Boolean),
+            BinaryOperator::OpEq => Ok(LuaType::BooleanConst(i == j)),
+            BinaryOperator::OpNe => Ok(LuaType::BooleanConst(i != j)),
+            _ => Ok(LuaType::Boolean),
         },
         (LuaType::BooleanConst(i), LuaType::BooleanConst(j)) => match op {
-            BinaryOperator::OpEq => Some(LuaType::BooleanConst(i == j)),
-            BinaryOperator::OpNe => Some(LuaType::BooleanConst(i != j)),
-            _ => Some(LuaType::Boolean),
+            BinaryOperator::OpEq => Ok(LuaType::BooleanConst(i == j)),
+            BinaryOperator::OpNe => Ok(LuaType::BooleanConst(i != j)),
+            _ => Ok(LuaType::Boolean),
         },
         (LuaType::DocStringConst(i), LuaType::DocStringConst(j)) => match op {
-            BinaryOperator::OpEq => Some(LuaType::BooleanConst(i == j)),
-            BinaryOperator::OpNe => Some(LuaType::BooleanConst(i != j)),
-            _ => Some(LuaType::Boolean),
+            BinaryOperator::OpEq => Ok(LuaType::BooleanConst(i == j)),
+            BinaryOperator::OpNe => Ok(LuaType::BooleanConst(i != j)),
+            _ => Ok(LuaType::Boolean),
         },
         (LuaType::StringConst(i), LuaType::StringConst(j)) => match op {
-            BinaryOperator::OpEq => Some(LuaType::BooleanConst(i == j)),
-            BinaryOperator::OpNe => Some(LuaType::BooleanConst(i != j)),
-            _ => Some(LuaType::Boolean),
+            BinaryOperator::OpEq => Ok(LuaType::BooleanConst(i == j)),
+            BinaryOperator::OpNe => Ok(LuaType::BooleanConst(i != j)),
+            _ => Ok(LuaType::Boolean),
         },
         (LuaType::TableConst(i), LuaType::TableConst(j)) => match op {
-            BinaryOperator::OpEq => Some(LuaType::BooleanConst(i == j)),
-            BinaryOperator::OpNe => Some(LuaType::BooleanConst(i != j)),
-            _ => Some(LuaType::Boolean),
+            BinaryOperator::OpEq => Ok(LuaType::BooleanConst(i == j)),
+            BinaryOperator::OpNe => Ok(LuaType::BooleanConst(i != j)),
+            _ => Ok(LuaType::Boolean),
         },
-        (left, right) if left.is_const() && right.is_const() => Some(LuaType::BooleanConst(false)),
-        _ => Some(LuaType::Boolean),
+        (left, right) if left.is_const() && right.is_const() => Ok(LuaType::BooleanConst(false)),
+        _ => Ok(LuaType::Boolean),
     }
 }
 

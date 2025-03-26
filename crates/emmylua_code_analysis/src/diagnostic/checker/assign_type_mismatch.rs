@@ -91,7 +91,7 @@ fn check_name_expr(
         semantic_model,
         name_expr.get_range(),
         origin_type.clone(),
-        Some(value_type),
+        value_type,
         false,
     );
     if let Some(expr) = expr {
@@ -114,7 +114,7 @@ fn check_index_expr(
         semantic_model,
         index_expr.get_range(),
         Some(member_info.typ.clone()),
-        Some(value_type),
+        value_type,
         true,
     );
     if let Some(expr) = expr {
@@ -146,7 +146,7 @@ fn check_local_stat(
             semantic_model,
             decl.get_range(),
             Some(name_type.clone()),
-            Some(value_types.get(idx)?.0.clone()),
+            value_types.get(idx)?.0.clone(),
             false,
         );
         if let Some(expr) = value_exprs.get(idx).map(|expr| expr.clone()) {
@@ -176,7 +176,7 @@ fn handle_value_is_table_expr(
                 .map(|info| info.typ.clone());
             let expr = field.get_value_expr();
             if let Some(expr) = expr {
-                let expr_type = semantic_model.infer_expr(expr);
+                let expr_type = semantic_model.infer_expr(expr).unwrap_or(LuaType::Any);
 
                 let allow_nil = match table_type {
                     LuaType::Array(_) => true,
@@ -203,12 +203,10 @@ fn check_assign_type_mismatch(
     semantic_model: &SemanticModel,
     range: TextRange,
     source_type: Option<LuaType>,
-    value_type: Option<LuaType>,
+    value_type: LuaType,
     allow_nil: bool,
 ) -> Option<()> {
     let source_type = source_type.unwrap_or(LuaType::Any);
-    let value_type = value_type.unwrap_or(LuaType::Any);
-
     // 如果一致, 则不进行类型检查
     if source_type == value_type {
         return Some(());
