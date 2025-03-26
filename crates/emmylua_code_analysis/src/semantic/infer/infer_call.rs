@@ -1,6 +1,7 @@
 use std::{ops::Deref, sync::Arc};
 
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr, LuaSyntaxKind};
+use rowan::TextRange;
 
 use crate::{
     db_index::{
@@ -318,11 +319,7 @@ fn unwrapp_return_type(
     call_expr: LuaCallExpr,
 ) -> InferResult {
     match &return_type {
-        LuaType::Table
-        | LuaType::TableConst(_)
-        | LuaType::Any
-        | LuaType::Unknown
-        | LuaType::Instance(_) => {
+        LuaType::Table | LuaType::Any | LuaType::Unknown => {
             let id = InFiled {
                 file_id: cache.get_file_id(),
                 value: call_expr.get_range(),
@@ -332,6 +329,35 @@ fn unwrapp_return_type(
                 LuaInstanceType::new(return_type, id).into(),
             ));
         }
+        LuaType::TableConst(inst) => {
+            if is_need_wrap_instance(cache, &call_expr, inst) {
+                let id = InFiled {
+                    file_id: cache.get_file_id(),
+                    value: call_expr.get_range(),
+                };
+
+                return Ok(LuaType::Instance(
+                    LuaInstanceType::new(return_type.clone(), id).into(),
+                ));
+            }
+
+            return Ok(return_type);
+        }
+        LuaType::Instance(inst) => {
+            if is_need_wrap_instance(cache, &call_expr, inst.get_range()) {
+                let id = InFiled {
+                    file_id: cache.get_file_id(),
+                    value: call_expr.get_range(),
+                };
+
+                return Ok(LuaType::Instance(
+                    LuaInstanceType::new(return_type.clone(), id).into(),
+                ));
+            }
+
+            return Ok(return_type);
+        }
+
         LuaType::MuliReturn(multi) => {
             if is_last_expr(&call_expr) {
                 return Ok(return_type);
@@ -367,6 +393,18 @@ fn unwrapp_return_type(
     }
 
     Ok(return_type)
+}
+
+fn is_need_wrap_instance(
+    cache: &mut LuaInferCache,
+    call_expr: &LuaCallExpr,
+    inst: &InFiled<TextRange>,
+) -> bool {
+    if cache.get_file_id() != inst.file_id {
+        return false;
+    }
+
+    return !call_expr.get_range().contains(inst.value.start());
 }
 
 fn is_last_expr(call_expr: &LuaCallExpr) -> bool {
