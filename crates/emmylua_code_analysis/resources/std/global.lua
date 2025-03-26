@@ -87,8 +87,7 @@ function dofile(filename) end
 --- `error` function was called. Level 2 points the error to where the function
 --- that called `error` was called; and so on. Passing a level 0 avoids the
 --- addition of error position information to the message.
----@overload fun(message:string)
----@param message string
+---@param message any
 ---@param level? integer
 function error(message, level) end
 
