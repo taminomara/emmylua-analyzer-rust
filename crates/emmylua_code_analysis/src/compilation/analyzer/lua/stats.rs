@@ -169,6 +169,7 @@ fn set_index_expr_owner(analyzer: &mut LuaAnalyzer, var_expr: LuaVarExpr) -> Opt
     let file_id = analyzer.file_id;
     let index_expr = LuaIndexExpr::cast(var_expr.syntax().clone())?;
     let prefix_expr = index_expr.get_prefix_expr()?;
+
     match analyzer.infer_expr(&prefix_expr.clone().into()) {
         Ok(prefix_type) => {
             index_expr.get_index_key()?;
@@ -346,7 +347,7 @@ fn merge_type_owner_and_expr_type(
                 .db
                 .get_member_index_mut()
                 .get_member_mut(&member_id)?;
-            if member.get_decl_type().is_unknown() {
+            if member.get_option_decl_type().is_none() {
                 member.set_decl_type(expr_type);
             } else {
                 merge_member_type(analyzer.db, &mut analyzer.infer_cache, member_id, expr_type);

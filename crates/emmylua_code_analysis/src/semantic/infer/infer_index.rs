@@ -410,9 +410,9 @@ fn infer_member_by_index_table(
     let table_array_expr = LuaTableExpr::cast(
         syntax_id
             .to_node_from_root(&root)
-            .ok_or(InferFailReason::None)?,
+            .ok_or(InferFailReason::FieldDotFound)?,
     )
-    .ok_or(InferFailReason::None)?;
+    .ok_or(InferFailReason::FieldDotFound)?;
     let member_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
     match member_key {
         LuaIndexKey::Integer(_) | LuaIndexKey::Expr(_) => {
