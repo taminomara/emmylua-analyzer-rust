@@ -409,4 +409,28 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_pairs() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@diagnostic disable: missing-return
+                ---@generic K, V
+                ---@param t table<K, V> | V[] | {[K]: V}
+                ---@return fun(tbl: any):K, std.NotNull<V>
+                local function _pairs(t) end
+
+                ---@class D10.A
+
+                ---@type {[string]: D10.A, _id: D10.A}
+                local a
+
+                for k, v in _pairs(a) do
+                end
+        "#
+        ));
+    }
 }
