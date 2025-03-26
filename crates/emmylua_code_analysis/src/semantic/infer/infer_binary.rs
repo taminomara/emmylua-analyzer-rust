@@ -166,6 +166,11 @@ fn infer_binary_expr_add(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
             }
         };
     }
+    match (left.is_nil(), right.is_nil()) {
+        (true, false) => return Some(right),
+        (false, true) => return Some(left),
+        _ => {}
+    }
 
     infer_binary_custom_operator(db, &left, &right, LuaOperatorMetaMethod::Add)
 }
