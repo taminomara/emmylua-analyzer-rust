@@ -1,3 +1,4 @@
+mod check_reason;
 mod infer_manager;
 mod merge_type;
 mod resolve;
@@ -8,6 +9,7 @@ use crate::{
     profile::Profile,
     FileId, InferFailReason, LuaSemanticDeclId,
 };
+use check_reason::resolve_all_reason;
 use emmylua_parser::{LuaCallExpr, LuaExpr};
 use infer_manager::InferCacheManager;
 pub use merge_type::{merge_decl_expr_type, merge_member_type};
@@ -31,7 +33,7 @@ pub fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     }
 
     if !unresolves.is_empty() {
-        infer_manager.set_force();
+        resolve_all_reason(db, &mut infer_manager, &mut unresolves);
 
         while try_resolve(db, &mut infer_manager, &mut unresolves) {
             unresolves.retain(|un_resolve| match un_resolve {

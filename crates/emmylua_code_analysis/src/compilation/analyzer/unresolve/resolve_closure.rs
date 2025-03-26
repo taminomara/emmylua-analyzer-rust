@@ -89,7 +89,7 @@ pub fn try_resolve_closure_params(
 pub fn try_resolve_closure_return(
     db: &mut DbIndex,
     config: &mut LuaInferCache,
-    closure_return: &UnResolveClosureReturn,
+    closure_return: &mut UnResolveClosureReturn,
 ) -> Option<bool> {
     let call_expr = closure_return.call_expr.clone();
     let prefix_expr = call_expr.get_prefix_expr()?;
@@ -138,14 +138,14 @@ pub fn try_resolve_closure_return(
 fn try_convert_to_func_body_infer(
     db: &mut DbIndex,
     config: &mut LuaInferCache,
-    closure_return: &UnResolveClosureReturn,
+    closure_return: &mut UnResolveClosureReturn,
 ) -> Option<bool> {
-    let unresolve = UnResolveReturn {
+    let mut unresolve = UnResolveReturn {
         file_id: closure_return.file_id,
         signature_id: closure_return.signature_id,
         return_points: closure_return.return_points.clone(),
         reason: InferFailReason::None,
     };
 
-    try_resolve_return_point(db, config, &unresolve)
+    try_resolve_return_point(db, config, &mut unresolve)
 }
