@@ -80,6 +80,7 @@ pub fn check_complex_type_compact(
                     return Ok(());
                 }
             }
+            LuaType::Any => return Ok(()),
             _ => {}
         },
         LuaType::Tuple(tuple) => {
@@ -211,7 +212,9 @@ pub fn check_complex_type_compact(
                     if source_generic_param.len() == 2 {
                         let key = &source_generic_param[0];
                         let value = &source_generic_param[1];
-                        if key.is_any() || key.is_integer() && check_type_compact(db, value, base).is_ok() {
+                        if key.is_any()
+                            || key.is_integer() && check_type_compact(db, value, base).is_ok()
+                        {
                             return Ok(());
                         }
                     }

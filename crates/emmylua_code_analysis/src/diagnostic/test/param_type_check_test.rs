@@ -369,4 +369,44 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_table_class() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@param t table
+                local function bar(t)
+                end
+
+                ---@class D11.A
+
+                ---@type D11.A|any
+                local a
+
+                bar(a)
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_table_1() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@param t table[]
+                local function bar(t)
+                end
+
+                ---@type table|any
+                local a
+
+                bar(a)
+        "#
+        ));
+    }
 }
