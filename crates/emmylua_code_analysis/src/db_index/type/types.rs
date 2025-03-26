@@ -262,6 +262,14 @@ impl LuaType {
         }
     }
 
+    pub fn is_optional(&self) -> bool {
+        match self {
+            LuaType::Nil | LuaType::Any | LuaType::Unknown => true,
+            LuaType::Union(u) => u.types.iter().any(|t| t.is_optional()),
+            _ => false,
+        }
+    }
+
     pub fn is_always_truthy(&self) -> bool {
         match self {
             LuaType::Nil | LuaType::Boolean | LuaType::Any | LuaType::Unknown => false,

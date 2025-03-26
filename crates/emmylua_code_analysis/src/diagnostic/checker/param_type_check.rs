@@ -138,32 +138,25 @@ fn add_type_check_diagnostic(
     let db = semantic_model.get_db();
     match result {
         Ok(_) => return,
-        Err(reason) => match reason {
-            TypeCheckFailReason::TypeNotMatchWithReason(reason) => {
-                context.add_diagnostic(DiagnosticCode::ParamTypeNotMatch, range, reason, None);
-            }
-            TypeCheckFailReason::TypeNotMatch => {
-                context.add_diagnostic(
-                    DiagnosticCode::ParamTypeNotMatch,
-                    range,
-                    t!(
-                        "expected `%{source}` but found `%{found}`",
-                        source = humanize_type(db, &param_type, RenderLevel::Simple),
-                        found = humanize_type(db, &expr_type, RenderLevel::Simple)
-                    )
-                    .to_string(),
-                    None,
-                );
-            }
-            TypeCheckFailReason::TypeRecursion => {
-                context.add_diagnostic(
-                    DiagnosticCode::ParamTypeNotMatch,
-                    range,
-                    "type recursion".into(),
-                    None,
-                );
-            }
-        },
+        Err(reason) => {
+            let reason_message = match reason {
+                TypeCheckFailReason::TypeNotMatchWithReason(reason) => reason,
+                TypeCheckFailReason::TypeNotMatch => "".to_string(),
+                TypeCheckFailReason::TypeRecursion => "type recursion".to_string(),
+            };
+            context.add_diagnostic(
+                DiagnosticCode::ParamTypeNotMatch,
+                range,
+                t!(
+                    "expected `%{source}` but found `%{found}`. %{reason}",
+                    source = humanize_type(db, &param_type, RenderLevel::Simple),
+                    found = humanize_type(db, &expr_type, RenderLevel::Simple),
+                    reason = reason_message
+                )
+                .to_string(),
+                None,
+            );
+        }
     }
 }
 
