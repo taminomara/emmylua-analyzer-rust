@@ -6,7 +6,7 @@ mod test;
 use crate::{
     kind::{LuaSyntaxKind, LuaTokenKind},
     syntax::traits::{LuaAstChildren, LuaAstNode, LuaAstToken},
-    LuaSyntaxNode,
+    LuaCommentOwner, LuaSyntaxNode,
 };
 
 pub use expr::*;
@@ -246,6 +246,8 @@ impl LuaAstNode for LuaTableField {
         }
     }
 }
+
+impl LuaCommentOwner for LuaTableField {}
 
 impl LuaTableField {
     pub fn is_assign_field(&self) -> bool {
