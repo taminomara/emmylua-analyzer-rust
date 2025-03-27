@@ -73,8 +73,7 @@ function collectgarbage(opt, ...) end
 --- (`stdin`). Returns all values returned by the chunk. In case of errors,
 --- `dofile` propagates the error to its caller (that is, `dofile` does not run
 --- in protected mode).
----@overload fun():table
----@param filename string
+---@param filename? string
 ---@return table
 function dofile(filename) end
 

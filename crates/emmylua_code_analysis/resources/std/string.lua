@@ -28,7 +28,6 @@ string = {}
 --- `string.sub`.
 ---
 --- Note that numerical codes are not necessarily portable across platforms.
----@overload fun(s:string):integer
 ---@param s string
 ---@param i? integer
 ---@param j? integer
@@ -191,7 +190,6 @@ function string.gmatch(s, pattern) end
 --- `local t = {name="lua", version="5.3"}`
 --- `x = string.gsub("$name-$version.tar.gz", "%$(%w+)", t)`
 --- > x="lua-5.3.tar.gz"
----@overload fun(s:string, pattern:string, repl:string|fun()):string, integer
 ---@param s string
 ---@param pattern string
 ---@param repl string|fun(param:string)
@@ -252,7 +250,6 @@ function string.packsize(fmt) end
 ---
 --- Note that it is very easy to exhaust the memory of your machine with a
 --- single call to this function.
----@overload fun(s:string, n:integer):string
 ---@param s string
 ---@param n integer
 ---@param sep? string
@@ -289,7 +286,6 @@ function string.sub(s, i, j) end
 --- `fmt`. An optional `pos` marks where to start reading in `s` (default is 1).
 --- After the read values, this function also returns the index of the first
 --- unread byte in `s`.
----@overload fun(fmt:string, s:string):string
 ---@param fmt string
 ---@param s string
 ---@param pos? integer

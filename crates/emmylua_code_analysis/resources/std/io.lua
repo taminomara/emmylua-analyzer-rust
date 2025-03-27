@@ -249,9 +249,8 @@ function file:seek(whence, offset) end
 ---
 --- For the last two cases, `size` specifies the size of the buffer, in
 --- bytes. The default is an appropriate size.
----@overload fun(mode:string)
 ---@param mode string | 'no' | 'full' | 'line'
----@param size integer
+---@param size? integer
 function file:setvbuf(mode, size) end
 
 ---

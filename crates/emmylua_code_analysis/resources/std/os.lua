@@ -176,7 +176,6 @@ function os.rename(oldname, newname) end
 ---
 --- This function may be not thread safe because of its reliance on C function
 --- `setlocale`.
----@overload fun(locale:string):string?
 ---@param locale string
 ---@param category? string
 ---@return string|nil
