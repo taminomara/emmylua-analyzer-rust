@@ -79,4 +79,83 @@ mod test {
             "#
         ));
     }
+
+    #[test]
+    fn test_any_key() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                ---@class LogicalOperators
+                local logicalOperators <const> = {}
+
+                ---@param key any
+                local function test(key)
+                    print(logicalOperators[key])
+                end
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_class_key_to_class_key() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                --- @type table<string, integer>
+                local FUNS = {}
+
+                ---@class D10.AAA
+
+                ---@type D10.AAA
+                local Test1
+
+                local a = FUNS[Test1]
+            "#
+        ));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                ---@generic K, V
+                ---@param t table<K, V> | V[] | {[K]: V}
+                ---@return fun(tbl: any):K, std.NotNull<V>
+                local function pairs(t) end
+
+                ---@class D11.AAA
+                ---@field name string
+                ---@field key string
+                local AAA = {}
+
+                ---@type D11.AAA
+                local a
+
+                for k, v in pairs(AAA) do
+                    if not a[k] then
+                        -- a[k] = v
+                    end
+                end
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_2() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                local function sortCallbackOfIndex()
+                    ---@type table<string, integer>
+                    local indexMap = {}
+                    return function(v)
+                        return -indexMap[v]
+                    end
+                end
+            "#
+        ));
+    }
 }
