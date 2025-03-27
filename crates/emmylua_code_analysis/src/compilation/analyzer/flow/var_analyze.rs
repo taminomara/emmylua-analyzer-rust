@@ -420,8 +420,12 @@ fn infer_lua_type_assert(
 ) -> Option<()> {
     let binary_expr = call_expr.get_parent::<LuaBinaryExpr>()?;
     let op = binary_expr.get_op_token()?;
+    let mut is_eq = true;
     match op.get_op() {
         BinaryOperator::OpEq => {}
+        BinaryOperator::OpNe => {
+            is_eq = false;
+        }
         _ => return None,
     };
 
@@ -439,7 +443,7 @@ fn infer_lua_type_assert(
         _ => return None,
     };
 
-    let type_assert = match type_literal.as_str() {
+    let mut type_assert = match type_literal.as_str() {
         "number" => TypeAssertion::Narrow(LuaType::Number),
         "string" => TypeAssertion::Narrow(LuaType::String),
         "boolean" => TypeAssertion::Narrow(LuaType::Boolean),
@@ -451,6 +455,10 @@ fn infer_lua_type_assert(
         // extend usage
         str => TypeAssertion::Narrow(LuaType::Ref(LuaTypeDeclId::new(str))),
     };
+
+    if !is_eq {
+        type_assert = type_assert.get_negation()?;
+    }
 
     broadcast_up(
         db,

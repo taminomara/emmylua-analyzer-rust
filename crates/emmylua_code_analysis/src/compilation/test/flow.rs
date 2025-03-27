@@ -321,4 +321,26 @@ end
         let d_desc = ws.humanize_type(d);
         assert_eq!(d_desc, "string");
     }
+
+    #[test]
+    fn test_issue_277() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+        ---@param t? table
+        function myfun3(t)
+            if type(t) ~= 'table' then
+                return
+            end
+
+            a = t
+        end   
+        "#,
+        );
+
+        let a = ws.expr_ty("a");
+        let a_desc = ws.humanize_type(a);
+        assert_eq!(a_desc, "table");
+    }
 }

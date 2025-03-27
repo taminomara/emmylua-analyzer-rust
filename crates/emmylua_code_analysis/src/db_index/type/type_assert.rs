@@ -20,6 +20,7 @@ impl TypeAssertion {
             TypeAssertion::Exist => Some(TypeAssertion::NotExist),
             TypeAssertion::NotExist => Some(TypeAssertion::Exist),
             TypeAssertion::Narrow(t) => Some(TypeAssertion::Remove(t.clone())),
+            TypeAssertion::Remove(t) => Some(TypeAssertion::Narrow(t.clone())),
             _ => None,
         }
     }
