@@ -5,8 +5,8 @@ use lsp_types::NumberOrString;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    check_type_compact, DiagnosticCode, EmmyLuaAnalysis, Emmyrc, FileId, LuaType,
-    VirtualUrlGenerator,
+    check_type_compact, humanize_type, DiagnosticCode, EmmyLuaAnalysis, Emmyrc, FileId, LuaType,
+    RenderLevel, VirtualUrlGenerator,
 };
 
 /// A virtual workspace for testing.
@@ -176,6 +176,12 @@ impl VirtualWorkspace {
         enables.push(DiagnosticCode::MissingGlobalDoc);
         emmyrc.diagnostics.enables = enables;
         self.analysis.diagnostic.update_config(Arc::new(emmyrc));
+    }
+
+    pub fn humanize_type(&self, ty: LuaType) -> String {
+        let db = &self.analysis.compilation.get_db();
+        let level = 0;
+        humanize_type(db, &ty, RenderLevel::Brief)
     }
 }
 
