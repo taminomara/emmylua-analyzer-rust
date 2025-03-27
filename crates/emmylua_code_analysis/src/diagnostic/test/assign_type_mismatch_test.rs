@@ -573,4 +573,21 @@ return t
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_246() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+        --- @alias Type1 'add' | 'change' | 'delete'
+        --- @alias Type2 'add' | 'change' | 'delete' | 'untracked'
+
+        local ty1 --- @type Type1?
+
+        --- @type Type2
+        local _ = ty1 or 'untracked'
+        "#
+        ));
+    }
 }

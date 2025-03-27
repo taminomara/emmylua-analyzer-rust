@@ -57,7 +57,7 @@ pub fn check_complex_type_compact(
                 LuaType::Union(compact_union) => {
                     return check_union_type_compact_union(
                         db,
-                        union_type,
+                        source,
                         compact_union,
                         check_guard.next_level()?,
                     );
@@ -111,29 +111,15 @@ pub fn check_complex_type_compact(
 // too complex
 fn check_union_type_compact_union(
     db: &DbIndex,
-    source_union: &LuaUnionType,
+    source: &LuaType,
     compact_union: &LuaUnionType,
     check_guard: TypeCheckGuard,
 ) -> TypeCheckResult {
-    let source_types = source_union.get_types();
     let compact_types = compact_union.get_types();
     for compact_sub_type in compact_types {
-        let mut is_match = false;
-        for source_sub_type in source_types {
-            if check_general_type_compact(
-                db,
-                source_sub_type,
-                compact_sub_type,
-                check_guard.next_level()?,
-            )
-            .is_ok()
-            {
-                is_match = true;
-                break;
-            }
-        }
-
-        if !is_match {
+        if check_general_type_compact(db, source, compact_sub_type, check_guard.next_level()?)
+            .is_err()
+        {
             return Err(TypeCheckFailReason::TypeNotMatch);
         }
     }
