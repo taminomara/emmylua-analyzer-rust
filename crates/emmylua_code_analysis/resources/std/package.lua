@@ -163,7 +163,6 @@ package.searchers = {}
 --- Returns the resulting name of the first file that it can open in read mode
 --- (after closing the file), or **nil** plus an error message if none succeeds.
 --- (This error message lists all file names it tried to open.)
----@overload fun(name:string, path:string):string
 ---@param name string
 ---@param path? string
 ---@param sep? string

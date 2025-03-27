@@ -42,9 +42,8 @@ function math.asin(x) end
 ---
 --- The default value for `x` is 1, so that the call `math.atan(y)`` returns the
 --- arc tangent of `y`.
----@overload fun(y:number):number
 ---@param y number
----@param x number
+---@param x? number
 ---@return number
 function math.atan(y, x) end
 
@@ -94,7 +93,6 @@ math.huge = nil
 ---
 --- Returns the logarithm of `x` in the given base. The default for `base` is
 --- *e* (so that the function returns the natural logarithm of `x`).
----@overload fun(x:number):number
 ---@param x number
 ---@param base? number
 ---@return number
