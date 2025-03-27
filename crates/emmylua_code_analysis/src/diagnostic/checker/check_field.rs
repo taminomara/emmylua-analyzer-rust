@@ -64,6 +64,11 @@ fn check_index_expr(
     let prefix_typ = semantic_model
         .infer_expr(index_expr.get_prefix_expr()?)
         .unwrap_or(LuaType::Unknown);
+
+    if !is_valid_prefix_type(&prefix_typ) {
+        return Some(());
+    }
+
     let index_name = index_key.get_path_part();
     match code {
         DiagnosticCode::InjectField => {
