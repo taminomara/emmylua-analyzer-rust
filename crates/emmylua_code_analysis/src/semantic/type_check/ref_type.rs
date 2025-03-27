@@ -83,6 +83,19 @@ pub fn check_ref_type_compact(
             }
         }
 
+        // 当 enum 的值全为整数常量时, 可能会用于位运算, 此时右值推断为整数
+        if union_types
+            .iter()
+            .all(|t| matches!(t, LuaType::DocIntegerConst(_)))
+        {
+            match compact_type {
+                LuaType::Integer => {
+                    return Ok(());
+                }
+                _ => {}
+            }
+        }
+
         let fake_union_type = LuaType::Union(LuaUnionType::new(union_types).into());
         return check_general_type_compact(
             db,
