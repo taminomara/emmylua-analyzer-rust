@@ -56,8 +56,7 @@ function string.char(...) end
 --- loaded, those upvalues receive fresh instances containing **nil**. (You can
 --- use the debug library to serialize and reload the upvalues of a function in
 --- a way adequate to your needs.)
----@overload fun(func:fun()):string
----@param func fun()
+---@param func function
 ---@param strip? boolean
 ---@return string
 function string.dump(func, strip) end
