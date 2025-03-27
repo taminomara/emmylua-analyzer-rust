@@ -202,8 +202,64 @@ fn object_tpl_pattern_match(
                 }
             }
         }
+        LuaType::TableConst(inst) => {
+            let owner = LuaMemberOwner::Element(inst.clone());
+            object_tpl_pattern_match_member_owner_match(
+                db,
+                cache,
+                root,
+                origin_obj,
+                owner,
+                substitutor,
+            );
+        }
         _ => {}
     }
+    Some(())
+}
+
+fn object_tpl_pattern_match_member_owner_match(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
+    root: &LuaSyntaxNode,
+    object: &LuaObjectType,
+    owner: LuaMemberOwner,
+    substitutor: &mut TypeSubstitutor,
+) -> Option<()> {
+    let owner_type = match &owner {
+        LuaMemberOwner::Element(inst) => LuaType::TableConst(inst.clone()),
+        LuaMemberOwner::Type(type_id) => LuaType::Ref(type_id.clone()),
+        _ => {
+            return None;
+        }
+    };
+
+    let members = infer_member_map(db, &owner_type)?;
+    for (k, v) in members {
+        let resolve_key = match &k {
+            LuaMemberKey::Integer(i) => Some(LuaType::IntegerConst(i.clone())),
+            LuaMemberKey::Name(s) => Some(LuaType::StringConst(s.clone().into())),
+            _ => None,
+        };
+        let resolve_type = match v.len() {
+            0 => LuaType::Any,
+            1 => v[0].typ.clone(),
+            _ => {
+                let mut types = Vec::new();
+                for m in v {
+                    types.push(m.typ.clone());
+                }
+                LuaType::Union(LuaUnionType::new(types).into())
+            }
+        };
+
+        if let Some(_) = resolve_key {
+            if let Some(field_value) = object.get_field(&k) {
+                tpl_pattern_match(db, cache, root, field_value, &resolve_type, substitutor);
+            }
+        }
+    }
+
     Some(())
 }
 
