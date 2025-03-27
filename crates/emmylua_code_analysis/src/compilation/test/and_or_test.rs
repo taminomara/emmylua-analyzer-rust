@@ -57,4 +57,21 @@ mod test {
             "Union(LuaUnionType { types: [Nil, IntegerConst(2)] })"
         );
     }
+
+    #[test]
+    fn test_issue_258() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+            local a            --- @type string|nil
+            local b            --- @type string|nil
+            c = a or b
+            "#,
+        );
+
+        let c = ws.expr_ty("c");
+        let c_desc = ws.humanize_type(c);
+        assert_eq!(c_desc, "(string|nil)");
+    }
 }
