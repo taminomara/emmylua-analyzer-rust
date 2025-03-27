@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use emmylua_parser::{LuaAst, LuaAstNode, LuaExpr, LuaIndexExpr, LuaVarExpr};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaExpr, LuaIndexExpr, LuaIndexKey, LuaVarExpr};
 
 use crate::{DiagnosticCode, InferFailReason, LuaType, SemanticModel};
 
@@ -54,11 +54,6 @@ fn check_index_expr(
     code: DiagnosticCode,
 ) -> Option<()> {
     let db = context.db;
-    let result = semantic_model.infer_expr(LuaExpr::IndexExpr(index_expr.clone()));
-    match result {
-        Err(InferFailReason::FieldDotFound) => {}
-        _ => return Some(()),
-    }
 
     let index_key = index_expr.get_index_key()?;
     let prefix_typ = semantic_model
@@ -67,6 +62,16 @@ fn check_index_expr(
 
     if !is_valid_prefix_type(&prefix_typ) {
         return Some(());
+    }
+
+    if !is_valid_index_key(&index_key) {
+        return Some(());
+    }
+
+    let result = semantic_model.infer_expr(LuaExpr::IndexExpr(index_expr.clone()));
+    match result {
+        Err(InferFailReason::FieldDotFound) => {}
+        _ => return Some(()),
     }
 
     let index_name = index_key.get_path_part();
@@ -98,7 +103,6 @@ fn check_index_expr(
     Some(())
 }
 
-#[allow(dead_code)]
 fn is_valid_prefix_type(typ: &LuaType) -> bool {
     let mut current_typ = typ;
     loop {
@@ -114,5 +118,12 @@ fn is_valid_prefix_type(typ: &LuaType) -> bool {
             }
             _ => return true,
         }
+    }
+}
+
+fn is_valid_index_key(index_key: &LuaIndexKey) -> bool {
+    match index_key {
+        LuaIndexKey::String(_) | LuaIndexKey::Name(_) | LuaIndexKey::Integer(_) => true,
+        _ => false,
     }
 }
