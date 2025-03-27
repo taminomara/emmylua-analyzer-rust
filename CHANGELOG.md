@@ -4,9 +4,11 @@
 
 `CHG` Refactor `type infer`
 
-`Fix` Optimize and Fix tuple type check
+`FIX` Optimize and Fix tuple type check
 
 `NEW` Support Varidic type use in tuple, eg: `[string, integer...]`
+
+`FIX` Optimize pcall infer, now can match the self and alias
 
 # 0.6.0
 
