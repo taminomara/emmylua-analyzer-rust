@@ -2,6 +2,12 @@
 
 # 0.6.1 (unreleased)
 
+`CHG` Refactor `type infer`
+
+`Fix` Optimize and Fix tuple type check
+
+`NEW` Support Varidic type use in tuple, eg: `[string, integer...]`
+
 # 0.6.0
 
 `NEW` Disable re-index in default, need to enable by `workspace.enableReindex`
