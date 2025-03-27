@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::VirtualWorkspace;
+    use crate::{DiagnosticCode, VirtualWorkspace};
 
     #[test]
     fn test_flow() {
@@ -25,5 +25,25 @@ mod test {
         let ty = ws.expr_ty("b");
         let expected = ws.ty("string[]");
         assert_eq!(ty, expected);
+    }
+
+    #[test]
+    fn test_issue_265() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+        local function bar()
+            return ''
+        end
+
+        --- @return integer
+        function foo()
+            return bar() --[[@as integer]]
+        end
+
+        "#,
+        ));
     }
 }

@@ -305,18 +305,20 @@ end
     fn test_issue_266() {
         let mut ws = VirtualWorkspace::new();
 
-        assert!(ws.check_code_for(DiagnosticCode::AssignTypeMismatch, r#"
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
         --- @return string
         function baz() end
 
         local a
         a = baz() -- a has type nil but should be string    
         d = a    
-        "#));
+        "#
+        ));
 
         let d = ws.expr_ty("d");
         let d_desc = ws.humanize_type(d);
         assert_eq!(d_desc, "string");
     }
-
 }
