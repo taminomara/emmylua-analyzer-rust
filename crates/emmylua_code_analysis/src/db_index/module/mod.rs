@@ -301,7 +301,7 @@ impl LuaModuleIndex {
                         matched_module_path = Some((module_path, workspace.id));
                     } else {
                         let (matched, _) = matched_module_path.as_ref().unwrap();
-                        if module_path.len() > matched.len() {
+                        if module_path.len() < matched.len() {
                             matched_module_path = Some((module_path, workspace.id));
                         }
                     }
