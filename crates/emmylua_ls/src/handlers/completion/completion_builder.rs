@@ -70,4 +70,9 @@ impl<'a> CompletionBuilder<'a> {
         }
         self.env_range = (0, 0);
     }
+
+    /// 是否是触发主动补全
+    pub fn is_invoked(&self) -> bool {
+        self.trigger_kind == CompletionTriggerKind::INVOKED
+    }
 }

@@ -59,17 +59,35 @@ fn infer_binary_expr_type(
 }
 
 fn infer_union(db: &DbIndex, u: &LuaUnionType, right: &LuaType, op: BinaryOperator) -> InferResult {
-    let mut union_types = vec![];
-    for ty in u.get_types() {
-        let ty = infer_binary_expr_type(db, ty.clone(), right.clone(), op)?;
-        union_types.push(ty);
-    }
-    union_types.dedup();
+    let mut unique_union_types = Vec::new();
 
-    match union_types.len() {
+    for ty in u.get_types() {
+        let inferred_ty = infer_binary_expr_type(db, ty.clone(), right.clone(), op)?;
+        flatten_and_insert(inferred_ty, &mut unique_union_types);
+    }
+
+    match unique_union_types.len() {
         0 => Ok(LuaType::Unknown),
-        1 => Ok(union_types[0].clone()),
-        _ => Ok(LuaType::Union(LuaUnionType::new(union_types).into())),
+        1 => Ok(unique_union_types.into_iter().next().unwrap()),
+        _ => Ok(LuaType::Union(LuaUnionType::new(unique_union_types).into())),
+    }
+}
+
+fn flatten_and_insert(ty: LuaType, unique_union_types: &mut Vec<LuaType>) {
+    let mut stack = vec![ty];
+    while let Some(current_ty) = stack.pop() {
+        match current_ty {
+            LuaType::Union(u) => {
+                for inner_ty in u.get_types() {
+                    stack.push(inner_ty.clone());
+                }
+            }
+            _ => {
+                if !unique_union_types.contains(&current_ty) {
+                    unique_union_types.push(current_ty);
+                }
+            }
+        }
     }
 }
 
@@ -147,6 +165,11 @@ fn infer_binary_expr_add(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
                 }
             }
         };
+    }
+    match (left.is_nil(), right.is_nil()) {
+        (true, false) => return Ok(right),
+        (false, true) => return Ok(left),
+        _ => {}
     }
 
     infer_binary_custom_operator(db, &left, &right, LuaOperatorMetaMethod::Add)

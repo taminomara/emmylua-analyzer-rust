@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use super::{ClientProxy, FileDiagnostic, StatusBar};
@@ -5,6 +6,7 @@ use crate::handlers::{init_analysis, ClientConfig};
 use emmylua_code_analysis::update_code_style;
 use emmylua_code_analysis::{load_configs, EmmyLuaAnalysis, Emmyrc};
 use log::{debug, info};
+use lsp_types::Uri;
 use tokio::sync::{Mutex, RwLock};
 use tokio_util::sync::CancellationToken;
 
@@ -17,6 +19,7 @@ pub struct WorkspaceManager {
     pub client_config: ClientConfig,
     pub workspace_folders: Vec<PathBuf>,
     pub watcher: Option<notify::RecommendedWatcher>,
+    pub current_open_files: HashSet<Uri>,
 }
 
 impl WorkspaceManager {
@@ -35,6 +38,7 @@ impl WorkspaceManager {
             update_token: Arc::new(Mutex::new(None)),
             file_diagnostic,
             watcher: None,
+            current_open_files: HashSet::new(),
         }
     }
 

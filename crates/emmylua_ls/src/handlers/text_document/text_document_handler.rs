@@ -25,6 +25,10 @@ pub async fn on_did_open_text_document(
             .await;
     }
 
+    let mut workspace = context.workspace_manager.write().await;
+    workspace.current_open_files.insert(uri);
+    drop(workspace);
+
     Some(())
 }
 
@@ -77,8 +81,13 @@ pub async fn on_did_change_text_document(
 }
 
 pub async fn on_did_close_document(
-    _: ServerContextSnapshot,
-    _: DidCloseTextDocumentParams,
+    context: ServerContextSnapshot,
+    params: DidCloseTextDocumentParams,
 ) -> Option<()> {
+    let mut workspace = context.workspace_manager.write().await;
+    workspace
+        .current_open_files
+        .remove(&params.text_document.uri);
+    drop(workspace);
     Some(())
 }

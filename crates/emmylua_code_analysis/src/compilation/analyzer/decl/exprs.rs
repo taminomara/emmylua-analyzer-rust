@@ -202,9 +202,9 @@ pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, expr: LuaTableExpr) -> Op
                 );
 
                 let decl_feature = if analyzer.is_meta {
-                    LuaMemberFeature::MetaFieldDecl
+                    LuaMemberFeature::MetaDefine
                 } else {
-                    LuaMemberFeature::FileFieldDecl
+                    LuaMemberFeature::FileDefine
                 };
 
                 let member_id = LuaMemberId::new(field.get_syntax_id(), file_id);

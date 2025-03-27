@@ -363,7 +363,7 @@ fn instantiate_alias_call(
             if operands.len() != 2 {
                 return LuaType::Unknown;
             }
-
+            // 如果类型为`Union`且只有一个类型, 则会解开`Union`包装
             return TypeOps::Remove.apply(&operands[0], &operands[1]);
         }
         LuaAliasCallKind::Add => {

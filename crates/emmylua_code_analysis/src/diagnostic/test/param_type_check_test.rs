@@ -329,4 +329,108 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_function() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            ---@param sorter function
+            ---@return string[]
+            local function getTableKeys(sorter)
+                local keys = {}
+                table.sort(keys, sorter)
+                return keys
+            end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_table_array() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@generic K, V
+                ---@param t table<K, V>
+                ---@return table<V, K>
+                local function revertMap(t)
+                end
+
+                ---@param arr any[]
+                local function sortCallbackOfIndex(arr)
+                    ---@type table<any, integer>
+                    local indexMap = revertMap(arr)
+                end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_table_class() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@param t table
+                local function bar(t)
+                end
+
+                ---@class D11.A
+
+                ---@type D11.A|any
+                local a
+
+                bar(a)
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_table_1() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@param t table[]
+                local function bar(t)
+                end
+
+                ---@type table|any
+                local a
+
+                bar(a)
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_pairs() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@diagnostic disable: missing-return
+                ---@generic K, V
+                ---@param t table<K, V> | V[] | {[K]: V}
+                ---@return fun(tbl: any):K, std.NotNull<V>
+                local function _pairs(t) end
+
+                ---@class D10.A
+
+                ---@type {[string]: D10.A, _id: D10.A}
+                local a
+
+                for k, v in _pairs(a) do
+                end
+        "#
+        ));
+    }
 }

@@ -87,8 +87,7 @@ function dofile(filename) end
 --- `error` function was called. Level 2 points the error to where the function
 --- that called `error` was called; and so on. Passing a level 0 avoids the
 --- addition of error position information to the message.
----@overload fun(message:string)
----@param message string
+---@param message any
 ---@param level? integer
 function error(message, level) end
 
@@ -114,7 +113,7 @@ function getmetatable(object) end
 --- will iterate over the key–value pairs (1,`t[1]`), (2,`t[2]`), ..., up to
 --- the first absent index.
 ---@generic V
----@param t V[] | table<any, V>
+---@param t V[] | table<any, V> | {[any]: V}
 ---@return fun(tbl: any):int, std.NotNull<V>
 function ipairs(t) end
 
@@ -232,7 +231,7 @@ function next(table, index) end
 --- See function `next` for the caveats of modifying the table during its
 --- traversal.
 ---@generic K, V
----@param t table<K, V>
+---@param t table<K, V> | V[] | {[K]: V}
 ---@return fun(tbl: any):K, std.NotNull<V>
 function pairs(t) end
 ---

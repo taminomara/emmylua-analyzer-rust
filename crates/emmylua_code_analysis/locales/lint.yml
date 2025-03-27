@@ -68,10 +68,10 @@ Should not reassign to iter variable:
   zh_CN: '不应重新赋值给迭代变量'
   zh_HK: '不應重新指定迭代變數'
 
-expected `%{source}` but found `%{found}`:
-  en: expected `%{source}` but found `%{found}`
-  zh_CN: '预期 `%{source}`，但得到 `%{found}`'
-  zh_HK: '期望 `%{source}`，但得到 `%{found}`'
+expected `%{source}` but found `%{found}`. %{reason}:
+  en: expected `%{source}` but found `%{found}`. %{reason}
+  zh_CN: '预期 `%{source}`，但得到 `%{found}`。 %{reason}'
+  zh_HK: '期望 `%{source}`，但得到 `%{found}`。 %{reason}'
 function %{name} may be nil:
   en: function %{name} may be nil
   zh_CN: '函数 %{name} 可能为 nil'

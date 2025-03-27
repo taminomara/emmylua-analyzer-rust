@@ -225,4 +225,38 @@ mod tests {
         "#
         ));
     }
+
+    #[test]
+    fn test_1() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+                ---@return string?
+                local function a()
+                    ---@type int?
+                    local ccc
+                    return ccc and a() or nil
+                end
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_2() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+                ---@return any[]
+                local function a()
+                    ---@type table|table<any, any>
+                    local ccc
+                    return ccc
+                end
+            "#
+        ));
+    }
 }

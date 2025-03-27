@@ -62,6 +62,25 @@ pub fn check_complex_type_compact(
                 );
             }
             LuaType::Table => return Ok(()),
+            LuaType::TableGeneric(compact_types) => {
+                if compact_types.len() == 2 {
+                    for typ in compact_types.iter() {
+                        if check_general_type_compact(
+                            db,
+                            source_base,
+                            typ,
+                            check_guard.next_level()?,
+                        )
+                        .is_err()
+                        {
+                            return Err(TypeCheckFailReason::TypeNotMatch);
+                        }
+                    }
+
+                    return Ok(());
+                }
+            }
+            LuaType::Any => return Ok(()),
             _ => {}
         },
         LuaType::Tuple(tuple) => {
@@ -193,7 +212,9 @@ pub fn check_complex_type_compact(
                     if source_generic_param.len() == 2 {
                         let key = &source_generic_param[0];
                         let value = &source_generic_param[1];
-                        if key.is_any() && check_type_compact(db, value, base).is_ok() {
+                        if key.is_any()
+                            || key.is_integer() && check_type_compact(db, value, base).is_ok()
+                        {
                             return Ok(());
                         }
                     }

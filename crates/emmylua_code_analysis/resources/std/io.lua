@@ -94,13 +94,25 @@ function io.output(file) end
 ---@return file
 function io.popen(prog, mode) end
 
+---@alias std.readmode
+---| integer
+---| string
+---| "n"   # Reads a number, returning a float or integer based on Lua's conversion grammar.
+---| "a"   # Reads the entire file starting from the current position.
+---| "l"   # Reads a line and ignores the end-of-line marker.
+---| "L"   # Reads a line and preserves the end-of-line marker.
+---| "*n"  # Reads a number, returning a float or integer based on Lua's conversion grammar.
+---| "*a"  # Reads the entire file starting from the current position.
+---| "*l"  # Reads a line and ignores the end-of-line marker.
+---| "*L"  # Reads a line and preserves the end-of-line marker.
+
 ---
 --- Equivalent to `io.input():read(···)`.
---- @param format '*n' | '*a' | '*l' | integer
---- @return string | integer | nil
---- @overload fun(format:'*n'): integer
---- @overload fun(format:'*a' | '*l' | integer): string | nil
-function io.read(format) end
+---@param ... std.readmode
+---@return any
+---@return any ...
+---@nodiscard
+function io.read(...) end
 
 ---
 --- In case of success, returns a handle for a temporary file. This file is
@@ -195,11 +207,11 @@ function file:lines(...) end
 --- *number*: reads a string with up to this number of bytes, returning **nil**
 --- on end of file. If `number` is zero, it reads nothing and returns an
 --- empty string, or **nil** on end of file.
---- @param format '*n' | '*a' | '*l' | integer
---- @return string | integer | nil
---- @overload fun(format:'*n'): integer
---- @overload fun(format:'*a' | '*l' | integer): string | nil
-function file:read(format) end
+---@param ... std.readmode
+---@return any
+---@return any ...
+---@nodiscard
+function file:read(...) end
 
 ---
 --- Sets and gets the file position, measured from the beginning of the

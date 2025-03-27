@@ -75,12 +75,14 @@ function string.dump(func, strip) end
 ---
 --- If the pattern has captures, then in a successful match the captured values
 --- are also returned, after the two indices.
----@overload fun(s:string, pattern:string):integer, integer, string...
----@param s string
----@param pattern string
----@param init? integer
----@param plain? boolean
----@return integer, integer, string...
+---@param s       string|number
+---@param pattern string|number
+---@param init?   integer
+---@param plain?  boolean
+---@return integer|nil start
+---@return integer|nil end
+---@return string ... captured
+---@nodiscard
 function string.find(s, pattern, init, plain) end
 
 ---
@@ -276,11 +278,11 @@ function string.reverse(s) end
 --- corrected to 1. If `j` is greater than the string length, it is corrected to
 --- that length. If, after these corrections, `i` is greater than `j`, the
 --- function returns the empty string.
----@overload fun(s:string, i:integer):string
----@param s string
----@param i integer
----@param j integer
+---@param s  string|number
+---@param i  integer
+---@param j? integer
 ---@return string
+---@nodiscard
 function string.sub(s, i, j) end
 
 ---@version >5.3

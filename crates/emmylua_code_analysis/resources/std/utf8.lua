@@ -60,12 +60,14 @@ function utf8.codepoint(s, i, j) end
 --- positions `i` and `j` (both inclusive). The default for `i` is 1 and for
 --- `j` is -1. If it finds any invalid byte sequence, returns a false value
 --- plus the position of the first invalid byte.
----@overload fun(s:string):number
----@param s string
----@param i? number
----@param j? number
----@return number
-function utf8.len(s, i, j) end
+---@param s    string
+---@param i?   integer
+---@param j?   integer
+---@param lax? boolean
+---@return integer?
+---@return integer? errpos
+---@nodiscard
+function utf8.len(s, i, j, lax) end
 
 ---
 --- Returns the position (in bytes) where the encoding of the `n`-th character

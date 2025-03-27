@@ -146,9 +146,11 @@ function debug.getregistry() end
 ---
 --- Variable names starting with '(' (open parenthesis) represent variables with
 --- no known names (variables from chunks saved without debug information).
----@param f integer
+---@param f async fun(...):any...
 ---@param up integer
----@return table
+---@return string name
+---@return any    value
+---@nodiscard
 function debug.getupvalue(f, up) end
 
 ---
@@ -236,6 +238,7 @@ function debug.setlocal(thread, level, var, value) end
 ---@param value T
 ---@param meta? table
 ---@return T value
+---@overload fun(value: table, meta: T): T
 function debug.setmetatable(value, meta) end
 
 ---

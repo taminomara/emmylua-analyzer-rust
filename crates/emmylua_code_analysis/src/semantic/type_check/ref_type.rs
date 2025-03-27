@@ -170,7 +170,7 @@ fn check_ref_type_compact_table(
                     .to_string(),
                 ));
             }
-        } else if source_member_type.is_nullable() {
+        } else if source_member_type.is_optional() {
             continue;
         } else {
             return Err(TypeCheckFailReason::TypeNotMatchWithReason(

@@ -109,9 +109,9 @@ function table.sort(list, comp) end
 --- return `list[i]`, `list[i+1]`, `···`, `list[j]`
 --- By default, i is 1 and j is #list.
 ---@generic T
+---@param list [T...] | table<any, T>
 ---@param i? integer
 ---@param j? integer
----@param list [T...]
 ---@return T...
 function table.unpack(list, i, j) end
 
