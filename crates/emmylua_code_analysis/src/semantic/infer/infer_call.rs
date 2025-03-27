@@ -359,7 +359,7 @@ fn unwrapp_return_type(
         }
 
         LuaType::MuliReturn(multi) => {
-            if is_last_expr(&call_expr) {
+            if is_last_call_expr(&call_expr) {
                 return Ok(return_type);
             }
 
@@ -369,7 +369,7 @@ fn unwrapp_return_type(
             };
         }
         LuaType::Variadic(inner) => {
-            if is_last_expr(&call_expr) {
+            if is_last_call_expr(&call_expr) {
                 return Ok(LuaType::MuliReturn(
                     LuaMultiReturn::Base(inner.deref().clone()).into(),
                 ));
@@ -407,9 +407,9 @@ fn is_need_wrap_instance(
     return !call_expr.get_range().contains(inst.value.start());
 }
 
-fn is_last_expr(call_expr: &LuaCallExpr) -> bool {
-    let parent = call_expr.syntax().parent();
-    if let Some(parent) = parent {
+fn is_last_call_expr(call_expr: &LuaCallExpr) -> bool {
+    let mut opt_parent = call_expr.syntax().parent();
+    while let Some(parent) = &opt_parent {
         match parent.kind().into() {
             LuaSyntaxKind::AssignStat
             | LuaSyntaxKind::LocalStat
@@ -417,11 +417,12 @@ fn is_last_expr(call_expr: &LuaCallExpr) -> bool {
             | LuaSyntaxKind::TableArrayExpr
             | LuaSyntaxKind::CallArgList => {
                 let next_expr = call_expr.syntax().next_sibling();
-                if next_expr.is_none() {
-                    return true;
-                }
+                return next_expr.is_none();
             }
-            _ => {}
+            LuaSyntaxKind::TableFieldValue => {
+                opt_parent = parent.parent();
+            }
+            _ => return false,
         }
     }
 

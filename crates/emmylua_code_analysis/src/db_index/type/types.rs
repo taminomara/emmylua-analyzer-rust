@@ -266,6 +266,7 @@ impl LuaType {
         match self {
             LuaType::Nil | LuaType::Any | LuaType::Unknown => true,
             LuaType::Union(u) => u.types.iter().any(|t| t.is_optional()),
+            LuaType::Variadic(_) => true,
             _ => false,
         }
     }

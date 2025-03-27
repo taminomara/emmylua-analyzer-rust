@@ -141,7 +141,9 @@ fn add_type_check_diagnostic(
         Err(reason) => {
             let reason_message = match reason {
                 TypeCheckFailReason::TypeNotMatchWithReason(reason) => reason,
-                TypeCheckFailReason::TypeNotMatch => "".to_string(),
+                TypeCheckFailReason::TypeNotMatch | TypeCheckFailReason::DonotCheck => {
+                    "".to_string()
+                }
                 TypeCheckFailReason::TypeRecursion => "type recursion".to_string(),
             };
             context.add_diagnostic(

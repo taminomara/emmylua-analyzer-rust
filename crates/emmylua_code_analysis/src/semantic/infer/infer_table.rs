@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use emmylua_parser::{
     LuaAssignStat, LuaAst, LuaAstNode, LuaCallArgList, LuaCallExpr, LuaExpr, LuaIndexMemberExpr,
     LuaLiteralToken, LuaLocalStat, LuaTableExpr, LuaTableField,
@@ -6,7 +8,7 @@ use emmylua_parser::{
 use crate::{
     db_index::{DbIndex, LuaType},
     infer_call_expr_func, infer_expr, InferGuard, LuaDeclId, LuaInferCache, LuaMemberId,
-    LuaTupleType,
+    LuaMultiReturn, LuaTupleType,
 };
 
 use super::{
@@ -44,16 +46,27 @@ fn infer_table_tuple_or_array(
         return Ok(LuaType::Array(first_type.into()));
     }
 
-    if let Some(last_field) = fields.last() {
-        let last_value_expr = last_field.get_value_expr().ok_or(InferFailReason::None)?;
-        if is_dots_expr(&last_value_expr).unwrap_or(false) {
-            let dots_type = infer_expr(db, cache, last_value_expr)?;
-            let typ = match &dots_type {
-                LuaType::MuliReturn(multi) => multi.get_type(0).unwrap_or(&LuaType::Unknown),
-                _ => &dots_type,
-            };
+    if let Some(first_field) = fields.first() {
+        let first_value_expr = first_field.get_value_expr().ok_or(InferFailReason::None)?;
 
-            return Ok(LuaType::Array(typ.clone().into()));
+        if is_dots_expr(&first_value_expr).unwrap_or(false) {
+            let first_expr_type = infer_expr(db, cache, first_value_expr)?;
+            match &first_expr_type {
+                LuaType::MuliReturn(multi) => match &multi.deref() {
+                    LuaMultiReturn::Base(base) => {
+                        return Ok(LuaType::Array(base.clone().into()));
+                    }
+                    LuaMultiReturn::Multi(tuple) => {
+                        return Ok(LuaType::Tuple(LuaTupleType::new(tuple.clone()).into()));
+                    }
+                },
+                LuaType::Variadic(base) => {
+                    return Ok(LuaType::Array(base.clone().into()));
+                }
+                _ => {
+                    return Ok(LuaType::Array(first_expr_type.into()));
+                }
+            };
         }
     }
 
@@ -61,10 +74,35 @@ fn infer_table_tuple_or_array(
     for field in fields {
         let value_expr = field.get_value_expr().ok_or(InferFailReason::None)?;
         let typ = infer_expr(db, cache, value_expr)?;
-        types.push(typ);
+        match typ {
+            LuaType::MuliReturn(multi) => flatten_multi_into_tuple(&mut types, &multi),
+            _ => {
+                types.push(typ);
+            }
+        }
     }
 
     Ok(LuaType::Tuple(LuaTupleType::new(types).into()))
+}
+
+fn flatten_multi_into_tuple(tuple_list: &mut Vec<LuaType>, multi: &LuaMultiReturn) {
+    match multi {
+        LuaMultiReturn::Base(base) => {
+            tuple_list.push(LuaType::Variadic(base.clone().into()));
+        }
+        LuaMultiReturn::Multi(multi) => {
+            for typ in multi {
+                match typ {
+                    LuaType::MuliReturn(multi) => {
+                        flatten_multi_into_tuple(tuple_list, multi.deref());
+                    }
+                    _ => {
+                        tuple_list.push(typ.clone());
+                    }
+                }
+            }
+        }
+    }
 }
 
 fn is_dots_expr(expr: &LuaExpr) -> Option<bool> {

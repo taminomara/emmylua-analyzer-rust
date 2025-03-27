@@ -167,6 +167,10 @@ fn handle_value_is_table_expr(
     let member_infos = semantic_model.infer_member_infos(&table_type)?;
     let fields = LuaTableExpr::cast(value_expr.syntax().clone())?.get_fields();
     for field in fields {
+        if field.is_value_field() {
+            continue;
+        }
+
         let field_key = field.get_field_key();
         if let Some(field_key) = field_key {
             let field_path_part = field_key.get_path_part();

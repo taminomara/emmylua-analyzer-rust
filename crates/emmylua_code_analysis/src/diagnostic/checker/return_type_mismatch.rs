@@ -177,6 +177,7 @@ fn add_type_check_diagnostic(
                     None,
                 );
             }
+            TypeCheckFailReason::DonotCheck => {}
         },
     }
 }
