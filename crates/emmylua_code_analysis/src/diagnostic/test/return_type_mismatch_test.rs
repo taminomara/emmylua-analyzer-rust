@@ -259,4 +259,21 @@ mod tests {
             "#
         ));
     }
+
+    #[test]
+    fn test_3() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+                ---@return table<string, {old: any, new: any}>
+                local function test()
+                    ---@type table<string, {old: any, new: any}>|table
+                    local a
+                    return a
+                end
+            "#
+        ));
+    }
 }
