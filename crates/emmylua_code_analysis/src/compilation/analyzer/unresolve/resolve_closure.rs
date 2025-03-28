@@ -222,8 +222,12 @@ pub fn try_resolve_closure_parent_params(
 
     let colon_define = signature.is_colon_define;
     let mut params = doc_func.get_params();
-    if colon_define && params.len() > 0 {
-        params = &params[1..];
+    if colon_define {
+        if params.len() > 1 {
+            params = &params[1..];
+        } else {
+            params = &[];
+        }
     }
 
     for (index, param) in params.iter().enumerate() {
