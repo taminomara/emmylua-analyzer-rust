@@ -9,7 +9,7 @@ use crate::{
     profile::Profile,
     FileId, InferFailReason, LuaSemanticDeclId,
 };
-use check_reason::resolve_all_reason;
+use check_reason::{resolve_all_reason, resolve_as_any};
 use emmylua_parser::{LuaCallExpr, LuaExpr};
 use infer_manager::InferCacheManager;
 pub use merge_type::{merge_decl_expr_type, merge_member_type};
@@ -32,8 +32,10 @@ pub fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
         });
     }
 
-    if !unresolves.is_empty() {
-        resolve_all_reason(db, &mut infer_manager, &mut unresolves);
+    infer_manager.set_force();
+    let mut loop_count = 0;
+    while !unresolves.is_empty() {
+        resolve_all_reason(db, &mut infer_manager, &mut unresolves, resolve_as_any);
 
         while try_resolve(db, &mut infer_manager, &mut unresolves) {
             unresolves.retain(|un_resolve| match un_resolve {
@@ -41,6 +43,11 @@ pub fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
                 _ => true,
             });
         }
+
+        if loop_count >= 10 {
+            break;
+        }
+        loop_count += 1;
     }
 }
 

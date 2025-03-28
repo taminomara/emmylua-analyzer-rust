@@ -25,9 +25,9 @@ impl InferCacheManager {
         })
     }
 
-    // pub fn set_force(&mut self) {
-    //     for (_, infer_cache) in self.infer_map.iter_mut() {
-    //         infer_cache.set_phase(LuaAnalysisPhase::Force);
-    //     }
-    // }
+    pub fn set_force(&mut self) {
+        for (_, infer_cache) in self.infer_map.iter_mut() {
+            infer_cache.set_phase(LuaAnalysisPhase::Force);
+        }
+    }
 }

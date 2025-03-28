@@ -77,6 +77,14 @@ pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> Inf
             cache.add_cache(&key, CacheEntry::ExprCache(LuaType::Unknown));
             return Ok(LuaType::Unknown);
         }
+        Err(InferFailReason::FieldDotFound) => {
+            if cache.get_config().analysis_phase.is_force() {
+                cache.add_cache(&key, CacheEntry::ExprCache(LuaType::Nil));
+                return Ok(LuaType::Nil);
+            } else {
+                cache.ready_cache(&key);
+            }
+        }
         _ => {
             cache.remove(&key);
         }

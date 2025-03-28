@@ -69,6 +69,10 @@ fn build_closure_hint(
     let db = semantic_model.get_db();
     for (signature_param_name, typ) in &signature_params {
         if let Some(typ) = typ {
+            if typ.is_any() {
+                continue;
+            }
+
             if let Some(lua_param) = lua_params_map.get(signature_param_name) {
                 let lsp_range = document.to_lsp_range(lua_param.get_range())?;
                 let typ_desc = format!(": {}", humanize_type(db, &typ, RenderLevel::Simple));

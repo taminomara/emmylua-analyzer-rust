@@ -1,8 +1,9 @@
 use emmylua_parser::LuaAstNode;
 
 use crate::{
-    infer_expr, DbIndex, FileId, InFiled, InferFailReason, LuaDocReturnInfo, LuaInferCache,
-    LuaSemanticDeclId, LuaType, SignatureReturnStatus,
+    infer_expr, DbIndex, FileId, InFiled, InferFailReason, LuaDeclExtra, LuaDeclId,
+    LuaDocParamInfo, LuaDocReturnInfo, LuaInferCache, LuaSemanticDeclId, LuaType,
+    SignatureReturnStatus,
 };
 
 use super::{infer_manager::InferCacheManager, UnResolve};
@@ -39,36 +40,39 @@ pub fn check_reach_reason(
     }
 }
 
-pub fn resolve_all_reason(
+pub fn resolve_all_reason<F>(
     db: &mut DbIndex,
     infer_manager: &mut InferCacheManager,
     unresolves: &mut Vec<UnResolve>,
-) {
+    resolve_fn: F,
+) where
+    F: Fn(&mut DbIndex, &mut LuaInferCache, &mut InferFailReason) -> Option<()>,
+{
     for unresolve in unresolves.iter_mut() {
         let file_id = unresolve.get_file_id().unwrap_or(FileId { id: 0 });
         let cache = infer_manager.get_infer_cache(file_id);
         match unresolve {
             UnResolve::Decl(un_resolve_decl) => {
-                resolve_reason(db, cache, &mut un_resolve_decl.reason);
+                resolve_fn(db, cache, &mut un_resolve_decl.reason);
             }
             UnResolve::Member(ref mut un_resolve_member) => {
-                resolve_reason(db, cache, &mut un_resolve_member.reason);
+                resolve_fn(db, cache, &mut un_resolve_member.reason);
             }
             UnResolve::Module(un_resolve_module) => {
-                resolve_reason(db, cache, &mut un_resolve_module.reason);
+                resolve_fn(db, cache, &mut un_resolve_module.reason);
             }
             UnResolve::Return(un_resolve_return) => {
-                resolve_reason(db, cache, &mut un_resolve_return.reason);
+                resolve_fn(db, cache, &mut un_resolve_return.reason);
             }
             UnResolve::IterDecl(un_resolve_iter_var) => {
-                resolve_reason(db, cache, &mut un_resolve_iter_var.reason);
+                resolve_fn(db, cache, &mut un_resolve_iter_var.reason);
             }
             _ => continue,
         };
     }
 }
 
-fn resolve_reason(
+pub fn resolve_as_any(
     db: &mut DbIndex,
     cache: &mut LuaInferCache,
     reason: &mut InferFailReason,
@@ -79,6 +83,10 @@ fn resolve_reason(
         | InferFailReason::RecursiveInfer => {}
         InferFailReason::UnResolveDeclType(decl_id) => {
             let decl = db.get_decl_index_mut().get_decl_mut(decl_id)?;
+            if decl.is_param() {
+                return set_param_decl_type(db, decl_id, LuaType::Any);
+            }
+
             if decl.get_type().is_none() {
                 decl.set_decl_type(LuaType::Any);
             }
@@ -116,5 +124,33 @@ fn resolve_reason(
     }
 
     *reason = InferFailReason::None;
+    Some(())
+}
+
+fn set_param_decl_type(db: &mut DbIndex, decl_id: &LuaDeclId, typ: LuaType) -> Option<()> {
+    let decl = db.get_decl_index_mut().get_decl_mut(decl_id)?;
+
+    let (param_idx, signature_id) = match &decl.extra {
+        LuaDeclExtra::Param {
+            idx, signature_id, ..
+        } => (*idx, *signature_id),
+        _ => unreachable!(),
+    };
+
+    // find local annotation
+    if let Some(signature) = db.get_signature_index_mut().get_mut(&signature_id) {
+        if signature.param_docs.get(&param_idx).is_none() {
+            let name = signature.params.get(param_idx)?;
+            signature.param_docs.insert(
+                param_idx,
+                LuaDocParamInfo {
+                    name: name.clone(),
+                    type_ref: typ,
+                    description: None,
+                    nullable: false,
+                },
+            );
+        }
+    }
     Some(())
 }
