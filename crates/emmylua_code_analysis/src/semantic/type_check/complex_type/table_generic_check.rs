@@ -84,6 +84,20 @@ pub fn check_table_generic_type_compact(
         // maybe support object
         // need check later
         LuaType::Ref(_) | LuaType::Def(_) | LuaType::Userdata => return Ok(()),
+        LuaType::Union(union) => {
+            for union_type in union.get_types() {
+                if check_table_generic_type_compact(
+                    db,
+                    source_generic_param,
+                    union_type,
+                    check_guard,
+                )
+                .is_ok()
+                {
+                    return Ok(());
+                }
+            }
+        }
         _ => {}
     }
 

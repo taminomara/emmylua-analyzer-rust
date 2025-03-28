@@ -112,8 +112,20 @@ mod test {
         assert!(ws.check_code_for(
             DiagnosticCode::InjectField,
             r#"
-            local a = { 'a' }
-            a[#a + 1] = 'b'
+                local a = { 'a' }
+                a[#a + 1] = 'b'
+
+                ---@type string[]
+                local b = { 'a' }
+                b[#b + 1] = 'b'
+
+                ---@type table<integer, string>
+                local c = { 'a' }
+                c[#c + 1] = 'b'
+
+                ---@type { [integer]: string }
+                local d = { 'a' }
+                d[#d + 1] = 'b'
         "#
         ));
     }

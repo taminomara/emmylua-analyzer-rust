@@ -65,6 +65,52 @@ mod tests {
     }
 
     #[test]
+    fn test_enum() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for_namespace(
+            DiagnosticCode::AssignTypeMismatch,
+            r#" 
+                ---@enum SubscriberFlags
+                local SubscriberFlags = {
+                    None = 0,
+                    Tracking = 1 << 0,
+                    Recursed = 1 << 1,
+                    ToCheckDirty = 1 << 3,
+                    Dirty = 1 << 4,
+                }
+                ---@class Subscriber
+                ---@field flags SubscriberFlags
+
+                ---@type Subscriber
+                local subscriber
+
+                subscriber.flags = subscriber.flags & ~SubscriberFlags.Tracking -- 被推断为`integer`而不是实际整数值, 允许匹配
+            "#
+        ));
+
+        assert!(!ws.check_code_for_namespace(
+            DiagnosticCode::AssignTypeMismatch,
+            r#" 
+                ---@enum SubscriberFlags
+                local SubscriberFlags = {
+                    None = 0,
+                    Tracking = 1 << 0,
+                    Recursed = 1 << 1,
+                    ToCheckDirty = 1 << 3,
+                    Dirty = 1 << 4,
+                }
+                ---@class Subscriber
+                ---@field flags SubscriberFlags
+
+                ---@type Subscriber
+                local subscriber
+                
+                subscriber.flags = 9 -- 不允许匹配不上的实际值
+            "#
+        ));
+    }
+
+    #[test]
     fn test_issue_193() {
         let mut ws = VirtualWorkspace::new();
         assert!(ws.check_code_for_namespace(
