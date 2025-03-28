@@ -37,7 +37,7 @@ pub fn infer_call_expr_func(
 
     cache.ready_cache(&key);
     let result = match call_expr_type {
-        LuaType::DocFunction(func) => Ok(func),
+        LuaType::DocFunction(func) => infer_doc_function(db, cache, &func, call_expr, args_count),
         LuaType::Signature(signature_id) => infer_signature_doc_function(
             db,
             cache,
@@ -96,6 +96,21 @@ pub fn infer_call_expr_func(
     }
 
     result
+}
+
+fn infer_doc_function(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
+    func: &LuaFunctionType,
+    call_expr: LuaCallExpr,
+    _: Option<usize>,
+) -> InferCallFuncResult {
+    if func.contain_tpl() {
+        let result = instantiate_func_generic(db, cache, func, call_expr)?;
+        return Ok(Arc::new(result));
+    }
+
+    return Ok(func.clone().into());
 }
 
 fn infer_generic_doc_function_union(

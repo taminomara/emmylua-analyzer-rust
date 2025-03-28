@@ -34,6 +34,13 @@ pub fn instantiate_type_generic(
         LuaType::Signature(sig_id) => instantiate_signature(db, sig_id, substitutor),
         LuaType::Call(alias_call) => instantiate_alias_call(db, alias_call, substitutor),
         LuaType::Variadic(inner) => instantiate_variadic_type(db, inner, substitutor),
+        LuaType::SelfInfer => {
+            if let Some(typ) = substitutor.get_self_type() {
+                typ.clone()
+            } else {
+                LuaType::SelfInfer
+            }
+        }
         _ => ty.clone(),
     }
 }

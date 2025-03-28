@@ -383,6 +383,7 @@ impl LuaType {
             LuaType::Variadic(inner) => inner.contain_tpl(),
             LuaType::TplRef(_) => true,
             LuaType::StrTplRef(_) => true,
+            LuaType::SelfInfer => true,
             LuaType::MultiLineUnion(inner) => inner.contain_tpl(),
             _ => false,
         }
@@ -504,6 +505,13 @@ impl LuaFunctionType {
             .iter()
             .any(|(_, t)| t.as_ref().map_or(false, |t| t.contain_tpl()))
             || self.ret.iter().any(|t| t.contain_tpl())
+    }
+
+    pub fn contain_self(&self) -> bool {
+        self.params
+            .iter()
+            .any(|(_, t)| t.as_ref().map_or(false, |t| t.is_self_infer()))
+            || self.ret.iter().any(|t| t.is_self_infer())
     }
 
     pub fn first_param_is_self(&self) -> bool {

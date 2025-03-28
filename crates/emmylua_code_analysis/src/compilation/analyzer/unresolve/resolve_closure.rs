@@ -94,7 +94,7 @@ pub fn try_resolve_closure_return(
     let call_expr = closure_return.call_expr.clone();
     let prefix_expr = call_expr.get_prefix_expr()?;
     let call_expr_type = infer_expr(db, config, prefix_expr.into()).ok()?;
-    let param_idx = closure_return.param_idx;
+    let mut param_idx = closure_return.param_idx;
     let call_doc_func = infer_call_expr_func(
         db,
         config,
@@ -104,6 +104,21 @@ pub fn try_resolve_closure_return(
         None,
     )
     .ok()?;
+
+    let colon_define = call_doc_func.is_colon_define();
+    let colon_call = call_expr.is_colon_call();
+    match (colon_define, colon_call) {
+        (true, false) => {
+            if param_idx == 0 {
+                return Some(true);
+            }
+            param_idx -= 1
+        }
+        (false, true) => {
+            param_idx += 1;
+        }
+        _ => {}
+    }
 
     let expr_closure_return = if let Some(param_type) = call_doc_func.get_params().get(param_idx) {
         if let Some(LuaType::DocFunction(func)) = &param_type.1 {

@@ -6,6 +6,7 @@ use crate::{GenericTplId, LuaType, LuaTypeDeclId};
 pub struct TypeSubstitutor {
     tpl_replace_map: HashMap<GenericTplId, SubstitutorValue>,
     alias_type_id: Option<LuaTypeDeclId>,
+    self_type: Option<LuaType>,
 }
 
 impl TypeSubstitutor {
@@ -13,6 +14,7 @@ impl TypeSubstitutor {
         Self {
             tpl_replace_map: HashMap::new(),
             alias_type_id: None,
+            self_type: None,
         }
     }
 
@@ -24,6 +26,7 @@ impl TypeSubstitutor {
         Self {
             tpl_replace_map,
             alias_type_id: None,
+            self_type: None,
         }
     }
 
@@ -35,6 +38,7 @@ impl TypeSubstitutor {
         Self {
             tpl_replace_map,
             alias_type_id: Some(alias_type_id),
+            self_type: None,
         }
     }
 
@@ -86,6 +90,14 @@ impl TypeSubstitutor {
         }
 
         false
+    }
+
+    pub fn add_self_type(&mut self, self_type: LuaType) {
+        self.self_type = Some(self_type);
+    }
+
+    pub fn get_self_type(&self) -> Option<&LuaType> {
+        self.self_type.as_ref()
     }
 }
 
