@@ -154,8 +154,11 @@ pub fn try_resolve_return_point(
     let signature = db
         .get_signature_index_mut()
         .get_mut(&return_.signature_id)?;
-    signature.resolve_return = SignatureReturnStatus::InferResolve;
-    signature.return_docs = return_docs;
+
+    if signature.resolve_return == SignatureReturnStatus::UnResolve {
+        signature.resolve_return = SignatureReturnStatus::InferResolve;
+        signature.return_docs = return_docs;
+    }
     Some(true)
 }
 

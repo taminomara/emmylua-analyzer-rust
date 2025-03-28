@@ -10,14 +10,16 @@ use crate::{
     FileId, InferFailReason, LuaSemanticDeclId,
 };
 use check_reason::{resolve_all_reason, resolve_as_any};
-use emmylua_parser::{LuaCallExpr, LuaExpr};
+use emmylua_parser::{LuaAssignStat, LuaCallExpr, LuaExpr, LuaFuncStat, LuaTableField};
 use infer_manager::InferCacheManager;
 pub use merge_type::{merge_decl_expr_type, merge_member_type};
 use resolve::{
     try_resolve_decl, try_resolve_iter_var, try_resolve_member, try_resolve_module,
     try_resolve_module_ref, try_resolve_return_point,
 };
-use resolve_closure::{try_resolve_closure_params, try_resolve_closure_return};
+use resolve_closure::{
+    try_resolve_closure_params, try_resolve_closure_parent_params, try_resolve_closure_return,
+};
 
 use super::{lua::LuaReturnPoint, AnalyzeContext};
 
@@ -86,6 +88,10 @@ fn try_resolve(
             UnResolve::ModuleRef(module_ref) => {
                 try_resolve_module_ref(db, config, module_ref).unwrap_or(false)
             }
+            UnResolve::ClosureParentParams(un_resolve_closure_params) => {
+                try_resolve_closure_parent_params(db, config, un_resolve_closure_params)
+                    .unwrap_or(false)
+            }
             UnResolve::None => continue,
         };
 
@@ -106,8 +112,9 @@ pub enum UnResolve {
     Member(Box<UnResolveMember>),
     Module(Box<UnResolveModule>),
     Return(Box<UnResolveReturn>),
-    ClosureParams(Box<UnResolveClosureParams>),
+    ClosureParams(Box<UnResolveCallClosureParams>),
     ClosureReturn(Box<UnResolveClosureReturn>),
+    ClosureParentParams(Box<UnResolveParentClosureParams>),
     ModuleRef(Box<UnResolveModuleRef>),
 }
 
@@ -129,6 +136,9 @@ impl UnResolve {
             }
             UnResolve::ClosureReturn(un_resolve_closure_return) => {
                 Some(un_resolve_closure_return.file_id)
+            }
+            UnResolve::ClosureParentParams(un_resolve_closure_params) => {
+                Some(un_resolve_closure_params.file_id)
             }
             UnResolve::ModuleRef(_) => None,
             UnResolve::None => None,
@@ -195,15 +205,15 @@ impl From<UnResolveReturn> for UnResolve {
 }
 
 #[derive(Debug)]
-pub struct UnResolveClosureParams {
+pub struct UnResolveCallClosureParams {
     pub file_id: FileId,
     pub signature_id: LuaSignatureId,
     pub call_expr: LuaCallExpr,
     pub param_idx: usize,
 }
 
-impl From<UnResolveClosureParams> for UnResolve {
-    fn from(un_resolve_closure_params: UnResolveClosureParams) -> Self {
+impl From<UnResolveCallClosureParams> for UnResolve {
+    fn from(un_resolve_closure_params: UnResolveCallClosureParams) -> Self {
         UnResolve::ClosureParams(Box::new(un_resolve_closure_params))
     }
 }
@@ -247,5 +257,25 @@ pub struct UnResolveModuleRef {
 impl From<UnResolveModuleRef> for UnResolve {
     fn from(un_resolve_module_ref: UnResolveModuleRef) -> Self {
         UnResolve::ModuleRef(Box::new(un_resolve_module_ref))
+    }
+}
+
+#[derive(Debug)]
+pub enum UnResolveParentAst {
+    LuaFuncStat(LuaFuncStat),
+    LuaTableField(LuaTableField),
+    LuaAssignStat(LuaAssignStat),
+}
+
+#[derive(Debug)]
+pub struct UnResolveParentClosureParams {
+    pub file_id: FileId,
+    pub signature_id: LuaSignatureId,
+    pub parent_ast: UnResolveParentAst,
+}
+
+impl From<UnResolveParentClosureParams> for UnResolve {
+    fn from(un_resolve_closure_params: UnResolveParentClosureParams) -> Self {
+        UnResolve::ClosureParentParams(Box::new(un_resolve_closure_params))
     }
 }

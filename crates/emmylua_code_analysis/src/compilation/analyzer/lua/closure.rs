@@ -4,7 +4,8 @@ use emmylua_parser::{
 
 use crate::{
     compilation::analyzer::unresolve::{
-        UnResolveClosureParams, UnResolveClosureReturn, UnResolveReturn,
+        UnResolveCallClosureParams, UnResolveClosureReturn, UnResolveParentAst,
+        UnResolveParentClosureParams, UnResolveReturn,
     },
     db_index::{LuaDocReturnInfo, LuaSignatureId},
     infer_expr, DbIndex, InferFailReason, LuaInferCache, LuaMultiReturn, LuaType,
@@ -47,21 +48,53 @@ fn analyze_lambda_params(
     signature_id: &LuaSignatureId,
     closure: &LuaClosureExpr,
 ) -> Option<()> {
-    let call_arg_list = closure.get_parent::<LuaCallArgList>()?;
-    let call_expr = call_arg_list.get_parent::<LuaCallExpr>()?;
-    let pos = closure.get_position();
-    let founded_idx = call_arg_list
-        .get_args()
-        .position(|arg| arg.get_position() == pos)?;
+    let ast_node = closure.get_parent::<LuaAst>()?;
+    match ast_node {
+        LuaAst::LuaCallArgList(call_arg_list) => {
+            let call_expr = call_arg_list.get_parent::<LuaCallExpr>()?;
+            let pos = closure.get_position();
+            let founded_idx = call_arg_list
+                .get_args()
+                .position(|arg| arg.get_position() == pos)?;
 
-    let unresolved = UnResolveClosureParams {
-        file_id: analyzer.file_id,
-        signature_id: signature_id.clone(),
-        call_expr,
-        param_idx: founded_idx,
-    };
+            let unresolved = UnResolveCallClosureParams {
+                file_id: analyzer.file_id,
+                signature_id: signature_id.clone(),
+                call_expr,
+                param_idx: founded_idx,
+            };
 
-    analyzer.add_unresolved(unresolved.into());
+            analyzer.add_unresolved(unresolved.into());
+        }
+        LuaAst::LuaFuncStat(func_stat) => {
+            let unresolved = UnResolveParentClosureParams {
+                file_id: analyzer.file_id,
+                signature_id: signature_id.clone(),
+                parent_ast: UnResolveParentAst::LuaFuncStat(func_stat.clone()),
+            };
+
+            analyzer.add_unresolved(unresolved.into());
+        }
+        LuaAst::LuaTableField(table_field) => {
+            let unresolved = UnResolveParentClosureParams {
+                file_id: analyzer.file_id,
+                signature_id: signature_id.clone(),
+                parent_ast: UnResolveParentAst::LuaTableField(table_field.clone()),
+            };
+
+            analyzer.add_unresolved(unresolved.into());
+        }
+        LuaAst::LuaAssignStat(assign_stat) => {
+            let unresolved = UnResolveParentClosureParams {
+                file_id: analyzer.file_id,
+                signature_id: signature_id.clone(),
+                parent_ast: UnResolveParentAst::LuaAssignStat(assign_stat.clone()),
+            };
+
+            analyzer.add_unresolved(unresolved.into());
+        }
+        _ => {}
+    }
 
     Some(())
 }

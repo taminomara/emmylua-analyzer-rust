@@ -1,25 +1,27 @@
+use emmylua_parser::{LuaAstNode, LuaExpr, LuaVarExpr};
+
 use crate::{
-    infer_call_expr_func, infer_expr, DbIndex, InferFailReason, InferGuard, LuaDocParamInfo,
-    LuaDocReturnInfo, LuaInferCache, LuaType, SignatureReturnStatus,
+    infer_call_expr_func, infer_expr, infer_table_field_value_should_be, DbIndex, InferFailReason,
+    InferGuard, LuaDocParamInfo, LuaDocReturnInfo, LuaInferCache, LuaType, SignatureReturnStatus,
 };
 
 use super::{
-    resolve::try_resolve_return_point, UnResolveClosureParams, UnResolveClosureReturn,
-    UnResolveReturn,
+    resolve::try_resolve_return_point, UnResolveCallClosureParams, UnResolveClosureReturn,
+    UnResolveParentAst, UnResolveParentClosureParams, UnResolveReturn,
 };
 
 pub fn try_resolve_closure_params(
     db: &mut DbIndex,
-    config: &mut LuaInferCache,
-    closure_params: &UnResolveClosureParams,
+    cache: &mut LuaInferCache,
+    closure_params: &UnResolveCallClosureParams,
 ) -> Option<bool> {
     let call_expr = closure_params.call_expr.clone();
     let prefix_expr = call_expr.get_prefix_expr()?;
-    let call_expr_type = infer_expr(db, config, prefix_expr.into()).ok()?;
+    let call_expr_type = infer_expr(db, cache, prefix_expr.into()).ok()?;
 
     let call_doc_func = infer_call_expr_func(
         db,
-        config,
+        cache,
         call_expr.clone(),
         call_expr_type,
         &mut InferGuard::new(),
@@ -88,16 +90,16 @@ pub fn try_resolve_closure_params(
 
 pub fn try_resolve_closure_return(
     db: &mut DbIndex,
-    config: &mut LuaInferCache,
+    cache: &mut LuaInferCache,
     closure_return: &mut UnResolveClosureReturn,
 ) -> Option<bool> {
     let call_expr = closure_return.call_expr.clone();
     let prefix_expr = call_expr.get_prefix_expr()?;
-    let call_expr_type = infer_expr(db, config, prefix_expr.into()).ok()?;
+    let call_expr_type = infer_expr(db, cache, prefix_expr.into()).ok()?;
     let mut param_idx = closure_return.param_idx;
     let call_doc_func = infer_call_expr_func(
         db,
-        config,
+        cache,
         call_expr.clone(),
         call_expr_type,
         &mut InferGuard::new(),
@@ -135,7 +137,7 @@ pub fn try_resolve_closure_return(
         .get_mut(&closure_return.signature_id)?;
 
     if expr_closure_return.iter().any(|it| it.contain_tpl()) {
-        return try_convert_to_func_body_infer(db, config, closure_return);
+        return try_convert_to_func_body_infer(db, cache, closure_return);
     }
 
     for ret_type in expr_closure_return {
@@ -152,7 +154,7 @@ pub fn try_resolve_closure_return(
 
 fn try_convert_to_func_body_infer(
     db: &mut DbIndex,
-    config: &mut LuaInferCache,
+    cache: &mut LuaInferCache,
     closure_return: &mut UnResolveClosureReturn,
 ) -> Option<bool> {
     let mut unresolve = UnResolveReturn {
@@ -162,5 +164,94 @@ fn try_convert_to_func_body_infer(
         reason: InferFailReason::None,
     };
 
-    try_resolve_return_point(db, config, &mut unresolve)
+    try_resolve_return_point(db, cache, &mut unresolve)
+}
+
+pub fn try_resolve_closure_parent_params(
+    db: &mut DbIndex,
+    cache: &mut LuaInferCache,
+    closure_params: &UnResolveParentClosureParams,
+) -> Option<bool> {
+    let signature = db.get_signature_index().get(&closure_params.signature_id)?;
+
+    if !signature.param_docs.is_empty() {
+        return Some(true);
+    }
+
+    let member_type = match &closure_params.parent_ast {
+        UnResolveParentAst::LuaFuncStat(func_stat) => {
+            let func_name = func_stat.get_func_name()?;
+            match func_name {
+                LuaVarExpr::IndexExpr(index_expr) => {
+                    infer_expr(db, cache, LuaExpr::IndexExpr(index_expr)).ok()?
+                }
+                LuaVarExpr::NameExpr(_) => return Some(true),
+            }
+        }
+        UnResolveParentAst::LuaTableField(table_field) => {
+            infer_table_field_value_should_be(db, cache, table_field.clone()).ok()?
+        }
+        UnResolveParentAst::LuaAssignStat(assign) => {
+            let (vars, exprs) = assign.get_var_and_expr_list();
+            let position = closure_params.signature_id.get_position();
+            let idx = exprs
+                .iter()
+                .position(|expr| expr.get_position() == position)?;
+            let var = vars.get(idx)?;
+
+            match var {
+                LuaVarExpr::IndexExpr(index_expr) => {
+                    infer_expr(db, cache, LuaExpr::IndexExpr(index_expr.clone())).ok()?
+                }
+                LuaVarExpr::NameExpr(_) => return Some(true),
+            }
+        }
+    };
+
+    let LuaType::DocFunction(doc_func) = member_type else {
+        return Some(true);
+    };
+
+    let signature = db
+        .get_signature_index_mut()
+        .get_mut(&closure_params.signature_id)?;
+
+    if doc_func.is_async() {
+        signature.is_async = true;
+    }
+
+    let colon_define = signature.is_colon_define;
+    let mut params = doc_func.get_params();
+    if colon_define && params.len() > 0 {
+        params = &params[1..];
+    }
+
+    for (index, param) in params.iter().enumerate() {
+        let name = signature.params.get(index).unwrap_or(&param.0);
+        signature.param_docs.insert(
+            index,
+            LuaDocParamInfo {
+                name: name.clone(),
+                type_ref: param.1.clone().unwrap_or(LuaType::Any),
+                description: None,
+                nullable: false,
+            },
+        );
+    }
+
+    if signature.resolve_return == SignatureReturnStatus::UnResolve
+        || signature.resolve_return == SignatureReturnStatus::InferResolve
+    {
+        signature.return_docs.clear();
+        signature.resolve_return = SignatureReturnStatus::DocResolve;
+        for ret in doc_func.get_ret() {
+            signature.return_docs.push(LuaDocReturnInfo {
+                name: None,
+                type_ref: ret.clone(),
+                description: None,
+            });
+        }
+    }
+
+    Some(true)
 }

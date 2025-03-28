@@ -125,13 +125,59 @@ pub fn infer_table_should_be(
         LuaAst::LuaCallArgList(call_arg_list) => {
             infer_table_type_by_calleee(db, cache, call_arg_list, table)
         }
-        LuaAst::LuaTableField(field) => infer_table_type_by_parent(db, cache, field),
+        LuaAst::LuaTableField(field) => infer_table_field_type_by_parent(db, cache, field),
         LuaAst::LuaLocalStat(local) => infer_table_type_by_local(db, cache, local, table),
         LuaAst::LuaAssignStat(assign_stat) => {
             infer_table_type_by_assign_stat(db, cache, assign_stat, table)
         }
         _ => Err(InferFailReason::None),
     }
+}
+
+pub fn infer_table_field_value_should_be(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
+    table_field: LuaTableField,
+) -> InferResult {
+    let parnet_table_expr = table_field
+        .get_parent::<LuaTableExpr>()
+        .ok_or(InferFailReason::None)?;
+    let parent_table_expr_type = infer_table_should_be(db, cache, parnet_table_expr)?;
+
+    let index = LuaIndexMemberExpr::TableField(table_field.clone());
+    let reason = match infer_member_by_member_key(
+        db,
+        cache,
+        &parent_table_expr_type,
+        index.clone(),
+        &mut InferGuard::new(),
+    ) {
+        Ok(member_type) => return Ok(member_type),
+        Err(InferFailReason::FieldDotFound) => InferFailReason::FieldDotFound,
+        Err(err) => return Err(err),
+    };
+
+    match infer_member_by_operator(
+        db,
+        cache,
+        &parent_table_expr_type,
+        index.into(),
+        &mut InferGuard::new(),
+    ) {
+        Ok(member_type) => return Ok(member_type),
+        Err(InferFailReason::FieldDotFound) => {}
+        Err(err) => return Err(err),
+    }
+
+    let member_id = LuaMemberId::new(table_field.get_syntax_id(), cache.get_file_id());
+    if let Some(member) = db.get_member_index().get_member(&member_id) {
+        match member.get_option_decl_type() {
+            Some(typ) => return Ok(typ),
+            None => {}
+        }
+    }
+
+    Err(reason)
 }
 
 fn infer_table_type_by_calleee(
@@ -169,7 +215,7 @@ fn infer_table_type_by_calleee(
         .unwrap_or(LuaType::Any))
 }
 
-fn infer_table_type_by_parent(
+fn infer_table_field_type_by_parent(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     field: LuaTableField,

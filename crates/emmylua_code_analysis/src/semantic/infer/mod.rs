@@ -20,7 +20,7 @@ pub use infer_fail_reason::InferFailReason;
 use infer_index::infer_index_expr;
 use infer_name::{infer_name_expr, infer_param};
 use infer_table::infer_table_expr;
-pub use infer_table::infer_table_should_be;
+pub use infer_table::{infer_table_field_value_should_be, infer_table_should_be};
 use infer_unary::infer_unary_expr;
 use rowan::TextRange;
 use smol_str::SmolStr;

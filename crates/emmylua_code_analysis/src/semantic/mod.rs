@@ -14,6 +14,7 @@ use std::{collections::HashSet, sync::Arc};
 
 pub use cache::{CacheEntry, CacheKey, CacheOptions, LuaAnalysisPhase, LuaInferCache};
 use emmylua_parser::{LuaCallExpr, LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken, LuaTableExpr};
+pub use infer::infer_table_field_value_should_be;
 use infer::{
     infer_left_value_type_from_right_value, infer_multi_value_adjusted_expression_types,
     infer_table_should_be,
