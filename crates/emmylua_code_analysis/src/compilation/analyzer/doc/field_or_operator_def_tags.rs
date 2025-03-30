@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use emmylua_parser::{
     LuaAstNode, LuaAstToken, LuaDocDescriptionOwner, LuaDocFieldKey, LuaDocTagField,
     LuaDocTagOperator, LuaDocType,
@@ -8,7 +10,8 @@ use crate::{
         LuaMember, LuaMemberKey, LuaMemberOwner, LuaOperator, LuaOperatorMetaMethod,
         LuaSemanticDeclId, LuaType,
     },
-    AnalyzeError, DiagnosticCode, LuaMemberFeature, LuaMemberId, LuaSignatureId, TypeOps,
+    AnalyzeError, DiagnosticCode, LuaFunctionType, LuaMemberFeature, LuaMemberId, LuaSignatureId,
+    OperatorFunction, TypeOps,
 };
 
 use super::{infer_type::infer_type, DocAnalyzer};
@@ -79,10 +82,20 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
             let operator = LuaOperator::new(
                 current_type_id.clone().into(),
                 LuaOperatorMetaMethod::Index,
-                vec![key_type_ref],
-                field_type,
                 analyzer.file_id,
                 range,
+                OperatorFunction::Func(Arc::new(LuaFunctionType::new(
+                    false,
+                    false,
+                    vec![
+                        (
+                            "self".to_string(),
+                            Some(LuaType::Ref(current_type_id.clone())),
+                        ),
+                        ("key".to_string(), Some(key_type_ref)),
+                    ],
+                    vec![field_type],
+                ))),
             );
             analyzer.db.get_operator_index_mut().add_operator(operator);
             return Some(());
@@ -134,11 +147,20 @@ pub fn analyze_operator(analyzer: &mut DocAnalyzer, tag: LuaDocTagOperator) -> O
     let current_type_id = analyzer.current_type_id.clone()?;
     let name_token = tag.get_name_token()?;
     let op_kind = LuaOperatorMetaMethod::from_operator_name(name_token.get_name_text())?;
-    let operands: Vec<LuaType> = tag
+    let mut operands: Vec<(String, Option<LuaType>)> = tag
         .get_param_list()?
         .get_types()
-        .map(|operand| infer_type(analyzer, operand))
+        .enumerate()
+        .map(|(i, doc_type)| (format!("arg{}", i), Some(infer_type(analyzer, doc_type))))
         .collect();
+
+    operands.insert(
+        0,
+        (
+            "self".to_string(),
+            Some(LuaType::Ref(current_type_id.clone())),
+        ),
+    );
 
     let return_type = if let Some(return_type) = tag.get_return_type() {
         infer_type(analyzer, return_type)
@@ -149,10 +171,14 @@ pub fn analyze_operator(analyzer: &mut DocAnalyzer, tag: LuaDocTagOperator) -> O
     let operator = LuaOperator::new(
         current_type_id.into(),
         op_kind,
-        operands,
-        return_type,
         analyzer.file_id,
         name_token.get_range(),
+        OperatorFunction::Func(Arc::new(LuaFunctionType::new(
+            false,
+            false,
+            operands,
+            vec![return_type],
+        ))),
     );
 
     analyzer.db.get_operator_index_mut().add_operator(operator);

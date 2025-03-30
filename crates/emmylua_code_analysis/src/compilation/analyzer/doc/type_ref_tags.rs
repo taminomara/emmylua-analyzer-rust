@@ -10,7 +10,7 @@ use crate::{
         LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaSemanticDeclId,
         LuaSignatureId, LuaType,
     },
-    InFiled, SignatureReturnStatus, TypeOps,
+    InFiled, LuaOperatorMetaMethod, OperatorFunction, SignatureReturnStatus, TypeOps,
 };
 
 use super::{
@@ -219,13 +219,19 @@ pub fn analyze_return(analyzer: &mut DocAnalyzer, tag: LuaDocTagReturn) -> Optio
 pub fn analyze_overload(analyzer: &mut DocAnalyzer, tag: LuaDocTagOverload) -> Option<()> {
     if let Some(decl_id) = analyzer.current_type_id.clone() {
         let type_ref = infer_type(analyzer, tag.get_type()?);
-        let operator = LuaOperator::new_call(
-            decl_id.clone().into(),
-            type_ref,
-            analyzer.file_id,
-            tag.get_range(),
-        );
-        analyzer.db.get_operator_index_mut().add_operator(operator);
+        match type_ref {
+            LuaType::DocFunction(func) => {
+                let operator = LuaOperator::new(
+                    decl_id.clone().into(),
+                    LuaOperatorMetaMethod::Call,
+                    analyzer.file_id,
+                    tag.get_range(),
+                    OperatorFunction::Func(func.clone()),
+                );
+                analyzer.db.get_operator_index_mut().add_operator(operator);
+            }
+            _ => {}
+        }
     } else if let Some(closure) = find_owner_closure(analyzer) {
         let type_ref = infer_type(analyzer, tag.get_type()?);
         match type_ref {

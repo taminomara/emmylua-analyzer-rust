@@ -4,7 +4,8 @@ use rowan::{TextRange, TextSize};
 
 use crate::{
     db_index::{LuaType, LuaTypeDeclId},
-    DbIndex, FileId, InFiled, LuaFunctionType, LuaSignatureId,
+    DbIndex, FileId, InFiled, InferFailReason, LuaFunctionType, LuaSignatureId,
+    SignatureReturnStatus,
 };
 
 use super::lua_operator_meta_method::LuaOperatorMetaMethod;
@@ -49,12 +50,57 @@ impl LuaOperator {
         self.op
     }
 
-    pub fn get_operands(&self, db: &DbIndex) -> &[LuaType] {
-        todo!()
+    pub fn get_operand(&self, db: &DbIndex) -> LuaType {
+        match &self.func {
+            OperatorFunction::Func(func) => {
+                let params = func.get_params();
+                if params.len() >= 2 {
+                    return params[1].1.clone().unwrap_or(LuaType::Any);
+                }
+
+                LuaType::Any
+            }
+            OperatorFunction::Signature(signature) => {
+                let signature = db.get_signature_index().get(signature);
+                if let Some(signature) = signature {
+                    let param = signature.get_param_info_by_id(1);
+                    if let Some(param) = param {
+                        return param.type_ref.clone();
+                    }
+                }
+
+                LuaType::Any
+            }
+        }
     }
 
-    pub fn get_result(&self) -> &LuaType {
-        todo!()
+    pub fn get_result(&self, db: &DbIndex) -> Result<LuaType, InferFailReason> {
+        match &self.func {
+            OperatorFunction::Func(func) => {
+                let return_types = func.get_ret();
+                if return_types.is_empty() {
+                    return Ok(LuaType::Any);
+                }
+                return Ok(return_types[0].clone());
+            }
+            OperatorFunction::Signature(signature_id) => {
+                let signature = db.get_signature_index().get(signature_id);
+                if let Some(signature) = signature {
+                    if signature.resolve_return == SignatureReturnStatus::UnResolve {
+                        return Err(InferFailReason::UnResolveSignatureReturn(
+                            signature_id.clone(),
+                        ));
+                    }
+
+                    let return_type = signature.return_docs.get(0);
+                    if let Some(return_type) = return_type {
+                        return Ok(return_type.type_ref.clone());
+                    }
+                }
+
+                Ok(LuaType::Any)
+            }
+        }
     }
 
     pub fn get_operator_func(&self) -> LuaType {

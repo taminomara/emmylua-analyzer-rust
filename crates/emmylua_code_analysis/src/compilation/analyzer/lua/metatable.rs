@@ -1,6 +1,8 @@
-use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr, LuaIndexKey};
+use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr, LuaIndexKey, LuaTableField};
 
-use crate::{InFiled, LuaOperatorMetaMethod, LuaOperatorOwner};
+use crate::{
+    InFiled, LuaOperator, LuaOperatorMetaMethod, LuaOperatorOwner, LuaSignatureId, OperatorFunction,
+};
 
 use super::LuaAnalyzer;
 
@@ -20,21 +22,40 @@ pub fn analyze_setmetatable(analyzer: &mut LuaAnalyzer, call_expr: LuaCallExpr) 
     let file_id = analyzer.file_id;
     let operator_owner = LuaOperatorOwner::Table(InFiled::new(file_id, table_expr.get_range()));
     for field in table_expr.get_fields() {
-        let field_name = match field.get_field_key() {
-            Some(LuaIndexKey::Name(n)) => n.get_name_text().to_string(),
-            Some(LuaIndexKey::String(s)) => s.get_value(),
-            _ => continue,
-        };
-
-        let meta_method = LuaOperatorMetaMethod::from_metatable_name(&field_name) else {
-            continue;
-        };
-
-        let operator_id = analyzer
-            .db
-            .get_operator_index()
-            .get_operators(&operator_owner, meta_method)?;
+        analyze_metable_field(analyzer, &field, &operator_owner);
     }
+
+    Some(())
+}
+
+fn analyze_metable_field(
+    analyzer: &mut LuaAnalyzer,
+    field: &LuaTableField,
+    operator_owner: &LuaOperatorOwner,
+) -> Option<()> {
+    let field_name = match field.get_field_key()? {
+        LuaIndexKey::Name(n) => n.get_name_text().to_string(),
+        LuaIndexKey::String(s) => s.get_value(),
+        _ => return None,
+    };
+
+    let meta_method = LuaOperatorMetaMethod::from_metatable_name(&field_name)?;
+    let field_value = field.get_value_expr()?;
+    let file_id = analyzer.file_id;
+
+    let signature_id = match field_value {
+        LuaExpr::ClosureExpr(closure) => LuaSignatureId::from_closure(file_id, &closure),
+        _ => return None,
+    };
+
+    let operator = LuaOperator::new(
+        operator_owner.clone(),
+        meta_method,
+        file_id,
+        field.get_range(),
+        OperatorFunction::Signature(signature_id),
+    );
+    analyzer.db.get_operator_index_mut().add_operator(operator);
 
     Some(())
 }

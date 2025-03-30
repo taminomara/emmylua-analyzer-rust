@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use crate::FileId;
 
 use super::traits::LuaIndex;
-pub use lua_operator::{LuaOperator, LuaOperatorId, LuaOperatorOwner};
+pub use lua_operator::{LuaOperator, LuaOperatorId, LuaOperatorOwner, OperatorFunction};
 pub use lua_operator_meta_method::LuaOperatorMetaMethod;
 
 #[derive(Debug)]

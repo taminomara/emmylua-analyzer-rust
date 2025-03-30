@@ -1,13 +1,13 @@
 use emmylua_code_analysis::{
-    LuaFunctionType, LuaOperatorMetaMethod, LuaSemanticDeclId, LuaSignatureId, LuaType,
-    LuaTypeDeclId, RenderLevel, SemanticModel,
+    InFiled, LuaFunctionType, LuaInstanceType, LuaOperatorMetaMethod, LuaOperatorOwner,
+    LuaSemanticDeclId, LuaSignatureId, LuaType, LuaTypeDeclId, RenderLevel, SemanticModel,
 };
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxToken, LuaTokenKind};
 use lsp_types::{
     Documentation, MarkupContent, ParameterInformation, ParameterLabel, SignatureHelp,
     SignatureInformation,
 };
-use rowan::NodeOrToken;
+use rowan::{NodeOrToken, TextRange};
 
 use emmylua_code_analysis::humanize_type;
 
@@ -24,14 +24,24 @@ pub fn build_signature_helper(
         LuaType::DocFunction(func_type) => {
             build_doc_function_signature_help(semantic_model, &func_type, colon_call, current_idx)
         }
-        LuaType::Signature(signature_id) => {
-            build_sig_id_signature_help(semantic_model, signature_id, colon_call, current_idx)
-        }
+        LuaType::Signature(signature_id) => build_sig_id_signature_help(
+            semantic_model,
+            signature_id,
+            colon_call,
+            current_idx,
+            false,
+        ),
         LuaType::Ref(type_decl_id) => {
             build_type_signature_help(semantic_model, &type_decl_id, colon_call, current_idx)
         }
         LuaType::Def(type_decl_id) => {
             build_type_signature_help(semantic_model, &type_decl_id, colon_call, current_idx)
+        }
+        LuaType::Instance(inst) => {
+            build_inst_signature_help(semantic_model, &inst, colon_call, current_idx)
+        }
+        LuaType::TableConst(meta_table) => {
+            build_table_call_signature_help(semantic_model, meta_table, colon_call, current_idx)
         }
         LuaType::Union(union_types) => build_union_type_signature_help(
             semantic_model,
@@ -137,13 +147,20 @@ fn build_sig_id_signature_help(
     signature_id: LuaSignatureId,
     colon_call: bool,
     current_idx: usize,
+    is_call_operator: bool,
 ) -> Option<SignatureHelp> {
     let origin_current_idx = current_idx;
     let db = semantic_model.get_db();
     let signature = db.get_signature_index().get(&signature_id)?;
     let mut current_idx = current_idx;
-    let params = signature.get_type_params();
+    let mut params = signature.get_type_params();
     let colon_define = signature.is_colon_define;
+    if is_call_operator {
+        if params.len() > 0 && !colon_define {
+            params.remove(0);
+        }
+    }
+
     let mut params_str = params
         .iter()
         .map(|param| param.0.clone())
@@ -263,9 +280,82 @@ fn build_type_signature_help(
     for operator_id in operator_ids {
         let operator = db.get_operator_index().get_operator(operator_id)?;
         let call_type = operator.get_operator_func();
-        if let Some(LuaType::DocFunction(f)) = call_type {
-            return build_doc_function_signature_help(semantic_model, &f, colon_call, current_idx);
+        match call_type {
+            LuaType::DocFunction(func_type) => {
+                return build_doc_function_signature_help(
+                    semantic_model,
+                    &func_type,
+                    colon_call,
+                    current_idx,
+                );
+            }
+            LuaType::Signature(signature_id) => {
+                // todo remove first param
+                return build_sig_id_signature_help(
+                    semantic_model,
+                    signature_id,
+                    colon_call,
+                    current_idx,
+                    true,
+                );
+            }
+            _ => {}
         }
+    }
+
+    None
+}
+
+fn build_inst_signature_help(
+    semantic_model: &SemanticModel,
+    inst: &LuaInstanceType,
+    colon_call: bool,
+    current_idx: usize,
+) -> Option<SignatureHelp> {
+    let base = inst.get_base();
+    let meta_table = match base {
+        LuaType::TableConst(meta_table) => meta_table.clone(),
+        _ => {
+            return None;
+        }
+    };
+
+    build_table_call_signature_help(semantic_model, meta_table, colon_call, current_idx)
+}
+
+fn build_table_call_signature_help(
+    semantic_model: &SemanticModel,
+    meta: InFiled<TextRange>,
+    colon_call: bool,
+    current_idx: usize,
+) -> Option<SignatureHelp> {
+    let operator_owner = LuaOperatorOwner::Table(meta);
+    let db = semantic_model.get_db();
+    let operator_ids = db
+        .get_operator_index()
+        .get_operators(&operator_owner, LuaOperatorMetaMethod::Call)?
+        .first()?;
+    let operator = db.get_operator_index().get_operator(operator_ids)?;
+    let call_type = operator.get_operator_func();
+    match call_type {
+        LuaType::DocFunction(func_type) => {
+            return build_doc_function_signature_help(
+                semantic_model,
+                &func_type,
+                colon_call,
+                current_idx,
+            );
+        }
+        LuaType::Signature(signature_id) => {
+            return build_sig_id_signature_help(
+                semantic_model,
+                signature_id,
+                colon_call,
+                current_idx,
+                true,
+            );
+        }
+        _ => {}
     }
 
     None
@@ -299,6 +389,7 @@ fn build_union_type_signature_help(
                     *signature_id,
                     colon_call,
                     current_idx,
+                    false,
                 );
 
                 if let Some(sig) = sig {

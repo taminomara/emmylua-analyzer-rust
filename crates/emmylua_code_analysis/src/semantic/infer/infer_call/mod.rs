@@ -249,10 +249,21 @@ fn collect_func_by_custom_type(
         let operator = operator_index
             .get_operator(overload_id)
             .ok_or(InferFailReason::None)?;
-        let func = operator.get_operator_func().ok_or(InferFailReason::None)?;
+        let func = operator.get_operator_func();
         match func {
             LuaType::DocFunction(f) => {
                 funcs.push(f.clone());
+            }
+            LuaType::Signature(signature_id) => {
+                let signature = db
+                    .get_signature_index()
+                    .get(&signature_id)
+                    .ok_or(InferFailReason::None)?;
+                if !signature.is_resolve_return() {
+                    return Err(InferFailReason::UnResolveSignatureReturn(signature_id));
+                }
+
+                funcs.push(signature.to_call_operator_func_type());
             }
             _ => {}
         }
@@ -295,11 +306,29 @@ fn collect_call_by_custom_generic_type(
         let operator = operator_index
             .get_operator(overload_id)
             .ok_or(InferFailReason::None)?;
-        let func = operator.get_operator_func().ok_or(InferFailReason::None)?;
-        let new_f = instantiate_type_generic(db, func, &substitutor);
-        match new_f {
-            LuaType::DocFunction(f) => {
-                overloads.push(f.clone());
+        let func = operator.get_operator_func();
+        match func {
+            LuaType::DocFunction(_) => {
+                let new_f = instantiate_type_generic(db, &func, &substitutor);
+                if let LuaType::DocFunction(f) = new_f {
+                    overloads.push(f.clone());
+                }
+            }
+            LuaType::Signature(signature_id) => {
+                let signature = db
+                    .get_signature_index()
+                    .get(&signature_id)
+                    .ok_or(InferFailReason::None)?;
+                if !signature.is_resolve_return() {
+                    return Err(InferFailReason::UnResolveSignatureReturn(signature_id));
+                }
+
+                let typ = LuaType::DocFunction(signature.to_call_operator_func_type());
+                let new_f = instantiate_type_generic(db, &typ, &substitutor);
+                if let LuaType::DocFunction(f) = new_f {
+                    overloads.push(f.clone());
+                }
+                // todo: support oveload?
             }
             _ => {}
         }

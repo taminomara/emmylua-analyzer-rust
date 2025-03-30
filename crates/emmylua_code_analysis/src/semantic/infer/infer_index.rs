@@ -1,7 +1,4 @@
-use emmylua_parser::{
-    LuaAstNode, LuaIndexExpr, LuaIndexKey, LuaIndexMemberExpr, LuaSyntaxId, LuaSyntaxKind,
-    LuaTableExpr, PathTrait,
-};
+use emmylua_parser::{LuaAstNode, LuaIndexExpr, LuaIndexKey, LuaIndexMemberExpr, PathTrait};
 use rowan::TextRange;
 use smol_str::SmolStr;
 
@@ -16,7 +13,7 @@ use crate::{
         type_check::{self, check_type_compact},
         InferGuard,
     },
-    InFiled, LuaFlowId, LuaInferCache, LuaInstanceType, LuaMemberOwner, TypeOps,
+    InFiled, LuaFlowId, LuaInferCache, LuaInstanceType, LuaMemberOwner, LuaOperatorOwner, TypeOps,
 };
 
 use super::{infer_expr, InferFailReason, InferResult};
@@ -395,6 +392,10 @@ pub fn infer_member_by_operator(
         LuaType::TableGeneric(table_generic) => {
             infer_member_by_index_table_generic(db, cache, table_generic, index_expr)
         }
+        LuaType::Instance(inst) => {
+            let base = inst.get_base();
+            infer_member_by_operator(db, cache, &base, index_expr, infer_guard)
+        }
         _ => Err(InferFailReason::FieldDotFound),
     }
 }
@@ -405,26 +406,26 @@ fn infer_member_by_index_table(
     table_range: &InFiled<TextRange>,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
-    let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::TableArrayExpr.into(), table_range.value);
-    let root = index_expr.get_root();
-    let table_array_expr = LuaTableExpr::cast(
-        syntax_id
-            .to_node_from_root(&root)
-            .ok_or(InferFailReason::FieldDotFound)?,
-    )
-    .ok_or(InferFailReason::FieldDotFound)?;
-    let member_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
-    match member_key {
-        LuaIndexKey::Integer(_) | LuaIndexKey::Expr(_) => {
-            let first_field = table_array_expr
-                .get_fields()
-                .next()
-                .ok_or(InferFailReason::None)?;
-            let first_expr = first_field.get_value_expr().ok_or(InferFailReason::None)?;
-            infer_expr(db, cache, first_expr)
-        }
-        _ => Err(InferFailReason::FieldDotFound),
+    let meta_owner = LuaOperatorOwner::Table(table_range.clone());
+    let operator_ids = db
+        .get_operator_index()
+        .get_operators(&meta_owner, LuaOperatorMetaMethod::Index)
+        .ok_or(InferFailReason::FieldDotFound)?;
+
+    let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
+
+    for operator_id in operator_ids {
+        let operator = db
+            .get_operator_index()
+            .get_operator(operator_id)
+            .ok_or(InferFailReason::None)?;
+        let operand = operator.get_operand(db);
+        let return_type = operator.get_result(db)?;
+        let typ = infer_index_metamethod(db, cache, &index_key, &operand, &return_type)?;
+        return Ok(typ);
     }
+
+    Err(InferFailReason::FieldDotFound)
 }
 
 fn infer_member_by_index_custom_type(
@@ -456,13 +457,10 @@ fn infer_member_by_index_custom_type(
                 .get_operator_index()
                 .get_operator(operator_id)
                 .ok_or(InferFailReason::None)?;
-            let operands = operator.get_operands();
-            let return_type = operator.get_result();
-            if operands.len() == 1 {
-                let typ =
-                    infer_index_metamethod(db, cache, &index_key, &operands[0], &return_type)?;
-                return Ok(typ);
-            }
+            let operand = operator.get_operand(db);
+            let return_type = operator.get_result(db)?;
+            let typ = infer_index_metamethod(db, cache, &index_key, &operand, &return_type)?;
+            return Ok(typ);
         }
     }
 
@@ -634,32 +632,22 @@ fn infer_member_by_index_generic(
             let index_operator = operator_index
                 .get_operator(index_operator_id)
                 .ok_or(InferFailReason::None)?;
-            let operands = index_operator.get_operands();
-            let instianted_operands = operands
-                .iter()
-                .map(|operand| instantiate_type_generic(db, operand, &substitutor))
-                .collect::<Vec<_>>();
+            let operand = index_operator.get_operand(db);
+            let instianted_operand = instantiate_type_generic(db, &operand, &substitutor);
             let return_type =
-                instantiate_type_generic(db, index_operator.get_result(), &substitutor);
+                instantiate_type_generic(db, &index_operator.get_result(db)?, &substitutor);
 
-            if instianted_operands.len() == 1 {
-                let result = infer_index_metamethod(
-                    db,
-                    cache,
-                    &member_key,
-                    &instianted_operands[0],
-                    &return_type,
-                );
+            let result =
+                infer_index_metamethod(db, cache, &member_key, &instianted_operand, &return_type);
 
-                match result {
-                    Ok(member_type) => {
-                        if !member_type.is_nil() {
-                            return Ok(member_type);
-                        }
+            match result {
+                Ok(member_type) => {
+                    if !member_type.is_nil() {
+                        return Ok(member_type);
                     }
-                    Err(InferFailReason::FieldDotFound) => {}
-                    Err(err) => return Err(err),
                 }
+                Err(InferFailReason::FieldDotFound) => {}
+                Err(err) => return Err(err),
             }
         }
     }

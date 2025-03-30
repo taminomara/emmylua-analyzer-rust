@@ -424,7 +424,7 @@ pub fn analyze_for_range_stat(
                             .iter()
                             .filter_map(|overload_id| {
                                 let operator = operator_index.get_operator(overload_id)?;
-                                let func = operator.get_operator_func()?;
+                                let func = operator.get_operator_func();
                                 match func {
                                     LuaType::DocFunction(f) => {
                                         return Some(f.clone());

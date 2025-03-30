@@ -201,20 +201,38 @@ fn check_doc_func_type_compact_for_custom_type(
                 .get_operator_index()
                 .get_operator(operator_id)
                 .ok_or(TypeCheckFailReason::TypeNotMatch)?;
-            let call_type = operator
-                .get_operator_func()
-                .ok_or(TypeCheckFailReason::TypeNotMatch)?;
-            if let LuaType::DocFunction(doc_func) = call_type {
-                if check_doc_func_type_compact_for_params(
-                    db,
-                    source_func,
-                    doc_func,
-                    check_guard.next_level()?,
-                )
-                .is_ok()
-                {
-                    return Ok(());
+            let call_type = operator.get_operator_func();
+            match call_type {
+                LuaType::DocFunction(doc_func) => {
+                    if check_doc_func_type_compact_for_params(
+                        db,
+                        source_func,
+                        &doc_func,
+                        check_guard.next_level()?,
+                    )
+                    .is_ok()
+                    {
+                        return Ok(());
+                    }
                 }
+                LuaType::Signature(signature_id) => {
+                    let signature = db
+                        .get_signature_index()
+                        .get(&signature_id)
+                        .ok_or(TypeCheckFailReason::TypeNotMatch)?;
+                    let doc_f = signature.to_call_operator_func_type();
+                    if check_doc_func_type_compact_for_params(
+                        db,
+                        source_func,
+                        &doc_f,
+                        check_guard.next_level()?,
+                    )
+                    .is_ok()
+                    {
+                        return Ok(());
+                    }
+                }
+                _ => {}
             }
         }
     }

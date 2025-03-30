@@ -35,7 +35,7 @@ fn infer_unary_custom_operator(
     let operators = get_custom_type_operator(db, inner.clone(), op);
     if let Some(operators) = operators {
         for operator in operators {
-            return Ok(operator.get_result().clone());
+            return operator.get_result(db);
         }
     }
 
