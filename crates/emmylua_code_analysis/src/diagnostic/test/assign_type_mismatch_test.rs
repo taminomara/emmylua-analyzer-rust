@@ -568,9 +568,7 @@ return t
     #[test]
     fn test_pending() {
         let mut ws = VirtualWorkspace::new();
-        // 不能直接向下转型.
-        // TODO 可以考虑允许向下转型, 转型时匹配类型字段是子集即可
-        assert!(!ws.check_code_for_namespace(
+        assert!(ws.check_code_for_namespace(
             DiagnosticCode::AssignTypeMismatch,
             r#"
             ---@class A

@@ -126,6 +126,12 @@ pub fn check_ref_type_compact(
         if is_sub_type_of(db, compact_id, source_id) {
             return Ok(());
         }
+
+        // This is not the correct logic, but explicit conversion in Lua looks a bit ugly, and too strict,
+        // so we have to assume that Lua automatically converts from superclass to subclass.
+        if is_sub_type_of(db, source_id, compact_id) {
+            return Ok(());
+        }
     }
 
     Err(TypeCheckFailReason::TypeNotMatch)
