@@ -9,7 +9,7 @@ use super::LuaAnalyzer;
 pub fn analyze_setmetatable(analyzer: &mut LuaAnalyzer, call_expr: LuaCallExpr) -> Option<()> {
     let arg_list = call_expr.get_args_list()?;
     let args = arg_list.get_args().collect::<Vec<_>>();
-    // uncomplete setmetatable call
+
     if args.len() != 2 {
         return Some(());
     }
