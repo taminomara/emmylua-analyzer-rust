@@ -100,12 +100,9 @@ fn infer_binary_custom_operator(
     let operators = get_custom_type_operator(db, left.clone(), op);
     if let Some(operators) = operators {
         for operator in operators {
-            let first_param = operator
-                .get_operands()
-                .get(0)
-                .ok_or(InferFailReason::None)?;
-            if check_type_compact(db, first_param, right).is_ok() {
-                return Ok(operator.get_result().clone());
+            let operand = operator.get_operand(db);
+            if check_type_compact(db, &operand, right).is_ok() {
+                return operator.get_result(db);
             }
         }
     }
@@ -113,12 +110,9 @@ fn infer_binary_custom_operator(
     let operators = get_custom_type_operator(db, right.clone(), op);
     if let Some(operators) = operators {
         for operator in operators {
-            let first_param = operator
-                .get_operands()
-                .get(0)
-                .ok_or(InferFailReason::None)?;
-            if check_type_compact(db, first_param, left).is_ok() {
-                return Ok(operator.get_result().clone());
+            let operand = operator.get_operand(db);
+            if check_type_compact(db, &operand, left).is_ok() {
+                return operator.get_result(db);
             }
         }
     }

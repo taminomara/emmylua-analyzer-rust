@@ -192,32 +192,47 @@ fn check_doc_func_type_compact_for_custom_type(
         .ok_or(TypeCheckFailReason::TypeNotMatch)?;
 
     if type_decl.is_class() {
-        let operators = db
+        let call_operators = db
             .get_operator_index()
-            .get_operators_by_type(custom_type_id)
-            .ok_or(TypeCheckFailReason::TypeNotMatch)?;
-        let call_operators = operators
-            .get(&LuaOperatorMetaMethod::Call)
+            .get_operators(&custom_type_id.clone().into(), LuaOperatorMetaMethod::Call)
             .ok_or(TypeCheckFailReason::TypeNotMatch)?;
         for operator_id in call_operators {
             let operator = db
                 .get_operator_index()
                 .get_operator(operator_id)
                 .ok_or(TypeCheckFailReason::TypeNotMatch)?;
-            let call_type = operator
-                .get_call_operator_type()
-                .ok_or(TypeCheckFailReason::TypeNotMatch)?;
-            if let LuaType::DocFunction(doc_func) = call_type {
-                if check_doc_func_type_compact_for_params(
-                    db,
-                    source_func,
-                    doc_func,
-                    check_guard.next_level()?,
-                )
-                .is_ok()
-                {
-                    return Ok(());
+            let call_type = operator.get_operator_func();
+            match call_type {
+                LuaType::DocFunction(doc_func) => {
+                    if check_doc_func_type_compact_for_params(
+                        db,
+                        source_func,
+                        &doc_func,
+                        check_guard.next_level()?,
+                    )
+                    .is_ok()
+                    {
+                        return Ok(());
+                    }
                 }
+                LuaType::Signature(signature_id) => {
+                    let signature = db
+                        .get_signature_index()
+                        .get(&signature_id)
+                        .ok_or(TypeCheckFailReason::TypeNotMatch)?;
+                    let doc_f = signature.to_call_operator_func_type();
+                    if check_doc_func_type_compact_for_params(
+                        db,
+                        source_func,
+                        &doc_f,
+                        check_guard.next_level()?,
+                    )
+                    .is_ok()
+                    {
+                        return Ok(());
+                    }
+                }
+                _ => {}
             }
         }
     }

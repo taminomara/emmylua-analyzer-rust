@@ -100,6 +100,25 @@ impl LuaSignature {
             false
         }
     }
+
+    pub fn to_doc_func_type(&self) -> Arc<LuaFunctionType> {
+        let params = self.get_type_params();
+        let return_types = self.get_return_types();
+        let func_type =
+            LuaFunctionType::new(self.is_async, self.is_colon_define, params, return_types);
+        Arc::new(func_type)
+    }
+
+    pub fn to_call_operator_func_type(&self) -> Arc<LuaFunctionType> {
+        let mut params = self.get_type_params();
+        if params.len() > 0 && !self.is_colon_define {
+            params.remove(0);
+        }
+
+        let return_types = self.get_return_types();
+        let func_type = LuaFunctionType::new(self.is_async, false, params, return_types);
+        Arc::new(func_type)
+    }
 }
 
 #[derive(Debug)]
