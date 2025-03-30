@@ -142,6 +142,30 @@ pub fn infer_member_by_member_key(
         LuaType::Global => infer_global_field_member(db, cache, index_expr),
         LuaType::Instance(inst) => infer_instance_member(db, cache, inst, index_expr, infer_guard),
         LuaType::Namespace(ns) => infer_namespace_member(db, cache, ns, index_expr),
+        LuaType::Array(array_type) => infer_array_member(db, cache, array_type, index_expr),
+        _ => Err(InferFailReason::FieldDotFound),
+    }
+}
+
+fn infer_array_member(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
+    array_type: &LuaType,
+    index_expr: LuaIndexMemberExpr,
+) -> Result<LuaType, InferFailReason> {
+    let key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
+    match key {
+        LuaIndexKey::Integer(_) => {
+            return Ok(array_type.clone());
+        }
+        LuaIndexKey::Expr(expr) => {
+            let expr_type = infer_expr(db, cache, expr.clone())?;
+            if expr_type.is_integer() {
+                return Ok(array_type.clone());
+            } else {
+                return Err(InferFailReason::FieldDotFound);
+            }
+        }
         _ => Err(InferFailReason::FieldDotFound),
     }
 }
