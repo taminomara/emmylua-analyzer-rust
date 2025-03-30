@@ -658,4 +658,22 @@ return t
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_285() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+                --- @return string, integer
+                local function foo() end
+
+                local text, err
+                text, err = foo()
+
+                ---@type integer
+                local b = err
+        "#
+        ));
+    }
 }
