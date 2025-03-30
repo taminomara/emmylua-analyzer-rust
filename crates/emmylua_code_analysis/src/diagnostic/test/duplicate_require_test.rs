@@ -34,7 +34,6 @@ mod tests {
     #[test]
     fn test_field() {
         let mut ws = VirtualWorkspace::new();
-        // 作用域不同
         assert!(ws.check_code_for(
             DiagnosticCode::DuplicateRequire,
             r#"
