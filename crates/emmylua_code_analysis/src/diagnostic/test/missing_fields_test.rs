@@ -163,4 +163,29 @@ foo({})
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_296() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                ---@generic T
+                ---@param table table
+                ---@param metatable {__index: T}
+                ---@return T
+                local function abc(table, metatable) end
+
+                ---@class B
+                local B
+
+                --- @return B
+                function newB()
+                    local self = abc({}, { __index = B })
+                    self:notmethod()
+                    return self
+                end
+        "#
+        ));
+    }
 }
