@@ -94,6 +94,15 @@ impl<'a> Reader<'a> {
         count
     }
 
+    pub fn consume_char_n_times(&mut self, ch: char, count: usize) -> usize {
+        let mut eaten = 0;
+        while !self.is_eof() && self.current_char() == ch && eaten < count {
+            eaten += 1;
+            self.bump();
+        }
+        eaten
+    }
+
     pub fn eat_while<F>(&mut self, func: F) -> usize
     where
         F: Fn(char) -> bool,

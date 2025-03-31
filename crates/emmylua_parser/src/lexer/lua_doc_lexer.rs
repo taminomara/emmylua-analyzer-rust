@@ -81,7 +81,7 @@ impl LuaDocLexer<'_> {
         let reader = self.reader.as_mut().unwrap();
         match reader.current_char() {
             '-' if reader.is_start_of_line() => {
-                let count = reader.eat_when('-');
+                let count = reader.consume_char_n_times('-', 3);
                 match count {
                     2 => {
                         if self.origin_token_kind == LuaTokenKind::TkLongComment {
@@ -310,55 +310,47 @@ impl LuaDocLexer<'_> {
                 LuaTokenKind::TkWhitespace
             }
             '-' if reader.is_start_of_line() => {
-                match reader.current_char() {
-                    '-' if reader.is_start_of_line() => {
-                        let count = reader.eat_when('-');
-                        match count {
-                            2 => {
-                                if self.origin_token_kind == LuaTokenKind::TkLongComment {
-                                    reader.bump();
-                                    reader.eat_when('=');
-                                    reader.bump();
+                let count = reader.consume_char_n_times('-', 3);
+                match count {
+                    2 => {
+                        if self.origin_token_kind == LuaTokenKind::TkLongComment {
+                            reader.bump();
+                            reader.eat_when('=');
+                            reader.bump();
 
-                                    match reader.current_char() {
-                                        '@' => {
-                                            reader.bump();
-                                            return LuaTokenKind::TkDocLongStart;
-                                        }
-                                        _ => return LuaTokenKind::TkLongCommentStart,
-                                    }
-                                } else {
-                                    return LuaTokenKind::TkNormalStart;
+                            match reader.current_char() {
+                                '@' => {
+                                    reader.bump();
+                                    return LuaTokenKind::TkDocLongStart;
                                 }
+                                _ => return LuaTokenKind::TkLongCommentStart,
                             }
-                            3 => {
-                                reader.eat_while(is_doc_whitespace);
-                                match reader.current_char() {
-                                    '@' => {
-                                        reader.bump();
-                                        LuaTokenKind::TkDocStart
-                                    }
-                                    '|' => {
-                                        reader.bump();
-                                        // compact luals
-                                        if matches!(reader.current_char(), '+' | '>') {
-                                            reader.bump();
-                                        }
+                        } else {
+                            return LuaTokenKind::TkNormalStart;
+                        }
+                    }
+                    3 => {
+                        reader.eat_while(is_doc_whitespace);
+                        match reader.current_char() {
+                            '@' => {
+                                reader.bump();
+                                LuaTokenKind::TkDocStart
+                            }
+                            '|' => {
+                                reader.bump();
+                                // compact luals
+                                if matches!(reader.current_char(), '+' | '>') {
+                                    reader.bump();
+                                }
 
-                                        LuaTokenKind::TkDocContinueOr
-                                    }
-                                    _ => LuaTokenKind::TkNormalStart,
-                                }
+                                LuaTokenKind::TkDocContinueOr
                             }
-                            _ => {
-                                reader.eat_while(|_| true);
-                                LuaTokenKind::TKDocTriviaStart
-                            }
+                            _ => LuaTokenKind::TkNormalStart,
                         }
                     }
                     _ => {
                         reader.eat_while(|_| true);
-                        LuaTokenKind::TkDocTrivia
+                        LuaTokenKind::TKDocTriviaStart
                     }
                 }
             }
@@ -503,7 +495,7 @@ impl LuaDocLexer<'_> {
                 };
             }
             '-' if reader.is_start_of_line() => {
-                let count = reader.eat_when('-');
+                let count = reader.consume_char_n_times('-', 3);
                 match count {
                     2 => {
                         if self.origin_token_kind == LuaTokenKind::TkLongComment {
