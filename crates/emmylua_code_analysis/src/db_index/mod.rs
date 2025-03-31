@@ -3,6 +3,7 @@ mod dependency;
 mod diagnostic;
 mod flow;
 mod member;
+mod metatable;
 mod module;
 mod operators;
 mod property;
@@ -23,6 +24,7 @@ pub use member::{
     LuaMember, LuaMemberFeature, LuaMemberId, LuaMemberIndex, LuaMemberIndexItem, LuaMemberKey,
     LuaMemberOwner,
 };
+use metatable::LuaMetatableIndex;
 use module::LuaModuleIndex;
 pub use module::{ModuleInfo, WorkspaceId};
 pub use operators::{
@@ -50,6 +52,7 @@ pub struct DbIndex {
     flow_index: LuaFlowIndex,
     vfs: Vfs,
     file_dependencies_index: LuaDenpendencyIndex,
+    metatable_index: LuaMetatableIndex,
     emmyrc: Arc<Emmyrc>,
 }
 
@@ -69,6 +72,7 @@ impl DbIndex {
             flow_index: LuaFlowIndex::new(),
             vfs: Vfs::new(),
             file_dependencies_index: LuaDenpendencyIndex::new(),
+            metatable_index: LuaMetatableIndex::new(),
             emmyrc: Arc::new(Emmyrc::default()),
         }
     }
@@ -77,6 +81,14 @@ impl DbIndex {
         for file_id in file_ids {
             self.remove(file_id);
         }
+    }
+
+    pub fn get_metatable_index_mut(&mut self) -> &mut LuaMetatableIndex {
+        &mut self.metatable_index
+    }
+
+    pub fn get_metatable_index(&self) -> &LuaMetatableIndex {
+        &self.metatable_index
     }
 
     pub fn get_decl_index_mut(&mut self) -> &mut LuaDeclIndex {
@@ -199,6 +211,7 @@ impl LuaIndex for DbIndex {
         self.operator_index.remove(file_id);
         self.flow_index.remove(file_id);
         self.file_dependencies_index.remove(file_id);
+        self.metatable_index.remove(file_id);
     }
 
     fn clear(&mut self) {
@@ -213,5 +226,6 @@ impl LuaIndex for DbIndex {
         self.operator_index.clear();
         self.flow_index.clear();
         self.file_dependencies_index.clear();
+        self.metatable_index.clear();
     }
 }

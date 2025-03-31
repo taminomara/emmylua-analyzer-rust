@@ -14,14 +14,20 @@ pub fn analyze_setmetatable(analyzer: &mut LuaAnalyzer, call_expr: LuaCallExpr) 
         return Some(());
     }
 
+    let table = args[0].clone();
     let metatable = args[1].clone();
-    let LuaExpr::TableExpr(table_expr) = metatable else {
+    let LuaExpr::TableExpr(metatable) = metatable else {
         return Some(());
     };
 
     let file_id = analyzer.file_id;
-    let operator_owner = LuaOperatorOwner::Table(InFiled::new(file_id, table_expr.get_range()));
-    for field in table_expr.get_fields() {
+    analyzer.db.get_metatable_index_mut().add(
+        InFiled::new(file_id, table.get_range()),
+        InFiled::new(file_id, metatable.get_range()),
+    );
+
+    let operator_owner = LuaOperatorOwner::Table(InFiled::new(file_id, metatable.get_range()));
+    for field in metatable.get_fields() {
         analyze_metable_field(analyzer, &field, &operator_owner);
     }
 

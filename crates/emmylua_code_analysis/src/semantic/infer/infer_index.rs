@@ -406,7 +406,12 @@ fn infer_member_by_index_table(
     table_range: &InFiled<TextRange>,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
-    let meta_owner = LuaOperatorOwner::Table(table_range.clone());
+    let metatable = db
+        .get_metatable_index()
+        .get(table_range)
+        .ok_or(InferFailReason::FieldDotFound)?;
+
+    let meta_owner = LuaOperatorOwner::Table(metatable.clone());
     let operator_ids = db
         .get_operator_index()
         .get_operators(&meta_owner, LuaOperatorMetaMethod::Index)

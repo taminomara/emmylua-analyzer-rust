@@ -2,7 +2,7 @@ use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr, LuaIndexKey};
 
 use crate::{
     infer_expr, semantic::infer::InferResult, DbIndex, InFiled, InferFailReason, LuaInferCache,
-    LuaInstanceType, LuaType,
+    LuaType,
 };
 
 pub fn infer_setmetatable_call(
@@ -20,19 +20,17 @@ pub fn infer_setmetatable_call(
     let basic_table = args[0].clone();
     let metatable = args[1].clone();
 
-    let meta_type = infer_metatable_type(db, cache, metatable)?;
+    let (meta_type, is_index) = infer_metatable_index_type(db, cache, metatable)?;
     match &basic_table {
         LuaExpr::TableExpr(table_expr) => {
-            if table_expr.is_empty() {
+            if table_expr.is_empty() && is_index {
                 return Ok(meta_type);
-            } else {
-                let file_id = cache.get_file_id();
-                let inst = LuaType::Instance(
-                    LuaInstanceType::new(meta_type, InFiled::new(file_id, basic_table.get_range()))
-                        .into(),
-                );
-                return Ok(inst);
             }
+
+            return Ok(LuaType::TableConst(InFiled::new(
+                cache.get_file_id(),
+                table_expr.get_range(),
+            )));
         }
         _ => {
             if meta_type.is_unknown() {
@@ -44,11 +42,11 @@ pub fn infer_setmetatable_call(
     }
 }
 
-fn infer_metatable_type(
+fn infer_metatable_index_type(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     metatable: LuaExpr,
-) -> InferResult {
+) -> Result<(LuaType, bool /*__index type*/), InferFailReason> {
     match &metatable {
         LuaExpr::TableExpr(table) => {
             let fields = table.get_fields();
@@ -71,7 +69,8 @@ fn infer_metatable_type(
                             | LuaExpr::IndexExpr(_)
                             | LuaExpr::NameExpr(_)
                     ) {
-                        return infer_expr(db, cache, field_value);
+                        let meta_type = infer_expr(db, cache, field_value)?;
+                        return Ok((meta_type, true));
                     }
                 }
             }
@@ -79,5 +78,6 @@ fn infer_metatable_type(
         _ => {}
     };
 
-    return infer_expr(db, cache, metatable);
+    let meta_type = infer_expr(db, cache, metatable)?;
+    Ok((meta_type, false))
 }

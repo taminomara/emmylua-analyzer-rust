@@ -73,7 +73,7 @@ pub fn infer_call_expr_func(
         LuaType::Instance(inst) => {
             infer_instance_type_doc_function(db, cache, &inst, call_expr, infer_guard, args_count)
         }
-        LuaType::TableConst(meta_table) => infer_metatable_type_doc_function(db, meta_table),
+        LuaType::TableConst(meta_table) => infer_table_type_doc_function(db, meta_table),
         LuaType::Union(union) => {
             // 此时我们将其视为泛型实例化联合体
             if union.get_types().len() > 1
@@ -325,7 +325,7 @@ fn infer_instance_type_doc_function(
     args_count: Option<usize>,
 ) -> InferCallFuncResult {
     let base = instance.get_base();
-    let metatable = match &base {
+    let base_table = match &base {
         LuaType::TableConst(meta_table) => meta_table.clone(),
         LuaType::Instance(inst) => {
             return infer_instance_type_doc_function(
@@ -340,14 +340,16 @@ fn infer_instance_type_doc_function(
         _ => return Err(InferFailReason::None),
     };
 
-    infer_metatable_type_doc_function(db, metatable)
+    infer_table_type_doc_function(db, base_table)
 }
 
-fn infer_metatable_type_doc_function(
-    db: &DbIndex,
-    meta_table: InFiled<TextRange>,
-) -> InferCallFuncResult {
-    let meta_table_owner = LuaOperatorOwner::Table(meta_table);
+fn infer_table_type_doc_function(db: &DbIndex, table: InFiled<TextRange>) -> InferCallFuncResult {
+    let meta_table = db
+        .get_metatable_index()
+        .get(&table)
+        .ok_or(InferFailReason::None)?;
+
+    let meta_table_owner = LuaOperatorOwner::Table(meta_table.clone());
 
     let call_operators = db
         .get_operator_index()

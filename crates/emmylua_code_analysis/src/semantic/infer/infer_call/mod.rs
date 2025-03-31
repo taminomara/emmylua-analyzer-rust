@@ -138,6 +138,19 @@ fn collect_function_type(
             infer_guard,
             funcs,
         )?,
+        LuaType::TableConst(inst) => {
+            collect_func_by_table(db, cache, &inst, call_expr.clone(), infer_guard, funcs)?;
+        }
+        LuaType::Instance(inst) => {
+            collect_function_type(
+                db,
+                cache,
+                call_expr,
+                inst.get_base().clone(),
+                infer_guard,
+                funcs,
+            )?;
+        }
         LuaType::Union(union_types) => {
             for sub_type in union_types.get_types() {
                 collect_function_type(
@@ -454,4 +467,49 @@ fn is_last_call_expr(call_expr: &LuaCallExpr) -> bool {
     }
 
     false
+}
+
+fn collect_func_by_table(
+    db: &DbIndex,
+    _: &mut LuaInferCache,
+    table: &InFiled<TextRange>,
+    _: LuaCallExpr,
+    _: &mut InferGuard,
+    funcs: &mut Vec<Arc<LuaFunctionType>>,
+) -> Result<(), InferFailReason> {
+    let metatable = db
+        .get_metatable_index()
+        .get(table)
+        .ok_or(InferFailReason::None)?;
+
+    let operator_index = db.get_operator_index();
+    let operator_ids = operator_index
+        .get_operators(&metatable.clone().into(), LuaOperatorMetaMethod::Call)
+        .ok_or(InferFailReason::None)?;
+
+    for overload_id in operator_ids {
+        let operator = operator_index
+            .get_operator(overload_id)
+            .ok_or(InferFailReason::None)?;
+        let func = operator.get_operator_func();
+        match func {
+            LuaType::DocFunction(f) => {
+                funcs.push(f.clone());
+            }
+            LuaType::Signature(signature_id) => {
+                let signature = db
+                    .get_signature_index()
+                    .get(&signature_id)
+                    .ok_or(InferFailReason::None)?;
+                if !signature.is_resolve_return() {
+                    return Err(InferFailReason::UnResolveSignatureReturn(signature_id));
+                }
+
+                funcs.push(signature.to_call_operator_func_type());
+            }
+            _ => {}
+        }
+    }
+
+    Ok(())
 }

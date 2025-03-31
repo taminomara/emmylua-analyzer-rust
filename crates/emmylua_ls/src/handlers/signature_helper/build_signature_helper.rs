@@ -329,7 +329,9 @@ fn build_table_call_signature_help(
     colon_call: bool,
     current_idx: usize,
 ) -> Option<SignatureHelp> {
-    let operator_owner = LuaOperatorOwner::Table(meta);
+    let metatable = semantic_model.get_db().get_metatable_index().get(&meta)?;
+
+    let operator_owner = LuaOperatorOwner::Table(metatable.clone());
     let db = semantic_model.get_db();
     let operator_ids = db
         .get_operator_index()
