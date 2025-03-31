@@ -123,7 +123,7 @@ pub fn try_resolve_table_field(
         unresolve_table_field.reason,
         InferFailReason::UnResolveExpr(_)
     ) {
-        return None;
+        return Some(true);
     }
     let field = unresolve_table_field.field.clone();
     let field_key = field.get_field_key()?;

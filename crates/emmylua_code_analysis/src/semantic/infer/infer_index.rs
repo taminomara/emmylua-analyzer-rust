@@ -102,7 +102,7 @@ fn infer_member_type_pass_flow(
                     .unwrap_or(LuaType::Unknown);
                 if type_assert.is_reassign() && !allow_reassign {
                     // 允许仅去除 nil
-                    if member_type.has_nil() && !new_type.is_nil() {
+                    if member_type.is_nullable() && !new_type.is_nullable() {
                         member_type = new_type;
                     }
                     continue;
