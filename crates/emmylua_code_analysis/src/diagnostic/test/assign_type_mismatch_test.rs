@@ -634,4 +634,46 @@ return t
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_295() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(!ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+
+            ---@enum SubscriberFlags
+            local SubscriberFlags = {
+                Tracking = 1 << 0,
+            }
+            ---@class Subscriber
+            ---@field flags SubscriberFlags
+            
+            ---@type Subscriber
+            local subscriber
+            
+            subscriber.flags = subscriber.flags & ~SubscriberFlags.Tracking
+            
+            subscriber.flags = 9 
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_issue_285() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+                --- @return string, integer
+                local function foo() end
+
+                local text, err
+                text, err = foo()
+
+                ---@type integer
+                local b = err
+        "#
+        ));
+    }
 }

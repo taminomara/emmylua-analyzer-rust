@@ -44,8 +44,24 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
                 if let LuaType::MuliReturn(multi) = expr_type {
                     expr_type = multi.get_type(0)?.clone();
                 }
-
                 let decl_id = LuaDeclId::new(analyzer.file_id, position);
+                // 当`call`参数包含表时, 表可能未被分析, 需要延迟
+                if let LuaType::Instance(instance) = &expr_type {
+                    if instance.get_base().is_unknown() {
+                        if call_expr_has_effect_table_arg(expr).is_some() {
+                            let unresolve = UnResolveDecl {
+                                file_id: analyzer.file_id,
+                                decl_id,
+                                expr: expr.clone(),
+                                ret_idx: 0,
+                                reason: InferFailReason::UnResolveExpr(expr.clone()),
+                            };
+                            analyzer.add_unresolved(unresolve.into());
+                            continue;
+                        }
+                    }
+                }
+
                 merge_decl_expr_type(analyzer.db, &mut analyzer.infer_cache, decl_id, expr_type);
             }
             Err(InferFailReason::None) => {
@@ -132,6 +148,20 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
     }
 
     Some(())
+}
+
+fn call_expr_has_effect_table_arg(expr: &LuaExpr) -> Option<()> {
+    if let LuaExpr::CallExpr(call_expr) = expr {
+        let args_list = call_expr.get_args_list()?;
+        for arg in args_list.get_args() {
+            if let LuaExpr::TableExpr(table_expr) = arg {
+                if !table_expr.is_empty() {
+                    return Some(());
+                }
+            }
+        }
+    }
+    None
 }
 
 #[derive(Debug, Clone)]

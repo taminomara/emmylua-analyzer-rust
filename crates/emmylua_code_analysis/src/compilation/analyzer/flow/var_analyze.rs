@@ -61,7 +61,7 @@ pub fn analyze_ref_assign(
     }
 
     let (var_exprs, value_exprs) = assign_stat.get_var_and_expr_list();
-    let index = var_exprs
+    let var_index = var_exprs
         .iter()
         .position(|it| it.get_position() == var_expr.get_position())?;
 
@@ -69,12 +69,12 @@ pub fn analyze_ref_assign(
         return None;
     }
 
-    let (value_expr, idx) = if let Some(expr) = value_exprs.get(index) {
+    let (value_expr, idx) = if let Some(expr) = value_exprs.get(var_index) {
         (expr.clone(), 0)
     } else {
         (
             value_exprs.last()?.clone(),
-            (index - value_exprs.len()) as i32,
+            (var_index - (value_exprs.len() - 1)) as i32,
         )
     };
 

@@ -65,11 +65,26 @@ fn infer_member_type_pass_flow(
     prefix_type: &LuaType,
     mut member_type: LuaType,
 ) -> InferResult {
-    // temp fix flow
-    // TODO: flow analysis should not generate corresponding `flow_chain` if the prefix type is an array
+    let mut allow_reassign = true;
     match &prefix_type {
+        // TODO: flow analysis should not generate corresponding `flow_chain` if the prefix type is an array
         LuaType::Array(_) => {
             return Ok(member_type.clone());
+        }
+        LuaType::Ref(decl_id) => {
+            if let Some(members) = db
+                .get_member_index()
+                .get_members(&LuaMemberOwner::Type(decl_id.clone()))
+            {
+                if let Some(key) = index_expr.get_index_key() {
+                    if let Some(_) = members
+                        .iter()
+                        .find(|m| m.get_key().to_path() == key.get_path_part())
+                    {
+                        allow_reassign = false
+                    }
+                }
+            }
         }
         _ => {}
     }
@@ -82,9 +97,17 @@ fn infer_member_type_pass_flow(
         let root = index_expr.get_root();
         if let Some(path) = index_expr.get_access_path() {
             for type_assert in flow_chain.get_type_asserts(&path, index_expr.get_position(), None) {
-                member_type = type_assert
-                    .tighten_type(db, cache, &root, member_type)
+                let new_type = type_assert
+                    .tighten_type(db, cache, &root, member_type.clone())
                     .unwrap_or(LuaType::Unknown);
+                if type_assert.is_reassign() && !allow_reassign {
+                    // 允许仅去除 nil
+                    if member_type.is_nullable() && !new_type.is_nullable() {
+                        member_type = new_type;
+                    }
+                    continue;
+                }
+                member_type = new_type;
             }
         }
     }
@@ -124,6 +147,30 @@ pub fn infer_member_by_member_key(
         LuaType::Global => infer_global_field_member(db, cache, index_expr),
         LuaType::Instance(inst) => infer_instance_member(db, cache, inst, index_expr, infer_guard),
         LuaType::Namespace(ns) => infer_namespace_member(db, cache, ns, index_expr),
+        LuaType::Array(array_type) => infer_array_member(db, cache, array_type, index_expr),
+        _ => Err(InferFailReason::FieldDotFound),
+    }
+}
+
+fn infer_array_member(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
+    array_type: &LuaType,
+    index_expr: LuaIndexMemberExpr,
+) -> Result<LuaType, InferFailReason> {
+    let key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
+    match key {
+        LuaIndexKey::Integer(_) => {
+            return Ok(array_type.clone());
+        }
+        LuaIndexKey::Expr(expr) => {
+            let expr_type = infer_expr(db, cache, expr.clone())?;
+            if expr_type.is_integer() {
+                return Ok(array_type.clone());
+            } else {
+                return Err(InferFailReason::FieldDotFound);
+            }
+        }
         _ => Err(InferFailReason::FieldDotFound),
     }
 }
