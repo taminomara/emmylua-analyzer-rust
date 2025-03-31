@@ -50,7 +50,6 @@ impl LuaDocLexer<'_> {
         self.origin_token_kind = kind;
     }
 
-    #[allow(unused)]
     pub fn lex(&mut self) -> LuaTokenKind {
         let reader = self.reader.as_mut().unwrap();
         reader.reset_buff();
@@ -71,7 +70,6 @@ impl LuaDocLexer<'_> {
             LuaDocLexerState::Version => self.lex_version(),
             LuaDocLexerState::Source => self.lex_source(),
             LuaDocLexerState::NormalDescription => self.lex_normal_description(),
-            _ => LuaTokenKind::None,
         }
     }
 
@@ -82,7 +80,7 @@ impl LuaDocLexer<'_> {
     fn lex_init(&mut self) -> LuaTokenKind {
         let reader = self.reader.as_mut().unwrap();
         match reader.current_char() {
-            '-' => {
+            '-' if reader.is_start_of_line() => {
                 let count = reader.eat_when('-');
                 match count {
                     2 => {
@@ -311,13 +309,9 @@ impl LuaDocLexer<'_> {
                 reader.eat_while(is_doc_whitespace);
                 LuaTokenKind::TkWhitespace
             }
-            '-' => {
-                if !reader.is_start_of_line() {
-                    reader.eat_while(|_| true);
-                    return LuaTokenKind::TkDocDetail;
-                }
+            '-' if reader.is_start_of_line() => {
                 match reader.current_char() {
-                    '-' => {
+                    '-' if reader.is_start_of_line() => {
                         let count = reader.eat_when('-');
                         match count {
                             2 => {
@@ -508,7 +502,7 @@ impl LuaDocLexer<'_> {
                     }
                 };
             }
-            '-' => {
+            '-' if reader.is_start_of_line() => {
                 let count = reader.eat_when('-');
                 match count {
                     2 => {

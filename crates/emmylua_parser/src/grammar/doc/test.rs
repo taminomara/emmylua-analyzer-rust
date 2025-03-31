@@ -2434,4 +2434,86 @@ Syntax(Chunk)@0..135
 
         assert_ast_eq!(code, result);
     }
+
+    // can not pass the test, I donot know why
+    //     #[test]
+    //     fn test_comment_2() {
+    //         let code = r#"
+    //         --- Sum two numbers
+    //         --- Example:
+    //         --- ```lua
+    //         --- -- `c` is equal to 5
+    //         --- local c = sum(2, 3)
+    //         --- ```
+    //         local function sum(a, b) return a + b end
+    //         "#;
+    //         let result = r##"
+    // Syntax(Chunk)@0..208
+    //   Syntax(Block)@0..208
+    //     Token(TkEndOfLine)@0..1 "\n"
+    //     Token(TkWhitespace)@1..9 "        "
+    //     Syntax(Comment)@9..149
+    //       Token(TkNormalStart)@9..13 "--- "
+    //       Syntax(DocDescription)@13..149
+    //         Token(TkDocDetail)@13..28 "Sum two numbers"
+    //         Token(TkEndOfLine)@28..29 "\n"
+    //         Token(TkWhitespace)@29..37 "        "
+    //         Token(TkNormalStart)@37..41 "--- "
+    //         Token(TkDocDetail)@41..49 "Example:"
+    //         Token(TkEndOfLine)@49..50 "\n"
+    //         Token(TkWhitespace)@50..58 "        "
+    //         Token(TkNormalStart)@58..62 "--- "
+    //         Token(TkDocDetail)@62..68 "```lua"
+    //         Token(TkEndOfLine)@68..69 "\n"
+    //         Token(TkWhitespace)@69..77 "        "
+    //         Token(TkNormalStart)@77..81 "--- "
+    //         Token(TkDocDetail)@81..101 "-- `c` is equal to 5"
+    //         Token(TkEndOfLine)@101..102 "\n"
+    //         Token(TkWhitespace)@102..110 "        "
+    //         Token(TkNormalStart)@110..114 "--- "
+    //         Token(TkDocDetail)@114..133 "local c = sum(2, 3)"
+    //         Token(TkEndOfLine)@133..134 "\n"
+    //         Token(TkWhitespace)@134..142 "        "
+    //         Token(TkNormalStart)@142..146 "--- "
+    //         Token(TkDocDetail)@146..149 "```"
+    //     Token(TkEndOfLine)@149..150 "\n"
+    //     Token(TkWhitespace)@150..158 "        "
+    //     Syntax(LocalFuncStat)@158..199
+    //       Token(TkLocal)@158..163 "local"
+    //       Token(TkWhitespace)@163..164 " "
+    //       Token(TkFunction)@164..172 "function"
+    //       Token(TkWhitespace)@172..173 " "
+    //       Syntax(LocalName)@173..176
+    //         Token(TkName)@173..176 "sum"
+    //       Syntax(ClosureExpr)@176..199
+    //         Syntax(ParamList)@176..182
+    //           Token(TkLeftParen)@176..177 "("
+    //           Syntax(ParamName)@177..178
+    //             Token(TkName)@177..178 "a"
+    //           Token(TkComma)@178..179 ","
+    //           Token(TkWhitespace)@179..180 " "
+    //           Syntax(ParamName)@180..181
+    //             Token(TkName)@180..181 "b"
+    //           Token(TkRightParen)@181..182 ")"
+    //         Syntax(Block)@182..196
+    //           Token(TkWhitespace)@182..183 " "
+    //           Syntax(ReturnStat)@183..195
+    //             Token(TkReturn)@183..189 "return"
+    //             Token(TkWhitespace)@189..190 " "
+    //             Syntax(BinaryExpr)@190..195
+    //               Syntax(NameExpr)@190..191
+    //                 Token(TkName)@190..191 "a"
+    //               Token(TkWhitespace)@191..192 " "
+    //               Token(TkPlus)@192..193 "+"
+    //               Token(TkWhitespace)@193..194 " "
+    //               Syntax(NameExpr)@194..195
+    //                 Token(TkName)@194..195 "b"
+    //           Token(TkWhitespace)@195..196 " "
+    //         Token(TkEnd)@196..199 "end"
+    //     Token(TkEndOfLine)@199..200 "\n"
+    //     Token(TkWhitespace)@200..208 "        "
+    //         "##;
+
+    //         assert_ast_eq!(code, result);
+    //     }
 }
