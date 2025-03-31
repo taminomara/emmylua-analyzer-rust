@@ -400,6 +400,14 @@ impl LuaType {
     pub fn is_member_owner(&self) -> bool {
         matches!(self, LuaType::Ref(_) | LuaType::TableConst(_))
     }
+
+    pub fn has_nil(&self) -> bool {
+        match self {
+            LuaType::Nil => true,
+            LuaType::Union(u) => u.types.iter().any(|t| t.has_nil()),
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]

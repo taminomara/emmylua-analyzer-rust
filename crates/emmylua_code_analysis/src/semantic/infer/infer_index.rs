@@ -97,12 +97,17 @@ fn infer_member_type_pass_flow(
         let root = index_expr.get_root();
         if let Some(path) = index_expr.get_access_path() {
             for type_assert in flow_chain.get_type_asserts(&path, index_expr.get_position(), None) {
+                let new_type = type_assert
+                    .tighten_type(db, cache, &root, member_type.clone())
+                    .unwrap_or(LuaType::Unknown);
                 if type_assert.is_reassign() && !allow_reassign {
+                    // 允许仅去除 nil
+                    if member_type.has_nil() && !new_type.is_nil() {
+                        member_type = new_type;
+                    }
                     continue;
                 }
-                member_type = type_assert
-                    .tighten_type(db, cache, &root, member_type)
-                    .unwrap_or(LuaType::Unknown);
+                member_type = new_type;
             }
         }
     }
