@@ -38,7 +38,7 @@ pub fn infer_name_expr(
         let root = name_expr.get_root();
         if let Some(flow_chain) = flow_chain {
             let mut position = name_expr.get_position();
-            // 如果是赋值语句, 那么我们使用赋值语句的结束位置来获取类型
+            // 如果是赋值语句, 那么我们使用赋值语句的结束位置来获取类型, 应用于`hover`左值
             if let Some(assign_stat) = name_expr.get_parent::<LuaAssignStat>() {
                 position = assign_stat.get_range().end();
             }

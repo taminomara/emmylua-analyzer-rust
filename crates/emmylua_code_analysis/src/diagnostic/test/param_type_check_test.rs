@@ -492,4 +492,23 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_287() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@param a table
+                local function f(a)
+                end
+
+                ---@type table?
+                local a 
+                a = a or {}
+
+                f(a)
+        "#
+        ));
+    }
 }
