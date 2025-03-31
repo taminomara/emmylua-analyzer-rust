@@ -200,13 +200,22 @@ fn infer_table_type_by_calleee(
         None,
     )?;
     let param_types = func_type.get_params();
-    let call_arg_number = call_arg_list
+    let mut call_arg_number = call_arg_list
         .children::<LuaAst>()
         .into_iter()
         .enumerate()
         .find(|(_, arg)| arg.get_position() == table_expr.get_position())
         .ok_or(InferFailReason::None)?
         .0;
+    match (func_type.is_colon_define(), call_expr.is_colon_call()) {
+        (true, true) | (false, false) => {}
+        (false, true) => {
+            call_arg_number += 1;
+        }
+        (true, false) => {
+            call_arg_number -= 1;
+        }
+    }
     Ok(param_types
         .get(call_arg_number)
         .ok_or(InferFailReason::None)?

@@ -188,4 +188,30 @@ foo({})
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_302() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::MissingFields,
+            r#"
+                ---@class data
+                data = {}
+                data.raw = {}
+                data.is_demo = false
+
+                --- @param _self data
+                function data.extend(_self, _otherdata)
+                -- Impl
+                end
+
+                data:extend({
+                {
+                    type = "item",
+                    name = "my-item",
+                },
+                })
+        "#
+        ));
+    }
 }
