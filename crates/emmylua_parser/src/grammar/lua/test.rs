@@ -339,7 +339,7 @@ Syntax(Chunk)@0..770
     Token(TkEndOfLine)@672..673 "\n"
     Token(TkEndOfLine)@673..674 "\n"
     Token(TkWhitespace)@674..686 "            "
-    Syntax(AssignStat)@686..705
+    Syntax(CallExprStat)@686..705
       Syntax(SetmetatableCallExpr)@686..705
         Syntax(NameExpr)@686..698
           Token(TkName)@686..698 "setmetatable"
