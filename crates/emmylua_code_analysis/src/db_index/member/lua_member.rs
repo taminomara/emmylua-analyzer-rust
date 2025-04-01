@@ -1,4 +1,5 @@
 use emmylua_parser::{LuaDocFieldKey, LuaIndexKey, LuaSyntaxId, LuaSyntaxKind};
+use internment::ArcIntern;
 use rowan::TextRange;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
@@ -12,7 +13,6 @@ use super::lua_member_feature::LuaMemberFeature;
 
 #[derive(Debug)]
 pub struct LuaMember {
-    owner: LuaMemberOwner,
     member_id: LuaMemberId,
     key: LuaMemberKey,
     feature: LuaMemberFeature,
@@ -21,14 +21,12 @@ pub struct LuaMember {
 
 impl LuaMember {
     pub fn new(
-        owner: LuaMemberOwner,
         member_id: LuaMemberId,
         key: LuaMemberKey,
         decl_feature: LuaMemberFeature,
         decl_type: Option<LuaType>,
     ) -> Self {
         Self {
-            owner,
             member_id,
             key,
             feature: decl_feature,
@@ -37,7 +35,7 @@ impl LuaMember {
     }
 
     pub fn get_owner(&self) -> LuaMemberOwner {
-        self.owner.clone()
+        todo!()
     }
 
     pub fn get_key(&self) -> &LuaMemberKey {
@@ -76,10 +74,6 @@ impl LuaMember {
         self.decl_type = Some(decl_type);
     }
 
-    pub(super) fn set_owner(&mut self, owner: LuaMemberOwner) {
-        self.owner = owner;
-    }
-
     pub fn get_id(&self) -> LuaMemberId {
         self.member_id
     }
@@ -111,9 +105,10 @@ impl LuaMemberId {
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub enum LuaMemberOwner {
-    None,
+    LocalUnknown,
     Type(LuaTypeDeclId),
     Element(InFiled<TextRange>),
+    GlobalPath(ArcIntern<SmolStr>)
 }
 
 impl LuaMemberOwner {
@@ -131,8 +126,15 @@ impl LuaMemberOwner {
         }
     }
 
-    pub fn is_none(&self) -> bool {
-        matches!(self, LuaMemberOwner::None)
+    pub fn get_path(&self) -> Option<&ArcIntern<SmolStr>> {
+        match self {
+            LuaMemberOwner::GlobalPath(path) => Some(path),
+            _ => None,
+        }
+    }
+
+    pub fn is_unknown(&self) -> bool {
+        matches!(self, LuaMemberOwner::LocalUnknown)
     }
 }
 

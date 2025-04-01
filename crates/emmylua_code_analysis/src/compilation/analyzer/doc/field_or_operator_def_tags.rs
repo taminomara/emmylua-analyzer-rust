@@ -32,7 +32,7 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
         }
     };
 
-    let member_owner = LuaMemberOwner::Type(current_type_id.clone());
+    let owner_id = LuaMemberOwner::Type(current_type_id.clone());
     let visibility_kind = if let Some(visibility_token) = tag.get_visibility_token() {
         Some(visibility_token.get_visibility())
     } else {
@@ -108,13 +108,7 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
         LuaMemberFeature::FileFieldDecl
     };
 
-    let member = LuaMember::new(
-        member_owner,
-        member_id,
-        key.clone(),
-        decl_feature,
-        Some(field_type),
-    );
+    let member = LuaMember::new(member_id, key.clone(), decl_feature, Some(field_type));
 
     analyzer.db.get_reference_index_mut().add_index_reference(
         key,
@@ -122,7 +116,10 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
         tag.get_syntax_id(),
     );
 
-    analyzer.db.get_member_index_mut().add_member(member);
+    analyzer
+        .db
+        .get_member_index_mut()
+        .add_member(owner_id, member);
 
     if let Some(visibility_kind) = visibility_kind {
         analyzer.db.get_property_index_mut().add_visibility(

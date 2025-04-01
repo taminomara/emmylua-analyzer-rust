@@ -166,13 +166,12 @@ pub fn try_resolve_table_field(
 
     let member_id = LuaMemberId::new(field.get_syntax_id(), file_id);
     let member = LuaMember::new(
-        owner_id.clone(),
         member_id,
         member_key,
         unresolve_table_field.decl_feature,
         decl_type,
     );
-    db.get_member_index_mut().add_member(member);
+    db.get_member_index_mut().add_member(owner_id, member);
 
     // 如果是`Def`则更新
     let local_name = table_expr

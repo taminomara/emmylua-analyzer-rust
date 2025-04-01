@@ -17,6 +17,8 @@ pub struct LuaMemberIndex {
     members: HashMap<LuaMemberId, LuaMember>,
     in_filed: HashMap<FileId, HashSet<MemberOrOwner>>,
     owner_members: HashMap<LuaMemberOwner, HashMap<LuaMemberKey, LuaMemberIndexItem>>,
+    member_current_owner: HashMap<LuaMemberId, LuaMemberOwner>,
+    member_origin_owner: HashMap<LuaMemberId, LuaMemberOwner>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -31,18 +33,21 @@ impl LuaMemberIndex {
             members: HashMap::new(),
             in_filed: HashMap::new(),
             owner_members: HashMap::new(),
+            member_current_owner: HashMap::new(),
+            member_origin_owner: HashMap::new(),
         }
     }
 
-    pub fn add_member(&mut self, member: LuaMember) -> LuaMemberId {
+    pub fn add_member(&mut self, owner: LuaMemberOwner, member: LuaMember) -> LuaMemberId {
         let id = member.get_id();
-        let owner = member.get_owner();
         let file_id = member.get_file_id();
         self.members.insert(id, member);
         self.add_in_file_object(file_id, MemberOrOwner::Member(id));
-        if !owner.is_none() {
+        if !owner.is_unknown() {
+            self.member_current_owner.insert(id, owner.clone());
+            self.member_origin_owner.insert(id, owner.clone());
             self.add_in_file_object(file_id, MemberOrOwner::Owner(owner.clone()));
-            self.add_member_to_owner(owner, id);
+            self.add_member_to_owner(owner.clone(), id);
         }
         id
     }
@@ -143,8 +148,7 @@ impl LuaMemberIndex {
         file_id: FileId,
         id: LuaMemberId,
     ) -> Option<()> {
-        let member = self.get_member_mut(&id)?;
-        member.set_owner(owner.clone());
+        self.member_current_owner.insert(id, owner.clone());
         self.add_in_file_object(file_id, MemberOrOwner::Owner(owner));
 
         Some(())

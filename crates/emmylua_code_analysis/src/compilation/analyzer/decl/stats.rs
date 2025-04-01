@@ -4,11 +4,11 @@ use emmylua_parser::{
 };
 
 use crate::{
-    db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner},
+    db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey},
     LuaDeclExtra, LuaMemberFeature, LuaMemberId, LuaSemanticDeclId, LuaSignatureId, LuaType,
 };
 
-use super::DeclAnalyzer;
+use super::{members::find_index_owner, DeclAnalyzer};
 
 pub fn analyze_local_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalStat) -> Option<()> {
     let local_name_list = stat.get_local_name_list().collect::<Vec<_>>();
@@ -109,15 +109,15 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
                     LuaMemberFeature::FileDefine
                 };
 
+                let owner = find_index_owner(analyzer, index_expr.clone())?;
                 let member = LuaMember::new(
-                    LuaMemberOwner::None,
                     member_id,
                     key.clone(),
                     decl_feature,
                     None,
                 );
 
-                analyzer.db.get_member_index_mut().add_member(member);
+                analyzer.db.get_member_index_mut().add_member(owner, member);
                 if let LuaMemberKey::Name(name) = &key {
                     analyze_maybe_global_index_expr(
                         analyzer,
@@ -263,14 +263,14 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
                 LuaMemberFeature::FileMethodDecl
             };
 
+            let owner_id = find_index_owner(analyzer, index_expr.clone())?;
             let member = LuaMember::new(
-                LuaMemberOwner::None,
                 member_id,
                 key.clone(),
                 decl_feature,
                 None,
             );
-            let member_id = analyzer.db.get_member_index_mut().add_member(member);
+            let member_id = analyzer.db.get_member_index_mut().add_member(owner_id,member);
 
             if let LuaMemberKey::Name(name) = &key {
                 analyze_maybe_global_index_expr(analyzer, &index_expr, &name, None, None);
