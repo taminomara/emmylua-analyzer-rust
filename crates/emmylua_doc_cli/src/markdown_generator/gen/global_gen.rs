@@ -30,6 +30,7 @@ pub fn generate_global_markdown(
     let decl = db.get_decl_index().get_decl(decl_id)?;
     let name = decl.get_name();
     doc.name = name.to_string();
+    doc.property = collect_property(db, LuaSemanticDeclId::LuaDecl(decl.get_id()));
 
     let mut template_name = "lua_global_template.tl";
     match &decl.get_type()? {
