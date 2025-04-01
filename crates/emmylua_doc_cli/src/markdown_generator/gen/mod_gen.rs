@@ -5,14 +5,15 @@ use emmylua_code_analysis::{
     ModuleInfo, RenderLevel,
 };
 use emmylua_parser::VisibilityKind;
-use tera::{Context, Tera};
+use tera::Tera;
 
-use crate::markdown_generator::{escape_type_name, IndexStruct, MemberDisplay};
-
-use super::{
+use crate::markdown_generator::{
+    escape_type_name,
+    markdown_types::{Doc, IndexStruct, MemberDoc, MkdocsIndex},
     render::{render_const_type, render_function_type},
-    MkdocsIndex,
 };
+
+use super::collect_property;
 
 pub fn generate_module_markdown(
     db: &DbIndex,
@@ -24,17 +25,11 @@ pub fn generate_module_markdown(
     check_filter(db, module.file_id)?;
 
     let mut context = tera::Context::new();
-    context.insert("module_name", &module.full_module_name);
+    let mut doc = Doc::default();
+    doc.name = module.full_module_name.clone();
     let property_owner_id = module.property_owner_id.clone();
-    if let Some(property_owner_id) = property_owner_id {
-        if let Some(property) = db.get_property_index().get_property(&property_owner_id) {
-            let description = property
-                .description
-                .clone()
-                .unwrap_or("".to_string().into())
-                .to_string();
-            context.insert("description", &description);
-        }
+    if let Some(property_id) = property_owner_id {
+        doc.property = collect_property(db, property_id);
     }
 
     let export_typ = module.export_type.clone()?;
@@ -42,18 +37,20 @@ pub fn generate_module_markdown(
         LuaType::Def(type_id) => {
             let member_owner = LuaMemberOwner::Type(type_id.clone());
             let type_simple_name = type_id.get_simple_name();
-            generate_member_owner_module(db, member_owner, type_simple_name, &mut context);
+            generate_member_owner_module(db, member_owner, type_simple_name, &mut doc);
         }
         LuaType::TableConst(t) => {
             let member_owner = LuaMemberOwner::Element(t.clone());
-            generate_member_owner_module(db, member_owner, "M", &mut context);
+            generate_member_owner_module(db, member_owner, "M", &mut doc);
         }
         LuaType::Instance(i) => {
             let member_owner = LuaMemberOwner::Element(i.get_range().clone());
-            generate_member_owner_module(db, member_owner, "M", &mut context);
+            generate_member_owner_module(db, member_owner, "M", &mut doc);
         }
         _ => {}
     }
+
+    context.insert("doc", &doc);
 
     let render_text = match tl.render("lua_module_template.tl", &context) {
         Ok(text) => text,
@@ -94,11 +91,11 @@ pub fn generate_member_owner_module(
     db: &DbIndex,
     member_owner: LuaMemberOwner,
     owner_name: &str,
-    context: &mut Context,
+    doc: &mut Doc,
 ) -> Option<()> {
     let members = db.get_member_index().get_sorted_members(&member_owner);
-    let mut method_members: Vec<MemberDisplay> = Vec::new();
-    let mut field_members: Vec<MemberDisplay> = Vec::new();
+    let mut method_members: Vec<MemberDoc> = Vec::new();
+    let mut field_members: Vec<MemberDoc> = Vec::new();
 
     if let Some(members) = members {
         for member in members {
@@ -114,22 +111,7 @@ pub fn generate_member_owner_module(
                 }
             }
 
-            let description = if let Some(member_property) = member_property {
-                let des = member_property
-                    .description
-                    .clone()
-                    .unwrap_or("".to_string().into())
-                    .to_string();
-
-                if let Some(see) = &member_property.see_content {
-                    format!("{}\n See: {}\n", des, see)
-                } else {
-                    des
-                }
-            } else {
-                "".to_string()
-            };
-
+            let member_property = collect_property(db, member_property_id);
             let member_key = member.get_key();
             let name = match member_key {
                 LuaMemberKey::Name(name) => name,
@@ -140,34 +122,34 @@ pub fn generate_member_owner_module(
             if member_typ.is_function() {
                 let func_name = format!("{}.{}", owner_name, name);
                 let display = render_function_type(db, &member_typ, &func_name, false);
-                method_members.push(MemberDisplay {
+                method_members.push(MemberDoc {
                     name: title_name,
                     display,
-                    description,
+                    property: member_property,
                 });
             } else if member_typ.is_const() {
                 let display = render_const_type(db, &member_typ);
-                field_members.push(MemberDisplay {
+                field_members.push(MemberDoc {
                     name: title_name,
                     display: format!("```lua\n{}.{}: {}\n```\n", owner_name, name, display),
-                    description,
+                    property: member_property,
                 });
             } else {
                 let typ_display = humanize_type(db, &member_typ, RenderLevel::Detailed);
-                field_members.push(MemberDisplay {
+                field_members.push(MemberDoc {
                     name: title_name,
                     display: format!("```lua\n{}.{} : {}\n```\n", owner_name, name, typ_display),
-                    description,
+                    property: member_property,
                 });
             }
         }
     }
     if !method_members.is_empty() {
-        context.insert("methods", &method_members);
+        doc.methods = Some(method_members);
     }
 
     if !field_members.is_empty() {
-        context.insert("fields", &field_members);
+        doc.fields = Some(field_members);
     }
 
     Some(())

@@ -1,15 +1,16 @@
-mod global_gen;
-mod index_gen;
+mod gen;
 mod init_tl;
+mod markdown_types;
 mod mixin_copy;
-mod mod_gen;
 mod render;
-mod typ_gen;
 
 use std::path::PathBuf;
 
 use emmylua_code_analysis::EmmyLuaAnalysis;
-use serde::{Deserialize, Serialize};
+use gen::{
+    generate_global_markdown, generate_index, generate_module_markdown, generate_type_markdown,
+};
+use markdown_types::MkdocsIndex;
 
 #[allow(unused)]
 pub fn generate_markdown(
@@ -56,54 +57,28 @@ pub fn generate_markdown(
     let type_index = db.get_type_index();
     let types = type_index.get_all_types();
     for type_decl in types {
-        typ_gen::generate_type_markdown(db, &tl, type_decl, &types_out, &mut mkdocs_index);
+        generate_type_markdown(db, &tl, type_decl, &types_out, &mut mkdocs_index);
     }
 
     let module_index = db.get_module_index();
     let modules = module_index.get_module_infos();
     for module in modules {
-        mod_gen::generate_module_markdown(db, &tl, module, &module_out, &mut mkdocs_index);
+        generate_module_markdown(db, &tl, module, &module_out, &mut mkdocs_index);
     }
 
     let decl_index = db.get_decl_index();
     let globals = decl_index.get_global_decls();
     for global_decl_id in globals {
-        global_gen::generate_global_markdown(
-            db,
-            &tl,
-            &global_decl_id,
-            &global_out,
-            &mut mkdocs_index,
-        );
+        generate_global_markdown(db, &tl, &global_decl_id, &global_out, &mut mkdocs_index);
     }
 
-    index_gen::generate_index(&tl, &mut mkdocs_index, &output);
+    generate_index(&tl, &mut mkdocs_index, &output);
 
     if let Some(mixin) = mixin {
         mixin_copy::mixin_copy(&output, mixin);
     }
 
     Some(())
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct MemberDisplay {
-    pub name: String,
-    pub display: String,
-    pub description: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Default)]
-struct MkdocsIndex {
-    pub types: Vec<IndexStruct>,
-    pub modules: Vec<IndexStruct>,
-    pub globals: Vec<IndexStruct>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct IndexStruct {
-    pub name: String,
-    pub file: String,
 }
 
 fn escape_type_name(name: &str) -> String {

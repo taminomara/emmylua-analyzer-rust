@@ -1,10 +1,10 @@
-# global {{ global_name }}
+# global {{ doc.name }}
 
 ---
-{% if display %}
-{{ display }}
+{% if doc.display %}
+{{ doc.display }}
 {% endif %}
 
-{% if description %}
-{{ description }}
+{% if doc.property.description %}
+{{ doc.property.description }}
 {% endif %}

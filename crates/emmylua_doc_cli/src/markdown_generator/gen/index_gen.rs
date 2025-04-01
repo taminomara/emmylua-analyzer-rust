@@ -1,6 +1,6 @@
 use tera::Tera;
 
-use super::MkdocsIndex;
+use crate::markdown_generator::markdown_types::MkdocsIndex;
 
 pub fn generate_index(
     tl: &Tera,

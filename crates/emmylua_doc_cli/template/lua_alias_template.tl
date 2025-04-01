@@ -1,14 +1,14 @@
-# alias {{ type_name }}
+# alias {{ doc.name }}
 ---
-{% if namespace %}
-- namespace: {{ namespace }}
+{% if doc.namespace %}
+- namespace: {{ doc.namespace }}
 {% endif %}
 
-{% if origin_type %}
-{{ origin_type }}
+{% if doc.display %}
+{{ doc.display }}
 {% endif %}
 
-{% if description %}
-{{ description }}
+{% if doc.property.description %}
+{{ doc.property.description }}
 {% endif %}
 

@@ -1,21 +1,35 @@
-# enum {{ type_name }}
+# enum {{ doc.name }}
 ---
-{% if namespace %}
-- namespace: {{ namespace }}
+{% if doc.namespace %}
+- namespace: {{ doc.namespace }}
 {% endif %}
 
-{% if description %}
-{{ description }}
+{% if doc.description %}
+{{ doc.description }}
 {% endif %}
-
-{% for field in fields -%}
+{% if doc.fields %}
+{% for field in doc.fields -%}
 
 ### {{ field.name }}
 
 ```lua
-{{ type_name }}.{{ field.name }} = {{ field.value }}
+{{ doc.name }}.{{ field.name }} = {{ field.display }}
 ```
+{% if field.property.description %}
+{{ field.property.description }}
+{% endif %}
 
-{{ field.description }}
+{% if field.property.deprecated %}
+@deprecated {{ field.property.deprecated }}
+{% endif %}
+
+{% if field.property.see %}
+@see {{ field.property.see }}
+{% endif %}
+
+{% if field.property.other %}
+{{ field.property.other }}
+{% endif %}
 
 {% endfor %}
+{% endif %}
