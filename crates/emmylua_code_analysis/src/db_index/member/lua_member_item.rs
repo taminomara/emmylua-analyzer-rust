@@ -14,7 +14,7 @@ impl LuaMemberIndexItem {
     }
 
     pub fn resolve_semantic_decl(&self, db: &DbIndex) -> Option<LuaSemanticDeclId> {
-        resolve_member_property(db, &self)
+        resolve_member_semantic_id(db, &self)
     }
 
     pub(super) fn resolve_member_id(&self, member_index: &LuaMemberIndex) -> Option<LuaMemberId> {
@@ -177,7 +177,7 @@ enum MemberTypeResolveState {
     FileDecl,
 }
 
-fn resolve_member_property(
+fn resolve_member_semantic_id(
     db: &DbIndex,
     member_item: &LuaMemberIndexItem,
 ) -> Option<LuaSemanticDeclId> {
@@ -201,14 +201,20 @@ fn resolve_member_property(
 
             match resolve_state {
                 MemberSemanticDeclResolveState::MetaOrNone => {
+                    let mut last_valid_member =
+                        LuaSemanticDeclId::Member(members.first()?.get_id());
                     for member in &members {
                         let feature = member.get_feature();
                         if feature.is_meta_decl() {
-                            return Some(LuaSemanticDeclId::Member(member.get_id()));
+                            let semantic_id = LuaSemanticDeclId::Member(member.get_id());
+                            last_valid_member = semantic_id.clone();
+                            if check_member_version(db, semantic_id.clone()) {
+                                return Some(semantic_id);
+                            }
                         }
                     }
 
-                    Some(LuaSemanticDeclId::Member(members.first()?.get_id()))
+                    Some(last_valid_member)
                 }
                 MemberSemanticDeclResolveState::FirstDefine => {
                     for member in &members {
@@ -240,4 +246,17 @@ enum MemberSemanticDeclResolveState {
     MetaOrNone,
     FirstDefine,
     FileDecl,
+}
+
+fn check_member_version(db: &DbIndex, semantic_id: LuaSemanticDeclId) -> bool {
+    let Some(property) = db.get_property_index().get_property(&semantic_id) else {
+        return true;
+    };
+
+    if let Some(version) = &property.version_conds {
+        let version_number = db.get_emmyrc().runtime.version.to_lua_version_number();
+        return version.iter().any(|cond| cond.check(&version_number));
+    }
+
+    true
 }

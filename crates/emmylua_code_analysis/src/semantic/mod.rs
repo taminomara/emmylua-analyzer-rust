@@ -205,7 +205,7 @@ impl<'a> SemanticModel<'a> {
         .unwrap_or(false)
     }
 
-    pub fn is_property_visible(
+    pub fn is_semantic_visible(
         &self,
         token: LuaSyntaxToken,
         property_owner: LuaSemanticDeclId,

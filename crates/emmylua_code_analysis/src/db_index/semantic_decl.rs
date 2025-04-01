@@ -8,6 +8,7 @@ pub enum LuaSemanticDeclId {
     Member(LuaMemberId),
     LuaDecl(LuaDeclId),
     Signature(LuaSignatureId),
+    // Multi(Box<Vec<LuaSemanticDeclId>>),
 }
 
 impl From<LuaDeclId> for LuaSemanticDeclId {

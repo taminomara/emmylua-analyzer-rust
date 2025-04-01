@@ -47,7 +47,7 @@ fn check_name_expr(
     }
 
     let name_token = name_expr.get_name_token()?;
-    if !semantic_model.is_property_visible(name_token.syntax().clone(), semantic_decl.clone()) {
+    if !semantic_model.is_semantic_visible(name_token.syntax().clone(), semantic_decl.clone()) {
         let emmyrc = semantic_model.get_emmyrc();
         report_reason(context, &emmyrc, name_token.get_range(), semantic_decl);
     }
@@ -71,7 +71,7 @@ fn check_index_expr(
     }
 
     let index_token = index_expr.get_index_name_token()?;
-    if !semantic_model.is_property_visible(index_token.clone(), semantic_decl.clone()) {
+    if !semantic_model.is_semantic_visible(index_token.clone(), semantic_decl.clone()) {
         let emmyrc = semantic_model.get_emmyrc();
         report_reason(context, &emmyrc, index_token.text_range(), semantic_decl);
     }

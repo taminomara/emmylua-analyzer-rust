@@ -23,7 +23,7 @@ pub fn check_visibility(builder: &mut CompletionBuilder, id: LuaSemanticDeclId) 
 
     if !builder
         .semantic_model
-        .is_property_visible(builder.trigger_token.clone(), id)
+        .is_semantic_visible(builder.trigger_token.clone(), id)
     {
         return None;
     }
