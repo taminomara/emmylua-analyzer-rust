@@ -1,9 +1,9 @@
-use emmylua_parser::{LuaAstNode, LuaExpr, LuaTableExpr, LuaVarExpr};
+use emmylua_parser::{LuaAstNode, LuaTableExpr, LuaVarExpr};
 
 use crate::{
-    infer_call_expr_func, infer_expr, infer_member_map, infer_table_field_value_should_be,
-    infer_table_should_be, DbIndex, InferFailReason, InferGuard, LuaDocParamInfo, LuaDocReturnInfo,
-    LuaFunctionType, LuaInferCache, LuaType, SignatureReturnStatus,
+    infer_call_expr_func, infer_expr, infer_member_map, infer_table_should_be, DbIndex,
+    InferFailReason, InferGuard, LuaDocParamInfo, LuaDocReturnInfo, LuaFunctionType, LuaInferCache,
+    LuaSignatureId, LuaType, SignatureReturnStatus,
 };
 
 use super::{
@@ -168,6 +168,7 @@ fn try_convert_to_func_body_infer(
     try_resolve_return_point(db, cache, &mut unresolve)
 }
 
+#[allow(unused)]
 pub fn try_resolve_closure_parent_params(
     db: &mut DbIndex,
     cache: &mut LuaInferCache,
@@ -178,19 +179,28 @@ pub fn try_resolve_closure_parent_params(
     if !signature.param_docs.is_empty() {
         return Some(true);
     }
-    // TODO 应该移除, 后面再次做了处理, 但由于测试覆盖率问题, 暂时保留
+    let mut self_type = None;
     let member_type = match &closure_params.parent_ast {
         UnResolveParentAst::LuaFuncStat(func_stat) => {
             let func_name = func_stat.get_func_name()?;
             match func_name {
                 LuaVarExpr::IndexExpr(index_expr) => {
-                    infer_expr(db, cache, LuaExpr::IndexExpr(index_expr)).ok()?
+                    let typ = infer_expr(db, cache, index_expr.get_prefix_expr()?).ok()?;
+                    self_type = Some(typ.clone());
+
+                    find_best_function_type(db, cache, &typ, &closure_params.signature_id)
                 }
-                LuaVarExpr::NameExpr(_) => return Some(true),
+                _ => return Some(true),
             }
         }
         UnResolveParentAst::LuaTableField(table_field) => {
-            infer_table_field_value_should_be(db, cache, table_field.clone()).ok()?
+            let parnet_table_expr = table_field
+                .get_parent::<LuaTableExpr>()
+                .ok_or(InferFailReason::None)
+                .ok()?;
+            let typ = infer_table_should_be(db, cache, parnet_table_expr).ok()?;
+            self_type = Some(typ.clone());
+            find_best_function_type(db, cache, &typ, &closure_params.signature_id)
         }
         UnResolveParentAst::LuaAssignStat(assign) => {
             let (vars, exprs) = assign.get_var_and_expr_list();
@@ -199,20 +209,25 @@ pub fn try_resolve_closure_parent_params(
                 .iter()
                 .position(|expr| expr.get_position() == position)?;
             let var = vars.get(idx)?;
-
             match var {
                 LuaVarExpr::IndexExpr(index_expr) => {
-                    infer_expr(db, cache, LuaExpr::IndexExpr(index_expr.clone())).ok()?
+                    let typ = infer_expr(db, cache, index_expr.get_prefix_expr()?).ok()?;
+                    self_type = Some(typ.clone());
+                    find_best_function_type(db, cache, &typ, &closure_params.signature_id)
                 }
-                LuaVarExpr::NameExpr(_) => return Some(true),
+                _ => return Some(true),
             }
         }
     };
 
-    let origin_type =
-        get_function_origin_type(db, cache, closure_params, &member_type).unwrap_or(member_type);
-    match &origin_type {
-        LuaType::DocFunction(doc_func) => resolve_doc_function(db, cache, closure_params, doc_func),
+    let Some(member_type) = member_type else {
+        return Some(true);
+    };
+
+    match &member_type {
+        LuaType::DocFunction(doc_func) => {
+            resolve_doc_function(db, closure_params, doc_func, self_type)
+        }
         LuaType::Signature(id) => {
             if id == &closure_params.signature_id {
                 return Some(true);
@@ -226,7 +241,7 @@ pub fn try_resolve_closure_parent_params(
                     signature.get_type_params(),
                     signature.get_return_types(),
                 );
-                resolve_doc_function(db, cache, closure_params, &fake_doc_function)
+                resolve_doc_function(db, closure_params, &fake_doc_function, self_type)
             } else {
                 Some(true)
             }
@@ -237,12 +252,10 @@ pub fn try_resolve_closure_parent_params(
 
 fn resolve_doc_function(
     db: &mut DbIndex,
-    cache: &mut LuaInferCache,
     closure_params: &UnResolveParentClosureParams,
     doc_func: &LuaFunctionType,
+    self_type: Option<LuaType>,
 ) -> Option<bool> {
-    let self_type = get_self_type(db, cache, closure_params);
-
     let signature = db
         .get_signature_index_mut()
         .get_mut(&closure_params.signature_id)?;
@@ -304,78 +317,26 @@ fn resolve_doc_function(
     Some(true)
 }
 
-fn get_function_origin_type(
-    db: &DbIndex,
-    cache: &mut LuaInferCache,
-    closure_params: &UnResolveParentClosureParams,
-    origin_typ: &LuaType,
-) -> Option<LuaType> {
-    match origin_typ {
-        LuaType::Signature(id) => {
-            let signature = db.get_signature_index().get(id);
-            if let Some(signature) = signature {
-                if signature.param_docs.len() == signature.params.len() {
-                    return Some(origin_typ.clone());
-                }
-            }
-        }
-        _ => return None,
-    };
-    let member_type = match &closure_params.parent_ast {
-        UnResolveParentAst::LuaTableField(table_field) => {
-            let parnet_table_expr = table_field
-                .get_parent::<LuaTableExpr>()
-                .ok_or(InferFailReason::None)
-                .ok()?;
-            let prefix_type = infer_table_should_be(db, cache, parnet_table_expr).ok()?;
-            find_best_function_type(db, cache, &prefix_type, origin_typ)
-        }
-        UnResolveParentAst::LuaAssignStat(assign) => {
-            let (vars, exprs) = assign.get_var_and_expr_list();
-            let position = closure_params.signature_id.get_position();
-            let idx = exprs
-                .iter()
-                .position(|expr| expr.get_position() == position)?;
-            let var = vars.get(idx)?;
-            match var {
-                LuaVarExpr::IndexExpr(index_expr) => {
-                    let prefix_type = infer_expr(db, cache, index_expr.get_prefix_expr()?).ok()?;
-                    find_best_function_type(db, cache, &prefix_type, origin_typ)
-                }
-                _ => return None,
-            }
-        }
-        UnResolveParentAst::LuaFuncStat(func_stat) => {
-            let func_name = func_stat.get_func_name()?;
-            match func_name {
-                LuaVarExpr::IndexExpr(index_expr) => {
-                    let prefix_type = infer_expr(db, cache, index_expr.get_prefix_expr()?).ok()?;
-                    find_best_function_type(db, cache, &prefix_type, origin_typ)
-                }
-                _ => return None,
-            }
-        }
-    };
-
-    member_type
-}
-
 fn find_best_function_type(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     prefix_type: &LuaType,
-    origin_typ: &LuaType,
+    signature_id: &LuaSignatureId,
 ) -> Option<LuaType> {
     let member_info_map = infer_member_map(db, &prefix_type)?;
-    let target_infos = member_info_map
-        .into_values()
-        .find(|infos| infos.iter().any(|info| &info.typ == origin_typ))?;
-    // 从匹配的 infos 中找到参数最多的签名
-    let mut cur_max_param_len = 0;
-    target_infos.iter().fold(None, |best_type, info| {
+    // 如果找不到证明是重定义
+    let target_infos = member_info_map.into_values().find(|infos| {
+        infos.iter().any(|info| match &info.typ {
+            LuaType::Signature(id) => id == signature_id,
+            _ => false,
+        })
+    })?;
+
+    // 找到第一个具有实际参数类型的签名
+    target_infos.iter().find_map(|info| {
         let function_type =
             get_final_function_type(db, cache, &info.typ).unwrap_or(info.typ.clone());
-        let param_len = match &function_type {
+        let param_type_len = match &function_type {
             LuaType::Signature(id) => db
                 .get_signature_index()
                 .get(&id)
@@ -388,13 +349,10 @@ fn find_best_function_type(
                 .count(),
             _ => 0, // 跳过其他类型
         };
-
-        if param_len > cur_max_param_len {
-            cur_max_param_len = param_len;
-            Some(function_type.clone())
-        } else {
-            best_type
+        if param_type_len > 0 {
+            return Some(function_type.clone());
         }
+        None
     })
 }
 
@@ -425,44 +383,5 @@ fn get_final_function_type(
             None
         }
         _ => None,
-    }
-}
-
-fn get_self_type(
-    db: &mut DbIndex,
-    cache: &mut LuaInferCache,
-    closure_params: &UnResolveParentClosureParams,
-) -> Option<LuaType> {
-    match &closure_params.parent_ast {
-        UnResolveParentAst::LuaTableField(table_field) => {
-            let parnet_table_expr = table_field
-                .get_parent::<LuaTableExpr>()
-                .ok_or(InferFailReason::None)
-                .ok()?;
-            infer_table_should_be(db, cache, parnet_table_expr).ok()
-        }
-        UnResolveParentAst::LuaAssignStat(assign) => {
-            let (vars, exprs) = assign.get_var_and_expr_list();
-            let position = closure_params.signature_id.get_position();
-            let idx = exprs
-                .iter()
-                .position(|expr| expr.get_position() == position)?;
-            let var = vars.get(idx)?;
-            match var {
-                LuaVarExpr::IndexExpr(index_expr) => {
-                    infer_expr(db, cache, index_expr.get_prefix_expr()?).ok()
-                }
-                _ => return None,
-            }
-        }
-        UnResolveParentAst::LuaFuncStat(func_stat) => {
-            let func_name = func_stat.get_func_name()?;
-            match func_name {
-                LuaVarExpr::IndexExpr(index_expr) => {
-                    infer_expr(db, cache, index_expr.get_prefix_expr()?).ok()
-                }
-                _ => return None,
-            }
-        }
     }
 }
