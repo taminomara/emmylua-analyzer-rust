@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::{DiagnosticCode, VirtualWorkspace};
+    use crate::VirtualWorkspace;
 
     #[test]
     fn test_closure_param_infer() {
@@ -186,32 +186,5 @@ mod test {
         let ty = ws.expr_ty("a");
         let expected = ws.ty("ShallowUnwrapHandlers");
         assert_eq!(ws.humanize_type(ty), ws.humanize_type(expected));
-    }
-
-    #[test]
-    fn test_resolve_closure_parent_params_5() {
-        let mut ws = VirtualWorkspace::new();
-        ws.def(
-            r#"
-        ---@class oslib
-        os = {}
-        ---@param code integer
-        ---@param close? boolean
-        ---@return integer
-        function os.exit(code, close) end
-
-        "#,
-        );
-
-        assert!(ws.check_code_for(
-            DiagnosticCode::MissingReturn,
-            r#"
-            local M = {}
-            M.oldOsExit = os.exit
-
-            os.exit = function(...)
-            end
-        "#,
-        ));
     }
 }

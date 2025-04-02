@@ -3,7 +3,8 @@ use emmylua_parser::{LuaAstNode, LuaTableExpr, LuaVarExpr};
 use crate::{
     infer_call_expr_func, infer_expr, infer_member_map, infer_table_should_be, DbIndex,
     InferFailReason, InferGuard, LuaDocParamInfo, LuaDocReturnInfo, LuaFunctionType, LuaInferCache,
-    LuaSignatureId, LuaType, SignatureReturnStatus,
+    LuaMemberInfo, LuaSemanticDeclId, LuaSignatureId, LuaType, LuaTypeDeclId,
+    SignatureReturnStatus,
 };
 
 use super::{
@@ -168,7 +169,6 @@ fn try_convert_to_func_body_infer(
     try_resolve_return_point(db, cache, &mut unresolve)
 }
 
-#[allow(unused)]
 pub fn try_resolve_closure_parent_params(
     db: &mut DbIndex,
     cache: &mut LuaInferCache,
@@ -179,7 +179,7 @@ pub fn try_resolve_closure_parent_params(
     if !signature.param_docs.is_empty() {
         return Some(true);
     }
-    let mut self_type = None;
+    let self_type;
     let member_type = match &closure_params.parent_ast {
         UnResolveParentAst::LuaFuncStat(func_stat) => {
             let func_name = func_stat.get_func_name()?;
@@ -317,6 +317,19 @@ fn resolve_doc_function(
     Some(true)
 }
 
+fn get_owner_type_id(db: &DbIndex, info: &LuaMemberInfo) -> Option<LuaTypeDeclId> {
+    match &info.property_owner_id {
+        Some(LuaSemanticDeclId::Member(member_id)) => {
+            if let Some(member) = db.get_member_index().get_member(member_id) {
+                member.get_owner().get_type_id().cloned()
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }
+}
+
 fn find_best_function_type(
     db: &DbIndex,
     cache: &mut LuaInferCache,
@@ -324,16 +337,26 @@ fn find_best_function_type(
     signature_id: &LuaSignatureId,
 ) -> Option<LuaType> {
     let member_info_map = infer_member_map(db, &prefix_type)?;
+    let mut current_type_id = None;
     // 如果找不到证明是重定义
     let target_infos = member_info_map.into_values().find(|infos| {
         infos.iter().any(|info| match &info.typ {
-            LuaType::Signature(id) => id == signature_id,
+            LuaType::Signature(id) => {
+                if id == signature_id {
+                    current_type_id = get_owner_type_id(db, info);
+                    return true;
+                }
+                false
+            }
             _ => false,
         })
     })?;
-
     // 找到第一个具有实际参数类型的签名
     target_infos.iter().find_map(|info| {
+        // 所有者类型一致, 但我们找的是父类型
+        if get_owner_type_id(db, info) == current_type_id {
+            return None;
+        }
         let function_type =
             get_final_function_type(db, cache, &info.typ).unwrap_or(info.typ.clone());
         let param_type_len = match &function_type {
