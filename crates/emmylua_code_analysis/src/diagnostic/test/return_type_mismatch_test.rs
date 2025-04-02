@@ -5,19 +5,19 @@ mod tests {
     #[test]
     fn test_issue_242() {
         let mut ws = VirtualWorkspace::new_with_init_std_lib();
-
         assert!(ws.check_code_for_namespace(
             DiagnosticCode::ReturnTypeMismatch,
             r#"
-                local setmetatable = setmetatable
-                --- @class A
+                ---@class A
                 local A = {}
+                A.__index = A
 
                 function A:method() end
 
-                --- @return A
+                ---@return A
                 function new()
-                return setmetatable({}, { __index = A })
+                    local a = setmetatable({}, A);
+                    return a
                 end
         "#
         ));
@@ -25,13 +25,29 @@ mod tests {
         assert!(ws.check_code_for_namespace(
             DiagnosticCode::ReturnTypeMismatch,
             r#"
-                --- @class A
+                local setmetatable = setmetatable
+                ---@class A
+                local A = {}
+
+                function A:method() end
+
+                ---@return A
+                function new()
+                    return setmetatable({}, { __index = A })
+                end
+        "#
+        ));
+
+        assert!(ws.check_code_for_namespace(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+                ---@class A
                 local A = {}
                 A.__index = A
 
                 function A:method() end
 
-                --- @return A
+                ---@return A
                 function new()
                 return setmetatable({}, A)
                 end
@@ -273,6 +289,38 @@ mod tests {
                     local a
                     return a
                 end
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_4() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        // TODO 该测试被`setmetatable`强行覆盖, 未正常诊断`debug.setmetatable`
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+            ---@generic T
+            ---@param value T
+            ---@param meta? table
+            ---@return T value
+            ---@overload fun(value: table, meta: T): T
+            local setmetatable = debug.setmetatable
+
+            ---@class switch
+            ---@field cachedCases string[]
+            ---@field map table<string, function>
+            ---@field _default fun(...):...
+            local switchMT = {}
+
+            ---@return switch
+            local function switch()
+                local obj = setmetatable({
+                    map = {},
+                    cachedCases = {},
+                }, switchMT)
+                return obj
+            end
             "#
         ));
     }

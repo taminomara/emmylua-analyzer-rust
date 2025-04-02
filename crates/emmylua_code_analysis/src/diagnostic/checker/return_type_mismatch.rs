@@ -1,9 +1,9 @@
-use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaExpr, LuaReturnStat};
+use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaExpr, LuaReturnStat, LuaSyntaxKind};
 use rowan::{NodeOrToken, TextRange};
 
 use crate::{
     humanize_type, DiagnosticCode, LuaSemanticDeclId, LuaSignatureId, LuaType, RenderLevel,
-    SemanticModel, SignatureReturnStatus, TypeCheckFailReason, TypeCheckResult,
+    SemanticDeclLevel, SemanticModel, SignatureReturnStatus, TypeCheckFailReason, TypeCheckResult,
 };
 
 use super::{get_own_return_stats, Checker, DiagnosticContext};
@@ -184,25 +184,29 @@ fn add_type_check_diagnostic(
 
 fn has_setmetatable(semantic_model: &SemanticModel, return_stat: &LuaReturnStat) -> Option<usize> {
     for (index, expr) in return_stat.get_expr_list().enumerate() {
-        if let LuaExpr::CallExpr(call_expr) = expr {
-            if let Some(prefix_expr) = call_expr.get_prefix_expr() {
-                let semantic_info = semantic_model
-                    .get_semantic_info(NodeOrToken::Node(prefix_expr.syntax().clone().into()))?;
-
-                if let Some(LuaSemanticDeclId::LuaDecl(decl_id)) = semantic_info.semantic_decl {
-                    let decl = semantic_model.get_db().get_decl_index().get_decl(&decl_id);
-
-                    if let Some(decl) = decl {
-                        if decl.is_global()
-                            && semantic_model
-                                .get_db()
-                                .get_module_index()
-                                .is_std(&decl.get_file_id())
-                            && decl.get_name() == "setmetatable"
-                        {
-                            return Some(index);
+        match expr {
+            LuaExpr::CallExpr(call_expr) => {
+                if call_expr.is_setmetatable() {
+                    return Some(index);
+                }
+            }
+            _ => {
+                let decl = semantic_model.find_decl(
+                    NodeOrToken::Node(expr.syntax().clone().into()),
+                    SemanticDeclLevel::Trace(50),
+                );
+                match decl {
+                    Some(LuaSemanticDeclId::LuaDecl(decl_id)) => {
+                        let decl = semantic_model.get_db().get_decl_index().get_decl(&decl_id);
+                        if let Some(decl) = decl {
+                            if decl.get_value_syntax_id()?.get_kind()
+                                == LuaSyntaxKind::SetmetatableCallExpr
+                            {
+                                return Some(index);
+                            }
                         }
                     }
+                    _ => {}
                 }
             }
         }
