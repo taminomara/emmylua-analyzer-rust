@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
-use emmylua_code_analysis::{LuaFlowId, LuaType};
-use emmylua_parser::{LuaAst, LuaAstNode, LuaCallArgList, LuaParamList};
-use lsp_types::CompletionTriggerKind;
+use emmylua_code_analysis::{LuaFlowId, LuaSignatureId, LuaType};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaCallArgList, LuaClosureExpr, LuaParamList};
+use lsp_types::{CompletionItem, CompletionItemKind, CompletionTriggerKind};
 
 use crate::handlers::completion::{
     add_completions::{add_decl_completion, check_match_word},
@@ -18,8 +18,8 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         return Some(());
     }
 
-    let node = LuaAst::cast(builder.trigger_token.parent()?)?;
-    match node {
+    let parent_node = LuaAst::cast(builder.trigger_token.parent()?)?;
+    match parent_node {
         LuaAst::LuaNameExpr(_) => {}
         LuaAst::LuaBlock(_) => {}
         LuaAst::LuaClosureExpr(_) => {}
@@ -31,8 +31,9 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
 
     let mut duplicated_name = HashSet::new();
     builder.env_range.0 = builder.get_completion_items_mut().len();
-    add_local_env(builder, &mut duplicated_name, &node);
+    add_local_env(builder, &mut duplicated_name, &parent_node);
     add_global_env(builder, &mut duplicated_name);
+    add_self(builder, &mut duplicated_name, &parent_node);
     builder.env_range.1 = builder.get_completion_items_mut().len();
 
     builder.env_duplicate_name.extend(duplicated_name);
@@ -64,6 +65,38 @@ fn check_can_add_completion(builder: &CompletionBuilder) -> Option<()> {
                 return None;
             }
         }
+    }
+
+    Some(())
+}
+
+fn add_self(
+    builder: &mut CompletionBuilder,
+    duplicated_name: &mut HashSet<String>,
+    node: &LuaAst,
+) -> Option<()> {
+    let closure_expr = node.ancestors::<LuaClosureExpr>().next()?;
+    let signature_id =
+        LuaSignatureId::from_closure(builder.semantic_model.get_file_id(), &closure_expr);
+    let signature = builder
+        .semantic_model
+        .get_db()
+        .get_signature_index()
+        .get(&signature_id)?;
+    if signature.is_colon_define {
+        let completion_item = CompletionItem {
+            label: "self".to_string(),
+            kind: Some(CompletionItemKind::VARIABLE),
+            data: None,
+            label_details: Some(lsp_types::CompletionItemLabelDetails {
+                detail: None,
+                description: None,
+            }),
+            ..Default::default()
+        };
+
+        builder.add_completion_item(completion_item)?;
+        duplicated_name.insert("self".to_string());
     }
 
     Some(())

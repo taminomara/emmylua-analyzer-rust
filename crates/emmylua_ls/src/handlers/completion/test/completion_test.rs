@@ -400,4 +400,23 @@ mod tests {
             CompletionTriggerKind::TRIGGER_CHARACTER,
         ));
     }
+
+    #[test]
+    fn test_function_self() {
+        let mut ws = CompletionVirtualWorkspace::new();
+        assert!(ws.check_completion_with_kind(
+            r#"
+                ---@class A
+                local A
+                function A:test()
+                s<??>
+                end
+            "#,
+            vec![VirtualCompletionItem {
+                label: "self".to_string(),
+                kind: CompletionItemKind::VARIABLE,
+            },],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
 }
