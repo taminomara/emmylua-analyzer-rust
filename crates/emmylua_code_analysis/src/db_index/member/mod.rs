@@ -1,16 +1,16 @@
 mod lua_member;
 mod lua_member_feature;
 mod lua_member_item;
-mod migrate_members;
+mod lua_member_owner;
 
 use std::collections::{HashMap, HashSet};
 
+use super::traits::LuaIndex;
 use crate::FileId;
-pub use lua_member::{LuaMember, LuaMemberId, LuaMemberKey, LuaMemberOwner};
+pub use lua_member::{LuaMember, LuaMemberId, LuaMemberKey};
 pub use lua_member_feature::LuaMemberFeature;
 pub use lua_member_item::LuaMemberIndexItem;
-
-use super::traits::LuaIndex;
+pub use lua_member_owner::LuaMemberOwner;
 
 #[derive(Debug)]
 pub struct LuaMemberIndex {
@@ -67,7 +67,6 @@ impl LuaMemberIndex {
             .owner_members
             .entry(owner.clone())
             .or_insert_with(HashMap::new);
-        let mut need_check_migrate = false;
         if feature.is_decl() {
             if let Some(item) = member_map.get_mut(&key) {
                 match item {
@@ -83,8 +82,6 @@ impl LuaMemberIndex {
                         }
                     }
                 }
-
-                need_check_migrate = true;
             } else {
                 member_map.insert(key.clone(), LuaMemberIndexItem::One(id));
             }
@@ -111,10 +108,6 @@ impl LuaMemberIndex {
                 .entry(owner.clone())
                 .or_insert_with(HashMap::new)
                 .insert(key.clone(), new_items);
-        }
-
-        if need_check_migrate {
-            migrate_members::migrate_members(self, owner, &key, id);
         }
 
         Some(())
@@ -202,6 +195,14 @@ impl LuaMemberIndex {
     pub fn get_member_len(&self, owner: &LuaMemberOwner) -> usize {
         self.owner_members.get(owner).map_or(0, |map| map.len())
     }
+
+    pub fn get_current_owner(&self, id: &LuaMemberId) -> Option<&LuaMemberOwner> {
+        self.member_current_owner.get(id)
+    }
+
+    pub fn get_origin_owner(&self, id: &LuaMemberId) -> Option<&LuaMemberOwner> {
+        self.member_origin_owner.get(id)
+    }
 }
 
 impl LuaIndex for LuaMemberIndex {
@@ -211,10 +212,9 @@ impl LuaIndex for LuaMemberIndex {
             for member_id_or_owner in member_ids {
                 match member_id_or_owner {
                     MemberOrOwner::Member(member_id) => {
-                        if let Some(member) = self.members.remove(&member_id) {
-                            let owner = member.get_owner();
-                            owners.insert(owner);
-                        }
+                        self.members.remove(&member_id);
+                        self.member_current_owner.remove(&member_id);
+                        self.member_origin_owner.remove(&member_id);
                     }
                     MemberOrOwner::Owner(owner) => {
                         owners.insert(owner);

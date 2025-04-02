@@ -10,7 +10,7 @@ use rowan::TextRange;
 
 use crate::{
     db_index::{LuaDeclId, LuaMemberId, LuaSemanticDeclId, LuaSignatureId, LuaType},
-    LuaTypeDeclId,
+    LuaTypeCache, LuaTypeDeclId,
 };
 
 use super::{
@@ -378,34 +378,35 @@ fn bind_def_type(analyzer: &mut DocAnalyzer, type_def: LuaType) -> Option<()> {
             let file_id = analyzer.file_id;
             let decl_id = LuaDeclId::new(file_id, position);
 
-            let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-
-            decl.set_decl_type(type_def);
+            analyzer
+                .db
+                .get_type_index_mut()
+                .bind_type(decl_id.into(), LuaTypeCache::DocType(type_def));
         }
         LuaAst::LuaAssignStat(assign_stat) => {
             if let LuaVarExpr::NameExpr(name_expr) = assign_stat.child::<LuaVarExpr>()? {
                 let position = name_expr.get_position();
                 let file_id = analyzer.file_id;
                 let decl_id = LuaDeclId::new(file_id, position);
-                let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
 
-                decl.set_decl_type(type_def);
+                analyzer
+                    .db
+                    .get_type_index_mut()
+                    .bind_type(decl_id.into(), LuaTypeCache::DocType(type_def));
             } else if let LuaVarExpr::IndexExpr(index_expr) = assign_stat.child::<LuaVarExpr>()? {
                 let member_id = LuaMemberId::new(index_expr.get_syntax_id(), analyzer.file_id);
-                let member = analyzer
+                analyzer
                     .db
-                    .get_member_index_mut()
-                    .get_member_mut(&member_id)?;
-                member.set_decl_type(type_def);
+                    .get_type_index_mut()
+                    .bind_type(member_id.into(), LuaTypeCache::DocType(type_def));
             }
         }
         LuaAst::LuaTableField(field) => {
             let member_id = LuaMemberId::new(field.get_syntax_id(), analyzer.file_id);
-            let member = analyzer
+            analyzer
                 .db
-                .get_member_index_mut()
-                .get_member_mut(&member_id)?;
-            member.set_decl_type(type_def);
+                .get_type_index_mut()
+                .bind_type(member_id.into(), LuaTypeCache::DocType(type_def));
         }
         _ => {}
     }

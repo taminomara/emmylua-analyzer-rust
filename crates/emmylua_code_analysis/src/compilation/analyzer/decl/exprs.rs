@@ -219,8 +219,18 @@ pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, table_expr: LuaTableExpr)
                 );
 
                 let member_id = LuaMemberId::new(field.get_syntax_id(), file_id);
-                let member = LuaMember::new(member_id, key, decl_feature, None);
-                analyzer.db.get_member_index_mut().add_member(owner_id.clone(), member);
+                let member = match &owner_id {
+                    LuaMemberOwner::GlobalPath(path) => {
+                        LuaMember::new(member_id, key, decl_feature, Some(path.clone()))
+                    }
+                    _ => {
+                        LuaMember::new(member_id, key, decl_feature, None)
+                    }
+                };
+                analyzer
+                    .db
+                    .get_member_index_mut()
+                    .add_member(owner_id.clone(), member);
             }
         }
     }

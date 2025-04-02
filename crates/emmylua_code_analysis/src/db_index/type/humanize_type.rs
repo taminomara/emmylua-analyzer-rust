@@ -130,9 +130,13 @@ fn humanize_simple_type(
     let mut member_vec = Vec::new();
     for member in members {
         let member_key = member.get_key();
-        let typ = member.get_decl_type();
-        if !typ.is_signature() {
-            member_vec.push((member_key, typ));
+        let type_cache = db.get_type_index().get_type_cache(&member.get_id().into());
+        let type_cache = match type_cache {
+            Some(type_cache) => type_cache,
+            None => &super::LuaTypeCache::InferType(LuaType::Any),
+        };
+        if !type_cache.is_signature() {
+            member_vec.push((member_key, type_cache.as_type().clone()));
         }
     }
 
@@ -453,11 +457,15 @@ fn humanize_table_const_type_detail_and_simple(
     let mut members_string = String::new();
     for member in members {
         let key = member.get_key();
-        let typ = member.get_decl_type();
+        let type_cache = db.get_type_index().get_type_cache(&member.get_id().into());
+        let type_cache = match type_cache {
+            Some(type_cache) => type_cache,
+            None => &super::LuaTypeCache::InferType(LuaType::Any),
+        };
         let member_string = build_table_member_string(
             key,
-            &typ,
-            humanize_type(db, &typ, level.next_level()),
+            &type_cache.as_type(),
+            humanize_type(db, &type_cache.as_type(), level.next_level()),
             level,
         );
 

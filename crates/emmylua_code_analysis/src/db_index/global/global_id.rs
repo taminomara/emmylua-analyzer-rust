@@ -1,0 +1,15 @@
+use internment::ArcIntern;
+use smol_str::SmolStr;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct GlobalId(pub ArcIntern<SmolStr>);
+
+impl GlobalId {
+    pub fn new(name: &str) -> Self {
+        Self(ArcIntern::new(SmolStr::new(name)))
+    }
+
+    pub fn get_name(&self) -> &str {
+        self.0.as_ref()
+    }
+}

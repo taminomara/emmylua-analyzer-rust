@@ -1,22 +1,17 @@
 use emmylua_parser::{LuaDocFieldKey, LuaIndexKey, LuaSyntaxId, LuaSyntaxKind};
-use internment::ArcIntern;
-use rowan::TextRange;
+use rowan::{TextRange, TextSize};
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
-use crate::{
-    db_index::{LuaType, LuaTypeDeclId},
-    FileId, InFiled,
-};
-
 use super::lua_member_feature::LuaMemberFeature;
+use crate::{FileId, GlobalId};
 
 #[derive(Debug)]
 pub struct LuaMember {
     member_id: LuaMemberId,
     key: LuaMemberKey,
     feature: LuaMemberFeature,
-    decl_type: Option<LuaType>,
+    global_id: Option<GlobalId>,
 }
 
 impl LuaMember {
@@ -24,18 +19,14 @@ impl LuaMember {
         member_id: LuaMemberId,
         key: LuaMemberKey,
         decl_feature: LuaMemberFeature,
-        decl_type: Option<LuaType>,
+        global_path: Option<GlobalId>,
     ) -> Self {
         Self {
             member_id,
             key,
             feature: decl_feature,
-            decl_type,
+            global_id: global_path,
         }
-    }
-
-    pub fn get_owner(&self) -> LuaMemberOwner {
-        todo!()
     }
 
     pub fn get_key(&self) -> &LuaMemberKey {
@@ -60,20 +51,6 @@ impl LuaMember {
         *self.member_id.get_syntax_id()
     }
 
-    // todo clean all the usage
-    pub fn get_decl_type(&self) -> LuaType {
-        self.decl_type.clone().unwrap_or(LuaType::Unknown)
-    }
-
-    // workaround
-    pub(crate) fn get_option_decl_type(&self) -> Option<LuaType> {
-        self.decl_type.clone()
-    }
-
-    pub(crate) fn set_decl_type(&mut self, decl_type: LuaType) {
-        self.decl_type = Some(decl_type);
-    }
-
     pub fn get_id(&self) -> LuaMemberId {
         self.member_id
     }
@@ -84,6 +61,10 @@ impl LuaMember {
 
     pub fn get_feature(&self) -> LuaMemberFeature {
         self.feature
+    }
+
+    pub fn get_global_id(&self) -> Option<&GlobalId> {
+        self.global_id.as_ref()
     }
 }
 
@@ -101,40 +82,9 @@ impl LuaMemberId {
     pub fn get_syntax_id(&self) -> &LuaSyntaxId {
         &self.id
     }
-}
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone)]
-pub enum LuaMemberOwner {
-    LocalUnknown,
-    Type(LuaTypeDeclId),
-    Element(InFiled<TextRange>),
-    GlobalPath(ArcIntern<SmolStr>)
-}
-
-impl LuaMemberOwner {
-    pub fn get_type_id(&self) -> Option<&LuaTypeDeclId> {
-        match self {
-            LuaMemberOwner::Type(id) => Some(id),
-            _ => None,
-        }
-    }
-
-    pub fn get_element_range(&self) -> Option<&InFiled<TextRange>> {
-        match self {
-            LuaMemberOwner::Element(range) => Some(range),
-            _ => None,
-        }
-    }
-
-    pub fn get_path(&self) -> Option<&ArcIntern<SmolStr>> {
-        match self {
-            LuaMemberOwner::GlobalPath(path) => Some(path),
-            _ => None,
-        }
-    }
-
-    pub fn is_unknown(&self) -> bool {
-        matches!(self, LuaMemberOwner::LocalUnknown)
+    pub fn get_position(&self) -> TextSize {
+        self.id.get_range().start()
     }
 }
 

@@ -5,7 +5,7 @@ use emmylua_parser::{
 
 use crate::{
     db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey},
-    LuaDeclExtra, LuaMemberFeature, LuaMemberId, LuaSemanticDeclId, LuaSignatureId, LuaType,
+    LuaDeclExtra, LuaMemberFeature, LuaMemberId, LuaMemberOwner, LuaSemanticDeclId, LuaSignatureId,
 };
 
 use super::{members::find_index_owner, DeclAnalyzer};
@@ -47,7 +47,6 @@ pub fn analyze_local_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalStat) -> Op
             LuaDeclExtra::Local {
                 kind: local_name.syntax().kind().into(),
                 attrib,
-                decl_type: None,
             },
             expr_id,
         );
@@ -86,7 +85,6 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
                         range,
                         LuaDeclExtra::Global {
                             kind: LuaSyntaxKind::NameExpr.into(),
-                            decl_type: None,
                         },
                         value_expr_id,
                     );
@@ -109,23 +107,12 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
                     LuaMemberFeature::FileDefine
                 };
 
-                let owner = find_index_owner(analyzer, index_expr.clone())?;
-                let member = LuaMember::new(
-                    member_id,
-                    key.clone(),
-                    decl_feature,
-                    None,
-                );
+                let (owner, global_id) = find_index_owner(analyzer, index_expr.clone());
+                let member = LuaMember::new(member_id, key.clone(), decl_feature, global_id);
 
                 analyzer.db.get_member_index_mut().add_member(owner, member);
                 if let LuaMemberKey::Name(name) = &key {
-                    analyze_maybe_global_index_expr(
-                        analyzer,
-                        index_expr,
-                        &name,
-                        None,
-                        value_expr_id,
-                    );
+                    analyze_maybe_global_index_expr(analyzer, index_expr, &name, value_expr_id);
                 }
             }
         }
@@ -138,7 +125,6 @@ fn analyze_maybe_global_index_expr(
     analyzer: &mut DeclAnalyzer,
     index_expr: &LuaIndexExpr,
     index_name: &str,
-    typ: Option<LuaType>,
     value_expr_id: Option<LuaSyntaxId>,
 ) -> Option<()> {
     let file_id = analyzer.get_file_id();
@@ -163,7 +149,6 @@ fn analyze_maybe_global_index_expr(
                     range,
                     LuaDeclExtra::Global {
                         kind: LuaSyntaxKind::IndexExpr.into(),
-                        decl_type: typ,
                     },
                     value_expr_id,
                 );
@@ -188,7 +173,6 @@ pub fn analyze_for_stat(analyzer: &mut DeclAnalyzer, stat: LuaForStat) -> Option
         LuaDeclExtra::Local {
             kind: it_var.syntax().kind().into(),
             attrib: Some(LocalAttribute::IterConst),
-            decl_type: Some(LuaType::Integer),
         },
         None,
     );
@@ -212,7 +196,6 @@ pub fn analyze_for_range_stat(analyzer: &mut DeclAnalyzer, stat: LuaForRangeStat
             LuaDeclExtra::Local {
                 kind: var.syntax().kind().into(),
                 attrib: Some(LocalAttribute::IterConst),
-                decl_type: None,
             },
             None,
         );
@@ -237,7 +220,6 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
                     range,
                     LuaDeclExtra::Global {
                         kind: LuaSyntaxKind::NameExpr.into(),
-                        decl_type: None,
                     },
                     None,
                 );
@@ -263,17 +245,15 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
                 LuaMemberFeature::FileMethodDecl
             };
 
-            let owner_id = find_index_owner(analyzer, index_expr.clone())?;
-            let member = LuaMember::new(
-                member_id,
-                key.clone(),
-                decl_feature,
-                None,
-            );
-            let member_id = analyzer.db.get_member_index_mut().add_member(owner_id,member);
+            let (owner_id, global_id) = find_index_owner(analyzer, index_expr.clone());
+            let member = LuaMember::new(member_id, key.clone(), decl_feature, global_id);
+            let member_id = analyzer
+                .db
+                .get_member_index_mut()
+                .add_member(owner_id, member);
 
             if let LuaMemberKey::Name(name) = &key {
-                analyze_maybe_global_index_expr(analyzer, &index_expr, &name, None, None);
+                analyze_maybe_global_index_expr(analyzer, &index_expr, &name, None);
             }
             LuaSemanticDeclId::Member(member_id)
         }
@@ -305,7 +285,6 @@ pub fn analyze_local_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalFuncSt
         LuaDeclExtra::Local {
             kind: local_name.syntax().kind().into(),
             attrib: None,
-            decl_type: None,
         },
         None,
     );

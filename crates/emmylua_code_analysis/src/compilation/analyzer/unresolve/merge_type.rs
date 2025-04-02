@@ -1,81 +1,56 @@
 use rowan::TextRange;
 
 use crate::{
-    compilation::analyzer::lua::set_owner_and_add_member,
-    db_index::{DbIndex, LuaDeclId, LuaMemberId, LuaMemberOwner, LuaType, LuaTypeDeclId},
-    InFiled, LuaInferCache, TypeOps,
+    db_index::{DbIndex, LuaMemberOwner, LuaType, LuaTypeDeclId},
+    InFiled, LuaInferCache, LuaMemberId, LuaTypeCache, LuaTypeOwner,
 };
 
-pub fn merge_decl_expr_type(
+use super::migrate_member::migrate_member_when_type_resolve;
+
+pub fn merge_type_owner_expr_type(
     db: &mut DbIndex,
     cache: &mut LuaInferCache,
-    decl_id: LuaDeclId,
+    type_owner: LuaTypeOwner,
     expr_type: LuaType,
 ) -> Option<()> {
-    let decl = db.get_decl_index().get_decl(&decl_id)?;
-    let decl_type = decl.get_type();
-    if decl_type.is_none() {
-        let decl = db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-        decl.set_decl_type(expr_type);
+    let decl_type_cache = db.get_type_index().get_type_cache(&type_owner);
+
+    if decl_type_cache.is_none() {
+        db.get_type_index_mut()
+            .bind_type(type_owner.clone(), LuaTypeCache::InferType(expr_type));
     } else {
-        let decl_type = decl_type.unwrap();
-        let new_type = merge_type(db, cache, decl_type.clone(), expr_type);
-        let decl = db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-        decl.set_decl_type(new_type);
+        let decl_type = decl_type_cache.unwrap().as_type();
+        merge_def_type(db, cache, decl_type.clone(), expr_type);
+    }
+
+    match &type_owner {
+        LuaTypeOwner::Member(member_id) => {
+            migrate_member_when_type_resolve(db, member_id.clone());
+        }
+        _ => {}
     }
 
     Some(())
 }
 
-pub fn merge_member_type(
-    db: &mut DbIndex,
-    cache: &mut LuaInferCache,
-    member_id: LuaMemberId,
-    expr_type: LuaType,
-) -> Option<()> {
-    let member = db.get_member_index().get_member(&member_id)?;
-    let member_type = member.get_decl_type();
-    let new_type = merge_type(db, cache, member_type.clone(), expr_type);
-    let member = db.get_member_index_mut().get_member_mut(&member_id)?;
-    member.set_decl_type(new_type);
-
-    Some(())
-}
-
-fn merge_type(
+fn merge_def_type(
     db: &mut DbIndex,
     cache: &mut LuaInferCache,
     decl_type: LuaType,
     expr_type: LuaType,
-) -> LuaType {
+) {
     match &decl_type {
-        LuaType::Unknown => expr_type,
-        LuaType::Nil => TypeOps::Union.apply(&expr_type, &LuaType::Nil),
-        LuaType::Def(def) => {
-            match expr_type {
-                LuaType::TableConst(in_filed_range) => {
-                    merge_def_type_with_table(db, cache, def.clone(), in_filed_range);
-                }
-                LuaType::Instance(instance) => {
-                    let base_ref = instance.get_base();
-                    match base_ref {
-                        LuaType::TableConst(in_filed_range) => {
-                            merge_def_type_with_table(
-                                db,
-                                cache,
-                                def.clone(),
-                                in_filed_range.clone(),
-                            );
-                        }
-                        _ => {}
-                    }
-                }
-                _ => {}
+        LuaType::Def(def) => match &expr_type {
+            LuaType::TableConst(in_filed_range) => {
+                merge_def_type_with_table(db, cache, def.clone(), in_filed_range.clone());
             }
-
-            return LuaType::Def(def.clone());
-        }
-        _ => decl_type,
+            LuaType::Instance(instance) => {
+                let base_ref = instance.get_base();
+                merge_def_type(db, cache, base_ref.clone(), expr_type);
+            }
+            _ => {}
+        },
+        _ => {}
     }
 }
 
@@ -96,6 +71,19 @@ fn merge_def_type_with_table(
     for table_member_id in expr_member_ids {
         set_owner_and_add_member(db, def_owner.clone(), table_member_id);
     }
+
+    Some(())
+}
+
+pub fn set_owner_and_add_member(
+    db: &mut DbIndex,
+    owner: LuaMemberOwner,
+    member_id: LuaMemberId,
+) -> Option<()> {
+    db.get_member_index_mut()
+        .set_member_owner(owner.clone(), member_id.file_id, member_id);
+    db.get_member_index_mut()
+        .add_member_to_owner(owner.clone(), member_id);
 
     Some(())
 }

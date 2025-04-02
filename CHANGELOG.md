@@ -1,6 +1,6 @@
 # CHANGELOG
 
-# 0.6.1 (unreleased)
+# 0.7.0 (unreleased)
 
 `CHG` Refactor `type infer`
 

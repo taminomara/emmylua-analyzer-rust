@@ -21,7 +21,7 @@ use crate::{
     db_index::{DbIndex, LuaType},
     profile::Profile,
     semantic::{infer_expr, LuaInferCache},
-    CacheOptions, FileId, InferFailReason, LuaAnalysisPhase, LuaMemberId, LuaMemberOwner,
+    CacheOptions, FileId, InferFailReason, LuaAnalysisPhase,
 };
 
 use super::{unresolve::UnResolve, AnalyzeContext};
@@ -88,19 +88,6 @@ fn analyze_node(analyzer: &mut LuaAnalyzer, node: LuaAst) {
         }
         _ => {}
     }
-}
-
-pub fn set_owner_and_add_member(
-    db: &mut DbIndex,
-    owner: LuaMemberOwner,
-    member_id: LuaMemberId,
-) -> Option<()> {
-    db.get_member_index_mut()
-        .set_member_owner(owner.clone(), member_id.file_id, member_id);
-    db.get_member_index_mut()
-        .add_member_to_owner(owner.clone(), member_id);
-
-    Some(())
 }
 
 #[derive(Debug)]

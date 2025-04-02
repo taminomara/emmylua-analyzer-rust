@@ -11,7 +11,7 @@ use crate::{
         LuaSemanticDeclId, LuaType,
     },
     AnalyzeError, DiagnosticCode, LuaFunctionType, LuaMemberFeature, LuaMemberId, LuaSignatureId,
-    OperatorFunction, TypeOps,
+    LuaTypeCache, OperatorFunction, TypeOps,
 };
 
 use super::{infer_type::infer_type, DocAnalyzer};
@@ -108,8 +108,7 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
         LuaMemberFeature::FileFieldDecl
     };
 
-    let member = LuaMember::new(member_id, key.clone(), decl_feature, Some(field_type));
-
+    let member = LuaMember::new(member_id, key.clone(), decl_feature, None);
     analyzer.db.get_reference_index_mut().add_index_reference(
         key,
         analyzer.file_id,
@@ -120,6 +119,11 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
         .db
         .get_member_index_mut()
         .add_member(owner_id, member);
+
+    analyzer.db.get_type_index_mut().bind_type(
+        member_id.clone().into(),
+        LuaTypeCache::DocType(field_type.clone()),
+    );
 
     if let Some(visibility_kind) = visibility_kind {
         analyzer.db.get_property_index_mut().add_visibility(

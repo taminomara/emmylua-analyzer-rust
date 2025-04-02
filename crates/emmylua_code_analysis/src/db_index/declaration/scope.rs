@@ -2,7 +2,7 @@ use rowan::{TextRange, TextSize};
 
 use crate::FileId;
 
-use super::decl::LuaDeclId;
+use super::LuaDeclId;
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone, Copy)]
 pub enum LuaScopeKind {

@@ -208,7 +208,7 @@ impl<'a> DeclAnalyzer<'a> {
         self.add_decl_to_current_scope(id);
 
         if is_global {
-            self.db.get_decl_index_mut().add_global_decl(&name, id);
+            self.db.get_global_index_mut().add_global_decl(&name, id);
 
             self.db
                 .get_reference_index_mut()
