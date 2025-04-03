@@ -36,10 +36,6 @@ impl<'a> DocumentSymbolBuilder<'a> {
         self.decl_tree.get_decl(id)
     }
 
-    pub fn get_db(&self) -> &'a DbIndex {
-        self.db
-    }
-
     pub fn get_type(&self, id: LuaTypeOwner) -> LuaType {
         self.db
             .get_type_index()
