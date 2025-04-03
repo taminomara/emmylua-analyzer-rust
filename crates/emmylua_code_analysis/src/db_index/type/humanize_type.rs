@@ -179,13 +179,17 @@ fn humanize_union_type(db: &DbIndex, union: &LuaUnionType, level: RenderLevel) -
     // 需要确保顺序
     let mut seen = HashSet::new();
     let mut type_strings = Vec::new();
+    let mut has_nil = false;
     for ty in types.iter() {
+        if ty.is_nil() {
+            has_nil = true;
+            continue;
+        }
         let type_str = humanize_type(db, ty, level.next_level());
         if seen.insert(type_str.clone()) {
             type_strings.push(type_str);
         }
     }
-
     // 取指定数量的类型
     let display_types: Vec<_> = type_strings.into_iter().take(num).collect();
     let type_str = display_types.join("|");
@@ -196,9 +200,9 @@ fn humanize_union_type(db: &DbIndex, union: &LuaUnionType, level: RenderLevel) -
     };
 
     if display_types.len() == 1 {
-        type_str
+        format!("{}{}", type_str, if has_nil { "?" } else { "" })
     } else {
-        format!("({}{})", type_str, dots)
+        format!("({}{}){}", type_str, dots, if has_nil { "?" } else { "" })
     }
 }
 

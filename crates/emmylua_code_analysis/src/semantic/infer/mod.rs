@@ -12,6 +12,7 @@ use std::ops::Deref;
 
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLiteralToken, LuaTableExpr,
+    LuaVarExpr,
 };
 use infer_binary::infer_binary_expr;
 use infer_call::infer_call_expr;
@@ -221,7 +222,22 @@ pub fn infer_left_value_type_from_right_value(
                 if expr == *assign_expr {
                     let var = vars.get(idx);
                     if let Some(var) = var {
+                        match var {
+                            LuaVarExpr::IndexExpr(index_expr) => {
+                                let prefix_expr = index_expr.get_prefix_expr()?;
+                                let prefix_type = infer_expr(db, cache, prefix_expr).ok()?;
+                                // 如果前缀类型是定义类型, 则不认为存在左值绑定
+                                match prefix_type {
+                                    LuaType::Def(_) => {
+                                        return None;
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            _ => {}
+                        };
                         typ = Some(infer_expr(db, cache, var.clone().into()).ok()?);
+                        break;
                     }
                 }
             }

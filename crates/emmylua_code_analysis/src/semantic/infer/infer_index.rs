@@ -511,8 +511,10 @@ fn infer_member_by_index_custom_type(
                 .ok_or(InferFailReason::None)?;
             let operand = operator.get_operand(db);
             let return_type = operator.get_result(db)?;
-            let typ = infer_index_metamethod(db, cache, &index_key, &operand, &return_type)?;
-            return Ok(typ);
+            let typ = infer_index_metamethod(db, cache, &index_key, &operand, &return_type);
+            if let Ok(typ) = typ {
+                return Ok(typ);
+            }
         }
     }
 

@@ -381,8 +381,7 @@ fn build_signature_ret_type(
     i: usize,
 ) -> String {
     let type_expansion_count = builder.get_type_expansion_count();
-    let type_text =
-        hover_type(builder, &ret_info.type_ref, Some(RenderLevel::Simple)).unwrap_or_default();
+    let type_text = hover_type(builder, &ret_info.type_ref, Some(RenderLevel::Simple));
     if builder.get_type_expansion_count() > type_expansion_count {
         // 重新设置`type_expansion`
         if let Some(pop_type_expansion) =
@@ -424,37 +423,30 @@ pub fn hover_type(
     builder: &mut HoverBuilder,
     ty: &LuaType,
     fallback_level: Option<RenderLevel>, // 当有值时, 若获取类型描述为空会回退到使用`humanize_type()`
-) -> Option<String> {
+) -> String {
     let db = builder.semantic_model.get_db();
-    let type_text = match ty {
+    match ty {
         LuaType::Ref(type_decl_id) => {
-            let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
-
-            if type_decl.is_alias() {
-                let origin = type_decl.get_alias_origin(db, None);
-                match origin {
-                    Some(LuaType::MultiLineUnion(multi_union)) => hover_multi_line_union_type(
+            if let Some(type_decl) = db.get_type_index().get_type_decl(type_decl_id) {
+                if let Some(LuaType::MultiLineUnion(multi_union)) =
+                    type_decl.get_alias_origin(db, None)
+                {
+                    return hover_multi_line_union_type(
                         builder,
                         db,
                         multi_union.as_ref(),
                         Some(type_decl.get_full_name()),
-                    ),
-                    _ => None,
+                    )
+                    .unwrap_or_default();
                 }
-            } else {
-                None
             }
+            humanize_type(db, ty, fallback_level.unwrap_or(RenderLevel::Simple))
         }
         LuaType::MultiLineUnion(multi_union) => {
-            hover_multi_line_union_type(builder, db, multi_union.as_ref(), None)
+            hover_multi_line_union_type(builder, db, multi_union.as_ref(), None).unwrap_or_default()
         }
-        LuaType::Union(union) => Some(hover_union_type(builder, union, RenderLevel::Detailed)),
-        _ => None,
-    };
-    match (fallback_level, type_text) {
-        (Some(level), Some(text)) if text.is_empty() => Some(humanize_type(db, ty, level)),
-        (Some(level), None) => Some(humanize_type(db, ty, level)),
-        (_, text) => text,
+        LuaType::Union(union) => hover_union_type(builder, union, RenderLevel::Detailed),
+        _ => humanize_type(db, ty, fallback_level.unwrap_or(RenderLevel::Simple)),
     }
 }
 
@@ -473,17 +465,34 @@ fn hover_union_type(
             return "union<...>".to_string();
         }
     };
-    let type_str = types
-        .iter()
-        .take(num)
-        .filter_map(|ty| hover_type(builder, ty, None))
-        .collect::<Vec<_>>()
-        .join("|");
-    if type_str.is_empty() {
-        return "".to_string();
+    // 需要确保顺序
+    let mut seen = HashSet::new();
+    let mut type_strings = Vec::new();
+    let mut has_nil = false;
+    for ty in types.iter() {
+        if ty.is_nil() {
+            has_nil = true;
+            continue;
+        }
+        let type_str = hover_type(builder, ty, Some(level.next_level()));
+        if seen.insert(type_str.clone()) {
+            type_strings.push(type_str);
+        }
     }
-    let dots = if types.len() > num { "..." } else { "" };
-    format!("({}{})", type_str, dots)
+    // 取指定数量的类型
+    let display_types: Vec<_> = type_strings.into_iter().take(num).collect();
+    let type_str = display_types.join("|");
+    let dots = if display_types.len() < types.len() {
+        "..."
+    } else {
+        ""
+    };
+
+    if display_types.len() == 1 {
+        format!("{}{}", type_str, if has_nil { "?" } else { "" })
+    } else {
+        format!("({}{}){}", type_str, dots, if has_nil { "?" } else { "" })
+    }
 }
 
 fn hover_multi_line_union_type(

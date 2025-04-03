@@ -295,14 +295,22 @@ fn build_node_semantic_token(
         }
         LuaAst::LuaParamName(param_name) => {
             let name = param_name.get_name_token()?;
-            builder.push(name.syntax(), SemanticTokenType::PARAMETER);
+            if name.get_name_text() == "self" {
+                builder.push_with_modifier(
+                    name.syntax(),
+                    SemanticTokenType::VARIABLE,
+                    SemanticTokenModifier::DEFINITION,
+                );
+            } else {
+                builder.push(name.syntax(), SemanticTokenType::PARAMETER);
+            }
         }
         LuaAst::LuaLocalName(local_name) => {
             handle_name_node(
                 semantic_model,
                 builder,
                 local_name.syntax(),
-                local_name.get_name_token()?.syntax(),
+                &local_name.get_name_token()?,
             );
         }
         LuaAst::LuaNameExpr(name_expr) => {
@@ -310,7 +318,7 @@ fn build_node_semantic_token(
                 semantic_model,
                 builder,
                 name_expr.syntax(),
-                name_expr.get_name_token()?.syntax(),
+                &name_expr.get_name_token()?,
             );
         }
         LuaAst::LuaForRangeStat(for_range_stat) => {
@@ -533,21 +541,29 @@ fn handle_name_node(
     semantic_model: &SemanticModel,
     builder: &mut SemanticBuilder,
     node: &LuaSyntaxNode,
-    name_token: &LuaSyntaxToken,
+    name_token: &LuaNameToken,
 ) -> Option<()> {
+    if name_token.get_name_text() == "self" {
+        builder.push_with_modifier(
+            name_token.syntax(),
+            SemanticTokenType::VARIABLE,
+            SemanticTokenModifier::DEFINITION,
+        );
+        return Some(());
+    }
     if is_class_def(semantic_model, node.clone()).is_some() {
-        builder.push(name_token, SemanticTokenType::CLASS);
+        builder.push(name_token.syntax(), SemanticTokenType::CLASS);
         return Some(());
     }
 
     let semantic_decl =
-        semantic_model.find_decl(node.clone().into(), SemanticDeclLevel::default())?;
+        semantic_model.find_decl(node.clone().into(), SemanticDeclLevel::Trace(50))?;
 
     match semantic_decl {
         LuaSemanticDeclId::Member(member_id) => {
-            let member_type = semantic_model.get_type(member_id.into());
-            if matches!(member_type, LuaType::Signature(_)) {
-                builder.push(name_token, SemanticTokenType::FUNCTION);
+            let decl_type = semantic_model.get_type(member_id.into());
+            if matches!(decl_type, LuaType::Signature(_)) {
+                builder.push(name_token.syntax(), SemanticTokenType::FUNCTION);
                 return Some(());
             }
         }
@@ -569,9 +585,9 @@ fn handle_name_node(
             };
 
             if let Some(modifier) = modifier {
-                builder.push_with_modifier(name_token, token_type, modifier);
+                builder.push_with_modifier(name_token.syntax(), token_type, modifier);
             } else {
-                builder.push(name_token, token_type);
+                builder.push(name_token.syntax(), token_type);
             }
             return Some(());
         }
@@ -579,6 +595,6 @@ fn handle_name_node(
         _ => {}
     }
 
-    builder.push(name_token, SemanticTokenType::VARIABLE);
+    builder.push(name_token.syntax(), SemanticTokenType::VARIABLE);
     Some(())
 }
