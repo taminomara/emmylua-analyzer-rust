@@ -140,7 +140,12 @@ impl<'a> HoverBuilder<'a> {
                         .get_member_index()
                         .get_member(&id)
                     {
-                        if let LuaMemberOwner::Type(ty) = &member.get_owner() {
+                        if let Some(LuaMemberOwner::Type(ty)) = self
+                            .semantic_model
+                            .get_db()
+                            .get_member_index()
+                            .get_current_owner(&id)
+                        {
                             if is_std(self.semantic_model.get_db(), member.get_file_id()) {
                                 let std_desc = hover_std_description(
                                     ty.get_name(),

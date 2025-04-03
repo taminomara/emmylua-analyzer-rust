@@ -504,6 +504,7 @@ fn add_enum_members_completion(
                     .clone(),
             )
         })
+        .sorted_by(|a, b| a.0.cmp(&b.0))
         .collect::<Vec<_>>();
 
     // 判断是否为字符串字面量触发

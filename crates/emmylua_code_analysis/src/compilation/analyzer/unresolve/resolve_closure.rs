@@ -320,11 +320,10 @@ fn resolve_doc_function(
 fn get_owner_type_id(db: &DbIndex, info: &LuaMemberInfo) -> Option<LuaTypeDeclId> {
     match &info.property_owner_id {
         Some(LuaSemanticDeclId::Member(member_id)) => {
-            if let Some(member) = db.get_member_index().get_member(member_id) {
-                member.get_owner().get_type_id().cloned()
-            } else {
-                None
+            if let Some(owner) = db.get_member_index().get_current_owner(member_id) {
+                return owner.get_type_id().cloned();
             }
+            None
         }
         _ => None,
     }

@@ -557,49 +557,30 @@ fn handle_name_node(
     }
 
     let semantic_decl =
-        semantic_model.find_decl(node.clone().into(), SemanticDeclLevel::default())?;
+        semantic_model.find_decl(node.clone().into(), SemanticDeclLevel::Trace(50))?;
 
     match semantic_decl {
         LuaSemanticDeclId::Member(member_id) => {
-            let member = semantic_model
-                .get_db()
-                .get_member_index()
-                .get_member(&member_id)?;
-            if matches!(member.get_decl_type(), LuaType::Signature(_)) {
+            let decl_type = semantic_model.get_type(member_id.into());
+            if matches!(decl_type, LuaType::Signature(_)) {
                 builder.push(name_token.syntax(), SemanticTokenType::FUNCTION);
                 return Some(());
             }
         }
 
         LuaSemanticDeclId::LuaDecl(decl_id) => {
-            let decl = semantic_model
-                .get_db()
-                .get_decl_index()
-                .get_decl(&decl_id)?;
-
-            let (token_type, modifier) = match &decl.extra {
-                LuaDeclExtra::Local { decl_type, .. } => match decl_type {
-                    Some(LuaType::Signature(_) | LuaType::DocFunction(_)) => {
-                        builder.push(name_token.syntax(), SemanticTokenType::FUNCTION);
-                        return Some(());
-                    }
-                    _ => (SemanticTokenType::VARIABLE, None),
-                },
-
-                LuaDeclExtra::Global { decl_type, .. } => match decl_type {
-                    Some(LuaType::Signature(signature)) => {
-                        let is_meta = semantic_model
-                            .get_db()
-                            .get_module_index()
-                            .is_meta_file(&signature.get_file_id());
-                        (
-                            SemanticTokenType::FUNCTION,
-                            is_meta.then_some(SemanticTokenModifier::DEFAULT_LIBRARY),
-                        )
-                    }
-                    _ => (SemanticTokenType::VARIABLE, None),
-                },
-
+            let decl_type = semantic_model.get_type(decl_id.into());
+            let (token_type, modifier) = match decl_type {
+                LuaType::Signature(signature) => {
+                    let is_meta = semantic_model
+                        .get_db()
+                        .get_module_index()
+                        .is_meta_file(&signature.get_file_id());
+                    (
+                        SemanticTokenType::FUNCTION,
+                        is_meta.then_some(SemanticTokenModifier::DEFAULT_LIBRARY),
+                    )
+                }
                 _ => (SemanticTokenType::VARIABLE, None),
             };
 

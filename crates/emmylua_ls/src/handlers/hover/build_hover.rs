@@ -64,12 +64,13 @@ pub fn build_hover_content_for_completion<'a>(
 ) -> Option<HoverBuilder<'a>> {
     let typ = match property_id {
         LuaSemanticDeclId::LuaDecl(decl_id) => {
-            let decl = db.get_decl_index().get_decl(&decl_id)?;
-            Some(decl.get_type()?.clone())
+            // let decl = db.get_decl_index().get_decl(&decl_id)?;
+            Some(semantic_model.get_type(decl_id.into()).clone())
         }
         LuaSemanticDeclId::Member(member_id) => {
-            let member = db.get_member_index().get_member(&member_id)?;
-            Some(member.get_decl_type())
+            // let member = db.get_member_index().get_member(&member_id)?;
+            Some(semantic_model.get_type(member_id.into()).clone())
+            // Some(member.get_decl_type())
         }
         _ => None,
     };
