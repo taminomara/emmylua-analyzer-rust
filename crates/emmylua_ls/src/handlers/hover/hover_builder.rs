@@ -5,11 +5,11 @@ use emmylua_code_analysis::{
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaIndexExpr, LuaSyntaxKind, LuaSyntaxToken};
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
 
-use crate::handlers::hover::std_hover::{hover_std_description, is_std_by_name};
+use crate::handlers::hover::std_hover::hover_std_description;
 
 use super::{
     build_hover::{add_signature_param_description, add_signature_ret_description},
-    std_hover::is_std_by_path,
+    std_hover::is_std,
 };
 
 #[derive(Debug)]
@@ -140,13 +140,8 @@ impl<'a> HoverBuilder<'a> {
                         .get_member_index()
                         .get_member(&id)
                     {
-                        let owner_id = self
-                            .semantic_model
-                            .get_db()
-                            .get_member_index()
-                            .get_current_owner(&member.get_id());
-                        if let Some(LuaMemberOwner::Type(ty)) = owner_id {
-                            if is_std_by_name(&ty.get_name()) {
+                        if let LuaMemberOwner::Type(ty) = &member.get_owner() {
+                            if is_std(self.semantic_model.get_db(), member.get_file_id()) {
                                 let std_desc = hover_std_description(
                                     ty.get_name(),
                                     member.get_key().get_name(),
@@ -161,11 +156,7 @@ impl<'a> HoverBuilder<'a> {
                 LuaSemanticDeclId::LuaDecl(id) => {
                     if let Some(decl) = self.semantic_model.get_db().get_decl_index().get_decl(&id)
                     {
-                        if decl.is_global()
-                            && is_std_by_name(&decl.get_name())
-                            && is_std_by_path(self.semantic_model.get_db(), decl.get_file_id())
-                                .unwrap_or(false)
-                        {
+                        if is_std(self.semantic_model.get_db(), decl.get_file_id()) {
                             let std_desc = hover_std_description(decl.get_name(), None);
                             if !std_desc.is_empty() {
                                 description = std_desc;

@@ -2,6 +2,7 @@ use emmylua_code_analysis::{DbIndex, FileId};
 
 use crate::meta_text::meta_std;
 
+#[allow(unused)]
 pub fn is_std_by_name(name: &str) -> bool {
     match name {
         "oslib" => true,
@@ -57,7 +58,6 @@ pub fn hover_std_description(type_name: &str, member_name: Option<&str>) -> Stri
     meta_std(type_name, member_name)
 }
 
-pub fn is_std_by_path(db: &DbIndex, file_id: FileId) -> Option<bool> {
-    let module_info = db.get_module_index().get_module(file_id)?;
-    Some(module_info.workspace_id.is_std())
+pub fn is_std(db: &DbIndex, file_id: FileId) -> bool {
+    db.get_module_index().is_std(&file_id)
 }
