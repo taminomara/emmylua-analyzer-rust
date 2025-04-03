@@ -56,7 +56,7 @@ pub struct DbIndex {
     vfs: Vfs,
     file_dependencies_index: LuaDenpendencyIndex,
     metatable_index: LuaMetatableIndex,
-    globla_index: LuaGlobalIndex,
+    global_index: LuaGlobalIndex,
     emmyrc: Arc<Emmyrc>,
 }
 
@@ -77,7 +77,7 @@ impl DbIndex {
             vfs: Vfs::new(),
             file_dependencies_index: LuaDenpendencyIndex::new(),
             metatable_index: LuaMetatableIndex::new(),
-            globla_index: LuaGlobalIndex::new(),
+            global_index: LuaGlobalIndex::new(),
             emmyrc: Arc::new(Emmyrc::default()),
         }
     }
@@ -193,11 +193,11 @@ impl DbIndex {
     }
 
     pub fn get_global_index(&self) -> &LuaGlobalIndex {
-        &self.globla_index
+        &self.global_index
     }
 
     pub fn get_global_index_mut(&mut self) -> &mut LuaGlobalIndex {
-        &mut self.globla_index
+        &mut self.global_index
     }
 
     pub fn update_config(&mut self, config: Arc<Emmyrc>) {
@@ -225,7 +225,7 @@ impl LuaIndex for DbIndex {
         self.flow_index.remove(file_id);
         self.file_dependencies_index.remove(file_id);
         self.metatable_index.remove(file_id);
-        self.globla_index.remove(file_id);
+        self.global_index.remove(file_id);
     }
 
     fn clear(&mut self) {
@@ -241,6 +241,6 @@ impl LuaIndex for DbIndex {
         self.flow_index.clear();
         self.file_dependencies_index.clear();
         self.metatable_index.clear();
-        self.globla_index.clear();
+        self.global_index.clear();
     }
 }

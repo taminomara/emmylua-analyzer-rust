@@ -274,5 +274,7 @@ impl LuaIndex for LuaTypeIndex {
         self.generic_params.clear();
         self.supers.clear();
         self.as_force_type.clear();
+        self.types.clear();
+        self.in_filed_type_owner.clear();
     }
 }
