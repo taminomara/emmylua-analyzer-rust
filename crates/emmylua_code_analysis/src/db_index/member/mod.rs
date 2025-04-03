@@ -18,7 +18,6 @@ pub struct LuaMemberIndex {
     in_filed: HashMap<FileId, HashSet<MemberOrOwner>>,
     owner_members: HashMap<LuaMemberOwner, HashMap<LuaMemberKey, LuaMemberIndexItem>>,
     member_current_owner: HashMap<LuaMemberId, LuaMemberOwner>,
-    member_origin_owner: HashMap<LuaMemberId, LuaMemberOwner>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -34,7 +33,6 @@ impl LuaMemberIndex {
             in_filed: HashMap::new(),
             owner_members: HashMap::new(),
             member_current_owner: HashMap::new(),
-            member_origin_owner: HashMap::new(),
         }
     }
 
@@ -45,7 +43,6 @@ impl LuaMemberIndex {
         self.add_in_file_object(file_id, MemberOrOwner::Member(id));
         if !owner.is_unknown() {
             self.member_current_owner.insert(id, owner.clone());
-            self.member_origin_owner.insert(id, owner.clone());
             self.add_in_file_object(file_id, MemberOrOwner::Owner(owner.clone()));
             self.add_member_to_owner(owner.clone(), id);
         }
@@ -94,8 +91,17 @@ impl LuaMemberIndex {
             let item = member_map.get(&key)?.clone();
             let new_items = if self.is_item_only_meta(&item) {
                 match item {
-                    LuaMemberIndexItem::One(old_id) => LuaMemberIndexItem::Many(vec![id, old_id]),
+                    LuaMemberIndexItem::One(old_id) => {
+                        if old_id == id {
+                            return Some(());
+                        }
+                        LuaMemberIndexItem::Many(vec![id, old_id])
+                    }
                     LuaMemberIndexItem::Many(mut ids) => {
+                        if ids.contains(&id) {
+                            return Some(());
+                        }
+
                         ids.push(id);
                         LuaMemberIndexItem::Many(ids)
                     }
@@ -178,6 +184,18 @@ impl LuaMemberIndex {
         Some(members)
     }
 
+    #[allow(unused)]
+    pub fn get_member_item_by_member_id(
+        &self,
+        member_id: LuaMemberId,
+    ) -> Option<&LuaMemberIndexItem> {
+        let owner = self.member_current_owner.get(&member_id)?;
+        let member_key = self.members.get(&member_id)?.get_key();
+        let member_items = self.owner_members.get(owner)?;
+        let item = member_items.get(member_key)?;
+        Some(item)
+    }
+
     pub fn get_sorted_members(&self, owner: &LuaMemberOwner) -> Option<Vec<&LuaMember>> {
         let mut members = self.get_members(owner)?;
         members.sort_by_key(|member| member.get_sort_key());
@@ -199,10 +217,6 @@ impl LuaMemberIndex {
     pub fn get_current_owner(&self, id: &LuaMemberId) -> Option<&LuaMemberOwner> {
         self.member_current_owner.get(id)
     }
-
-    pub fn get_origin_owner(&self, id: &LuaMemberId) -> Option<&LuaMemberOwner> {
-        self.member_origin_owner.get(id)
-    }
 }
 
 impl LuaIndex for LuaMemberIndex {
@@ -214,7 +228,6 @@ impl LuaIndex for LuaMemberIndex {
                     MemberOrOwner::Member(member_id) => {
                         self.members.remove(&member_id);
                         self.member_current_owner.remove(&member_id);
-                        self.member_origin_owner.remove(&member_id);
                     }
                     MemberOrOwner::Owner(owner) => {
                         owners.insert(owner);

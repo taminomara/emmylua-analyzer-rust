@@ -1,3 +1,4 @@
+mod bind_type;
 mod decl;
 mod doc;
 mod flow;
@@ -79,7 +80,7 @@ pub struct AnalyzeContext {
     tree_list: Vec<InFiled<LuaChunk>>,
     #[allow(unused)]
     config: Arc<Emmyrc>,
-    type_flow: HashMap<InFiled<LuaSyntaxId>, LuaType>,
+    cast_flow: HashMap<InFiled<LuaSyntaxId>, LuaType>,
     unresolves: Vec<UnResolve>,
 }
 
@@ -88,7 +89,7 @@ impl AnalyzeContext {
         Self {
             tree_list: Vec::new(),
             config: emmyrc,
-            type_flow: HashMap::new(),
+            cast_flow: HashMap::new(),
             unresolves: Vec::new(),
         }
     }

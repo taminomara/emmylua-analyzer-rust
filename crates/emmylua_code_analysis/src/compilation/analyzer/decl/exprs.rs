@@ -223,9 +223,7 @@ pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, table_expr: LuaTableExpr)
                     LuaMemberOwner::GlobalPath(path) => {
                         LuaMember::new(member_id, key, decl_feature, Some(path.clone()))
                     }
-                    _ => {
-                        LuaMember::new(member_id, key, decl_feature, None)
-                    }
+                    _ => LuaMember::new(member_id, key, decl_feature, None),
                 };
                 analyzer
                     .db

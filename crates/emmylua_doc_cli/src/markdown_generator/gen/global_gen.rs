@@ -32,8 +32,11 @@ pub fn generate_global_markdown(
     doc.name = name.to_string();
     doc.property = collect_property(db, LuaSemanticDeclId::LuaDecl(decl.get_id()));
 
+    let decl_type = db
+        .get_type_index()
+        .get_type_cache(&decl_id.clone().into())?;
     let mut template_name = "lua_global_template.tl";
-    match &decl.get_type()? {
+    match decl_type.as_type() {
         LuaType::TableConst(table) => {
             let member_owner = LuaMemberOwner::Element(table.clone());
             generate_member_owner_module(db, member_owner, name, &mut doc)?;
@@ -76,11 +79,11 @@ fn check_filter(db: &DbIndex, decl_id: &LuaDeclId) -> Option<()> {
     let module = db.get_module_index().get_module(file_id)?;
     if !module.workspace_id.is_main() {
         return None;
-    }
-
-    let decl = db.get_decl_index().get_decl(decl_id)?;
-    let ty = decl.get_type()?;
-    match ty {
+    };
+    let decl_type = db
+        .get_type_index()
+        .get_type_cache(&decl_id.clone().into())?;
+    match decl_type.as_type() {
         LuaType::Ref(_) | LuaType::Def(_) => return None,
         _ => {}
     }
@@ -93,7 +96,9 @@ fn generate_simple_global(db: &DbIndex, decl: &LuaDecl, doc: &mut Doc) -> Option
     doc.property = collect_property(db, semantic_decl);
 
     let name = decl.get_name();
-    let ty = decl.get_type().unwrap_or(&LuaType::Unknown);
+    let ty = db
+        .get_type_index()
+        .get_type_cache(&decl.get_id().clone().into())?;
     if ty.is_function() {
         let display = render_function_type(db, ty, &name, false);
         doc.display = Some(display);

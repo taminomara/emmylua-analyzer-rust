@@ -58,8 +58,8 @@ fn get_decl_type(db: &DbIndex, decl: &LuaDecl) -> InferResult {
         return infer_global_type(db, name);
     }
 
-    if let Some(typ) = decl.get_type() {
-        return Ok(typ.clone());
+    if let Some(type_cache) = db.get_type_index().get_type_cache(&decl.get_id().into()) {
+        return Ok(type_cache.as_type().clone());
     }
 
     if decl.is_param() {
@@ -76,7 +76,7 @@ fn infer_self(db: &DbIndex, cache: &mut LuaInferCache, name_expr: LuaNameExpr) -
         .get_decl_tree(&file_id)
         .ok_or(InferFailReason::None)?;
     let id = tree
-        .find_self_decl(db, name_expr.clone())
+        .find_self_decl(name_expr.clone())
         .ok_or(InferFailReason::None)?;
     match id {
         LuaDeclOrMemberId::Decl(decl_id) => {
@@ -104,17 +104,7 @@ fn infer_self(db: &DbIndex, cache: &mut LuaInferCache, name_expr: LuaNameExpr) -
 
             Ok(decl_type)
         }
-        LuaDeclOrMemberId::Member(member_id) => {
-            let member = db
-                .get_member_index()
-                .get_member(&member_id)
-                .ok_or(InferFailReason::None)?;
-            let typ = member.get_option_decl_type();
-            match typ {
-                Some(typ) => Ok(typ),
-                None => Err(InferFailReason::UnResolveMemberType(member.get_id())),
-            }
-        }
+        LuaDeclOrMemberId::Member(member_id) => find_decl_member_type(db, member_id),
     }
 }
 
@@ -154,17 +144,11 @@ pub fn infer_param(db: &DbIndex, decl: &LuaDecl) -> InferResult {
 }
 
 fn find_decl_member_type(db: &DbIndex, member_id: LuaMemberId) -> InferResult {
-    let member = db
+    let item = db
         .get_member_index()
-        .get_member(&member_id)
+        .get_member_item_by_member_id(member_id)
         .ok_or(InferFailReason::None)?;
-    let key = member.get_key();
-    let owner = member.get_owner();
-    let member_item = db
-        .get_member_index()
-        .get_member_item(&owner, key)
-        .ok_or(InferFailReason::None)?;
-    member_item.resolve_type(db)
+    item.resolve_type(db)
 }
 
 fn find_param_type_from_type(
@@ -233,35 +217,36 @@ fn find_param_type_from_type(
     None
 }
 
-fn infer_global_type(db: &DbIndex, name: &str) -> InferResult {
-    let decl_index = db.get_decl_index();
-    let decls = decl_index.get_global_decls_by_name(name);
-    if decls.len() == 1 {
-        let decl = decl_index
-            .get_decl(&decls[0])
-            .ok_or(InferFailReason::None)?;
-        return match decl.get_type() {
-            Some(typ) => Ok(typ.clone()),
-            None => Err(InferFailReason::UnResolveDeclType(decl.get_id())),
+pub fn infer_global_type(db: &DbIndex, name: &str) -> InferResult {
+    let decl_ids = db
+        .get_global_index()
+        .get_global_decl_ids(name)
+        .ok_or(InferFailReason::None)?;
+    if decl_ids.len() == 1 {
+        let id = decl_ids[0];
+        return match db.get_type_index().get_type_cache(&id.into()) {
+            Some(type_cache) => Ok(type_cache.as_type().clone()),
+            None => Err(InferFailReason::UnResolveDeclType(id)),
         };
     }
 
     let mut valid_type = LuaType::Unknown;
     let mut last_resolve_reason = InferFailReason::None;
-    for decl_id in decls {
-        let decl = decl_index.get_decl(&decl_id).ok_or(InferFailReason::None)?;
-        match decl.get_type() {
-            Some(typ) => {
+    for decl_id in decl_ids {
+        let decl_type_cache = db.get_type_index().get_type_cache(&decl_id.clone().into());
+        match decl_type_cache {
+            Some(type_cache) => {
+                let typ = type_cache.as_type();
                 if typ.is_def() || typ.is_ref() || typ.is_function() {
                     return Ok(typ.clone());
                 }
 
-                if typ.is_table() {
+                if type_cache.is_table() {
                     valid_type = typ.clone();
                 }
             }
             None => {
-                last_resolve_reason = InferFailReason::UnResolveDeclType(decl.get_id());
+                last_resolve_reason = InferFailReason::UnResolveDeclType(*decl_id);
             }
         }
     }

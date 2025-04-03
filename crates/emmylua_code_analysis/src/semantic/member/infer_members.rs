@@ -57,7 +57,11 @@ fn infer_normal_members(db: &DbIndex, member_owner: LuaMemberOwner) -> InferMemb
         members.push(LuaMemberInfo {
             property_owner_id: Some(LuaSemanticDeclId::Member(member.get_id())),
             key: member.get_key().clone(),
-            typ: member.get_decl_type(),
+            typ: db
+                .get_type_index()
+                .get_type_cache(&member.get_id().into())
+                .map(|t| t.as_type().clone())
+                .unwrap_or(LuaType::Unknown),
             feature: Some(member.get_feature()),
             overload_index: None,
         });
@@ -91,7 +95,11 @@ fn infer_custom_type_members(
             members.push(LuaMemberInfo {
                 property_owner_id: Some(LuaSemanticDeclId::Member(member.get_id())),
                 key: member.get_key().clone(),
-                typ: member.get_decl_type(),
+                typ: db
+                    .get_type_index()
+                    .get_type_cache(&member.get_id().into())
+                    .map(|t| t.as_type().clone())
+                    .unwrap_or(LuaType::Unknown),
                 feature: Some(member.get_feature()),
                 overload_index: None,
             });
@@ -220,17 +228,21 @@ fn infer_generic_members(
 
 fn infer_global_members(db: &DbIndex) -> InferMembersResult {
     let mut members = Vec::new();
-    let decl_index = db.get_decl_index();
-    let global_decls = decl_index.get_global_decls();
+    let global_decls = db.get_global_index().get_all_global_decl_ids();
     for decl_id in global_decls {
-        let decl = decl_index.get_decl(&decl_id)?;
-        members.push(LuaMemberInfo {
-            property_owner_id: Some(LuaSemanticDeclId::LuaDecl(decl_id)),
-            key: LuaMemberKey::Name(decl.get_name().to_string().into()),
-            typ: decl.get_type().cloned().unwrap_or(LuaType::Unknown),
-            feature: None,
-            overload_index: None,
-        });
+        if let Some(decl) = db.get_decl_index().get_decl(&decl_id) {
+            members.push(LuaMemberInfo {
+                property_owner_id: Some(LuaSemanticDeclId::LuaDecl(decl_id)),
+                key: LuaMemberKey::Name(decl.get_name().to_string().into()),
+                typ: db
+                    .get_type_index()
+                    .get_type_cache(&decl_id.into())
+                    .map(|t| t.as_type().clone())
+                    .unwrap_or(LuaType::Unknown),
+                feature: None,
+                overload_index: None,
+            });
+        }
     }
 
     Some(members)

@@ -1,9 +1,7 @@
 mod check_reason;
 mod infer_manager;
-mod merge_type;
 mod resolve;
 mod resolve_closure;
-mod migrate_member;
 
 use crate::{
     db_index::{DbIndex, LuaDeclId, LuaMemberId, LuaSignatureId},
@@ -15,7 +13,6 @@ use emmylua_parser::{
     LuaAssignStat, LuaCallExpr, LuaExpr, LuaFuncStat, LuaTableExpr, LuaTableField,
 };
 use infer_manager::InferCacheManager;
-pub use merge_type::{merge_type_owner_expr_type, set_owner_and_add_member};
 use resolve::{
     try_resolve_decl, try_resolve_iter_var, try_resolve_member, try_resolve_module,
     try_resolve_module_ref, try_resolve_return_point, try_resolve_table_field,

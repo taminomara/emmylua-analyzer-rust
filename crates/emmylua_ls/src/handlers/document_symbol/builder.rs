@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use emmylua_code_analysis::{
-    DbIndex, FileId, LuaDecl, LuaDeclId, LuaDeclarationTree, LuaDocument, LuaType,
+    DbIndex, FileId, LuaDecl, LuaDeclId, LuaDeclarationTree, LuaDocument, LuaType, LuaTypeOwner,
 };
 use emmylua_parser::{LuaAstNode, LuaChunk, LuaSyntaxId, LuaSyntaxNode, LuaSyntaxToken};
 use lsp_types::{DocumentSymbol, SymbolKind};
@@ -34,6 +34,19 @@ impl<'a> DocumentSymbolBuilder<'a> {
 
     pub fn get_decl(&self, id: &LuaDeclId) -> Option<&LuaDecl> {
         self.decl_tree.get_decl(id)
+    }
+
+    pub fn get_db(&self) -> &'a DbIndex {
+        self.db
+    }
+
+    pub fn get_type(&self, id: LuaTypeOwner) -> LuaType {
+        self.db
+            .get_type_index()
+            .get_type_cache(&id)
+            .map(|cache| cache.as_type())
+            .unwrap_or(&LuaType::Unknown)
+            .clone()
     }
 
     pub fn add_node_symbol(&mut self, node: LuaSyntaxNode, symbol: LuaSymbol) {

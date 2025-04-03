@@ -41,6 +41,11 @@ impl LuaGlobalIndex {
         let id = GlobalId::new(name);
         self.global_decl.get(&id)
     }
+
+    pub fn is_exist_global_decl(&self, name: &str) -> bool {
+        let id = GlobalId::new(name);
+        self.global_decl.contains_key(&id)
+    }
 }
 
 impl LuaIndex for LuaGlobalIndex {

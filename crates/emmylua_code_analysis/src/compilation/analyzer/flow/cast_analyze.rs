@@ -54,7 +54,7 @@ pub fn analyze_cast(
             }
         } else if let Some(doc_typ) = cast_op_type.get_type() {
             let key = InFiled::new(file_id, doc_typ.get_syntax_id());
-            let typ = match context.type_flow.get(&key) {
+            let typ = match context.cast_flow.get(&key) {
                 Some(t) => t.clone(),
                 None => continue,
             };

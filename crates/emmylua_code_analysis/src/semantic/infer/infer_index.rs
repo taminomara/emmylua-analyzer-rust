@@ -16,7 +16,7 @@ use crate::{
     InFiled, LuaFlowId, LuaInferCache, LuaInstanceType, LuaMemberOwner, LuaOperatorOwner, TypeOps,
 };
 
-use super::{infer_expr, InferFailReason, InferResult};
+use super::{infer_expr, infer_name::infer_global_type, InferFailReason, InferResult};
 
 pub fn infer_index_expr(
     db: &DbIndex,
@@ -753,19 +753,7 @@ fn infer_global_field_member(
         .get_name()
         .ok_or(InferFailReason::None)?
         .get_name_text();
-    let global_member = db
-        .get_decl_index()
-        .get_global_decl_id(&LuaMemberKey::Name(name.to_string().into()))
-        .ok_or(InferFailReason::None)?;
-
-    let decl = db
-        .get_decl_index()
-        .get_decl(&global_member)
-        .ok_or(InferFailReason::None)?;
-    match decl.get_type() {
-        Some(typ) => Ok(typ.clone()),
-        None => Err(InferFailReason::UnResolveDeclType(decl.get_id())),
-    }
+    infer_global_type(db, name)
 }
 
 fn infer_namespace_member(

@@ -1,7 +1,8 @@
 use crate::{
     check_type_compact,
     semantic::type_check::{check_general_type_compact, type_check_guard::TypeCheckGuard},
-    DbIndex, LuaMemberKey, LuaMemberOwner, LuaType, TypeCheckFailReason, TypeCheckResult,
+    DbIndex, LuaMemberKey, LuaMemberOwner, LuaType, LuaTypeCache, TypeCheckFailReason,
+    TypeCheckResult,
 };
 
 pub fn check_table_generic_type_compact(
@@ -131,7 +132,11 @@ fn check_table_generic_compact_member_owner(
             _ => LuaType::Any,
         };
 
-        let member_type = member.get_decl_type();
+        let member_type = db
+            .get_type_index()
+            .get_type_cache(&member.get_id().into())
+            .unwrap_or(&LuaTypeCache::InferType(LuaType::Unknown))
+            .as_type();
         if check_general_type_compact(db, source_key, &key_type, check_guard.next_level()?).is_err()
             || check_general_type_compact(db, source_value, &member_type, check_guard.next_level()?)
                 .is_err()

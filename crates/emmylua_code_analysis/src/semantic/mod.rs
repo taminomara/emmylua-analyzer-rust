@@ -37,7 +37,7 @@ use crate::{
     db_index::{DbIndex, LuaType},
     FileId,
 };
-use crate::{LuaFunctionType, LuaMemberKey};
+use crate::{LuaFunctionType, LuaMemberKey, LuaTypeOwner};
 pub use generic::{instantiate_type_generic, TypeSubstitutor};
 pub use infer::InferFailReason;
 pub(crate) use infer::{infer_call_expr_func, infer_expr};
@@ -247,6 +247,15 @@ impl<'a> SemanticModel<'a> {
 
     pub fn get_config(&self) -> &RefCell<LuaInferCache> {
         &self.infer_cache
+    }
+
+    pub fn get_type(&self, type_owner: LuaTypeOwner) -> LuaType {
+        self.db
+            .get_type_index()
+            .get_type_cache(&type_owner)
+            .map(|cache| cache.as_type())
+            .unwrap_or(&LuaType::Unknown)
+            .clone()
     }
 }
 

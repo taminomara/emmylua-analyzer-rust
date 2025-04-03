@@ -18,7 +18,8 @@ pub fn build_local_stat_symbol(
     for local_name in local_names {
         let decl_id = LuaDeclId::new(file_id, local_name.get_position());
         let decl = builder.get_decl(&decl_id)?;
-        let desc = builder.get_symbol_kind_and_detail(decl.get_type());
+        let typ = builder.get_type(decl_id.into());
+        let desc = builder.get_symbol_kind_and_detail(Some(&typ));
         let range = if simple_local {
             local_stat.get_range()
         } else {
@@ -51,8 +52,8 @@ pub fn build_assign_stat_symbol(
         } else {
             decl.get_range()
         };
-
-        let desc = builder.get_symbol_kind_and_detail(decl.get_type());
+        let typ = builder.get_type(decl_id.into());
+        let desc = builder.get_symbol_kind_and_detail(Some(&typ));
         let symbol = LuaSymbol::new(decl.get_name().to_string(), desc.1, desc.0, range);
 
         builder.add_node_symbol(var.syntax().clone(), symbol);
@@ -77,7 +78,8 @@ pub fn build_for_stat_symbol(
     let iter_token = for_stat.get_var_name()?;
     let decl_id = LuaDeclId::new(file_id, iter_token.get_position());
     let decl = builder.get_decl(&decl_id)?;
-    let desc = builder.get_symbol_kind_and_detail(decl.get_type());
+    let typ = builder.get_type(decl_id.into());
+    let desc = builder.get_symbol_kind_and_detail(Some(&typ));
     let symbol = LuaSymbol::new(
         decl.get_name().to_string(),
         desc.1,
@@ -107,7 +109,8 @@ pub fn build_for_range_stat_symbol(
     for var in vars {
         let decl_id = LuaDeclId::new(file_id, var.get_position());
         let decl = builder.get_decl(&decl_id)?;
-        let desc = builder.get_symbol_kind_and_detail(decl.get_type());
+        let typ = builder.get_type(decl_id.into());
+        let desc = builder.get_symbol_kind_and_detail(Some(&typ));
         let symbol = LuaSymbol::new(
             decl.get_name().to_string(),
             desc.1,
@@ -129,7 +132,8 @@ pub fn build_local_func_stat_symbol(
     let func_name = local_func.get_local_name()?;
     let decl_id = LuaDeclId::new(file_id, func_name.get_position());
     let decl = builder.get_decl(&decl_id)?;
-    let desc = builder.get_symbol_kind_and_detail(decl.get_type());
+    let typ = builder.get_type(decl_id.into());
+    let desc = builder.get_symbol_kind_and_detail(Some(&typ));
     let symbol = LuaSymbol::new(
         decl.get_name().to_string(),
         desc.1,

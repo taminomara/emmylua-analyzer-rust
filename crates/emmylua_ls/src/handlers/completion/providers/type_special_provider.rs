@@ -1,7 +1,7 @@
 use emmylua_code_analysis::{
-    InferGuard, LuaDeclLocation, LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner,
-    LuaMultiLineUnion, LuaSemanticDeclId, LuaType, LuaTypeDeclId, LuaUnionType, RenderLevel,
-    SemanticDeclLevel,
+    DbIndex, InferGuard, LuaDeclLocation, LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner,
+    LuaMultiLineUnion, LuaSemanticDeclId, LuaType, LuaTypeCache, LuaTypeDeclId, LuaUnionType,
+    RenderLevel, SemanticDeclLevel,
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaClosureExpr, LuaComment,
@@ -279,8 +279,9 @@ fn push_function_overloads_param(
         LuaSemanticDeclId::Member(member_id) => {
             let member = member_index.get_member(&member_id)?;
             let key = member.get_key().to_path();
-            let members = member_index.get_members(&member.get_owner())?;
-            let functions = filter_function_members(members, key);
+            let owner = member_index.get_current_owner(&member_id)?;
+            let members = member_index.get_members(owner)?;
+            let functions = filter_function_members(builder.semantic_model.get_db(), members, key);
             Some(functions)
         }
         LuaSemanticDeclId::LuaDecl(decl_id) => {
@@ -290,14 +291,24 @@ fn push_function_overloads_param(
                 .get_decl_index()
                 .get_decl(&decl_id)?;
 
-            let typ = decl.get_type()?;
+            let typ = builder
+                .semantic_model
+                .get_db()
+                .get_type_index()
+                .get_type_cache(&decl_id.into())
+                .map(|cache| cache.as_type().clone())
+                .unwrap_or(LuaType::Unknown);
             match typ {
                 LuaType::Signature(_) | LuaType::DocFunction(_) => Some(vec![typ.clone()]),
                 _ => {
                     let key = decl.get_name();
                     let type_id = LuaTypeDeclId::new(decl.get_name());
                     let members = member_index.get_members(&LuaMemberOwner::Type(type_id))?;
-                    let functions = filter_function_members(members, key.to_string());
+                    let functions = filter_function_members(
+                        builder.semantic_model.get_db(),
+                        members,
+                        key.to_string(),
+                    );
                     Some(functions)
                 }
             }
@@ -338,18 +349,25 @@ fn push_function_overloads_param(
     }
 
     /// 过滤出函数类型的成员
-    fn filter_function_members(members: Vec<&LuaMember>, key: String) -> Vec<LuaType> {
-        members
-            .into_iter()
-            .filter(|it| {
-                it.get_key().to_path() == key
-                    && matches!(
-                        it.get_decl_type(),
-                        LuaType::Signature(_) | LuaType::DocFunction(_)
-                    )
-            })
-            .map(|it| it.get_decl_type())
-            .collect()
+    fn filter_function_members(
+        db: &DbIndex,
+        members: Vec<&LuaMember>,
+        key: String,
+    ) -> Vec<LuaType> {
+        let mut result_members = vec![];
+        for member in members {
+            if member.get_key().to_path() == key {
+                let member_type = db
+                    .get_type_index()
+                    .get_type_cache(&member.get_id().into())
+                    .unwrap_or(&LuaTypeCache::InferType(LuaType::Unknown));
+                if let LuaType::Signature(_) | LuaType::DocFunction(_) = member_type.as_type() {
+                    result_members.push(member_type.as_type().clone());
+                }
+            }
+        }
+
+        result_members
     }
 
     /// 判断前面的参数是否匹配
@@ -467,7 +485,19 @@ fn add_enum_members_completion(
         .get_member_index()
         .get_members(&owner_id)?
         .iter()
-        .map(|it| (it.get_key().clone(), it.get_decl_type()))
+        .map(|it| {
+            (
+                it.get_key().clone(),
+                builder
+                    .semantic_model
+                    .get_db()
+                    .get_type_index()
+                    .get_type_cache(&it.get_id().into())
+                    .unwrap_or(&LuaTypeCache::InferType(LuaType::Unknown))
+                    .as_type()
+                    .clone(),
+            )
+        })
         .collect::<Vec<_>>();
     let file_id = builder.semantic_model.get_file_id();
     let is_same_file = locations.iter().all(|it| it.file_id == file_id);

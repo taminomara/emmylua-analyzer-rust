@@ -1,8 +1,8 @@
 use std::path::Path;
 
 use emmylua_code_analysis::{
-    humanize_type, DbIndex, LuaMemberKey, LuaMemberOwner, LuaSemanticDeclId, LuaTypeDecl,
-    RenderLevel,
+    humanize_type, DbIndex, LuaMemberKey, LuaMemberOwner, LuaSemanticDeclId, LuaType, LuaTypeCache,
+    LuaTypeDecl, RenderLevel,
 };
 use emmylua_parser::VisibilityKind;
 use tera::{Context, Tera};
@@ -85,7 +85,11 @@ fn generate_class_type_markdown(
     let mut field_members: Vec<MemberDoc> = Vec::new();
     if let Some(members) = members {
         for member in members {
-            let member_typ = member.get_decl_type();
+            let member_typ = db
+                .get_type_index()
+                .get_type_cache(&member.get_id().into())
+                .unwrap_or(&LuaTypeCache::InferType(LuaType::Unknown))
+                .as_type();
             let member_id = member.get_id();
             let member_property_id = LuaSemanticDeclId::Member(member_id.clone());
             let member_property = db.get_property_index().get_property(&member_property_id);
@@ -192,7 +196,11 @@ fn generate_enum_type_markdown(
     let mut field_members: Vec<MemberDoc> = Vec::new();
     if let Some(members) = members {
         for member in members {
-            let member_typ = member.get_decl_type();
+            let member_typ = db
+                .get_type_index()
+                .get_type_cache(&member.get_id().into())
+                .unwrap_or(&LuaTypeCache::InferType(LuaType::Unknown))
+                .as_type();
             let member_id = member.get_id();
             let member_property_id = LuaSemanticDeclId::Member(member_id.clone());
             let member_property = db.get_property_index().get_property(&member_property_id);

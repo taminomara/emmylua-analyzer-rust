@@ -29,11 +29,8 @@ fn is_member_reference_to(
     node_member_id: LuaMemberId,
     member_id: LuaMemberId,
 ) -> Option<bool> {
-    let node_owner = db
-        .get_member_index()
-        .get_member(&node_member_id)?
-        .get_owner();
-    let owner = db.get_member_index().get_member(&member_id)?.get_owner();
+    let node_owner = db.get_member_index().get_current_owner(&node_member_id)?;
+    let owner = db.get_member_index().get_current_owner(&member_id)?;
 
     Some(node_owner == owner)
 }

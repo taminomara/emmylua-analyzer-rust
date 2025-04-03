@@ -99,8 +99,10 @@ fn hover_doc_function_type(
     let full_name = if let Some(owner_member) = owner_member {
         let global_name = builder.infer_prefix_global_name(owner_member);
         let mut name = String::new();
-        let parent_owner = owner_member.get_owner();
-        if let LuaMemberOwner::Type(ty) = &parent_owner.clone() {
+        let parent_owner = db
+            .get_member_index()
+            .get_current_owner(&owner_member.get_id());
+        if let Some(LuaMemberOwner::Type(ty)) = parent_owner {
             // 如果是全局定义, 则使用定义时的名称
             if let Some(global_name) = global_name {
                 name.push_str(global_name);
@@ -176,7 +178,10 @@ fn hover_signature_type(
     let full_name = if let Some(owner_member) = owner_member {
         let global_name = builder.infer_prefix_global_name(owner_member);
         let mut name = String::new();
-        if let LuaMemberOwner::Type(ty) = &owner_member.get_owner() {
+        let parent_owner = db
+            .get_member_index()
+            .get_current_owner(&owner_member.get_id());
+        if let Some(LuaMemberOwner::Type(ty)) = parent_owner {
             // 如果是全局定义, 则使用定义时的名称
             if let Some(global_name) = global_name {
                 name.push_str(global_name);

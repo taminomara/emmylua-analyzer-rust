@@ -282,7 +282,7 @@ pub fn analyze_cast(analyzer: &mut DocAnalyzer, tag: LuaDocTagCast) -> Option<()
     for op in tag.get_op_types() {
         if let Some(doc_type) = op.get_type() {
             let typ = infer_type(analyzer, doc_type.clone());
-            analyzer.context.type_flow.insert(
+            analyzer.context.cast_flow.insert(
                 InFiled {
                     file_id: analyzer.file_id,
                     value: doc_type.get_syntax_id(),

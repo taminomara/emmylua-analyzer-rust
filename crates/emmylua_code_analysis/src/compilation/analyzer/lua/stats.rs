@@ -4,9 +4,9 @@ use emmylua_parser::{
 };
 
 use crate::{
-    compilation::analyzer::unresolve::{
-        merge_type_owner_expr_type, set_owner_and_add_member, UnResolveDecl, UnResolveIterVar,
-        UnResolveMember,
+    compilation::analyzer::{
+        bind_type::{add_member, bind_type},
+        unresolve::{UnResolveDecl, UnResolveIterVar, UnResolveMember},
     },
     db_index::{LuaDeclId, LuaMemberId, LuaMemberOwner, LuaOperatorMetaMethod, LuaType},
     InferFailReason, LuaTypeCache, LuaTypeOwner,
@@ -63,11 +63,10 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
                     }
                 }
 
-                merge_type_owner_expr_type(
+                bind_type(
                     analyzer.db,
-                    &mut analyzer.infer_cache,
                     decl_id.into(),
-                    expr_type,
+                    LuaTypeCache::InferType(expr_type),
                 );
             }
             Err(InferFailReason::None) => {
@@ -105,11 +104,10 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
                             let decl_id = LuaDeclId::new(analyzer.file_id, position);
                             let ret_type = multi.get_type(i - expr_count + 1);
                             if let Some(ty) = ret_type {
-                                merge_type_owner_expr_type(
+                                bind_type(
                                     analyzer.db,
-                                    &mut analyzer.infer_cache,
                                     decl_id.into(),
-                                    ty.clone(),
+                                    LuaTypeCache::InferType(ty.clone()),
                                 );
                             } else {
                                 analyzer.db.get_type_index_mut().bind_type(
@@ -223,7 +221,7 @@ fn set_index_expr_owner(analyzer: &mut LuaAnalyzer, var_expr: LuaVarExpr) -> Opt
                 }
             };
 
-            set_owner_and_add_member(analyzer.db, member_owner, member_id);
+            add_member(analyzer.db, member_owner, member_id);
         }
         Err(InferFailReason::None) => {}
         Err(reason) => {
@@ -356,12 +354,7 @@ fn merge_type_owner_and_expr_type(
         expr_type = multi.get_type(idx).unwrap_or(&LuaType::Nil).clone();
     }
 
-    merge_type_owner_expr_type(
-        analyzer.db,
-        &mut analyzer.infer_cache,
-        type_owner,
-        expr_type,
-    );
+    bind_type(analyzer.db, type_owner, LuaTypeCache::InferType(expr_type));
 
     Some(())
 }
@@ -558,11 +551,10 @@ pub fn analyze_table_field(analyzer: &mut LuaAnalyzer, field: LuaTableField) -> 
         }
     };
 
-    merge_type_owner_expr_type(
+    bind_type(
         analyzer.db,
-        &mut analyzer.infer_cache,
         member_id.into(),
-        value_type,
+        LuaTypeCache::InferType(value_type),
     );
 
     Some(())

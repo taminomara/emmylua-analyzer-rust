@@ -5,7 +5,7 @@ use emmylua_parser::{
 
 use crate::{
     db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey},
-    LuaDeclExtra, LuaMemberFeature, LuaMemberId, LuaMemberOwner, LuaSemanticDeclId, LuaSignatureId,
+    LuaDeclExtra, LuaMemberFeature, LuaMemberId, LuaSemanticDeclId, LuaSignatureId,
 };
 
 use super::{members::find_index_owner, DeclAnalyzer};

@@ -1,5 +1,4 @@
 use emmylua_parser::{LuaAstNode, LuaExpr, LuaIndexExpr, PathTrait};
-use internment::ArcIntern;
 use smol_str::SmolStr;
 
 use crate::{GlobalId, LuaMemberOwner};

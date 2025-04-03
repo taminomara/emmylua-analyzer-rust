@@ -3,7 +3,10 @@ use std::ops::Deref;
 use emmylua_parser::{LuaAstNode, LuaExpr, LuaLocalStat, LuaTableExpr};
 
 use crate::{
-    compilation::analyzer::lua::analyze_return_point,
+    compilation::analyzer::{
+        bind_type::{add_member, bind_type},
+        lua::analyze_return_point,
+    },
     db_index::{DbIndex, LuaMemberOwner, LuaType},
     semantic::{infer_expr, LuaInferCache},
     InFiled, InferFailReason, LuaDeclId, LuaMember, LuaMemberId, LuaMemberKey, LuaSemanticDeclId,
@@ -11,8 +14,8 @@ use crate::{
 };
 
 use super::{
-    check_reason::check_reach_reason, merge_type_owner_expr_type, UnResolveDecl, UnResolveIterVar,
-    UnResolveMember, UnResolveModule, UnResolveModuleRef, UnResolveReturn, UnResolveTableField,
+    check_reason::check_reach_reason, UnResolveDecl, UnResolveIterVar, UnResolveMember,
+    UnResolveModule, UnResolveModuleRef, UnResolveReturn, UnResolveTableField,
 };
 
 pub fn try_resolve_decl(
@@ -41,7 +44,7 @@ pub fn try_resolve_decl(
         _ => expr_type,
     };
 
-    merge_type_owner_expr_type(db, cache, decl_id.into(), expr_type);
+    bind_type(db, decl_id.into(), LuaTypeCache::InferType(expr_type));
     Some(true)
 }
 
@@ -79,13 +82,7 @@ pub fn try_resolve_member(
             }
         };
         let member_id = unresolve_member.member_id.clone();
-        db.get_member_index_mut().set_member_owner(
-            member_owner.clone(),
-            cache.get_file_id(),
-            member_id,
-        );
-        db.get_member_index_mut()
-            .add_member_to_owner(member_owner, member_id);
+        add_member(db, member_owner, member_id);
         unresolve_member.prefix = None;
     }
 
@@ -107,7 +104,7 @@ pub fn try_resolve_member(
         };
 
         let member_id = unresolve_member.member_id;
-        merge_type_owner_expr_type(db, cache, member_id.into(), expr_type);
+        bind_type(db, member_id.into(), LuaTypeCache::InferType(expr_type));
     }
     Some(true)
 }
@@ -166,7 +163,12 @@ pub fn try_resolve_table_field(
     })?;
 
     let member_id = LuaMemberId::new(field.get_syntax_id(), file_id);
-    let member = LuaMember::new(member_id, member_key, unresolve_table_field.decl_feature, None);
+    let member = LuaMember::new(
+        member_id,
+        member_key,
+        unresolve_table_field.decl_feature,
+        None,
+    );
     db.get_member_index_mut().add_member(owner_id, member);
     db.get_type_index_mut().bind_type(
         member_id.clone().into(),
@@ -275,7 +277,11 @@ pub fn try_resolve_iter_var(
         .get_type(iter_var.ret_idx)
         .unwrap_or(&LuaType::Nil);
     let decl_id = iter_var.decl_id;
-    merge_type_owner_expr_type(db, cache, decl_id.into(), iter_type.clone());
+    bind_type(
+        db,
+        decl_id.into(),
+        LuaTypeCache::InferType(iter_type.clone()),
+    );
     Some(true)
 }
 

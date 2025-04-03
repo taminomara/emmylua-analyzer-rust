@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use emmylua_parser::{LuaAstNode, LuaTableExpr};
 
-use crate::{DiagnosticCode, LuaMemberOwner, LuaType, LuaTypeDeclId, SemanticModel};
+use crate::{DiagnosticCode, LuaMemberOwner, LuaType, LuaTypeCache, LuaTypeDeclId, SemanticModel};
 
 use super::{humanize_lint_type, Checker, DiagnosticContext};
 use itertools::Itertools;
@@ -91,12 +91,14 @@ fn get_required_fields(
     for super_type in types {
         match super_type {
             LuaType::Ref(type_decl_id) => process_type_decl_id(
+                &context,
                 member_index,
                 &mut required_fields,
                 &mut optional_type,
                 type_decl_id.clone(),
             ),
             LuaType::Generic(generic_type) => process_type_decl_id(
+                &context,
                 member_index,
                 &mut required_fields,
                 &mut optional_type,
@@ -121,6 +123,7 @@ fn get_required_fields(
     }
 
     fn process_type_decl_id(
+        context: &DiagnosticContext,
         member_index: &crate::LuaMemberIndex,
         required_fields: &mut HashSet<String>,
         optional_type: &mut HashSet<String>,
@@ -129,7 +132,13 @@ fn get_required_fields(
         let members = member_index.get_members(&LuaMemberOwner::Type(type_decl_id))?;
         for member in members {
             let name = member.get_key().to_path();
-            let decl_type = member.get_decl_type();
+            let decl_type = context
+                .db
+                .get_type_index()
+                .get_type_cache(&member.get_id().into())
+                .unwrap_or(&LuaTypeCache::InferType(LuaType::Unknown))
+                .as_type()
+                .clone();
             record_required_fields(required_fields, optional_type, name, decl_type);
         }
 
