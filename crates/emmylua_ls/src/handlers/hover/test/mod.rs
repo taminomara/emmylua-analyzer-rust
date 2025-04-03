@@ -1,6 +1,7 @@
 use emmylua_code_analysis::{EmmyLuaAnalysis, FileId, VirtualUrlGenerator};
 use lsp_types::{Hover, HoverContents, MarkupContent, Position};
 
+mod hover_function_test;
 mod hover_test;
 use super::hover;
 
@@ -62,30 +63,29 @@ impl HoverVirtualWorkspace {
 
     /// 处理文件内容
     fn handle_file_content(content: &str) -> Option<(String, Position)> {
-        let mut content = content.to_string();
-        let cursor_pos = content.find("<??>");
-        if let Some(cursor_pos) = cursor_pos {
-            // 确保只有一个 <??> 标记
-            if content.matches("<??>").count() > 1 {
-                return None;
-            }
-
-            let mut line = 0;
-            let mut column = 0;
-            for (i, c) in content.chars().take(cursor_pos).enumerate() {
-                if c == '\n' {
-                    line += 1;
-                    column = 0;
-                } else {
-                    column += 1;
-                }
-            }
-
-            content = content.replace("<??>", "");
-
-            return Some((content, Position::new(line as u32, column as u32)));
+        let content = content.to_string();
+        let cursor_byte_pos = content.find("<??>")?;
+        if content.matches("<??>").count() > 1 {
+            return None;
         }
-        None
+
+        let mut line = 0;
+        let mut column = 0;
+
+        for (byte_pos, c) in content.char_indices() {
+            if byte_pos >= cursor_byte_pos {
+                break;
+            }
+            if c == '\n' {
+                line += 1;
+                column = 0;
+            } else {
+                column += 1;
+            }
+        }
+
+        let new_content = content.replace("<??>", "");
+        Some((new_content, Position::new(line as u32, column as u32)))
     }
 
     pub fn check_hover(&mut self, block_str: &str, expect: VirtualHoverResult) -> bool {
