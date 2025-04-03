@@ -154,8 +154,7 @@ fn build_decl_hover(
     } else {
         let decl_hover_type =
             get_hover_type(builder, builder.semantic_model).unwrap_or(typ.clone());
-        let type_humanize_text =
-            hover_type(builder, &decl_hover_type, Some(RenderLevel::Detailed)).unwrap_or_default();
+        let type_humanize_text = hover_type(builder, &decl_hover_type, Some(RenderLevel::Detailed));
         let prefix = if decl.is_local() {
             "local "
         } else {
@@ -255,8 +254,7 @@ fn build_member_hover(
     } else {
         let member_hover_type =
             get_hover_type(builder, builder.semantic_model).unwrap_or(typ.clone());
-        let type_humanize_text =
-            hover_type(builder, &member_hover_type, Some(RenderLevel::Simple)).unwrap_or_default();
+        let type_humanize_text = hover_type(builder, &member_hover_type, Some(RenderLevel::Simple));
         builder.set_type_description(format!("(field) {}: {}", member_name, type_humanize_text));
         builder.set_location_path(Some(&member));
     }

@@ -84,4 +84,23 @@ mod tests {
             },
         ));
     }
+
+    #[test]
+    fn test_hover_nil() {
+        let mut ws = HoverVirtualWorkspace::new();
+        assert!(ws.check_hover(
+            r#"
+                ---@class A
+                ---@field a? number
+
+                ---@type A
+                local a
+
+                local d = a.<??>a
+            "#,
+            VirtualHoverResult {
+                value: "\n```lua\n(field) a: number?\n```\n\n---\n".to_string(),
+            },
+        ));
+    }
 }
