@@ -24,16 +24,20 @@ fn add_global_variable_symbols(
     }
 
     let db = compilation.get_db();
-    let decl_index = db.get_decl_index();
-    let global_decl_id = decl_index.get_global_decls();
-    for decl_id in global_decl_id {
-        let decl = decl_index.get_decl(&decl_id)?;
+    let global_index = db.get_global_index();
+    let global_decl_ids = global_index.get_all_global_decl_ids();
+    for decl_id in global_decl_ids {
+        let decl = db.get_decl_index().get_decl(&decl_id)?;
         if cancel_token.is_cancelled() {
             return None;
         }
 
         if decl.get_name().contains(query) {
-            let typ = decl.get_type().unwrap_or(&LuaType::Unknown);
+            let typ = db
+                .get_type_index()
+                .get_type_cache(&decl_id.clone().into())
+                .map(|cache| cache.as_type())
+                .unwrap_or(&LuaType::Unknown);
             let property_owner_id = LuaSemanticDeclId::LuaDecl(decl_id);
             let document = db.get_vfs().get_document(&decl.get_file_id())?;
             let location = document.to_lsp_location(decl.get_range())?;

@@ -52,7 +52,7 @@ fn check_visibility_by_visibility(
 ) -> Option<bool> {
     let member_owner = match property_owner {
         LuaSemanticDeclId::Member(member_id) => {
-            db.get_member_index().get_member(&member_id)?.get_owner()
+            db.get_member_index().get_current_owner(&member_id)?
         }
         _ => return Some(true),
     };

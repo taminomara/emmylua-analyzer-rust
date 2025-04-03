@@ -2,7 +2,7 @@ use emmylua_parser::LuaAstNode;
 
 use crate::{
     infer_expr, DbIndex, FileId, InFiled, InferFailReason, LuaDeclExtra, LuaDeclId,
-    LuaDocParamInfo, LuaDocReturnInfo, LuaInferCache, LuaSemanticDeclId, LuaType,
+    LuaDocParamInfo, LuaDocReturnInfo, LuaInferCache, LuaSemanticDeclId, LuaType, LuaTypeCache,
     SignatureReturnStatus,
 };
 
@@ -23,12 +23,16 @@ pub fn check_reach_reason(
                 return Some(true);
             }
 
-            Some(decl.get_type().is_some())
+            Some(
+                db.get_type_index()
+                    .get_type_cache(&decl_id.clone().into())
+                    .is_some(),
+            )
         }
         InferFailReason::UnResolveMemberType(member_id) => {
             let member = db.get_member_index().get_member(member_id)?;
             let key = member.get_key();
-            let owner = member.get_owner();
+            let owner = db.get_member_index().get_current_owner(member_id)?;
             let member_item = db.get_member_index().get_member_item(&owner, key)?;
             Some(member_item.resolve_type(db).is_ok())
         }
@@ -87,23 +91,22 @@ pub fn resolve_as_any(
                 return set_param_decl_type(db, decl_id, LuaType::Any);
             }
 
-            if decl.get_type().is_none() {
-                decl.set_decl_type(LuaType::Any);
-            }
+            db.get_type_index_mut().bind_type(
+                decl_id.clone().into(),
+                LuaTypeCache::InferType(LuaType::Any),
+            );
         }
         InferFailReason::UnResolveMemberType(member_id) => {
             let member = db.get_member_index().get_member(member_id)?;
             let key = member.get_key();
-            let owner = member.get_owner();
+            let owner = db.get_member_index().get_current_owner(&member_id)?;
             let member_item = db.get_member_index().get_member_item(&owner, key)?;
             let opt_type = member_item.resolve_type(db).ok();
             if opt_type.is_none() {
                 let semantic_member_id = member_item.resolve_semantic_decl(db)?;
                 if let LuaSemanticDeclId::Member(member_id) = semantic_member_id {
-                    let member = db.get_member_index_mut().get_member_mut(&member_id)?;
-                    if member.get_option_decl_type().is_none() {
-                        member.set_decl_type(LuaType::Any);
-                    }
+                    db.get_type_index_mut()
+                        .bind_type(member_id.into(), LuaTypeCache::InferType(LuaType::Any));
                 }
             }
         }

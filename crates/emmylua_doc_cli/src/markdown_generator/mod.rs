@@ -66,8 +66,8 @@ pub fn generate_markdown(
         generate_module_markdown(db, &tl, module, &module_out, &mut mkdocs_index);
     }
 
-    let decl_index = db.get_decl_index();
-    let globals = decl_index.get_global_decls();
+    let global_index = db.get_global_index();
+    let globals = global_index.get_all_global_decl_ids();
     for global_decl_id in globals {
         generate_global_markdown(db, &tl, &global_decl_id, &global_out, &mut mkdocs_index);
     }

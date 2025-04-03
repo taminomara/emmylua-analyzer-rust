@@ -48,8 +48,8 @@ mod test {
         );
 
         let ty = ws.expr_ty("A");
-        let expected = ws.ty("Object | T");
-        assert_eq!(ty, expected);
+        let type_desc = ws.humanize_type(ty);
+        assert_eq!(type_desc, "T");
     }
 
     #[test]

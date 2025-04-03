@@ -1,6 +1,5 @@
 mod check_reason;
 mod infer_manager;
-mod merge_type;
 mod resolve;
 mod resolve_closure;
 
@@ -14,7 +13,6 @@ use emmylua_parser::{
     LuaAssignStat, LuaCallExpr, LuaExpr, LuaFuncStat, LuaTableExpr, LuaTableField,
 };
 use infer_manager::InferCacheManager;
-pub use merge_type::{merge_decl_expr_type, merge_member_type};
 use resolve::{
     try_resolve_decl, try_resolve_iter_var, try_resolve_member, try_resolve_module,
     try_resolve_module_ref, try_resolve_return_point, try_resolve_table_field,

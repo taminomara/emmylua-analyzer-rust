@@ -3,18 +3,20 @@ mod test;
 mod type_assert;
 mod type_decl;
 mod type_ops;
+mod type_owner;
 mod types;
 
 use super::traits::LuaIndex;
 use crate::{FileId, InFiled};
 use emmylua_parser::LuaSyntaxId;
 pub use humanize_type::{humanize_type, RenderLevel};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 pub use type_assert::TypeAssertion;
 pub use type_decl::{
     LuaDeclLocation, LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId,
 };
 pub use type_ops::TypeOps;
+pub use type_owner::{LuaTypeCache, LuaTypeOwner};
 pub use types::*;
 
 #[derive(Debug)]
@@ -26,6 +28,8 @@ pub struct LuaTypeIndex {
     generic_params: HashMap<LuaTypeDeclId, Vec<(String, Option<LuaType>)>>,
     supers: HashMap<LuaTypeDeclId, Vec<InFiled<LuaType>>>,
     as_force_type: HashMap<InFiled<LuaSyntaxId>, LuaType>,
+    types: HashMap<LuaTypeOwner, LuaTypeCache>,
+    in_filed_type_owner: HashMap<FileId, HashSet<LuaTypeOwner>>,
 }
 
 impl LuaTypeIndex {
@@ -38,6 +42,8 @@ impl LuaTypeIndex {
             generic_params: HashMap::new(),
             supers: HashMap::new(),
             as_force_type: HashMap::new(),
+            types: HashMap::new(),
+            in_filed_type_owner: HashMap::new(),
         }
     }
 
@@ -206,6 +212,21 @@ impl LuaTypeIndex {
     pub fn get_as_force_type(&self, syntax_id: &InFiled<LuaSyntaxId>) -> Option<&LuaType> {
         self.as_force_type.get(syntax_id)
     }
+
+    pub fn bind_type(&mut self, owner: LuaTypeOwner, cache: LuaTypeCache) {
+        if self.types.contains_key(&owner) {
+            return;
+        }
+        self.types.insert(owner.clone(), cache);
+        self.in_filed_type_owner
+            .entry(owner.get_file_id())
+            .or_insert_with(HashSet::new)
+            .insert(owner);
+    }
+
+    pub fn get_type_cache(&self, owner: &LuaTypeOwner) -> Option<&LuaTypeCache> {
+        self.types.get(owner)
+    }
 }
 
 impl LuaIndex for LuaTypeIndex {
@@ -238,6 +259,11 @@ impl LuaIndex for LuaTypeIndex {
         }
 
         self.as_force_type.retain(|id, _| id.file_id != file_id);
+        if let Some(type_owners) = self.in_filed_type_owner.remove(&file_id) {
+            for type_owner in type_owners {
+                self.types.remove(&type_owner);
+            }
+        }
     }
 
     fn clear(&mut self) {
@@ -248,5 +274,7 @@ impl LuaIndex for LuaTypeIndex {
         self.generic_params.clear();
         self.supers.clear();
         self.as_force_type.clear();
+        self.types.clear();
+        self.in_filed_type_owner.clear();
     }
 }

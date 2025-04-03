@@ -4,14 +4,15 @@ use emmylua_parser::{
 };
 
 use crate::{
-    compilation::analyzer::unresolve::{
-        merge_decl_expr_type, merge_member_type, UnResolveDecl, UnResolveIterVar, UnResolveMember,
+    compilation::analyzer::{
+        bind_type::{add_member, bind_type},
+        unresolve::{UnResolveDecl, UnResolveIterVar, UnResolveMember},
     },
     db_index::{LuaDeclId, LuaMemberId, LuaMemberOwner, LuaOperatorMetaMethod, LuaType},
-    InferFailReason,
+    InferFailReason, LuaTypeCache, LuaTypeOwner,
 };
 
-use super::{set_owner_and_add_member, LuaAnalyzer};
+use super::LuaAnalyzer;
 
 pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) -> Option<()> {
     let name_list: Vec<_> = local_stat.get_local_name_list().collect();
@@ -22,10 +23,10 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
         for local_name in name_list {
             let position = local_name.get_position();
             let decl_id = LuaDeclId::new(analyzer.file_id, position);
-            let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-            if decl.get_type().is_none() {
-                decl.set_decl_type(LuaType::Nil);
-            }
+            analyzer
+                .db
+                .get_type_index_mut()
+                .bind_type(decl_id.into(), LuaTypeCache::InferType(LuaType::Nil));
         }
 
         return Some(());
@@ -62,14 +63,18 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
                     }
                 }
 
-                merge_decl_expr_type(analyzer.db, &mut analyzer.infer_cache, decl_id, expr_type);
+                bind_type(
+                    analyzer.db,
+                    decl_id.into(),
+                    LuaTypeCache::InferType(expr_type),
+                );
             }
             Err(InferFailReason::None) => {
                 let decl_id = LuaDeclId::new(analyzer.file_id, position);
-                let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-                if decl.get_type().is_none() {
-                    decl.set_decl_type(LuaType::Unknown);
-                }
+                analyzer
+                    .db
+                    .get_type_index_mut()
+                    .bind_type(decl_id.into(), LuaTypeCache::InferType(LuaType::Nil));
             }
             Err(reason) => {
                 let decl_id = LuaDeclId::new(analyzer.file_id, position);
@@ -97,17 +102,18 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
                             let name = name_list.get(i)?;
                             let position = name.get_position();
                             let decl_id = LuaDeclId::new(analyzer.file_id, position);
-                            let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
                             let ret_type = multi.get_type(i - expr_count + 1);
                             if let Some(ty) = ret_type {
-                                merge_decl_expr_type(
+                                bind_type(
                                     analyzer.db,
-                                    &mut analyzer.infer_cache,
-                                    decl_id,
-                                    ty.clone(),
+                                    decl_id.into(),
+                                    LuaTypeCache::InferType(ty.clone()),
                                 );
                             } else {
-                                decl.set_decl_type(LuaType::Unknown);
+                                analyzer.db.get_type_index_mut().bind_type(
+                                    decl_id.into(),
+                                    LuaTypeCache::InferType(LuaType::Unknown),
+                                );
                             }
                         }
                         return Some(());
@@ -136,14 +142,10 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
             let name = name_list.get(i)?;
             let position = name.get_position();
             let decl_id = LuaDeclId::new(analyzer.file_id, position);
-            let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-            if decl.get_type().is_none() {
-                if expr_count == 0 {
-                    decl.set_decl_type(LuaType::Unknown);
-                } else {
-                    decl.set_decl_type(LuaType::Nil);
-                }
-            }
+            analyzer
+                .db
+                .get_type_index_mut()
+                .bind_type(decl_id.into(), LuaTypeCache::InferType(LuaType::Nil));
         }
     }
 
@@ -164,19 +166,13 @@ fn call_expr_has_effect_table_arg(expr: &LuaExpr) -> Option<()> {
     None
 }
 
-#[derive(Debug, Clone)]
-enum TypeOwner {
-    Decl(LuaDeclId),
-    Member(LuaMemberId),
-}
-
-fn get_var_owner(analyzer: &mut LuaAnalyzer, var: LuaVarExpr) -> TypeOwner {
+fn get_var_owner(analyzer: &mut LuaAnalyzer, var: LuaVarExpr) -> LuaTypeOwner {
     let file_id = analyzer.file_id;
     match var {
         LuaVarExpr::NameExpr(var_name) => {
             let position = var_name.get_position();
             let decl_id = LuaDeclId::new(file_id, position);
-            TypeOwner::Decl(decl_id)
+            LuaTypeOwner::Decl(decl_id)
         }
         LuaVarExpr::IndexExpr(index_expr) => {
             let maybe_decl_id = LuaDeclId::new(file_id, index_expr.get_position());
@@ -186,11 +182,11 @@ fn get_var_owner(analyzer: &mut LuaAnalyzer, var: LuaVarExpr) -> TypeOwner {
                 .get_decl(&maybe_decl_id)
                 .is_some()
             {
-                return TypeOwner::Decl(maybe_decl_id);
+                return LuaTypeOwner::Decl(maybe_decl_id);
             }
 
             let member_id = LuaMemberId::new(index_expr.get_syntax_id(), file_id);
-            TypeOwner::Member(member_id)
+            LuaTypeOwner::Member(member_id)
         }
     }
 }
@@ -225,7 +221,7 @@ fn set_index_expr_owner(analyzer: &mut LuaAnalyzer, var_expr: LuaVarExpr) -> Opt
                 }
             };
 
-            set_owner_and_add_member(analyzer.db, member_owner, member_id);
+            add_member(analyzer.db, member_owner, member_id);
         }
         Err(InferFailReason::None) => {}
         Err(reason) => {
@@ -275,22 +271,18 @@ pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignSta
             Err(InferFailReason::None) => LuaType::Unknown,
             Err(reason) => {
                 match type_owner {
-                    TypeOwner::Decl(decl_id) => {
-                        let decl = analyzer.db.get_decl_index().get_decl(&decl_id)?;
-                        let decl_type = decl.get_type();
-                        if decl_type.is_none() {
-                            let unresolve_decl = UnResolveDecl {
-                                file_id: analyzer.file_id,
-                                decl_id,
-                                expr: expr.clone(),
-                                ret_idx: 0,
-                                reason,
-                            };
+                    LuaTypeOwner::Decl(decl_id) => {
+                        let unresolve_decl = UnResolveDecl {
+                            file_id: analyzer.file_id,
+                            decl_id,
+                            expr: expr.clone(),
+                            ret_idx: 0,
+                            reason,
+                        };
 
-                            analyzer.add_unresolved(unresolve_decl.into());
-                        }
+                        analyzer.add_unresolved(unresolve_decl.into());
                     }
-                    TypeOwner::Member(member_id) => {
+                    LuaTypeOwner::Member(member_id) => {
                         let unresolve_member = UnResolveMember {
                             file_id: analyzer.file_id,
                             member_id,
@@ -334,7 +326,7 @@ pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignSta
                         let var = var_list.get(i)?;
                         let type_owner = get_var_owner(analyzer, var.clone());
                         set_index_expr_owner(analyzer, var.clone());
-                        merge_type_owner_and_expr(
+                        merge_type_owner_and_unresolve_expr(
                             analyzer,
                             type_owner,
                             last_expr.clone(),
@@ -353,7 +345,7 @@ pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignSta
 
 fn merge_type_owner_and_expr_type(
     analyzer: &mut LuaAnalyzer,
-    type_owner: TypeOwner,
+    type_owner: LuaTypeOwner,
     expr_type: &LuaType,
     idx: usize,
 ) -> Option<()> {
@@ -362,55 +354,30 @@ fn merge_type_owner_and_expr_type(
         expr_type = multi.get_type(idx).unwrap_or(&LuaType::Nil).clone();
     }
 
-    match type_owner {
-        TypeOwner::Decl(decl_id) => {
-            let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-            let decl_type = decl.get_type();
-            if decl_type.is_none() {
-                decl.set_decl_type(expr_type);
-            } else {
-                merge_decl_expr_type(analyzer.db, &mut analyzer.infer_cache, decl_id, expr_type);
-            }
-        }
-        TypeOwner::Member(member_id) => {
-            let member = analyzer
-                .db
-                .get_member_index_mut()
-                .get_member_mut(&member_id)?;
-            if member.get_option_decl_type().is_none() {
-                member.set_decl_type(expr_type);
-            } else {
-                merge_member_type(analyzer.db, &mut analyzer.infer_cache, member_id, expr_type);
-            }
-        }
-    }
+    bind_type(analyzer.db, type_owner, LuaTypeCache::InferType(expr_type));
 
     Some(())
 }
 
-fn merge_type_owner_and_expr(
+fn merge_type_owner_and_unresolve_expr(
     analyzer: &mut LuaAnalyzer,
-    type_owner: TypeOwner,
+    type_owner: LuaTypeOwner,
     expr: LuaExpr,
     idx: usize,
 ) -> Option<()> {
     match type_owner {
-        TypeOwner::Decl(decl_id) => {
-            let decl = analyzer.db.get_decl_index().get_decl(&decl_id)?;
-            let decl_type = decl.get_type();
-            if decl_type.is_none() {
-                let unresolve_decl = UnResolveDecl {
-                    file_id: analyzer.file_id,
-                    decl_id,
-                    expr: expr.clone(),
-                    ret_idx: idx,
-                    reason: InferFailReason::UnResolveExpr(expr),
-                };
+        LuaTypeOwner::Decl(decl_id) => {
+            let unresolve_decl = UnResolveDecl {
+                file_id: analyzer.file_id,
+                decl_id,
+                expr: expr.clone(),
+                ret_idx: idx,
+                reason: InferFailReason::UnResolveExpr(expr),
+            };
 
-                analyzer.add_unresolved(unresolve_decl.into());
-            }
+            analyzer.add_unresolved(unresolve_decl.into());
         }
-        TypeOwner::Member(member_id) => {
+        LuaTypeOwner::Member(member_id) => {
             let unresolve_member = UnResolveMember {
                 file_id: analyzer.file_id,
                 member_id,
@@ -476,15 +443,14 @@ pub fn analyze_for_range_stat(
                 for var_name in var_name_list {
                     let position = var_name.get_position();
                     let decl_id = LuaDeclId::new(analyzer.file_id, position);
-                    let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-                    let decl_type = decl.get_type();
-                    if decl_type.is_none() {
-                        let ret_type = multi_return
-                            .get_type(idx)
-                            .unwrap_or(&LuaType::Unknown)
-                            .clone();
-                        decl.set_decl_type(ret_type);
-                    }
+                    let ret_type = multi_return
+                        .get_type(idx)
+                        .unwrap_or(&LuaType::Unknown)
+                        .clone();
+                    analyzer
+                        .db
+                        .get_type_index_mut()
+                        .bind_type(decl_id.into(), LuaTypeCache::InferType(ret_type));
                     idx += 1;
                 }
                 return Some(());
@@ -492,11 +458,10 @@ pub fn analyze_for_range_stat(
                 for var_name in var_name_list {
                     let position = var_name.get_position();
                     let decl_id = LuaDeclId::new(analyzer.file_id, position);
-                    let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-                    let decl_type = decl.get_type();
-                    if decl_type.is_none() {
-                        decl.set_decl_type(LuaType::Unknown);
-                    }
+                    analyzer
+                        .db
+                        .get_type_index_mut()
+                        .bind_type(decl_id.into(), LuaTypeCache::InferType(LuaType::Unknown));
                 }
                 return Some(());
             }
@@ -505,11 +470,10 @@ pub fn analyze_for_range_stat(
             for var_name in var_name_list {
                 let position = var_name.get_position();
                 let decl_id = LuaDeclId::new(analyzer.file_id, position);
-                let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-                let decl_type = decl.get_type();
-                if decl_type.is_none() {
-                    decl.set_decl_type(LuaType::Unknown);
-                }
+                analyzer
+                    .db
+                    .get_type_index_mut()
+                    .bind_type(decl_id.into(), LuaTypeCache::InferType(LuaType::Unknown));
             }
             return Some(());
         }
@@ -518,18 +482,14 @@ pub fn analyze_for_range_stat(
             for var_name in var_name_list {
                 let position = var_name.get_position();
                 let decl_id = LuaDeclId::new(analyzer.file_id, position);
-                let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-                let decl_type = decl.get_type();
-                if decl_type.is_none() {
-                    let unresolved = UnResolveIterVar {
-                        file_id: analyzer.file_id,
-                        decl_id,
-                        iter_expr: first_iter_expr.clone(),
-                        ret_idx: idx,
-                        reason: reason.clone(),
-                    };
-                    analyzer.add_unresolved(unresolved.into());
-                }
+                let unresolved = UnResolveIterVar {
+                    file_id: analyzer.file_id,
+                    decl_id,
+                    iter_expr: first_iter_expr.clone(),
+                    ret_idx: idx,
+                    reason: reason.clone(),
+                };
+                analyzer.add_unresolved(unresolved.into());
                 idx += 1;
             }
         }
@@ -544,20 +504,10 @@ pub fn analyze_func_stat(analyzer: &mut LuaAnalyzer, func_stat: LuaFuncStat) -> 
     let signature_type = analyzer.infer_expr(&closure.clone().into()).ok()?;
     let type_owner = get_var_owner(analyzer, func_name.clone());
     set_index_expr_owner(analyzer, func_name.clone());
-    match type_owner {
-        TypeOwner::Decl(decl_id) => {
-            let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-            decl.set_decl_type(signature_type);
-        }
-        TypeOwner::Member(member_id) => {
-            let member = analyzer
-                .db
-                .get_member_index_mut()
-                .get_member_mut(&member_id)?;
-
-            member.set_decl_type(signature_type);
-        }
-    }
+    analyzer
+        .db
+        .get_type_index_mut()
+        .bind_type(type_owner, LuaTypeCache::InferType(signature_type.clone()));
 
     Some(())
 }
@@ -571,8 +521,10 @@ pub fn analyze_local_func_stat(
     let signature_type = analyzer.infer_expr(&closure.clone().into()).ok()?;
     let position = func_name.get_position();
     let decl_id = LuaDeclId::new(analyzer.file_id, position);
-    let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-    decl.set_decl_type(signature_type);
+    analyzer.db.get_type_index_mut().bind_type(
+        decl_id.into(),
+        LuaTypeCache::InferType(signature_type.clone()),
+    );
 
     Some(())
 }
@@ -599,31 +551,18 @@ pub fn analyze_table_field(analyzer: &mut LuaAnalyzer, field: LuaTableField) -> 
         }
     };
 
-    let member = analyzer
-        .db
-        .get_member_index_mut()
-        .get_member_mut(&member_id)?;
-
-    match member.get_option_decl_type() {
-        Some(_) => {
-            merge_member_type(
-                analyzer.db,
-                &mut analyzer.infer_cache,
-                member_id,
-                value_type,
-            );
-        }
-        None => {
-            member.set_decl_type(value_type);
-        }
-    }
+    bind_type(
+        analyzer.db,
+        member_id.into(),
+        LuaTypeCache::InferType(value_type),
+    );
 
     Some(())
 }
 
 fn special_assign_pattern(
     analyzer: &mut LuaAnalyzer,
-    type_owner: TypeOwner,
+    type_owner: LuaTypeOwner,
     var: LuaVarExpr,
     expr: LuaExpr,
 ) -> Option<()> {

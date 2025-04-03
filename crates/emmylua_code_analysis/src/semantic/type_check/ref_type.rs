@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::{
-    humanize_type, DbIndex, LuaMemberKey, LuaMemberOwner, LuaType, LuaTypeDeclId, LuaUnionType,
-    RenderLevel,
+    humanize_type, DbIndex, LuaMemberKey, LuaMemberOwner, LuaType, LuaTypeCache, LuaTypeDeclId,
+    LuaUnionType, RenderLevel,
 };
 
 use super::{
@@ -73,14 +73,17 @@ pub fn check_ref_type_compact(
             }
         } else {
             for member in enum_members {
-                let member_type = member.get_decl_type();
-                let member_fake_type = match member_type {
-                    LuaType::StringConst(s) => &LuaType::DocStringConst(s.clone().into()),
-                    LuaType::IntegerConst(i) => &LuaType::DocIntegerConst(i.clone()),
-                    _ => &member_type,
-                };
+                if let Some(type_cache) =
+                    db.get_type_index().get_type_cache(&member.get_id().into())
+                {
+                    let member_fake_type = match type_cache.as_type() {
+                        LuaType::StringConst(s) => &LuaType::DocStringConst(s.clone().into()),
+                        LuaType::IntegerConst(i) => &LuaType::DocIntegerConst(i.clone()),
+                        _ => &type_cache.as_type(),
+                    };
 
-                union_types.push(member_fake_type.clone());
+                    union_types.push(member_fake_type.clone());
+                }
             }
         }
 
@@ -164,14 +167,22 @@ fn check_ref_type_compact_table(
     };
 
     for source_member in source_type_members {
-        let source_member_type = source_member.get_decl_type();
+        let source_member_type = db
+            .get_type_index()
+            .get_type_cache(&source_member.get_id().into())
+            .unwrap_or(&LuaTypeCache::InferType(LuaType::Any))
+            .as_type();
         let key = source_member.get_key();
 
         if let Some(table_member_id) = table_member_map.get(key) {
             let table_member = member_index
                 .get_member(table_member_id)
                 .ok_or(TypeCheckFailReason::TypeNotMatch)?;
-            let table_member_type = table_member.get_decl_type();
+            let table_member_type = db
+                .get_type_index()
+                .get_type_cache(&table_member.get_id().into())
+                .unwrap_or(&LuaTypeCache::InferType(LuaType::Any))
+                .as_type();
             if !check_general_type_compact(
                 db,
                 &source_member_type,

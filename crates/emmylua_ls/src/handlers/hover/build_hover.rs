@@ -71,20 +71,14 @@ pub fn build_hover_content<'a>(
         LuaSemanticDeclId::LuaDecl(decl_id) => {
             let effective_typ = match typ {
                 Some(t) => t,
-                None => {
-                    let decl = db.get_decl_index().get_decl(&decl_id)?;
-                    decl.get_type()?.clone()
-                }
+                None => semantic_model.get_type(decl_id.into()),
             };
             build_decl_hover(&mut builder, db, effective_typ, decl_id);
         }
         LuaSemanticDeclId::Member(member_id) => {
             let effective_typ = match typ {
                 Some(t) => t,
-                None => {
-                    let member = db.get_member_index().get_member(&member_id)?;
-                    member.get_decl_type().clone()
-                }
+                None => semantic_model.get_type(member_id.into()),
             };
             build_member_hover(&mut builder, db, effective_typ, member_id);
         }

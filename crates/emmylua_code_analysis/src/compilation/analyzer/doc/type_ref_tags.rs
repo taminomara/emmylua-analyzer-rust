@@ -10,7 +10,7 @@ use crate::{
         LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaSemanticDeclId,
         LuaSignatureId, LuaType,
     },
-    InFiled, LuaOperatorMetaMethod, OperatorFunction, SignatureReturnStatus, TypeOps,
+    InFiled, LuaOperatorMetaMethod, LuaTypeCache, OperatorFunction, SignatureReturnStatus, TypeOps,
 };
 
 use super::{
@@ -42,37 +42,18 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                         let position = name_token.get_position();
                         let file_id = analyzer.file_id;
                         let decl_id = LuaDeclId::new(file_id, position);
-                        if let Some(decl) = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)
-                        {
-                            decl.set_decl_type(type_ref.clone());
-                        } else {
-                            analyzer.context.type_flow.insert(
-                                InFiled {
-                                    file_id: analyzer.file_id,
-                                    value: name_expr.get_syntax_id(),
-                                },
-                                type_ref.clone(),
-                            );
-                        }
+                        analyzer
+                            .db
+                            .get_type_index_mut()
+                            .bind_type(decl_id.into(), LuaTypeCache::DocType(type_ref.clone()));
                     }
                     LuaVarExpr::IndexExpr(index_expr) => {
                         let member_id =
                             LuaMemberId::new(index_expr.get_syntax_id(), analyzer.file_id);
-                        if let Some(member) = analyzer
+                        analyzer
                             .db
-                            .get_member_index_mut()
-                            .get_member_mut(&member_id)
-                        {
-                            member.set_decl_type(type_ref.clone());
-                        } else {
-                            analyzer.context.type_flow.insert(
-                                InFiled {
-                                    file_id: analyzer.file_id,
-                                    value: index_expr.get_syntax_id(),
-                                },
-                                type_ref.clone(),
-                            );
-                        }
+                            .get_type_index_mut()
+                            .bind_type(member_id.into(), LuaTypeCache::DocType(type_ref.clone()));
                     }
                 }
             }
@@ -87,19 +68,21 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                 let position = name_token.get_position();
                 let file_id = analyzer.file_id;
                 let decl_id = LuaDeclId::new(file_id, position);
-                let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
 
-                decl.set_decl_type(type_ref.clone());
+                analyzer
+                    .db
+                    .get_type_index_mut()
+                    .bind_type(decl_id.into(), LuaTypeCache::DocType(type_ref.clone()));
             }
         }
         LuaAst::LuaTableField(table_field) => {
             if let Some(first_type) = type_list.get(0) {
                 let member_id = LuaMemberId::new(table_field.get_syntax_id(), analyzer.file_id);
-                let member = analyzer
+
+                analyzer
                     .db
-                    .get_member_index_mut()
-                    .get_member_mut(&member_id)?;
-                member.set_decl_type(first_type.clone());
+                    .get_type_index_mut()
+                    .bind_type(member_id.into(), LuaTypeCache::DocType(first_type.clone()));
             }
         }
         _ => {}
@@ -148,31 +131,16 @@ pub fn analyze_param(analyzer: &mut DocAnalyzer, tag: LuaDocTagParam) -> Option<
         let idx = signature.find_param_idx(&name)?;
 
         signature.param_docs.insert(idx, param_info);
-
-        let param_list = closure.get_params_list()?;
-        for param in param_list.get_params() {
-            let param_name = if let Some(name_token) = param.get_name_token() {
-                name_token.get_name_text().to_string()
-            } else {
-                "...".to_string()
-            };
-
-            if param_name == name {
-                let decl_id = LuaDeclId::new(analyzer.file_id, param.get_position());
-                let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-
-                decl.set_decl_type(type_ref);
-                break;
-            }
-        }
     } else if let Some(LuaAst::LuaForRangeStat(for_range)) = analyzer.comment.get_owner() {
         for it_name_token in for_range.get_var_name_list() {
             let it_name = it_name_token.get_name_text();
             if it_name == name {
                 let decl_id = LuaDeclId::new(analyzer.file_id, it_name_token.get_position());
-                let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
 
-                decl.set_decl_type(type_ref);
+                analyzer
+                    .db
+                    .get_type_index_mut()
+                    .bind_type(decl_id.into(), LuaTypeCache::DocType(type_ref));
                 break;
             }
         }
@@ -255,15 +223,16 @@ pub fn analyze_module(analyzer: &mut DocAnalyzer, tag: LuaDocTagModule) -> Optio
     if let Some(export_type) = export_type {
         match &owner_id {
             LuaSemanticDeclId::LuaDecl(decl_id) => {
-                let decl = analyzer.db.get_decl_index_mut().get_decl_mut(&decl_id)?;
-                decl.set_decl_type(export_type);
+                analyzer.db.get_type_index_mut().bind_type(
+                    decl_id.clone().into(),
+                    LuaTypeCache::DocType(export_type.clone()),
+                );
             }
             LuaSemanticDeclId::Member(member_id) => {
-                let member = analyzer
-                    .db
-                    .get_member_index_mut()
-                    .get_member_mut(&member_id)?;
-                member.set_decl_type(export_type);
+                analyzer.db.get_type_index_mut().bind_type(
+                    member_id.clone().into(),
+                    LuaTypeCache::DocType(export_type.clone()),
+                );
             }
             _ => {}
         }
@@ -313,7 +282,7 @@ pub fn analyze_cast(analyzer: &mut DocAnalyzer, tag: LuaDocTagCast) -> Option<()
     for op in tag.get_op_types() {
         if let Some(doc_type) = op.get_type() {
             let typ = infer_type(analyzer, doc_type.clone());
-            analyzer.context.type_flow.insert(
+            analyzer.context.cast_flow.insert(
                 InFiled {
                     file_id: analyzer.file_id,
                     value: doc_type.get_syntax_id(),

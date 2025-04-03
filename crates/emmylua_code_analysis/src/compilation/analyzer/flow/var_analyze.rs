@@ -7,9 +7,8 @@ use rowan::TextRange;
 use smol_str::SmolStr;
 
 use crate::{
-    compilation::analyzer::AnalyzeContext,
     db_index::{LuaType, TypeAssertion},
-    DbIndex, FileId, InFiled, LuaFlowChain, LuaTypeDeclId,
+    DbIndex, FileId, LuaDeclId, LuaFlowChain, LuaMemberId, LuaTypeDeclId, LuaTypeOwner,
 };
 
 pub fn analyze_ref_expr(
@@ -37,16 +36,21 @@ pub fn analyze_ref_assign(
     var_expr: LuaVarExpr,
     path: &str,
     file_id: FileId,
-    context: &AnalyzeContext,
 ) -> Option<()> {
     let assign_stat = var_expr.get_parent::<LuaAssignStat>()?;
     if is_decl_assign_stat(assign_stat.clone()).unwrap_or(false) {
-        let key = InFiled {
-            file_id,
-            value: var_expr.get_syntax_id(),
+        let type_owner = match var_expr {
+            LuaVarExpr::IndexExpr(index_expr) => {
+                let member_id = LuaMemberId::new(index_expr.get_syntax_id(), file_id);
+                LuaTypeOwner::Member(member_id)
+            }
+            LuaVarExpr::NameExpr(name_expr) => {
+                let decl_id = LuaDeclId::new(file_id, name_expr.get_position());
+                LuaTypeOwner::Decl(decl_id)
+            }
         };
-        if let Some(typ) = context.type_flow.get(&key) {
-            let type_assert = TypeAssertion::Narrow(typ.clone());
+        if let Some(type_cache) = db.get_type_index().get_type_cache(&type_owner) {
+            let type_assert = TypeAssertion::Narrow(type_cache.as_type().clone());
             broadcast_down(
                 db,
                 flow_chain,

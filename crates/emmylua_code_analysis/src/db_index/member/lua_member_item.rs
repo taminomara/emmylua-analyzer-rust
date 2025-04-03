@@ -1,6 +1,6 @@
 use crate::{DbIndex, InferFailReason, LuaSemanticDeclId, LuaType, TypeOps};
 
-use super::{LuaMemberId, LuaMemberIndex};
+use super::LuaMemberId;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LuaMemberIndexItem {
@@ -17,8 +17,13 @@ impl LuaMemberIndexItem {
         resolve_member_semantic_id(db, &self)
     }
 
-    pub(super) fn resolve_member_id(&self, member_index: &LuaMemberIndex) -> Option<LuaMemberId> {
-        resolve_member_id(member_index, &self)
+    #[allow(unused)]
+    pub fn resolve_type_owner_member_id(&self, db: &DbIndex) -> Option<LuaMemberId> {
+        resolve_type_owner_member_id(db, &self)
+    }
+
+    pub fn is_one(&self) -> bool {
+        matches!(self, LuaMemberIndexItem::One(_))
     }
 
     pub fn get_member_ids(&self) -> Vec<LuaMemberId> {
@@ -35,13 +40,11 @@ fn resolve_member_type(
 ) -> Result<LuaType, InferFailReason> {
     match member_item {
         LuaMemberIndexItem::One(member_id) => {
-            let member = db
-                .get_member_index()
-                .get_member(&member_id)
-                .ok_or(InferFailReason::None)?;
-            let member_type = member.get_option_decl_type();
-            return match member_type {
-                Some(typ) => Ok(typ),
+            let member_type_cache = db
+                .get_type_index()
+                .get_type_cache(&member_id.clone().into());
+            return match member_type_cache {
+                Some(cache) => Ok(cache.as_type().clone()),
                 None => Err(InferFailReason::UnResolveMemberType(*member_id)),
             };
         }
@@ -71,9 +74,10 @@ fn resolve_member_type(
                     for member in members {
                         typ = TypeOps::Union.apply(
                             &typ,
-                            &member
-                                .get_option_decl_type()
-                                .ok_or(InferFailReason::UnResolveMemberType(member.get_id()))?,
+                            &db.get_type_index()
+                                .get_type_cache(&member.get_id().into())
+                                .ok_or(InferFailReason::UnResolveMemberType(member.get_id()))?
+                                .as_type(),
                         );
                     }
                     Ok(typ)
@@ -85,9 +89,10 @@ fn resolve_member_type(
                         if feature.is_meta_decl() {
                             typ = TypeOps::Union.apply(
                                 &typ,
-                                &member
-                                    .get_option_decl_type()
-                                    .ok_or(InferFailReason::UnResolveMemberType(member.get_id()))?,
+                                &db.get_type_index()
+                                    .get_type_cache(&member.get_id().into())
+                                    .ok_or(InferFailReason::UnResolveMemberType(member.get_id()))?
+                                    .as_type(),
                             );
                         }
                     }
@@ -100,9 +105,10 @@ fn resolve_member_type(
                         if feature.is_file_decl() {
                             typ = TypeOps::Union.apply(
                                 &typ,
-                                &member
-                                    .get_option_decl_type()
-                                    .ok_or(InferFailReason::UnResolveMemberType(member.get_id()))?,
+                                &db.get_type_index()
+                                    .get_type_cache(&member.get_id().into())
+                                    .ok_or(InferFailReason::UnResolveMemberType(member.get_id()))?
+                                    .as_type(),
                             );
                         }
                     }
@@ -113,13 +119,14 @@ fn resolve_member_type(
     }
 }
 
-fn resolve_member_id(
-    member_index: &LuaMemberIndex,
+fn resolve_type_owner_member_id(
+    db: &DbIndex,
     member_item: &LuaMemberIndexItem,
 ) -> Option<LuaMemberId> {
     match member_item {
         LuaMemberIndexItem::One(member_id) => Some(*member_id),
         LuaMemberIndexItem::Many(member_ids) => {
+            let member_index = db.get_member_index();
             let mut resolve_state = MemberTypeResolveState::All;
             let members = member_ids
                 .iter()
@@ -138,7 +145,10 @@ fn resolve_member_id(
             match resolve_state {
                 MemberTypeResolveState::All => {
                     for member in members {
-                        if member.get_decl_type().is_member_owner() {
+                        let member_type_cache = db
+                            .get_type_index()
+                            .get_type_cache(&member.get_id().into())?;
+                        if member_type_cache.as_type().is_member_owner() {
                             return Some(member.get_id());
                         }
                     }

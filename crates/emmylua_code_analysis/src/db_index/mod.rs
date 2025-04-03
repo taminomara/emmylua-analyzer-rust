@@ -2,6 +2,7 @@ mod declaration;
 mod dependency;
 mod diagnostic;
 mod flow;
+mod global;
 mod member;
 mod metatable;
 mod module;
@@ -20,6 +21,8 @@ pub use declaration::*;
 use dependency::LuaDenpendencyIndex;
 pub use diagnostic::{AnalyzeError, DiagnosticAction, DiagnosticActionKind, DiagnosticIndex};
 pub use flow::{LuaFlowChain, LuaFlowId, LuaFlowIndex};
+pub use global::GlobalId;
+use global::LuaGlobalIndex;
 pub use member::{
     LuaMember, LuaMemberFeature, LuaMemberId, LuaMemberIndex, LuaMemberIndexItem, LuaMemberKey,
     LuaMemberOwner,
@@ -53,6 +56,7 @@ pub struct DbIndex {
     vfs: Vfs,
     file_dependencies_index: LuaDenpendencyIndex,
     metatable_index: LuaMetatableIndex,
+    global_index: LuaGlobalIndex,
     emmyrc: Arc<Emmyrc>,
 }
 
@@ -73,6 +77,7 @@ impl DbIndex {
             vfs: Vfs::new(),
             file_dependencies_index: LuaDenpendencyIndex::new(),
             metatable_index: LuaMetatableIndex::new(),
+            global_index: LuaGlobalIndex::new(),
             emmyrc: Arc::new(Emmyrc::default()),
         }
     }
@@ -187,6 +192,14 @@ impl DbIndex {
         &mut self.file_dependencies_index
     }
 
+    pub fn get_global_index(&self) -> &LuaGlobalIndex {
+        &self.global_index
+    }
+
+    pub fn get_global_index_mut(&mut self) -> &mut LuaGlobalIndex {
+        &mut self.global_index
+    }
+
     pub fn update_config(&mut self, config: Arc<Emmyrc>) {
         self.vfs.update_config(config.clone());
         self.modules_index.update_config(config.clone());
@@ -212,6 +225,7 @@ impl LuaIndex for DbIndex {
         self.flow_index.remove(file_id);
         self.file_dependencies_index.remove(file_id);
         self.metatable_index.remove(file_id);
+        self.global_index.remove(file_id);
     }
 
     fn clear(&mut self) {
@@ -227,5 +241,6 @@ impl LuaIndex for DbIndex {
         self.flow_index.clear();
         self.file_dependencies_index.clear();
         self.metatable_index.clear();
+        self.global_index.clear();
     }
 }

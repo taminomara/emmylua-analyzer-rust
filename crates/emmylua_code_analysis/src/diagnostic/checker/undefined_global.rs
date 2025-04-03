@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaNameExpr};
 use rowan::TextRange;
 
-use crate::{DiagnosticCode, LuaMemberKey, LuaSignatureId, SemanticModel};
+use crate::{DiagnosticCode, LuaSignatureId, SemanticModel};
 
 use super::{Checker, DiagnosticContext};
 
@@ -54,9 +54,11 @@ fn check_name_expr(
         return Some(());
     }
 
-    let decl_index = semantic_model.get_db().get_decl_index();
-    let member_key = LuaMemberKey::Name(name_text.clone().into());
-    if decl_index.get_global_decl_id(&member_key).is_some() {
+    if semantic_model
+        .get_db()
+        .get_global_index()
+        .is_exist_global_decl(&name_text)
+    {
         return Some(());
     }
 

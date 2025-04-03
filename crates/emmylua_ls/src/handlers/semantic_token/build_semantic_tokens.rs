@@ -1,6 +1,5 @@
 use emmylua_code_analysis::{
-    LuaDeclExtra, LuaMemberId, LuaMemberOwner, LuaSemanticDeclId, LuaType, SemanticDeclLevel,
-    SemanticModel,
+    LuaMemberId, LuaMemberOwner, LuaSemanticDeclId, LuaType, SemanticDeclLevel, SemanticModel,
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr,
@@ -432,18 +431,17 @@ fn build_node_semantic_token(
                 .find_decl(name.syntax().clone().into(), SemanticDeclLevel::default());
             if let Some(property_owner) = semantic_decl {
                 if let LuaSemanticDeclId::Member(member_id) = property_owner {
-                    let member = semantic_model
-                        .get_db()
-                        .get_member_index()
-                        .get_member(&member_id)?;
-                    let decl = member.get_decl_type();
-                    if decl.is_function() {
+                    let decl_type = semantic_model.get_type(member_id.into());
+                    if decl_type.is_function() {
                         builder.push(name.syntax(), SemanticTokenType::FUNCTION);
                         return Some(());
                     }
 
-                    let owner_id = member.get_owner();
-                    if let LuaMemberOwner::Type(type_id) = owner_id {
+                    let owner_id = semantic_model
+                        .get_db()
+                        .get_member_index()
+                        .get_current_owner(&member_id);
+                    if let Some(LuaMemberOwner::Type(type_id)) = owner_id {
                         if let Some(type_decl) = semantic_model
                             .get_db()
                             .get_type_index()
@@ -467,8 +465,11 @@ fn build_node_semantic_token(
                 .get_member_index()
                 .get_member(&owner_id)
             {
-                let owner_id = member.get_owner();
-                if let LuaMemberOwner::Type(type_id) = owner_id {
+                let owner_id = semantic_model
+                    .get_db()
+                    .get_member_index()
+                    .get_current_owner(&member.get_id());
+                if let Some(LuaMemberOwner::Type(type_id)) = owner_id {
                     if let Some(type_decl) = semantic_model
                         .get_db()
                         .get_type_index()
@@ -517,12 +518,8 @@ fn build_node_semantic_token(
 fn is_class_def(semantic_model: &SemanticModel, node: LuaSyntaxNode) -> Option<()> {
     let semantic_decl = semantic_model.find_decl(node.into(), SemanticDeclLevel::default())?;
     if let LuaSemanticDeclId::LuaDecl(decl_id) = semantic_decl {
-        let decl = semantic_model
-            .get_db()
-            .get_decl_index()
-            .get_decl(&decl_id)?
-            .get_type()?;
-        match decl {
+        let decl_type = semantic_model.get_type(decl_id.into());
+        match decl_type {
             LuaType::Def(_) => Some(()),
             _ => None,
         }
@@ -548,45 +545,26 @@ fn handle_name_node(
 
     match semantic_decl {
         LuaSemanticDeclId::Member(member_id) => {
-            let member = semantic_model
-                .get_db()
-                .get_member_index()
-                .get_member(&member_id)?;
-            if matches!(member.get_decl_type(), LuaType::Signature(_)) {
+            let member_type = semantic_model.get_type(member_id.into());
+            if matches!(member_type, LuaType::Signature(_)) {
                 builder.push(name_token, SemanticTokenType::FUNCTION);
                 return Some(());
             }
         }
 
         LuaSemanticDeclId::LuaDecl(decl_id) => {
-            let decl = semantic_model
-                .get_db()
-                .get_decl_index()
-                .get_decl(&decl_id)?;
-
-            let (token_type, modifier) = match &decl.extra {
-                LuaDeclExtra::Local { decl_type, .. } => match decl_type {
-                    Some(LuaType::Signature(_) | LuaType::DocFunction(_)) => {
-                        builder.push(name_token, SemanticTokenType::FUNCTION);
-                        return Some(());
-                    }
-                    _ => (SemanticTokenType::VARIABLE, None),
-                },
-
-                LuaDeclExtra::Global { decl_type, .. } => match decl_type {
-                    Some(LuaType::Signature(signature)) => {
-                        let is_meta = semantic_model
-                            .get_db()
-                            .get_module_index()
-                            .is_meta_file(&signature.get_file_id());
-                        (
-                            SemanticTokenType::FUNCTION,
-                            is_meta.then_some(SemanticTokenModifier::DEFAULT_LIBRARY),
-                        )
-                    }
-                    _ => (SemanticTokenType::VARIABLE, None),
-                },
-
+            let decl_type = semantic_model.get_type(decl_id.into());
+            let (token_type, modifier) = match decl_type {
+                LuaType::Signature(signature) => {
+                    let is_meta = semantic_model
+                        .get_db()
+                        .get_module_index()
+                        .is_meta_file(&signature.get_file_id());
+                    (
+                        SemanticTokenType::FUNCTION,
+                        is_meta.then_some(SemanticTokenModifier::DEFAULT_LIBRARY),
+                    )
+                }
                 _ => (SemanticTokenType::VARIABLE, None),
             };
 

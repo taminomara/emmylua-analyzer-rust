@@ -77,13 +77,11 @@ fn check_name_expr(
         SemanticDeclLevel::default(),
     )?;
     let origin_type = match semantic_decl {
-        LuaSemanticDeclId::LuaDecl(decl_id) => {
-            let decl = semantic_model
-                .get_db()
-                .get_decl_index()
-                .get_decl(&decl_id)?;
-            decl.get_type().cloned()
-        }
+        LuaSemanticDeclId::LuaDecl(decl_id) => semantic_model
+            .get_db()
+            .get_type_index()
+            .get_type_cache(&decl_id.into())
+            .map(|cache| cache.as_type().clone()),
         _ => None,
     };
     check_assign_type_mismatch(
@@ -136,15 +134,20 @@ fn check_local_stat(
     for (idx, var) in vars.iter().enumerate() {
         let name_token = var.get_name_token()?;
         let decl_id = LuaDeclId::new(semantic_model.get_file_id(), name_token.get_position());
-        let decl = semantic_model
+        let range = semantic_model
             .get_db()
             .get_decl_index()
-            .get_decl(&decl_id)?;
-        let name_type = decl.get_type()?;
+            .get_decl(&decl_id)?
+            .get_range();
+        let name_type = semantic_model
+            .get_db()
+            .get_type_index()
+            .get_type_cache(&decl_id.into())
+            .map(|cache| cache.as_type().clone())?;
         check_assign_type_mismatch(
             context,
             semantic_model,
-            decl.get_range(),
+            range,
             Some(name_type.clone()),
             value_types.get(idx)?.0.clone(),
             false,

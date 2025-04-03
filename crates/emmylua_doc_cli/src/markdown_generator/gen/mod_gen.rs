@@ -2,7 +2,7 @@ use std::path::Path;
 
 use emmylua_code_analysis::{
     humanize_type, DbIndex, FileId, LuaMemberKey, LuaMemberOwner, LuaSemanticDeclId, LuaType,
-    ModuleInfo, RenderLevel,
+    LuaTypeCache, ModuleInfo, RenderLevel,
 };
 use emmylua_parser::VisibilityKind;
 use tera::Tera;
@@ -99,7 +99,11 @@ pub fn generate_member_owner_module(
 
     if let Some(members) = members {
         for member in members {
-            let member_typ = member.get_decl_type();
+            let member_type = db
+                .get_type_index()
+                .get_type_cache(&member.get_id().into())
+                .unwrap_or(&LuaTypeCache::InferType(LuaType::Unknown))
+                .as_type();
             let member_id = member.get_id();
             let member_property_id = LuaSemanticDeclId::Member(member_id.clone());
             let member_property = db.get_property_index().get_property(&member_property_id);
@@ -119,23 +123,23 @@ pub fn generate_member_owner_module(
             };
 
             let title_name = format!("{}.{}", owner_name, name);
-            if member_typ.is_function() {
+            if member_type.is_function() {
                 let func_name = format!("{}.{}", owner_name, name);
-                let display = render_function_type(db, &member_typ, &func_name, false);
+                let display = render_function_type(db, &member_type, &func_name, false);
                 method_members.push(MemberDoc {
                     name: title_name,
                     display,
                     property: member_property,
                 });
-            } else if member_typ.is_const() {
-                let display = render_const_type(db, &member_typ);
+            } else if member_type.is_const() {
+                let display = render_const_type(db, &member_type);
                 field_members.push(MemberDoc {
                     name: title_name,
                     display: format!("```lua\n{}.{}: {}\n```\n", owner_name, name, display),
                     property: member_property,
                 });
             } else {
-                let typ_display = humanize_type(db, &member_typ, RenderLevel::Detailed);
+                let typ_display = humanize_type(db, &member_type, RenderLevel::Detailed);
                 field_members.push(MemberDoc {
                     name: title_name,
                     display: format!("```lua\n{}.{} : {}\n```\n", owner_name, name, typ_display),

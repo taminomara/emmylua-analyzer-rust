@@ -96,7 +96,13 @@ fn add_local_env(
                 .get_decl(&decl_id)?;
             (
                 decl.get_name().to_string(),
-                decl.get_type().cloned().unwrap_or(LuaType::Unknown),
+                builder
+                    .semantic_model
+                    .get_db()
+                    .get_type_index()
+                    .get_type_cache(&decl_id.clone().into())
+                    .map(|cache| cache.as_type().clone())
+                    .unwrap_or(LuaType::Unknown),
             )
         };
 
@@ -144,8 +150,8 @@ fn add_global_env(
     let global_env = builder
         .semantic_model
         .get_db()
-        .get_decl_index()
-        .get_global_decls();
+        .get_global_index()
+        .get_all_global_decl_ids();
     for decl_id in global_env.iter() {
         let decl = builder
             .semantic_model
@@ -155,7 +161,13 @@ fn add_global_env(
         let (name, typ) = {
             (
                 decl.get_name().to_string(),
-                decl.get_type().cloned().unwrap_or(LuaType::Unknown),
+                builder
+                    .semantic_model
+                    .get_db()
+                    .get_type_index()
+                    .get_type_cache(&decl_id.clone().into())
+                    .map(|cache| cache.as_type().clone())
+                    .unwrap_or(LuaType::Unknown),
             )
         };
         if duplicated_name.contains(&name) {

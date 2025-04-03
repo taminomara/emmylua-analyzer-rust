@@ -170,12 +170,10 @@ pub fn infer_table_field_value_should_be(
     }
 
     let member_id = LuaMemberId::new(table_field.get_syntax_id(), cache.get_file_id());
-    if let Some(member) = db.get_member_index().get_member(&member_id) {
-        match member.get_option_decl_type() {
-            Some(typ) => return Ok(typ),
-            None => {}
-        }
-    }
+    match db.get_type_index().get_type_cache(&member_id.into()) {
+        Some(type_cache) => return Ok(type_cache.as_type().clone()),
+        None => {}
+    };
 
     Err(reason)
 }
@@ -230,12 +228,13 @@ fn infer_table_field_type_by_parent(
     field: LuaTableField,
 ) -> InferResult {
     let member_id = LuaMemberId::new(field.get_syntax_id(), cache.get_file_id());
-    if let Some(member) = db.get_member_index().get_member(&member_id) {
-        match member.get_option_decl_type() {
-            Some(LuaType::TableConst(_)) => {}
-            Some(typ) => return Ok(typ),
-            None => return Err(InferFailReason::UnResolveMemberType(member.get_id())),
+    if let Some(type_cache) = db.get_type_index().get_type_cache(&member_id.into()) {
+        match type_cache.as_type() {
+            LuaType::TableConst(_) => {}
+            typ => return Ok(typ.clone()),
         }
+    } else {
+        return Err(InferFailReason::UnResolveMemberType(member_id));
     }
 
     let parnet_table_expr = field
@@ -288,14 +287,11 @@ fn infer_table_type_by_local(
 
     let local_name = local_names.get(num).ok_or(InferFailReason::None)?;
     let decl_id = LuaDeclId::new(cache.get_file_id(), local_name.get_position());
-    let decl = db
-        .get_decl_index()
-        .get_decl(&decl_id)
-        .ok_or(InferFailReason::None)?;
-    let typ = decl.get_type();
-    match typ {
-        Some(LuaType::TableConst(_)) => Err(InferFailReason::None),
-        Some(typ) => Ok(typ.clone()),
+    match db.get_type_index().get_type_cache(&decl_id.into()) {
+        Some(type_cache) => match type_cache.as_type() {
+            LuaType::TableConst(_) => Err(InferFailReason::None),
+            typ => return Ok(typ.clone()),
+        },
         None => Err(InferFailReason::UnResolveDeclType(decl_id)),
     }
 }
@@ -316,11 +312,12 @@ fn infer_table_type_by_assign_stat(
     let name = vars.get(num).ok_or(InferFailReason::None)?;
 
     let decl_id = LuaDeclId::new(cache.get_file_id(), name.get_position());
-    let decl = db.get_decl_index().get_decl(&decl_id);
-    if let Some(decl) = decl {
-        match decl.get_type() {
-            Some(LuaType::TableConst(_)) => Err(InferFailReason::None),
-            Some(typ) => Ok(typ.clone()),
+    if db.get_decl_index().get_decl(&decl_id).is_some() {
+        match db.get_type_index().get_type_cache(&decl_id.into()) {
+            Some(type_cache) => match type_cache.as_type() {
+                LuaType::TableConst(_) => Err(InferFailReason::None),
+                typ => return Ok(typ.clone()),
+            },
             None => Err(InferFailReason::UnResolveDeclType(decl_id)),
         }
     } else {

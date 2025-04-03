@@ -162,14 +162,7 @@ fn analyze_flow(
                             FlowRef::IndexExpr(expr) => LuaVarExpr::IndexExpr(expr.clone()),
                             _ => continue,
                         };
-                        analyze_ref_assign(
-                            db,
-                            &mut flow_chain,
-                            var_expr,
-                            var_path,
-                            file_id,
-                            context,
-                        );
+                        analyze_ref_assign(db, &mut flow_chain, var_expr, var_path, file_id);
                     }
                     FlowNode::CastRef(ref_node) => {
                         let tag_cast = match ref_node {

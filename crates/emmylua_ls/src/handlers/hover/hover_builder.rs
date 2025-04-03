@@ -61,7 +61,12 @@ impl<'a> HoverBuilder<'a> {
 
     pub fn set_location_path(&mut self, owner_member: Option<&LuaMember>) {
         if let Some(owner_member) = owner_member {
-            if let LuaMemberOwner::Type(ty) = &owner_member.get_owner() {
+            let owner_id = self
+                .semantic_model
+                .get_db()
+                .get_member_index()
+                .get_current_owner(&owner_member.get_id());
+            if let Some(LuaMemberOwner::Type(ty)) = owner_id {
                 if ty.get_name() != ty.get_simple_name() {
                     self.location_path = Some(MarkedString::from_markdown(format!(
                         "{}{} `{}`",
@@ -135,7 +140,12 @@ impl<'a> HoverBuilder<'a> {
                         .get_member_index()
                         .get_member(&id)
                     {
-                        if let LuaMemberOwner::Type(ty) = &member.get_owner() {
+                        let owner_id = self
+                            .semantic_model
+                            .get_db()
+                            .get_member_index()
+                            .get_current_owner(&member.get_id());
+                        if let Some(LuaMemberOwner::Type(ty)) = owner_id {
                             if is_std_by_name(&ty.get_name()) {
                                 let std_desc = hover_std_description(
                                     ty.get_name(),
