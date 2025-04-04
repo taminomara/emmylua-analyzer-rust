@@ -1,5 +1,8 @@
+mod best_resource_path;
+
 use std::path::{Path, PathBuf};
 
+use best_resource_path::get_best_resources_dir;
 use include_dir::{include_dir, Dir, DirEntry};
 
 use crate::{load_workspace_files, LuaFileInfo};
@@ -10,10 +13,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub fn load_resource_std(create_resources_dir: Option<String>) -> (PathBuf, Vec<LuaFileInfo>) {
     if let Some(create_resources_dir) = create_resources_dir {
         let resource_path = if create_resources_dir.is_empty() {
-            let exe_path = std::env::current_exe().unwrap();
-            let exe_dir = exe_path.parent().unwrap();
-            let resoucres_dir = exe_dir.join("resources");
-            resoucres_dir
+            get_best_resources_dir()
         } else {
             PathBuf::from(&create_resources_dir)
         };
@@ -25,9 +25,7 @@ pub fn load_resource_std(create_resources_dir: Option<String>) -> (PathBuf, Vec<
         }
     }
 
-    let exe_path = std::env::current_exe().unwrap();
-    let exe_dir = exe_path.parent().unwrap();
-    let resoucres_dir = exe_dir.join("resources");
+    let resoucres_dir = get_best_resources_dir();
     let std_dir = resoucres_dir.join("std");
     let files = load_resource_from_include_dir();
     let files = files
@@ -104,9 +102,7 @@ fn check_need_dump_to_file_system() -> bool {
         return true;
     }
 
-    let exe_path = std::env::current_exe().unwrap();
-    let exe_dir = exe_path.parent().unwrap();
-    let resoucres_dir = exe_dir.join("resources");
+    let resoucres_dir = get_best_resources_dir();
     let version_path = resoucres_dir.join("version");
 
     if !version_path.exists() {

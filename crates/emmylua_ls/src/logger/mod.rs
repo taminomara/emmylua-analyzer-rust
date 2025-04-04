@@ -1,5 +1,8 @@
+mod best_log_path;
+
 use std::{env, fs, path::PathBuf};
 
+use best_log_path::get_best_log_dir;
 use chrono::Local;
 use emmylua_code_analysis::file_path_to_uri;
 use fern::Dispatch;
@@ -36,10 +39,8 @@ pub fn init_logger(root: Option<&str>, cmd_args: &CmdArgs) {
             .join("_")
     };
 
-    let exe_path = env::current_exe().unwrap();
-    let exe_dir = exe_path.parent().unwrap();
     let log_dir = if cmd_log_path.is_empty() {
-        exe_dir.join("logs")
+        get_best_log_dir()
     } else {
         PathBuf::from(cmd_log_path.as_str())
     };
