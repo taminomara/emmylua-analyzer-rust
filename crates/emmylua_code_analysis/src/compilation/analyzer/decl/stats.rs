@@ -4,8 +4,9 @@ use emmylua_parser::{
 };
 
 use crate::{
+    compilation::analyzer::bind_type::bind_type,
     db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey},
-    LuaDeclExtra, LuaMemberFeature, LuaMemberId, LuaSemanticDeclId, LuaSignatureId,
+    LuaDeclExtra, LuaMemberFeature, LuaMemberId, LuaSemanticDeclId, LuaSignatureId, LuaType,
 };
 
 use super::{members::find_index_owner, DeclAnalyzer};
@@ -176,8 +177,13 @@ pub fn analyze_for_stat(analyzer: &mut DeclAnalyzer, stat: LuaForStat) -> Option
         },
         None,
     );
-
+    let decl_id = decl.get_id();
     analyzer.add_decl(decl);
+    bind_type(
+        analyzer.db,
+        decl_id.into(),
+        crate::LuaTypeCache::DocType(LuaType::Integer),
+    );
 
     Some(())
 }

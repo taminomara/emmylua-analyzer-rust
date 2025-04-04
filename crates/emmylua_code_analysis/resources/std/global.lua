@@ -113,7 +113,7 @@ function getmetatable(object) end
 --- the first absent index.
 ---@generic V
 ---@param t V[] | table<any, V> | {[any]: V}
----@return fun(tbl: any):int, std.NotNull<V>
+---@return fun(tbl: any):int, V
 function ipairs(t) end
 
 ---@alias std.loadmode
@@ -231,7 +231,7 @@ function next(table, index) end
 --- traversal.
 ---@generic K, V
 ---@param t table<K, V> | V[] | {[K]: V}
----@return fun(tbl: any):K, std.NotNull<V>
+---@return fun(tbl: any):K, V
 function pairs(t) end
 ---
 --- Calls function `f` with the given arguments in *protected mode*. This
