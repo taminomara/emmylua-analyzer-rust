@@ -488,7 +488,7 @@ checksum = "60b1af1c220855b6ceac025d3f6ecdd2b7c4894bfe9cd9bda4fbb4bc7c0d4cf0"
 
 [[package]]
 name = "emmylua_check"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "ariadne",
  "emmylua_code_analysis",
@@ -505,7 +505,7 @@ dependencies = [
 
 [[package]]
 name = "emmylua_code_analysis"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "dirs",
  "emmylua_codestyle",
@@ -571,7 +571,7 @@ dependencies = [
 
 [[package]]
 name = "emmylua_ls"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "chrono",
  "emmylua_code_analysis",
@@ -596,7 +596,7 @@ dependencies = [
 
 [[package]]
 name = "emmylua_parser"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "rowan",
  "rust-i18n",
