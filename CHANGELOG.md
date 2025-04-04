@@ -1,14 +1,30 @@
 # CHANGELOG
 
-# 0.7.0 (unreleased)
+# 0.7.1 (unreleased)
+
+# 0.7.0 
 
 `CHG` Refactor `type infer`
+
+`CHG` Refactor `member infer`
 
 `FIX` Optimize and Fix tuple type check
 
 `NEW` Support Varidic type use in tuple, eg: `[string, integer...]`
 
 `FIX` Optimize pcall infer, now can match the self and alias
+
+`FIX` for range iter var now will remove nil type
+
+`FIX` Optimize some std library type check
+
+`NEW` Support infer from setmetatable
+
+`NEW` emmylua_doc_cli will export more information
+
+`NEW` Optimize type check rule for subclass and super class
+
+`NEW` Allow '-' as description
 
 # 0.6.0
 
