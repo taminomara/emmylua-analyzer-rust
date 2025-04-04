@@ -63,16 +63,6 @@ function debug.gethook(thread) end
 ---@field ntransfer       integer
 ---@field activelines     table
 
----@alias debuglib.Infowhat
----|+"n"     # `name` and `namewhat`
----|+"S"     # `source`, `short_src`, `linedefined`, `lastlinedefined`, and `what`
----|+"l"     # `currentline`
----|+"t"     # `istailcall`
----|+"u"     # `nups`, `nparams`, and `isvararg`
----|+"f"     # `func`
----|+"r"     # `ftransfer` and `ntransfer`
----|+"L"     # `activelines`
-
 ---
 --- Returns a table with information about a function. You can give the
 --- function directly, or you can give a number as the value of `f`,
@@ -93,13 +83,15 @@ function debug.gethook(thread) end
 --- with a name for the current function, if a reasonable name can be found,
 --- and the expression `debug.getinfo(print)` returns a table with all available
 --- information about the `print` function.
----@overload fun(f: int|function, what?: debuglib.Infowhat):debuglib.DebugInfo
+---@overload fun(f: int|function, what?: string):debuglib.DebugInfo
 ---@param thread thread
 ---@param f function
----@param what? debuglib.Infowhat
+---@param what? string
 ---@return debuglib.DebugInfo
+---@nodiscard
 function debug.getinfo(thread, f, what) end
 
+--- @version >5.2, JIT
 ---
 --- This function returns the name and the value of the local variable with
 --- index `local` of the function at level `level f` of the stack. This function
@@ -120,23 +112,49 @@ function debug.getinfo(thread, f, what) end
 ---
 --- The parameter `f` may also be a function. In that case, `getlocal` returns
 --- only the name of function parameters.
----@overload fun(f:table, var:string):table
----@param thread thread
----@param f table
----@param var? string
----@return table
-function debug.getlocal(thread, f, var) end
+--- @overload fun(f: integer, integer): string?, any?
+--- @overload fun(f: function, integer): string?
+--- @overload fun(thread: thread, f: function, integer): string?
+--- @param thread thread
+--- @param f integer
+--- @param index integer
+--- @return string? name
+--- @return any? value
+--- @nodiscard
+function debug.getlocal(thread, f, index) end
+
+--- @version 5.1
+---
+--- This function returns the name and the value of the local variable with
+--- index `index` of the function at level `level` of the stack. (The first
+--- parameter or local variable has index 1, and so on, until the last active
+--- local variable). The function returns **nil** if there is no local variable
+--- with the given index, and raises an error when called with a level out of
+--- range. (You can call `debug.getinfo` to check whether the level is valid.)
+---
+--- Variable names starting with `'('` (open parentheses) represent internal
+--- variables (loop control variables, temporaries, and C function locals).
+--- @overload fun(f: integer, integer): string, any
+--- @param thread thread
+--- @param lvl integer
+--- @param index integer
+--- @return string? name
+--- @return any? value
+--- @nodiscard
+function debug.getlocal(thread, lvl, index) end
 
 ---
 --- Returns the metatable of the given `value` or **nil** if it does not have
 --- a metatable.
 ---@param value table
----@return table
+---@return table?
+---@nodiscard
 function debug.getmetatable(value) end
 
 ---
 --- Returns the registry table.
 ---@return table
+---@nodiscard
 function debug.getregistry() end
 
 ---
