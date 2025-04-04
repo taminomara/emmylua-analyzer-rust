@@ -18,11 +18,13 @@ pub fn init_logger(root: Option<&str>, cmd_args: &CmdArgs) {
         LogLevel::Debug => LevelFilter::Debug,
     };
 
-    if root.is_none() {
+    let cmd_log_path = cmd_args.log_path.clone();
+    if root.is_none() || cmd_log_path.0.is_none() {
         init_stderr_logger(level);
         return;
     }
     let root = root.unwrap();
+    let cmd_log_path = cmd_log_path.0.as_ref().cloned().unwrap_or("".to_string());
 
     let filename = if root.is_empty() || root == "/" {
         "root".to_string()
@@ -36,10 +38,10 @@ pub fn init_logger(root: Option<&str>, cmd_args: &CmdArgs) {
 
     let exe_path = env::current_exe().unwrap();
     let exe_dir = exe_path.parent().unwrap();
-    let log_dir = if cmd_args.log_path.is_empty() {
+    let log_dir = if cmd_log_path.is_empty() {
         exe_dir.join("logs")
     } else {
-        PathBuf::from(cmd_args.log_path.as_str())
+        PathBuf::from(cmd_log_path.as_str())
     };
     if !log_dir.exists() {
         match fs::create_dir_all(&log_dir) {

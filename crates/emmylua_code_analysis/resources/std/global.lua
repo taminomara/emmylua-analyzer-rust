@@ -355,8 +355,8 @@ function select(index, ...) end
 ---@field __eq? fun(t1,t2):boolean
 ---@field __lt? fun(t1,t2):boolean
 ---@field __le? fun(t1,t2):boolean
----@field __index? table|(fun(t,k):any
----@field __newindex? table|fun(t,k,v
+---@field __index? table|fun(t,k):any
+---@field __newindex? table|fun(t,k,v)
 ---@field __call? fun(t,...): any...
 ---@field __pairs? fun(t):((fun(t,k,v):any,any),any,any)
 ---@field __close? fun(t,errobj):any

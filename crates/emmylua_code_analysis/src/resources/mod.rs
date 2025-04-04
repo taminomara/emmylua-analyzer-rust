@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use include_dir::{include_dir, Dir, DirEntry};
 
@@ -7,20 +7,28 @@ use crate::{load_workspace_files, LuaFileInfo};
 static RESOURCE_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/resources");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub fn load_resource_std(allow_create_resources_dir: bool) -> (PathBuf, Vec<LuaFileInfo>) {
-    let exe_path = std::env::current_exe().unwrap();
-    let exe_dir = exe_path.parent().unwrap();
-    let resoucres_dir = exe_dir.join("resources");
-    let std_dir = resoucres_dir.join("std");
-
-    if allow_create_resources_dir {
-        let result = load_resource_from_file_system();
+pub fn load_resource_std(create_resources_dir: Option<String>) -> (PathBuf, Vec<LuaFileInfo>) {
+    if let Some(create_resources_dir) = create_resources_dir {
+        let resource_path = if create_resources_dir.is_empty() {
+            let exe_path = std::env::current_exe().unwrap();
+            let exe_dir = exe_path.parent().unwrap();
+            let resoucres_dir = exe_dir.join("resources");
+            resoucres_dir
+        } else {
+            PathBuf::from(&create_resources_dir)
+        };
+        let std_dir = PathBuf::from(&create_resources_dir).join("std");
+        let result = load_resource_from_file_system(&resource_path);
         match result {
             Some(files) => return (std_dir, files),
             None => {}
         }
     }
 
+    let exe_path = std::env::current_exe().unwrap();
+    let exe_dir = exe_path.parent().unwrap();
+    let resoucres_dir = exe_dir.join("resources");
+    let std_dir = resoucres_dir.join("std");
     let files = load_resource_from_include_dir();
     let files = files
         .into_iter()
@@ -40,16 +48,12 @@ pub fn load_resource_std(allow_create_resources_dir: bool) -> (PathBuf, Vec<LuaF
     (std_dir, files)
 }
 
-fn load_resource_from_file_system() -> Option<Vec<LuaFileInfo>> {
-    let exe_path = std::env::current_exe().unwrap();
-    let exe_dir = exe_path.parent().unwrap();
-    let resoucres_dir = exe_dir.join("resources");
-
+fn load_resource_from_file_system(resources_dir: &Path) -> Option<Vec<LuaFileInfo>> {
     if check_need_dump_to_file_system() {
-        log::info!("Creating resources dir: {:?}", resoucres_dir);
+        log::info!("Creating resources dir: {:?}", resources_dir);
         let files = load_resource_from_include_dir();
         for file in &files {
-            let path = resoucres_dir.join(&file.path);
+            let path = resources_dir.join(&file.path);
             let parent = path.parent().unwrap();
             if !parent.exists() {
                 match std::fs::create_dir_all(parent) {
@@ -70,7 +74,7 @@ fn load_resource_from_file_system() -> Option<Vec<LuaFileInfo>> {
             }
         }
 
-        let version_path = resoucres_dir.join("version");
+        let version_path = resources_dir.join("version");
         let content = format!("{}", VERSION);
         match std::fs::write(&version_path, content) {
             Ok(_) => {}
@@ -81,7 +85,7 @@ fn load_resource_from_file_system() -> Option<Vec<LuaFileInfo>> {
         }
     }
 
-    let std_dir = resoucres_dir.join("std");
+    let std_dir = resources_dir.join("std");
     let match_pattern = vec!["**/*.lua".to_string()];
     let files = match load_workspace_files(&std_dir, &match_pattern, &Vec::new(), &Vec::new(), None)
     {
