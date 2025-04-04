@@ -9,6 +9,7 @@ mod for_range_var_infer_test;
 mod infer_str_tpl_test;
 mod inherit_type;
 mod mathlib_test;
+mod memebr_infer_test;
 mod metatable_test;
 mod module_annotation;
 mod multi_return;

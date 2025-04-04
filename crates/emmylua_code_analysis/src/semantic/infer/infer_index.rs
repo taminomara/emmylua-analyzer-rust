@@ -453,28 +453,67 @@ fn infer_member_by_index_table(
     table_range: &InFiled<TextRange>,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
-    let metatable = db
-        .get_metatable_index()
-        .get(table_range)
-        .ok_or(InferFailReason::FieldDotFound)?;
+    let metatable = db.get_metatable_index().get(table_range);
+    match metatable {
+        Some(metatable) => {
+            let meta_owner = LuaOperatorOwner::Table(metatable.clone());
+            let operator_ids = db
+                .get_operator_index()
+                .get_operators(&meta_owner, LuaOperatorMetaMethod::Index)
+                .ok_or(InferFailReason::FieldDotFound)?;
 
-    let meta_owner = LuaOperatorOwner::Table(metatable.clone());
-    let operator_ids = db
-        .get_operator_index()
-        .get_operators(&meta_owner, LuaOperatorMetaMethod::Index)
-        .ok_or(InferFailReason::FieldDotFound)?;
+            let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
 
-    let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
+            for operator_id in operator_ids {
+                let operator = db
+                    .get_operator_index()
+                    .get_operator(operator_id)
+                    .ok_or(InferFailReason::None)?;
+                let operand = operator.get_operand(db);
+                let return_type = operator.get_result(db)?;
+                let typ = infer_index_metamethod(db, cache, &index_key, &operand, &return_type)?;
+                return Ok(typ);
+            }
+        }
+        None => {
+            let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
+            if let LuaIndexKey::Expr(expr) = index_key {
+                let key_type = infer_expr(db, cache, expr.clone())?;
+                let members = db
+                    .get_member_index()
+                    .get_members(&LuaMemberOwner::Element(table_range.clone()));
+                if let Some(members) = members {
+                    let mut result_type = LuaType::Unknown;
+                    for member in members {
+                        let member_key_type = match member.get_key() {
+                            LuaMemberKey::Name(s) => LuaType::StringConst(s.clone().into()),
+                            LuaMemberKey::Integer(i) => LuaType::IntegerConst(*i),
+                            _ => continue,
+                        };
+                        if check_type_compact(db, &key_type, &member_key_type).is_ok() {
+                            let member_type = db
+                                .get_type_index()
+                                .get_type_cache(&member.get_id().into())
+                                .map(|it| it.as_type())
+                                .unwrap_or(&LuaType::Unknown);
 
-    for operator_id in operator_ids {
-        let operator = db
-            .get_operator_index()
-            .get_operator(operator_id)
-            .ok_or(InferFailReason::None)?;
-        let operand = operator.get_operand(db);
-        let return_type = operator.get_result(db)?;
-        let typ = infer_index_metamethod(db, cache, &index_key, &operand, &return_type)?;
-        return Ok(typ);
+                            result_type = TypeOps::Union.apply(&result_type, member_type);
+                        }
+                    }
+
+                    if !result_type.is_unknown() {
+                        if matches!(
+                            key_type,
+                            LuaType::String | LuaType::Number | LuaType::Integer
+                        ) {
+                            result_type = TypeOps::Union.apply(&result_type, &LuaType::Nil);
+                        }
+
+                        return Ok(result_type);
+                    }
+                }
+            }
+        }
     }
 
     Err(InferFailReason::FieldDotFound)
