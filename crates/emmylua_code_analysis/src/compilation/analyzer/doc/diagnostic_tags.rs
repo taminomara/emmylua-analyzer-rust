@@ -131,7 +131,7 @@ fn analyze_diagnostic_enable(
     diagnostic: LuaDocTagDiagnostic,
 ) -> Option<()> {
     let diagnostic_index = analyzer.db.get_diagnostic_index_mut();
-    let diagnostic_code_list = diagnostic.get_code_list().unwrap();
+    let diagnostic_code_list = diagnostic.get_code_list()?;
     for code in diagnostic_code_list.get_codes() {
         let name = code.get_name_text();
         let diagnostic_code = if let Some(code) = DiagnosticCode::from_str(name).ok() {
