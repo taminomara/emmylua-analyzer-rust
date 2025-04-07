@@ -4,9 +4,10 @@ use emmylua_parser::{
 };
 
 use crate::{
-    semantic::member::get_buildin_type_map_type_id, DbIndex, LuaDeclId, LuaDeclOrMemberId,
-    LuaInferCache, LuaInstanceType, LuaMemberId, LuaMemberKey, LuaMemberOwner, LuaSemanticDeclId,
-    LuaType, LuaTypeCache, LuaTypeDeclId, LuaUnionType,
+    semantic::{infer::find_self_decl_or_member_id, member::get_buildin_type_map_type_id},
+    DbIndex, LuaDeclId, LuaDeclOrMemberId, LuaInferCache, LuaInstanceType, LuaMemberId,
+    LuaMemberKey, LuaMemberOwner, LuaSemanticDeclId, LuaType, LuaTypeCache, LuaTypeDeclId,
+    LuaUnionType,
 };
 
 use super::{
@@ -126,38 +127,7 @@ fn get_name_decl_id(
         }
     }
 
-    get_global_decl_id(db, name)
-}
-
-fn get_global_decl_id(db: &DbIndex, name: &str) -> Option<LuaDeclId> {
-    let decl_ids = db.get_global_index().get_global_decl_ids(name)?;
-    if decl_ids.len() == 1 {
-        return Some(decl_ids[0]);
-    }
-
-    let mut last_valid_decl_id = None;
-    for decl_id in decl_ids {
-        let decl_type_cache = db.get_type_index().get_type_cache(&decl_id.clone().into());
-        match decl_type_cache {
-            Some(type_cache) => {
-                let typ = type_cache.as_type();
-                if typ.is_def() || typ.is_ref() || typ.is_function() {
-                    return Some(*decl_id);
-                }
-
-                if type_cache.is_table() {
-                    last_valid_decl_id = Some(decl_id)
-                }
-            }
-            None => {}
-        }
-    }
-
-    if last_valid_decl_id.is_none() && decl_ids.len() > 0 {
-        return Some(decl_ids[0]);
-    }
-
-    last_valid_decl_id.cloned()
+    db.get_global_index().resolve_global_decl_id(db, name)
 }
 
 fn infer_self_semantic_decl(
@@ -165,9 +135,7 @@ fn infer_self_semantic_decl(
     cache: &LuaInferCache,
     name_expr: LuaNameExpr,
 ) -> Option<LuaSemanticDeclId> {
-    let file_id = cache.get_file_id();
-    let tree = db.get_decl_index().get_decl_tree(&file_id)?;
-    let id = tree.find_self_decl(name_expr)?;
+    let id = find_self_decl_or_member_id(db, cache, &name_expr)?;
     match id {
         LuaDeclOrMemberId::Decl(decl_id) => {
             return Some(LuaSemanticDeclId::LuaDecl(decl_id));
@@ -398,5 +366,7 @@ fn infer_global_member_semantic_decl_by_member_key(
     member_key: &LuaMemberKey,
 ) -> Option<LuaSemanticDeclId> {
     let name = member_key.get_name()?;
-    get_global_decl_id(db, name).map(|decl_id| LuaSemanticDeclId::LuaDecl(decl_id))
+    db.get_global_index()
+        .resolve_global_decl_id(db, name)
+        .map(|decl_id| LuaSemanticDeclId::LuaDecl(decl_id))
 }

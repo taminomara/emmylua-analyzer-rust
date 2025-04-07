@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::{decl, scope, LuaDeclId};
-use crate::{db_index::LuaMemberId, FileId};
+use crate::{db_index::LuaMemberId, DbIndex, FileId};
 use decl::LuaDecl;
 use emmylua_parser::{
     LuaAstNode, LuaChunk, LuaExpr, LuaFuncStat, LuaNameExpr, LuaSyntaxId, LuaSyntaxKind, LuaVarExpr,
@@ -236,7 +236,11 @@ impl LuaDeclarationTree {
         }
     }
 
-    pub fn find_self_decl(&self, name_expr: LuaNameExpr) -> Option<LuaDeclOrMemberId> {
+    pub fn find_self_decl(
+        &self,
+        db: &DbIndex,
+        name_expr: LuaNameExpr,
+    ) -> Option<LuaDeclOrMemberId> {
         let position = name_expr.get_position();
         let scope = self.find_scope(position)?;
         let mut result: Option<LuaDeclOrMemberId> = None;
@@ -256,7 +260,7 @@ impl LuaDeclarationTree {
                         if scope.get_kind() == LuaScopeKind::MethodStat {
                             let range = scope.get_range();
                             let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::FuncStat.into(), range);
-                            let id = self.find_self_decl_id(&root, syntax_id);
+                            let id = self.find_self_decl_id(&db, &root, syntax_id);
                             if id.is_some() {
                                 result = id;
                                 return true;
@@ -273,6 +277,7 @@ impl LuaDeclarationTree {
 
     fn find_self_decl_id(
         &self,
+        db: &DbIndex,
         root: &LuaChunk,
         syntax_id: LuaSyntaxId,
     ) -> Option<LuaDeclOrMemberId> {
@@ -289,6 +294,9 @@ impl LuaDeclarationTree {
                     if let Some(decl) = decl {
                         return Some(LuaDeclOrMemberId::Decl(decl.get_id()));
                     }
+
+                    let id = db.get_global_index().resolve_global_decl_id(db, &name)?;
+                    return Some(LuaDeclOrMemberId::Decl(id));
                 }
                 LuaExpr::IndexExpr(prefx_index) => {
                     let member_id = LuaMemberId::new(prefx_index.get_syntax_id(), self.file_id);

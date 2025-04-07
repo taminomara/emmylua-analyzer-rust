@@ -3,7 +3,9 @@ use emmylua_code_analysis::{
     LuaSignatureId, LuaType, LuaTypeDeclId, RenderLevel, SemanticDeclLevel, SemanticInfo,
     SemanticModel,
 };
-use emmylua_parser::{LuaAssignStat, LuaAstNode, LuaSyntaxKind, LuaSyntaxToken, LuaTableField};
+use emmylua_parser::{
+    LuaAssignStat, LuaAstNode, LuaExpr, LuaSyntaxKind, LuaSyntaxToken, LuaTableField,
+};
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
 
 use emmylua_code_analysis::humanize_type;
@@ -451,9 +453,9 @@ pub fn get_hover_type(builder: &HoverBuilder, semantic_model: &SemanticModel) ->
             .text_range()
             .contains(builder.get_trigger_token()?.text_range().start())
         {
-            let mut expr: Option<&emmylua_parser::LuaExpr> = exprs.get(i);
+            let mut expr: Option<&LuaExpr> = exprs.get(i);
             let multi_return_index = if expr.is_none() {
-                expr = Some(&exprs.last().unwrap());
+                expr = Some(exprs.last()?);
                 i + 1 - exprs.len()
             } else {
                 0
