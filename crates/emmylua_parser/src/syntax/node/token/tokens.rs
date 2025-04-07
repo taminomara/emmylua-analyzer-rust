@@ -660,7 +660,7 @@ impl LuaAstToken for LuaDocTypeUnaryToken {
     where
         Self: Sized,
     {
-        kind == LuaTokenKind::TkDocKeyOf
+        kind == LuaTokenKind::TkDocKeyOf || kind == LuaTokenKind::TkMinus
     }
 
     fn cast(syntax: LuaSyntaxToken) -> Option<Self>

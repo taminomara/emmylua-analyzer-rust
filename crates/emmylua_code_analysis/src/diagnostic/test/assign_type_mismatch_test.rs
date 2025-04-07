@@ -676,4 +676,17 @@ return t
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_338() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            local t ---@type 0|-1
+
+            t = -1
+        "#
+        ));
+    }
 }
