@@ -4,7 +4,6 @@ use emmylua_code_analysis::{
     load_configs, load_workspace_files, update_code_style, EmmyLuaAnalysis, Emmyrc, LuaFileInfo,
 };
 
-#[allow(unused)]
 pub fn load_workspace(
     workspace_folder: PathBuf,
     config_path: Option<PathBuf>,
@@ -19,17 +18,23 @@ pub fn load_workspace(
     }
 
     let main_path = workspace_folders.get(0)?.clone();
-    let config_files = if let Some(config_path) = config_path {
-        vec![config_path]
+    let (config_files, config_root) = if let Some(config_path) = config_path {
+        (
+            vec![config_path.clone()],
+            config_path.parent().unwrap().to_path_buf(),
+        )
     } else {
-        vec![
-            main_path.join(".luarc.json"),
-            main_path.join(".emmyrc.json"),
-        ]
+        (
+            vec![
+                main_path.join(".luarc.json"),
+                main_path.join(".emmyrc.json"),
+            ],
+            main_path.clone(),
+        )
     };
 
     let mut emmyrc = load_configs(config_files, None);
-    emmyrc.pre_process_emmyrc(&main_path);
+    emmyrc.pre_process_emmyrc(&config_root);
 
     for root in &emmyrc.workspace.workspace_roots {
         analysis.add_main_workspace(PathBuf::from_str(root).unwrap());
