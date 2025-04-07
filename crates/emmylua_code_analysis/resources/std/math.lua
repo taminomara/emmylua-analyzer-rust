@@ -87,7 +87,7 @@ function math.fmod(x, y) end
 
 ---
 --- The float value `HUGE_VAL`, a value larger than any other numeric value.
----@type number
+---@type integer
 math.huge = nil
 
 ---
