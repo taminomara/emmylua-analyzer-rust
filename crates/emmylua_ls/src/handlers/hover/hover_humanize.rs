@@ -2,10 +2,12 @@ use std::collections::HashSet;
 
 use emmylua_code_analysis::{
     DbIndex, LuaDocReturnInfo, LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner,
-    LuaMultiLineUnion, LuaSignature, LuaSignatureId, LuaType, LuaUnionType, RenderLevel,
+    LuaMultiLineUnion, LuaSemanticDeclId, LuaSignature, LuaSignatureId, LuaType, LuaUnionType,
+    RenderLevel, SemanticDeclLevel, SemanticModel,
 };
 
 use emmylua_code_analysis::humanize_type;
+use emmylua_parser::{LuaAstNode, LuaIndexExpr, LuaSyntaxKind};
 
 use super::hover_builder::HoverBuilder;
 
@@ -97,7 +99,7 @@ fn hover_doc_function_type(
     let mut type_label = "function ";
     // 有可能来源于类. 例如: `local add = class.add`, `add()`应被视为类方法
     let full_name = if let Some(owner_member) = owner_member {
-        let global_name = builder.infer_prefix_global_name(owner_member);
+        let global_name = infer_prefix_global_name(builder.semantic_model, owner_member);
         let mut name = String::new();
         let parent_owner = db
             .get_member_index()
@@ -176,7 +178,7 @@ fn hover_signature_type(
     let mut type_label = "function ";
     // 有可能来源于类. 例如: `local add = class.add`, `add()`应被视为类定义的内容
     let full_name = if let Some(owner_member) = owner_member {
-        let global_name = builder.infer_prefix_global_name(owner_member);
+        let global_name = infer_prefix_global_name(builder.semantic_model, owner_member);
         let mut name = String::new();
         let parent_owner = db
             .get_member_index()
@@ -528,4 +530,43 @@ fn hover_multi_line_union_type(
     }
     builder.add_type_expansion(text);
     type_name
+}
+
+/// 推断前缀是否为全局定义, 如果是, 则返回全局名称, 否则返回 None
+pub fn infer_prefix_global_name<'a>(
+    semantic_model: &'a SemanticModel,
+    member: &LuaMember,
+) -> Option<&'a str> {
+    let root = semantic_model
+        .get_db()
+        .get_vfs()
+        .get_syntax_tree(&member.get_file_id())?
+        .get_red_root();
+    let cur_node = member.get_syntax_id().to_node_from_root(&root)?;
+
+    match cur_node.kind().into() {
+        LuaSyntaxKind::IndexExpr => {
+            let index_expr = LuaIndexExpr::cast(cur_node)?;
+            let semantic_decl = semantic_model.find_decl(
+                index_expr
+                    .get_prefix_expr()?
+                    .get_syntax_id()
+                    .to_node_from_root(&root)
+                    .unwrap()
+                    .into(),
+                SemanticDeclLevel::default(),
+            );
+            if let Some(property_owner) = semantic_decl {
+                if let LuaSemanticDeclId::LuaDecl(id) = property_owner {
+                    if let Some(decl) = semantic_model.get_db().get_decl_index().get_decl(&id) {
+                        if decl.is_global() {
+                            return Some(decl.get_name());
+                        }
+                    }
+                }
+            }
+        }
+        _ => {}
+    }
+    None
 }

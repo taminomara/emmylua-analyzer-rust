@@ -1,8 +1,7 @@
 use emmylua_code_analysis::{
-    LuaFunctionType, LuaMember, LuaMemberOwner, LuaSemanticDeclId, LuaType, SemanticDeclLevel,
-    SemanticModel,
+    LuaFunctionType, LuaMember, LuaMemberOwner, LuaSemanticDeclId, LuaType, SemanticModel,
 };
-use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaIndexExpr, LuaSyntaxKind, LuaSyntaxToken};
+use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxToken};
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
 
 use crate::handlers::hover::std_hover::hover_std_description;
@@ -230,45 +229,6 @@ impl<'a> HoverBuilder<'a> {
             }
         }
 
-        None
-    }
-
-    /// 推断前缀是否为全局定义, 如果是, 则返回全局名称, 否则返回 None
-    pub fn infer_prefix_global_name(&self, member: &LuaMember) -> Option<&str> {
-        let root = self
-            .semantic_model
-            .get_db()
-            .get_vfs()
-            .get_syntax_tree(&member.get_file_id())?
-            .get_red_root();
-        let cur_node = member.get_syntax_id().to_node_from_root(&root)?;
-
-        match cur_node.kind().into() {
-            LuaSyntaxKind::IndexExpr => {
-                let index_expr = LuaIndexExpr::cast(cur_node)?;
-                let semantic_decl = self.semantic_model.find_decl(
-                    index_expr
-                        .get_prefix_expr()?
-                        .get_syntax_id()
-                        .to_node_from_root(&root)
-                        .unwrap()
-                        .into(),
-                    SemanticDeclLevel::default(),
-                );
-                if let Some(property_owner) = semantic_decl {
-                    if let LuaSemanticDeclId::LuaDecl(id) = property_owner {
-                        if let Some(decl) =
-                            self.semantic_model.get_db().get_decl_index().get_decl(&id)
-                        {
-                            if decl.is_global() {
-                                return Some(decl.get_name());
-                            }
-                        }
-                    }
-                }
-            }
-            _ => {}
-        }
         None
     }
 
