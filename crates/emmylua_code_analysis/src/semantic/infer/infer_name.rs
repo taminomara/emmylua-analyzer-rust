@@ -251,7 +251,7 @@ pub fn infer_global_type(db: &DbIndex, name: &str) -> InferResult {
         }
     }
 
-    if valid_type.is_unknown() && last_resolve_reason != InferFailReason::None {
+    if !valid_type.is_unknown() {
         return Ok(valid_type);
     }
 
