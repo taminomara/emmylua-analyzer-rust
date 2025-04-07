@@ -1,4 +1,4 @@
-use emmylua_parser::{BinaryOperator, LuaBinaryExpr};
+use emmylua_parser::{BinaryOperator, LuaBinaryExpr, LuaExpr};
 use smol_str::SmolStr;
 
 use crate::{
@@ -18,6 +18,13 @@ pub fn infer_binary_expr(
     let (left, right) = expr.get_exprs().ok_or(InferFailReason::None)?;
     let left_type = infer_expr(db, cache, left.clone())?;
     let right_type = infer_expr(db, cache, right.clone())?;
+
+    // workaround for x or error('')
+    if let LuaExpr::CallExpr(call_expr) = right {
+        if call_expr.is_error() && op == BinaryOperator::OpOr {
+            return Ok(TypeOps::Remove.apply(&left_type, &LuaType::Nil));
+        }
+    }
 
     match (&left_type, &right_type) {
         (LuaType::Union(u), right) => infer_union(db, &u, right, op, true),

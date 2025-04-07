@@ -324,4 +324,21 @@ mod tests {
             "#
         ));
     }
+
+    #[test]
+    fn test_issue_341() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+            --- @return integer
+            local function foo()
+                local a --- @type integer?
+                return a or error("a is nil")
+            end
+            end
+            "#
+        ));
+    }
 }
