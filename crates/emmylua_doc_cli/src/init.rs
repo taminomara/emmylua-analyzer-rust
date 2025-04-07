@@ -7,7 +7,7 @@ use emmylua_code_analysis::{
 #[allow(unused)]
 pub fn load_workspace(workspace_folders: Vec<&str>) -> Option<EmmyLuaAnalysis> {
     let mut analysis = EmmyLuaAnalysis::new();
-    analysis.init_std_lib(false);
+    analysis.init_std_lib(None);
 
     let mut workspace_folders = workspace_folders
         .iter()

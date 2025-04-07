@@ -421,4 +421,44 @@ mod tests {
             "#
         ));
     }
+
+    #[test]
+    fn test_miss_return_1() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+        ---@class oslib
+        os = {}
+        ---@param code integer
+        ---@param close? boolean
+        ---@return integer
+        function os.exit(code, close) end
+
+        "#,
+        );
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::MissingReturn,
+            r#"
+            local M = {}
+            M.oldOsExit = os.exit
+
+            os.exit = function(...)
+            end
+        "#,
+        ));
+    }
+
+    #[test]
+    fn test_miss_return_2() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::MissingReturn,
+            r#"
+            os.exit = function(...)
+            end
+        "#,
+        ));
+    }
 }

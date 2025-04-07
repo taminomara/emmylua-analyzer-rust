@@ -1,4 +1,8 @@
-use std::{collections::HashMap, hash::Hash, sync::Arc};
+use std::{
+    collections::HashMap,
+    hash::{Hash, Hasher},
+    sync::Arc,
+};
 
 use internment::ArcIntern;
 use rowan::TextRange;
@@ -631,8 +635,7 @@ impl From<LuaObjectType> for LuaType {
         LuaType::Object(t.into())
     }
 }
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct LuaUnionType {
     types: Vec<LuaType>,
 }
@@ -652,6 +655,50 @@ impl LuaUnionType {
 
     pub fn contain_tpl(&self) -> bool {
         self.types.iter().any(|t| t.contain_tpl())
+    }
+}
+
+impl PartialEq for LuaUnionType {
+    fn eq(&self, other: &Self) -> bool {
+        if self.types.len() != other.types.len() {
+            return false;
+        }
+        let mut counts = HashMap::new();
+        // Count occurrences in self.types
+        for t in &self.types {
+            *counts.entry(t).or_insert(0) += 1;
+        }
+        // Decrease counts for other.types
+        for t in &other.types {
+            match counts.get_mut(t) {
+                Some(count) if *count > 0 => *count -= 1,
+                _ => return false,
+            }
+        }
+        true
+    }
+}
+
+impl Eq for LuaUnionType {}
+
+impl std::hash::Hash for LuaUnionType {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        // To get an order-insensitive hash, combine:
+        // - the number of elements
+        // - the sum and product of the hashes of individual elements.
+        // This is a simple and fast commutative hash.
+        let mut sum: u64 = 0;
+        let mut prod: u64 = 1;
+        for t in &self.types {
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            t.hash(&mut hasher);
+            let h = hasher.finish();
+            sum = sum.wrapping_add(h);
+            prod = prod.wrapping_mul(h.wrapping_add(1));
+        }
+        self.types.len().hash(state);
+        sum.hash(state);
+        prod.hash(state);
     }
 }
 

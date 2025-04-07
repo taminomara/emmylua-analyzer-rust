@@ -55,4 +55,23 @@ mod test {
 
         assert_eq!(ws.expr_ty("d"), LuaType::Any);
     }
+
+    #[test]
+    fn test_issue_321() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.def(
+            r#"
+        ---@return fun():string?
+        local function test(...) end
+
+        for k in test() do
+            -- k can't be nil
+            d = k
+        end
+        "#,
+        );
+
+        assert_eq!(ws.expr_ty("d"), LuaType::String);
+    }
 }

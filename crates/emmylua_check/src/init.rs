@@ -11,7 +11,7 @@ pub fn load_workspace(
     ignore: Option<Vec<String>>,
 ) -> Option<EmmyLuaAnalysis> {
     let mut analysis = EmmyLuaAnalysis::new();
-    analysis.init_std_lib(false);
+    analysis.init_std_lib(None);
 
     let mut workspace_folders = vec![workspace_folder];
     for path in &workspace_folders {

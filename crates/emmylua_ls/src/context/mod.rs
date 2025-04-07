@@ -37,10 +37,7 @@ impl ServerContext {
             receiver: conn.receiver.clone(),
         }));
 
-        let mut analysis = EmmyLuaAnalysis::new();
-        analysis.init_std_lib(true);
-
-        let analysis = Arc::new(RwLock::new(analysis));
+        let analysis = Arc::new(RwLock::new(EmmyLuaAnalysis::new()));
         let status_bar = Arc::new(StatusBar::new(client.clone()));
         let file_diagnostic = Arc::new(FileDiagnostic::new(
             analysis.clone(),

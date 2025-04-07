@@ -1,34 +1,32 @@
 use emmylua_code_analysis::{EmmyLuaAnalysis, FileId, VirtualUrlGenerator};
-use emmylua_parser::LuaAstNode;
-use lsp_types::{CompletionItemKind, CompletionResponse, CompletionTriggerKind, Position};
-use tokio_util::sync::CancellationToken;
+use lsp_types::{Hover, HoverContents, MarkupContent, Position};
 
-mod completion_test;
-use super::completion;
+mod hover_function_test;
+mod hover_test;
+use super::hover;
 
 /// A virtual workspace for testing.
 #[allow(unused)]
 #[derive(Debug)]
-struct CompletionVirtualWorkspace {
+struct HoverVirtualWorkspace {
     pub virtual_url_generator: VirtualUrlGenerator,
     pub analysis: EmmyLuaAnalysis,
     id_counter: u32,
 }
 
 #[derive(Debug)]
-struct VirtualCompletionItem {
-    pub label: String,
-    pub kind: CompletionItemKind,
+struct VirtualHoverResult {
+    pub value: String,
 }
 
 #[allow(unused)]
-impl CompletionVirtualWorkspace {
+impl HoverVirtualWorkspace {
     pub fn new() -> Self {
         let gen = VirtualUrlGenerator::new();
         let mut analysis = EmmyLuaAnalysis::new();
         let base = &gen.base;
         analysis.add_main_workspace(base.clone());
-        CompletionVirtualWorkspace {
+        HoverVirtualWorkspace {
             virtual_url_generator: gen,
             analysis,
             id_counter: 0,
@@ -41,7 +39,7 @@ impl CompletionVirtualWorkspace {
         analysis.init_std_lib(None);
         let base = &gen.base;
         analysis.add_main_workspace(base.clone());
-        CompletionVirtualWorkspace {
+        HoverVirtualWorkspace {
             virtual_url_generator: gen,
             analysis,
             id_counter: 0,
@@ -61,17 +59,6 @@ impl CompletionVirtualWorkspace {
             .update_file_by_uri(&uri, Some(content.to_string()))
             .unwrap();
         file_id
-    }
-
-    pub fn get_node<Ast: LuaAstNode>(&self, file_id: FileId) -> Ast {
-        let tree = self
-            .analysis
-            .compilation
-            .get_db()
-            .get_vfs()
-            .get_syntax_tree(&file_id)
-            .unwrap();
-        tree.get_chunk_node().descendants::<Ast>().next().unwrap()
     }
 
     /// 处理文件内容
@@ -101,49 +88,24 @@ impl CompletionVirtualWorkspace {
         Some((new_content, Position::new(line as u32, column as u32)))
     }
 
-    pub fn check_completion(
-        &mut self,
-        block_str: &str,
-        expect: Vec<VirtualCompletionItem>,
-    ) -> bool {
-        self.check_completion_with_kind(block_str, expect, CompletionTriggerKind::INVOKED)
-    }
-
-    pub fn check_completion_with_kind(
-        &mut self,
-        block_str: &str,
-        expect: Vec<VirtualCompletionItem>,
-        trigger_kind: CompletionTriggerKind,
-    ) -> bool {
+    pub fn check_hover(&mut self, block_str: &str, expect: VirtualHoverResult) -> bool {
         let content = Self::handle_file_content(block_str);
         let Some((content, position)) = content else {
             return false;
         };
         let file_id = self.def(&content);
-        let result = completion(
-            &self.analysis,
-            file_id,
-            position,
-            trigger_kind,
-            CancellationToken::new(),
-        );
+        let result = hover(&self.analysis, file_id, position);
         let Some(result) = result else {
             return false;
         };
-        // 对比
-        let items = match result {
-            CompletionResponse::Array(items) => items,
-            CompletionResponse::List(list) => list.items,
+        let Hover { contents, range } = result;
+        let HoverContents::Markup(MarkupContent { kind, value }) = contents else {
+            return false;
         };
-        if items.len() != expect.len() {
+        if value != expect.value {
             return false;
         }
-        // 需要顺序一致
-        for (item, expect) in items.iter().zip(expect.iter()) {
-            if item.label != expect.label || item.kind != Some(expect.kind) {
-                return false;
-            }
-        }
+
         true
     }
 }

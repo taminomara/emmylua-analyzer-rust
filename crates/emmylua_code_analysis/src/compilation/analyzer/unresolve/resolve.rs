@@ -5,12 +5,12 @@ use emmylua_parser::{LuaAstNode, LuaExpr, LuaLocalStat, LuaTableExpr};
 use crate::{
     compilation::analyzer::{
         bind_type::{add_member, bind_type},
-        lua::analyze_return_point,
+        lua::{analyze_return_point, infer_for_range_iter_expr_func},
     },
     db_index::{DbIndex, LuaMemberOwner, LuaType},
     semantic::{infer_expr, LuaInferCache},
     InFiled, InferFailReason, LuaDeclId, LuaMember, LuaMemberId, LuaMemberKey, LuaSemanticDeclId,
-    LuaTypeCache, SignatureReturnStatus,
+    LuaTypeCache, SignatureReturnStatus, TypeOps,
 };
 
 use super::{
@@ -260,22 +260,33 @@ pub fn try_resolve_return_point(
 pub fn try_resolve_iter_var(
     db: &mut DbIndex,
     cache: &mut LuaInferCache,
-    iter_var: &UnResolveIterVar,
+    iter_var: &mut UnResolveIterVar,
 ) -> Option<bool> {
     if !check_reach_reason(db, cache, &iter_var.reason).unwrap_or(false) {
         return None;
     }
 
-    let expr_type = infer_expr(db, cache, iter_var.iter_expr.clone()).ok()?;
-    let func = match expr_type {
-        LuaType::DocFunction(func) => func,
-        _ => return Some(true),
+    let expr_type = match infer_expr(db, cache, iter_var.iter_expr.clone()) {
+        Ok(t) => t,
+        Err(InferFailReason::None) => return Some(true),
+        Err(reason) => {
+            iter_var.reason = reason;
+            return None;
+        }
+    };
+    let func = match infer_for_range_iter_expr_func(db, expr_type.clone()) {
+        Some(func) => func,
+        None => {
+            return Some(true);
+        }
     };
 
     let multi_return = func.get_multi_return();
-    let iter_type = multi_return
+    let mut iter_type = multi_return
         .get_type(iter_var.ret_idx)
-        .unwrap_or(&LuaType::Nil);
+        .cloned()
+        .unwrap_or(LuaType::Unknown);
+    iter_type = TypeOps::Remove.apply(&iter_type, &LuaType::Nil);
     let decl_id = iter_var.decl_id;
     bind_type(
         db,

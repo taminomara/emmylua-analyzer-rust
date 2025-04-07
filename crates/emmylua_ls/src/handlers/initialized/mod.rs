@@ -37,6 +37,9 @@ pub async fn initialized_handler(
     // init locale
     locale::set_ls_locale(&params);
 
+    // init std lib
+    init_std_lib(context.analysis.clone(), &cmd_args).await;
+
     // init logger
     init_logger(main_root, &cmd_args);
     info!("client_id: {:?}", client_id);
@@ -172,4 +175,11 @@ fn get_workspace_folders(params: &InitializeParams) -> Vec<PathBuf> {
     }
 
     workspace_folders
+}
+
+pub async fn init_std_lib(analysis: Arc<RwLock<EmmyLuaAnalysis>>, cmd_args: &CmdArgs) {
+    let mut analysis = analysis.write().await;
+    if cmd_args.load_std_lib.0 {
+        analysis.init_std_lib(cmd_args.resources_path.0.clone());
+    }
 }

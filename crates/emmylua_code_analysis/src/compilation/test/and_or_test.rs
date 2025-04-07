@@ -72,6 +72,6 @@ mod test {
 
         let c = ws.expr_ty("c");
         let c_desc = ws.humanize_type(c);
-        assert_eq!(c_desc, "(string|nil)");
+        assert_eq!(c_desc, "string?");
     }
 }
