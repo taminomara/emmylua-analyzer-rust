@@ -375,7 +375,7 @@ fn get_function_decl_owner(
 }
 
 // 获取`member_id`可能的来源
-fn get_function_member_owner(
+pub fn get_function_member_owner(
     semantic_model: &SemanticModel,
     member_id: LuaMemberId,
 ) -> Option<LuaSemanticDeclId> {

@@ -82,7 +82,7 @@ fn resolve_signature_by_args(
             0
         };
         let mut total_weight = 0; // 总权重
-        let expr_len = expr_types.len();
+        let mut fake_expr_len = 0;
         // 检查每个参数的匹配情况
         for (i, param) in params.iter().enumerate() {
             if i == 0 && jump_param > 0 {
@@ -93,13 +93,15 @@ fn resolve_signature_by_args(
             let param_type = param.1.as_ref().unwrap_or(&LuaType::Any);
             let expr_idx = i - jump_param;
 
-            if expr_idx >= expr_len {
+            if expr_idx >= expr_types.len() {
                 // 没有传入参数, 但参数是可空类型
                 if param_type.is_nullable() {
                     total_weight += 1;
+                    fake_expr_len += 1;
                 }
                 continue;
             }
+            fake_expr_len += 1;
 
             let expr_type = &expr_types[expr_idx];
             if *param_type == LuaType::Any || check_type_compact(db, param_type, expr_type).is_ok()
@@ -108,7 +110,7 @@ fn resolve_signature_by_args(
             }
         }
         // 如果参数数量完全匹配, 则认为其权重更高
-        if total_weight > 0 && params.len() == expr_types.len() {
+        if total_weight > 0 && params.len() == fake_expr_len {
             total_weight += 50000;
         }
 
@@ -133,7 +135,7 @@ fn resolve_signature_by_args(
 //     expr_types: &[LuaType],
 //     is_colon_call: bool,
 //     arg_count: Option<usize>,
-// ) -> Option<Arc<LuaFunctionType>> {
+// ) -> InferCallFuncResult {
 //     let arg_count = arg_count.unwrap_or(0);
 //     let mut opt_funcs = Vec::with_capacity(overloads.len());
 //     // 函数本身签名在尾部
@@ -195,4 +197,5 @@ fn resolve_signature_by_args(
 //         .first()
 //         .map(|(func, _, _, _)| Arc::clone(func))
 //         .or_else(|| overloads.last().cloned())
+//         .ok_or(InferFailReason::None)
 // }

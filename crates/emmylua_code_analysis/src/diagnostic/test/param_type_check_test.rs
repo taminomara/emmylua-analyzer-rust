@@ -511,4 +511,22 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_336() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            --- @param b string
+            --- @param c? boolean
+            --- @param d? string
+            --- @overload fun(b: string, d: string)
+            function foo(b, c, d) end
+
+            foo('number', true)
+        "#
+        ));
+    }
 }
