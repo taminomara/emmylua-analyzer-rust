@@ -1,11 +1,13 @@
 use emmylua_code_analysis::{
-    LuaMemberOwner, LuaSemanticDeclId, LuaType, SemanticDeclLevel, SemanticModel,
+    FileId, LuaMemberOwner, LuaSemanticDeclId, LuaType, SemanticDeclLevel, SemanticModel,
 };
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr};
 use lsp_types::{ParameterInformation, ParameterLabel};
 use rowan::NodeOrToken;
 
-use crate::handlers::hover::{get_function_member_owner, infer_prefix_global_name};
+use crate::handlers::hover::{
+    get_function_member_owner, hover_std_description, infer_prefix_global_name, is_std,
+};
 
 use super::build_signature_helper::{build_function_label, generate_param_label};
 
@@ -18,6 +20,7 @@ pub struct SignatureHelperBuilder<'a> {
     self_type: Option<LuaType>,
     params_info: Vec<ParameterInformation>,
     pub best_call_function_label: String,
+    pub description: String,
 }
 
 impl<'a> SignatureHelperBuilder<'a> {
@@ -30,6 +33,7 @@ impl<'a> SignatureHelperBuilder<'a> {
             self_type: None,
             params_info: Vec::new(),
             best_call_function_label: String::new(),
+            description: String::new(),
         };
         builder.self_type = builder.infer_self_type();
         builder.build_full_name();
@@ -74,7 +78,19 @@ impl<'a> SignatureHelperBuilder<'a> {
             return None;
         };
 
-        match semantic_decl {
+        // 先设置原始描述
+        let property = self
+            .semantic_model
+            .get_db()
+            .get_property_index()
+            .get_property(&semantic_decl);
+        if let Some(property) = property {
+            if let Some(description) = &property.description {
+                self.description = description.to_string();
+            }
+        }
+
+        match &semantic_decl {
             LuaSemanticDeclId::Member(member_id) => {
                 let member = db.get_member_index().get_member(&member_id)?;
                 let global_name = infer_prefix_global_name(self.semantic_model, member);
@@ -89,16 +105,38 @@ impl<'a> SignatureHelperBuilder<'a> {
                         name.push_str(ty.get_simple_name());
                     }
                     self.prefix_name = Some(name);
+
+                    // i18n
+                    self.set_std_function_description(
+                        member.get_file_id(),
+                        ty.get_name(),
+                        member.get_key().get_name(),
+                    );
                 }
                 self.function_name = member.get_key().to_path().to_string();
             }
             LuaSemanticDeclId::LuaDecl(decl_id) => {
                 let decl = db.get_decl_index().get_decl(&decl_id)?;
                 self.function_name = decl.get_name().to_string();
+                self.set_std_function_description(decl.get_file_id(), decl.get_name(), None);
             }
             _ => {}
         }
         Some(())
+    }
+
+    fn set_std_function_description(
+        &mut self,
+        file_id: FileId,
+        type_name: &str,
+        member_name: Option<&str>,
+    ) {
+        if is_std(self.semantic_model.get_db(), file_id) {
+            let std_desc = hover_std_description(type_name, member_name);
+            if !std_desc.is_empty() {
+                self.description = std_desc;
+            }
+        }
     }
 
     fn set_best_call_params_info(&mut self) -> Option<()> {

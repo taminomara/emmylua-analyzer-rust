@@ -1,6 +1,6 @@
 use emmylua_code_analysis::{
     DbIndex, InFiled, LuaFunctionType, LuaInstanceType, LuaOperatorMetaMethod, LuaOperatorOwner,
-    LuaSemanticDeclId, LuaSignatureId, LuaType, LuaTypeDeclId, RenderLevel, SemanticModel,
+    LuaSignatureId, LuaType, LuaTypeDeclId, RenderLevel, SemanticModel,
 };
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxToken, LuaTokenKind};
 use lsp_types::{
@@ -238,11 +238,9 @@ fn build_sig_id_signature_help(
         &signature.get_return_types(),
     );
 
-    let documentation = build_documentation(builder, signature_id);
-
     let signature_info = SignatureInformation {
         label,
-        documentation,
+        documentation: Some(Documentation::String(builder.description.clone())),
         parameters: Some(param_infos),
         active_parameter: Some(current_idx as u32),
     };
@@ -252,7 +250,8 @@ fn build_sig_id_signature_help(
         let signature =
             build_doc_function_signature_help(&builder, &overload, colon_call, origin_current_idx);
         if let Some(mut signature) = signature {
-            signature.signatures[0].documentation = build_documentation(builder, signature_id);
+            signature.signatures[0].documentation =
+                Some(Documentation::String(builder.description.clone()));
             signatures.push(signature.signatures[0].clone());
         }
     }
@@ -459,29 +458,6 @@ pub fn build_function_label(
     }
 
     label
-}
-
-/// 生成评论信息
-fn build_documentation(
-    builder: &SignatureHelperBuilder,
-    signature_id: LuaSignatureId,
-) -> Option<Documentation> {
-    let db = builder.semantic_model.get_db();
-    let property_owner = LuaSemanticDeclId::Signature(signature_id);
-    let documentation =
-        if let Some(property) = db.get_property_index().get_property(&property_owner) {
-            if let Some(description) = &property.description {
-                Some(Documentation::MarkupContent(MarkupContent {
-                    kind: lsp_types::MarkupKind::Markdown,
-                    value: description.to_string(),
-                }))
-            } else {
-                None
-            }
-        } else {
-            None
-        };
-    documentation
 }
 
 pub fn generate_param_label(db: &DbIndex, param: (String, Option<LuaType>)) -> String {
