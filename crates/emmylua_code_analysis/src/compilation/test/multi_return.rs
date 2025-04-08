@@ -90,4 +90,24 @@ mod test {
         let expected = ws.ty("string");
         assert_eq!(err_ty, expected);
     }
+
+    #[test]
+    fn test_issue_342() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+        function bar()
+            local a, b = foo()
+            e = b
+        end
+
+        --- @return string, integer
+        function foo() end
+        "#,
+        );
+
+        let e_ty = ws.expr_ty("e");
+        let expected = ws.ty("integer");
+        assert_eq!(e_ty, expected);
+    }
 }

@@ -136,16 +136,16 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
                     }
                 }
             }
-        }
-
-        for i in expr_count..name_count {
-            let name = name_list.get(i)?;
-            let position = name.get_position();
-            let decl_id = LuaDeclId::new(analyzer.file_id, position);
-            analyzer
-                .db
-                .get_type_index_mut()
-                .bind_type(decl_id.into(), LuaTypeCache::InferType(LuaType::Nil));
+        } else {
+            for i in expr_count..name_count {
+                let name = name_list.get(i)?;
+                let position = name.get_position();
+                let decl_id = LuaDeclId::new(analyzer.file_id, position);
+                analyzer
+                    .db
+                    .get_type_index_mut()
+                    .bind_type(decl_id.into(), LuaTypeCache::InferType(LuaType::Nil));
+            }
         }
     }
 
