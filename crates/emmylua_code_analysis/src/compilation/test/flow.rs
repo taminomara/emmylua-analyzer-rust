@@ -272,7 +272,6 @@ print(a.field)
         --- @return A
         function foo(opts)
             opts = opts or {}
-            --- @cast opts -table
             return opts
         end
         "#

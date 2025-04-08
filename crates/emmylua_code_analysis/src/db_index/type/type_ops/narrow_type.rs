@@ -27,11 +27,22 @@ pub fn narrow_down_type(source: LuaType, target: LuaType) -> Option<LuaType> {
                 return Some(source);
             }
         }
-        LuaType::Table => {
-            if source.is_table() {
+        LuaType::Table => match &source {
+            LuaType::TableConst(_) => {
                 return Some(source);
             }
-        }
+            LuaType::Table | LuaType::Userdata | LuaType::Any | LuaType::Unknown => {
+                return Some(LuaType::Table);
+            }
+            LuaType::Ref(_)
+            | LuaType::Def(_)
+            | LuaType::Global
+            | LuaType::Array(_)
+            | LuaType::Tuple(_)
+            | LuaType::Generic(_)
+            | LuaType::TableGeneric(_) => return Some(source),
+            _ => {}
+        },
         LuaType::Function => {
             if source.is_function() {
                 return Some(source);

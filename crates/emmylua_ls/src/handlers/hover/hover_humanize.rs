@@ -77,10 +77,11 @@ pub fn hover_function_type(
                         ));
                     }
                 }
-                let signature = overloads.pop().unwrap();
-                builder.set_type_description(signature);
-                for overload in overloads {
-                    builder.add_signature_overload(overload);
+                if let Some(signature) = overloads.pop() {
+                    builder.set_type_description(signature);
+                    for overload in overloads {
+                        builder.add_signature_overload(overload);
+                    }
                 }
             }
         }

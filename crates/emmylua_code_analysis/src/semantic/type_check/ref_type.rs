@@ -120,6 +120,9 @@ pub fn check_ref_type_compact(
                     check_guard.next_level()?,
                 );
             }
+            LuaType::Table => {
+                return Ok(());
+            }
             _ => return Err(TypeCheckFailReason::TypeNotMatch),
         };
 

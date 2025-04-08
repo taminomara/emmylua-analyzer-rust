@@ -1,4 +1,7 @@
-use emmylua_parser::{BinaryOperator, LuaBinaryExpr, LuaExpr};
+mod infer_binary_or;
+
+use emmylua_parser::{BinaryOperator, LuaBinaryExpr};
+use infer_binary_or::{infer_binary_expr_or, special_or_rule};
 use smol_str::SmolStr;
 
 use crate::{
@@ -19,10 +22,9 @@ pub fn infer_binary_expr(
     let left_type = infer_expr(db, cache, left.clone())?;
     let right_type = infer_expr(db, cache, right.clone())?;
 
-    // workaround for x or error('')
-    if let LuaExpr::CallExpr(call_expr) = right {
-        if call_expr.is_error() && op == BinaryOperator::OpOr {
-            return Ok(TypeOps::Remove.apply(&left_type, &LuaType::Nil));
+    if op == BinaryOperator::OpOr {
+        if let Some(ty) = special_or_rule(db, &left_type, &right_type, left, right) {
+            return Ok(ty);
         }
     }
 
@@ -420,16 +422,6 @@ fn infer_binary_expr_concat(db: &DbIndex, left: LuaType, right: LuaType) -> Infe
     }
 
     infer_binary_custom_operator(db, &left, &right, LuaOperatorMetaMethod::Concat)
-}
-
-fn infer_binary_expr_or(left: LuaType, right: LuaType) -> InferResult {
-    if left.is_always_truthy() {
-        return Ok(left);
-    } else if left.is_always_falsy() {
-        return Ok(right);
-    }
-
-    Ok(TypeOps::Union.apply(&TypeOps::Remove.apply(&left, &LuaType::Nil), &right))
 }
 
 fn infer_binary_expr_and(left: LuaType, right: LuaType) -> InferResult {
