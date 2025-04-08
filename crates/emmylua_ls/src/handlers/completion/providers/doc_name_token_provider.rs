@@ -1,8 +1,9 @@
 use std::collections::HashSet;
 
-use emmylua_code_analysis::DiagnosticCode;
+use emmylua_code_analysis::{DiagnosticCode, LuaTypeAttribute};
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaClosureExpr, LuaComment, LuaSyntaxKind, LuaSyntaxToken, LuaTokenKind,
+    LuaAst, LuaAstNode, LuaClosureExpr, LuaComment, LuaDocAttribute, LuaSyntaxKind, LuaSyntaxToken,
+    LuaTokenKind,
 };
 use lsp_types::CompletionItem;
 
@@ -27,6 +28,9 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         }
         DocCompletionExpected::DiagnosticCode => {
             add_tag_diagnostic_code_completion(builder);
+        }
+        DocCompletionExpected::ClassAttr => {
+            add_tag_class_attr_completion(builder);
         }
     }
 
@@ -68,6 +72,7 @@ fn get_doc_completion_expected(trigger_token: &LuaSyntaxToken) -> Option<DocComp
                         LuaSyntaxKind::DocDiagnosticCodeList => {
                             Some(DocCompletionExpected::DiagnosticCode)
                         }
+                        LuaSyntaxKind::DocAttribute => Some(DocCompletionExpected::ClassAttr),
                         _ => None,
                     }
                 }
@@ -85,6 +90,14 @@ fn get_doc_completion_expected(trigger_token: &LuaSyntaxToken) -> Option<DocComp
             let parent = trigger_token.parent()?;
             match parent.kind().into() {
                 LuaSyntaxKind::DocDiagnosticCodeList => Some(DocCompletionExpected::DiagnosticCode),
+                LuaSyntaxKind::DocAttribute => Some(DocCompletionExpected::ClassAttr),
+                _ => None,
+            }
+        }
+        LuaTokenKind::TkLeftParen => {
+            let parent = trigger_token.parent()?;
+            match parent.kind().into() {
+                LuaSyntaxKind::DocAttribute => Some(DocCompletionExpected::ClassAttr),
                 _ => None,
             }
         }
@@ -98,6 +111,7 @@ enum DocCompletionExpected {
     Cast,
     DiagnosticAction,
     DiagnosticCode,
+    ClassAttr,
 }
 
 fn add_tag_param_name_completion(builder: &mut CompletionBuilder) -> Option<()> {
@@ -186,6 +200,56 @@ fn add_tag_diagnostic_code_completion(builder: &mut CompletionBuilder) {
             ..Default::default()
         };
 
+        builder.add_completion_item(completion_item);
+    }
+}
+
+fn add_tag_class_attr_completion(builder: &mut CompletionBuilder) {
+    let attributes = [
+        (LuaTypeAttribute::Partial, "partial"),
+        (LuaTypeAttribute::Key, "key"),
+        (LuaTypeAttribute::Constructor, "constructor"),
+        (LuaTypeAttribute::Exact, "exact"),
+        (LuaTypeAttribute::Meta, "meta"),
+    ];
+
+    // 已存在的属性
+    let mut existing_attrs = HashSet::new();
+    match builder.trigger_token.kind().into() {
+        LuaTokenKind::TkLeftParen | LuaTokenKind::TkComma => {
+            let parent = builder.trigger_token.parent().unwrap();
+            let attr = LuaDocAttribute::cast(parent).unwrap();
+            for token in attr.get_attrib_tokens() {
+                let name_text = token.get_name_text().to_string();
+                existing_attrs.insert(name_text);
+            }
+        }
+        LuaTokenKind::TkWhitespace => {
+            let left_token = builder.trigger_token.prev_token().unwrap();
+            match left_token.kind().into() {
+                LuaTokenKind::TkComma => {
+                    let parent = left_token.parent().unwrap();
+                    let attr = LuaDocAttribute::cast(parent).unwrap();
+                    for token in attr.get_attrib_tokens() {
+                        let name_text = token.get_name_text().to_string();
+                        existing_attrs.insert(name_text);
+                    }
+                }
+                _ => {}
+            }
+        }
+        _ => {}
+    }
+
+    for (_, name) in attributes.iter() {
+        if existing_attrs.contains(*name) {
+            continue;
+        }
+        let completion_item = CompletionItem {
+            label: name.to_string(),
+            kind: Some(lsp_types::CompletionItemKind::ENUM_MEMBER),
+            ..Default::default()
+        };
         builder.add_completion_item(completion_item);
     }
 }
