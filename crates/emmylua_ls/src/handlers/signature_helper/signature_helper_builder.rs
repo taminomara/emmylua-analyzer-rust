@@ -2,9 +2,12 @@ use emmylua_code_analysis::{
     LuaMemberOwner, LuaSemanticDeclId, LuaType, SemanticDeclLevel, SemanticModel,
 };
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr};
+use lsp_types::{ParameterInformation, ParameterLabel};
 use rowan::NodeOrToken;
 
 use crate::handlers::hover::{get_function_member_owner, infer_prefix_global_name};
+
+use super::build_signature_helper::generate_param_label;
 
 #[derive(Debug)]
 pub struct SignatureHelperBuilder<'a> {
@@ -13,6 +16,7 @@ pub struct SignatureHelperBuilder<'a> {
     pub prefix_name: Option<String>,
     pub function_name: String,
     self_type: Option<LuaType>,
+    params_info: Vec<ParameterInformation>,
 }
 
 impl<'a> SignatureHelperBuilder<'a> {
@@ -23,9 +27,11 @@ impl<'a> SignatureHelperBuilder<'a> {
             prefix_name: None,
             function_name: String::new(),
             self_type: None,
+            params_info: Vec::new(),
         };
         builder.self_type = builder.infer_self_type();
         builder.build_full_name();
+        builder.set_best_call_params_info();
         builder
     }
 
@@ -46,7 +52,7 @@ impl<'a> SignatureHelperBuilder<'a> {
         self.self_type.clone()
     }
 
-    pub fn build_full_name(&mut self) -> Option<()> {
+    fn build_full_name(&mut self) -> Option<()> {
         let semantic_model = self.semantic_model;
         let db = semantic_model.get_db();
         let prefix_expr = self.call_expr.get_prefix_expr()?;
@@ -65,7 +71,6 @@ impl<'a> SignatureHelperBuilder<'a> {
         let Some(semantic_decl) = semantic_decl else {
             return None;
         };
-        dbg!(&semantic_decl);
 
         match semantic_decl {
             LuaSemanticDeclId::Member(member_id) => {
@@ -92,5 +97,27 @@ impl<'a> SignatureHelperBuilder<'a> {
             _ => {}
         }
         Some(())
+    }
+
+    fn set_best_call_params_info(&mut self) -> Option<()> {
+        if !self.params_info.is_empty() {
+            return Some(());
+        }
+        let func = self
+            .semantic_model
+            .infer_call_expr_func(self.call_expr.clone(), None)?;
+        for param in func.get_params() {
+            let param_label = generate_param_label(self.semantic_model.get_db(), param.clone());
+            self.params_info.push(ParameterInformation {
+                label: ParameterLabel::Simple(param_label),
+                documentation: None,
+            });
+        }
+
+        Some(())
+    }
+
+    pub fn get_best_call_params_info(&self) -> &[ParameterInformation] {
+        &self.params_info
     }
 }

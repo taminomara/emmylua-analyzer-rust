@@ -1,5 +1,5 @@
 use emmylua_code_analysis::{
-    InFiled, LuaFunctionType, LuaInstanceType, LuaOperatorMetaMethod, LuaOperatorOwner,
+    DbIndex, InFiled, LuaFunctionType, LuaInstanceType, LuaOperatorMetaMethod, LuaOperatorOwner,
     LuaSemanticDeclId, LuaSignatureId, LuaType, LuaTypeDeclId, RenderLevel, SemanticModel,
 };
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxToken, LuaTokenKind};
@@ -23,7 +23,7 @@ pub fn build_signature_helper(
     let builder = SignatureHelperBuilder::new(semantic_model, call_expr.clone());
     let colon_call = call_expr.is_colon_call();
     let current_idx = get_current_param_index(&call_expr, &token)?;
-    match prefix_expr_type {
+    let help = match prefix_expr_type {
         LuaType::DocFunction(func_type) => {
             build_doc_function_signature_help(&builder, &func_type, colon_call, current_idx)
         }
@@ -49,6 +49,14 @@ pub fn build_signature_helper(
             current_idx,
         ),
         _ => None,
+    };
+
+    if let Some(mut help) = help {
+        // 将所有参数均相同的签名放在最前面
+        sort_best_call_params_info(&builder, &mut help.signatures);
+        Some(help)
+    } else {
+        None
     }
 }
 
@@ -86,13 +94,7 @@ fn build_doc_function_signature_help(
     // 参数信息
     let mut param_infos = vec![];
     for param in params.iter() {
-        let param_name = param.0.clone();
-        let param_type = param.1.clone();
-        let param_label = format!(
-            "{}: {}",
-            param_name,
-            humanize_type(db, &param_type.unwrap_or(LuaType::Any), RenderLevel::Simple)
-        );
+        let param_label = generate_param_label(db, param.clone());
 
         param_infos.push(ParameterInformation {
             label: ParameterLabel::Simple(param_label),
@@ -175,16 +177,9 @@ fn build_sig_id_signature_help(
     // 参数信息
     let mut param_infos = vec![];
     for param in params.iter() {
-        let param_name = param.0.clone();
-        let param_type = param.1.clone();
-        let param_label = format!(
-            "{}: {}",
-            param_name,
-            humanize_type(db, &param_type.unwrap_or(LuaType::Any), RenderLevel::Simple)
-        );
-
+        let param_label = generate_param_label(db, param.clone());
         let mut documentation_string = String::new();
-        if let Some(desc) = signature.get_param_info_by_name(&param_name) {
+        if let Some(desc) = signature.get_param_info_by_name(&param.0) {
             if let Some(description) = &desc.description {
                 documentation_string.push_str(description);
             }
@@ -487,4 +482,44 @@ fn build_documentation(
             None
         };
     documentation
+}
+
+pub fn generate_param_label(db: &DbIndex, param: (String, Option<LuaType>)) -> String {
+    let param_name = param.0.clone();
+    let param_type = param.1.clone();
+    format!(
+        "{}: {}",
+        param_name,
+        humanize_type(db, &param_type.unwrap_or(LuaType::Any), RenderLevel::Simple)
+    )
+}
+
+/// 将最佳参数信息放在最前面
+fn sort_best_call_params_info(
+    builder: &SignatureHelperBuilder,
+    signatures: &mut Vec<SignatureInformation>,
+) {
+    if builder.get_best_call_params_info().is_empty() {
+        return;
+    }
+    let best_call_params_info: &[ParameterInformation] = builder.get_best_call_params_info();
+
+    let mut matched = Vec::new();
+    let mut unmatched = Vec::new();
+
+    for signature in signatures.drain(..) {
+        if let Some(parameters) = &signature.parameters {
+            if parameters == best_call_params_info {
+                matched.push(signature);
+            } else {
+                unmatched.push(signature);
+            }
+        } else {
+            unmatched.push(signature);
+        }
+    }
+
+    // 将匹配的签名放在前面，不匹配的放在后面
+    signatures.extend(matched);
+    signatures.extend(unmatched);
 }
