@@ -49,16 +49,26 @@ pub fn try_resolve_closure_params(
         _ => {}
     }
 
-    let mut is_async = false;
+    let is_async;
     let expr_closure_params = if let Some(param_type) = call_doc_func.get_params().get(param_idx) {
-        if let Some(LuaType::DocFunction(func)) = &param_type.1 {
-            if func.is_async() {
-                is_async = true;
+        match &param_type.1 {
+            Some(LuaType::DocFunction(func)) => {
+                is_async = func.is_async();
+                func.get_params()
             }
-
-            func.get_params()
-        } else {
-            return Some(true);
+            Some(LuaType::Union(union_types)) => {
+                if let Some(LuaType::DocFunction(func)) = union_types
+                    .get_types()
+                    .iter()
+                    .find(|typ| matches!(typ, LuaType::DocFunction(_)))
+                {
+                    is_async = func.is_async();
+                    func.get_params()
+                } else {
+                    return Some(true);
+                }
+            }
+            _ => return Some(true),
         }
     } else {
         return Some(true);
