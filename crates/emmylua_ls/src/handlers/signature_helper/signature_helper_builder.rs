@@ -7,7 +7,7 @@ use rowan::NodeOrToken;
 
 use crate::handlers::hover::{get_function_member_owner, infer_prefix_global_name};
 
-use super::build_signature_helper::generate_param_label;
+use super::build_signature_helper::{build_function_label, generate_param_label};
 
 #[derive(Debug)]
 pub struct SignatureHelperBuilder<'a> {
@@ -17,6 +17,7 @@ pub struct SignatureHelperBuilder<'a> {
     pub function_name: String,
     self_type: Option<LuaType>,
     params_info: Vec<ParameterInformation>,
+    pub best_call_function_label: String,
 }
 
 impl<'a> SignatureHelperBuilder<'a> {
@@ -28,6 +29,7 @@ impl<'a> SignatureHelperBuilder<'a> {
             function_name: String::new(),
             self_type: None,
             params_info: Vec::new(),
+            best_call_function_label: String::new(),
         };
         builder.self_type = builder.infer_self_type();
         builder.build_full_name();
@@ -113,6 +115,12 @@ impl<'a> SignatureHelperBuilder<'a> {
                 documentation: None,
             });
         }
+        self.best_call_function_label = build_function_label(
+            self,
+            &self.params_info,
+            func.is_colon_define() || func.first_param_is_self(),
+            &func.get_ret(),
+        );
 
         Some(())
     }
