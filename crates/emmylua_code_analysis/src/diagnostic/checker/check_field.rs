@@ -236,11 +236,12 @@ fn get_key_types(typ: &LuaType) -> (HashSet<String>, HashSet<LuaType>) {
     let mut stack = vec![typ.clone()];
 
     while let Some(current_type) = stack.pop() {
+        // `DocStringConst`与`DocIntegerConst`用于处理`---@type 'a'|'b'`这种联合类型
         match &current_type {
-            LuaType::StringConst(name) => {
+            LuaType::StringConst(name) | LuaType::DocStringConst(name) => {
                 name_set.insert(name.as_ref().to_string());
             }
-            LuaType::IntegerConst(i) => {
+            LuaType::IntegerConst(i) | LuaType::DocIntegerConst(i) => {
                 name_set.insert(format!("[{}]", i));
             }
             LuaType::Union(union_typ) => {
