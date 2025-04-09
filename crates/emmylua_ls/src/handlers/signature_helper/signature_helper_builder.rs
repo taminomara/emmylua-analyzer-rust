@@ -2,7 +2,7 @@ use emmylua_code_analysis::{
     FileId, LuaMemberOwner, LuaSemanticDeclId, LuaType, SemanticDeclLevel, SemanticModel,
 };
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr};
-use lsp_types::{ParameterInformation, ParameterLabel};
+use lsp_types::{Documentation, MarkupContent, MarkupKind, ParameterInformation, ParameterLabel};
 use rowan::NodeOrToken;
 
 use crate::handlers::hover::{
@@ -20,7 +20,7 @@ pub struct SignatureHelperBuilder<'a> {
     self_type: Option<LuaType>,
     params_info: Vec<ParameterInformation>,
     pub best_call_function_label: String,
-    pub description: String,
+    pub description: Option<Documentation>,
 }
 
 impl<'a> SignatureHelperBuilder<'a> {
@@ -33,7 +33,7 @@ impl<'a> SignatureHelperBuilder<'a> {
             self_type: None,
             params_info: Vec::new(),
             best_call_function_label: String::new(),
-            description: String::new(),
+            description: None,
         };
         builder.self_type = builder.infer_self_type();
         builder.build_full_name();
@@ -86,7 +86,7 @@ impl<'a> SignatureHelperBuilder<'a> {
             .get_property(&semantic_decl);
         if let Some(property) = property {
             if let Some(description) = &property.description {
-                self.description = description.to_string();
+                self.set_description(description.to_string());
             }
         }
 
@@ -134,9 +134,16 @@ impl<'a> SignatureHelperBuilder<'a> {
         if is_std(self.semantic_model.get_db(), file_id) {
             let std_desc = hover_std_description(type_name, member_name);
             if !std_desc.is_empty() {
-                self.description = std_desc;
+                self.set_description(std_desc);
             }
         }
+    }
+
+    fn set_description(&mut self, description: String) {
+        self.description = Some(Documentation::MarkupContent(MarkupContent {
+            kind: MarkupKind::Markdown,
+            value: description,
+        }));
     }
 
     fn set_best_call_params_info(&mut self) -> Option<()> {

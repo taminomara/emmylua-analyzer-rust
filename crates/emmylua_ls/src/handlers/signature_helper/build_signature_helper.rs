@@ -240,7 +240,7 @@ fn build_sig_id_signature_help(
 
     let signature_info = SignatureInformation {
         label,
-        documentation: Some(Documentation::String(builder.description.clone())),
+        documentation: builder.description.clone(),
         parameters: Some(param_infos),
         active_parameter: Some(current_idx as u32),
     };
@@ -250,8 +250,7 @@ fn build_sig_id_signature_help(
         let signature =
             build_doc_function_signature_help(&builder, &overload, colon_call, origin_current_idx);
         if let Some(mut signature) = signature {
-            signature.signatures[0].documentation =
-                Some(Documentation::String(builder.description.clone()));
+            signature.signatures[0].documentation = builder.description.clone();
             signatures.push(signature.signatures[0].clone());
         }
     }
