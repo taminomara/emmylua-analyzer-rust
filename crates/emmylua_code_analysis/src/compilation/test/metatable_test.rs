@@ -46,4 +46,31 @@ mod test {
         let ty_desc = ws.humanize_type(ty);
         assert_eq!(ty_desc, "fun(...: string)");
     }
+
+    #[test]
+    fn test_metatable_2() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+            ---@class switch
+            ---@field map table
+            ---@field cachedCases table
+            local switchMT = {}
+            switchMT.__index = switchMT
+
+            ---@return switch
+            local function switch()
+                local obj = setmetatable({
+                    map = {},
+                    cachedCases = {},
+                }, switchMT)
+                a =  obj
+            end
+            "#,
+        );
+
+        let ty = ws.expr_ty("a");
+        assert_eq!(ws.humanize_type(ty), "switch");
+    }
 }
