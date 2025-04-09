@@ -1,14 +1,70 @@
 use std::collections::HashMap;
 
-use emmylua_code_analysis::{DiagnosticCode, SemanticModel};
+use emmylua_code_analysis::{DiagnosticCode, LuaDocument, SemanticModel};
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaComment, LuaCommentOwner, LuaDocTag, LuaDocTagDiagnostic, LuaStat,
-    LuaTokenKind,
+    LuaAst, LuaAstNode, LuaComment, LuaCommentOwner, LuaDocTag, LuaDocTagDiagnostic, LuaExpr,
+    LuaKind, LuaStat, LuaSyntaxNode, LuaTokenKind,
 };
 use lsp_types::{Position, Range, TextEdit, Uri};
-use rowan::TokenAtOffset;
+use rowan::{TextSize, TokenAtOffset};
 
 use crate::handlers::command::DisableAction;
+
+#[derive(Debug, Clone)]
+enum DisableLineAst {
+    Stat(LuaStat),
+    Expr(LuaExpr),
+}
+
+impl DisableLineAst {
+    fn get_left_comment(&self) -> Option<LuaComment> {
+        match self {
+            DisableLineAst::Stat(stat) => stat.get_left_comment(),
+            DisableLineAst::Expr(expr) => {
+                if let Some(attached_comment) = find_expr_attached_comment(expr.syntax()) {
+                    return Some(LuaComment::cast(attached_comment)?);
+                }
+                None
+            }
+        }
+    }
+
+    fn get_position(&self) -> TextSize {
+        match self {
+            DisableLineAst::Stat(stat) => stat.get_position(),
+            DisableLineAst::Expr(expr) => expr.get_position(),
+        }
+    }
+
+    fn syntax(&self) -> &LuaSyntaxNode {
+        match self {
+            DisableLineAst::Stat(stat) => stat.syntax(),
+            DisableLineAst::Expr(expr) => expr.syntax(),
+        }
+    }
+}
+
+fn find_expr_attached_comment(node: &LuaSyntaxNode) -> Option<LuaSyntaxNode> {
+    let mut prev_sibling = node.prev_sibling_or_token();
+    while let Some(sibling) = prev_sibling {
+        match sibling.kind() {
+            LuaKind::Token(LuaTokenKind::TkWhitespace) => {}
+            LuaKind::Token(LuaTokenKind::TkEndOfLine) => match sibling.prev_sibling_or_token() {
+                Some(prev_sibling) => {
+                    return prev_sibling.clone().into_node();
+                }
+                _ => {
+                    return None;
+                }
+            },
+            _ => {
+                return None;
+            }
+        }
+        prev_sibling = sibling.prev_sibling_or_token();
+    }
+    None
+}
 
 pub fn build_disable_next_line_changes(
     semantic_model: &SemanticModel<'_>,
@@ -25,7 +81,26 @@ pub fn build_disable_next_line_changes(
     };
 
     let stat = token.parent_ancestors().find_map(LuaStat::cast)?;
-    let text_edit = if let Some(comment) = stat.get_left_comment() {
+    let mut ast = DisableLineAst::Stat(stat.clone());
+    let expr = token.parent_ancestors().find_map(LuaExpr::cast);
+    // 如果 expr 是 stat 的子节点, 则认为是 expr
+    if let Some(expr) = expr {
+        if stat.get_range().contains(expr.get_range().start()) {
+            let stat_line = semantic_model
+                .get_document()
+                .get_line(stat.get_position())?;
+            let expr_line = semantic_model
+                .get_document()
+                .get_line(expr.get_position())?;
+            if expr_line != stat_line {
+                ast = DisableLineAst::Expr(expr);
+            }
+        }
+    };
+
+    let mut text_edit = None;
+
+    if let Some(comment) = ast.get_left_comment() {
         if let Some(diagnostic_tag) =
             find_diagnostic_disable_tag(comment.clone(), DisableAction::DisableLine)
         {
@@ -36,7 +111,7 @@ pub fn build_disable_next_line_changes(
             };
 
             let (line, col) = document.get_line_col(new_start)?;
-            TextEdit {
+            text_edit = Some(TextEdit {
                 range: Range {
                     start: Position {
                         line: line as u32,
@@ -48,72 +123,67 @@ pub fn build_disable_next_line_changes(
                     },
                 },
                 new_text: format!(", {}", code.get_name()),
-            }
+            });
         } else {
-            let indent_text = if let Some(prefix_token) = comment.syntax().prev_sibling_or_token() {
-                if prefix_token.kind() == LuaTokenKind::TkWhitespace.into() {
-                    prefix_token.into_token()?.text().to_string()
-                } else {
-                    "".to_string()
-                }
-            } else {
-                "".to_string()
-            };
-
-            let line = document.get_line(comment.get_position())?;
-            TextEdit {
-                range: Range {
-                    start: Position {
-                        line: line as u32,
-                        character: 0,
-                    },
-                    end: Position {
-                        line: line as u32,
-                        character: 0,
-                    },
-                },
-                new_text: format!(
-                    "{}---@diagnostic disable-next-line: {}\n",
-                    indent_text,
-                    code.get_name()
-                ),
-            }
-        }
-    } else {
-        let indent_text = if let Some(prefix_token) = stat.syntax().prev_sibling_or_token() {
-            if prefix_token.kind() == LuaTokenKind::TkWhitespace.into() {
-                prefix_token.into_token()?.text().to_string()
-            } else {
-                "".to_string()
-            }
-        } else {
-            "".to_string()
-        };
-        let line = document.get_line(stat.get_position())?;
-        TextEdit {
-            range: Range {
-                start: Position {
-                    line: line as u32,
-                    character: 0,
-                },
-                end: Position {
-                    line: line as u32,
-                    character: 0,
-                },
-            },
-            new_text: format!(
-                "{}---@diagnostic disable-next-line: {}\n",
-                indent_text,
-                code.get_name()
-            ),
+            text_edit = get_disable_next_line_text_edit(
+                &document,
+                comment.syntax().clone(),
+                comment.get_position(),
+                code,
+            );
         }
     };
 
+    if text_edit.is_none() {
+        text_edit = get_disable_next_line_text_edit(
+            &document,
+            ast.syntax().clone(),
+            ast.get_position(),
+            code,
+        );
+    }
+
     let mut changes = HashMap::new();
     let uri = document.get_uri();
-    changes.insert(uri, vec![text_edit]);
+    changes.insert(uri, vec![text_edit?]);
 
     Some(changes)
+}
+
+fn get_disable_next_line_text_edit(
+    document: &LuaDocument,
+    node: LuaSyntaxNode,
+    offset: TextSize,
+    code: DiagnosticCode,
+) -> Option<TextEdit> {
+    let indent_text = if let Some(prefix_token) = node.prev_sibling_or_token() {
+        if prefix_token.kind() == LuaTokenKind::TkWhitespace.into() {
+            prefix_token.into_token()?.text().to_string()
+        } else {
+            "".to_string()
+        }
+    } else {
+        "".to_string()
+    };
+
+    let line = document.get_line(offset)?;
+    Some(TextEdit {
+        range: Range {
+            start: Position {
+                line: line as u32,
+                character: 0,
+            },
+            end: Position {
+                line: line as u32,
+                character: 0,
+            },
+        },
+        new_text: format!(
+            "{}---@diagnostic disable-next-line: {}\n",
+            indent_text,
+            code.get_name()
+        ),
+    })
 }
 
 pub fn build_disable_file_changes(
