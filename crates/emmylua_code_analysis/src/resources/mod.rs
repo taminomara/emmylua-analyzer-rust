@@ -17,7 +17,7 @@ pub fn load_resource_std(create_resources_dir: Option<String>) -> (PathBuf, Vec<
         } else {
             PathBuf::from(&create_resources_dir)
         };
-        let std_dir = PathBuf::from(&create_resources_dir).join("std");
+        let std_dir = PathBuf::from(&resource_path).join("std");
         let result = load_resource_from_file_system(&resource_path);
         match result {
             Some(files) => return (std_dir, files),
