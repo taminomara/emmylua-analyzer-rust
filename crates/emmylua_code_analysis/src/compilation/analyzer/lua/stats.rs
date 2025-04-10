@@ -293,6 +293,7 @@ pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignSta
                         };
                         analyzer.add_unresolved(unresolve_member.into());
                     }
+                    _ => {}
                 }
                 continue;
             }
@@ -388,6 +389,7 @@ fn merge_type_owner_and_unresolve_expr(
             };
             analyzer.add_unresolved(unresolve_member.into());
         }
+        _ => {}
     }
 
     Some(())

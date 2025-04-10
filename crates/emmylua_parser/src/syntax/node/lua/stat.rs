@@ -121,6 +121,63 @@ impl LuaStat {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum LuaLoopStat {
+    WhileStat(LuaWhileStat),
+    RepeatStat(LuaRepeatStat),
+    ForStat(LuaForStat),
+    ForRangeStat(LuaForRangeStat),
+}
+
+impl LuaAstNode for LuaLoopStat {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        match self {
+            LuaLoopStat::WhileStat(node) => node.syntax(),
+            LuaLoopStat::RepeatStat(node) => node.syntax(),
+            LuaLoopStat::ForStat(node) => node.syntax(),
+            LuaLoopStat::ForRangeStat(node) => node.syntax(),
+        }
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        match kind {
+            LuaSyntaxKind::WhileStat => true,
+            LuaSyntaxKind::RepeatStat => true,
+            LuaSyntaxKind::ForStat => true,
+            LuaSyntaxKind::ForRangeStat => true,
+            _ => false,
+        }
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if let Some(node) = LuaWhileStat::cast(syntax.clone()) {
+            Some(LuaLoopStat::WhileStat(node))
+        } else if let Some(node) = LuaRepeatStat::cast(syntax.clone()) {
+            Some(LuaLoopStat::RepeatStat(node))
+        } else if let Some(node) = LuaForStat::cast(syntax.clone()) {
+            Some(LuaLoopStat::ForStat(node))
+        } else if let Some(node) = LuaForRangeStat::cast(syntax.clone()) {
+            Some(LuaLoopStat::ForRangeStat(node))
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaCommentOwner for LuaLoopStat {}
+
+impl LuaLoopStat {
+    pub fn get_parent_block(&self) -> Option<LuaBlock> {
+        LuaBlock::cast(self.syntax().parent()?)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LuaLocalStat {
     syntax: LuaSyntaxNode,
 }

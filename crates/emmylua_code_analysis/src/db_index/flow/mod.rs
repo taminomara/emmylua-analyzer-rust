@@ -1,8 +1,10 @@
 mod flow_chain;
+mod flow_var_ref_id;
 
 use std::collections::HashMap;
 
 pub use flow_chain::{LuaFlowChain, LuaFlowId};
+pub use flow_var_ref_id::VarRefId;
 
 use crate::FileId;
 

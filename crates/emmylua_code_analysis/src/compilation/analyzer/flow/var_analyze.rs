@@ -8,22 +8,23 @@ use smol_str::SmolStr;
 
 use crate::{
     db_index::{LuaType, TypeAssertion},
-    DbIndex, FileId, LuaDeclId, LuaFlowChain, LuaMemberId, LuaTypeDeclId, LuaTypeOwner,
+    DbIndex, FileId, LuaDeclId, LuaFlowChain, LuaMemberId, LuaTypeDeclId, LuaTypeOwner, VarRefId,
 };
+
 
 pub fn analyze_ref_expr(
     db: &mut DbIndex,
     flow_chain: &mut LuaFlowChain,
-    expr: &LuaExpr,
-    path: &str,
+    var_expr: &LuaVarExpr,
+    var_ref_id: &VarRefId,
 ) -> Option<()> {
-    let parent = expr.get_parent::<LuaAst>()?;
+    let parent = var_expr.get_parent::<LuaAst>()?;
     broadcast_up(
         db,
         flow_chain,
-        &path,
+        &var_ref_id,
         parent,
-        LuaAst::cast(expr.syntax().clone())?,
+        LuaAst::cast(var_expr.syntax().clone())?,
         TypeAssertion::Exist,
     );
 
@@ -33,8 +34,8 @@ pub fn analyze_ref_expr(
 pub fn analyze_ref_assign(
     db: &mut DbIndex,
     flow_chain: &mut LuaFlowChain,
-    var_expr: LuaVarExpr,
-    path: &str,
+    var_expr: &LuaVarExpr,
+    var_ref_id: &VarRefId,
     file_id: FileId,
 ) -> Option<()> {
     let assign_stat = var_expr.get_parent::<LuaAssignStat>()?;
@@ -54,7 +55,7 @@ pub fn analyze_ref_assign(
             broadcast_down(
                 db,
                 flow_chain,
-                path,
+                var_ref_id,
                 LuaAst::LuaAssignStat(assign_stat),
                 type_assert,
                 true,
@@ -86,7 +87,7 @@ pub fn analyze_ref_assign(
     broadcast_down(
         db,
         flow_chain,
-        path,
+        var_ref_id,
         LuaAst::LuaAssignStat(assign_stat),
         type_assert,
         true,
@@ -115,7 +116,7 @@ fn is_decl_assign_stat(assign_stat: LuaAssignStat) -> Option<bool> {
 fn broadcast_up(
     db: &mut DbIndex,
     flow_chain: &mut LuaFlowChain,
-    path: &str,
+    var_ref_id: &VarRefId,
     parent: LuaAst,
     origin: LuaAst,
     type_assert: TypeAssertion,
@@ -126,7 +127,7 @@ fn broadcast_up(
             // this mean the name_expr is a condition and the name_expr is not nil and is not false
             if let Some(block) = if_stat.get_block() {
                 flow_chain.add_type_assert(
-                    path,
+                    var_ref_id,
                     type_assert.clone(),
                     block.get_range(),
                     actual_range,
@@ -137,7 +138,7 @@ fn broadcast_up(
                 if let Some(else_stat) = if_stat.get_else_clause() {
                     let block_range = else_stat.get_range();
                     flow_chain.add_type_assert(
-                        path,
+                        var_ref_id,
                         ne_type_assert.clone(),
                         block_range,
                         actual_range,
@@ -149,7 +150,7 @@ fn broadcast_up(
                     if if_range.end() < parent_range.end() {
                         let range = TextRange::new(if_range.end(), parent_range.end());
                         flow_chain.add_type_assert(
-                            path,
+                            var_ref_id,
                             ne_type_assert.clone(),
                             range,
                             actual_range,
@@ -159,7 +160,7 @@ fn broadcast_up(
                 for else_if_clause in if_stat.get_else_if_clause_list() {
                     let block_range = else_if_clause.get_range();
                     flow_chain.add_type_assert(
-                        path,
+                        var_ref_id,
                         ne_type_assert.clone(),
                         block_range,
                         actual_range,
@@ -170,18 +171,18 @@ fn broadcast_up(
         LuaAst::LuaWhileStat(while_stat) => {
             // this mean the name_expr is a condition and the name_expr is not nil and is not false
             let block = while_stat.get_block()?;
-            flow_chain.add_type_assert(path, type_assert, block.get_range(), actual_range);
+            flow_chain.add_type_assert(var_ref_id, type_assert, block.get_range(), actual_range);
         }
         LuaAst::LuaElseIfClauseStat(else_if_clause_stat) => {
             // this mean the name_expr is a condition and the name_expr is not nil and is not false
             let block = else_if_clause_stat.get_block()?;
-            flow_chain.add_type_assert(path, type_assert, block.get_range(), actual_range);
+            flow_chain.add_type_assert(var_ref_id, type_assert, block.get_range(), actual_range);
         }
         LuaAst::LuaParenExpr(paren_expr) => {
             broadcast_up(
                 db,
                 flow_chain,
-                path,
+                var_ref_id,
                 paren_expr.get_parent::<LuaAst>()?,
                 LuaAst::LuaParenExpr(paren_expr),
                 type_assert,
@@ -194,7 +195,7 @@ fn broadcast_up(
                     let (left, right) = binary_expr.get_exprs()?;
                     if left.get_position() == origin.get_position() {
                         flow_chain.add_type_assert(
-                            path,
+                            var_ref_id,
                             type_assert.clone(),
                             right.get_range(),
                             actual_range,
@@ -204,7 +205,7 @@ fn broadcast_up(
                     broadcast_up(
                         db,
                         flow_chain,
-                        path,
+                        var_ref_id,
                         binary_expr.get_parent::<LuaAst>()?,
                         LuaAst::LuaBinaryExpr(binary_expr),
                         type_assert,
@@ -214,13 +215,13 @@ fn broadcast_up(
                     let (left, right) = binary_expr.get_exprs()?;
                     if left.get_position() == origin.get_position() {
                         if let Some(ne) = type_assert.get_negation() {
-                            flow_chain.add_type_assert(path, ne, right.get_range(), actual_range);
+                            flow_chain.add_type_assert(var_ref_id, ne, right.get_range(), actual_range);
                         }
                     }
                     broadcast_up(
                         db,
                         flow_chain,
-                        path,
+                        var_ref_id,
                         binary_expr.get_parent::<LuaAst>()?,
                         LuaAst::LuaBinaryExpr(binary_expr),
                         type_assert,
@@ -260,7 +261,7 @@ fn broadcast_up(
                         broadcast_up(
                             db,
                             flow_chain,
-                            path,
+                            var_ref_id,
                             binary_expr.get_parent::<LuaAst>()?,
                             LuaAst::LuaBinaryExpr(binary_expr),
                             type_assert,
@@ -301,7 +302,7 @@ fn broadcast_up(
                         broadcast_up(
                             db,
                             flow_chain,
-                            path,
+                            var_ref_id,
                             binary_expr.get_parent::<LuaAst>()?,
                             LuaAst::LuaBinaryExpr(binary_expr),
                             type_assert,
@@ -313,7 +314,7 @@ fn broadcast_up(
             }
         }
         LuaAst::LuaCallArgList(call_args_list) => {
-            infer_call_arg_list(db, flow_chain, type_assert, path, call_args_list)?;
+            infer_call_arg_list(db, flow_chain, type_assert, var_ref_id, call_args_list)?;
         }
         LuaAst::LuaUnaryExpr(unary_expr) => {
             let op = unary_expr.get_op_token()?;
@@ -323,7 +324,7 @@ fn broadcast_up(
                         broadcast_up(
                             db,
                             flow_chain,
-                            path,
+                            var_ref_id,
                             unary_expr.get_parent::<LuaAst>()?,
                             LuaAst::LuaUnaryExpr(unary_expr),
                             ne_type_assert,
@@ -341,7 +342,7 @@ fn broadcast_up(
 fn broadcast_down(
     db: &mut DbIndex,
     flow_chain: &mut LuaFlowChain,
-    path: &str,
+    var_ref_id: &VarRefId,
     node: LuaAst,
     type_assert: TypeAssertion,
     continue_broadcast_outside: bool,
@@ -351,11 +352,11 @@ fn broadcast_down(
     let range = node.get_range();
     if range.end() < parent_range.end() {
         let range = TextRange::new(range.end(), parent_range.end());
-        flow_chain.add_type_assert(path, type_assert.clone(), range, range);
+        flow_chain.add_type_assert(var_ref_id, type_assert.clone(), range, range);
     }
 
     if continue_broadcast_outside {
-        broadcast_outside(db, flow_chain, path, parent_block, type_assert);
+        broadcast_outside(db, flow_chain, var_ref_id, parent_block, type_assert);
     }
 
     Some(())
@@ -364,7 +365,7 @@ fn broadcast_down(
 fn broadcast_outside(
     db: &mut DbIndex,
     flow_chain: &mut LuaFlowChain,
-    path: &str,
+    var_ref_id: &VarRefId,
     node: LuaBlock,
     type_assert: TypeAssertion,
 ) -> Option<()> {
@@ -376,13 +377,13 @@ fn broadcast_outside(
         | LuaAst::LuaForStat(_)
         | LuaAst::LuaForRangeStat(_)
         | LuaAst::LuaRepeatStat(_) => {
-            broadcast_down(db, flow_chain, path, parent, type_assert, false);
+            broadcast_down(db, flow_chain, var_ref_id, parent, type_assert, false);
         }
         LuaAst::LuaElseIfClauseStat(_) | LuaAst::LuaElseClauseStat(_) => {
             broadcast_down(
                 db,
                 flow_chain,
-                path,
+                var_ref_id,
                 parent.get_parent::<LuaAst>()?,
                 type_assert,
                 false,
@@ -398,16 +399,16 @@ fn infer_call_arg_list(
     db: &mut DbIndex,
     flow_chain: &mut LuaFlowChain,
     type_assert: TypeAssertion,
-    path: &str,
+    var_ref_id: &VarRefId,
     call_arg: LuaCallArgList,
 ) -> Option<()> {
     let parent = call_arg.get_parent::<LuaAst>()?;
     match parent {
         LuaAst::LuaCallExpr(call_expr) => {
             if call_expr.is_type() {
-                infer_lua_type_assert(db, flow_chain, path, call_expr);
+                infer_lua_type_assert(db, flow_chain, var_ref_id, call_expr);
             } else if call_expr.is_assert() {
-                infer_lua_assert(db, flow_chain, type_assert, path, call_expr);
+                infer_lua_assert(db, flow_chain, type_assert, var_ref_id, call_expr);
             }
         }
         _ => {}
@@ -419,7 +420,7 @@ fn infer_call_arg_list(
 fn infer_lua_type_assert(
     db: &mut DbIndex,
     flow_chain: &mut LuaFlowChain,
-    path: &str,
+    var_ref_id: &VarRefId,
     call_expr: LuaCallExpr,
 ) -> Option<()> {
     let binary_expr = call_expr.get_parent::<LuaBinaryExpr>()?;
@@ -467,7 +468,7 @@ fn infer_lua_type_assert(
     broadcast_up(
         db,
         flow_chain,
-        path,
+        var_ref_id,
         binary_expr.get_parent::<LuaAst>()?,
         LuaAst::LuaBinaryExpr(binary_expr),
         type_assert,
@@ -511,13 +512,13 @@ fn infer_lua_assert(
     db: &mut DbIndex,
     flow_chain: &mut LuaFlowChain,
     type_assert: TypeAssertion,
-    path: &str,
+    var_ref_id: &VarRefId,
     call_expr: LuaCallExpr,
 ) -> Option<()> {
     broadcast_down(
         db,
         flow_chain,
-        path,
+        var_ref_id,
         LuaAst::LuaCallExprStat(call_expr.get_parent::<LuaCallExprStat>()?),
         type_assert.clone(),
         true,

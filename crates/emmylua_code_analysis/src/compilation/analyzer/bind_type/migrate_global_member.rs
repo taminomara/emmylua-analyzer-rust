@@ -13,6 +13,7 @@ pub fn migrate_global_members_when_type_resolve(
         LuaTypeOwner::Member(member_id) => {
             migrate_global_member_to_member(db, member_id);
         }
+        _ => {}
     }
     Some(())
 }

@@ -40,6 +40,7 @@ pub use reference::{DeclReference, LuaReferenceIndex};
 pub use semantic_decl::LuaSemanticDeclId;
 pub use signature::*;
 pub use traits::LuaIndex;
+pub use flow::VarRefId;
 
 #[derive(Debug)]
 pub struct DbIndex {

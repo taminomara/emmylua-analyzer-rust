@@ -2,6 +2,7 @@ use emmylua_parser::{BinaryOperator, LuaAstNode, LuaBlock, LuaDocTagCast};
 
 use crate::{
     compilation::analyzer::AnalyzeContext, FileId, InFiled, LuaFlowChain, LuaType, TypeAssertion,
+    VarRefId,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -14,7 +15,7 @@ enum CastAction {
 pub fn analyze_cast(
     flow_chain: &mut LuaFlowChain,
     file_id: FileId,
-    name: &str,
+    var_ref_id: &VarRefId,
     tag: LuaDocTagCast,
     context: &AnalyzeContext,
 ) -> Option<()> {
@@ -36,7 +37,7 @@ pub fn analyze_cast(
             match action {
                 CastAction::Add => {
                     flow_chain.add_type_assert(
-                        name,
+                        var_ref_id,
                         TypeAssertion::Add(LuaType::Nil),
                         effect_range,
                         actual_range,
@@ -44,7 +45,7 @@ pub fn analyze_cast(
                 }
                 CastAction::Remove => {
                     flow_chain.add_type_assert(
-                        name,
+                        var_ref_id,
                         TypeAssertion::Remove(LuaType::Nil),
                         effect_range,
                         actual_range,
@@ -62,7 +63,7 @@ pub fn analyze_cast(
             match action {
                 CastAction::Add => {
                     flow_chain.add_type_assert(
-                        name,
+                        var_ref_id,
                         TypeAssertion::Add(typ),
                         effect_range,
                         actual_range,
@@ -70,7 +71,7 @@ pub fn analyze_cast(
                 }
                 CastAction::Remove => {
                     flow_chain.add_type_assert(
-                        name,
+                        var_ref_id,
                         TypeAssertion::Remove(typ),
                         effect_range,
                         actual_range,
@@ -78,7 +79,7 @@ pub fn analyze_cast(
                 }
                 CastAction::Force => {
                     flow_chain.add_type_assert(
-                        name,
+                        var_ref_id,
                         TypeAssertion::Narrow(typ),
                         effect_range,
                         actual_range,

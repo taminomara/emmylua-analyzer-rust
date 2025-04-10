@@ -6,6 +6,8 @@ use smol_str::SmolStr;
 
 use crate::db_index::TypeAssertion;
 
+use super::VarRefId;
+
 #[derive(Debug)]
 pub struct LuaFlowChain {
     flow_id: LuaFlowId,
@@ -33,19 +35,20 @@ impl LuaFlowChain {
 
     pub fn add_type_assert(
         &mut self,
-        path: &str,
+        var_ref_id: &VarRefId,
         type_assert: TypeAssertion,
         block_range: TextRange,
         actual_range: TextRange,
     ) {
-        self.type_asserts
-            .entry(SmolStr::new(path))
-            .or_insert_with(Vec::new)
-            .push(LuaFlowChainEntry {
-                type_assert,
-                block_range,
-                actual_range,
-            });
+        todo!()
+        // self.type_asserts
+        //     .entry(var_ref_id)
+        //     .or_insert_with(Vec::new)
+        //     .push(LuaFlowChainEntry {
+        //         type_assert,
+        //         block_range,
+        //         actual_range,
+        //     });
     }
 
     pub fn get_type_asserts(
@@ -98,5 +101,9 @@ impl LuaFlowId {
         });
 
         flow_id.unwrap_or_else(|| LuaFlowId::chunk())
+    }
+
+    pub fn get_position(&self) -> TextSize {
+        self.0
     }
 }

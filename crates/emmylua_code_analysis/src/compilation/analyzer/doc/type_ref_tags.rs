@@ -5,7 +5,7 @@ use emmylua_parser::{
 };
 
 use crate::{
-    compilation::analyzer::unresolve::UnResolveModuleRef,
+    compilation::analyzer::{bind_type::bind_type, unresolve::UnResolveModuleRef},
     db_index::{
         LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaSemanticDeclId,
         LuaSignatureId, LuaType,
@@ -270,10 +270,11 @@ pub fn analyze_as(analyzer: &mut DocAnalyzer, tag: LuaDocTagAs) -> Option<()> {
 
     let file_id = analyzer.file_id;
     let in_filed_syntax_id = InFiled::new(file_id, expr.get_syntax_id());
-    analyzer
-        .db
-        .get_type_index_mut()
-        .add_as_force_type(in_filed_syntax_id, type_ref);
+    bind_type(
+        analyzer.db,
+        in_filed_syntax_id.into(),
+        LuaTypeCache::DocType(type_ref),
+    );
 
     Some(())
 }

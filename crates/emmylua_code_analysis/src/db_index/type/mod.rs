@@ -8,7 +8,6 @@ mod types;
 
 use super::traits::LuaIndex;
 use crate::{FileId, InFiled};
-use emmylua_parser::LuaSyntaxId;
 pub use humanize_type::{humanize_type, RenderLevel};
 use std::collections::{HashMap, HashSet};
 pub use type_assert::TypeAssertion;
@@ -27,7 +26,6 @@ pub struct LuaTypeIndex {
     full_name_type_map: HashMap<LuaTypeDeclId, LuaTypeDecl>,
     generic_params: HashMap<LuaTypeDeclId, Vec<(String, Option<LuaType>)>>,
     supers: HashMap<LuaTypeDeclId, Vec<InFiled<LuaType>>>,
-    as_force_type: HashMap<InFiled<LuaSyntaxId>, LuaType>,
     types: HashMap<LuaTypeOwner, LuaTypeCache>,
     in_filed_type_owner: HashMap<FileId, HashSet<LuaTypeOwner>>,
 }
@@ -41,7 +39,6 @@ impl LuaTypeIndex {
             full_name_type_map: HashMap::new(),
             generic_params: HashMap::new(),
             supers: HashMap::new(),
-            as_force_type: HashMap::new(),
             types: HashMap::new(),
             in_filed_type_owner: HashMap::new(),
         }
@@ -205,14 +202,6 @@ impl LuaTypeIndex {
         self.full_name_type_map.get_mut(decl_id)
     }
 
-    pub fn add_as_force_type(&mut self, syntax_id: InFiled<LuaSyntaxId>, ty: LuaType) {
-        self.as_force_type.insert(syntax_id, ty);
-    }
-
-    pub fn get_as_force_type(&self, syntax_id: &InFiled<LuaSyntaxId>) -> Option<&LuaType> {
-        self.as_force_type.get(syntax_id)
-    }
-
     pub fn bind_type(&mut self, owner: LuaTypeOwner, cache: LuaTypeCache) {
         if self.types.contains_key(&owner) {
             return;
@@ -258,7 +247,6 @@ impl LuaIndex for LuaTypeIndex {
             }
         }
 
-        self.as_force_type.retain(|id, _| id.file_id != file_id);
         if let Some(type_owners) = self.in_filed_type_owner.remove(&file_id) {
             for type_owner in type_owners {
                 self.types.remove(&type_owner);
@@ -273,7 +261,6 @@ impl LuaIndex for LuaTypeIndex {
         self.full_name_type_map.clear();
         self.generic_params.clear();
         self.supers.clear();
-        self.as_force_type.clear();
         self.types.clear();
         self.in_filed_type_owner.clear();
     }

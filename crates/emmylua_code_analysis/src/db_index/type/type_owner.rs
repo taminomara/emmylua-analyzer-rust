@@ -1,6 +1,7 @@
+use emmylua_parser::LuaSyntaxId;
 use rowan::TextSize;
 
-use crate::{FileId, LuaDeclId, LuaMemberId};
+use crate::{FileId, InFiled, LuaDeclId, LuaMemberId};
 
 use super::LuaType;
 
@@ -8,6 +9,7 @@ use super::LuaType;
 pub enum LuaTypeOwner {
     Decl(LuaDeclId),
     Member(LuaMemberId),
+    SyntaxId(InFiled<LuaSyntaxId>)
 }
 
 impl From<LuaDeclId> for LuaTypeOwner {
@@ -22,11 +24,18 @@ impl From<LuaMemberId> for LuaTypeOwner {
     }
 }
 
+impl From<InFiled<LuaSyntaxId>> for LuaTypeOwner {
+    fn from(syntax_id: InFiled<LuaSyntaxId>) -> Self {
+        Self::SyntaxId(syntax_id)
+    }
+}
+
 impl LuaTypeOwner {
     pub fn get_file_id(&self) -> FileId {
         match self {
             LuaTypeOwner::Decl(id) => id.file_id,
             LuaTypeOwner::Member(id) => id.file_id,
+            LuaTypeOwner::SyntaxId(id) => id.file_id,
         }
     }
 
@@ -34,6 +43,7 @@ impl LuaTypeOwner {
         match self {
             LuaTypeOwner::Decl(id) => id.position,
             LuaTypeOwner::Member(id) => id.get_position(),
+            LuaTypeOwner::SyntaxId(id) => id.value.get_range().start(),
         }
     }
 }
