@@ -3,6 +3,7 @@ use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use super::{ClientProxy, FileDiagnostic, StatusBar};
 use crate::handlers::{init_analysis, ClientConfig};
+use dirs;
 use emmylua_code_analysis::update_code_style;
 use emmylua_code_analysis::{load_configs, EmmyLuaAnalysis, Emmyrc};
 use log::{debug, info};
@@ -165,14 +166,70 @@ impl WorkspaceManager {
 }
 
 pub fn load_emmy_config(config_root: Option<PathBuf>, client_config: ClientConfig) -> Arc<Emmyrc> {
+    // Config load priority.
+    // * Global `<os-specific home-dir>/.luarc.json`.
+    // * Global `<os-specific home-dir>/.emmyrc.json`.
+    // * Global `<os-specific config-dir>/emmylua_ls/.luarc.json`.
+    // * Global `<os-specific config-dir>/emmylua_ls/.emmyrc.json`.
+    // * Environment-specified config at the $EMMYLUALS_CONFIG path.
+    // * Local `.luarc.json`.
+    // * Local `.emmyrc.json`.
+    let luarc_file = ".luarc.json";
+    let emmyrc_file = ".emmyrc.json";
     let mut config_files = Vec::new();
+
+    let home_dir = dirs::home_dir();
+    match home_dir {
+        Some(home_dir) => {
+            let global_luarc_path = home_dir.join(luarc_file);
+            if global_luarc_path.exists() {
+                info!("load config from: {:?}", global_luarc_path);
+                config_files.push(global_luarc_path);
+            }
+            let global_emmyrc_path = home_dir.join(emmyrc_file);
+            if global_emmyrc_path.exists() {
+                info!("load config from: {:?}", global_emmyrc_path);
+                config_files.push(global_emmyrc_path);
+            }
+        }
+        None => {}
+    };
+
+    let emmylua_config_dir = "emmylua_ls";
+    let config_dir = dirs::config_dir().map(|path| path.join(emmylua_config_dir));
+    match config_dir {
+        Some(config_dir) => {
+            let global_luarc_path = config_dir.join(luarc_file);
+            if global_luarc_path.exists() {
+                info!("load config from: {:?}", global_luarc_path);
+                config_files.push(global_luarc_path);
+            }
+            let global_emmyrc_path = config_dir.join(emmyrc_file);
+            if global_emmyrc_path.exists() {
+                info!("load config from: {:?}", global_emmyrc_path);
+                config_files.push(global_emmyrc_path);
+            }
+        }
+        None => {}
+    };
+
+    std::env::var("EMMYLUALS_CONFIG")
+        .inspect(|path| {
+            let config_path = std::path::PathBuf::from(path);
+            if config_path.exists() {
+                info!("load config from: {:?}", config_path);
+                config_files.push(config_path);
+            }
+        })
+        .ok();
+
     if let Some(config_root) = &config_root {
-        let luarc_path = config_root.join(".luarc.json");
+        let luarc_path = config_root.join(luarc_file);
         if luarc_path.exists() {
             info!("load config from: {:?}", luarc_path);
             config_files.push(luarc_path);
         }
-        let emmyrc_path = config_root.join(".emmyrc.json");
+        let emmyrc_path = config_root.join(emmyrc_file);
         if emmyrc_path.exists() {
             info!("load config from: {:?}", emmyrc_path);
             config_files.push(emmyrc_path);

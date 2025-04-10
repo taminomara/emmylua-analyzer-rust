@@ -2,6 +2,9 @@
 
 # 0.7.1 (unreleased)
 
+`NEW` Now language server configuration might be provided globally via the `<os-specific home dir>/.emmyrc.json`, `<os-specific config dir>/emmylua_ls/.emmyrc.json`, or by setting a variable `EMMYLUALS_CONFIG` with a path to the json configuration.
+Global configuration have less priority than the local one
+
 # 0.7.0 
 
 `CHG` Refactor `type infer`

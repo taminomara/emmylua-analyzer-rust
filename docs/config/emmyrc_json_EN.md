@@ -4,6 +4,8 @@
 
 The language server reads the ".emmyrc.json" file in the project root directory. For compatibility, it also reads a ".luarc.json" file. The ".emmyrc.json" format is similar to ".luarc.json" but provides richer options, and any settings in ".emmyrc.json" will override those in ".luarc.json". The two formats are not fully compatible, so unsupported parts in ".luarc.json" are ignored.
 
+You might also setup provide language server configuration globally by creating ".emmyrc.json"/".luarc.json" in your home dir or by setting a `EMMYLUALS_CONFIG` variable with a path to the configuration.
+
 It primarily follows this format:
 ```json
 {
