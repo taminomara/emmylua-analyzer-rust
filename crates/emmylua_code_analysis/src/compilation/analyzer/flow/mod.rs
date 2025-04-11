@@ -60,4 +60,8 @@ fn analyze_flow(
             }
         }
     }
+
+    for (_, flow_chain) in flow_chain_map {
+        db.get_flow_index_mut().add_flow_chain(file_id, flow_chain);
+    }
 }
