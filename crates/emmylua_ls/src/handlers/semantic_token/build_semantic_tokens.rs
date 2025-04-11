@@ -3,7 +3,8 @@ use emmylua_code_analysis::{
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr,
-    LuaLiteralToken, LuaNameToken, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
+    LuaGeneralToken, LuaLiteralToken, LuaNameToken, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind,
+    LuaVarExpr,
 };
 use lsp_types::{SemanticToken, SemanticTokenModifier, SemanticTokenType};
 use rowan::NodeOrToken;
@@ -207,15 +208,16 @@ fn build_node_semantic_token(
 ) -> Option<()> {
     match LuaAst::cast(node)? {
         LuaAst::LuaDocTagClass(doc_class) => {
-            let name = doc_class.get_name_token()?;
-            builder.push_with_modifier(
-                name.syntax(),
-                SemanticTokenType::CLASS,
-                SemanticTokenModifier::DECLARATION,
-            );
+            if let Some(name) = doc_class.get_name_token() {
+                builder.push_with_modifier(
+                    name.syntax(),
+                    SemanticTokenType::CLASS,
+                    SemanticTokenModifier::DECLARATION,
+                );
+            }
             if let Some(attribs) = doc_class.get_attrib() {
-                for attrib_token in attribs.get_attrib_tokens() {
-                    builder.push(attrib_token.syntax(), SemanticTokenType::MODIFIER);
+                for token in attribs.tokens::<LuaGeneralToken>() {
+                    builder.push(token.syntax(), SemanticTokenType::DECORATOR);
                 }
             }
             if let Some(generic_list) = doc_class.get_generic_decl() {

@@ -20,7 +20,7 @@ use super::completion_builder::CompletionBuilder;
 
 pub fn add_completions(builder: &mut CompletionBuilder) -> Option<()> {
     postfix_provider::add_completion(builder);
-    // `type_special_provider`优先级必须高于`env_provider`
+    // `function_provider`优先级必须高于`env_provider`
     function_provider::add_completion(builder);
     equality_comparison_provider::add_completion(builder);
     // `env_provider`在某些情况下是不需要的, 但有些补全功能依赖于他, 因此我们先添加`env_provider`的补全, 再在某些补全中移除掉他的补全.

@@ -207,9 +207,29 @@ mod test {
                 local foo = {}
 
                 local bar = foo[1]
-
-
             "#
         ));
+    }
+
+    #[test]
+    fn test_issue_345() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                --- @class C
+                --- @field a string
+                --- @field b string
+
+                local scope --- @type 'a'|'b'
+
+                local m --- @type C
+
+                a = m[scope]
+        "#
+        ));
+        let ty = ws.expr_ty("a");
+        let expected = ws.ty("string");
+        assert_eq!(ws.humanize_type(ty), ws.humanize_type(expected));
     }
 }

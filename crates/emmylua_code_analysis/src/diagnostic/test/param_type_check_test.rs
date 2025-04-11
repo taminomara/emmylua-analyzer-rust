@@ -529,4 +529,17 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_348() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                local a --- @type type|'a'
+                string.len(a)
+        "#
+        ));
+    }
 }

@@ -1,9 +1,14 @@
 use std::str::FromStr;
 
 use emmylua_code_analysis::{DiagnosticCode, FileId, SemanticModel};
-use lsp_types::{CodeActionOrCommand, CodeActionResponse, Diagnostic, NumberOrString, Range};
+use lsp_types::{
+    CodeAction, CodeActionKind, CodeActionOrCommand, CodeActionResponse, Diagnostic,
+    NumberOrString, Range, WorkspaceEdit,
+};
 
 use crate::handlers::command::{make_disable_code_command, DisableAction};
+
+use super::actions::{build_disable_file_changes, build_disable_next_line_changes};
 
 pub fn build_actions(
     semantic_model: &SemanticModel,
@@ -26,6 +31,7 @@ pub fn build_actions(
                 if let Some(diagnostic_code) = DiagnosticCode::from_str(&action_string).ok() {
                     add_fix_code_action(&mut actions, diagnostic_code, file_id, diagnostic.range);
                     add_disable_code_action(
+                        &semantic_model,
                         &mut actions,
                         diagnostic_code,
                         file_id,
@@ -34,6 +40,10 @@ pub fn build_actions(
                 }
             }
         }
+    }
+
+    if actions.is_empty() {
+        return None;
     }
 
     Some(actions)
@@ -50,6 +60,7 @@ fn add_fix_code_action(
 }
 
 fn add_disable_code_action(
+    semantic_model: &SemanticModel,
     actions: &mut Vec<CodeActionOrCommand>,
     diagnostic_code: DiagnosticCode,
     file_id: FileId,
@@ -59,41 +70,56 @@ fn add_disable_code_action(
     if diagnostic_code == DiagnosticCode::LuaSyntaxError {
         return Some(());
     }
-    actions.push(CodeActionOrCommand::Command(make_disable_code_command(
-        &t!(
+
+    actions.push(CodeActionOrCommand::CodeAction(CodeAction {
+        title: t!(
             "Disable current line diagnostic (%{name})",
             name = diagnostic_code.get_name()
         )
         .to_string(),
-        DisableAction::DisableLine,
-        diagnostic_code,
-        file_id,
-        range,
-    )));
+        kind: Some(CodeActionKind::QUICKFIX),
+        edit: Some(WorkspaceEdit {
+            changes: build_disable_next_line_changes(semantic_model, range.start, diagnostic_code),
+            ..Default::default()
+        }),
+        ..Default::default()
+    }));
 
-    actions.push(CodeActionOrCommand::Command(make_disable_code_command(
-        &t!(
+    actions.push(CodeActionOrCommand::CodeAction(CodeAction {
+        title: t!(
             "Disable all diagnostics in current file (%{name})",
             name = diagnostic_code.get_name()
         )
         .to_string(),
-        DisableAction::DisableFile,
-        diagnostic_code,
-        file_id,
-        range,
-    )));
+        kind: Some(CodeActionKind::QUICKFIX),
+        edit: Some(WorkspaceEdit {
+            changes: build_disable_file_changes(semantic_model, diagnostic_code),
+            ..Default::default()
+        }),
+        ..Default::default()
+    }));
 
-    actions.push(CodeActionOrCommand::Command(make_disable_code_command(
-        &t!(
+    actions.push(CodeActionOrCommand::CodeAction(CodeAction {
+        title: t!(
             "Disable all diagnostics in current project (%{name})",
             name = diagnostic_code.get_name()
         )
         .to_string(),
-        DisableAction::DisableProject,
-        diagnostic_code,
-        file_id,
-        range,
-    )));
+        kind: Some(CodeActionKind::QUICKFIX),
+        command: Some(make_disable_code_command(
+            &t!(
+                "Disable all diagnostics in current project (%{name})",
+                name = diagnostic_code.get_name()
+            )
+            .to_string(),
+            DisableAction::DisableProject,
+            diagnostic_code,
+            file_id,
+            range,
+        )),
+
+        ..Default::default()
+    }));
 
     Some(())
 }
