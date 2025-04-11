@@ -9,7 +9,7 @@ use super::LuaType;
 pub enum LuaTypeOwner {
     Decl(LuaDeclId),
     Member(LuaMemberId),
-    SyntaxId(InFiled<LuaSyntaxId>)
+    SyntaxId(InFiled<LuaSyntaxId>),
 }
 
 impl From<LuaDeclId> for LuaTypeOwner {

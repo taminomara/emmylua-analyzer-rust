@@ -1,8 +1,9 @@
 use emmylua_parser::{LuaAstNode, LuaNameExpr};
+use smol_str::SmolStr;
 
 use crate::{
     db_index::{DbIndex, LuaDeclOrMemberId},
-    LuaDecl, LuaDeclExtra, LuaFlowId, LuaInferCache, LuaMemberId, LuaType, TypeOps,
+    LuaDecl, LuaDeclExtra, LuaFlowId, LuaInferCache, LuaMemberId, LuaType, TypeOps, VarRefId,
 };
 
 use super::{InferFailReason, InferResult};
@@ -37,9 +38,12 @@ pub fn infer_name_expr(
         let flow_chain = db.get_flow_index().get_flow_chain(file_id, flow_id);
         let root = name_expr.get_root();
         if let Some(flow_chain) = flow_chain {
-            for type_assert in
-                flow_chain.get_type_asserts(name, name_expr.get_position(), Some(decl_id.position))
-            {
+            let var_ref_id = VarRefId::DeclId(decl_id);
+            for type_assert in flow_chain.get_type_asserts(
+                &var_ref_id,
+                name_expr.get_position(),
+                Some(decl_id.position),
+            ) {
                 decl_type = type_assert.tighten_type(db, cache, &root, decl_type)?;
             }
         }
@@ -85,8 +89,9 @@ fn infer_self(db: &DbIndex, cache: &mut LuaInferCache, name_expr: LuaNameExpr) -
             let flow_chain = db.get_flow_index().get_flow_chain(file_id, flow_id);
             let root = name_expr.get_root();
             if let Some(flow_chain) = flow_chain {
+                let var_ref_id = VarRefId::Name(SmolStr::new("self"));
                 for type_assert in flow_chain.get_type_asserts(
-                    "self",
+                    &var_ref_id,
                     name_expr.get_position(),
                     Some(decl_id.position),
                 ) {

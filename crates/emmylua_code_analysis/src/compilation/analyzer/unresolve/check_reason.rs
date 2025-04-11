@@ -113,7 +113,8 @@ pub fn resolve_as_any(
         InferFailReason::UnResolveExpr(expr) => {
             let file_id = cache.get_file_id();
             let key = InFiled::new(file_id, expr.get_syntax_id());
-            db.get_type_index_mut().bind_type(key.into(), LuaTypeCache::InferType(LuaType::Any));
+            db.get_type_index_mut()
+                .bind_type(key.into(), LuaTypeCache::InferType(LuaType::Any));
         }
         InferFailReason::UnResolveSignatureReturn(signature_id) => {
             let signature = db.get_signature_index_mut().get_mut(signature_id)?;

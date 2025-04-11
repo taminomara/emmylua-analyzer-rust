@@ -51,8 +51,14 @@ pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> Inf
     // for @as
     let file_id = cache.get_file_id();
     let in_filed_syntax_id = InFiled::new(file_id, syntax_id);
-    if let Some(bind_type_cache) = db.get_type_index().get_type_cache(&in_filed_syntax_id.into()) {
-        cache.add_cache(&key, CacheEntry::ExprCache(bind_type_cache.as_type().clone()));
+    if let Some(bind_type_cache) = db
+        .get_type_index()
+        .get_type_cache(&in_filed_syntax_id.into())
+    {
+        cache.add_cache(
+            &key,
+            CacheEntry::ExprCache(bind_type_cache.as_type().clone()),
+        );
         return Ok(bind_type_cache.as_type().clone());
     }
 

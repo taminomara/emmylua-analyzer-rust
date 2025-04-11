@@ -20,6 +20,7 @@ use crate::{Emmyrc, FileId, Vfs};
 pub use declaration::*;
 use dependency::LuaDenpendencyIndex;
 pub use diagnostic::{AnalyzeError, DiagnosticAction, DiagnosticActionKind, DiagnosticIndex};
+pub use flow::VarRefId;
 pub use flow::{LuaFlowChain, LuaFlowId, LuaFlowIndex};
 pub use global::GlobalId;
 use global::LuaGlobalIndex;
@@ -40,7 +41,6 @@ pub use reference::{DeclReference, LuaReferenceIndex};
 pub use semantic_decl::LuaSemanticDeclId;
 pub use signature::*;
 pub use traits::LuaIndex;
-pub use flow::VarRefId;
 
 #[derive(Debug)]
 pub struct DbIndex {

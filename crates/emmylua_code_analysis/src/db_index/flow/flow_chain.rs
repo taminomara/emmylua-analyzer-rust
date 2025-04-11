@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaSyntaxKind, LuaSyntaxNode};
 use rowan::{TextRange, TextSize};
-use smol_str::SmolStr;
 
 use crate::db_index::TypeAssertion;
 
@@ -11,7 +10,7 @@ use super::VarRefId;
 #[derive(Debug)]
 pub struct LuaFlowChain {
     flow_id: LuaFlowId,
-    type_asserts: HashMap<SmolStr, Vec<LuaFlowChainEntry>>,
+    type_asserts: HashMap<VarRefId, Vec<LuaFlowChainEntry>>,
 }
 
 #[derive(Debug)]
@@ -40,25 +39,24 @@ impl LuaFlowChain {
         block_range: TextRange,
         actual_range: TextRange,
     ) {
-        todo!()
-        // self.type_asserts
-        //     .entry(var_ref_id)
-        //     .or_insert_with(Vec::new)
-        //     .push(LuaFlowChainEntry {
-        //         type_assert,
-        //         block_range,
-        //         actual_range,
-        //     });
+        self.type_asserts
+            .entry(var_ref_id.clone())
+            .or_insert_with(Vec::new)
+            .push(LuaFlowChainEntry {
+                type_assert,
+                block_range,
+                actual_range,
+            });
     }
 
     pub fn get_type_asserts(
         &self,
-        path: &str,
+        var_ref_id: &VarRefId,
         position: TextSize,
         start_position: Option<TextSize>,
     ) -> impl Iterator<Item = &TypeAssertion> {
         self.type_asserts
-            .get(path)
+            .get(var_ref_id)
             .into_iter()
             .flat_map(move |asserts| {
                 asserts.iter().filter_map(move |entry| {

@@ -39,7 +39,7 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
         if expr.is_none() {
             break;
         }
-        let expr = expr.unwrap();
+        let expr = expr?;
         match analyzer.infer_expr(expr) {
             Ok(mut expr_type) => {
                 if let LuaType::MuliReturn(multi) = expr_type {

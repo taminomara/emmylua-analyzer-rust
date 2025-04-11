@@ -10,24 +10,27 @@ use super::flow_node::FlowNode;
 pub struct FlowTree {
     current_flow_id: LuaFlowId,
     flow_id_stack: Vec<LuaFlowId>,
-    flow_trees: HashMap<LuaFlowId, FlowNode>,
+    flow_nodes: HashMap<LuaFlowId, FlowNode>,
     var_flow_ref: HashMap<VarRefId, Vec<(VarRefNode, LuaFlowId)>>,
+    var_node_to_id: HashMap<VarRefNode, VarRefId>,
     root_flow_id: LuaFlowId,
 }
 
+#[allow(unused)]
 impl FlowTree {
     pub fn new(document_range: TextRange) -> FlowTree {
         let mut builder = FlowTree {
             current_flow_id: LuaFlowId::chunk(),
             flow_id_stack: Vec::new(),
-            flow_trees: HashMap::new(),
+            flow_nodes: HashMap::new(),
             var_flow_ref: HashMap::new(),
+            var_node_to_id: HashMap::new(),
             root_flow_id: LuaFlowId::chunk(),
         };
 
         let flow_id = LuaFlowId::chunk();
         builder
-            .flow_trees
+            .flow_nodes
             .insert(flow_id, FlowNode::new(flow_id, document_range, None));
         builder
     }
@@ -36,43 +39,47 @@ impl FlowTree {
         let parent = self.current_flow_id;
         self.flow_id_stack.push(flow_id);
         self.current_flow_id = flow_id;
-        self.flow_trees
+        self.flow_nodes
             .insert(flow_id, FlowNode::new(flow_id, range, Some(parent)));
-        if let Some(parent_tree) = self.flow_trees.get_mut(&parent) {
+        if let Some(parent_tree) = self.flow_nodes.get_mut(&parent) {
             parent_tree.add_child(flow_id);
         }
     }
 
     pub fn pop_flow(&mut self) {
         self.flow_id_stack.pop();
-        self.current_flow_id = *self.flow_id_stack.last().unwrap();
+        self.current_flow_id = self
+            .flow_id_stack
+            .last()
+            .unwrap_or(&self.root_flow_id)
+            .clone();
     }
 
     pub fn add_flow_node(&mut self, ref_id: VarRefId, ref_node: VarRefNode) -> Option<()> {
         let flow_id = self.current_flow_id;
-        self
-            .var_flow_ref
-            .entry(ref_id)
+        self.var_flow_ref
+            .entry(ref_id.clone())
             .or_insert_with(Vec::new)
-            .push((ref_node, flow_id));
+            .push((ref_node.clone(), flow_id));
+        self.var_node_to_id.insert(ref_node, ref_id);
 
         Some(())
     }
 
-    pub fn get_flow_tree(&self, flow_id: LuaFlowId) -> Option<&FlowNode> {
-        self.flow_trees.get(&flow_id)
+    pub fn get_flow_node(&self, flow_id: LuaFlowId) -> Option<&FlowNode> {
+        self.flow_nodes.get(&flow_id)
     }
 
-    pub fn get_flow_tree_mut(&mut self, flow_id: LuaFlowId) -> Option<&mut FlowNode> {
-        self.flow_trees.get_mut(&flow_id)
+    pub fn get_flow_node_mut(&mut self, flow_id: LuaFlowId) -> Option<&mut FlowNode> {
+        self.flow_nodes.get_mut(&flow_id)
     }
 
-    pub fn get_current_flow_tree(&self) -> Option<&FlowNode> {
-        self.flow_trees.get(&self.current_flow_id)
+    pub fn get_current_flow_node(&self) -> Option<&FlowNode> {
+        self.flow_nodes.get(&self.current_flow_id)
     }
 
-    pub fn get_current_flow_tree_mut(&mut self) -> Option<&mut FlowNode> {
-        self.flow_trees.get_mut(&self.current_flow_id)
+    pub fn get_current_flow_node_mut(&mut self) -> Option<&mut FlowNode> {
+        self.flow_nodes.get_mut(&self.current_flow_id)
     }
 
     pub fn get_current_flow_id(&self) -> LuaFlowId {
@@ -88,7 +95,7 @@ impl FlowTree {
         let mut stack = vec![self.root_flow_id];
 
         while let Some(flow_id) = stack.pop() {
-            if let Some(node) = self.flow_trees.get(&flow_id) {
+            if let Some(node) = self.flow_nodes.get(&flow_id) {
                 if node.get_range().contains(position) {
                     result = flow_id;
                     if node.get_children().is_empty() {
@@ -102,9 +109,16 @@ impl FlowTree {
 
         result
     }
+
+    pub fn get_var_ref_nodes(
+        &self,
+        var_ref_id: &VarRefId,
+    ) -> Option<&Vec<(VarRefNode, LuaFlowId)>> {
+        self.var_flow_ref.get(var_ref_id)
+    }
 }
 
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum VarRefNode {
     UseRef(LuaVarExpr),
     AssignRef(LuaVarExpr),

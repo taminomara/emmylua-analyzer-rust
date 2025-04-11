@@ -183,7 +183,7 @@ fn build_label_flow(
         return None;
     }
 
-    let flow_tree = builder.get_current_flow_tree_mut()?;
+    let flow_tree = builder.get_current_flow_node_mut()?;
     let label_token = label.get_label_name_token()?;
     let label_name = label_token.get_name_text();
     let block = label.get_parent::<LuaBlock>()?;
@@ -214,10 +214,10 @@ fn build_goto_flow(
     goto_stat: LuaGotoStat,
     flow_id: LuaFlowId,
 ) -> Option<()> {
-    let flow_tree = builder.get_flow_tree_mut(flow_id)?;
+    let flow_node = builder.get_flow_node_mut(flow_id)?;
     let label_token = goto_stat.get_label_name_token()?;
     let label_name = label_token.get_name_text();
-    let label = flow_tree.find_label(label_name, goto_stat.clone());
+    let label = flow_node.find_label(label_name, goto_stat.clone());
     if label.is_none() {
         db.get_diagnostic_index_mut().add_diagnostic(
             file_id,
@@ -235,7 +235,7 @@ fn build_goto_flow(
     let label_block_end_pos = label_block.get_range().end();
     if label_end_pos < label_block_end_pos {
         let new_range = TextRange::new(label_end_pos, label_block_end_pos);
-        flow_tree.add_jump_to_range(goto_stat.get_syntax_id(), new_range);
+        flow_node.add_jump_to_range(goto_stat.get_syntax_id(), new_range);
     }
 
     Some(())
@@ -247,7 +247,7 @@ fn build_break_flow(
     file_id: FileId,
     break_stat: LuaBreakStat,
 ) -> Option<()> {
-    let flow_tree = builder.get_current_flow_tree_mut()?;
+    let flow_tree = builder.get_current_flow_node_mut()?;
     let first_loop_stat = break_stat.ancestors::<LuaLoopStat>().next();
     if first_loop_stat.is_none() {
         db.get_diagnostic_index_mut().add_diagnostic(

@@ -3,12 +3,13 @@ mod cast_analyze;
 mod flow_node;
 mod flow_tree;
 mod var_analyze;
+use std::collections::HashMap;
 
-use crate::{db_index::DbIndex, profile::Profile, FileId, LuaDeclId, VarRefId};
+use crate::{db_index::DbIndex, profile::Profile, FileId, LuaFlowChain};
 use build_flow_tree::build_flow_tree;
-use flow_node::{BlockId, FlowNode};
+use cast_analyze::analyze_cast;
 use flow_tree::{FlowTree, VarRefNode};
-use smol_str::SmolStr;
+use var_analyze::{analyze_ref_assign, analyze_ref_expr};
 
 use super::AnalyzeContext;
 
@@ -29,50 +30,34 @@ fn analyze_flow(
     context: &mut AnalyzeContext,
 ) {
     let var_ref_ids = flow_tree.get_var_ref_ids();
+    let mut flow_chain_map = HashMap::new();
     for var_ref_id in var_ref_ids {
-        match var_ref_id {
-            VarRefId::DeclId(decl_id) => {
-                analyze_decl_flow(db, &flow_tree, file_id, decl_id, context);
+        let var_ref_nodes = match flow_tree.get_var_ref_nodes(&var_ref_id) {
+            Some(nodes) => nodes,
+            None => continue,
+        };
+
+        for (var_ref_node, flow_id) in var_ref_nodes {
+            let mut flow_chain = flow_chain_map
+                .entry(flow_id)
+                .or_insert_with(|| LuaFlowChain::new(*flow_id));
+            match var_ref_node {
+                VarRefNode::UseRef(var_expr) => {
+                    analyze_ref_expr(db, &mut flow_chain, &var_expr, &var_ref_id);
+                }
+                VarRefNode::AssignRef(var_expr) => {
+                    analyze_ref_assign(db, &mut flow_chain, &var_expr, &var_ref_id, file_id);
+                }
+                VarRefNode::CastRef(tag_cast) => {
+                    analyze_cast(
+                        &mut flow_chain,
+                        file_id,
+                        &var_ref_id,
+                        tag_cast.clone(),
+                        context,
+                    );
+                }
             }
-            VarRefId::Name(_) => {}
         }
     }
-}
-
-fn analyze_decl_flow(
-    db: &mut DbIndex,
-    flow_tree: &FlowTree,
-    file_id: FileId,
-    decl_id: LuaDeclId,
-    context: &mut AnalyzeContext,
-) {
-    let start_flow_id = flow_tree.get_flow_id_from_position(decl_id.position);
-
-    // for (flow_id, tree) in flow_trees {
-    //     let nodes = tree.get_var_flow_nodes();
-    //     let mut flow_chain = LuaFlowChain::new(flow_id);
-    //     for (var_ref_id, var_ref_nodes) in nodes {
-    //         for flow_node in var_ref_nodes {
-    //             match flow_node {
-    //                 VarRefNode::UseRef(var_expr) => {
-    //                     analyze_ref_expr(db, &mut flow_chain, &var_expr, var_ref_id);
-    //                 }
-    //                 VarRefNode::AssignRef(var_expr) => {
-    //                     analyze_ref_assign(db, &mut flow_chain, &var_expr, var_ref_id, file_id);
-    //                 }
-    //                 VarRefNode::CastRef(tag_cast) => {
-    //                     analyze_cast(
-    //                         &mut flow_chain,
-    //                         file_id,
-    //                         var_ref_id,
-    //                         tag_cast.clone(),
-    //                         context,
-    //                     );
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     db.get_flow_index_mut().add_flow_chain(file_id, flow_chain);
-    // }
 }

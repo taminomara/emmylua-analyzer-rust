@@ -14,6 +14,7 @@ use crate::{
         InferGuard,
     },
     InFiled, LuaFlowId, LuaInferCache, LuaInstanceType, LuaMemberOwner, LuaOperatorOwner, TypeOps,
+    VarRefId,
 };
 
 use super::{infer_expr, infer_name::infer_global_type, InferFailReason, InferResult};
@@ -96,7 +97,10 @@ fn infer_member_type_pass_flow(
     if let Some(flow_chain) = flow_chain {
         let root = index_expr.get_root();
         if let Some(path) = index_expr.get_access_path() {
-            for type_assert in flow_chain.get_type_asserts(&path, index_expr.get_position(), None) {
+            let var_ref_id = VarRefId::Name(SmolStr::new(path));
+            for type_assert in
+                flow_chain.get_type_asserts(&var_ref_id, index_expr.get_position(), None)
+            {
                 let new_type = type_assert
                     .tighten_type(db, cache, &root, member_type.clone())
                     .unwrap_or(LuaType::Unknown);

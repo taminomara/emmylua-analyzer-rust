@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use emmylua_code_analysis::{LuaFlowId, LuaSignatureId, LuaType};
+use emmylua_code_analysis::{LuaFlowId, LuaSignatureId, LuaType, VarRefId};
 use emmylua_parser::{LuaAst, LuaAstNode, LuaCallArgList, LuaClosureExpr, LuaParamList};
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionTriggerKind};
 
@@ -155,12 +155,13 @@ fn add_local_env(
             .get_flow_index()
             .get_flow_chain(file_id, flow_id)
         {
+            let var_ref_id = VarRefId::DeclId(*decl_id);
             let semantic_model = &builder.semantic_model;
             let db = semantic_model.get_db();
             let root = semantic_model.get_root().syntax();
             let config = semantic_model.get_config();
             for type_assert in
-                chain.get_type_asserts(&name, node.get_position(), Some(decl_id.position))
+                chain.get_type_asserts(&var_ref_id, node.get_position(), Some(decl_id.position))
             {
                 typ = type_assert
                     .tighten_type(db, &mut config.borrow_mut(), root, typ)
