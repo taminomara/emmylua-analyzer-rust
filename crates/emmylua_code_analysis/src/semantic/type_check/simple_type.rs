@@ -63,14 +63,27 @@ pub fn check_simple_type_compact(
                 return Ok(());
             }
         }
-        LuaType::String | LuaType::StringConst(_) => {
-            if matches!(
-                compact_type,
-                LuaType::String | LuaType::StringConst(_) | LuaType::DocStringConst(_)
-            ) {
+        LuaType::String | LuaType::StringConst(_) => match compact_type {
+            LuaType::String | LuaType::StringConst(_) | LuaType::DocStringConst(_) => {
                 return Ok(());
             }
-        }
+            LuaType::Ref(_) => {
+                let real_type = get_alias_real_type(db, compact_type);
+                match real_type {
+                    Some(LuaType::MultiLineUnion(multi_line_union)) => {
+                        let all_are_string = multi_line_union
+                            .get_unions()
+                            .iter()
+                            .all(|(t, _)| t.is_string());
+                        if all_are_string {
+                            return Ok(());
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        },
         LuaType::Integer | LuaType::IntegerConst(_) => {
             if matches!(
                 compact_type,
@@ -202,4 +215,17 @@ pub fn check_simple_type_compact(
 
     // complex infer
     Err(TypeCheckFailReason::TypeNotMatch)
+}
+
+fn get_alias_real_type(db: &DbIndex, compact_type: &LuaType) -> Option<LuaType> {
+    match compact_type {
+        LuaType::Ref(type_decl_id) => {
+            let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
+            if type_decl.is_alias() {
+                return get_alias_real_type(db, &type_decl.get_alias_origin(db, None)?);
+            }
+            Some(compact_type.clone())
+        }
+        _ => Some(compact_type.clone()),
+    }
 }

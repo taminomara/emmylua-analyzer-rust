@@ -18,6 +18,7 @@ use lsp_types::{
     Position, ServerCapabilities,
 };
 use rowan::TokenAtOffset;
+pub use std_hover::{hover_std_description, is_std};
 use tokio_util::sync::CancellationToken;
 
 use crate::context::ServerContextSnapshot;

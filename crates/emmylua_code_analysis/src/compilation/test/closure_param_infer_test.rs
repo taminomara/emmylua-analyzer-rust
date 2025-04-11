@@ -187,4 +187,26 @@ mod test {
         let expected = ws.ty("ShallowUnwrapHandlers");
         assert_eq!(ws.humanize_type(ty), ws.humanize_type(expected));
     }
+
+    #[test]
+    fn test_issue_350() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+                --- @param x string|fun(args: string[])
+                function cmd(x) end
+            "#,
+        );
+
+        ws.def(
+            r#"
+                cmd(function(args)
+                a = args -- should be string[]
+                end)
+            "#,
+        );
+        let ty = ws.expr_ty("a");
+        let expected = ws.ty("string[]");
+        assert_eq!(ws.humanize_type(ty), ws.humanize_type(expected));
+    }
 }

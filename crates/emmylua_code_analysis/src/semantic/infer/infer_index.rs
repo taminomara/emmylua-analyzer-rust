@@ -1,4 +1,8 @@
-use emmylua_parser::{LuaAstNode, LuaIndexExpr, LuaIndexKey, LuaIndexMemberExpr, PathTrait};
+use std::collections::HashSet;
+
+use emmylua_parser::{
+    LuaAstNode, LuaExpr, LuaIndexExpr, LuaIndexKey, LuaIndexMemberExpr, PathTrait,
+};
 use rowan::TextRange;
 use smol_str::SmolStr;
 
@@ -218,10 +222,8 @@ fn infer_custom_type_member(
     }
 
     let owner = LuaMemberOwner::Type(prefix_type_id.clone());
-    let key: LuaMemberKey = index_expr
-        .get_index_key()
-        .ok_or(InferFailReason::None)?
-        .into();
+    let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
+    let key: LuaMemberKey = index_key.clone().into();
     if let Some(member_item) = db.get_member_index().get_member_item(&owner, &key) {
         return member_item.resolve_type(db);
     }
@@ -244,6 +246,27 @@ fn infer_custom_type_member(
                     Err(InferFailReason::FieldDotFound) => {}
                     Err(err) => return Err(err),
                 }
+            }
+        }
+    }
+
+    // 解决`key`为表达式的情况
+    if let LuaIndexKey::Expr(expr) = index_key {
+        if let Some(keys) = expr_to_member_key(db, cache, &expr) {
+            let mut result_type = Vec::new();
+            for key in keys {
+                if let Some(member_item) = db.get_member_index().get_member_item(&owner, &key) {
+                    if let Ok(member_type) = member_item.resolve_type(db) {
+                        if !result_type.contains(&member_type) {
+                            result_type.push(member_type);
+                        }
+                    }
+                }
+            }
+            match result_type.len() {
+                0 => {}
+                1 => return Ok(result_type[0].clone()),
+                _ => return Ok(LuaType::Union(LuaUnionType::new(result_type).into())),
             }
         }
     }
@@ -823,4 +846,32 @@ fn infer_namespace_member(
     Ok(LuaType::Namespace(
         SmolStr::new(namespace_or_type_id).into(),
     ))
+}
+
+fn expr_to_member_key(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
+    expr: &LuaExpr,
+) -> Option<HashSet<LuaMemberKey>> {
+    let expr_type = infer_expr(db, cache, expr.clone()).ok()?;
+    let mut keys: HashSet<LuaMemberKey> = HashSet::new();
+    let mut stack = vec![expr_type.clone()];
+
+    while let Some(current_type) = stack.pop() {
+        match &current_type {
+            LuaType::StringConst(name) | LuaType::DocStringConst(name) => {
+                keys.insert(name.as_ref().to_string().into());
+            }
+            LuaType::IntegerConst(i) | LuaType::DocIntegerConst(i) => {
+                keys.insert((*i).into());
+            }
+            LuaType::Union(union_typ) => {
+                for t in union_typ.get_types() {
+                    stack.push(t.clone());
+                }
+            }
+            _ => {}
+        }
+    }
+    Some(keys)
 }

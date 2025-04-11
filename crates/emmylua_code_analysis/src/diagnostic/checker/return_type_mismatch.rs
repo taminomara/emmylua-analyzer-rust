@@ -144,7 +144,7 @@ fn add_type_check_diagnostic(
                     DiagnosticCode::ReturnTypeMismatch,
                     range,
                     t!(
-                        "Annotations specify that return value %{index} has a type of `%{source}`, returning value of type `%{found}` here instead. %{reason}.",
+                        "Annotations specify that return value %{index} has a type of `%{source}`, returning value of type `%{found}` here instead. %{reason}",
                         index = index + 1,
                         source = humanize_type(db, &param_type, RenderLevel::Simple),
                         found = humanize_type(db, &expr_type, RenderLevel::Simple),
@@ -159,7 +159,7 @@ fn add_type_check_diagnostic(
                     DiagnosticCode::ReturnTypeMismatch,
                     range,
                     t!(
-                        "Annotations specify that return value %{index} has a type of `%{source}`, returning value of type `%{found}` here instead. %{reason}.",
+                        "Annotations specify that return value %{index} has a type of `%{source}`, returning value of type `%{found}` here instead. %{reason}",
                         index = index + 1,
                         source = humanize_type(db, &param_type, RenderLevel::Simple),
                         found = humanize_type(db, &expr_type, RenderLevel::Simple),

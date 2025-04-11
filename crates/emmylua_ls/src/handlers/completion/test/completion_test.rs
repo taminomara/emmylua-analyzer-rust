@@ -419,4 +419,90 @@ mod tests {
             CompletionTriggerKind::TRIGGER_CHARACTER,
         ));
     }
+
+    #[test]
+    fn test_class_attr() {
+        let mut ws = CompletionVirtualWorkspace::new();
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@class (<??>) A
+            ---@field a string
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "partial".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+                VirtualCompletionItem {
+                    label: "key".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+                VirtualCompletionItem {
+                    label: "constructor".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+                VirtualCompletionItem {
+                    label: "exact".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+                VirtualCompletionItem {
+                    label: "meta".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+            ],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@class (partial,<??>) B
+            ---@field a string
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "key".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+                VirtualCompletionItem {
+                    label: "constructor".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+                VirtualCompletionItem {
+                    label: "exact".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+                VirtualCompletionItem {
+                    label: "meta".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+            ],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@class (partial, <??>) C
+            ---@field a string
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "key".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+                VirtualCompletionItem {
+                    label: "constructor".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+                VirtualCompletionItem {
+                    label: "exact".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+                VirtualCompletionItem {
+                    label: "meta".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+            ],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
 }
