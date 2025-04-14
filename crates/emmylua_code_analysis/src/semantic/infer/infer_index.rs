@@ -921,6 +921,9 @@ fn expr_to_member_key(
                     stack.push(t.clone());
                 }
             }
+            LuaType::TableConst(_) => {
+                keys.insert(LuaMemberKey::Expr(expr_type.clone()));
+            }
             _ => {}
         }
     }
