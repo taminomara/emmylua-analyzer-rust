@@ -236,8 +236,8 @@ fn build_node_semantic_token(
             let name = doc_enum.get_name_token()?;
             builder.push(name.syntax(), SemanticTokenType::ENUM);
             if let Some(attribs) = doc_enum.get_attrib() {
-                for attrib_token in attribs.get_attrib_tokens() {
-                    builder.push(attrib_token.syntax(), SemanticTokenType::MODIFIER);
+                for token in attribs.tokens::<LuaGeneralToken>() {
+                    builder.push(token.syntax(), SemanticTokenType::DECORATOR);
                 }
             }
         }
