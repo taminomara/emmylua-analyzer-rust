@@ -130,7 +130,7 @@ fn add_function_keyword_completions(builder: &mut CompletionBuilder) -> Option<(
     let item = CompletionItem {
         label: "function".to_string(),
         kind: Some(lsp_types::CompletionItemKind::SNIPPET),
-        insert_text: Some("function ${1:name}(${2:...})\n\t${0}\nend".to_string()),
+        insert_text: Some("function ${1:name}(${2:})\n\t${0}\nend".to_string()),
         insert_text_format: Some(InsertTextFormat::SNIPPET),
         insert_text_mode: Some(InsertTextMode::ADJUST_INDENTATION),
         sort_text: Some("0000".to_string()), // 优先级较高
