@@ -6,7 +6,7 @@ mod var_analyze;
 
 use std::collections::HashMap;
 
-use crate::{db_index::DbIndex, profile::Profile, FileId, LuaFlowChain};
+use crate::{db_index::DbIndex, profile::Profile, FileId, VarRefId};
 use build_flow_tree::build_flow_tree;
 use cast_analyze::analyze_cast;
 use flow_tree::{FlowTree, VarRefNode};
@@ -31,18 +31,17 @@ fn analyze_flow(
     context: &mut AnalyzeContext,
 ) {
     let var_ref_ids = flow_tree.get_var_ref_ids();
-    // let mut flow_chain_map = HashMap::new();
+    let mut var_trace_map: HashMap<VarRefId, VarTrace> = HashMap::new();
     for var_ref_id in var_ref_ids {
         let var_ref_nodes = match flow_tree.get_var_ref_nodes(&var_ref_id) {
             Some(nodes) => nodes,
             None => continue,
         };
 
-        let mut var_trace = VarTrace::new(var_ref_id.clone());
+        let mut var_trace = var_trace_map
+            .entry(var_ref_id.clone())
+            .or_insert_with(|| VarTrace::new(var_ref_id.clone(), var_ref_nodes.clone()));
         for (var_ref_node, flow_id) in var_ref_nodes {
-            // let mut flow_chain = flow_chain_map
-            //     .entry(flow_id)
-            //     .or_insert_with(|| LuaFlowChain::new(*flow_id));
             var_trace.set_current_flow_id(*flow_id);
             match var_ref_node {
                 VarRefNode::UseRef(var_expr) => {
@@ -62,3 +61,11 @@ fn analyze_flow(
     //     db.get_flow_index_mut().add_flow_chain(file_id, flow_chain);
     // }
 }
+
+// fn resolve_flow_analyze(
+//     db: &mut DbIndex,
+//     flow_tree: &FlowTree,
+//     var_ref_id: &VarRefId,
+//     var_trace: &mut VarTrace,
+// ) {
+// }

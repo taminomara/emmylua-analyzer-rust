@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use emmylua_parser::{LuaAstNode, LuaBlock, LuaGotoStat, LuaLabelStat, LuaSyntaxId};
+use emmylua_parser::{LuaAstNode, LuaBlock, LuaGotoStat, LuaLabelStat, LuaStat, LuaSyntaxId};
 use rowan::{TextRange, TextSize};
 use smol_str::SmolStr;
 
@@ -11,7 +11,7 @@ pub struct FlowNode {
     flow_id: LuaFlowId,
     parent_id: Option<LuaFlowId>,
     label_ref: HashMap<BlockId, Vec<(SmolStr, LuaLabelStat)>>,
-    jump_to_range: HashMap<LuaSyntaxId, TextRange>,
+    jump_to_stat_end: HashMap<LuaSyntaxId, LuaStat>,
     children: Vec<LuaFlowId>,
     range: TextRange,
 }
@@ -24,7 +24,7 @@ impl FlowNode {
             parent_id,
             children: Vec::new(),
             label_ref: HashMap::new(),
-            jump_to_range: HashMap::new(),
+            jump_to_stat_end: HashMap::new(),
             range,
         }
     }
@@ -89,12 +89,12 @@ impl FlowNode {
         None
     }
 
-    pub fn add_jump_to_range(&mut self, jump_syntax_id: LuaSyntaxId, text_range: TextRange) {
-        self.jump_to_range.insert(jump_syntax_id, text_range);
+    pub fn add_jump_to_stat(&mut self, jump_syntax_id: LuaSyntaxId, stat: LuaStat) {
+        self.jump_to_stat_end.insert(jump_syntax_id, stat);
     }
 
-    pub fn get_jump_to_range(&self, jump_syntax_id: LuaSyntaxId) -> Option<TextRange> {
-        self.jump_to_range.get(&jump_syntax_id).copied()
+    pub fn get_jump_to_stat(&self, jump_syntax_id: LuaSyntaxId) -> Option<LuaStat> {
+        self.jump_to_stat_end.get(&jump_syntax_id).cloned()
     }
 }
 

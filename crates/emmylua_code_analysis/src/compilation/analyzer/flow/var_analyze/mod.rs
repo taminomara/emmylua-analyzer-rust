@@ -2,9 +2,10 @@ mod broadcast_down;
 mod broadcast_inside;
 mod broadcast_outside;
 mod broadcast_up;
+mod unresolve_trace_id;
 mod var_trace;
 
-use broadcast_down::broadcast_down;
+use broadcast_down::broadcast_down_after_node;
 use broadcast_up::broadcast_up;
 use emmylua_parser::{
     BinaryOperator, LuaAssignStat, LuaAst, LuaAstNode, LuaBinaryExpr, LuaCallArgList, LuaCallExpr,
@@ -54,7 +55,7 @@ pub fn analyze_ref_assign(
         };
         if let Some(type_cache) = db.get_type_index().get_type_cache(&type_owner) {
             let type_assert = TypeAssertion::Narrow(type_cache.as_type().clone());
-            broadcast_down(
+            broadcast_down_after_node(
                 db,
                 var_trace,
                 LuaAst::LuaAssignStat(assign_stat),
@@ -85,7 +86,7 @@ pub fn analyze_ref_assign(
     };
 
     let type_assert = TypeAssertion::Reassign((value_expr.get_syntax_id(), idx));
-    broadcast_down(
+    broadcast_down_after_node(
         db,
         var_trace,
         LuaAst::LuaAssignStat(assign_stat),
@@ -125,7 +126,7 @@ fn infer_call_arg_list(
             if call_expr.is_type() {
                 infer_lua_type_assert(db, var_trace, call_expr);
             } else if call_expr.is_assert() {
-                broadcast_down(
+                broadcast_down_after_node(
                     db,
                     var_trace,
                     LuaAst::LuaCallExprStat(call_expr.get_parent::<LuaCallExprStat>()?),

@@ -13,7 +13,9 @@ pub enum TypeAssertion {
     Narrow(LuaType),
     Add(LuaType),
     Remove(LuaType),
-    Reassign((LuaSyntaxId, i32))
+    Reassign((LuaSyntaxId, i32)),
+    And(Arc<(TypeAssertion, TypeAssertion)>),
+    Or(Arc<(TypeAssertion, TypeAssertion)>),
 }
 
 #[allow(unused)]

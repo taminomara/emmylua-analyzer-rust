@@ -1,13 +1,13 @@
 use emmylua_parser::{
-    BinaryOperator, LuaAst, LuaAstNode, LuaExpr, LuaLiteralToken, UnaryOperator,
+    BinaryOperator, LuaAst, LuaAstNode, LuaBinaryExpr, LuaExpr, LuaLiteralToken, UnaryOperator,
 };
 use smol_str::SmolStr;
 
 use crate::{DbIndex, LuaType, TypeAssertion};
 
 use super::{
-    broadcast_inside::broadcast_inside_block,
-    infer_call_arg_list, VarTrace,
+    broadcast_inside::broadcast_inside_if_condition_block, infer_call_arg_list,
+    unresolve_trace_id::UnResolveTraceId, VarTrace,
 };
 
 pub fn broadcast_up(
@@ -20,12 +20,24 @@ pub fn broadcast_up(
     match parent {
         LuaAst::LuaIfStat(if_stat) => {
             if let Some(block) = if_stat.get_block() {
-                broadcast_inside_block(db, var_trace, block, type_assert.clone());
+                broadcast_inside_if_condition_block(
+                    db,
+                    var_trace,
+                    block,
+                    type_assert.clone(),
+                    true,
+                );
             }
 
             if let Some(ne_type_assert) = type_assert.get_negation() {
                 if let Some(else_stat) = if_stat.get_else_clause() {
-                    broadcast_inside_block(db, var_trace, else_stat.get_block()?, type_assert);
+                    broadcast_inside_if_condition_block(
+                        db,
+                        var_trace,
+                        else_stat.get_block()?,
+                        type_assert,
+                        true,
+                    );
                 }
 
                 for else_if_clause in if_stat.get_else_if_clause_list() {
@@ -37,26 +49,19 @@ pub fn broadcast_up(
         LuaAst::LuaWhileStat(while_stat) => {
             // this mean the name_expr is a condition and the name_expr is not nil and is not false
             let block = while_stat.get_block()?;
-            broadcast_inside_block(db, var_trace, block, type_assert);
+            broadcast_inside_if_condition_block(db, var_trace, block, type_assert, false);
         }
         LuaAst::LuaElseIfClauseStat(else_if_clause_stat) => {
             // this mean the name_expr is a condition and the name_expr is not nil and is not false
             if let Some(block) = else_if_clause_stat.get_block() {
-                broadcast_inside_block(db, var_trace, block, type_assert.clone());
+                broadcast_inside_if_condition_block(
+                    db,
+                    var_trace,
+                    block,
+                    type_assert.clone(),
+                    false,
+                );
             }
-
-            // todo
-            // for else_if_clause
-            // if let Some(ne_type_assert) = type_assert.get_negation() {
-            //     if let Some(else_stat) = if_stat.get_else_clause() {
-            //         broadcast_inside_block(db, var_trace, else_stat.get_block()?, type_assert);
-            //     }
-
-            //     for else_if_clause in if_stat.get_else_if_clause_list() {
-            //         let range = else_if_clause.get_range();
-            //         var_trace.add_and_assert(ne_type_assert.clone(), range);
-            //     }
-            // }
         }
         LuaAst::LuaParenExpr(paren_expr) => {
             broadcast_up(
@@ -71,22 +76,22 @@ pub fn broadcast_up(
             let op = binary_expr.get_op_token()?;
             match op.get_op() {
                 BinaryOperator::OpAnd => {
-                    let (left, right) = binary_expr.get_exprs()?;
-                    if left.get_position() == origin.get_position() {
-                        var_trace.add_assert(type_assert.clone(), right.get_range());
-                    }
-
-                    var_trace.add_and_assert(type_assert, binary_expr);
+                    broadcast_up_and(
+                        db,
+                        var_trace,
+                        binary_expr.clone(),
+                        LuaExpr::cast(origin.syntax().clone())?,
+                        type_assert,
+                    );
                 }
                 BinaryOperator::OpOr => {
-                    let (left, right) = binary_expr.get_exprs()?;
-                    if left.get_position() == origin.get_position() {
-                        if let Some(ne) = type_assert.get_negation() {
-                            var_trace.add_assert(ne, right.get_range());
-                        }
-                    }
-
-                    var_trace.add_or_assert(type_assert, binary_expr);
+                    broadcast_up_or(
+                        db,
+                        var_trace,
+                        binary_expr.clone(),
+                        LuaExpr::cast(origin.syntax().clone())?,
+                        type_assert,
+                    );
                 }
                 BinaryOperator::OpEq => {
                     let (left, right) = binary_expr.get_exprs()?;
@@ -194,5 +199,87 @@ pub fn broadcast_up(
         }
         _ => {}
     }
+    Some(())
+}
+
+pub fn broadcast_up_and(
+    db: &mut DbIndex,
+    var_trace: &mut VarTrace,
+    binary_expr: LuaBinaryExpr,
+    origin: LuaExpr,
+    type_assert: TypeAssertion,
+) -> Option<()> {
+    let (left, right) = binary_expr.get_exprs()?;
+    if left.get_position() == origin.get_position() {
+        var_trace.add_assert(type_assert.clone(), right.get_range());
+
+        if var_trace.check_var_use_in_range(right.get_range()) {
+            let trace_id = UnResolveTraceId::Expr(LuaExpr::cast(origin.syntax().clone())?);
+            var_trace.add_unresolve_trace(trace_id, type_assert);
+            return Some(());
+        }
+    } else {
+        let left_id = UnResolveTraceId::Expr(left);
+        if let Some(left_type_assert) = var_trace.pop_unresolve_trace(&left_id) {
+            //
+            let new_assert = TypeAssertion::And((left_type_assert, type_assert.clone()).into());
+            broadcast_up(
+                db,
+                var_trace,
+                binary_expr.get_parent::<LuaAst>()?,
+                LuaAst::LuaBinaryExpr(binary_expr),
+                new_assert,
+            );
+
+            return Some(());
+        }
+    }
+
+    broadcast_up(
+        db,
+        var_trace,
+        binary_expr.get_parent::<LuaAst>()?,
+        LuaAst::LuaBinaryExpr(binary_expr),
+        type_assert,
+    );
+
+    Some(())
+}
+
+pub fn broadcast_up_or(
+    db: &mut DbIndex,
+    var_trace: &mut VarTrace,
+    binary_expr: LuaBinaryExpr,
+    origin: LuaExpr,
+    type_assert: TypeAssertion,
+) -> Option<()> {
+    let (left, right) = binary_expr.get_exprs()?;
+    if left.get_position() == origin.get_position() {
+        if let Some(ne) = type_assert.get_negation() {
+            var_trace.add_assert(ne, right.get_range());
+        }
+
+        if var_trace.check_var_use_in_range(right.get_range()) {
+            let trace_id = UnResolveTraceId::Expr(LuaExpr::cast(origin.syntax().clone())?);
+            var_trace.add_unresolve_trace(trace_id, type_assert);
+            return Some(());
+        }
+    } else {
+        let left_id = UnResolveTraceId::Expr(left);
+        if let Some(left_type_assert) = var_trace.pop_unresolve_trace(&left_id) {
+            //
+            let new_assert = TypeAssertion::Or((left_type_assert, type_assert.clone()).into());
+            broadcast_up(
+                db,
+                var_trace,
+                binary_expr.get_parent::<LuaAst>()?,
+                LuaAst::LuaBinaryExpr(binary_expr),
+                new_assert,
+            );
+
+            return Some(());
+        }
+    }
+
     Some(())
 }

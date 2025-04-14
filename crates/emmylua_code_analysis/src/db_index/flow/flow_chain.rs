@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaSyntaxKind, LuaSyntaxNode};
+use emmylua_parser::{LuaAstNode, LuaChunk, LuaClosureExpr, LuaSyntaxKind, LuaSyntaxNode};
 use rowan::{TextRange, TextSize};
 
 use crate::db_index::TypeAssertion;
@@ -81,27 +81,32 @@ impl LuaFlowChain {
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct LuaFlowId(TextSize);
+pub struct LuaFlowId(TextRange);
 
 impl LuaFlowId {
     pub fn from_closure(closure_expr: LuaClosureExpr) -> Self {
-        Self(closure_expr.get_position())
+        Self(closure_expr.get_range())
     }
 
-    pub fn chunk() -> Self {
-        Self(TextSize::from(0))
+    pub fn from_chunk(chunk: LuaChunk) -> Self {
+        Self(chunk.get_range())
     }
 
     pub fn from_node(node: &LuaSyntaxNode) -> Self {
         let flow_id = node.ancestors().find_map(|node| match node.kind().into() {
             LuaSyntaxKind::ClosureExpr => LuaClosureExpr::cast(node).map(LuaFlowId::from_closure),
+            LuaSyntaxKind::Chunk => LuaChunk::cast(node).map(LuaFlowId::from_chunk),
             _ => None,
         });
 
-        flow_id.unwrap_or_else(|| LuaFlowId::chunk())
+        flow_id.unwrap_or_else(|| LuaFlowId(TextRange::default()))
     }
 
     pub fn get_position(&self) -> TextSize {
+        self.0.start()
+    }
+
+    pub fn get_range(&self) -> TextRange {
         self.0
     }
 }

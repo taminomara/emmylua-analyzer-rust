@@ -1,33 +1,35 @@
-use emmylua_parser::{LuaAst, LuaAstNode, LuaBlock};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaBlock, LuaIfStat};
 
-use crate::{DbIndex, LuaFlowChain, TypeAssertion, VarRefId};
+use crate::{DbIndex, TypeAssertion};
 
-use super::{broadcast_down::broadcast_down, VarTrace};
+use super::VarTrace;
 
 pub fn broadcast_outside_block(
-    db: &mut DbIndex,
+    _: &mut DbIndex,
     var_trace: &mut VarTrace,
     block: LuaBlock,
     type_assert: TypeAssertion,
 ) -> Option<()> {
     let parent = block.get_parent::<LuaAst>()?;
     match &parent {
-        LuaAst::LuaIfStat(_)
-        | LuaAst::LuaDoStat(_)
-        | LuaAst::LuaWhileStat(_)
-        | LuaAst::LuaForStat(_)
-        | LuaAst::LuaForRangeStat(_)
-        | LuaAst::LuaRepeatStat(_) => {
-            broadcast_down(db, var_trace, parent, type_assert, false);
+        LuaAst::LuaIfStat(if_stat) => {
+            // let trace_id = UnResolveTraceId::If(if_stat.clone());
+            // let trace_info = super::UnResolveTraceInfo {
+            //     type_assert,
+            //     var_ref_id: var_trace.get_var_ref_id().clone(),
+            // };
+            // unresolve_trace.add_unresolve_trace(trace_id, trace_info);
+            // broadcast_down_after_node(db, var_trace, unresolve_trace, parent, type_assert, false);
         }
         LuaAst::LuaElseIfClauseStat(_) | LuaAst::LuaElseClauseStat(_) => {
-            broadcast_down(
-                db,
-                var_trace,
-                parent.get_parent::<LuaAst>()?,
-                type_assert,
-                false,
-            );
+            if let Some(if_stat) = parent.get_parent::<LuaIfStat>() {
+                // let trace_id = UnResolveTraceId::If(if_stat.clone());
+                // let trace_info = super::UnResolveTraceInfo {
+                //     type_assert,
+                //     var_ref_id: var_trace.get_var_ref_id().clone(),
+                // };
+                // unresolve_trace.add_unresolve_trace(trace_id, trace_info);
+            }
         }
         _ => {}
     }
