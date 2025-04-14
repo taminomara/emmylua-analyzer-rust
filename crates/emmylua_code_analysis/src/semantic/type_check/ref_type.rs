@@ -6,8 +6,8 @@ use crate::{
 };
 
 use super::{
-    check_general_type_compact, is_sub_type_of, type_check_fail_reason::TypeCheckFailReason,
-    type_check_guard::TypeCheckGuard, TypeCheckResult,
+    check_general_type_compact, is_sub_type_of, sub_type::get_base_type_id,
+    type_check_fail_reason::TypeCheckFailReason, type_check_guard::TypeCheckGuard, TypeCheckResult,
 };
 
 pub fn check_ref_type_compact(
@@ -109,8 +109,8 @@ pub fn check_ref_type_compact(
         );
     } else {
         let compact_id = match compact_type {
-            LuaType::Def(compact_id) => compact_id,
-            LuaType::Ref(compact_id) => compact_id,
+            LuaType::Def(id) => id,
+            LuaType::Ref(id) => id,
             LuaType::TableConst(range) => {
                 let table_member_owner = LuaMemberOwner::Element(range.clone());
                 return check_ref_type_compact_table(
@@ -123,7 +123,13 @@ pub fn check_ref_type_compact(
             LuaType::Table => {
                 return Ok(());
             }
-            _ => return Err(TypeCheckFailReason::TypeNotMatch),
+            _ => {
+                if let Some(base_type_id) = get_base_type_id(compact_type) {
+                    base_type_id
+                } else {
+                    return Err(TypeCheckFailReason::TypeNotMatch);
+                }
+            }
         };
 
         if source_id == compact_id {
