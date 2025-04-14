@@ -232,4 +232,50 @@ mod test {
         let expected = ws.ty("string");
         assert_eq!(ws.humanize_type(ty), ws.humanize_type(expected));
     }
+
+    #[test]
+    fn test_index_key_by_string() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+            ---@enum (key) K1
+            local apiAlias = {
+                Unit         = 'unit_entity',
+            }
+
+            ---@type string?
+            local cls
+            local a = apiAlias[cls]
+        "#
+        ));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+            ---@enum (key) K2
+            local apiAlias = {
+                Unit         = 'unit_entity',
+            }
+
+            ---@type string?
+            local cls
+            local a = apiAlias["1" .. cls]
+        "#
+        ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+            ---@enum K3
+            local apiAlias = {
+                Unit         = 'unit_entity',
+            }
+
+            ---@type string?
+            local cls
+            local a = apiAlias["Unit1"]
+        "#
+        ));
+    }
 }
