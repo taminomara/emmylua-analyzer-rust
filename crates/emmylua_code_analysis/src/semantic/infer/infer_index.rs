@@ -94,11 +94,11 @@ fn infer_member_type_pass_flow(
         _ => {}
     }
 
-    let acccess_path = match index_expr.get_access_path() {
+    let access_path = match index_expr.get_access_path() {
         Some(path) => path,
         None => return Ok(member_type.clone()),
     };
-    let var_ref_id = VarRefId::Name(SmolStr::new(&acccess_path));
+    let var_ref_id = VarRefId::Name(SmolStr::new(&access_path));
     let flow_id = LuaFlowId::from_node(index_expr.syntax());
     let flow_chain = db
         .get_flow_index()
