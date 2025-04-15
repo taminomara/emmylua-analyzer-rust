@@ -1,5 +1,5 @@
 use emmylua_parser::{
-    LuaAstNode, LuaAstToken, LuaBlock, LuaClosureExpr, LuaFuncStat, LuaGeneralToken,
+    LuaAstNode, LuaAstToken, LuaBlock, LuaClosureExpr, LuaFuncStat, LuaGeneralToken, LuaIndexExpr,
     LuaSyntaxToken, LuaVarExpr, VisibilityKind,
 };
 
@@ -32,7 +32,7 @@ pub fn check_visibility(
             VisibilityKind::Public => return Some(true),
             VisibilityKind::Protected |
             VisibilityKind::Private => {
-                return Some(check_visibility_by_visibility(db, infer_config, property_owner, token, visibility).unwrap_or(false));
+                return Some(check_visibility_by_visibility(db, infer_config, file_id, property_owner, token, visibility).unwrap_or(false));
             },
             VisibilityKind::Package => {
                 return Some(file_id == property_owner.get_file_id()?);
@@ -46,6 +46,7 @@ pub fn check_visibility(
 fn check_visibility_by_visibility(
     db: &DbIndex,
     infer_config: &mut LuaInferCache,
+    file_id: FileId,
     property_owner: LuaSemanticDeclId,
     token: LuaSyntaxToken,
     visibility: VisibilityKind,
@@ -58,6 +59,19 @@ fn check_visibility_by_visibility(
     };
 
     let token = LuaGeneralToken::cast(token)?;
+    if check_def_visibility(
+        db,
+        infer_config,
+        file_id,
+        &member_owner,
+        token.clone(),
+        visibility,
+    )
+    .unwrap_or(false)
+    {
+        return Some(true);
+    }
+
     let blocks = token.ancestors::<LuaBlock>();
     for block in blocks {
         if check_block_visibility(db, infer_config, &member_owner, block, visibility)
@@ -112,4 +126,53 @@ fn check_block_visibility(
     }
 
     Some(false)
+}
+
+fn check_def_visibility(
+    db: &DbIndex,
+    infer_config: &mut LuaInferCache,
+    file_id: FileId,
+    member_owner: &LuaMemberOwner,
+    token: LuaGeneralToken,
+    visibility: VisibilityKind,
+) -> Option<bool> {
+    let index_expr = token.get_parent::<LuaIndexExpr>()?;
+    let prefix_expr = index_expr.get_prefix_expr()?;
+    let typ = infer_expr(db, infer_config, prefix_expr.into()).ok()?;
+
+    if !in_def_file(db, &typ, file_id) {
+        return Some(false);
+    }
+
+    match visibility {
+        VisibilityKind::Protected => match (typ, member_owner) {
+            (LuaType::Def(left), LuaMemberOwner::Type(right)) => {
+                Some(left == *right || is_sub_type_of(db, &left, &right))
+            }
+            _ => Some(false),
+        },
+        VisibilityKind::Private => match (typ, member_owner) {
+            (LuaType::Def(left), LuaMemberOwner::Type(right)) => Some(left == *right),
+            (LuaType::TableConst(left), LuaMemberOwner::Element(right)) => Some(left == *right),
+            _ => Some(false),
+        },
+        _ => None,
+    }
+}
+
+fn in_def_file(db: &DbIndex, typ: &LuaType, file_id: FileId) -> bool {
+    match typ {
+        LuaType::Def(id) => {
+            let decl = db.get_type_index().get_type_decl(id);
+            if let Some(decl) = decl {
+                decl.get_locations()
+                    .iter()
+                    .any(|location| location.file_id == file_id)
+            } else {
+                false
+            }
+        }
+        LuaType::TableConst(in_file) => in_file.file_id == file_id,
+        _ => false,
+    }
 }
