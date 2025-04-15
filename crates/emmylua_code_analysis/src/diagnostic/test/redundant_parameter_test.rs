@@ -86,4 +86,23 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_360() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::RedundantParameter,
+            r#"
+                ---@alias buz number
+
+                ---@param a buz
+                ---@overload fun(): number
+                function test(a)
+                end
+
+                local c = test({'test'})
+        "#
+        ));
+    }
 }
