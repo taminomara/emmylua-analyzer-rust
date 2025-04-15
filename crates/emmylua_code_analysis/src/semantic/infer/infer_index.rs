@@ -400,6 +400,38 @@ fn infer_intersection_member(
     Ok(LuaType::Nil)
 }
 
+fn infer_generic_members_from_super_generics(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
+    type_decl_id: &LuaTypeDeclId,
+    substitutor: &TypeSubstitutor,
+    index_expr: LuaIndexMemberExpr,
+) -> Option<LuaType> {
+    let type_index = db.get_type_index();
+
+    let type_decl = type_index.get_type_decl(&type_decl_id)?;
+    if !type_decl.is_class() {
+        return None;
+    };
+
+    let type_decl_id = type_decl.get_id();
+    if let Some(super_types) = type_index.get_super_types(&type_decl_id) {
+        super_types.iter().find_map(|super_type| {
+            let super_type = instantiate_type_generic(db, &super_type, &substitutor);
+            infer_member_by_member_key(
+                db,
+                cache,
+                &super_type,
+                index_expr.clone(),
+                &mut InferGuard::new(),
+            )
+            .ok()
+        })
+    } else {
+        return None;
+    }
+}
+
 fn infer_generic_member(
     db: &DbIndex,
     cache: &mut LuaInferCache,
@@ -407,11 +439,30 @@ fn infer_generic_member(
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
     let base_type = generic_type.get_base_type();
-    let member_type =
-        infer_member_by_member_key(db, cache, &base_type, index_expr, &mut InferGuard::new())?;
 
     let generic_params = generic_type.get_params();
     let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
+
+    // TODO: this is just a hack to support inheritance from the generic objects
+    // like `---@class box<T>: T`. Should be rewritten: generic types should
+    // be passed to the called instantiate_type_generic() in some kind of a
+    // context.
+    if let LuaType::Ref(base_type_decl_id) = &base_type {
+        let result = infer_generic_members_from_super_generics(
+            db,
+            cache,
+            base_type_decl_id,
+            &substitutor,
+            index_expr.clone(),
+        );
+        if let Some(result) = result {
+            return Ok(result);
+        }
+    }
+
+    let member_type =
+        infer_member_by_member_key(db, cache, &base_type, index_expr, &mut InferGuard::new())?;
+
     Ok(instantiate_type_generic(db, &member_type, &substitutor))
 }
 
