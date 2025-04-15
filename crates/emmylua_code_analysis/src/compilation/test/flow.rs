@@ -450,6 +450,22 @@ end
     }
 
     #[test]
+    fn test_unknown_type() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+        local a
+        b = a
+        "#,
+        );
+
+        let b = ws.expr_ty("b");
+        let b_expected = ws.ty("unknown");
+        assert_eq!(b, b_expected);
+    }
+
+    #[test]
     fn test_issue_367() {
         let mut ws = VirtualWorkspace::new();
 

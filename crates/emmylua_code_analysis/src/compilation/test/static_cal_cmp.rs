@@ -47,8 +47,7 @@ mod test {
         "#,
         );
         let left = ws.expr_ty("d");
-        let right = ws.expr_ty("nil");
-        assert_eq!(left, right);
+        assert_eq!(ws.humanize_type(left), "1?");
     }
 
     #[test]
