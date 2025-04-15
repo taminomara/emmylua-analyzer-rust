@@ -421,4 +421,31 @@ end
         "#,
         ));
     }
+
+    #[test]
+    fn test_issue_339() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+        --- @class A
+
+        local a --- @type A|string
+
+        if type(a) == 'table' then
+            b = a -- a should be A
+        else
+            c = a -- a should be string
+        end
+        "#,
+        );
+
+        let b = ws.expr_ty("b");
+        let b_expected = ws.ty("A");
+        assert_eq!(b, b_expected);
+
+        let c = ws.expr_ty("c");
+        let c_expected = ws.ty("string");
+        assert_eq!(c, c_expected);
+    }
 }

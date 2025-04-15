@@ -35,7 +35,7 @@ pub fn broadcast_up(
                         db,
                         var_trace,
                         else_stat.get_block()?,
-                        type_assert,
+                        ne_type_assert.clone(),
                         true,
                     );
                 }
