@@ -1,4 +1,6 @@
-use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaExpr, LuaReturnStat, LuaSyntaxKind};
+use emmylua_parser::{
+    LuaAstNode, LuaClosureExpr, LuaExpr, LuaFuncStat, LuaReturnStat, LuaSyntaxKind, LuaVarExpr,
+};
 use rowan::{NodeOrToken, TextRange};
 
 use crate::{
@@ -32,8 +34,15 @@ fn check_closure_expr(
         return None;
     }
     let return_types = signature.get_return_types();
+    let self_type = get_self_type(semantic_model, closure_expr);
     for return_stat in get_own_return_stats(closure_expr) {
-        check_return_stat(context, semantic_model, &return_types, &return_stat);
+        check_return_stat(
+            context,
+            semantic_model,
+            &self_type,
+            &return_types,
+            &return_stat,
+        );
     }
     Some(())
 }
@@ -41,6 +50,7 @@ fn check_closure_expr(
 fn check_return_stat(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
+    self_type: &Option<LuaType>,
     return_types: &[LuaType],
     return_stat: &LuaReturnStat,
 ) -> Option<()> {
@@ -79,7 +89,14 @@ fn check_return_stat(
         };
 
         let return_expr_type = return_expr_types.get(index).unwrap_or(&LuaType::Any);
-        let result = semantic_model.type_check(return_type, return_expr_type);
+        let mut check_type = return_type;
+        if return_type.is_self_infer() {
+            if let Some(self_type) = self_type {
+                check_type = self_type;
+            }
+        }
+
+        let result = semantic_model.type_check(check_type, return_expr_type);
         if !result.is_ok() {
             add_type_check_diagnostic(
                 context,
@@ -212,4 +229,22 @@ fn has_setmetatable(semantic_model: &SemanticModel, return_stat: &LuaReturnStat)
         }
     }
     None
+}
+
+/// 获取 self 实际类型
+fn get_self_type(semantic_model: &SemanticModel, closure_expr: &LuaClosureExpr) -> Option<LuaType> {
+    let parent = closure_expr.syntax().parent()?;
+    match parent {
+        _ if LuaFuncStat::can_cast(parent.kind().into()) => {
+            let func_stat = LuaFuncStat::cast(parent)?;
+            let func_name = func_stat.get_func_name()?;
+            if let LuaVarExpr::IndexExpr(index_expr) = func_name {
+                let prefix_expr = index_expr.get_prefix_expr()?;
+                semantic_model.infer_expr(prefix_expr).ok()
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }
 }

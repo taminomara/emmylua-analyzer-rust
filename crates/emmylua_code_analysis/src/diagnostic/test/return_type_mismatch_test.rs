@@ -358,4 +358,22 @@ mod tests {
             "#
         ));
     }
+
+    #[test]
+    fn test_return_self() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+            ---@class UI
+            local M = {}
+
+            ---@return self
+            function M:get()
+                return self
+            end
+            "#
+        ));
+    }
 }

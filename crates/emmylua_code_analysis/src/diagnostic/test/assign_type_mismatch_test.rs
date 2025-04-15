@@ -690,4 +690,20 @@ return t
         "#
         ));
     }
+
+    #[test]
+    fn test_return_self() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            ---@class UI
+            ---@overload fun(): self
+            local M
+
+            ---@type UI
+            local a = M()
+        "#
+        ));
+    }
 }
