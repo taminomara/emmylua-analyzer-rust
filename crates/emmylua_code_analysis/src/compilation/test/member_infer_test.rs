@@ -35,4 +35,35 @@ mod test {
 
         assert_eq!(c_ty, union_type);
     }
+
+    #[test]
+    fn test_issue_314_generic_inheritance() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.def(
+            r#"
+        ---@class foo<T>: T
+        local foo_mt = {}
+
+        ---@type foo<{a: string}>
+        local bar = { a = 'test' }
+
+        c = bar.a -- should be string
+
+        ---@class buz<T>: foo<T>
+        local buz_mt = {}
+
+        ---@type buz<{a: integer}>
+        local qux = { a = 5 }
+
+        d = qux.a -- should be integer
+        "#,
+        );
+
+        let c_ty = ws.expr_ty("c");
+        let d_ty = ws.expr_ty("d");
+
+        assert_eq!(c_ty, LuaType::String);
+        assert_eq!(d_ty, LuaType::Integer);
+    }
 }

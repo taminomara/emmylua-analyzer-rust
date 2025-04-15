@@ -209,6 +209,44 @@ fn infer_intersection_members(
     }
 }
 
+fn infer_generic_members_from_super_generics(
+    db: &DbIndex,
+    type_decl_id: &LuaTypeDeclId,
+    substitutor: &TypeSubstitutor,
+    infer_guard: &mut InferGuard,
+) -> Vec<LuaMemberInfo> {
+    let type_index = db.get_type_index();
+
+    let Some(type_decl) = type_index.get_type_decl(&type_decl_id) else {
+        return vec![];
+    };
+    if !type_decl.is_class() {
+        return vec![];
+    };
+
+    let type_decl_id = type_decl.get_id();
+    if let Some(super_types) = type_index.get_super_types(&type_decl_id) {
+        super_types
+            .iter() /*.filter(|super_type| super_type.is_generic())*/
+            .filter_map(|super_type| {
+                let super_type_sub = instantiate_type_generic(db, &super_type, &substitutor);
+                if !super_type_sub.eq(&super_type) {
+                    Some(super_type_sub)
+                } else {
+                    None
+                }
+            })
+            .filter_map(|super_type| {
+                let super_type = instantiate_type_generic(db, &super_type, &substitutor);
+                infer_members_guard(db, &super_type, infer_guard)
+            })
+            .flatten()
+            .collect()
+    } else {
+        vec![]
+    }
+}
+
 fn infer_generic_members(
     db: &DbIndex,
     generic_type: &LuaGenericType,
@@ -222,6 +260,19 @@ fn infer_generic_members(
     for info in members.iter_mut() {
         info.typ = instantiate_type_generic(db, &info.typ, &substitutor);
     }
+
+    // TODO: this is just a hack to support inheritance from the generic objects
+    // like `---@class box<T>: T`. Should be rewritten: generic types should
+    // be passed to the called instantiate_type_generic() in some kind of a
+    // context.
+    if let LuaType::Ref(base_type_decl_id) = base_type {
+        members.extend(infer_generic_members_from_super_generics(
+            db,
+            &base_type_decl_id,
+            &substitutor,
+            infer_guard,
+        ))
+    };
 
     Some(members)
 }
