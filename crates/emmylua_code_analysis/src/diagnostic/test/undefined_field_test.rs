@@ -101,20 +101,20 @@ mod test {
     fn test_class_key_to_class_key() {
         let mut ws = VirtualWorkspace::new();
 
-        // assert!(!ws.check_code_for(
-        //     DiagnosticCode::UndefinedField,
-        //     r#"
-        //         --- @type table<string, integer>
-        //         local FUNS = {}
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                --- @type table<string, integer>
+                local FUNS = {}
 
-        //         ---@class D10.AAA
+                ---@class D10.AAA
 
-        //         ---@type D10.AAA
-        //         local Test1
+                ---@type D10.AAA
+                local Test1
 
-        //         local a = FUNS[Test1]
-        //     "#
-        // ));
+                local a = FUNS[Test1]
+            "#
+        ));
 
         assert!(ws.check_code_for(
             DiagnosticCode::UndefinedField,
@@ -275,6 +275,64 @@ mod test {
             ---@type string?
             local cls
             local a = apiAlias["Unit1"]
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_unknown_type() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                local function test(...)
+                    local args = { ... }
+                    local a = args[1]
+                end
+        "#
+        ));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::InjectField,
+            r#"
+                local function test(...)
+                    local args = { ... }
+                    args[1] = 1
+                end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_g() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                print(_G['game_lua_files'])
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_def() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::InjectField,
+            r#"
+                ---@class ECABind
+                Bind = {}
+
+                ---@class ECAFunction
+                ---@field call_name string
+                local M = {}
+
+                ---@param func function
+                function M:call(func)
+                    Bind[self.call_name] = function(...)
+                        return
+                    end
+                end
         "#
         ));
     }

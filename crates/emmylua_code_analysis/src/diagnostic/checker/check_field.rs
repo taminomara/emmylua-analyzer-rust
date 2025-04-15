@@ -65,7 +65,7 @@ fn check_index_expr(
 
     let index_key = index_expr.get_index_key()?;
 
-    if is_valid_member(semantic_model, &prefix_typ, index_expr, &index_key).is_some() {
+    if is_valid_member(semantic_model, &prefix_typ, index_expr, &index_key, code).is_some() {
         return Some(());
     }
 
@@ -129,6 +129,7 @@ fn is_valid_member(
     prefix_typ: &LuaType,
     index_expr: &LuaIndexExpr,
     index_key: &LuaIndexKey,
+    code: DiagnosticCode,
 ) -> Option<()> {
     // 检查 member_info
     let need_add_diagnostic =
@@ -172,7 +173,25 @@ fn is_valid_member(
 
     // 允许特定类型组合通过
     match (prefix_typ, &key_type) {
+        (LuaType::Global, _) => return Some(()),
         (LuaType::Tuple(_), LuaType::Integer | LuaType::IntegerConst(_)) => return Some(()),
+        (LuaType::Array(typ), _) => {
+            if typ.is_unknown() {
+                return Some(());
+            }
+        }
+        (LuaType::Def(id), _) => {
+            if let Some(decl) = semantic_model.get_db().get_type_index().get_type_decl(id) {
+                if decl.is_class() {
+                    if code == DiagnosticCode::InjectField {
+                        return Some(());
+                    }
+                    if index_key.is_string() || matches!(key_type, LuaType::String) {
+                        return Some(());
+                    }
+                }
+            }
+        }
         _ => {}
     }
 
@@ -196,10 +215,10 @@ fn is_valid_member(
                         if typ.is_string() {
                             if key_type_set.iter().any(|typ| typ.is_string()) {
                                 return Some(());
-                            } else if typ.is_integer() {
-                                if key_type_set.iter().any(|typ| typ.is_integer()) {
-                                    return Some(());
-                                }
+                            }
+                        } else if typ.is_integer() {
+                            if key_type_set.iter().any(|typ| typ.is_integer()) {
+                                return Some(());
                             }
                         }
                     }
