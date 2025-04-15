@@ -31,7 +31,9 @@ pub async fn on_document_symbol(
     let file_id = analysis.get_file_id(&uri)?;
     let mut semantic_model = analysis.compilation.get_semantic_model(file_id)?;
     let document_symbol_root = build_document_symbol(&mut semantic_model)?;
-    let response = DocumentSymbolResponse::Nested(vec![document_symbol_root]);
+    // remove root file symbol
+    let children = document_symbol_root.children?;
+    let response = DocumentSymbolResponse::Nested(children);
     Some(response)
 }
 
@@ -46,12 +48,7 @@ fn build_document_symbol(semantic_model: &SemanticModel) -> Option<DocumentSymbo
     let db = semantic_model.get_db();
 
     let mut builder = DocumentSymbolBuilder::new(db, decl_tree, &document);
-    let symbol = LuaSymbol::new(
-        document.get_file_name().unwrap_or("LuaChunk".to_string()),
-        None,
-        SymbolKind::FILE,
-        root.get_range(),
-    );
+    let symbol = LuaSymbol::new("".into(), None, SymbolKind::FILE, root.get_range());
     builder.add_node_symbol(root.syntax().clone(), symbol);
     build_child_document_symbols(&mut builder, root);
 
