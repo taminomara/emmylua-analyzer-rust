@@ -234,16 +234,12 @@ fn has_setmetatable(semantic_model: &SemanticModel, return_stat: &LuaReturnStat)
 /// 获取 self 实际类型
 fn get_self_type(semantic_model: &SemanticModel, closure_expr: &LuaClosureExpr) -> Option<LuaType> {
     let parent = closure_expr.syntax().parent()?;
-    match parent {
-        _ if LuaFuncStat::can_cast(parent.kind().into()) => {
-            let func_stat = LuaFuncStat::cast(parent)?;
-            let func_name = func_stat.get_func_name()?;
-            if let LuaVarExpr::IndexExpr(index_expr) = func_name {
-                let prefix_expr = index_expr.get_prefix_expr()?;
-                semantic_model.infer_expr(prefix_expr).ok()
-            } else {
-                None
-            }
+    let func_stat = LuaFuncStat::cast(parent)?;
+    let func_name = func_stat.get_func_name()?;
+    match func_name {
+        LuaVarExpr::IndexExpr(index_expr) => {
+            let prefix_expr = index_expr.get_prefix_expr()?;
+            semantic_model.infer_expr(prefix_expr).ok()
         }
         _ => None,
     }
