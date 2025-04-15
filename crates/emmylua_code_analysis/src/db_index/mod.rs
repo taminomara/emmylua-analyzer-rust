@@ -21,7 +21,7 @@ pub use declaration::*;
 use dependency::LuaDenpendencyIndex;
 pub use diagnostic::{AnalyzeError, DiagnosticAction, DiagnosticActionKind, DiagnosticIndex};
 pub use flow::VarRefId;
-pub use flow::{LuaFlowChain, LuaFlowId, LuaFlowIndex};
+pub use flow::{LuaFlowChain, LuaFlowChainInfo, LuaFlowId, LuaFlowIndex};
 pub use global::GlobalId;
 use global::LuaGlobalIndex;
 pub use member::{

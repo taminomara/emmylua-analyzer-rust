@@ -1,4 +1,4 @@
-use emmylua_parser::{LuaDocTagCast, LuaVarExpr};
+use emmylua_parser::{LuaAstNode, LuaChunk, LuaDocTagCast, LuaVarExpr};
 use rowan::{TextRange, TextSize};
 
 use crate::{LuaFlowId, VarRefId};
@@ -18,20 +18,21 @@ pub struct FlowTree {
 
 #[allow(unused)]
 impl FlowTree {
-    pub fn new(document_range: TextRange) -> FlowTree {
+    pub fn new(root: LuaChunk) -> FlowTree {
+        let current_flow_id = LuaFlowId::from_chunk(root.clone());
         let mut builder = FlowTree {
-            current_flow_id: LuaFlowId::chunk(),
+            current_flow_id,
             flow_id_stack: Vec::new(),
             flow_nodes: HashMap::new(),
             var_flow_ref: HashMap::new(),
             var_node_to_id: HashMap::new(),
-            root_flow_id: LuaFlowId::chunk(),
+            root_flow_id: current_flow_id,
         };
 
-        let flow_id = LuaFlowId::chunk();
-        builder
-            .flow_nodes
-            .insert(flow_id, FlowNode::new(flow_id, document_range, None));
+        builder.flow_nodes.insert(
+            current_flow_id,
+            FlowNode::new(current_flow_id, current_flow_id.get_range(), None),
+        );
         builder
     }
 
@@ -123,4 +124,35 @@ pub enum VarRefNode {
     UseRef(LuaVarExpr),
     AssignRef(LuaVarExpr),
     CastRef(LuaDocTagCast),
+}
+
+#[allow(unused)]
+impl VarRefNode {
+    pub fn get_range(&self) -> TextRange {
+        match self {
+            VarRefNode::UseRef(expr) => expr.get_range(),
+            VarRefNode::AssignRef(expr) => expr.get_range(),
+            VarRefNode::CastRef(tag_cast) => tag_cast.get_range(),
+        }
+    }
+
+    pub fn get_position(&self) -> TextSize {
+        match self {
+            VarRefNode::UseRef(expr) => expr.get_position(),
+            VarRefNode::AssignRef(expr) => expr.get_position(),
+            VarRefNode::CastRef(tag_cast) => tag_cast.get_position(),
+        }
+    }
+
+    pub fn is_use_ref(&self) -> bool {
+        matches!(self, VarRefNode::UseRef(_))
+    }
+
+    pub fn is_assign_ref(&self) -> bool {
+        matches!(self, VarRefNode::AssignRef(_))
+    }
+
+    pub fn is_cast_ref(&self) -> bool {
+        matches!(self, VarRefNode::CastRef(_))
+    }
 }

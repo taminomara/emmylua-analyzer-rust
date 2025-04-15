@@ -1,8 +1,8 @@
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaBlock, LuaBreakStat, LuaChunk, LuaDocTagCast, LuaGotoStat,
-    LuaIndexExpr, LuaLabelStat, LuaLoopStat, LuaNameExpr, LuaTokenKind, PathTrait,
+    LuaIndexExpr, LuaLabelStat, LuaLoopStat, LuaNameExpr, LuaStat, LuaTokenKind, PathTrait,
 };
-use rowan::{TextRange, WalkEvent};
+use rowan::WalkEvent;
 use smol_str::SmolStr;
 
 use crate::{AnalyzeError, DbIndex, DiagnosticCode, FileId, LuaDeclId, LuaFlowId, VarRefId};
@@ -13,8 +13,7 @@ use super::{
 };
 
 pub fn build_flow_tree(db: &mut DbIndex, file_id: FileId, root: LuaChunk) -> FlowTree {
-    let range = root.get_range();
-    let mut flow_tree = FlowTree::new(range);
+    let mut flow_tree = FlowTree::new(root.clone());
     let mut goto_vecs: Vec<(LuaFlowId, LuaGotoStat)> = vec![];
     for walk_node in root.walk_descendants::<LuaAst>() {
         match walk_node {
@@ -230,13 +229,11 @@ fn build_goto_flow(
     }
 
     let label = label?;
-    let label_block = label.get_parent::<LuaBlock>()?;
-    let label_end_pos = label_block.get_range().end();
-    let label_block_end_pos = label_block.get_range().end();
-    if label_end_pos < label_block_end_pos {
-        let new_range = TextRange::new(label_end_pos, label_block_end_pos);
-        flow_node.add_jump_to_range(goto_stat.get_syntax_id(), new_range);
-    }
+
+    flow_node.add_jump_to_stat(
+        goto_stat.get_syntax_id(),
+        LuaStat::cast(label.syntax().clone())?,
+    );
 
     Some(())
 }
@@ -261,13 +258,10 @@ fn build_break_flow(
         return None;
     }
     let loop_stat = first_loop_stat?;
-    let block = loop_stat.get_parent_block()?;
-    let loop_end_pos = loop_stat.get_range().end();
-    let block_end_pos = block.get_range().end();
-    if loop_end_pos < block_end_pos {
-        let new_range = TextRange::new(loop_end_pos, block_end_pos);
-        flow_tree.add_jump_to_range(break_stat.get_syntax_id(), new_range);
-    }
+    flow_tree.add_jump_to_stat(
+        break_stat.get_syntax_id(),
+        LuaStat::cast(loop_stat.syntax().clone())?,
+    );
 
     Some(())
 }

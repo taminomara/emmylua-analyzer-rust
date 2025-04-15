@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test {
 
-    use crate::{DiagnosticCode, VirtualWorkspace};
+    use crate::{DiagnosticCode, LuaType, VirtualWorkspace};
 
     #[test]
     fn test_closure_return() {
@@ -359,5 +359,66 @@ end
         let a = ws.expr_ty("a");
         let a_desc = ws.humanize_type(a);
         assert_eq!(a_desc, "integer");
+    }
+
+    #[test]
+    fn test_issue_147() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+            local d ---@type string?
+            if d then
+                local d2 = function(...)
+                    e = d
+                end
+            end
+
+        "#,
+        );
+
+        let e = ws.expr_ty("e");
+        assert_eq!(e, LuaType::String);
+    }
+
+    #[test]
+    fn test_issue_325() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+        while condition do
+            local a ---@type string?
+            if not a then
+                break
+            end
+            b = a
+        end
+
+        "#,
+        );
+
+        let b = ws.expr_ty("b");
+        assert_eq!(b, LuaType::String);
+    }
+
+    #[test]
+    fn test_issue_347() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+        --- @param x 'a'|'b'
+        --- @return 'a'|'b'
+        function foo(x)
+        if x ~= 'a' and x ~= 'b' then
+            error('invalid behavior')
+        end
+
+        return x
+        end
+        "#,
+        ));
     }
 }

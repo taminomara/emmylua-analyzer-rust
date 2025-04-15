@@ -1,35 +1,26 @@
-use emmylua_parser::{LuaAst, LuaAstNode, LuaBlock};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaBlock, LuaIfStat};
 
-use crate::{DbIndex, LuaFlowChain, TypeAssertion, VarRefId};
+use crate::{DbIndex, TypeAssertion};
 
-use super::broadcast_down::broadcast_down;
+use super::{unresolve_trace::UnResolveTraceId, VarTrace};
 
-pub fn broadcast_outside(
-    db: &mut DbIndex,
-    flow_chain: &mut LuaFlowChain,
-    var_ref_id: &VarRefId,
-    node: LuaBlock,
+pub fn broadcast_outside_block(
+    _: &mut DbIndex,
+    var_trace: &mut VarTrace,
+    block: LuaBlock,
     type_assert: TypeAssertion,
 ) -> Option<()> {
-    let parent = node.get_parent::<LuaAst>()?;
+    let parent = block.get_parent::<LuaAst>()?;
     match &parent {
-        LuaAst::LuaIfStat(_)
-        | LuaAst::LuaDoStat(_)
-        | LuaAst::LuaWhileStat(_)
-        | LuaAst::LuaForStat(_)
-        | LuaAst::LuaForRangeStat(_)
-        | LuaAst::LuaRepeatStat(_) => {
-            broadcast_down(db, flow_chain, var_ref_id, parent, type_assert, false);
+        LuaAst::LuaIfStat(if_stat) => {
+            let trace_id = UnResolveTraceId::If(if_stat.clone());
+            var_trace.add_unresolve_trace(trace_id, type_assert);
         }
         LuaAst::LuaElseIfClauseStat(_) | LuaAst::LuaElseClauseStat(_) => {
-            broadcast_down(
-                db,
-                flow_chain,
-                var_ref_id,
-                parent.get_parent::<LuaAst>()?,
-                type_assert,
-                false,
-            );
+            if let Some(if_stat) = parent.get_parent::<LuaIfStat>() {
+                let trace_id = UnResolveTraceId::If(if_stat.clone());
+                var_trace.add_unresolve_trace(trace_id, type_assert);
+            }
         }
         _ => {}
     }

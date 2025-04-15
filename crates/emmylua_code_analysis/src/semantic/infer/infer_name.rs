@@ -34,16 +34,12 @@ pub fn infer_name_expr(
             .get_decl(&decl_id)
             .ok_or(InferFailReason::None)?;
         let mut decl_type = get_decl_type(db, decl)?;
-        let flow_id = LuaFlowId::from_node(name_expr.syntax());
-        let flow_chain = db.get_flow_index().get_flow_chain(file_id, flow_id);
+        let var_ref_id = VarRefId::DeclId(decl_id);
+        let flow_chain = db.get_flow_index().get_flow_chain(file_id, var_ref_id);
         let root = name_expr.get_root();
         if let Some(flow_chain) = flow_chain {
-            let var_ref_id = VarRefId::DeclId(decl_id);
-            for type_assert in flow_chain.get_type_asserts(
-                &var_ref_id,
-                name_expr.get_position(),
-                Some(decl_id.position),
-            ) {
+            let flow_id = LuaFlowId::from_node(name_expr.syntax());
+            for type_assert in flow_chain.get_type_asserts(name_expr.get_position(), flow_id) {
                 decl_type = type_assert.tighten_type(db, cache, &root, decl_type)?;
             }
         }
@@ -85,16 +81,13 @@ fn infer_self(db: &DbIndex, cache: &mut LuaInferCache, name_expr: LuaNameExpr) -
                 decl_type = LuaType::Def(id);
             }
 
-            let flow_id = LuaFlowId::from_node(name_expr.syntax());
-            let flow_chain = db.get_flow_index().get_flow_chain(file_id, flow_id);
+            // let flow_id = LuaFlowId::from_node(name_expr.syntax());
+            let var_ref_id = VarRefId::Name(SmolStr::new("self"));
+            let flow_chain = db.get_flow_index().get_flow_chain(file_id, var_ref_id);
             let root = name_expr.get_root();
             if let Some(flow_chain) = flow_chain {
-                let var_ref_id = VarRefId::Name(SmolStr::new("self"));
-                for type_assert in flow_chain.get_type_asserts(
-                    &var_ref_id,
-                    name_expr.get_position(),
-                    Some(decl_id.position),
-                ) {
+                let flow_id = LuaFlowId::from_node(name_expr.syntax());
+                for type_assert in flow_chain.get_type_asserts(name_expr.get_position(), flow_id) {
                     decl_type = type_assert.tighten_type(db, cache, &root, decl_type)?;
                 }
             }

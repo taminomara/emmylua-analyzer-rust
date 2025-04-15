@@ -3,7 +3,7 @@ mod flow_var_ref_id;
 
 use std::collections::HashMap;
 
-pub use flow_chain::{LuaFlowChain, LuaFlowId};
+pub use flow_chain::{LuaFlowChain, LuaFlowChainInfo, LuaFlowId};
 pub use flow_var_ref_id::VarRefId;
 
 use crate::FileId;
@@ -12,7 +12,7 @@ use super::traits::LuaIndex;
 
 #[derive(Debug)]
 pub struct LuaFlowIndex {
-    chains_map: HashMap<FileId, HashMap<LuaFlowId, LuaFlowChain>>,
+    chains_map: HashMap<FileId, HashMap<VarRefId, LuaFlowChain>>,
 }
 
 impl LuaFlowIndex {
@@ -26,13 +26,13 @@ impl LuaFlowIndex {
         self.chains_map
             .entry(file_id)
             .or_insert_with(HashMap::new)
-            .insert(chain.get_flow_id(), chain);
+            .insert(chain.get_var_ref_id(), chain);
     }
 
-    pub fn get_flow_chain(&self, file_id: FileId, flow_id: LuaFlowId) -> Option<&LuaFlowChain> {
+    pub fn get_flow_chain(&self, file_id: FileId, var_ref_id: VarRefId) -> Option<&LuaFlowChain> {
         self.chains_map
             .get(&file_id)
-            .and_then(|map| map.get(&flow_id))
+            .and_then(|map| map.get(&var_ref_id))
     }
 }
 

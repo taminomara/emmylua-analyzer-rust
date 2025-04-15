@@ -1,3 +1,4 @@
+mod and_type;
 mod false_or_nil_type;
 mod narrow_type;
 mod remove_type;
@@ -16,6 +17,8 @@ pub enum TypeOps {
     Narrow,
     /// Only keep the false or nil type
     NarrowFalseOrNil,
+    /// And operation
+    And,
 }
 
 impl TypeOps {
@@ -27,6 +30,7 @@ impl TypeOps {
             }
             TypeOps::Narrow => narrow_type::narrow_down_type(source.clone(), target.clone())
                 .unwrap_or(target.clone()),
+            TypeOps::And => and_type::and_type(source.clone(), target.clone()),
             _ => source.clone(),
         }
     }
