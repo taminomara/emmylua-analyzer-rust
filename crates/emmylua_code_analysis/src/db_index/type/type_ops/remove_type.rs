@@ -81,6 +81,58 @@ pub fn remove_type(source: LuaType, removed_type: LuaType) -> Option<LuaType> {
             | LuaType::TableGeneric(_) => return None,
             _ => {}
         },
+        LuaType::DocStringConst(s) => match &source {
+            LuaType::DocStringConst(s2) => {
+                if s == s2 {
+                    return None;
+                }
+            }
+            LuaType::StringConst(s2) => {
+                if s == s2 {
+                    return None;
+                }
+            }
+            _ => {}
+        },
+        LuaType::StringConst(s) => match &source {
+            LuaType::DocStringConst(s2) => {
+                if s == s2 {
+                    return None;
+                }
+            }
+            LuaType::StringConst(s2) => {
+                if s == s2 {
+                    return None;
+                }
+            }
+            _ => {}
+        },
+        LuaType::DocIntegerConst(i) => match &source {
+            LuaType::DocIntegerConst(i2) => {
+                if i == i2 {
+                    return None;
+                }
+            }
+            LuaType::IntegerConst(i2) => {
+                if i == i2 {
+                    return None;
+                }
+            }
+            _ => {}
+        },
+        LuaType::IntegerConst(i) => match &source {
+            LuaType::DocIntegerConst(i2) => {
+                if i == i2 {
+                    return None;
+                }
+            }
+            LuaType::IntegerConst(i2) => {
+                if i == i2 {
+                    return None;
+                }
+            }
+            _ => {}
+        },
         _ => {}
     }
 

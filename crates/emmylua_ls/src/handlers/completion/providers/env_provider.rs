@@ -107,7 +107,7 @@ fn add_local_env(
     duplicated_name: &mut HashSet<String>,
     node: &LuaAst,
 ) -> Option<()> {
-    let flow_id = LuaFlowId::from_node(node.syntax());
+    // let flow_id = LuaFlowId::from_node(node.syntax());
 
     let file_id = builder.semantic_model.get_file_id();
     let decl_tree = builder
@@ -148,21 +148,20 @@ fn add_local_env(
             continue;
         }
 
+        let flow_id = LuaFlowId::from_node(node.syntax());
+        let var_ref_id = VarRefId::DeclId(*decl_id);
         // 类型缩窄
         if let Some(chain) = builder
             .semantic_model
             .get_db()
             .get_flow_index()
-            .get_flow_chain(file_id, flow_id)
+            .get_flow_chain(file_id, var_ref_id)
         {
-            let var_ref_id = VarRefId::DeclId(*decl_id);
             let semantic_model = &builder.semantic_model;
             let db = semantic_model.get_db();
             let root = semantic_model.get_root().syntax();
             let config = semantic_model.get_config();
-            for type_assert in
-                chain.get_type_asserts(&var_ref_id, node.get_position(), Some(decl_id.position))
-            {
+            for type_assert in chain.get_type_asserts(node.get_position(), flow_id) {
                 typ = type_assert
                     .tighten_type(db, &mut config.borrow_mut(), root, typ)
                     .unwrap_or(LuaType::Unknown);

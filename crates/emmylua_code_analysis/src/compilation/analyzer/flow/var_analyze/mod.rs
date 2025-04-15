@@ -2,11 +2,11 @@ mod broadcast_down;
 mod broadcast_inside;
 mod broadcast_outside;
 mod broadcast_up;
-mod unresolve_trace_id;
+mod unresolve_trace;
 mod var_trace;
 
 use broadcast_down::broadcast_down_after_node;
-use broadcast_up::broadcast_up;
+pub use broadcast_up::broadcast_up;
 use emmylua_parser::{
     BinaryOperator, LuaAssignStat, LuaAst, LuaAstNode, LuaBinaryExpr, LuaCallArgList, LuaCallExpr,
     LuaCallExprStat, LuaCommentOwner, LuaDocTag, LuaExpr, LuaLiteralToken, LuaVarExpr,
@@ -16,6 +16,8 @@ use crate::{
     db_index::{LuaType, TypeAssertion},
     DbIndex, FileId, LuaDeclId, LuaMemberId, LuaTypeDeclId, LuaTypeOwner,
 };
+#[allow(unused)]
+pub use unresolve_trace::{UnResolveTraceId, UnResolveTraceInfo};
 pub use var_trace::VarTrace;
 
 pub fn analyze_ref_expr(

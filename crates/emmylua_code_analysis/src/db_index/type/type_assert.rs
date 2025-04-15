@@ -1,8 +1,5 @@
-use std::sync::Arc;
-
 use crate::{infer_expr, DbIndex, InferFailReason, LuaInferCache};
 use emmylua_parser::{LuaAstNode, LuaExpr, LuaSyntaxId, LuaSyntaxNode};
-use rowan::TextSize;
 
 use super::{type_ops::TypeOps, LuaType};
 
@@ -14,8 +11,8 @@ pub enum TypeAssertion {
     Add(LuaType),
     Remove(LuaType),
     Reassign((LuaSyntaxId, i32)),
-    And(Arc<(TypeAssertion, TypeAssertion)>),
-    Or(Arc<(TypeAssertion, TypeAssertion)>),
+    And(Vec<TypeAssertion>),
+    Or(Vec<TypeAssertion>),
 }
 
 #[allow(unused)]
@@ -26,6 +23,15 @@ impl TypeAssertion {
             TypeAssertion::NotExist => Some(TypeAssertion::Exist),
             TypeAssertion::Narrow(t) => Some(TypeAssertion::Remove(t.clone())),
             TypeAssertion::Remove(t) => Some(TypeAssertion::Narrow(t.clone())),
+            TypeAssertion::Add(t) => Some(TypeAssertion::Remove(t.clone())),
+            TypeAssertion::And(a) => {
+                let negations: Vec<_> = a.iter().filter_map(|x| x.get_negation()).collect();
+                Some(TypeAssertion::Or(negations))
+            }
+            TypeAssertion::Or(a) => {
+                let negations: Vec<_> = a.iter().filter_map(|x| x.get_negation()).collect();
+                Some(TypeAssertion::And(negations))
+            }
             _ => None,
         }
     }
@@ -58,6 +64,47 @@ impl TypeAssertion {
                     t => t,
                 };
                 Ok(TypeOps::Narrow.apply(&source, &expr_type))
+            }
+            TypeAssertion::And(a) => {
+                let mut result = vec![];
+                for assertion in a {
+                    result.push(assertion.tighten_type(db, config, root, source.clone())?);
+                }
+
+                match result.len() {
+                    0 => Ok(source),
+                    1 => Ok(result.remove(0)),
+                    _ => {
+                        let mut result_type = result.remove(0);
+                        for t in result {
+                            result_type = TypeOps::And.apply(&result_type, &t);
+                            if result_type.is_nil() {
+                                return Ok(LuaType::Nil);
+                            }
+                        }
+
+                        Ok(result_type)
+                    }
+                }
+            }
+            TypeAssertion::Or(a) => {
+                let mut result = vec![];
+                for assertion in a {
+                    result.push(assertion.tighten_type(db, config, root, source.clone())?);
+                }
+
+                match result.len() {
+                    0 => Ok(source),
+                    1 => Ok(result.remove(0)),
+                    _ => {
+                        let mut result_type = result.remove(0);
+                        for t in result {
+                            result_type = TypeOps::Union.apply(&result_type, &t);
+                        }
+
+                        Ok(result_type)
+                    }
+                }
             }
             _ => Ok(source),
         }

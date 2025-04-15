@@ -1,8 +1,6 @@
 use emmylua_parser::{BinaryOperator, LuaAstNode, LuaBlock, LuaDocTagCast};
 
-use crate::{
-    compilation::analyzer::AnalyzeContext, FileId, InFiled, LuaType, TypeAssertion,
-};
+use crate::{compilation::analyzer::AnalyzeContext, FileId, InFiled, LuaType, TypeAssertion};
 
 use super::var_analyze::VarTrace;
 
@@ -35,16 +33,10 @@ pub fn analyze_cast(
         if cast_op_type.is_nullable() {
             match action {
                 CastAction::Add => {
-                    var_trace.add_assert(
-                        TypeAssertion::Add(LuaType::Nil),
-                        effect_range,
-                    );
+                    var_trace.add_assert(TypeAssertion::Add(LuaType::Nil), effect_range);
                 }
                 CastAction::Remove => {
-                    var_trace.add_assert(
-                        TypeAssertion::Remove(LuaType::Nil),
-                        effect_range,
-                    );
+                    var_trace.add_assert(TypeAssertion::Remove(LuaType::Nil), effect_range);
                 }
                 _ => {}
             }
@@ -57,22 +49,13 @@ pub fn analyze_cast(
 
             match action {
                 CastAction::Add => {
-                    var_trace.add_assert(
-                        TypeAssertion::Add(typ),
-                        effect_range
-                    );
+                    var_trace.add_assert(TypeAssertion::Add(typ), effect_range);
                 }
                 CastAction::Remove => {
-                    var_trace.add_assert(
-                        TypeAssertion::Remove(typ),
-                        effect_range,
-                    );
+                    var_trace.add_assert(TypeAssertion::Remove(typ), effect_range);
                 }
                 CastAction::Force => {
-                    var_trace.add_assert(
-                        TypeAssertion::Narrow(typ),
-                        effect_range,
-                    );
+                    var_trace.add_assert(TypeAssertion::Narrow(typ), effect_range);
                 }
             }
         }

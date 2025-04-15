@@ -6,11 +6,13 @@ mod var_analyze;
 
 use std::collections::HashMap;
 
-use crate::{db_index::DbIndex, profile::Profile, FileId, VarRefId};
+use crate::{db_index::DbIndex, profile::Profile, FileId, TypeAssertion, VarRefId};
 use build_flow_tree::build_flow_tree;
 use cast_analyze::analyze_cast;
+use emmylua_parser::{BinaryOperator, LuaAst, LuaAstNode, LuaBinaryExpr, LuaBlock};
 use flow_tree::{FlowTree, VarRefNode};
-use var_analyze::{analyze_ref_assign, analyze_ref_expr, VarTrace};
+use rowan::TextRange;
+use var_analyze::{analyze_ref_assign, analyze_ref_expr, broadcast_up, UnResolveTraceId, VarTrace};
 
 use super::AnalyzeContext;
 
@@ -38,9 +40,9 @@ fn analyze_flow(
             None => continue,
         };
 
-        let mut var_trace = var_trace_map
-            .entry(var_ref_id.clone())
-            .or_insert_with(|| VarTrace::new(var_ref_id.clone(), var_ref_nodes.clone()));
+        let mut var_trace = var_trace_map.entry(var_ref_id.clone()).or_insert_with(|| {
+            VarTrace::new(var_ref_id.clone(), var_ref_nodes.clone(), &flow_tree)
+        });
         for (var_ref_node, flow_id) in var_ref_nodes {
             var_trace.set_current_flow_id(*flow_id);
             match var_ref_node {
@@ -55,17 +57,53 @@ fn analyze_flow(
                 }
             }
         }
+
+        let mut guard_count = 0;
+        while var_trace.has_unresolve_traces() {
+            resolve_flow_analyze(db, &mut var_trace);
+            guard_count += 1;
+            if guard_count > 10 {
+                break;
+            }
+        }
     }
 
-    // for (_, flow_chain) in flow_chain_map {
-    //     db.get_flow_index_mut().add_flow_chain(file_id, flow_chain);
-    // }
+    for (_, var_trace) in var_trace_map {
+        db.get_flow_index_mut()
+            .add_flow_chain(file_id, var_trace.finish());
+    }
 }
 
-// fn resolve_flow_analyze(
-//     db: &mut DbIndex,
-//     flow_tree: &FlowTree,
-//     var_ref_id: &VarRefId,
-//     var_trace: &mut VarTrace,
-// ) {
-// }
+fn resolve_flow_analyze(db: &mut DbIndex, var_trace: &mut VarTrace) -> Option<()> {
+    let all_trace = var_trace.pop_all_unresolve_traces();
+    for (trace_id, assertion_info) in all_trace {
+        match trace_id {
+            UnResolveTraceId::Expr(expr) => {
+                let binary_expr = expr.get_parent::<LuaBinaryExpr>()?;
+                let op = binary_expr.get_op_token()?.get_op();
+                let assert = assertion_info.get_assertion()?;
+                if op == BinaryOperator::OpAnd || op == BinaryOperator::OpOr {
+                    broadcast_up(
+                        db,
+                        var_trace,
+                        binary_expr.get_parent::<LuaAst>()?,
+                        LuaAst::cast(binary_expr.syntax().clone())?,
+                        assert,
+                    );
+                }
+            }
+            UnResolveTraceId::If(if_stat) => {
+                let asserts = assertion_info.get_assertions()?;
+                let block = if_stat.get_parent::<LuaBlock>()?;
+                let block_end = block.get_range().end();
+                let if_end = if_stat.get_range().end();
+                if if_end < block_end {
+                    let range = TextRange::new(if_end, block_end);
+                    var_trace.add_assert(TypeAssertion::Or(asserts), range);
+                }
+            }
+        }
+    }
+
+    Some(())
+}

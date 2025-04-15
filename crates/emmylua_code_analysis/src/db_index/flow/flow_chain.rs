@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use emmylua_parser::{LuaAstNode, LuaChunk, LuaClosureExpr, LuaSyntaxKind, LuaSyntaxNode};
 use rowan::{TextRange, TextSize};
 
@@ -9,74 +7,40 @@ use super::VarRefId;
 
 #[derive(Debug)]
 pub struct LuaFlowChain {
-    flow_id: LuaFlowId,
-    type_asserts: HashMap<VarRefId, Vec<LuaFlowChainEntry>>,
+    var_ref_id: VarRefId,
+    type_asserts: Vec<LuaFlowChainInfo>,
 }
 
-#[derive(Debug)]
-pub struct LuaFlowChainEntry {
+#[derive(Debug, Clone)]
+pub struct LuaFlowChainInfo {
+    pub range: TextRange,
     pub type_assert: TypeAssertion,
-    pub block_range: TextRange,
-    pub actual_range: TextRange,
+    pub allow_flow_id: Vec<LuaFlowId>,
 }
 
 impl LuaFlowChain {
-    pub fn new(flow_id: LuaFlowId) -> Self {
+    pub fn new(var_ref_id: VarRefId, asserts: Vec<LuaFlowChainInfo>) -> Self {
         Self {
-            flow_id,
-            type_asserts: HashMap::new(),
+            var_ref_id,
+            type_asserts: asserts,
         }
     }
 
-    pub fn get_flow_id(&self) -> LuaFlowId {
-        self.flow_id
-    }
-
-    pub fn add_type_assert(
-        &mut self,
-        var_ref_id: &VarRefId,
-        type_assert: TypeAssertion,
-        block_range: TextRange,
-        actual_range: TextRange,
-    ) {
-        self.type_asserts
-            .entry(var_ref_id.clone())
-            .or_insert_with(Vec::new)
-            .push(LuaFlowChainEntry {
-                type_assert,
-                block_range,
-                actual_range,
-            });
+    pub fn get_var_ref_id(&self) -> VarRefId {
+        self.var_ref_id.clone()
     }
 
     pub fn get_type_asserts(
         &self,
-        var_ref_id: &VarRefId,
         position: TextSize,
-        start_position: Option<TextSize>,
+        flow_id: LuaFlowId,
     ) -> impl Iterator<Item = &TypeAssertion> {
         self.type_asserts
-            .get(var_ref_id)
-            .into_iter()
-            .flat_map(move |asserts| {
-                asserts.iter().filter_map(move |entry| {
-                    if !entry.block_range.contains(position)
-                        || position < entry.actual_range.start()
-                    {
-                        return None;
-                    }
-                    // 变量可能被重定义, 需要抛弃之前的声明
-                    if let Some(start_pos) = start_position {
-                        if entry.actual_range.start() >= start_pos {
-                            Some(&entry.type_assert)
-                        } else {
-                            None
-                        }
-                    } else {
-                        Some(&entry.type_assert)
-                    }
-                })
+            .iter()
+            .filter(move |assert| {
+                assert.allow_flow_id.contains(&flow_id) && assert.range.contains(position)
             })
+            .map(|assert| &assert.type_assert)
     }
 }
 

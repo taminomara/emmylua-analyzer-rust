@@ -1,32 +1,38 @@
 use std::collections::HashMap;
 
-use emmylua_parser::LuaAstNode;
 use rowan::TextRange;
 
 use crate::{
-    compilation::analyzer::flow::flow_tree::VarRefNode, LuaFlowId, TypeAssertion, VarRefId,
+    compilation::analyzer::flow::flow_tree::{FlowTree, VarRefNode},
+    LuaFlowChain, LuaFlowChainInfo, LuaFlowId, TypeAssertion, VarRefId,
 };
 
-use super::unresolve_trace_id::UnResolveTraceId;
+use super::unresolve_trace::{UnResolveTraceId, UnResolveTraceInfo};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct VarTrace {
+#[derive(Debug, Clone)]
+pub struct VarTrace<'a> {
     var_ref_id: VarRefId,
     var_refs: Vec<(VarRefNode, LuaFlowId)>,
-    assertions: HashMap<TextRange, Vec<TypeAssertion>>,
+    assertions: Vec<LuaFlowChainInfo>,
     current_flow_id: Option<LuaFlowId>,
-    unresolve_traces: HashMap<UnResolveTraceId, TypeAssertion>,
+    unresolve_traces: HashMap<UnResolveTraceId, UnResolveTraceInfo>,
+    flow_tree: &'a FlowTree,
 }
 
 #[allow(unused)]
-impl VarTrace {
-    pub fn new(var_ref_id: VarRefId, var_refs: Vec<(VarRefNode, LuaFlowId)>) -> Self {
+impl<'a> VarTrace<'a> {
+    pub fn new(
+        var_ref_id: VarRefId,
+        var_refs: Vec<(VarRefNode, LuaFlowId)>,
+        flow_tree: &'a FlowTree,
+    ) -> Self {
         Self {
             var_ref_id,
             var_refs,
-            assertions: HashMap::new(),
+            assertions: Vec::new(),
             current_flow_id: None,
             unresolve_traces: HashMap::new(),
+            flow_tree,
         }
     }
 
@@ -44,42 +50,43 @@ impl VarTrace {
 
     pub fn add_assert(&mut self, assertion: TypeAssertion, effect_range: TextRange) -> Option<()> {
         let current_flow_id = self.current_flow_id?;
-        for var_ref in &self.var_refs {
-            if effect_range.contains(var_ref.0.get_position()) {
-                let var_use_ref = match &var_ref.0 {
-                    VarRefNode::UseRef(var) => var,
-                    _ => continue,
-                };
-                let var_ref_flow_id = var_ref.1;
-                if current_flow_id == var_ref_flow_id {
-                    self.assertions
-                        .entry(var_use_ref.get_range())
-                        .or_default()
-                        .push(assertion);
-                    return Some(());
-                }
-                // different closure, check is mutable after the flow
-                let is_mutable_after_closure = self.var_refs.iter().any(|(node, flow_id)| {
-                    flow_id == &current_flow_id
-                        && node.is_assign_ref()
-                        && (node.get_position() > var_ref_flow_id.get_range().end())
-                });
+        let mut assert_info = LuaFlowChainInfo {
+            range: effect_range,
+            type_assert: assertion.clone(),
+            allow_flow_id: vec![current_flow_id],
+        };
 
-                if !is_mutable_after_closure {
-                    self.assertions
-                        .entry(var_use_ref.get_range())
-                        .or_default()
-                        .push(assertion);
-                    return Some(());
+        if let Some(flow_node) = self.flow_tree.get_flow_node(current_flow_id) {
+            let children = flow_node.get_children();
+            for child in children {
+                let range = child.get_range();
+                let mut allow_add_flow_id = true;
+                for (var_ref, flow_id) in &self.var_refs {
+                    if flow_id == &current_flow_id
+                        && var_ref.is_assign_ref()
+                        && var_ref.get_position() > range.end()
+                    {
+                        allow_add_flow_id = false;
+                        break;
+                    }
+                }
+                if allow_add_flow_id {
+                    assert_info.allow_flow_id.push(*child);
                 }
             }
         }
 
+        self.assertions.push(assert_info);
         Some(())
     }
 
     pub fn add_unresolve_trace(&mut self, trace_id: UnResolveTraceId, assertion: TypeAssertion) {
-        self.unresolve_traces.insert(trace_id, assertion);
+        if let Some(trace_info) = self.unresolve_traces.get_mut(&trace_id) {
+            trace_info.add_assertion(assertion);
+        } else {
+            let trace_info = UnResolveTraceInfo::Assertion(assertion);
+            self.unresolve_traces.insert(trace_id, trace_info);
+        }
     }
 
     pub fn check_var_use_in_range(&self, range: TextRange) -> bool {
@@ -92,7 +99,22 @@ impl VarTrace {
         false
     }
 
-    pub fn pop_unresolve_trace(&mut self, trace_id: &UnResolveTraceId) -> Option<TypeAssertion> {
+    pub fn pop_unresolve_trace(
+        &mut self,
+        trace_id: &UnResolveTraceId,
+    ) -> Option<UnResolveTraceInfo> {
         self.unresolve_traces.remove(trace_id)
+    }
+
+    pub fn pop_all_unresolve_traces(&mut self) -> HashMap<UnResolveTraceId, UnResolveTraceInfo> {
+        std::mem::take(&mut self.unresolve_traces)
+    }
+
+    pub fn has_unresolve_traces(&self) -> bool {
+        !self.unresolve_traces.is_empty()
+    }
+
+    pub fn finish(self) -> LuaFlowChain {
+        LuaFlowChain::new(self.var_ref_id, self.assertions)
     }
 }

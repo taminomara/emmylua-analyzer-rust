@@ -29,9 +29,10 @@ impl FlowTree {
             root_flow_id: current_flow_id,
         };
 
-        builder
-            .flow_nodes
-            .insert(current_flow_id, FlowNode::new(current_flow_id, current_flow_id.get_range(), None));
+        builder.flow_nodes.insert(
+            current_flow_id,
+            FlowNode::new(current_flow_id, current_flow_id.get_range(), None),
+        );
         builder
     }
 

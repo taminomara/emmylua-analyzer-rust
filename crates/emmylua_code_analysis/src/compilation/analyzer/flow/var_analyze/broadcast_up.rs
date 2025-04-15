@@ -7,7 +7,7 @@ use crate::{DbIndex, LuaType, TypeAssertion};
 
 use super::{
     broadcast_inside::broadcast_inside_if_condition_block, infer_call_arg_list,
-    unresolve_trace_id::UnResolveTraceId, VarTrace,
+    unresolve_trace::UnResolveTraceId, VarTrace,
 };
 
 pub fn broadcast_up(
@@ -220,9 +220,9 @@ pub fn broadcast_up_and(
         }
     } else {
         let left_id = UnResolveTraceId::Expr(left);
-        if let Some(left_type_assert) = var_trace.pop_unresolve_trace(&left_id) {
-            //
-            let new_assert = TypeAssertion::And((left_type_assert, type_assert.clone()).into());
+        if let Some(left_type_assert_info) = var_trace.pop_unresolve_trace(&left_id) {
+            let left_type_assert = left_type_assert_info.get_assertion()?;
+            let new_assert = TypeAssertion::And(vec![left_type_assert, type_assert.clone()]);
             broadcast_up(
                 db,
                 var_trace,
@@ -266,9 +266,9 @@ pub fn broadcast_up_or(
         }
     } else {
         let left_id = UnResolveTraceId::Expr(left);
-        if let Some(left_type_assert) = var_trace.pop_unresolve_trace(&left_id) {
-            //
-            let new_assert = TypeAssertion::Or((left_type_assert, type_assert.clone()).into());
+        if let Some(left_type_assert_info) = var_trace.pop_unresolve_trace(&left_id) {
+            let left_type_assert = left_type_assert_info.get_assertion()?;
+            let new_assert = TypeAssertion::Or(vec![left_type_assert, type_assert.clone()]);
             broadcast_up(
                 db,
                 var_trace,

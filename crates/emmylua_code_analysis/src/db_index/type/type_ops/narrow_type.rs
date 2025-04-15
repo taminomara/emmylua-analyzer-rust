@@ -73,20 +73,34 @@ pub fn narrow_down_type(source: LuaType, target: LuaType) -> Option<LuaType> {
                 return Some(LuaType::FloatConst(*f));
             }
         }
-        LuaType::IntegerConst(i) => {
-            if source.is_integer() {
-                return Some(LuaType::Integer);
-            } else if source.is_unknown() {
+        LuaType::IntegerConst(i) => match &source {
+            LuaType::DocIntegerConst(i2) => {
+                if i == i2 {
+                    return Some(LuaType::IntegerConst(*i));
+                }
+            }
+            LuaType::Number | LuaType::Integer | LuaType::Any | LuaType::Unknown => {
                 return Some(LuaType::IntegerConst(*i));
             }
-        }
-        LuaType::StringConst(s) => {
-            if source.is_string() {
-                return Some(LuaType::String);
-            } else if source.is_unknown() {
+            LuaType::IntegerConst(_) => {
+                return Some(LuaType::Integer);
+            }
+            _ => {}
+        },
+        LuaType::StringConst(s) => match &source {
+            LuaType::DocStringConst(s2) => {
+                if s == s2 {
+                    return Some(LuaType::DocStringConst(s.clone()));
+                }
+            }
+            LuaType::String | LuaType::Any | LuaType::Unknown => {
                 return Some(LuaType::StringConst(s.clone()));
             }
-        }
+            LuaType::StringConst(_) => {
+                return Some(LuaType::String);
+            }
+            _ => {}
+        },
         LuaType::TableConst(t) => match &source {
             LuaType::TableConst(s) => {
                 return Some(LuaType::TableConst(s.clone()));
