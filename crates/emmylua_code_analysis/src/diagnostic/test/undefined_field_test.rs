@@ -336,4 +336,51 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_enum_1() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                ---@enum (key) UnitAttr
+                local UnitAttr = {
+                    ['hp_cur'] = 'hp_cur',
+                    ['mp_cur'] = 1,
+                }
+
+                ---@param name UnitAttr
+                local function get(name)
+                    local a = UnitAttr[name]
+                end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_enum_2() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+            ---@enum AbilityType
+            local AbilityType = {
+                HIDE    = 0,
+                NORMAL  = 1,
+                ['隐藏'] = 0,
+                ['普通'] = 1,
+            }
+
+            ---@alias AbilityTypeAlias
+            ---| '隐藏'
+            ---| '普通'
+
+            
+            ---@param name AbilityType | AbilityTypeAlias
+            local function get(name)
+                local a = AbilityType[name]
+            end
+        "#
+        ));
+    }
 }

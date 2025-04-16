@@ -17,8 +17,8 @@ use crate::{
         type_check::{self, check_type_compact},
         InferGuard,
     },
-    InFiled, LuaFlowId, LuaInferCache, LuaInstanceType, LuaMemberOwner, LuaOperatorOwner, TypeOps,
-    VarRefId,
+    InFiled, LuaFlowId, LuaInferCache, LuaInstanceType, LuaMemberOwner, LuaOperatorOwner,
+    LuaTypeDecl, TypeOps, VarRefId,
 };
 
 use super::{infer_expr, infer_name::infer_global_type, InferFailReason, InferResult};
@@ -255,6 +255,14 @@ fn infer_custom_type_member(
         if let Some(keys) = expr_to_member_key(db, cache, &expr) {
             let mut result_type = Vec::new();
             for key in keys {
+                // 解决 enum[enum] 的情况
+                if let Some(member_type) = get_enum_members(db, type_decl, &key, &owner) {
+                    if !result_type.contains(&member_type) {
+                        result_type.push(member_type);
+                    }
+                    continue;
+                }
+
                 if let Some(member_item) = db.get_member_index().get_member_item(&owner, &key) {
                     if let Ok(member_type) = member_item.resolve_type(db) {
                         if !result_type.contains(&member_type) {
@@ -272,6 +280,67 @@ fn infer_custom_type_member(
     }
 
     Err(InferFailReason::FieldDotFound)
+}
+
+fn get_enum_members(
+    db: &DbIndex,
+    type_decl: &LuaTypeDecl,
+    key: &LuaMemberKey,
+    owner: &LuaMemberOwner,
+) -> Option<LuaType> {
+    if !type_decl.is_enum() {
+        return None;
+    }
+    let LuaMemberKey::Expr(LuaType::Ref(id)) = key else {
+        return None;
+    };
+    let index_type_decl = db.get_type_index().get_type_decl(id)?;
+    let mut result = Vec::new();
+
+    // 此时是 enum[enum] 的情况
+    if index_type_decl == type_decl {
+        // 只在包含 [key] 属性时才允许
+        if !type_decl.is_enum_key() {
+            return None;
+        }
+
+        let members = &db.get_member_index().get_members(&owner)?;
+        for member in members {
+            db.get_type_index()
+                .get_type_cache(&member.get_id().into())
+                .map(|it| it.as_type())
+                .map(|it| result.push(it.clone()));
+        }
+    }
+
+    if index_type_decl.is_alias() {
+        let origin_type = index_type_decl.get_alias_origin(db, None)?;
+        if let LuaType::MultiLineUnion(types) = &origin_type {
+            for (typ, _) in types.get_unions() {
+                let member_key: LuaMemberKey = match typ {
+                    LuaType::DocStringConst(s) => (*s).to_string().into(),
+                    LuaType::IntegerConst(i) => (*i).into(),
+                    _ => continue,
+                };
+
+                if let Some(member_item) =
+                    db.get_member_index().get_member_item(&owner, &member_key)
+                {
+                    if let Ok(member_type) = member_item.resolve_type(db) {
+                        if !result.contains(&member_type) {
+                            result.push(member_type);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return match result.len() {
+        0 => None,
+        1 => Some(result[0].clone()),
+        _ => Some(LuaType::Union(LuaUnionType::new(result).into())),
+    };
 }
 
 fn infer_tuple_member(tuple_type: &LuaTupleType, index_expr: LuaIndexMemberExpr) -> InferResult {
@@ -923,6 +992,13 @@ fn expr_to_member_key(
             }
             LuaType::TableConst(_) => {
                 keys.insert(LuaMemberKey::Expr(expr_type.clone()));
+            }
+            LuaType::Ref(id) => {
+                if let Some(type_decl) = db.get_type_index().get_type_decl(id) {
+                    if type_decl.is_enum() || type_decl.is_alias() {
+                        keys.insert(LuaMemberKey::Expr(current_type.clone()));
+                    }
+                }
             }
             _ => {}
         }
