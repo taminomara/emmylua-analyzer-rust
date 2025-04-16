@@ -516,7 +516,6 @@ dependencies = [
  "include_dir",
  "internment",
  "itertools",
- "lazy_static",
  "log",
  "lsp-types",
  "percent-encoding",

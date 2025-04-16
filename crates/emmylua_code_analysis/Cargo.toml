@@ -43,7 +43,6 @@ serde_with.workspace = true
 include_dir.workspace = true
 emmylua_codestyle.workspace = true
 itertools.workspace = true
-lazy_static.workspace = true
 
 [package.metadata.i18n]
 available-locales = ["en", "zh_CN", "zh_HK"]
