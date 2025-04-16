@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 
 use emmylua_parser::{LuaAst, LuaAstNode, LuaIndexExpr, LuaIndexKey, LuaVarExpr};
-use internment::ArcIntern;
 
 use crate::{DiagnosticCode, InferFailReason, LuaMemberKey, LuaType, SemanticModel};
 
@@ -142,9 +141,18 @@ fn is_valid_member(
         return Some(());
     }
 
-    // 获取并验证 key_type
-    let key_type = match index_key {
-        LuaIndexKey::Expr(expr) => match semantic_model.infer_expr(expr.clone()) {
+    match prefix_typ {
+        LuaType::Global => return Some(()),
+        LuaType::Array(typ) => {
+            if typ.is_unknown() {
+                return Some(());
+            }
+        }
+        _ => {}
+    }
+
+    let key_type = if let LuaIndexKey::Expr(expr) = index_key {
+        match semantic_model.infer_expr(expr.clone()) {
             Ok(
                 LuaType::Any
                 | LuaType::Unknown
@@ -162,24 +170,14 @@ fn is_valid_member(
             Err(_) => {
                 return None;
             }
-        },
-        LuaIndexKey::String(name) => LuaType::StringConst(ArcIntern::new(name.get_value().into())),
-        LuaIndexKey::Integer(i) => LuaType::IntegerConst(i.get_int_value()),
-        LuaIndexKey::Name(name) => {
-            LuaType::StringConst(ArcIntern::new(name.get_name_text().into()))
         }
-        LuaIndexKey::Idx(i) => LuaType::IntegerConst(i.clone() as i64),
+    } else {
+        return None;
     };
 
     // 允许特定类型组合通过
     match (prefix_typ, &key_type) {
-        (LuaType::Global, _) => return Some(()),
         (LuaType::Tuple(_), LuaType::Integer | LuaType::IntegerConst(_)) => return Some(()),
-        (LuaType::Array(typ), _) => {
-            if typ.is_unknown() {
-                return Some(());
-            }
-        }
         (LuaType::Def(id), _) => {
             if let Some(decl) = semantic_model.get_db().get_type_index().get_type_decl(id) {
                 if decl.is_class() {
