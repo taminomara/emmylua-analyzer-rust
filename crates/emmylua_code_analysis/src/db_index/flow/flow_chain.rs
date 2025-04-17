@@ -1,5 +1,4 @@
 use emmylua_parser::{LuaAstNode, LuaChunk, LuaClosureExpr, LuaSyntaxKind, LuaSyntaxNode};
-use itertools::Itertools;
 use rowan::{TextRange, TextSize};
 
 use crate::db_index::TypeAssertion;
@@ -41,7 +40,6 @@ impl LuaFlowChain {
             .filter(move |assert| {
                 assert.allow_flow_id.contains(&flow_id) && assert.range.contains(position)
             })
-            .sorted_by_key(|assert| assert.range.start())
             .map(|assert| &assert.type_assert)
     }
 }
