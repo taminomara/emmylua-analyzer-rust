@@ -327,8 +327,12 @@ fn get_all_member_key(
         LuaType::MultiLineUnion(types) => {
             for (typ, _) in types.get_unions() {
                 let member_key: LuaMemberKey = match typ {
-                    LuaType::DocStringConst(s) => (*s).to_string().into(),
-                    LuaType::IntegerConst(i) => (*i).into(),
+                    LuaType::DocStringConst(s) | LuaType::StringConst(s) => (*s).to_string().into(),
+                    LuaType::DocIntegerConst(i) | LuaType::IntegerConst(i) => (*i).into(),
+                    LuaType::Ref(_) => {
+                        get_all_member_key(db, index_type_decl, typ, result);
+                        continue;
+                    }
                     _ => continue,
                 };
 

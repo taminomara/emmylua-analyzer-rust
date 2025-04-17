@@ -143,6 +143,7 @@ fn is_valid_member(
 
     match prefix_typ {
         LuaType::Global => return Some(()),
+        LuaType::Userdata => return Some(()),
         LuaType::Array(typ) => {
             if typ.is_unknown() {
                 return Some(());
@@ -233,6 +234,22 @@ fn is_valid_member(
                     _ => {}
                 }
             }
+            if members.is_empty() {
+                // 当没有任何成员信息且是 enum 类型时, 需要检查参数是否为自己
+                if let LuaType::Ref(id) | LuaType::Def(id) = prefix_type {
+                    if let Some(decl) = semantic_model.get_db().get_type_index().get_type_decl(&id)
+                    {
+                        if decl.is_enum() {
+                            if key_type_set.iter().any(|typ| match typ {
+                                LuaType::Ref(key_id) | LuaType::Def(key_id) => id == *key_id,
+                                _ => false,
+                            }) {
+                                return Some(());
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -275,6 +292,9 @@ fn get_key_types(typ: &LuaType) -> HashSet<LuaType> {
                 for t in union_typ.get_types() {
                     stack.push(t.clone());
                 }
+            }
+            LuaType::Ref(_) => {
+                type_set.insert(current_type);
             }
             _ => {}
         }

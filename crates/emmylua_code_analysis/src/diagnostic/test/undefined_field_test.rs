@@ -383,4 +383,72 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_enum_3() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+            ---@enum (key) PlayerAttr
+            local PlayerAttr = {}
+
+            ---@param key PlayerAttr
+            local function add(key)
+                local a = PlayerAttr[key]
+            end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_enum_alias() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                ---@enum EA
+                A = {
+                    ['GAME_INIT'] = "ET_GAME_INIT",
+                }
+
+                ---@enum EB
+                B = {
+                    ['GAME_PAUSE'] = "ET_GAME_PAUSE",
+                }
+
+                ---@alias EventName EA | EB
+
+                ---@class Event
+                local event = {}
+                event.ET_GAME_INIT = {}
+                event.ET_GAME_PAUSE = {}
+
+
+                ---@param name EventName
+                local function test(name)
+                    local a = event[name]
+                end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_userdata() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+            ---@type any
+            local value
+            local tp = type(value)
+
+            if tp == 'userdata' then
+                ---@cast value userdata
+                if value['type'] then
+                end
+            end
+        "#
+        ));
+    }
 }
