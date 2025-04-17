@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{infer_expr, DbIndex, InferFailReason, LuaInferCache};
 use emmylua_parser::{LuaAstNode, LuaExpr, LuaSyntaxId, LuaSyntaxNode};
 
@@ -11,8 +13,9 @@ pub enum TypeAssertion {
     Add(LuaType),
     Remove(LuaType),
     Reassign((LuaSyntaxId, i32)),
-    And(Vec<TypeAssertion>),
-    Or(Vec<TypeAssertion>),
+    Force(LuaType),
+    And(Arc<Vec<TypeAssertion>>),
+    Or(Arc<Vec<TypeAssertion>>),
 }
 
 #[allow(unused)]
@@ -22,15 +25,16 @@ impl TypeAssertion {
             TypeAssertion::Exist => Some(TypeAssertion::NotExist),
             TypeAssertion::NotExist => Some(TypeAssertion::Exist),
             TypeAssertion::Narrow(t) => Some(TypeAssertion::Remove(t.clone())),
+            TypeAssertion::Force(t) => Some(TypeAssertion::Remove(t.clone())),
             TypeAssertion::Remove(t) => Some(TypeAssertion::Narrow(t.clone())),
             TypeAssertion::Add(t) => Some(TypeAssertion::Remove(t.clone())),
             TypeAssertion::And(a) => {
                 let negations: Vec<_> = a.iter().filter_map(|x| x.get_negation()).collect();
-                Some(TypeAssertion::Or(negations))
+                Some(TypeAssertion::Or(negations.into()))
             }
             TypeAssertion::Or(a) => {
                 let negations: Vec<_> = a.iter().filter_map(|x| x.get_negation()).collect();
-                Some(TypeAssertion::And(negations))
+                Some(TypeAssertion::And(negations.into()))
             }
             _ => None,
         }
@@ -49,6 +53,7 @@ impl TypeAssertion {
             TypeAssertion::Narrow(t) => Ok(TypeOps::Narrow.apply(&source, t)),
             TypeAssertion::Add(lua_type) => Ok(TypeOps::Union.apply(&source, lua_type)),
             TypeAssertion::Remove(lua_type) => Ok(TypeOps::Remove.apply(&source, lua_type)),
+            TypeAssertion::Force(t) => Ok(t.clone()),
             TypeAssertion::Reassign((syntax_id, idx)) => {
                 let expr = LuaExpr::cast(
                     syntax_id
@@ -67,7 +72,7 @@ impl TypeAssertion {
             }
             TypeAssertion::And(a) => {
                 let mut result = vec![];
-                for assertion in a {
+                for assertion in a.iter() {
                     result.push(assertion.tighten_type(db, config, root, source.clone())?);
                 }
 
@@ -89,7 +94,7 @@ impl TypeAssertion {
             }
             TypeAssertion::Or(a) => {
                 let mut result = vec![];
-                for assertion in a {
+                for assertion in a.iter() {
                     result.push(assertion.tighten_type(db, config, root, source.clone())?);
                 }
 
@@ -112,5 +117,37 @@ impl TypeAssertion {
 
     pub fn is_reassign(&self) -> bool {
         matches!(self, TypeAssertion::Reassign(_))
+    }
+
+    pub fn is_and(&self) -> bool {
+        matches!(self, TypeAssertion::And(_))
+    }
+
+    pub fn is_or(&self) -> bool {
+        matches!(self, TypeAssertion::Or(_))
+    }
+
+    pub fn is_exist(&self) -> bool {
+        matches!(self, TypeAssertion::Exist)
+    }
+
+    pub fn and_assert(&self, assertion: TypeAssertion) -> TypeAssertion {
+        if let TypeAssertion::And(a) = self {
+            let mut vecs = a.as_ref().clone();
+            vecs.push(assertion);
+            TypeAssertion::And(Arc::new(vecs))
+        } else {
+            TypeAssertion::And(Arc::new(vec![self.clone(), assertion]))
+        }
+    }
+
+    pub fn or_assert(&self, assertion: TypeAssertion) -> TypeAssertion {
+        if let TypeAssertion::Or(a) = self {
+            let mut vecs = a.as_ref().clone();
+            vecs.push(assertion);
+            TypeAssertion::Or(Arc::new(vecs))
+        } else {
+            TypeAssertion::Or(Arc::new(vec![self.clone(), assertion]))
+        }
     }
 }

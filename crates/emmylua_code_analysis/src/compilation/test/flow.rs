@@ -448,4 +448,70 @@ end
         let c_expected = ws.ty("string");
         assert_eq!(c, c_expected);
     }
+
+    #[test]
+    fn test_issue_367() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+        local files
+        local function init()
+            if files then
+                return
+            end
+            files = {}
+            a = files -- a 与 files 现在均为 nil
+        end
+        "#,
+        );
+
+        let a = ws.expr_ty("a");
+        assert!(a != LuaType::Nil);
+
+        ws.def(
+            r#"
+            ---@alias D10.data
+            ---| number
+            ---| string
+            ---| boolean
+            ---| table
+            ---| nil
+
+            ---@param data D10.data
+            local function init(data)
+                ---@cast data table
+                
+                b = data -- data 现在仍为 `10.data` 而不是 `table`
+            end
+            "#,
+        );
+
+        let b = ws.expr_ty("b");
+        let b_desc = ws.humanize_type(b);
+        assert_eq!(b_desc, "table");
+    }
+
+    #[test]
+    fn test_issue_364() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::NeedCheckNil,
+            r#"
+            ---@param k integer
+            ---@param t table<integer,integer>
+            function foo(k, t)
+                if t and t[k] then
+                    return t[k]
+                end
+
+                if t then
+                    -- t is nil -- incorrect
+                    t[k] = 1 -- t may be nil -- incorrect
+                end
+            end
+            "#,
+        ));
+    }
 }

@@ -4,6 +4,9 @@ mod broadcast_outside;
 mod broadcast_up;
 mod unresolve_trace;
 mod var_trace;
+mod var_trace_info;
+
+use std::sync::Arc;
 
 use broadcast_down::broadcast_down_after_node;
 pub use broadcast_up::broadcast_up;
@@ -19,6 +22,7 @@ use crate::{
 #[allow(unused)]
 pub use unresolve_trace::{UnResolveTraceId, UnResolveTraceInfo};
 pub use var_trace::VarTrace;
+pub use var_trace_info::VarTraceInfo;
 
 pub fn analyze_ref_expr(
     db: &mut DbIndex,
@@ -26,13 +30,11 @@ pub fn analyze_ref_expr(
     var_expr: &LuaVarExpr,
 ) -> Option<()> {
     let parent = var_expr.get_parent::<LuaAst>()?;
-    broadcast_up(
-        db,
-        var_trace,
-        parent,
-        LuaAst::cast(var_expr.syntax().clone())?,
+    let trace_info = Arc::new(VarTraceInfo::new(
         TypeAssertion::Exist,
-    );
+        LuaAst::cast(var_expr.syntax().clone())?,
+    ));
+    broadcast_up(db, var_trace, trace_info, parent);
 
     Some(())
 }
@@ -60,8 +62,11 @@ pub fn analyze_ref_assign(
             broadcast_down_after_node(
                 db,
                 var_trace,
+                Arc::new(VarTraceInfo::new(
+                    type_assert,
+                    LuaAst::cast(var_expr.syntax().clone())?,
+                )),
                 LuaAst::LuaAssignStat(assign_stat),
-                type_assert,
                 true,
             );
         }
@@ -91,8 +96,11 @@ pub fn analyze_ref_assign(
     broadcast_down_after_node(
         db,
         var_trace,
+        Arc::new(VarTraceInfo::new(
+            type_assert,
+            LuaAst::cast(value_expr.syntax().clone())?,
+        )),
         LuaAst::LuaAssignStat(assign_stat),
-        type_assert,
         true,
     );
 
@@ -119,20 +127,20 @@ fn is_decl_assign_stat(assign_stat: LuaAssignStat) -> Option<bool> {
 fn infer_call_arg_list(
     db: &mut DbIndex,
     var_trace: &mut VarTrace,
-    type_assert: TypeAssertion,
+    trace_info: Arc<VarTraceInfo>,
     call_arg: LuaCallArgList,
 ) -> Option<()> {
     let parent = call_arg.get_parent::<LuaAst>()?;
     match parent {
         LuaAst::LuaCallExpr(call_expr) => {
-            if call_expr.is_type() {
+            if call_expr.is_type() && trace_info.type_assertion.is_exist() {
                 infer_lua_type_assert(db, var_trace, call_expr);
             } else if call_expr.is_assert() {
                 broadcast_down_after_node(
                     db,
                     var_trace,
+                    trace_info,
                     LuaAst::LuaCallExprStat(call_expr.get_parent::<LuaCallExprStat>()?),
-                    type_assert.clone(),
                     true,
                 );
             }
@@ -193,9 +201,8 @@ fn infer_lua_type_assert(
     broadcast_up(
         db,
         var_trace,
+        VarTraceInfo::new(type_assert, LuaAst::cast(binary_expr.syntax().clone())?).into(),
         binary_expr.get_parent::<LuaAst>()?,
-        LuaAst::LuaBinaryExpr(binary_expr),
-        type_assert,
     );
 
     Some(())

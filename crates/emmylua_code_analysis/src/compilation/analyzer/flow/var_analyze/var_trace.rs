@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use rowan::TextRange;
 
@@ -7,7 +7,10 @@ use crate::{
     LuaFlowChain, LuaFlowChainInfo, LuaFlowId, TypeAssertion, VarRefId,
 };
 
-use super::unresolve_trace::{UnResolveTraceId, UnResolveTraceInfo};
+use super::{
+    unresolve_trace::{UnResolveTraceId, UnResolveTraceInfo},
+    var_trace_info::VarTraceInfo,
+};
 
 #[derive(Debug, Clone)]
 pub struct VarTrace<'a> {
@@ -80,11 +83,15 @@ impl<'a> VarTrace<'a> {
         Some(())
     }
 
-    pub fn add_unresolve_trace(&mut self, trace_id: UnResolveTraceId, assertion: TypeAssertion) {
-        if let Some(trace_info) = self.unresolve_traces.get_mut(&trace_id) {
-            trace_info.add_assertion(assertion);
+    pub fn add_unresolve_trace(
+        &mut self,
+        trace_id: UnResolveTraceId,
+        trace_info: Arc<VarTraceInfo>,
+    ) {
+        if let Some(old_info) = self.unresolve_traces.get_mut(&trace_id) {
+            old_info.add_trace_info(trace_info);
         } else {
-            let trace_info = UnResolveTraceInfo::Assertion(assertion);
+            let trace_info = UnResolveTraceInfo::Trace(trace_info);
             self.unresolve_traces.insert(trace_id, trace_info);
         }
     }
@@ -115,6 +122,9 @@ impl<'a> VarTrace<'a> {
     }
 
     pub fn finish(self) -> LuaFlowChain {
-        LuaFlowChain::new(self.var_ref_id, self.assertions)
+        let mut asserts = self.assertions;
+        asserts.sort_by(|a, b| a.range.start().cmp(&b.range.start()));
+
+        LuaFlowChain::new(self.var_ref_id, asserts)
     }
 }

@@ -12,7 +12,9 @@ use cast_analyze::analyze_cast;
 use emmylua_parser::{BinaryOperator, LuaAst, LuaAstNode, LuaBinaryExpr, LuaBlock};
 use flow_tree::{FlowTree, VarRefNode};
 use rowan::TextRange;
-use var_analyze::{analyze_ref_assign, analyze_ref_expr, broadcast_up, UnResolveTraceId, VarTrace};
+use var_analyze::{
+    analyze_ref_assign, analyze_ref_expr, broadcast_up, UnResolveTraceId, VarTrace, VarTraceInfo,
+};
 
 use super::AnalyzeContext;
 
@@ -76,30 +78,37 @@ fn analyze_flow(
 
 fn resolve_flow_analyze(db: &mut DbIndex, var_trace: &mut VarTrace) -> Option<()> {
     let all_trace = var_trace.pop_all_unresolve_traces();
-    for (trace_id, assertion_info) in all_trace {
+    for (trace_id, uresolve_trace_info) in all_trace {
         match trace_id {
             UnResolveTraceId::Expr(expr) => {
                 let binary_expr = expr.get_parent::<LuaBinaryExpr>()?;
                 let op = binary_expr.get_op_token()?.get_op();
-                let assert = assertion_info.get_assertion()?;
+                let trace_info = uresolve_trace_info.get_trace_info()?;
                 if op == BinaryOperator::OpAnd || op == BinaryOperator::OpOr {
                     broadcast_up(
                         db,
                         var_trace,
+                        VarTraceInfo::new(
+                            trace_info.type_assertion.clone(),
+                            LuaAst::cast(binary_expr.syntax().clone())?,
+                        )
+                        .into(),
                         binary_expr.get_parent::<LuaAst>()?,
-                        LuaAst::cast(binary_expr.syntax().clone())?,
-                        assert,
                     );
                 }
             }
             UnResolveTraceId::If(if_stat) => {
-                let asserts = assertion_info.get_assertions()?;
+                let asserts = uresolve_trace_info
+                    .get_trace_infos()?
+                    .into_iter()
+                    .map(|trace_info| trace_info.type_assertion.clone())
+                    .collect::<Vec<_>>();
                 let block = if_stat.get_parent::<LuaBlock>()?;
                 let block_end = block.get_range().end();
                 let if_end = if_stat.get_range().end();
                 if if_end < block_end {
                     let range = TextRange::new(if_end, block_end);
-                    var_trace.add_assert(TypeAssertion::Or(asserts), range);
+                    var_trace.add_assert(TypeAssertion::Or(asserts.into()), range);
                 }
             }
         }

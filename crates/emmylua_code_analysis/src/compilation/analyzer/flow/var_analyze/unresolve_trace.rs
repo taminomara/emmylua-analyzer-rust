@@ -1,6 +1,8 @@
+use std::sync::Arc;
+
 use emmylua_parser::{LuaExpr, LuaIfStat};
 
-use crate::TypeAssertion;
+use super::var_trace_info::VarTraceInfo;
 
 #[derive(Debug, Hash, Clone, PartialEq, Eq)]
 pub enum UnResolveTraceId {
@@ -10,36 +12,36 @@ pub enum UnResolveTraceId {
 
 #[derive(Debug, Clone)]
 pub enum UnResolveTraceInfo {
-    Assertion(TypeAssertion),
-    MultipleAssertion(Vec<TypeAssertion>),
+    Trace(Arc<VarTraceInfo>),
+    MultipleTraces(Vec<Arc<VarTraceInfo>>),
 }
 
 #[allow(unused)]
 impl UnResolveTraceInfo {
-    pub fn get_assertion(&self) -> Option<TypeAssertion> {
+    pub fn get_trace_info(&self) -> Option<Arc<VarTraceInfo>> {
         match self {
-            UnResolveTraceInfo::Assertion(assertion) => Some(assertion.clone()),
-            UnResolveTraceInfo::MultipleAssertion(assertions) => assertions.get(0).cloned(),
+            UnResolveTraceInfo::Trace(assertion) => Some(assertion.clone()),
+            UnResolveTraceInfo::MultipleTraces(assertions) => assertions.get(0).cloned(),
         }
     }
 
-    pub fn get_assertions(&self) -> Option<Vec<TypeAssertion>> {
+    pub fn get_trace_infos(&self) -> Option<Vec<Arc<VarTraceInfo>>> {
         match self {
-            UnResolveTraceInfo::Assertion(assertion) => Some(vec![assertion.clone()]),
-            UnResolveTraceInfo::MultipleAssertion(assertions) => Some(assertions.clone()),
+            UnResolveTraceInfo::Trace(assertion) => Some(vec![assertion.clone()]),
+            UnResolveTraceInfo::MultipleTraces(assertions) => Some(assertions.clone()),
         }
     }
 
-    pub fn add_assertion(&mut self, assertion: TypeAssertion) {
+    pub fn add_trace_info(&mut self, trace_info: Arc<VarTraceInfo>) {
         match self {
-            UnResolveTraceInfo::Assertion(existing_assertion) => {
-                *self = UnResolveTraceInfo::MultipleAssertion(vec![
+            UnResolveTraceInfo::Trace(existing_assertion) => {
+                *self = UnResolveTraceInfo::MultipleTraces(vec![
                     existing_assertion.clone(),
-                    assertion,
+                    trace_info,
                 ]);
             }
-            UnResolveTraceInfo::MultipleAssertion(assertions) => {
-                assertions.push(assertion);
+            UnResolveTraceInfo::MultipleTraces(assertions) => {
+                assertions.push(trace_info);
             }
         }
     }

@@ -1,4 +1,5 @@
 use emmylua_parser::{BinaryOperator, LuaAstNode, LuaBlock, LuaDocTagCast};
+use rowan::TextRange;
 
 use crate::{compilation::analyzer::AnalyzeContext, FileId, InFiled, LuaType, TypeAssertion};
 
@@ -17,7 +18,16 @@ pub fn analyze_cast(
     tag: LuaDocTagCast,
     context: &AnalyzeContext,
 ) -> Option<()> {
-    let effect_range = tag.ancestors::<LuaBlock>().next()?.get_range();
+    let block_range = tag.ancestors::<LuaBlock>().next()?.get_range();
+    let cast_range = tag.get_range();
+
+    let cast_end = cast_range.end();
+    let block_end = block_range.end();
+
+    if block_end <= cast_end {
+        return Some(());
+    }
+    let effect_range = TextRange::new(cast_end, block_end);
     for cast_op_type in tag.get_op_types() {
         let action = match cast_op_type.get_op() {
             Some(op) => {
@@ -55,7 +65,7 @@ pub fn analyze_cast(
                     var_trace.add_assert(TypeAssertion::Remove(typ), effect_range);
                 }
                 CastAction::Force => {
-                    var_trace.add_assert(TypeAssertion::Narrow(typ), effect_range);
+                    var_trace.add_assert(TypeAssertion::Force(typ), effect_range);
                 }
             }
         }
