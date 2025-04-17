@@ -35,6 +35,14 @@ mod test {
             assert(false)
 
             assert(nil and 5)
+
+            ---@type integer[]
+            local ints = {1, 2}
+            assert(ints[3])
+
+            ---@type [integer, integer]
+            local enum = {1, 2}
+            assert(enum[3])
         "#
         ));
     }
@@ -65,6 +73,15 @@ mod test {
             DiagnosticCode::UnnecessaryAssert,
             r#"
             assert({}, 'hi')
+            "#
+        ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UnnecessaryAssert,
+            r#"
+            ---@type [integer, integer]
+            local enum = {1, 2}
+            assert(enum[2])
             "#
         ));
     }

@@ -168,15 +168,13 @@ fn infer_array_member(
 ) -> Result<LuaType, InferFailReason> {
     let key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
     match key {
-        LuaIndexKey::Integer(_) => {
-            return Ok(array_type.clone());
-        }
+        LuaIndexKey::Integer(_) => Ok(TypeOps::Union.apply(array_type, &LuaType::Nil)),
         LuaIndexKey::Expr(expr) => {
             let expr_type = infer_expr(db, cache, expr.clone())?;
             if expr_type.is_integer() {
-                return Ok(array_type.clone());
+                Ok(TypeOps::Union.apply(array_type, &LuaType::Nil))
             } else {
-                return Err(InferFailReason::FieldDotFound);
+                Err(InferFailReason::FieldDotFound)
             }
         }
         _ => Err(InferFailReason::FieldDotFound),
@@ -668,12 +666,12 @@ fn infer_member_by_index_array(
 ) -> InferResult {
     let member_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
     if member_key.is_integer() {
-        return Ok(base.clone());
+        return Ok(TypeOps::Union.apply(base, &LuaType::Nil));
     } else if member_key.is_expr() {
         let expr = member_key.get_expr().ok_or(InferFailReason::None)?;
         let expr_type = infer_expr(db, cache, expr.clone())?;
         if check_type_compact(db, &LuaType::Number, &expr_type).is_ok() {
-            return Ok(base.clone());
+            return Ok(TypeOps::Union.apply(base, &LuaType::Nil));
         }
     }
 
