@@ -224,6 +224,7 @@ fn infer_custom_type_member(
     let owner = LuaMemberOwner::Type(prefix_type_id.clone());
     let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
     let key: LuaMemberKey = index_key.clone().into();
+    dbg!(&db.get_member_index().get_members(&owner));
     if let Some(member_item) = db.get_member_index().get_member_item(&owner, &key) {
         return member_item.resolve_type(db);
     }
@@ -254,9 +255,12 @@ fn infer_custom_type_member(
     if let LuaIndexKey::Expr(expr) = index_key {
         if let Some(keys) = expr_to_member_key(db, cache, &expr) {
             let mut result_type = Vec::new();
+            dbg!(&keys);
             for key in keys {
-                // 解决 enum[enum] 的情况
-                if let Some(member_type) = get_enum_members(db, type_decl, &key, &owner) {
+                // 解决 enum[enum] | class[class] 的情况
+                if let Some(member_type) =
+                    get_expr_key_members(db, type_decl, &key, &owner, cache, infer_guard, &index_expr)
+                {
                     if !result_type.contains(&member_type) {
                         result_type.push(member_type);
                     }
@@ -282,58 +286,124 @@ fn infer_custom_type_member(
     Err(InferFailReason::FieldDotFound)
 }
 
-fn get_enum_members(
+#[allow(unused)]
+fn get_expr_key_members(
     db: &DbIndex,
     type_decl: &LuaTypeDecl,
     key: &LuaMemberKey,
     owner: &LuaMemberOwner,
+    cache: &mut LuaInferCache,
+    infer_guard: &mut InferGuard,
+    index_expr: &LuaIndexMemberExpr,
 ) -> Option<LuaType> {
-    if !type_decl.is_enum() {
-        return None;
-    }
-    let LuaMemberKey::Expr(LuaType::Ref(id)) = key else {
+    // if !type_decl.is_enum() {
+    //     return None;
+    // }
+    let LuaMemberKey::Expr(LuaType::Ref(index_id)) = key else {
         return None;
     };
-    let index_type_decl = db.get_type_index().get_type_decl(id)?;
+    let index_type_decl = db.get_type_index().get_type_decl(index_id)?;
     let mut result = Vec::new();
 
-    // 此时是 enum[enum] 的情况
-    if index_type_decl == type_decl {
-        // 只在包含 [key] 属性时才允许
-        if !type_decl.is_enum_key() {
-            return None;
-        }
-
-        let members = &db.get_member_index().get_members(&owner)?;
-        for member in members {
-            db.get_type_index()
-                .get_type_cache(&member.get_id().into())
-                .map(|it| it.as_type())
-                .map(|it| result.push(it.clone()));
-        }
-    }
-
-    if index_type_decl.is_alias() {
-        let origin_type = index_type_decl.get_alias_origin(db, None)?;
-        if let LuaType::MultiLineUnion(types) = &origin_type {
-            for (typ, _) in types.get_unions() {
-                let member_key: LuaMemberKey = match typ {
-                    LuaType::DocStringConst(s) => (*s).to_string().into(),
-                    LuaType::IntegerConst(i) => (*i).into(),
-                    _ => continue,
-                };
-
-                if let Some(member_item) =
-                    db.get_member_index().get_member_item(&owner, &member_key)
-                {
-                    if let Ok(member_type) = member_item.resolve_type(db) {
-                        if !result.contains(&member_type) {
-                            result.push(member_type);
-                        }
-                    }
+    let origin_type = if index_type_decl.is_alias() {
+        index_type_decl.get_alias_origin(db, None)?
+    } else {
+        LuaType::Ref(index_id.clone())
+    };
+    let mut member_keys = Vec::new();
+    get_all_member_key(db, index_type_decl, &origin_type, &mut member_keys);
+    for key in member_keys {
+        if let Some(member_item) = db.get_member_index().get_member_item(&owner, &key) {
+            if let Ok(member_type) = member_item.resolve_type(db) {
+                if !result.contains(&member_type) {
+                    result.push(member_type);
                 }
             }
         }
+    }
+
+    // 此时是 enum[enum] 的情况
+    // if index_type_decl == type_decl {
+    //     // 只在包含 [key] 属性时才允许
+    //     if !type_decl.is_enum_key() {
+    //         return None;
+    //     }
+
+    //     match db.get_member_index().get_members(&owner) {
+    //         Some(members) => {
+    //             for member in members {
+    //                 db.get_type_index()
+    //                     .get_type_cache(&member.get_id().into())
+    //                     .map(|it| it.as_type())
+    //                     .map(|it| result.push(it.clone()));
+    //             }
+    //         }
+    //         // enum 没有成员时, 返回 unknown
+    //         None => {
+    //             result.push(LuaType::Unknown);
+    //         }
+    //     }
+    // }
+
+    if index_type_decl.is_alias() {
+        // let origin_type = index_type_decl.get_alias_origin(db, None)?;
+        // let mut member_keys = Vec::new();
+        // get_all_member_key(db, index_type_decl, &origin_type, &mut member_keys);
+        // for key in member_keys {
+        //     if let Some(member_item) = db.get_member_index().get_member_item(&owner, &key) {
+        //         if let Ok(member_type) = member_item.resolve_type(db) {
+        //             if !result.contains(&member_type) {
+        //                 result.push(member_type);
+        //             }
+        //         }
+        //     }
+        // }
+        // dbg!(&member_keys);
+        // dbg!(&origin_type);
+        // match &origin_type {
+        //     LuaType::Union(union_type) => {
+        //         for typ in union_type.get_types() {
+        //             match typ {
+        //                 LuaType::Ref(id) => {
+        //                     let type_decl = db.get_type_index().get_type_decl(id)?;
+        //                     dbg!(&type_decl);
+        //                     if type_decl.is_enum() {
+        //                         let a = infer_member_by_member_key(
+        //                             db,
+        //                             cache,
+        //                             typ,
+        //                             index_expr.clone(),
+        //                             infer_guard,
+        //                         );
+        //                         dbg!(&a);
+        //                     }
+        //                 }
+        //                 _ => {}
+        //             }
+        //         }
+        //     }
+        //     _ => {}
+        // }
+
+        // if let LuaType::MultiLineUnion(types) = &origin_type {
+        //     for (typ, _) in types.get_unions() {
+        //         let member_key: LuaMemberKey = match typ {
+        //             LuaType::DocStringConst(s) => (*s).to_string().into(),
+        //             LuaType::IntegerConst(i) => (*i).into(),
+        //             _ => continue,
+        //         };
+
+        //         if let Some(member_item) =
+        //             db.get_member_index().get_member_item(&owner, &member_key)
+        //         {
+        //             if let Ok(member_type) = member_item.resolve_type(db) {
+        //                 if !result.contains(&member_type) {
+        //                     result.push(member_type);
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     }
 
     return match result.len() {
@@ -341,6 +411,68 @@ fn get_enum_members(
         1 => Some(result[0].clone()),
         _ => Some(LuaType::Union(LuaUnionType::new(result).into())),
     };
+}
+
+fn get_all_member_key(
+    db: &DbIndex,
+    index_type_decl: &LuaTypeDecl,
+    origin_type: &LuaType,
+    result: &mut Vec<LuaMemberKey>,
+) -> Option<()> {
+    match &origin_type {
+        LuaType::MultiLineUnion(types) => {
+            for (typ, _) in types.get_unions() {
+                let member_key: LuaMemberKey = match typ {
+                    LuaType::DocStringConst(s) => (*s).to_string().into(),
+                    LuaType::IntegerConst(i) => (*i).into(),
+                    _ => continue,
+                };
+
+                result.push(member_key);
+            }
+        }
+        LuaType::Union(union_type) => {
+            for typ in union_type.get_types() {
+                if let LuaType::Ref(_) = typ {
+                    get_all_member_key(db, index_type_decl, typ, result)?;
+                }
+            }
+        }
+        LuaType::Ref(id) => {
+            let type_decl = db.get_type_index().get_type_decl(id)?;
+            if type_decl.is_enum() {
+                let owner = LuaMemberOwner::Type(id.clone());
+                if let Some(members) = db.get_member_index().get_members(&owner) {
+                    let is_enum_key = type_decl.is_enum_key();
+                    for member in members {
+                        if is_enum_key {
+                            result.push(member.get_key().clone());
+                        } else {
+                            let typ = db
+                                .get_type_index()
+                                .get_type_cache(&member.get_id().into())
+                                .map(|it| it.as_type());
+                            if let Some(typ) = typ {
+                                let member_key: LuaMemberKey = match typ {
+                                    LuaType::DocStringConst(s) | LuaType::StringConst(s) => {
+                                        (*s).to_string().into()
+                                    }
+                                    LuaType::DocIntegerConst(i) | LuaType::IntegerConst(i) => {
+                                        (*i).into()
+                                    }
+                                    _ => continue,
+                                };
+                                result.push(member_key);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        _ => {}
+    }
+
+    Some(())
 }
 
 fn infer_tuple_member(tuple_type: &LuaTupleType, index_expr: LuaIndexMemberExpr) -> InferResult {
