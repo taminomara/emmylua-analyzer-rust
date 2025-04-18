@@ -43,7 +43,15 @@ impl Vfs {
     }
 
     pub fn file_id(&mut self, uri: &Uri) -> FileId {
-        let path = uri_to_file_path(uri).unwrap();
+        let path = match uri_to_file_path(uri) {
+            Some(path) => path,
+            None => {
+                log::warn!("uri {} can not cover to file path", uri.as_str());
+                let id = self.file_data.len() as u32;
+                self.file_data.push(None);
+                return FileId { id };
+            }
+        };
         if let Some(&id) = self.file_id_map.get(&path) {
             FileId { id }
         } else {

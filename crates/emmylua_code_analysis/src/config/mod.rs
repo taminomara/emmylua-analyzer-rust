@@ -106,10 +106,24 @@ fn pre_process_path(path: &str, workspace: &Path) -> String {
     path = replace_env_var(&path);
     // ${workspaceFolder}  == {workspaceFolder}
     path = path.replace("$", "");
-    path = replace_placeholders(&path, workspace.to_str().unwrap());
+    let workspace_str = match workspace.to_str() {
+        Some(path) => path,
+        None => {
+            log::error!("Warning: workspace path is not valid UTF-8");
+            return path;
+        }
+    };
+
+    path = replace_placeholders(&path, workspace_str);
 
     if path.starts_with('~') {
-        let home_dir = dirs::home_dir().unwrap();
+        let home_dir = match dirs::home_dir() {
+            Some(path) => path,
+            None => {
+                log::error!("Warning: Home directory not found");
+                return path;
+            }
+        };
         path = home_dir.join(&path[1..]).to_string_lossy().to_string();
     } else if path.starts_with("./") {
         path = workspace.join(&path[2..]).to_string_lossy().to_string();
@@ -124,7 +138,13 @@ fn pre_process_path(path: &str, workspace: &Path) -> String {
 
 // compact luals
 fn replace_env_var(path: &str) -> String {
-    let re = Regex::new(r"\$(\w+)").unwrap();
+    let re = match Regex::new(r"\$(\w+)") {
+        Ok(re) => re,
+        Err(_) => {
+            log::error!("Warning: Failed to create regex for environment variable replacement");
+            return path.to_string();
+        }
+    };
     re.replace_all(path, |caps: &regex::Captures| {
         let key = &caps[1];
         std::env::var(key).unwrap_or_else(|_| {
@@ -136,7 +156,13 @@ fn replace_env_var(path: &str) -> String {
 }
 
 fn replace_placeholders(input: &str, workspace_folder: &str) -> String {
-    let re = Regex::new(r"\{([^}]+)\}").unwrap();
+    let re = match Regex::new(r"\{([^}]+)\}") {
+        Ok(re) => re,
+        Err(_) => {
+            log::error!("Warning: Failed to create regex for placeholder replacement");
+            return input.to_string();
+        }
+    };
     re.replace_all(input, |caps: &regex::Captures| {
         let key = &caps[1];
         if key == "workspaceFolder" {

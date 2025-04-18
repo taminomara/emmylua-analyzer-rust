@@ -43,7 +43,14 @@ pub fn load_configs(config_files: Vec<PathBuf>, partial_emmyrcs: Option<Vec<Valu
         log::info!("No valid config file found.");
         Emmyrc::default()
     } else if config_jsons.len() == 1 {
-        let first_config = config_jsons.into_iter().next().unwrap();
+        let first_config = match config_jsons.into_iter().next() {
+            Some(config) => config,
+            None => {
+                log::error!("No valid config file found.");
+                return Emmyrc::default();
+            }
+        };
+
         let flatten_config = FlattenConfigObject::parse(first_config);
         let emmyrc_json_value = flatten_config.to_emmyrc();
         let emmyrc: Emmyrc = match serde_json::from_value(emmyrc_json_value) {

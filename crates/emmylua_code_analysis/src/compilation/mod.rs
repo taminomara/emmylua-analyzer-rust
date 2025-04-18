@@ -39,7 +39,13 @@ impl LuaCompilation {
     pub fn update_index(&mut self, file_ids: Vec<FileId>) {
         let mut need_analyzed_files = vec![];
         for file_id in file_ids {
-            let tree = self.db.get_vfs().get_syntax_tree(&file_id).unwrap();
+            let tree = match self.db.get_vfs().get_syntax_tree(&file_id) {
+                Some(tree) => tree,
+                None => {
+                    log::warn!("file_id {:?} not found in vfs", file_id);
+                    continue;
+                }
+            };
             need_analyzed_files.push(InFiled {
                 file_id,
                 value: tree.get_chunk_node(),

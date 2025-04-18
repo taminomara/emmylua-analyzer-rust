@@ -93,20 +93,20 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
 }
 
 fn humanize_def_type(db: &DbIndex, id: &LuaTypeDeclId, level: RenderLevel) -> String {
-    let type_decl = db.get_type_index().get_type_decl(id);
-    if type_decl.is_none() {
-        return id.get_name().to_string();
-    }
+    let type_decl = match db.get_type_index().get_type_decl(id) {
+        Some(type_decl) => type_decl,
+        None => return id.get_name().to_string(),
+    };
 
-    let type_decl = type_decl.unwrap();
     let full_name = type_decl.get_full_name();
-    let generic = db.get_type_index().get_generic_params(id);
-    if generic.is_none() {
-        return humanize_simple_type(db, id, &full_name, level).unwrap_or(full_name.to_string());
-    }
+    let generic = match db.get_type_index().get_generic_params(id) {
+        Some(generic) => generic,
+        None => {
+            return humanize_simple_type(db, id, &full_name, level).unwrap_or(full_name.to_string())
+        }
+    };
 
     let generic_names = generic
-        .unwrap()
         .iter()
         .map(|it| it.0.clone())
         .collect::<Vec<_>>()
@@ -414,12 +414,11 @@ fn humanize_intersect_type(
 
 fn humanize_generic_type(db: &DbIndex, generic: &LuaGenericType, level: RenderLevel) -> String {
     let base_id = generic.get_base_type_id();
-    let type_decl = db.get_type_index().get_type_decl(&base_id);
-    if type_decl.is_none() {
-        return base_id.get_name().to_string();
-    }
+    let type_decl = match db.get_type_index().get_type_decl(&base_id) {
+        Some(type_decl) => type_decl,
+        None => return base_id.get_name().to_string(),
+    };
 
-    let type_decl = type_decl.unwrap();
     let simple_name = type_decl.get_name();
     match level {
         RenderLevel::Brief => {
@@ -607,12 +606,11 @@ fn humanize_signature_type(
         return "fun(...) -> ...".to_string();
     }
 
-    let signature = db.get_signature_index().get(signature_id);
-    if signature.is_none() {
-        return "unknown".to_string();
-    }
+    let signature = match db.get_signature_index().get(signature_id) {
+        Some(sig) => sig,
+        None => return "unknown".to_string(),
+    };
 
-    let signature = signature.unwrap();
     let params = signature
         .get_type_params()
         .iter()

@@ -38,9 +38,17 @@ fn module_analyze(
         let in_filed_tree = need_analyzed_files[0].clone();
         let file_id = in_filed_tree.file_id;
         if let Some(path) = db.get_vfs().get_file_path(&file_id).cloned() {
+            let path_str = match path.to_str() {
+                Some(path) => path,
+                None => {
+                    log::warn!("file_id {:?} path not found", file_id);
+                    return vec![];
+                }
+            };
+
             let workspace_id = db
                 .get_module_index_mut()
-                .add_module_by_path(file_id, path.to_str().unwrap());
+                .add_module_by_path(file_id, path_str);
             let workspace_id = workspace_id.unwrap_or(WorkspaceId::MAIN);
             let mut context = AnalyzeContext::new(config);
             context.add_tree_chunk(in_filed_tree);
@@ -55,9 +63,17 @@ fn module_analyze(
     for in_filed_tree in need_analyzed_files {
         let file_id = in_filed_tree.file_id;
         if let Some(path) = db.get_vfs().get_file_path(&file_id).cloned() {
+            let path_str = match path.to_str() {
+                Some(path) => path,
+                None => {
+                    log::warn!("file_id {:?} path not found", file_id);
+                    continue;
+                }
+            };
+
             let workspace_id = db
                 .get_module_index_mut()
-                .add_module_by_path(file_id, path.to_str().unwrap());
+                .add_module_by_path(file_id, path_str);
             let workspace_id = workspace_id.unwrap_or(WorkspaceId::MAIN);
             file_tree_map
                 .entry(workspace_id)

@@ -125,9 +125,10 @@ impl LuaTypeDecl {
             LuaTypeExtra::Alias {
                 origin: Some(origin),
             } => {
-                if substitutor.is_none() {
-                    return Some(origin.clone());
-                }
+                let substitutor = match substitutor {
+                    Some(substitutor) => substitutor,
+                    None => return Some(origin.clone()),
+                };
 
                 let type_decl_id = self.get_id();
                 if db
@@ -138,7 +139,6 @@ impl LuaTypeDecl {
                     return Some(origin.clone());
                 }
 
-                let substitutor = substitutor.unwrap();
                 Some(instantiate_type_generic(db, &origin, substitutor))
             }
             _ => None,

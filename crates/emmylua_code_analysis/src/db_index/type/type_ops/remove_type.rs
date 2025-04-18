@@ -143,10 +143,12 @@ pub fn remove_type(source: LuaType, removed_type: LuaType) -> Option<LuaType> {
             .filter_map(|t| remove_type(t.clone(), removed_type.clone()))
             .collect::<Vec<_>>();
         types.dedup();
-        if types.len() == 1 {
-            return Some(types.pop().unwrap());
-        }
-        return Some(LuaType::Union(LuaUnionType::new(types).into()));
+
+        return match types.len() {
+            0 => None,
+            1 => Some(types[0].clone()),
+            _ => Some(LuaType::Union(LuaUnionType::new(types).into())),
+        };
     } else if let LuaType::Union(u) = &removed_type {
         let mut types = u
             .get_types()
@@ -154,10 +156,11 @@ pub fn remove_type(source: LuaType, removed_type: LuaType) -> Option<LuaType> {
             .filter_map(|t| remove_type(source.clone(), t.clone()))
             .collect::<Vec<_>>();
         types.dedup();
-        if types.len() == 1 {
-            return Some(types.pop().unwrap());
-        }
-        return Some(LuaType::Union(LuaUnionType::new(types).into()));
+        return match types.len() {
+            0 => None,
+            1 => Some(types[0].clone()),
+            _ => Some(LuaType::Union(LuaUnionType::new(types).into())),
+        };
     }
 
     Some(source)

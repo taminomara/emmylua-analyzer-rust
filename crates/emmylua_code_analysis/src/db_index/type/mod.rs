@@ -108,8 +108,8 @@ impl LuaTypeIndex {
             let prefix = &format!("{}.{}", ns, prefix);
             for id in all_type_ids.clone() {
                 let id_name = id.get_name();
-                if id_name.starts_with(prefix) {
-                    let rest_name = id_name.strip_prefix(prefix).unwrap();
+
+                if let Some(rest_name) = id_name.strip_prefix(prefix) {
                     if let Some(i) = rest_name.find('.') {
                         let name = rest_name[..i].to_string();
                         if !result.contains_key(&name) {
@@ -127,8 +127,8 @@ impl LuaTypeIndex {
                 let prefix = &format!("{}.{}", ns, prefix);
                 for id in all_type_ids.clone() {
                     let id_name = id.get_name();
-                    if id_name.starts_with(prefix) {
-                        let rest_name = id_name.strip_prefix(prefix).unwrap();
+
+                    if let Some(rest_name) = id_name.strip_prefix(prefix) {
                         if let Some(i) = rest_name.find('.') {
                             let name = rest_name[..i].to_string();
                             if !result.contains_key(&name) {
@@ -145,14 +145,15 @@ impl LuaTypeIndex {
         for id in all_type_ids {
             let id_name = id.get_name();
             if id_name.starts_with(prefix) {
-                let rest_name = id_name.strip_prefix(prefix).unwrap();
-                if let Some(i) = rest_name.find('.') {
-                    let name = rest_name[..i].to_string();
-                    if !result.contains_key(&name) {
-                        result.insert(name, None);
+                if let Some(rest_name) = id_name.strip_prefix(prefix) {
+                    if let Some(i) = rest_name.find('.') {
+                        let name = rest_name[..i].to_string();
+                        if !result.contains_key(&name) {
+                            result.insert(name, None);
+                        }
+                    } else {
+                        result.insert(rest_name.to_string(), Some(id.clone()));
                     }
-                } else {
-                    result.insert(rest_name.to_string(), Some(id.clone()));
                 }
             }
         }

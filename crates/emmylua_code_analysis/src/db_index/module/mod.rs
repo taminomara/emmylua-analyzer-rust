@@ -127,7 +127,10 @@ impl LuaModuleIndex {
         for part in &module_parts {
             // I had to struggle with Rust's ownership rules, making the code look like this.
             let child_id = {
-                let parent_node = self.module_nodes.get_mut(&parent_node_id).unwrap();
+                let parent_node = match self.module_nodes.get_mut(&parent_node_id) {
+                    Some(node) => node,
+                    None => return None,
+                };
                 let node_id = parent_node.children.get(*part);
                 match node_id {
                     Some(id) => *id,
@@ -154,9 +157,16 @@ impl LuaModuleIndex {
             parent_node_id = child_id;
         }
 
-        let node = self.module_nodes.get_mut(&parent_node_id).unwrap();
+        let node = match self.module_nodes.get_mut(&parent_node_id) {
+            Some(node) => node,
+            None => return None,
+        };
+
         node.file_ids.push(file_id);
-        let module_name = module_parts.last().unwrap().to_string();
+        let module_name = match module_parts.last() {
+            Some(name) => name.to_string(),
+            None => return None,
+        };
         let module_info = ModuleInfo {
             file_id,
             full_module_name: module_parts.join("."),
@@ -218,7 +228,12 @@ impl LuaModuleIndex {
         }
 
         if self.fuzzy_search {
-            return self.fuzzy_find_module(&module_path, module_parts.last().unwrap());
+            let last_name = match module_parts.last() {
+                Some(name) => name,
+                None => return None,
+            };
+
+            return self.fuzzy_find_module(&module_path, last_name);
         }
 
         None
@@ -300,7 +315,10 @@ impl LuaModuleIndex {
                     if matched_module_path.is_none() {
                         matched_module_path = Some((module_path, workspace.id));
                     } else {
-                        let (matched, _) = matched_module_path.as_ref().unwrap();
+                        let (matched, _) = match matched_module_path.as_ref() {
+                            Some((matched, id)) => (matched, id),
+                            None => continue,
+                        };
                         if module_path.len() < matched.len() {
                             matched_module_path = Some((module_path, workspace.id));
                         }
@@ -436,7 +454,10 @@ impl LuaIndex for LuaModuleIndex {
         let (mut parent_id, mut child_id) =
             if let Some(module_info) = self.file_module_map.remove(&file_id) {
                 let module_id = module_info.module_id;
-                let node = self.module_nodes.get_mut(&module_id).unwrap();
+                let node = match self.module_nodes.get_mut(&module_id) {
+                    Some(node) => node,
+                    None => return,
+                };
                 node.file_ids.retain(|id| *id != file_id);
                 if node.file_ids.is_empty() && node.children.is_empty() {
                     (node.parent, Some(module_id))
@@ -452,8 +473,14 @@ impl LuaIndex for LuaModuleIndex {
         }
 
         while let Some(id) = parent_id {
-            let child_module_id = child_id.unwrap();
-            let node = self.module_nodes.get_mut(&id).unwrap();
+            let child_module_id = match child_id {
+                Some(id) => id,
+                None => break,
+            };
+            let node = match self.module_nodes.get_mut(&id) {
+                Some(node) => node,
+                None => break,
+            };
             node.children
                 .retain(|_, node_child_idid| *node_child_idid != child_module_id);
 
@@ -480,7 +507,11 @@ impl LuaIndex for LuaModuleIndex {
             }
 
             if !module_name.is_empty() {
-                let file_ids = self.module_name_to_file_ids.get_mut(&module_name).unwrap();
+                let file_ids = match self.module_name_to_file_ids.get_mut(&module_name) {
+                    Some(ids) => ids,
+                    None => return,
+                };
+
                 file_ids.retain(|id| *id != file_id);
                 if file_ids.is_empty() {
                     self.module_name_to_file_ids.remove(&module_name);

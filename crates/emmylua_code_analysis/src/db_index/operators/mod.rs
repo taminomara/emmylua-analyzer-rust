@@ -62,18 +62,25 @@ impl LuaIndex for LuaOperatorIndex {
     fn remove(&mut self, file_id: FileId) {
         if let Some(operator_ids) = self.in_filed_operator_map.remove(&file_id) {
             for id in operator_ids {
-                let operator = self.operators.remove(&id).unwrap();
-                let owner = operator.get_owner();
-                let op = operator.get_op();
-                let operators_map = self.type_operators_map.get_mut(owner).unwrap();
-                let operators = operators_map.get_mut(&op).unwrap();
-                operators.retain(|x| x != &id);
-                if operators.is_empty() {
-                    operators_map.remove(&op);
-                }
+                if let Some(operator) = self.operators.remove(&id) {
+                    let owner = operator.get_owner();
+                    let op = operator.get_op();
+                    let operators_map = match self.type_operators_map.get_mut(owner) {
+                        Some(map) => map,
+                        None => continue,
+                    };
+                    let operators = match operators_map.get_mut(&op) {
+                        Some(operators) => operators,
+                        None => continue,
+                    };
+                    operators.retain(|x| x != &id);
+                    if operators.is_empty() {
+                        operators_map.remove(&op);
+                    }
 
-                if operators_map.is_empty() {
-                    self.type_operators_map.remove(owner);
+                    if operators_map.is_empty() {
+                        self.type_operators_map.remove(owner);
+                    }
                 }
             }
         }

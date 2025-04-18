@@ -59,7 +59,10 @@ impl FileGenericIndex {
         id: GenericParamId,
         effect_id: GenericEffectId,
     ) -> bool {
-        let effect_node = self.effect_nodes.get(effect_id.id).unwrap();
+        let effect_node = match self.effect_nodes.get(effect_id.id) {
+            Some(node) => node,
+            None => return false,
+        };
 
         if effect_node.range.contains_range(range) {
             let children = effect_node.children.clone();
@@ -77,7 +80,10 @@ impl FileGenericIndex {
 
             let child_node_id = self.effect_nodes.len();
             self.effect_nodes.push(child_node);
-            let effect_node = self.effect_nodes.get_mut(effect_id.id).unwrap();
+            let effect_node = match self.effect_nodes.get_mut(effect_id.id) {
+                Some(node) => node,
+                None => return false,
+            };
             effect_node
                 .children
                 .push(GenericEffectId::new(child_node_id));

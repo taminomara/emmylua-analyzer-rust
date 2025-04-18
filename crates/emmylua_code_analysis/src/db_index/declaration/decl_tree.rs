@@ -35,14 +35,21 @@ impl LuaDeclarationTree {
         self.walk_up(scope, position, 0, &mut |decl_id| {
             match decl_id {
                 ScopeOrDeclId::Decl(decl_id) => {
-                    let decl = self.get_decl(&decl_id).unwrap();
+                    let decl = match self.get_decl(&decl_id) {
+                        Some(decl) => decl,
+                        None => return false,
+                    };
                     if decl.get_name() == name {
                         result = Some(decl);
                         return true;
                     }
                 }
                 ScopeOrDeclId::Scope(scope) => {
-                    let scope = self.scopes.get(scope.id as usize).unwrap();
+                    let scope = match self.scopes.get(scope.id as usize) {
+                        Some(scope) => scope,
+                        None => return false,
+                    };
+
                     // self found method stat, donot return decl id
                     if scope.get_kind() == LuaScopeKind::MethodStat && name == "self" {
                         return true;
@@ -75,23 +82,24 @@ impl LuaDeclarationTree {
         if self.scopes.is_empty() {
             return None;
         }
-        let mut scope = self.scopes.get(0).unwrap();
+        let mut scope = match self.scopes.get(0) {
+            Some(scope) => scope,
+            None => return None,
+        };
+
         loop {
             let child_scope = scope
                 .get_children()
                 .iter()
                 .filter_map(|child| match child {
-                    ScopeOrDeclId::Scope(child_id) => {
-                        let child_scope = self.scopes.get(child_id.id as usize).unwrap();
-                        Some(child_scope)
-                    }
+                    ScopeOrDeclId::Scope(child_id) => self.scopes.get(child_id.id as usize),
                     ScopeOrDeclId::Decl(_) => None,
                 })
                 .find(|child_scope| child_scope.get_range().contains(position));
             if child_scope.is_none() {
                 break;
             }
-            scope = child_scope.unwrap();
+            scope = child_scope?;
         }
 
         Some(scope)
@@ -104,21 +112,33 @@ impl LuaDeclarationTree {
         let cur_index = scope.get_children().iter().rposition(|child| match child {
             ScopeOrDeclId::Decl(decl_id) => decl_id.position < start_pos,
             ScopeOrDeclId::Scope(scope_id) => {
-                let child_scope = self.scopes.get(scope_id.id as usize).unwrap();
+                let child_scope = match self.scopes.get(scope_id.id as usize) {
+                    Some(scope) => scope,
+                    None => return false,
+                };
                 child_scope.get_position() < start_pos
             }
         });
 
         if let Some(cur_index) = cur_index {
             for i in (0..=cur_index).rev() {
-                match scope.get_children().get(i).unwrap() {
+                let scope_or_id = match scope.get_children().get(i) {
+                    Some(scope_or_id) => scope_or_id,
+                    None => continue,
+                };
+
+                match scope_or_id {
                     ScopeOrDeclId::Decl(decl_id) => {
                         if f(decl_id.into()) {
                             return;
                         }
                     }
                     ScopeOrDeclId::Scope(scope_id) => {
-                        let child_scope = self.scopes.get(scope_id.id as usize).unwrap();
+                        let child_scope = match self.scopes.get(scope_id.id as usize) {
+                            Some(scope) => scope,
+                            None => continue,
+                        };
+
                         if self.walk_over_scope(child_scope, f) {
                             return;
                         }
@@ -128,7 +148,10 @@ impl LuaDeclarationTree {
         }
 
         if let Some(parent_id) = scope.get_parent() {
-            let parent_scope = self.scopes.get(parent_id.id as usize).unwrap();
+            let parent_scope = match self.scopes.get(parent_id.id as usize) {
+                Some(scope) => scope,
+                None => return,
+            };
             self.walk_up(parent_scope, start_pos, level + 1, f);
         }
     }
@@ -142,14 +165,20 @@ impl LuaDeclarationTree {
             LuaScopeKind::LocalOrAssignStat => {
                 let parent = scope.get_parent();
                 if let Some(parent) = parent {
-                    let parent_scope = self.scopes.get(parent.id as usize).unwrap();
+                    let parent_scope = match self.scopes.get(parent.id as usize) {
+                        Some(scope) => scope,
+                        None => return,
+                    };
                     self.walk_up(parent_scope, scope.get_position(), level, f);
                 }
             }
             LuaScopeKind::Repeat => {
                 if level == 0 {
                     if let Some(ScopeOrDeclId::Scope(scope_id)) = scope.get_children().get(0) {
-                        let scope = self.scopes.get(scope_id.id as usize).unwrap();
+                        let scope = match self.scopes.get(scope_id.id as usize) {
+                            Some(scope) => scope,
+                            None => return,
+                        };
                         self.walk_up(scope, start_pos, level, f);
                         return;
                     }
@@ -161,7 +190,10 @@ impl LuaDeclarationTree {
                 if level == 0 {
                     let parent = scope.get_parent();
                     if let Some(parent) = parent {
-                        let parent_scope = self.scopes.get(parent.id as usize).unwrap();
+                        let parent_scope = match self.scopes.get(parent.id as usize) {
+                            Some(scope) => scope,
+                            None => return,
+                        };
                         self.walk_up(parent_scope, start_pos, level, f);
                     }
                 } else {
@@ -249,7 +281,10 @@ impl LuaDeclarationTree {
         self.walk_up(scope, position, 0, &mut |decl_id| {
             match decl_id {
                 ScopeOrDeclId::Decl(decl_id) => {
-                    let decl = self.get_decl(&decl_id).unwrap();
+                    let decl = match self.get_decl(&decl_id) {
+                        Some(decl) => decl,
+                        None => return false,
+                    };
                     if decl.get_name() == "self" {
                         result = Some(LuaDeclOrMemberId::Decl(decl_id));
                         return true;

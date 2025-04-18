@@ -50,11 +50,12 @@ fn check_unbalanced_assignment(
     vars: &[impl LuaAstNode],
     value_exprs: &[LuaExpr],
 ) -> Option<()> {
-    if value_exprs.is_empty() {
-        return Some(());
-    }
+    let last_value_expr = match value_exprs.last() {
+        Some(expr) => expr,
+        None => return Some(()),
+    };
 
-    if check_last_expr(semantic_model, &value_exprs.last().unwrap()).unwrap_or(false) {
+    if check_last_expr(semantic_model, &last_value_expr).unwrap_or(false) {
         return Some(());
     }
 

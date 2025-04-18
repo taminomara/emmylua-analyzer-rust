@@ -252,7 +252,7 @@ pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignSta
         if expr.is_none() {
             break;
         }
-        let expr = expr.unwrap();
+        let expr = expr?;
         let type_owner = get_var_owner(analyzer, var.clone());
         set_index_expr_owner(analyzer, var.clone());
 

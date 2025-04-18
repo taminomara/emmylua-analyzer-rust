@@ -76,7 +76,10 @@ fn check_normal_string_error(string_token: &LuaSyntaxToken) -> Result<(), String
     }
 
     let mut chars = text.chars().peekable();
-    let delimiter = chars.next().unwrap();
+    let delimiter = match chars.next() {
+        Some(c) => c,
+        None => return Ok(()),
+    };
 
     while let Some(c) = chars.next() {
         match c {
