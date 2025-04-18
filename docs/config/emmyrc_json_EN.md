@@ -64,7 +64,8 @@ It primarily follows this format:
   },
   "strict": {
     "requirePath": false,
-    "typeCall": true
+    "typeCall": false,
+    "arrayIndex": true
   },
   "hover": {
     "enable": true
@@ -135,8 +136,9 @@ This feature is mainly to make `require` work correctly. If you need to map modu
 - `enable`: Whether or not to enable CodeLens. Default is `true`.
 
 ## strict
-- `requirePath`: Whether or not to enable strict mode for require. Default is `true`.
-- `typeCall`: Whether or not to enable strict type calls. Default is `true`.
+- `requirePath`: Whether or not to enable strict mode for require. Default is `false`.
+- `typeCall`: Whether or not to enable strict type calls. Default is `false`.
+- `arrayIndex`: Whether or not to enable strict mode for array indexing. Default is `true`.
 
 ## hover
 - `enable`: Whether or not to enable hover support. Default is `true`.
