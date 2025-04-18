@@ -7,6 +7,18 @@ Global configuration have less priority than the local one
 
 `NEW` Classes might now infer from generic types and provide corresponding completions.
 
+`CHG` Refactor flow analyze algorithm
+
+`NEW` Array return values are now considered nullable. If you want to remove this behavior, you can set `strict.arrayIndex` to `false` in the configuration file.
+
+`FIX` Fix some self infer issue 
+
+`FIX` Fix some diagnostic action issue
+
+`FIX` Optimize some type check
+
+`FIX` Optimize some completion
+
 # 0.7.0 
 
 `CHG` Refactor `type infer`
