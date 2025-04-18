@@ -1,6 +1,6 @@
 use emmylua_parser::{LuaAssignStat, LuaAstNode, LuaExpr, LuaLocalStat, LuaStat};
 
-use crate::{DiagnosticCode, SemanticModel};
+use crate::{DiagnosticCode, LuaType, SemanticModel};
 
 use super::{Checker, DiagnosticContext};
 
@@ -54,8 +54,17 @@ fn check_unbalanced_assignment(
         return Some(());
     }
 
+    if check_last_expr(semantic_model, &value_exprs.last().unwrap()).unwrap_or(false) {
+        return Some(());
+    }
+
     let value_types = semantic_model
         .infer_multi_value_adjusted_expression_types(value_exprs, Some(vars.len()))?;
+    if let Some(last_type) = value_types.last() {
+        if check_last(&last_type.0) {
+            return Some(());
+        }
+    }
 
     let value_len = value_types.len();
 
@@ -72,4 +81,43 @@ fn check_unbalanced_assignment(
     }
 
     Some(())
+}
+
+fn check_last(last_type: &LuaType) -> bool {
+    match last_type {
+        LuaType::Instance(instance) => check_last(&instance.get_base()),
+        _ => false,
+    }
+}
+
+#[allow(unused)]
+fn check_last_expr(semantic_model: &SemanticModel, last_expr: &LuaExpr) -> Option<bool> {
+    match last_expr {
+        // TODO: 为 signature 建立独立规则
+        LuaExpr::CallExpr(call_expr) => {
+            return Some(true);
+            // 目前仅允许 pcall 和 xpcall 禁用检查, 或许我们应该禁用所有函数调用的检查?
+            // let decl_id = semantic_model.find_decl(
+            //     call_expr.get_prefix_expr()?.syntax().clone().into(),
+            //     SemanticDeclLevel::Trace(50),
+            // )?;
+            // if let LuaSemanticDeclId::LuaDecl(decl_id) = decl_id {
+            //     let decl = semantic_model
+            //         .get_db()
+            //         .get_decl_index()
+            //         .get_decl(&decl_id)?;
+
+            //     if semantic_model
+            //         .get_db()
+            //         .get_module_index()
+            //         .is_std(&decl.get_file_id())
+            //         && (decl.get_name() == "pcall" || decl.get_name() == "xpcall")
+            //     {
+            //         return Some(true);
+            //     }
+            // }
+            // None
+        }
+        _ => None,
+    }
 }

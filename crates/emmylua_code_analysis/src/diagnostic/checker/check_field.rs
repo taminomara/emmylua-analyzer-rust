@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 
-use emmylua_parser::{LuaAst, LuaAstNode, LuaExpr, LuaIndexExpr, LuaIndexKey, LuaVarExpr};
-use internment::ArcIntern;
+use emmylua_parser::{LuaAst, LuaAstNode, LuaIndexExpr, LuaIndexKey, LuaVarExpr};
 
 use crate::{DiagnosticCode, InferFailReason, LuaMemberKey, LuaType, SemanticModel};
 
@@ -65,7 +64,7 @@ fn check_index_expr(
 
     let index_key = index_expr.get_index_key()?;
 
-    if is_valid_member(semantic_model, &prefix_typ, index_expr, &index_key).is_some() {
+    if is_valid_member(semantic_model, &prefix_typ, index_expr, &index_key, code).is_some() {
         return Some(());
     }
 
@@ -129,6 +128,7 @@ fn is_valid_member(
     prefix_typ: &LuaType,
     index_expr: &LuaIndexExpr,
     index_key: &LuaIndexKey,
+    code: DiagnosticCode,
 ) -> Option<()> {
     // 检查 member_info
     let need_add_diagnostic =
@@ -141,9 +141,19 @@ fn is_valid_member(
         return Some(());
     }
 
-    // 获取并验证 key_type
-    let key_type = match index_key {
-        LuaIndexKey::Expr(expr) => match semantic_model.infer_expr(expr.clone()) {
+    match prefix_typ {
+        LuaType::Global => return Some(()),
+        LuaType::Userdata => return Some(()),
+        LuaType::Array(typ) => {
+            if typ.is_unknown() {
+                return Some(());
+            }
+        }
+        _ => {}
+    }
+
+    let key_type = if let LuaIndexKey::Expr(expr) = index_key {
+        match semantic_model.infer_expr(expr.clone()) {
             Ok(
                 LuaType::Any
                 | LuaType::Unknown
@@ -161,45 +171,81 @@ fn is_valid_member(
             Err(_) => {
                 return None;
             }
-        },
-        LuaIndexKey::String(name) => LuaType::StringConst(ArcIntern::new(name.get_value().into())),
-        LuaIndexKey::Integer(i) => LuaType::IntegerConst(i.get_int_value()),
-        LuaIndexKey::Name(name) => {
-            LuaType::StringConst(ArcIntern::new(name.get_name_text().into()))
         }
-        LuaIndexKey::Idx(i) => LuaType::IntegerConst(i.clone() as i64),
+    } else {
+        return None;
     };
 
     // 允许特定类型组合通过
     match (prefix_typ, &key_type) {
         (LuaType::Tuple(_), LuaType::Integer | LuaType::IntegerConst(_)) => return Some(()),
+        (LuaType::Def(id), _) => {
+            if let Some(decl) = semantic_model.get_db().get_type_index().get_type_decl(id) {
+                if decl.is_class() {
+                    if code == DiagnosticCode::InjectField {
+                        return Some(());
+                    }
+                    if index_key.is_string() || matches!(key_type, LuaType::String) {
+                        return Some(());
+                    }
+                }
+            }
+        }
         _ => {}
     }
 
-    // 解决`key`类型为联合名称时的报错(通常是`pairs`返回的`key`)
-    let (key_name_set, key_type_set) = get_key_types(&key_type);
-    if key_name_set.is_empty() && key_type_set.is_empty() {
+    /*
+    允许这种写法
+            ---@type string?
+            local field
+            local a = Class[field]
+    */
+    let key_type_set = get_key_types(&key_type);
+    if key_type_set.is_empty() {
         return None;
     }
+
     let prefix_types = get_prefix_types(prefix_typ);
     for prefix_type in prefix_types {
         if let Some(members) = semantic_model.infer_member_infos(&prefix_type) {
-            for info in members {
+            for info in &members {
                 match &info.key {
-                    LuaMemberKey::SyntaxId(syntax_id) => {
-                        let node =
-                            syntax_id.to_node_from_root(semantic_model.get_root().syntax())?;
-                        let expr = LuaExpr::cast(node)?;
-                        if let Ok(typ) = semantic_model.infer_expr(expr) {
-                            if key_type_set.contains(&typ) {
+                    LuaMemberKey::Expr(typ) => {
+                        if typ.is_string() {
+                            if key_type_set.iter().any(|typ| typ.is_string()) {
+                                return Some(());
+                            }
+                        } else if typ.is_integer() {
+                            if key_type_set.iter().any(|typ| typ.is_integer()) {
                                 return Some(());
                             }
                         }
                     }
-                    _ => {
-                        let key_name = info.key.to_path();
-                        if key_name_set.contains(&key_name) {
+                    LuaMemberKey::Name(_) => {
+                        if key_type_set.iter().any(|typ| typ.is_string()) {
                             return Some(());
+                        }
+                    }
+                    LuaMemberKey::Integer(_) => {
+                        if key_type_set.iter().any(|typ| typ.is_integer()) {
+                            return Some(());
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            if members.is_empty() {
+                // 当没有任何成员信息且是 enum 类型时, 需要检查参数是否为自己
+                if let LuaType::Ref(id) | LuaType::Def(id) = prefix_type {
+                    if let Some(decl) = semantic_model.get_db().get_type_index().get_type_decl(&id)
+                    {
+                        if decl.is_enum() {
+                            if key_type_set.iter().any(|typ| match typ {
+                                LuaType::Ref(key_id) | LuaType::Def(key_id) => id == *key_id,
+                                _ => false,
+                            }) {
+                                return Some(());
+                            }
                         }
                     }
                 }
@@ -230,31 +276,28 @@ fn get_prefix_types(prefix_typ: &LuaType) -> HashSet<LuaType> {
     type_set
 }
 
-fn get_key_types(typ: &LuaType) -> (HashSet<String>, HashSet<LuaType>) {
+fn get_key_types(typ: &LuaType) -> HashSet<LuaType> {
     let mut type_set = HashSet::new();
-    let mut name_set = HashSet::new();
     let mut stack = vec![typ.clone()];
 
     while let Some(current_type) = stack.pop() {
-        // `DocStringConst`与`DocIntegerConst`用于处理`---@type 'a'|'b'`这种联合类型
         match &current_type {
-            LuaType::StringConst(name) | LuaType::DocStringConst(name) => {
-                name_set.insert(name.as_ref().to_string());
+            LuaType::String => {
+                type_set.insert(current_type);
             }
-            LuaType::IntegerConst(i) | LuaType::DocIntegerConst(i) => {
-                name_set.insert(format!("[{}]", i));
+            LuaType::Integer => {
+                type_set.insert(current_type);
             }
             LuaType::Union(union_typ) => {
                 for t in union_typ.get_types() {
                     stack.push(t.clone());
                 }
             }
-            _ => {
-                if current_type.is_table() {
-                    type_set.insert(current_type);
-                }
+            LuaType::Ref(_) => {
+                type_set.insert(current_type);
             }
+            _ => {}
         }
     }
-    (name_set, type_set)
+    type_set
 }

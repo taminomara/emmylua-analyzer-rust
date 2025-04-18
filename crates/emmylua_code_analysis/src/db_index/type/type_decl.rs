@@ -174,7 +174,6 @@ pub struct LuaTypeDeclId {
 }
 
 impl LuaTypeDeclId {
-    #[allow(unused)]
     pub fn new_by_id(id: ArcIntern<SmolStr>) -> Self {
         Self { id }
     }

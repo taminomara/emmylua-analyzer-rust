@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use super::lua_member_feature::LuaMemberFeature;
-use crate::{FileId, GlobalId};
+use crate::{FileId, GlobalId, LuaType};
 
 #[derive(Debug)]
 pub struct LuaMember {
@@ -93,7 +93,7 @@ pub enum LuaMemberKey {
     None,
     Integer(i64),
     Name(SmolStr),
-    SyntaxId(LuaSyntaxId),
+    Expr(LuaType),
 }
 
 impl LuaMemberKey {
@@ -109,8 +109,8 @@ impl LuaMemberKey {
         matches!(self, LuaMemberKey::Integer(_))
     }
 
-    pub fn is_syntax_id(&self) -> bool {
-        matches!(self, LuaMemberKey::SyntaxId(_))
+    pub fn is_expr(&self) -> bool {
+        matches!(self, LuaMemberKey::Expr(_))
     }
 
     pub fn get_name(&self) -> Option<&str> {
@@ -134,7 +134,7 @@ impl LuaMemberKey {
                 format!("[{}]", i)
             }
             LuaMemberKey::None => "".to_string(),
-            LuaMemberKey::SyntaxId(_) => "".to_string(),
+            LuaMemberKey::Expr(_) => "".to_string(),
         }
     }
 }
@@ -158,7 +158,7 @@ impl Ord for LuaMemberKey {
             (Name(a), Name(b)) => a.cmp(b),
             (Name(_), _) => std::cmp::Ordering::Less,
             (_, Name(_)) => std::cmp::Ordering::Greater,
-            (SyntaxId(_), SyntaxId(_)) => std::cmp::Ordering::Equal,
+            (Expr(_), Expr(_)) => std::cmp::Ordering::Equal,
         }
     }
 }

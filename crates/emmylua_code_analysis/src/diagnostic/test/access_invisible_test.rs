@@ -18,4 +18,71 @@ mod tests {
             "#
         ));
     }
+
+    #[test]
+    fn test_1() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for_namespace(
+            DiagnosticCode::AccessInvisible,
+            r#"
+                ---@class (partial) Log
+                ---@field private logLevel table<Log.Level, integer>
+                local M 
+
+                ---@enum (key) Log.Level
+                M.logLevel = {
+                    trace = 1,
+                }
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_2() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def_file(
+            "test.lua",
+            r#"
+            ---@class (partial) Log
+            ---@field private logLevel table<Log.Level, integer>
+            local M 
+
+            ---@enum (key) Log.Level
+            M.logLevel = {
+                trace = 1,
+            }
+
+            return M
+        "#,
+        );
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::AccessInvisible,
+            r#"
+                local Log = require("test")
+                Log.logLevel = 1
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_3() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::AccessInvisible,
+            r#"
+                local M = {}
+                ---@private
+                function M.init()
+                    ---@private
+                    M.log = 1
+                end
+
+                local function step_collector()
+                    if M.log then
+                    end
+                end
+            "#
+        ));
+    }
 }

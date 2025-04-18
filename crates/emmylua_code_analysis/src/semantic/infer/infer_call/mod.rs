@@ -14,7 +14,10 @@ use crate::{
         LuaOperatorMetaMethod, LuaSignatureId, LuaType, LuaTypeDeclId,
     },
     semantic::{
-        generic::{instantiate_func_generic, instantiate_type_generic, TypeSubstitutor},
+        generic::{
+            instantiate_doc_function, instantiate_func_generic, instantiate_type_generic,
+            TypeSubstitutor,
+        },
         overload_resolve::resolve_signature,
         InferGuard,
     },
@@ -107,7 +110,7 @@ fn collect_function_type(
     infer_guard: &mut InferGuard,
     funcs: &mut Vec<Arc<LuaFunctionType>>,
 ) -> Result<(), InferFailReason> {
-    match prefix_type {
+    match &prefix_type {
         LuaType::DocFunction(func) => {
             collect_func_by_doc_function(db, cache, func.clone(), call_expr.clone(), funcs)?
         }
@@ -121,6 +124,7 @@ fn collect_function_type(
             call_expr.clone(),
             infer_guard,
             funcs,
+            &prefix_type,
         )?,
         LuaType::Ref(type_ref_id) => collect_func_by_custom_type(
             db,
@@ -129,6 +133,7 @@ fn collect_function_type(
             call_expr.clone(),
             infer_guard,
             funcs,
+            &prefix_type,
         )?,
         LuaType::Generic(generic) => collect_call_by_custom_generic_type(
             db,
@@ -231,6 +236,7 @@ fn collect_func_by_custom_type(
     call_expr: LuaCallExpr,
     infer_guard: &mut InferGuard,
     funcs: &mut Vec<Arc<LuaFunctionType>>,
+    self_type: &LuaType,
 ) -> Result<(), InferFailReason> {
     infer_guard.check(&type_id)?;
     let type_decl = db
@@ -244,7 +250,7 @@ fn collect_func_by_custom_type(
         return collect_function_type(
             db,
             cache,
-            call_expr,
+            call_expr.clone(),
             origin_type.clone(),
             infer_guard,
             funcs,
@@ -265,7 +271,16 @@ fn collect_func_by_custom_type(
         let func = operator.get_operator_func();
         match func {
             LuaType::DocFunction(f) => {
-                funcs.push(f.clone());
+                if f.contain_self() {
+                    let mut substitutor = TypeSubstitutor::new();
+                    substitutor.add_self_type(self_type.clone());
+                    if let LuaType::DocFunction(f) = instantiate_doc_function(db, &f, &substitutor)
+                    {
+                        funcs.push(f);
+                    }
+                } else {
+                    funcs.push(f.clone());
+                }
             }
             LuaType::Signature(signature_id) => {
                 let signature = db

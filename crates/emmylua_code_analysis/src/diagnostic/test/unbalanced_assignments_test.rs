@@ -6,7 +6,7 @@ mod tests {
     fn test() {
         let mut ws = VirtualWorkspace::new_with_init_std_lib();
 
-        assert!(!ws.check_code_for(
+        assert!(ws.check_code_for(
             DiagnosticCode::UnbalancedAssignments,
             r#"
             local x, y, z = print()
@@ -74,6 +74,58 @@ mod tests {
             DiagnosticCode::UnbalancedAssignments,
             r#"
             local a, b, c = string.match("hello world", "(%w+) (%w+)")
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_2() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::UnbalancedAssignments,
+            r#"
+            ---@return any
+            local function test()
+            end
+
+            local a, b, c = test()
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_3() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::UnbalancedAssignments,
+            r#"
+            ---@class D18
+            local M
+            function M:send()
+            end
+            local suc, err = M:send()
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_pcall() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_code_for(
+            DiagnosticCode::UnbalancedAssignments,
+            r#"
+                ---@type any
+                local f
+                local ok, result, err = pcall(f)
+            "#
+        ));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::UnbalancedAssignments,
+            r#"
+                ---@type any
+                local f
+                local ok, result, err = xpcall(f, debug.traceback)
             "#
         ));
     }

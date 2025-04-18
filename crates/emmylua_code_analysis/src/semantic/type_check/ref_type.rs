@@ -6,8 +6,8 @@ use crate::{
 };
 
 use super::{
-    check_general_type_compact, is_sub_type_of, type_check_fail_reason::TypeCheckFailReason,
-    type_check_guard::TypeCheckGuard, TypeCheckResult,
+    check_general_type_compact, is_sub_type_of, sub_type::get_base_type_id,
+    type_check_fail_reason::TypeCheckFailReason, type_check_guard::TypeCheckGuard, TypeCheckResult,
 };
 
 pub fn check_ref_type_compact(
@@ -66,7 +66,7 @@ pub fn check_ref_type_compact(
                     LuaMemberKey::Name(name) => LuaType::DocStringConst(name.clone().into()),
                     LuaMemberKey::Integer(i) => LuaType::IntegerConst(i.clone()),
                     LuaMemberKey::None => continue,
-                    LuaMemberKey::SyntaxId(_) => continue,
+                    LuaMemberKey::Expr(_) => continue,
                 };
 
                 union_types.push(fake_type);
@@ -108,9 +108,10 @@ pub fn check_ref_type_compact(
             check_guard.next_level()?,
         );
     } else {
-        let compact_id = match compact_type {
-            LuaType::Def(compact_id) => compact_id,
-            LuaType::Ref(compact_id) => compact_id,
+        let compact_id;
+        match compact_type {
+            LuaType::Def(id) => compact_id = id.clone(),
+            LuaType::Ref(id) => compact_id = id.clone(),
             LuaType::TableConst(range) => {
                 let table_member_owner = LuaMemberOwner::Element(range.clone());
                 return check_ref_type_compact_table(
@@ -123,20 +124,23 @@ pub fn check_ref_type_compact(
             LuaType::Table => {
                 return Ok(());
             }
-            _ => return Err(TypeCheckFailReason::TypeNotMatch),
+            _ => match get_base_type_id(compact_type) {
+                Some(base_type_id) => compact_id = base_type_id.clone(),
+                None => return Err(TypeCheckFailReason::TypeNotMatch),
+            },
         };
 
-        if source_id == compact_id {
+        if *source_id == compact_id {
             return Ok(());
         }
 
-        if is_sub_type_of(db, compact_id, source_id) {
+        if is_sub_type_of(db, &compact_id, source_id) {
             return Ok(());
         }
 
         // This is not the correct logic, but explicit conversion in Lua looks a bit ugly, and too strict,
         // so we have to assume that Lua automatically converts from superclass to subclass.
-        if is_sub_type_of(db, source_id, compact_id) {
+        if is_sub_type_of(db, source_id, &compact_id) {
             return Ok(());
         }
     }

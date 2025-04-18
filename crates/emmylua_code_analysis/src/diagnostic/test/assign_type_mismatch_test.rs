@@ -579,8 +579,9 @@ return t
                 "#
         ));
 
-        // 不能直接向下转型.
-        assert!(!ws.check_code_for_namespace(
+        // 允许接受父类.
+        // TODO: 接受父类时应该检查是否具有子类的所有非可空成员.
+        assert!(ws.check_code_for_namespace(
             DiagnosticCode::AssignTypeMismatch,
             r#"
             ---@class Option: string
@@ -686,6 +687,22 @@ return t
             local t ---@type 0|-1
 
             t = -1
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_return_self() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            ---@class UI
+            ---@overload fun(): self
+            local M
+
+            ---@type UI
+            local a = M()
         "#
         ));
     }

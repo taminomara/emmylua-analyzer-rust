@@ -138,7 +138,7 @@ pub fn try_resolve_table_field(
         LuaType::IntegerConst(i) => LuaMemberKey::Integer(i),
         _ => {
             if field_type.is_table() {
-                LuaMemberKey::SyntaxId(field_expr.get_syntax_id())
+                LuaMemberKey::Expr(field_type)
             } else {
                 return None;
             }

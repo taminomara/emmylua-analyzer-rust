@@ -82,7 +82,7 @@ fn resolve_signature_by_args(
             0
         };
         let mut total_weight = 0; // 总权重
-        let mut fake_expr_len = 0;
+        let mut fake_expr_len = expr_types.len();
         // 检查每个参数的匹配情况
         for (i, param) in params.iter().enumerate() {
             if i == 0 && jump_param > 0 {
@@ -101,7 +101,6 @@ fn resolve_signature_by_args(
                 }
                 continue;
             }
-            fake_expr_len += 1;
 
             let expr_type = &expr_types[expr_idx];
             if *param_type == LuaType::Any || check_type_compact(db, param_type, expr_type).is_ok()
@@ -110,7 +109,7 @@ fn resolve_signature_by_args(
             }
         }
         // 如果参数数量完全匹配, 则认为其权重更高
-        if total_weight > 0 && params.len() == fake_expr_len {
+        if params.len() == fake_expr_len {
             total_weight += 50000;
         }
 
@@ -119,7 +118,6 @@ fn resolve_signature_by_args(
 
     // 按权重降序排序
     opt_funcs.sort_by(|a, b| b.1.cmp(&a.1));
-
     // 返回权重最高的签名，若无则取最后一个重载作为默认
     opt_funcs
         .first()
