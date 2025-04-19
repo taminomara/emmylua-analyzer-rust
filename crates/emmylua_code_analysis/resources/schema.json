@@ -466,6 +466,13 @@
           "enum": [
             "unnecessary-assert"
           ]
+        },
+        {
+          "description": "unnecessary-if",
+          "type": "string",
+          "enum": [
+            "unnecessary-if"
+          ]
         }
       ]
     },

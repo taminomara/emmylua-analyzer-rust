@@ -90,6 +90,8 @@ pub enum DiagnosticCode {
     UnbalancedAssignments,
     /// unnecessary-assert
     UnnecessaryAssert,
+    /// unnecessary-if
+    UnnecessaryIf,
 
     #[serde(other)]
     None,

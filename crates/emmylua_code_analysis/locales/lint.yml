@@ -213,6 +213,14 @@ Cannot use `...` outside a vararg function.:
   en: 'Impossible assert: this expression is always falsy; prefer `error()`'
   zh_CN: '不可能的断言: 该表达式始终为假；建议使用 `error()`'
   zh_HK: '不可能的斷言: 該表達式始終為假；建議使用 `error()`'
+'Unnecessary `if` statement: this condition is always truthy':
+  en: 'Unnecessary `if` statement: this condition is always truthy'
+  zh_CN: '不必要的 `if` 语句：此条件始终为真'
+  zh_HK: '不必要的 `if` 陳述式：此條件始終為真'
+'Impossible `if` statement: this condition is always falsy':
+  en: 'Impossible `if` statement: this condition is always falsy'
+  zh_CN: '不可能的 `if` 语句：此条件始终为假'
+  zh_HK: '不可能的 `if` 陳述式：此條件始終為假'
 "`...` should be the last arg.":
   en: "`...` should be the last arg."
   zh_CN: "`...`必须是最后一个参数。"
