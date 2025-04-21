@@ -24,6 +24,7 @@ mod unbalanced_assignments;
 mod undefined_doc_param;
 mod undefined_global;
 mod unnecessary_assert;
+mod unnecessary_if;
 mod unused;
 
 use emmylua_parser::{
@@ -65,6 +66,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     run_check::<deprecated::DeprecatedChecker>(context, semantic_model);
     run_check::<undefined_global::UndefinedGlobalChecker>(context, semantic_model);
     run_check::<unnecessary_assert::UnnecessaryAssertChecker>(context, semantic_model);
+    run_check::<unnecessary_if::UnnecessaryIfChecker>(context, semantic_model);
     run_check::<access_invisible::AccessInvisibleChecker>(context, semantic_model);
     run_check::<local_const_reassign::LocalConstReassignChecker>(context, semantic_model);
     run_check::<discard_returns::DiscardReturnsChecker>(context, semantic_model);
