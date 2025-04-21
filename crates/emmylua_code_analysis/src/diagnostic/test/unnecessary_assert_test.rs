@@ -32,10 +32,6 @@ mod test {
             local f
             assert(f)
 
-            assert(false)
-
-            assert(nil and 5)
-
             ---@type integer[]
             local ints = {1, 2}
             assert(ints[3])
@@ -82,6 +78,52 @@ mod test {
             ---@type [integer, integer]
             local enum = {1, 2}
             assert(enum[2])
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_impossible_assert() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UnnecessaryAssert,
+            r#"
+            assert(false)
+            "#
+        ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UnnecessaryAssert,
+            r#"
+            assert(nil)
+            "#
+        ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UnnecessaryAssert,
+            r#"
+            assert(nil and 5)
+            "#
+        ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UnnecessaryAssert,
+            r#"
+            local a = false ---@type false
+            assert(a)
+            "#
+        ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UnnecessaryAssert,
+            r#"
+            ---@type integer[]
+            local a = {1,2,3}
+            local b = a[2] ---@type integer|nil
+            if not b then
+              assert(b, "No second element!")
+            end
             "#
         ));
     }
