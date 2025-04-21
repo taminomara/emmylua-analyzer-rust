@@ -1,6 +1,6 @@
 use emmylua_parser::{LuaAstNode, LuaExpr, LuaIfStat};
 
-use crate::{DiagnosticCode, LuaType, SemanticModel};
+use crate::{DiagnosticCode, SemanticModel};
 
 use super::{Checker, DiagnosticContext};
 

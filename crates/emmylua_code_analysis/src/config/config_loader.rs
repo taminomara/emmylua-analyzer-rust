@@ -2,22 +2,26 @@ use std::{collections::HashSet, path::PathBuf};
 
 use serde_json::Value;
 
+use crate::read_file_with_encoding;
+
 use super::{flatten_config::FlattenConfigObject, Emmyrc};
 
 pub fn load_configs(config_files: Vec<PathBuf>, partial_emmyrcs: Option<Vec<Value>>) -> Emmyrc {
     let mut config_jsons = Vec::new();
+
     for config_file in config_files {
-        let config_json_str = match std::fs::read_to_string(&config_file) {
-            Ok(json_str) => json_str,
-            Err(e) => {
+        log::info!("Loading config file: {:?}", config_file);
+        let config_json_str = match read_file_with_encoding(&config_file, "utf-8") {
+            Some(json_str) => json_str,
+            None => {
                 log::error!(
-                    "Failed to read config file: {:?}, error: {:?}",
-                    config_file,
-                    e
+                    "Failed to read config file: {:?}, error: File not found or unreadable",
+                    config_file
                 );
                 continue;
             }
         };
+
         let config_json: Value = match serde_json::from_str(&config_json_str) {
             Ok(json) => json,
             Err(e) => {

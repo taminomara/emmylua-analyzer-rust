@@ -2,6 +2,8 @@
 
 # 0.7.2 (unreleased)
 
+`FIX` Fix reading configuration file encoded with UTF-8 BOM
+
 # 0.7.1
 
 `NEW` Now language server configuration might be provided globally via the `<os-specific home dir>/.emmyrc.json`, `<os-specific config dir>/emmylua_ls/.emmyrc.json`, or by setting a variable `EMMYLUALS_CONFIG` with a path to the json configuration.
