@@ -1033,8 +1033,13 @@ fn expr_to_member_key(
     let expr_type = infer_expr(db, cache, expr.clone()).ok()?;
     let mut keys: HashSet<LuaMemberKey> = HashSet::new();
     let mut stack = vec![expr_type.clone()];
+    let mut visited = HashSet::new();
 
     while let Some(current_type) = stack.pop() {
+        if visited.contains(&current_type) {
+            continue;
+        }
+        visited.insert(current_type.clone());
         match &current_type {
             LuaType::StringConst(name) | LuaType::DocStringConst(name) => {
                 keys.insert(name.as_ref().to_string().into());

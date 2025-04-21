@@ -1,9 +1,11 @@
+use std::collections::HashSet;
+
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaCallExpr, LuaClosureExpr, LuaExpr, LuaGeneralToken,
     LuaLiteralToken,
 };
 
-use crate::{DiagnosticCode, LuaSignatureId, LuaType, SemanticModel};
+use crate::{DbIndex, DiagnosticCode, LuaSignatureId, LuaType, SemanticModel};
 
 use super::{Checker, DiagnosticContext};
 
@@ -154,7 +156,7 @@ fn check_call_expr(
 
             let typ = param_info.1.clone();
             if let Some(typ) = typ {
-                if !typ.is_any() && !typ.is_unknown() && !typ.is_nullable() {
+                if !is_nullable(context.db, &typ) {
                     miss_parameter_info
                         .push(t!("missing parameter: %{name}", name = param_info.0,));
                 }
@@ -236,4 +238,40 @@ fn get_params_len(params: &[(String, Option<LuaType>)]) -> Option<usize> {
         }
     }
     Some(params.len())
+}
+
+fn is_nullable(db: &DbIndex, typ: &LuaType) -> bool {
+    let mut stack: Vec<&LuaType> = Vec::new();
+    stack.push(typ);
+    let mut visited = HashSet::new();
+    while let Some(typ) = stack.pop() {
+        if visited.contains(typ) {
+            continue;
+        }
+        visited.insert(typ);
+        match typ {
+            LuaType::Any | LuaType::Unknown | LuaType::Nil => return true,
+            LuaType::Ref(decl_id) => {
+                if let Some(decl) = db.get_type_index().get_type_decl(decl_id) {
+                    if decl.is_alias() {
+                        if let Some(alias_origin) = decl.get_alias() {
+                            stack.push(alias_origin);
+                        }
+                    }
+                }
+            }
+            LuaType::Union(u) => {
+                for t in u.get_types() {
+                    stack.push(t);
+                }
+            }
+            LuaType::MultiLineUnion(m) => {
+                for (t, _) in m.get_unions() {
+                    stack.push(t);
+                }
+            }
+            _ => {}
+        }
+    }
+    false
 }

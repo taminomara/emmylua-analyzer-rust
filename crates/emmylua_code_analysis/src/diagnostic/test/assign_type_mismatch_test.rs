@@ -720,4 +720,26 @@ return t
         "#
         ));
     }
+
+    #[test]
+    fn test_assign_field_with_flow() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+                ---@class M
+                local M
+
+                ---@type 'new' | 'inited' | 'started'
+                M.state = 'new'
+
+                function M:test()
+                    if self.state ~= 'started' and self.state ~= 'inited' then
+                        return
+                    end
+                    self.state = 'new'
+                end
+        "#
+        ));
+    }
 }

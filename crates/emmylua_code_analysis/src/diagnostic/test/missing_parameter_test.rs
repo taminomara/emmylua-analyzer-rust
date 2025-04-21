@@ -147,4 +147,22 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_alias() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::MissingParameter,
+            r#"
+            ---@alias Serialization.SupportTypes
+            ---| number
+            ---| nil
+
+            ---@param data Serialization.SupportTypes
+            local function send(data)
+            end
+            send()
+        "#
+        ));
+    }
 }

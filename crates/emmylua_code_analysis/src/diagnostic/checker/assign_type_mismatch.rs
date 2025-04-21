@@ -5,8 +5,8 @@ use emmylua_parser::{
 use rowan::TextRange;
 
 use crate::{
-    DiagnosticCode, LuaDeclId, LuaSemanticDeclId, LuaType, SemanticDeclLevel, SemanticModel,
-    TypeCheckFailReason, TypeCheckResult,
+    DiagnosticCode, LuaDeclId, LuaSemanticDeclId, LuaType, LuaTypeCache, SemanticDeclLevel,
+    SemanticModel, TypeCheckFailReason, TypeCheckResult,
 };
 
 use super::{humanize_lint_type, Checker, DiagnosticContext};
@@ -105,18 +105,40 @@ fn check_index_expr(
     expr: Option<LuaExpr>,
     value_type: LuaType,
 ) -> Option<()> {
-    let member_info =
+    let semantic_info =
         semantic_model.get_semantic_info(rowan::NodeOrToken::Node(index_expr.syntax().clone()))?;
+    let mut typ = None;
+    match semantic_info.semantic_decl {
+        Some(LuaSemanticDeclId::Member(member_id)) => {
+            let type_cache = semantic_model
+                .get_db()
+                .get_type_index()
+                .get_type_cache(&member_id.into());
+            if let Some(type_cache) = type_cache {
+                match type_cache {
+                    LuaTypeCache::DocType(ty) => {
+                        typ = Some(ty.clone());
+                    }
+                    _ => {}
+                }
+            }
+        }
+        _ => {}
+    }
+    if typ.is_none() {
+        typ = Some(semantic_info.typ);
+    }
+
     check_assign_type_mismatch(
         context,
         semantic_model,
         index_expr.get_range(),
-        Some(member_info.typ.clone()),
+        typ.clone(),
         value_type,
         true,
     );
     if let Some(expr) = expr {
-        handle_value_is_table_expr(context, semantic_model, Some(member_info.typ), &expr);
+        handle_value_is_table_expr(context, semantic_model, typ, &expr);
     }
     Some(())
 }
