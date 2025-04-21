@@ -10,88 +10,94 @@ use crate::{
     util::{module_name_convert, time_cancel_token},
 };
 
-pub const COMMAND: &str = "emmy.auto.require";
+use super::CommandSpec;
 
-pub async fn handle(context: ServerContextSnapshot, args: Vec<Value>) -> Option<()> {
-    let add_to: FileId = serde_json::from_value(args.get(0)?.clone()).ok()?;
-    let need_require_file_id: FileId = serde_json::from_value(args.get(1)?.clone()).ok()?;
-    let position: Position = serde_json::from_value(args.get(2)?.clone()).ok()?;
+pub struct AutoRequireCommand;
 
-    let analysis = context.analysis.read().await;
-    let semantic_model = analysis.compilation.get_semantic_model(add_to)?;
-    let module_info = semantic_model
-        .get_db()
-        .get_module_index()
-        .get_module(need_require_file_id)?;
-    let emmyrc = semantic_model.get_emmyrc();
-    let require_like_func = &emmyrc.runtime.require_like_function;
-    let auto_require_func = emmyrc.completion.auto_require_function.clone();
-    let file_conversion = emmyrc.completion.auto_require_naming_convention;
-    let local_name = module_name_convert(&module_info.name, file_conversion);
-    let require_str = format!(
-        "local {} = {}(\"{}\")",
-        local_name, auto_require_func, module_info.full_module_name
-    );
-    let document = semantic_model.get_document();
-    let offset = document.get_offset(position.line as usize, position.character as usize)?;
-    let root_block = semantic_model.get_root().get_block()?;
-    let mut last_require_stat: Option<LuaStat> = None;
-    for stat in root_block.get_stats() {
-        if stat.get_position() > offset {
-            break;
-        }
+impl CommandSpec for AutoRequireCommand {
+    const COMMAND: &str = "emmy.auto.require";
 
-        if is_require_stat(stat.clone(), &require_like_func).unwrap_or(false) {
-            last_require_stat = Some(stat);
-        }
-    }
+    async fn handle(context: ServerContextSnapshot, args: Vec<Value>) -> Option<()> {
+        let add_to: FileId = serde_json::from_value(args.get(0)?.clone()).ok()?;
+        let need_require_file_id: FileId = serde_json::from_value(args.get(1)?.clone()).ok()?;
+        let position: Position = serde_json::from_value(args.get(2)?.clone()).ok()?;
 
-    let line = if let Some(last_require_stat) = last_require_stat {
-        let last_require_stat_end = last_require_stat.get_range().end();
-        document.get_line(last_require_stat_end)? + 1
-    } else {
-        0
-    };
+        let analysis = context.analysis.read().await;
+        let semantic_model = analysis.compilation.get_semantic_model(add_to)?;
+        let module_info = semantic_model
+            .get_db()
+            .get_module_index()
+            .get_module(need_require_file_id)?;
+        let emmyrc = semantic_model.get_emmyrc();
+        let require_like_func = &emmyrc.runtime.require_like_function;
+        let auto_require_func = emmyrc.completion.auto_require_function.clone();
+        let file_conversion = emmyrc.completion.auto_require_naming_convention;
+        let local_name = module_name_convert(&module_info.name, file_conversion);
+        let require_str = format!(
+            "local {} = {}(\"{}\")",
+            local_name, auto_require_func, module_info.full_module_name
+        );
+        let document = semantic_model.get_document();
+        let offset = document.get_offset(position.line as usize, position.character as usize)?;
+        let root_block = semantic_model.get_root().get_block()?;
+        let mut last_require_stat: Option<LuaStat> = None;
+        for stat in root_block.get_stats() {
+            if stat.get_position() > offset {
+                break;
+            }
 
-    let text_edit = TextEdit {
-        range: lsp_types::Range {
-            start: Position {
-                line: line as u32,
-                character: 0,
-            },
-            end: Position {
-                line: line as u32,
-                character: 0,
-            },
-        },
-        new_text: format!("{}\n", require_str),
-    };
-
-    let uri = document.get_uri();
-    let mut changes = HashMap::new();
-    changes.insert(uri.clone(), vec![text_edit.clone()]);
-
-    let client = context.client;
-    let cancel_token = time_cancel_token(Duration::from_secs(5));
-    let apply_edit_params = ApplyWorkspaceEditParams {
-        label: None,
-        edit: WorkspaceEdit {
-            changes: Some(changes),
-            document_changes: None,
-            change_annotations: None,
-        },
-    };
-
-    tokio::spawn(async move {
-        let res = client.apply_edit(apply_edit_params, cancel_token).await;
-        if let Some(res) = res {
-            if !res.applied {
-                log::error!("Failed to apply edit: {:?}", res.failure_reason);
+            if is_require_stat(stat.clone(), &require_like_func).unwrap_or(false) {
+                last_require_stat = Some(stat);
             }
         }
-    });
 
-    Some(())
+        let line = if let Some(last_require_stat) = last_require_stat {
+            let last_require_stat_end = last_require_stat.get_range().end();
+            document.get_line(last_require_stat_end)? + 1
+        } else {
+            0
+        };
+
+        let text_edit = TextEdit {
+            range: lsp_types::Range {
+                start: Position {
+                    line: line as u32,
+                    character: 0,
+                },
+                end: Position {
+                    line: line as u32,
+                    character: 0,
+                },
+            },
+            new_text: format!("{}\n", require_str),
+        };
+
+        let uri = document.get_uri();
+        let mut changes = HashMap::new();
+        changes.insert(uri.clone(), vec![text_edit.clone()]);
+
+        let client = context.client;
+        let cancel_token = time_cancel_token(Duration::from_secs(5));
+        let apply_edit_params = ApplyWorkspaceEditParams {
+            label: None,
+            edit: WorkspaceEdit {
+                changes: Some(changes),
+                document_changes: None,
+                change_annotations: None,
+            },
+        };
+
+        tokio::spawn(async move {
+            let res = client.apply_edit(apply_edit_params, cancel_token).await;
+            if let Some(res) = res {
+                if !res.applied {
+                    log::error!("Failed to apply edit: {:?}", res.failure_reason);
+                }
+            }
+        });
+
+        Some(())
+    }
 }
 
 fn is_require_stat(stat: LuaStat, require_like_func: &Vec<String>) -> Option<bool> {
@@ -152,7 +158,7 @@ pub fn make_auto_require(
 
     Command {
         title: title.to_string(),
-        command: COMMAND.to_string(),
+        command: AutoRequireCommand::COMMAND.to_string(),
         arguments: Some(args),
     }
 }

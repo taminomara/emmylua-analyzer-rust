@@ -8,7 +8,8 @@ use tokio::sync::RwLock;
 
 use crate::context::{ServerContextSnapshot, WorkspaceManager};
 
-pub const COMMAND: &str = "emmy.disable.code";
+use super::CommandSpec;
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum DisableAction {
@@ -17,18 +18,24 @@ pub enum DisableAction {
     DisableProject,
 }
 
-pub async fn handle(context: ServerContextSnapshot, args: Vec<Value>) -> Option<()> {
-    let action: DisableAction = serde_json::from_value(args.get(0)?.clone()).ok()?;
-    let code: DiagnosticCode = serde_json::from_value(args.get(3)?.clone()).ok()?;
+pub struct DisableCodeCommand;
 
-    match action {
-        DisableAction::DisableProject => {
-            add_disable_project(context.workspace_manager, code).await;
+impl CommandSpec for DisableCodeCommand {
+    const COMMAND: &str = "emmy.disable.code";
+
+    async fn handle(context: ServerContextSnapshot, args: Vec<Value>) -> Option<()> {
+        let action: DisableAction = serde_json::from_value(args.get(0)?.clone()).ok()?;
+        let code: DiagnosticCode = serde_json::from_value(args.get(3)?.clone()).ok()?;
+
+        match action {
+            DisableAction::DisableProject => {
+                add_disable_project(context.workspace_manager, code).await;
+            }
+            _ => {}
         }
-        _ => {}
-    }
 
-    Some(())
+        Some(())
+    }
 }
 
 pub fn make_disable_code_command(
@@ -47,7 +54,7 @@ pub fn make_disable_code_command(
 
     Command {
         title: title.to_string(),
-        command: COMMAND.to_string(),
+        command: DisableCodeCommand::COMMAND.to_string(),
         arguments: Some(args),
     }
 }
