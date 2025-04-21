@@ -55,6 +55,8 @@
 --- integrity of data owned by the host program.
 ---@class userdata
 
+---@class lightuserdata
+
 ---
 --- The type *thread* represents independent threads of execution and it is 
 --- used to implement coroutines. Lua threads are not related to 

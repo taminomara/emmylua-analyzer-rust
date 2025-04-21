@@ -221,7 +221,7 @@ function string.lower(s) end
 ---@param s string
 ---@param pattern string
 ---@param init? integer
----@return string...
+---@return any...
 function string.match(s, pattern, init) end
 
 ---@version >5.3
@@ -289,7 +289,8 @@ function string.sub(s, i, j) end
 ---@param fmt string
 ---@param s string
 ---@param pos? integer
----@return string
+---@return any ...
+---@return integer offset
 function string.unpack(fmt, s, pos) end
 
 ---

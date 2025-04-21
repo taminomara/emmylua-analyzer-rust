@@ -176,6 +176,7 @@ function debug.getupvalue(f, up) end
 --- **false** if the userdata does not have that value.
 ---@param u userdata
 ---@param n integer
+---@return any
 ---@return boolean
 function debug.getuservalue(u, n) end
 
@@ -304,9 +305,10 @@ function debug.traceback(thread, message, level) end
 --- access a same external local variable) will return identical ids for those
 --- upvalue indices.
 ---@version >5.2, JIT
----@param f fun():integer
+---@param f async fun(...):any...
 ---@param n integer
----@return integer
+---@return lightuserdata id
+---@nodiscard
 function debug.upvalueid(f, n) end
 
 

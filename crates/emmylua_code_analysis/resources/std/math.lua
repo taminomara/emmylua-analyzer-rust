@@ -195,7 +195,7 @@ function math.tointeger(x) end
 --- Returns "`integer`" if `x` is an integer, "`float`" if it is a float, or
 --- **nil** if `x` is not a number.
 ---@param x number
----@return 'integer'|'float'|nil
+---@return 'integer'|'float'|'nil'
 function math.type(x) end
 
 ---@version >5.3
