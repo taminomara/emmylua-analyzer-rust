@@ -154,7 +154,7 @@ fn infer_signature_doc_function(
             signature.is_async,
             signature.is_colon_define,
             signature.get_type_params(),
-            vec![],
+            signature.get_return_types(),
         );
         if signature.is_generic() {
             fake_doc_function = instantiate_func_generic(db, cache, &fake_doc_function, call_expr)?;
@@ -167,7 +167,7 @@ fn infer_signature_doc_function(
             signature.is_async,
             signature.is_colon_define,
             signature.get_type_params(),
-            vec![],
+            signature.get_return_types(),
         ));
         new_overloads.push(fake_doc_function);
 

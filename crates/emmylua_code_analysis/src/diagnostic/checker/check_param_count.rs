@@ -120,8 +120,21 @@ fn check_call_expr(
                 }
             }
         }
-        // 参数调用中最后一个参数是多返回值
+        // 对调用参数的最后一个参数进行特殊处理
         if let Some(last_arg) = call_args.last() {
+            // 如果最后一个参数是函数调用的结果, 那么需要判断他的函数签名返回值是否包含可变参数
+            match last_arg {
+                LuaExpr::CallExpr(call_expr) => {
+                    if let Some(func) = semantic_model.infer_call_expr_func(call_expr.clone(), None)
+                    {
+                        if func.get_ret().iter().any(|typ| typ.is_variadic()) {
+                            return Some(());
+                        }
+                    }
+                }
+                _ => {}
+            }
+
             if let Ok(LuaType::MuliReturn(types)) = semantic_model.infer_expr(last_arg.clone()) {
                 let len = types.get_len().unwrap_or(0);
                 call_args_count = call_args_count + len as usize - 1;

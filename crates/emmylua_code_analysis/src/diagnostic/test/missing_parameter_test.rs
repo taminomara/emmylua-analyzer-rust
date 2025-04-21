@@ -119,4 +119,32 @@ mod test {
             "#
         ));
     }
+
+    #[test]
+    fn test_table_unpack() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::MissingParameter,
+            r#"
+            local table = {}
+            ---@generic T
+            ---@param list [T...] | T[] | table<any, T>
+            ---@param i? integer
+            ---@param j? integer
+            ---@return T...
+            function table.unpack(list, i, j) end
+
+            ---@param a number
+            ---@param b number
+            local function test(a,b)
+            end
+            
+            ---@type number[]
+            local a = {1,2,3}
+            
+            test(table.unpack(a))
+        "#
+        ));
+    }
 }

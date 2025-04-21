@@ -228,6 +228,17 @@ pub fn check_simple_type_compact(
                 );
             }
         }
+        LuaType::MuliReturn(multi_return) => {
+            match compact_type {
+                LuaType::MuliReturn(compact_multi_return) => {
+                    if multi_return == compact_multi_return {
+                        return Ok(());
+                    }
+                }
+                _ => {}
+            }
+            return Err(TypeCheckFailReason::TypeNotMatch);
+        }
         _ => {}
     }
 

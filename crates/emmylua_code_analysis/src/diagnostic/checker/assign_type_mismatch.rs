@@ -152,8 +152,8 @@ fn check_local_stat(
             value_types.get(idx)?.0.clone(),
             false,
         );
-        if let Some(expr) = value_exprs.get(idx).map(|expr| expr.clone()) {
-            handle_value_is_table_expr(context, semantic_model, Some(name_type.clone()), &expr);
+        if let Some(expr) = value_exprs.get(idx).map(|expr| expr) {
+            handle_value_is_table_expr(context, semantic_model, Some(name_type), &expr);
         }
     }
     Some(())

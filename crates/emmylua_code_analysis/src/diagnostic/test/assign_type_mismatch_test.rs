@@ -706,4 +706,18 @@ return t
         "#
         ));
     }
+
+    #[test]
+    fn test_table_pack_in_function() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+                ---@param ... any
+                local function build(...)
+                    local t = table.pack(...)
+                end
+        "#
+        ));
+    }
 }
