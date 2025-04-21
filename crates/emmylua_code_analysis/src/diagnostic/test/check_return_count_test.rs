@@ -461,4 +461,38 @@ mod tests {
         "#,
         ));
     }
+
+    #[test]
+    fn test_miss_return_3() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::MissingReturn,
+            r#"
+                ---@class Point
+
+                ---@class Unit
+
+                ---@class Player
+
+                ---@class CreateData
+                ---@field target Point|Unit
+                ---@field owner? Unit|Player
+
+
+                ---@param data CreateData
+                ---@return string
+                local function send(data)
+                    if not data.owner then
+                        data.owner = ""
+                    end
+                    if data.target then
+                        return ""
+                    else
+                        return ""
+                    end
+                end
+        "#,
+        ));
+    }
 }
