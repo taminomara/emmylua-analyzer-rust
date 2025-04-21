@@ -543,7 +543,6 @@ mod test {
         ));
     }
 
-
     #[test]
     fn test_super() {
         let mut ws = VirtualWorkspace::new_with_init_std_lib();

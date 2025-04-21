@@ -92,7 +92,8 @@ impl<'a> VarTrace<'a> {
             old_info.1.add_trace_info(trace_info);
         } else {
             let trace_info = UnResolveTraceInfo::Trace(trace_info);
-            self.unresolve_traces.insert(trace_id, (self.current_flow_id.unwrap(), trace_info));
+            self.unresolve_traces
+                .insert(trace_id, (self.current_flow_id.unwrap(), trace_info));
         }
     }
 
@@ -113,7 +114,9 @@ impl<'a> VarTrace<'a> {
         self.unresolve_traces.remove(trace_id)
     }
 
-    pub fn pop_all_unresolve_traces(&mut self) -> HashMap<UnResolveTraceId, (LuaFlowId, UnResolveTraceInfo)> {
+    pub fn pop_all_unresolve_traces(
+        &mut self,
+    ) -> HashMap<UnResolveTraceId, (LuaFlowId, UnResolveTraceInfo)> {
         std::mem::take(&mut self.unresolve_traces)
     }
 
