@@ -648,4 +648,25 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_empty_class() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class D4.A: table<integer, string>
+
+                ---@param lua_conf D4.A 
+                local function enable_global_lua_trigger(lua_conf) end
+
+                ---@return { on_event: fun(trigger: table,  actor, data), [integer]: string }
+                function new_global_trigger() end
+
+                local a = new_global_trigger()
+
+                enable_global_lua_trigger(a)
+        "#
+        ));
+    }
 }

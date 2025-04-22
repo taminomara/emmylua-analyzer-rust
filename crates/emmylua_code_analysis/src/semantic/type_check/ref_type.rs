@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::{
-    humanize_type, DbIndex, LuaMemberKey, LuaMemberOwner, LuaType, LuaTypeCache, LuaTypeDeclId,
-    LuaUnionType, RenderLevel,
+    humanize_type, semantic::member::infer_members, DbIndex, LuaMemberKey, LuaMemberOwner,
+    LuaObjectType, LuaType, LuaTypeCache, LuaTypeDeclId, LuaUnionType, RenderLevel,
 };
 
 use super::{
@@ -118,6 +118,14 @@ pub fn check_ref_type_compact(
                     db,
                     source_id,
                     table_member_owner,
+                    check_guard.next_level()?,
+                );
+            }
+            LuaType::Object(object_type) => {
+                return check_ref_type_compact_object(
+                    db,
+                    object_type,
+                    source_id,
                     check_guard.next_level()?,
                 );
             }
@@ -252,4 +260,72 @@ fn check_ref_type_compact_table(
     }
 
     Ok(())
+}
+
+fn check_ref_type_compact_object(
+    db: &DbIndex,
+    object_type: &LuaObjectType,
+    source_type_id: &LuaTypeDeclId,
+    check_guard: TypeCheckGuard,
+) -> TypeCheckResult {
+    // ref 可能继承自其他类型, 所以需要使用 infer_members 来获取所有成员
+    let source_type_members = match infer_members(db, &LuaType::Ref(source_type_id.clone())) {
+        Some(members) => members,
+        None => return Ok(()),
+    };
+
+    for source_member in source_type_members {
+        let source_member_type = source_member.typ;
+        let key = source_member.key;
+        let field_type = get_object_field_type(object_type, &key);
+        if let Some(field_type) = field_type {
+            if check_general_type_compact(
+                db,
+                &source_member_type,
+                &field_type,
+                check_guard.next_level()?,
+            )
+            .is_err()
+            {
+                return Err(TypeCheckFailReason::TypeNotMatchWithReason(
+                    t!(
+                        "member %{name} type not match, expect %{expect}, got %{got}",
+                        name = key.to_path(),
+                        expect = humanize_type(db, &source_member_type, RenderLevel::Simple),
+                        got = humanize_type(db, &field_type, RenderLevel::Simple)
+                    )
+                    .to_string(),
+                ));
+            }
+        } else if source_member_type.is_optional() {
+            continue;
+        } else {
+            return Err(TypeCheckFailReason::TypeNotMatchWithReason(
+                t!("missing member %{name}, in table", name = key.to_path()).to_string(),
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+fn get_object_field_type<'a>(
+    object_type: &'a LuaObjectType,
+    key: &LuaMemberKey,
+) -> Option<&'a LuaType> {
+    let field_type = object_type.get_field(&key);
+    if let Some(field_type) = field_type {
+        return Some(field_type);
+    }
+    match key {
+        LuaMemberKey::Expr(t) => {
+            for (index_key, value) in object_type.get_index_access() {
+                if index_key == t {
+                    return Some(value);
+                }
+            }
+        }
+        _ => {}
+    }
+    None
 }
