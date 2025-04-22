@@ -146,12 +146,10 @@ fn analyze_call_expr_stat_returns(
     call_expr_stat: LuaCallExprStat,
     returns: &mut Vec<LuaReturnPoint>,
 ) -> Option<ChangeFlow> {
-    let prefix_expr = call_expr_stat.get_call_expr()?.get_prefix_expr()?;
-    if let LuaExpr::NameExpr(name) = prefix_expr {
-        if name.get_name_text()? == "error" {
-            returns.push(LuaReturnPoint::Error);
-            return Some(ChangeFlow::Error);
-        }
+    let call_expr = call_expr_stat.get_call_expr()?;
+    if call_expr.is_error() {
+        returns.push(LuaReturnPoint::Error);
+        return Some(ChangeFlow::Error);
     }
     Some(ChangeFlow::None)
 }

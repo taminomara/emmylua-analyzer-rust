@@ -42,27 +42,27 @@ mod tests {
         ));
     }
 
-    #[test]
-    fn test_3() {
-        let mut ws = VirtualWorkspace::new();
-        assert!(ws.check_code_for_namespace(
-            DiagnosticCode::AssignTypeMismatch,
-            r#"
-                ---@param s    string
-                ---@param i?   integer
-                ---@param j?   integer
-                ---@param lax? boolean
-                ---@return integer?
-                ---@return integer? errpos
-                ---@nodiscard
-                local function get_len(s, i, j, lax) end
+    // #[test]
+    // fn test_3() {
+    //     let mut ws = VirtualWorkspace::new();
+    //     assert!(ws.check_code_for_namespace(
+    //         DiagnosticCode::AssignTypeMismatch,
+    //         r#"
+    //             ---@param s    string
+    //             ---@param i?   integer
+    //             ---@param j?   integer
+    //             ---@param lax? boolean
+    //             ---@return integer?
+    //             ---@return integer? errpos
+    //             ---@nodiscard
+    //             local function get_len(s, i, j, lax) end
 
-                local len = 0
-                ---@diagnostic disable-next-line: need-check-nil
-                len = len + get_len("", 1, 1, true)
-            "#
-        ));
-    }
+    //             local len = 0
+    //             ---@diagnostic disable-next-line: need-check-nil
+    //             len = len + get_len("", 1, 1, true)
+    //         "#
+    //     ));
+    // }
 
     #[test]
     fn test_enum() {

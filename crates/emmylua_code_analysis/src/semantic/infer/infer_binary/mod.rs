@@ -7,7 +7,7 @@ use smol_str::SmolStr;
 use crate::{
     check_type_compact,
     db_index::{DbIndex, LuaOperatorMetaMethod, LuaType},
-    LuaInferCache, LuaUnionType, TypeOps,
+    LuaInferCache, TypeOps,
 };
 
 use super::{get_custom_type_operator, infer_expr, InferFailReason, InferResult};
@@ -28,11 +28,7 @@ pub fn infer_binary_expr(
         }
     }
 
-    match (&left_type, &right_type) {
-        (LuaType::Union(u), right) => infer_union(db, &u, right, op, true),
-        (left, LuaType::Union(u)) => infer_union(db, &u, left, op, false),
-        _ => infer_binary_expr_type(db, left_type, right_type, op),
-    }
+    infer_binary_expr_type(db, left_type, right_type, op)
 }
 
 fn infer_binary_expr_type(
@@ -64,49 +60,6 @@ fn infer_binary_expr_type(
         | BinaryOperator::OpEq
         | BinaryOperator::OpNe => infer_cmp_expr(db, left_type, right_type, op),
         _ => Ok(left_type),
-    }
-}
-
-fn infer_union(
-    db: &DbIndex,
-    u: &LuaUnionType,
-    right: &LuaType,
-    op: BinaryOperator,
-    union_is_left: bool,
-) -> InferResult {
-    let mut unique_union_types = Vec::new();
-
-    for ty in u.get_types() {
-        let inferred_ty = if union_is_left {
-            infer_binary_expr_type(db, ty.clone(), right.clone(), op)?
-        } else {
-            infer_binary_expr_type(db, right.clone(), ty.clone(), op)?
-        };
-        flatten_and_insert(inferred_ty, &mut unique_union_types);
-    }
-
-    match unique_union_types.len() {
-        0 => Ok(LuaType::Unknown),
-        1 => Ok(unique_union_types.into_iter().next().unwrap()),
-        _ => Ok(LuaType::Union(LuaUnionType::new(unique_union_types).into())),
-    }
-}
-
-fn flatten_and_insert(ty: LuaType, unique_union_types: &mut Vec<LuaType>) {
-    let mut stack = vec![ty];
-    while let Some(current_ty) = stack.pop() {
-        match current_ty {
-            LuaType::Union(u) => {
-                for inner_ty in u.get_types() {
-                    stack.push(inner_ty.clone());
-                }
-            }
-            _ => {
-                if !unique_union_types.contains(&current_ty) {
-                    unique_union_types.push(current_ty);
-                }
-            }
-        }
     }
 }
 
@@ -478,7 +431,17 @@ fn infer_cmp_expr(_: &DbIndex, left: LuaType, right: LuaType, op: BinaryOperator
             BinaryOperator::OpNe => Ok(LuaType::BooleanConst(i != j)),
             _ => Ok(LuaType::Boolean),
         },
+        (LuaType::DocStringConst(i), LuaType::StringConst(j)) => match op {
+            BinaryOperator::OpEq => Ok(LuaType::BooleanConst(i == j)),
+            BinaryOperator::OpNe => Ok(LuaType::BooleanConst(i != j)),
+            _ => Ok(LuaType::Boolean),
+        },
         (LuaType::StringConst(i), LuaType::StringConst(j)) => match op {
+            BinaryOperator::OpEq => Ok(LuaType::BooleanConst(i == j)),
+            BinaryOperator::OpNe => Ok(LuaType::BooleanConst(i != j)),
+            _ => Ok(LuaType::Boolean),
+        },
+        (LuaType::StringConst(i), LuaType::DocStringConst(j)) => match op {
             BinaryOperator::OpEq => Ok(LuaType::BooleanConst(i == j)),
             BinaryOperator::OpNe => Ok(LuaType::BooleanConst(i != j)),
             _ => Ok(LuaType::Boolean),
