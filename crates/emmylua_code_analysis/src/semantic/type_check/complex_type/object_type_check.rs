@@ -46,6 +46,14 @@ pub fn check_object_type_compact(
                 check_guard.next_level()?,
             );
         }
+        LuaType::Array(array) => {
+            return check_object_type_compact_array(
+                db,
+                source_object,
+                array,
+                check_guard.next_level()?,
+            );
+        }
         LuaType::Table => return Ok(()),
         _ => {}
     }
@@ -177,4 +185,28 @@ fn check_object_type_compact_tuple(
     }
 
     Ok(())
+}
+
+fn check_object_type_compact_array(
+    db: &DbIndex,
+    source_object: &LuaObjectType,
+    array: &LuaType,
+    check_guard: TypeCheckGuard,
+) -> TypeCheckResult {
+    let index_access = source_object.get_index_access();
+    if index_access.is_empty() {
+        return Err(TypeCheckFailReason::TypeNotMatch);
+    }
+    for (key, source_type) in index_access {
+        if !key.is_integer() {
+            continue;
+        }
+        match check_general_type_compact(db, source_type, array, check_guard.next_level()?) {
+            Ok(_) => {
+                return Ok(());
+            }
+            Err(_) => {}
+        }
+    }
+    Err(TypeCheckFailReason::TypeNotMatch)
 }

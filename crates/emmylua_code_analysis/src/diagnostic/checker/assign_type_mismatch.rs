@@ -5,8 +5,8 @@ use emmylua_parser::{
 use rowan::TextRange;
 
 use crate::{
-    DiagnosticCode, LuaDeclId, LuaSemanticDeclId, LuaType, LuaTypeCache, SemanticDeclLevel,
-    SemanticModel, TypeCheckFailReason, TypeCheckResult,
+    DiagnosticCode, LuaDeclExtra, LuaDeclId, LuaSemanticDeclId, LuaType, LuaTypeCache,
+    SemanticDeclLevel, SemanticModel, TypeCheckFailReason, TypeCheckResult,
 };
 
 use super::{humanize_lint_type, Checker, DiagnosticContext};
@@ -77,11 +77,29 @@ fn check_name_expr(
         SemanticDeclLevel::default(),
     )?;
     let origin_type = match semantic_decl {
-        LuaSemanticDeclId::LuaDecl(decl_id) => semantic_model
-            .get_db()
-            .get_type_index()
-            .get_type_cache(&decl_id.into())
-            .map(|cache| cache.as_type().clone()),
+        LuaSemanticDeclId::LuaDecl(decl_id) => {
+            let decl = semantic_model
+                .get_db()
+                .get_decl_index()
+                .get_decl(&decl_id)?;
+            match decl.extra {
+                LuaDeclExtra::Param {
+                    idx, signature_id, ..
+                } => {
+                    let signature = semantic_model
+                        .get_db()
+                        .get_signature_index()
+                        .get(&signature_id)?;
+                    let param_type = signature.get_param_info_by_id(idx)?;
+                    Some(param_type.type_ref.clone())
+                }
+                _ => semantic_model
+                    .get_db()
+                    .get_type_index()
+                    .get_type_cache(&decl_id.into())
+                    .map(|cache| cache.as_type().clone()),
+            }
+        }
         _ => None,
     };
     check_assign_type_mismatch(
@@ -109,6 +127,7 @@ fn check_index_expr(
         semantic_model.get_semantic_info(rowan::NodeOrToken::Node(index_expr.syntax().clone()))?;
     let mut typ = None;
     match semantic_info.semantic_decl {
+        // 如果是已显示定义的成员, 我们不能获取其经过类型缩窄后的类型
         Some(LuaSemanticDeclId::Member(member_id)) => {
             let type_cache = semantic_model
                 .get_db()

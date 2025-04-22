@@ -742,4 +742,67 @@ return t
         "#
         ));
     }
+
+    #[test]
+    fn test_flow_1() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(!ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+                ---@class Unit
+
+                ---@class Player
+
+                ---@class CreateData
+                ---@field owner? Unit|Player
+
+                ---@param data CreateData
+                local function send(data)
+                    if not data.owner then
+                        data.owner = ""
+                    end
+                end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_flow_2() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(!ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+                ---@class Unit
+
+                ---@class Player
+
+                ---@class CreateData
+                ---@field owner? Unit|Player
+
+                ---@param data Unit|Player?
+                local function send(data)
+                    if not data then
+                        data = ""
+                    end
+                end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_table_array() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+                ---@type  { [1]: string, [integer]: any }
+                local py_event
+
+                ---@type any[]
+                local py_args
+
+                py_event = py_args
+        "#
+        ));
+    }
 }
