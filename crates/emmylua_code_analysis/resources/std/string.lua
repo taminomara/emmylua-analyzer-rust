@@ -190,11 +190,12 @@ function string.gmatch(s, pattern) end
 --- `local t = {name="lua", version="5.3"}`
 --- `x = string.gsub("$name-$version.tar.gz", "%$(%w+)", t)`
 --- > x="lua-5.3.tar.gz"
----@param s string
----@param pattern string
----@param repl string|fun(param:string)
+---@param s       string|number
+---@param pattern string|number
+---@param repl string|number|table|fun(param:string)
 ---@param n? integer
----@return string, integer
+---@return string
+---@return integer count
 function string.gsub(s, pattern, repl, n) end
 
 ---

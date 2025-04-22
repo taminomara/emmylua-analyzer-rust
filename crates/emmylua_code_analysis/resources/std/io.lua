@@ -55,7 +55,7 @@ function io.input(file) end
 ---@return fun():any
 function io.lines(filename, ...) end
 
----@alias iolib.OpenMode "r" | "w" | "a" | "r+" | "w+" | "a+" | "rb" | "wb" | "ab" | "rb+" | "wb+" | "ab+"
+---@alias iolib.OpenMode "r" | "w" | "a" | "r+" | "w+" | "a+" | "rb" | "wb" | "ab" | "rb+" | "wb+" | "ab+" | "r+b" | "w+b" | "a+b"
 ---
 --- This function opens a file, in the mode specified in the string `mode`.  In
 --- case of success, it returns a new file handle. The `mode` string can be
