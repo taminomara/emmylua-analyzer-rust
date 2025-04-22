@@ -23,8 +23,10 @@ pub fn special_or_rule(
             }
         }
         LuaExpr::LiteralExpr(_) => {
-            if check_type_compact(db, &left_type, &right_type).is_ok() {
-                return Some(TypeOps::Remove.apply(&left_type, &LuaType::Nil));
+            if !right_type.is_nil() {
+                if check_type_compact(db, &left_type, &right_type).is_ok() {
+                    return Some(TypeOps::Remove.apply(&left_type, &LuaType::Nil));
+                }
             }
         }
 
@@ -42,6 +44,5 @@ pub fn infer_binary_expr_or(left: LuaType, right: LuaType) -> InferResult {
     }
 
     // if check_type_compact(db, source, compact_type)
-
     Ok(TypeOps::Union.apply(&TypeOps::Remove.apply(&left, &LuaType::Nil), &right))
 }
