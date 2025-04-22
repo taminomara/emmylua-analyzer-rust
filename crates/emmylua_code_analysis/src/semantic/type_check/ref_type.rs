@@ -124,6 +124,23 @@ pub fn check_ref_type_compact(
             LuaType::Table => {
                 return Ok(());
             }
+            LuaType::Union(union_type) => {
+                let union_types = union_type.get_types();
+                for typ in union_types {
+                    match check_general_type_compact(
+                        db,
+                        compact_type,
+                        &typ,
+                        check_guard.next_level()?,
+                    ) {
+                        Ok(_) => {
+                            continue;
+                        }
+                        Err(e) => return Err(e),
+                    }
+                }
+                return Ok(());
+            }
             _ => match get_base_type_id(compact_type) {
                 Some(base_type_id) => compact_id = base_type_id.clone(),
                 None => return Err(TypeCheckFailReason::TypeNotMatch),

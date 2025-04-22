@@ -1,8 +1,8 @@
 use crate::{semantic::type_check::is_sub_type_of, DbIndex, LuaType};
 
 use super::{
-    sub_type::get_base_type_id, type_check_fail_reason::TypeCheckFailReason,
-    type_check_guard::TypeCheckGuard, TypeCheckResult,
+    check_general_type_compact, ref_type::check_ref_type_compact, sub_type::get_base_type_id,
+    type_check_fail_reason::TypeCheckFailReason, type_check_guard::TypeCheckGuard, TypeCheckResult,
 };
 
 pub fn check_simple_type_compact(
@@ -69,26 +69,8 @@ pub fn check_simple_type_compact(
                 return Ok(());
             }
             LuaType::Ref(_) => {
-                if let Some(real_type) = get_alias_real_type(db, compact_type) {
-                    match &real_type {
-                        LuaType::MultiLineUnion(multi_line_union) => {
-                            if multi_line_union
-                                .get_unions()
-                                .iter()
-                                .all(|(t, _)| t.is_string())
-                            {
-                                return Ok(());
-                            }
-                        }
-                        LuaType::Ref(type_decl_id) => {
-                            if let Some(source_id) = get_base_type_id(&source) {
-                                if is_sub_type_of(db, type_decl_id, &source_id) {
-                                    return Ok(());
-                                }
-                            }
-                        }
-                        _ => {}
-                    }
+                if check_base_type_for_ref_compact(db, source, compact_type, check_guard).is_ok() {
+                    return Ok(());
                 }
             }
             _ => {}
@@ -98,26 +80,8 @@ pub fn check_simple_type_compact(
                 return Ok(());
             }
             LuaType::Ref(_) => {
-                if let Some(real_type) = get_alias_real_type(db, compact_type) {
-                    match &real_type {
-                        LuaType::MultiLineUnion(multi_line_union) => {
-                            if multi_line_union
-                                .get_unions()
-                                .iter()
-                                .all(|(t, _)| t.is_integer())
-                            {
-                                return Ok(());
-                            }
-                        }
-                        LuaType::Ref(type_decl_id) => {
-                            if let Some(source_id) = get_base_type_id(&source) {
-                                if is_sub_type_of(db, type_decl_id, &source_id) {
-                                    return Ok(());
-                                }
-                            }
-                        }
-                        _ => {}
-                    }
+                if check_base_type_for_ref_compact(db, source, compact_type, check_guard).is_ok() {
+                    return Ok(());
                 }
             }
             _ => {}
@@ -258,15 +222,63 @@ pub fn check_simple_type_compact(
     Err(TypeCheckFailReason::TypeNotMatch)
 }
 
-fn get_alias_real_type(db: &DbIndex, compact_type: &LuaType) -> Option<LuaType> {
+fn get_alias_real_type<'a>(db: &'a DbIndex, compact_type: &'a LuaType) -> Option<&'a LuaType> {
     match compact_type {
         LuaType::Ref(type_decl_id) => {
             let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
             if type_decl.is_alias() {
-                return get_alias_real_type(db, &type_decl.get_alias_origin(db, None)?);
+                return get_alias_real_type(db, type_decl.get_alias()?);
             }
-            Some(compact_type.clone())
+            Some(compact_type)
         }
-        _ => Some(compact_type.clone()),
+        _ => Some(compact_type),
     }
+}
+
+fn check_base_type_for_ref_compact(
+    db: &DbIndex,
+    source: &LuaType,
+    compact_type: &LuaType,
+    check_guard: TypeCheckGuard,
+) -> TypeCheckResult {
+    if let LuaType::Ref(_) = compact_type {
+        let real_type = get_alias_real_type(db, compact_type).unwrap_or(compact_type);
+        match &real_type {
+            LuaType::MultiLineUnion(multi_line_union) => {
+                if multi_line_union.get_unions().iter().all(|(t, _)| {
+                    let next_guard = check_guard.next_level();
+                    if next_guard.is_err() {
+                        return false;
+                    }
+                    check_general_type_compact(db, source, t, next_guard.unwrap()).is_ok()
+                }) {
+                    return Ok(());
+                }
+            }
+            LuaType::Ref(type_decl_id) => {
+                if let Some(source_id) = get_base_type_id(&source) {
+                    if is_sub_type_of(db, type_decl_id, &source_id) {
+                        return Ok(());
+                    }
+                }
+                if let Some(decl) = db.get_type_index().get_type_decl(type_decl_id) {
+                    if decl.is_enum() {
+                        // TODO: 优化, 不经过`check_ref_type_compact`
+                        if check_ref_type_compact(
+                            db,
+                            type_decl_id,
+                            compact_type,
+                            check_guard.next_level()?,
+                        )
+                        .is_ok()
+                        {
+                            return Ok(());
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    Err(TypeCheckFailReason::TypeNotMatch)
 }

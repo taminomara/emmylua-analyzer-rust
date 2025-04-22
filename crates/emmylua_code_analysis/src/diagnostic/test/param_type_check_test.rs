@@ -570,4 +570,82 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_union_type() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            ---@class py.Area
+            ---@class py.RecArea: py.Area
+            ---@class py.CirArea: py.Area
+
+            ---@param a py.Area
+            local function test(a)
+            end
+
+            ---@type py.RecArea | py.CirArea
+            local a
+
+            test(a)
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_super_1() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class py.SlotType: integer
+
+                ---@param a py.SlotType
+                local function test(a)
+                end
+
+                ---@type 0|1
+                local a
+
+                test(a)
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_alias_union_enum() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@alias EventType
+                ---| GlobalEventType
+                ---| UIEventType
+
+                ---@enum UIEventType
+                local UIEventType = {
+                    ['UI_CREATE'] = "ET_UI_PREFAB_CREATE_EVENT",
+                    ['UI_DELETE'] = "ET_UI_PREFAB_DEL_EVENT",
+                }
+
+                ---@enum GlobalEventType
+                local GlobalEventType = {
+                    ['GAME_INIT'] = "ET_GAME_INIT",
+                    ['GAME_PAUSE'] = "ET_GAME_PAUSE",
+                }
+
+                ---@param event_name string
+                local function get_py_event_name(event_name)
+                end
+
+                ---@param a EventType
+                local function test(a)
+                    get_py_event_name(a)
+                end
+
+        "#
+        ));
+    }
 }
