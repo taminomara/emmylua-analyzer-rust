@@ -856,7 +856,7 @@ impl LuaMultiReturn {
                     let last_element_len = last_multi.get_len();
                     return match last_element_len {
                         Some(len) => Some(basic_len - 1 + len),
-                        None => None,
+                        None => Some(basic_len),
                     };
                 }
 
