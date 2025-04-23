@@ -1,7 +1,7 @@
-use crate::{semantic::type_check::is_sub_type_of, DbIndex, LuaType};
+use crate::{semantic::type_check::is_sub_type_of, DbIndex, LuaType, LuaTypeDeclId};
 
 use super::{
-    check_general_type_compact, ref_type::check_ref_type_compact, sub_type::get_base_type_id,
+    check_general_type_compact, sub_type::get_base_type_id,
     type_check_fail_reason::TypeCheckFailReason, type_check_guard::TypeCheckGuard, TypeCheckResult,
 };
 
@@ -263,14 +263,8 @@ fn check_base_type_for_ref_compact(
                 }
                 if let Some(decl) = db.get_type_index().get_type_decl(type_decl_id) {
                     if decl.is_enum() {
-                        // TODO: 优化, 不经过`check_ref_type_compact`
-                        if check_ref_type_compact(
-                            db,
-                            type_decl_id,
-                            compact_type,
-                            check_guard.next_level()?,
-                        )
-                        .is_ok()
+                        if check_enum_fields_match_source(db, source, type_decl_id, check_guard)
+                            .is_ok()
                         {
                             return Ok(());
                         }
@@ -278,6 +272,30 @@ fn check_base_type_for_ref_compact(
                 }
             }
             _ => {}
+        }
+    }
+    Err(TypeCheckFailReason::TypeNotMatch)
+}
+
+/// 检查`enum`的所有字段是否匹配`source`
+fn check_enum_fields_match_source(
+    db: &DbIndex,
+    source: &LuaType,
+    enum_type_decl_id: &LuaTypeDeclId,
+    check_guard: TypeCheckGuard,
+) -> TypeCheckResult {
+    if let Some(decl) = db.get_type_index().get_type_decl(enum_type_decl_id) {
+        if let Some(LuaType::Union(enum_fields)) = decl.get_enum_field_type(db) {
+            let is_match = enum_fields.get_types().iter().all(|field| {
+                let next_guard = check_guard.next_level();
+                if next_guard.is_err() {
+                    return false;
+                }
+                check_general_type_compact(db, source, field, next_guard.unwrap()).is_ok()
+            });
+            if is_match {
+                return Ok(());
+            }
         }
     }
     Err(TypeCheckFailReason::TypeNotMatch)

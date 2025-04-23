@@ -650,6 +650,41 @@ mod test {
     }
 
     #[test]
+    fn test_alias_union_enum_2() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(!ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@alias EventType
+                ---| GlobalEventType
+                ---| UIEventType
+
+                ---@enum UIEventType
+                local UIEventType = {
+                    ['UI_CREATE'] = "ET_UI_PREFAB_CREATE_EVENT",
+                    ['UI_DELETE'] = "ET_UI_PREFAB_DEL_EVENT",
+                }
+
+                ---@enum GlobalEventType
+                local GlobalEventType = {
+                    ['GAME_INIT'] = 1,
+                    ['GAME_PAUSE'] = "ET_GAME_PAUSE",
+                }
+
+                ---@param event_name string
+                local function get_py_event_name(event_name)
+                end
+
+                ---@param a EventType
+                local function test(a)
+                    get_py_event_name(a)
+                end
+
+        "#
+        ));
+    }
+
+    #[test]
     fn test_empty_class() {
         let mut ws = VirtualWorkspace::new();
         assert!(ws.check_code_for(
