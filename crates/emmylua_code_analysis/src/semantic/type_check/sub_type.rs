@@ -22,7 +22,7 @@ fn check_sub_type_of_iterative(
     }
 
     let type_index = db.get_type_index();
-    let mut stack= Vec::new();
+    let mut stack = Vec::new();
     let mut visited = HashSet::new();
 
     stack.push(sub_type_ref_id.clone());

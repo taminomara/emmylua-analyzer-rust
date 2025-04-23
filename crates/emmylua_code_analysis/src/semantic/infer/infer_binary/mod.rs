@@ -1,7 +1,5 @@
 mod infer_binary_or;
 
-use std::collections::HashSet;
-
 use emmylua_parser::{BinaryOperator, LuaBinaryExpr};
 use infer_binary_or::{infer_binary_expr_or, special_or_rule};
 use smol_str::SmolStr;
