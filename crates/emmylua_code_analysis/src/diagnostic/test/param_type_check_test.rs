@@ -704,4 +704,56 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_super_and_enum_1() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@enum AbilityType
+                local AbilityType = {
+                    HIDE   = 0,
+                    NORMAL = 1,
+                    COMMON = 2,
+                    HERO   = 3,
+                }
+                ---@class py.AbilityType: integer
+
+                ---@param ability_type py.AbilityType
+                local function a(ability_type) end
+
+                ---@param type AbilityType
+                local function get(type)
+                    local py_list = a(type)
+                end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_super_and_enum_2() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(!ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@enum AbilityType
+                local AbilityType = {
+                    HIDE   = "a",
+                    NORMAL = 1,
+                    COMMON = 2,
+                    HERO   = 3,
+                }
+                ---@class py.AbilityType: integer
+
+                ---@param ability_type py.AbilityType
+                local function a(ability_type) end
+
+                ---@param type AbilityType
+                local function get(type)
+                    local py_list = a(type)
+                end
+        "#
+        ));
+    }
 }

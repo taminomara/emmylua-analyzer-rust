@@ -137,7 +137,7 @@ pub fn check_ref_type_compact(
                 for typ in union_types {
                     match check_general_type_compact(
                         db,
-                        compact_type,
+                        &LuaType::Ref(source_id.clone()),
                         &typ,
                         check_guard.next_level()?,
                     ) {
@@ -167,6 +167,29 @@ pub fn check_ref_type_compact(
         // so we have to assume that Lua automatically converts from superclass to subclass.
         if is_sub_type_of(db, source_id, &compact_id) {
             return Ok(());
+        }
+
+        // `compact`为枚举时也需要额外处理
+        if let LuaType::Ref(compact_id) = compact_type {
+            if let Some(compact_decl) = db.get_type_index().get_type_decl(compact_id) {
+                if compact_decl.is_enum() {
+                    let source = LuaType::Ref(source_id.clone());
+                    if let Some(LuaType::Union(enum_fields)) = compact_decl.get_enum_field_type(db)
+                    {
+                        let is_match = enum_fields.get_types().iter().all(|field| {
+                            let next_guard = check_guard.next_level();
+                            if next_guard.is_err() {
+                                return false;
+                            }
+                            check_general_type_compact(db, &source, field, next_guard.unwrap())
+                                .is_ok()
+                        });
+                        if is_match {
+                            return Ok(());
+                        }
+                    }
+                }
+            }
         }
     }
 
