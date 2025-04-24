@@ -5,6 +5,10 @@ fn default_true() -> bool {
     true
 }
 
+fn default_false() -> bool {
+    false
+}
+
 #[derive(Serialize, Deserialize, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcStrict {
@@ -14,7 +18,7 @@ pub struct EmmyrcStrict {
     #[serde(default)]
     pub type_call: bool,
     /// Whether to enable strict mode array indexing.
-    #[serde(default = "default_true")]
+    #[serde(default = "default_false")]
     pub array_index: bool,
 }
 
