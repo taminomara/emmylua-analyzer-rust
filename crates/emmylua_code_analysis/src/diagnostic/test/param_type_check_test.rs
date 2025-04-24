@@ -756,4 +756,24 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_generic_array() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            ---@class LocalTimer
+
+            ---@generic V
+            ---@param list V[]
+            ---@return integer
+            local function sort(list) end
+
+            ---@type { need_sort: true?, [integer]: LocalTimer }
+            local queue = {}
+            sort(queue)
+        "#
+        ));
+    }
 }

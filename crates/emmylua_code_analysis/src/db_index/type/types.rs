@@ -600,7 +600,18 @@ impl LuaObjectType {
 
     pub fn cast_down_array_base(&self) -> Option<LuaType> {
         if self.index_access.len() != 0 {
-            return None;
+            let mut ty = None;
+            for (key, value_type) in self.index_access.iter() {
+                if matches!(key, LuaType::Integer) {
+                    if ty.is_none() {
+                        ty = Some(LuaType::Unknown);
+                    }
+                    if let Some(t) = ty {
+                        ty = Some(TypeOps::Union.apply(&t, value_type));
+                    }
+                }
+            }
+            return ty;
         }
 
         let mut ty = LuaType::Unknown;
