@@ -99,6 +99,9 @@ fn check_doc_func_type_compact_for_params(
                 )
                 .is_err()
                 {
+                    if i == 0 && source_type.is_self_infer() && compact_param.0 == "self" {
+                        continue;
+                    }
                     // add error message
                     return Err(TypeCheckFailReason::TypeNotMatch);
                 }

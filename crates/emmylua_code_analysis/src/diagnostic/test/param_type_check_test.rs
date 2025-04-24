@@ -897,4 +897,27 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_function_self() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class D23.A
+
+                ---@generic Extends: string
+                ---@param init? fun(self: self, super: Extends)
+                local function extends(init)
+                end
+
+                ---@generic Super: string
+                ---@param super? `Super`
+                ---@param superInit? fun(self: D23.A, super: Super, ...)
+                local function declare(super, superInit)
+                    extends(superInit)
+                end
+        "#
+        ));
+    }
 }
