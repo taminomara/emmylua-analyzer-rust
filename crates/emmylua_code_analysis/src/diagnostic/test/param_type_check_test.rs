@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod test {
+    use std::sync::Arc;
+
     use crate::{DiagnosticCode, VirtualWorkspace};
 
     #[test]
@@ -842,6 +844,51 @@ mod test {
 
                 ---@class (partial) D21.A
                 ---@field event fun(self: self, event: "游戏-初始化")
+
+                ---@param p EventType
+                local function test(p)
+                    M:event(p)
+                end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_function_union_meta() {
+        let mut ws = VirtualWorkspace::new();
+        let mut emmyrc = ws.analysis.emmyrc.as_ref().clone();
+        emmyrc.strict.meta_override_file_define = false;
+        ws.analysis.update_config(Arc::new(emmyrc));
+
+        ws.def(
+            r#"
+                ---@meta
+                ---@class (partial) D21.A
+                ---@field event fun(self: self, event: "游戏-初始化")
+            "#,
+        );
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class (partial) D21.A
+                local M
+
+                ---@alias EventType
+                ---| GlobalEventType
+                ---| UIEventType
+
+                ---@enum UIEventType
+                local UIEventType = {
+                    ['UI_CREATE'] = "ET_UI_PREFAB_CREATE_EVENT",
+                }
+                ---@enum GlobalEventType
+                local GlobalEventType = {
+                    ['GAME_INIT'] = "ET_GAME_INIT",
+                }
+
+                ---@param event_type EventType
+                function M:event(event_type)
+                end
 
                 ---@param p EventType
                 local function test(p)

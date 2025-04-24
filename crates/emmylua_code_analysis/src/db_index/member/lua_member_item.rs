@@ -58,13 +58,15 @@ fn resolve_member_type(
                     return Err(InferFailReason::None);
                 }
             }
-            for member in &members {
-                let feature = member.get_feature();
-                if feature.is_meta_decl() {
-                    resolve_state = MemberTypeResolveState::Meta;
-                    break;
-                } else if feature.is_file_decl() {
-                    resolve_state = MemberTypeResolveState::FileDecl;
+            if db.get_emmyrc().strict.meta_override_file_define {
+                for member in &members {
+                    let feature = member.get_feature();
+                    if feature.is_meta_decl() {
+                        resolve_state = MemberTypeResolveState::Meta;
+                        break;
+                    } else if feature.is_file_decl() {
+                        resolve_state = MemberTypeResolveState::FileDecl;
+                    }
                 }
             }
 
