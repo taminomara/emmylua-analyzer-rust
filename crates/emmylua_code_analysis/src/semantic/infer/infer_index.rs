@@ -1052,7 +1052,7 @@ fn expr_to_member_key(
                     stack.push(t.clone());
                 }
             }
-            LuaType::TableConst(_) => {
+            LuaType::TableConst(_) | LuaType::Tuple(_) => {
                 keys.insert(LuaMemberKey::Expr(expr_type.clone()));
             }
             LuaType::Ref(id) => {

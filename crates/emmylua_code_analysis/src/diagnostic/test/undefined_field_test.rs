@@ -508,4 +508,34 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_ref_field() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                ---@enum ReactiveFlags
+                local ReactiveFlags = {
+                    IS_REF = { '<IS_REF>' },
+                }
+                local IS_REF = ReactiveFlags.IS_REF
+
+                ---@class ObjectRefImpl
+                local ObjectRefImpl = {}
+
+                function ObjectRefImpl.new()
+                    ---@class (constructor) ObjectRefImpl
+                    local self = {
+                        [IS_REF] = true, -- 标记为ref
+                    }
+                end
+
+                ---@param a ObjectRefImpl
+                local function name(a)
+                    local c = a[IS_REF]
+                end
+        "#
+        ));
+    }
 }
