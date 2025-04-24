@@ -96,7 +96,7 @@ function debug.gethook(thread) end
 --- information about the `print` function.
 ---@overload fun(f: int|function, what?: debuglib.InfoWhat):debuglib.DebugInfo
 ---@param thread thread
----@param f integer|async fun(...):any...
+---@param f integer|function
 ---@param what? debuglib.InfoWhat
 ---@return debuglib.DebugInfo
 ---@nodiscard
@@ -175,7 +175,7 @@ function debug.getregistry() end
 ---
 --- Variable names starting with '(' (open parenthesis) represent variables with
 --- no known names (variables from chunks saved without debug information).
----@param f async fun(...):any...
+---@param f function
 ---@param up integer
 ---@return string name
 ---@return any    value

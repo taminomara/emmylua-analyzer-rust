@@ -222,7 +222,7 @@ function string.lower(s) end
 ---@param s string
 ---@param pattern string
 ---@param init? integer
----@return any...
+---@return string...
 function string.match(s, pattern, init) end
 
 ---@version >5.3

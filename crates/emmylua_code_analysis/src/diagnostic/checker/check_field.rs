@@ -130,7 +130,6 @@ fn is_valid_member(
     index_key: &LuaIndexKey,
     code: DiagnosticCode,
 ) -> Option<()> {
-    // dbg!(semantic_model.get_semantic_info(index_expr.syntax().clone().into()));
     // 检查 member_info
     let need_add_diagnostic =
         match semantic_model.get_semantic_info(index_expr.syntax().clone().into()) {
@@ -213,7 +212,10 @@ fn is_valid_member(
                 match &info.key {
                     LuaMemberKey::Expr(typ) => {
                         if typ.is_string() {
-                            if key_type_set.iter().any(|typ| typ.is_string() || typ.is_str_tpl_ref()) {
+                            if key_type_set
+                                .iter()
+                                .any(|typ| typ.is_string() || typ.is_str_tpl_ref())
+                            {
                                 return Some(());
                             }
                         } else if typ.is_integer() {
@@ -223,7 +225,10 @@ fn is_valid_member(
                         }
                     }
                     LuaMemberKey::Name(_) => {
-                        if key_type_set.iter().any(|typ| typ.is_string() || typ.is_str_tpl_ref()) {
+                        if key_type_set
+                            .iter()
+                            .any(|typ| typ.is_string() || typ.is_str_tpl_ref())
+                        {
                             return Some(());
                         }
                     }

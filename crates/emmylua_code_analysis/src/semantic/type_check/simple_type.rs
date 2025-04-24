@@ -65,7 +65,10 @@ pub fn check_simple_type_compact(
             }
         }
         LuaType::String | LuaType::StringConst(_) => match compact_type {
-            LuaType::String | LuaType::StringConst(_) | LuaType::DocStringConst(_) | LuaType::StrTplRef(_) => {
+            LuaType::String
+            | LuaType::StringConst(_)
+            | LuaType::DocStringConst(_)
+            | LuaType::StrTplRef(_) => {
                 return Ok(());
             }
             LuaType::Ref(_) => {
