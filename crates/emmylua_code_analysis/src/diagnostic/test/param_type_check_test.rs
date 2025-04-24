@@ -776,4 +776,78 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_function_union() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(!ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class (partial) D21.A
+                local M
+
+                ---@alias EventType
+                ---| GlobalEventType
+                ---| UIEventType
+
+                ---@enum UIEventType
+                local UIEventType = {
+                    ['UI_CREATE'] = "ET_UI_PREFAB_CREATE_EVENT",
+                }
+                ---@enum GlobalEventType
+                local GlobalEventType = {
+                    ['GAME_INIT'] = "ET_GAME_INIT",
+                }
+
+                ---@param event_type EventType
+                function M:event(event_type)
+                end
+
+                ---@class (partial) D21.A
+                ---@field event fun(self: self, event: "游戏-初始化")
+
+                ---@param p string
+                local function test(p)
+                    M:event(p)
+                end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_function_union_2() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class (partial) D21.A
+                local M
+
+                ---@alias EventType
+                ---| GlobalEventType
+                ---| UIEventType
+
+                ---@enum UIEventType
+                local UIEventType = {
+                    ['UI_CREATE'] = "ET_UI_PREFAB_CREATE_EVENT",
+                }
+                ---@enum GlobalEventType
+                local GlobalEventType = {
+                    ['GAME_INIT'] = "ET_GAME_INIT",
+                }
+
+                ---@param event_type EventType
+                function M:event(event_type)
+                end
+
+                ---@class (partial) D21.A
+                ---@field event fun(self: self, event: "游戏-初始化")
+
+                ---@param p EventType
+                local function test(p)
+                    M:event(p)
+                end
+        "#
+        ));
+    }
 }

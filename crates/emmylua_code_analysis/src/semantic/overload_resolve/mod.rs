@@ -86,6 +86,11 @@ fn resolve_signature_by_args(
             jump_param = 0;
         };
 
+        // 冒号定义且冒号调用
+        if is_colon_call && func.is_colon_define() {
+            total_weight += 100;
+        }
+
         // 检查每个参数的匹配情况
         for (i, param) in params.iter().enumerate() {
             if i == 0 && jump_param > 0 {
