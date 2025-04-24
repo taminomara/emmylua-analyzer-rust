@@ -213,7 +213,7 @@ fn is_valid_member(
                 match &info.key {
                     LuaMemberKey::Expr(typ) => {
                         if typ.is_string() {
-                            if key_type_set.iter().any(|typ| typ.is_string()) {
+                            if key_type_set.iter().any(|typ| typ.is_string() || typ.is_str_tpl_ref()) {
                                 return Some(());
                             }
                         } else if typ.is_integer() {
@@ -223,7 +223,7 @@ fn is_valid_member(
                         }
                     }
                     LuaMemberKey::Name(_) => {
-                        if key_type_set.iter().any(|typ| typ.is_string()) {
+                        if key_type_set.iter().any(|typ| typ.is_string() || typ.is_str_tpl_ref()) {
                             return Some(());
                         }
                     }
@@ -304,7 +304,7 @@ fn get_key_types(typ: &LuaType) -> HashSet<LuaType> {
                     stack.push(t.clone());
                 }
             }
-            LuaType::Ref(_) => {
+            LuaType::StrTplRef(_) | LuaType::Ref(_) => {
                 type_set.insert(current_type);
             }
             _ => {}
