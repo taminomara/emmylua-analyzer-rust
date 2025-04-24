@@ -62,7 +62,9 @@
   },
   "strict": {
     "requirePath": false,
-    "typeCall": true
+    "typeCall": false,
+    "arrayIndex": false,
+    "metaOverrideFileDefine": true
   },
   "hover": {
     "enable": true
@@ -151,6 +153,7 @@ https://github.com/CppCXY/emmylua-analyzer-rust/blob/main/crates/emmylua_code_an
 - `requirePath`: 是否启用require严格模式, 默认为 `false`. 严格模式时, require必须从指定的根目录开始, 否则无法跳转
 - `typeCall`: 是否启用类型调用时严格模式, 默认为 `false`. 严格模式时, 类型调用必须手动写好重载, 否则返回unknown, 非严格模式时, 类型调用会返回自身
 - `arrayIndex`：是否启用数组索引的严格模式. 默认为 `true`. 严格模式下，索引必须遵循严格规则（如适用）
+- `metaOverrideFileDefine`: 是否启用元定义覆盖文件定义, 默认为 `true`. 严格模式下，元定义会覆盖文件定义, 为`false`时行为接近`luals`
 
 ## hover
 
