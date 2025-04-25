@@ -17,6 +17,11 @@ pub fn init_tl(override_template: Option<PathBuf>) -> Option<Tera> {
         .collect();
 
     if let Some(override_template) = override_template {
+        if !override_template.exists() {
+            eprintln!("Override template directory does not exist: {:?}", override_template);
+            return None;
+        }
+
         if override_template.is_dir() {
             for entry in walkdir::WalkDir::new(&override_template)
                 .into_iter()
