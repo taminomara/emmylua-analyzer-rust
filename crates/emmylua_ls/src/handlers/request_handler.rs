@@ -3,6 +3,7 @@ use std::{error::Error, future::Future};
 use log::error;
 use lsp_server::{Request, RequestId, Response};
 use lsp_types::request::{
+    CallHierarchyIncomingCalls, CallHierarchyOutgoingCalls, CallHierarchyPrepare,
     CodeActionRequest, CodeLensRequest, CodeLensResolve, ColorPresentationRequest, Completion,
     DocumentColor, DocumentHighlightRequest, DocumentLinkRequest, DocumentLinkResolve,
     DocumentSymbolRequest, ExecuteCommand, FoldingRangeRequest, Formatting, GotoDefinition,
@@ -16,6 +17,9 @@ use tokio_util::sync::CancellationToken;
 use crate::context::{ServerContext, ServerContextSnapshot};
 
 use super::{
+    call_hierarchy::{
+        on_incoming_calls_handler, on_outgoing_calls_handler, on_prepare_call_hierarchy_handler,
+    },
     code_actions::on_code_action_handler,
     code_lens::{on_code_lens_handler, on_resolve_code_lens_handler},
     command::on_execute_command_handler,
@@ -100,6 +104,12 @@ pub async fn on_req_handler(
         .on_parallel::<Formatting, _, _>(on_formatting_handler)
         .await
         .on_parallel::<RangeFormatting, _, _>(on_range_formatting_handler)
+        .await
+        .on_parallel::<CallHierarchyPrepare, _, _>(on_prepare_call_hierarchy_handler)
+        .await
+        .on_parallel::<CallHierarchyIncomingCalls, _, _>(on_incoming_calls_handler)
+        .await
+        .on_parallel::<CallHierarchyOutgoingCalls, _, _>(on_outgoing_calls_handler)
         .await
         .finish();
     Ok(())

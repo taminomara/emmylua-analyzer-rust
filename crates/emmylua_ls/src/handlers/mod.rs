@@ -1,3 +1,4 @@
+mod call_hierarchy;
 mod code_actions;
 mod code_lens;
 mod command;
@@ -113,6 +114,10 @@ pub fn server_capabilities(client_capabilities: &ClientCapabilities) -> ServerCa
         client_capabilities,
     );
     register::<configuration::ConfigurationCapabilities>(
+        &mut server_capabilities,
+        client_capabilities,
+    );
+    register::<call_hierarchy::CallHierarchyCapabilities>(
         &mut server_capabilities,
         client_capabilities,
     );

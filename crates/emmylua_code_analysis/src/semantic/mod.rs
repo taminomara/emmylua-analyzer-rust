@@ -16,6 +16,7 @@ pub use cache::{CacheEntry, CacheKey, CacheOptions, LuaAnalysisPhase, LuaInferCa
 use emmylua_parser::{LuaCallExpr, LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken, LuaTableExpr};
 use infer::{infer_left_value_type_from_right_value, infer_multi_value_adjusted_expression_types};
 pub use infer::{infer_table_field_value_should_be, infer_table_should_be};
+use lsp_types::Uri;
 pub use member::infer_member_map;
 use member::infer_members;
 pub use member::LuaMemberInfo;
@@ -77,6 +78,11 @@ impl<'a> SemanticModel<'a> {
     }
 
     pub fn get_document_by_file_id(&self, file_id: FileId) -> Option<LuaDocument> {
+        self.db.get_vfs().get_document(&file_id)
+    }
+
+    pub fn get_document_by_uri(&self, uri: &Uri) -> Option<LuaDocument> {
+        let file_id = self.db.get_vfs().get_file_id(&uri)?;
         self.db.get_vfs().get_document(&file_id)
     }
 
