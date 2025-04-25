@@ -308,8 +308,8 @@ fn build_func_stat_override_hint(
                 .get_type_index()
                 .get_super_types(&id)?;
 
-            let name = index_expr.get_index_key()?;
-            let member_key: LuaMemberKey = name.into();
+            let index_key = index_expr.get_index_key()?;
+            let member_key: LuaMemberKey = semantic_model.get_member_key(&index_key)?;
             let infer_guard = &mut InferGuard::new();
             for super_type in supers {
                 if let Some(member_id) =

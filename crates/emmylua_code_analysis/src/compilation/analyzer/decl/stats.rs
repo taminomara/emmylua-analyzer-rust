@@ -1,6 +1,7 @@
 use emmylua_parser::{
     LuaAssignStat, LuaAstNode, LuaAstToken, LuaExpr, LuaForRangeStat, LuaForStat, LuaFuncStat,
-    LuaIndexExpr, LuaLocalFuncStat, LuaLocalStat, LuaSyntaxId, LuaSyntaxKind, LuaVarExpr,
+    LuaIndexExpr, LuaIndexKey, LuaLocalFuncStat, LuaLocalStat, LuaSyntaxId, LuaSyntaxKind,
+    LuaVarExpr,
 };
 
 use crate::{
@@ -95,10 +96,15 @@ pub fn analyze_assign_stat(analyzer: &mut DeclAnalyzer, stat: LuaAssignStat) -> 
             }
             LuaVarExpr::IndexExpr(index_expr) => {
                 let index_key = index_expr.get_index_key()?;
-                let key: LuaMemberKey = index_key.into();
-                if key.is_none() {
-                    continue;
-                }
+                let key: LuaMemberKey = match index_key {
+                    LuaIndexKey::Name(name) => LuaMemberKey::Name(name.get_name_text().into()),
+                    LuaIndexKey::String(str) => LuaMemberKey::Name(str.get_value().into()),
+                    LuaIndexKey::Integer(i) => LuaMemberKey::Integer(i.get_int_value()),
+                    LuaIndexKey::Idx(idx) => LuaMemberKey::Integer(idx as i64),
+                    LuaIndexKey::Expr(_) => {
+                        continue;
+                    }
+                };
 
                 let file_id = analyzer.get_file_id();
                 let member_id = LuaMemberId::new(index_expr.get_syntax_id(), file_id);
@@ -238,10 +244,15 @@ pub fn analyze_func_stat(analyzer: &mut DeclAnalyzer, stat: LuaFuncStat) -> Opti
         }
         LuaVarExpr::IndexExpr(index_expr) => {
             let index_key = index_expr.get_index_key()?;
-            let key: LuaMemberKey = index_key.into();
-            if key.is_none() {
-                return None;
-            }
+            let key: LuaMemberKey = match index_key {
+                LuaIndexKey::Name(name) => LuaMemberKey::Name(name.get_name_text().into()),
+                LuaIndexKey::String(str) => LuaMemberKey::Name(str.get_value().into()),
+                LuaIndexKey::Integer(i) => LuaMemberKey::Integer(i.get_int_value()),
+                LuaIndexKey::Idx(idx) => LuaMemberKey::Integer(idx as i64),
+                LuaIndexKey::Expr(_) => {
+                    return None;
+                }
+            };
 
             let file_id = analyzer.get_file_id();
             let member_id = LuaMemberId::new(index_expr.get_syntax_id(), file_id);

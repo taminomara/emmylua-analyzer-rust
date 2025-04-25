@@ -13,7 +13,9 @@ use std::collections::HashMap;
 use std::{collections::HashSet, sync::Arc};
 
 pub use cache::{CacheEntry, CacheKey, CacheOptions, LuaAnalysisPhase, LuaInferCache};
-use emmylua_parser::{LuaCallExpr, LuaChunk, LuaExpr, LuaSyntaxNode, LuaSyntaxToken, LuaTableExpr};
+use emmylua_parser::{
+    LuaCallExpr, LuaChunk, LuaExpr, LuaIndexKey, LuaSyntaxNode, LuaSyntaxToken, LuaTableExpr,
+};
 use infer::{infer_left_value_type_from_right_value, infer_multi_value_adjusted_expression_types};
 pub use infer::{infer_table_field_value_should_be, infer_table_should_be};
 use lsp_types::Uri;
@@ -260,6 +262,10 @@ impl<'a> SemanticModel<'a> {
             .map(|cache| cache.as_type())
             .unwrap_or(&LuaType::Unknown)
             .clone()
+    }
+
+    pub fn get_member_key(&self, index_key: &LuaIndexKey) -> Option<LuaMemberKey> {
+        LuaMemberKey::from_index_key(self.db, &mut self.infer_cache.borrow_mut(), index_key).ok()
     }
 }
 

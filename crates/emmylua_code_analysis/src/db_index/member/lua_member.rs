@@ -1,10 +1,12 @@
+use std::ops::Deref;
+
 use emmylua_parser::{LuaDocFieldKey, LuaIndexKey, LuaSyntaxId, LuaSyntaxKind};
 use rowan::{TextRange, TextSize};
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use super::lua_member_feature::LuaMemberFeature;
-use crate::{FileId, GlobalId, LuaType};
+use crate::{infer_expr, DbIndex, FileId, GlobalId, InferFailReason, LuaInferCache, LuaType};
 
 #[derive(Debug)]
 pub struct LuaMember {
@@ -97,6 +99,29 @@ pub enum LuaMemberKey {
 }
 
 impl LuaMemberKey {
+    pub fn from_index_key(
+        db: &DbIndex,
+        cache: &mut LuaInferCache,
+        key: &LuaIndexKey,
+    ) -> Result<Self, InferFailReason> {
+        match key {
+            LuaIndexKey::Name(name) => Ok(LuaMemberKey::Name(name.get_name_text().into())),
+            LuaIndexKey::String(str) => Ok(LuaMemberKey::Name(str.get_value().into())),
+            LuaIndexKey::Integer(i) => Ok(LuaMemberKey::Integer(i.get_int_value())),
+            LuaIndexKey::Idx(idx) => Ok(LuaMemberKey::Integer(*idx as i64)),
+            LuaIndexKey::Expr(expr) => {
+                let expr_type = infer_expr(db, cache, expr.clone())?;
+                match expr_type {
+                    LuaType::StringConst(s) => Ok(LuaMemberKey::Name(s.deref().clone())),
+                    LuaType::DocStringConst(s) => Ok(LuaMemberKey::Name(s.deref().clone())),
+                    LuaType::IntegerConst(i) => Ok(LuaMemberKey::Integer(i)),
+                    LuaType::DocIntegerConst(i) => Ok(LuaMemberKey::Integer(i)),
+                    _ => Ok(LuaMemberKey::Expr(expr_type)),
+                }
+            }
+        }
+    }
+
     pub fn is_none(&self) -> bool {
         matches!(self, LuaMemberKey::None)
     }
@@ -159,29 +184,6 @@ impl Ord for LuaMemberKey {
             (Name(_), _) => std::cmp::Ordering::Less,
             (_, Name(_)) => std::cmp::Ordering::Greater,
             (Expr(_), Expr(_)) => std::cmp::Ordering::Equal,
-        }
-    }
-}
-
-impl From<LuaIndexKey> for LuaMemberKey {
-    fn from(key: LuaIndexKey) -> Self {
-        match key {
-            LuaIndexKey::Name(name) => LuaMemberKey::Name(name.get_name_text().into()),
-            LuaIndexKey::String(str) => LuaMemberKey::Name(str.get_value().into()),
-            LuaIndexKey::Integer(i) => LuaMemberKey::Integer(i.get_int_value()),
-            LuaIndexKey::Idx(idx) => LuaMemberKey::Integer(idx as i64),
-            _ => LuaMemberKey::None,
-        }
-    }
-}
-
-impl From<&LuaIndexKey> for LuaMemberKey {
-    fn from(key: &LuaIndexKey) -> Self {
-        match key {
-            LuaIndexKey::Name(name) => LuaMemberKey::Name(name.get_name_text().to_string().into()),
-            LuaIndexKey::String(str) => LuaMemberKey::Name(str.get_value().into()),
-            LuaIndexKey::Integer(i) => LuaMemberKey::Integer(i.get_int_value()),
-            _ => LuaMemberKey::None,
         }
     }
 }

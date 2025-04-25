@@ -197,9 +197,12 @@ pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, table_expr: LuaTableExpr)
 
         for field in table_expr.get_fields() {
             if let Some(field_key) = field.get_field_key() {
-                let key: LuaMemberKey = field_key.clone().into();
-                if key.is_none() {
-                    if let Some(field_expr) = field_key.get_expr() {
+                let key: LuaMemberKey = match field_key {
+                    LuaIndexKey::Name(name) => LuaMemberKey::Name(name.get_name_text().into()),
+                    LuaIndexKey::String(str) => LuaMemberKey::Name(str.get_value().into()),
+                    LuaIndexKey::Integer(i) => LuaMemberKey::Integer(i.get_int_value()),
+                    LuaIndexKey::Idx(idx) => LuaMemberKey::Integer(idx as i64),
+                    LuaIndexKey::Expr(field_expr) => {
                         let unresolve_member = UnResolveTableField {
                             file_id: analyzer.get_file_id(),
                             table_expr: table_expr.clone(),
@@ -208,9 +211,9 @@ pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, table_expr: LuaTableExpr)
                             reason: InferFailReason::UnResolveExpr(field_expr.clone()),
                         };
                         analyzer.add_unresolved(unresolve_member.into());
+                        continue;
                     }
-                    continue;
-                }
+                };
 
                 analyzer.db.get_reference_index_mut().add_index_reference(
                     key.clone(),

@@ -132,7 +132,7 @@ pub fn infer_member_by_member_key(
 ) -> InferResult {
     match &prefix_type {
         LuaType::Table | LuaType::Any | LuaType::Unknown => Ok(LuaType::Any),
-        LuaType::TableConst(id) => infer_table_member(db, id.clone(), index_expr),
+        LuaType::TableConst(id) => infer_table_member(db, cache, id.clone(), index_expr),
         LuaType::String | LuaType::Io | LuaType::StringConst(_) | LuaType::DocStringConst(_) => {
             let decl_id =
                 get_buildin_type_map_type_id(&prefix_type).ok_or(InferFailReason::None)?;
@@ -145,7 +145,7 @@ pub fn infer_member_by_member_key(
             infer_custom_type_member(db, cache, decl_id.clone(), index_expr, infer_guard)
         }
         // LuaType::Module(_) => todo!(),
-        LuaType::Tuple(tuple_type) => infer_tuple_member(tuple_type, index_expr),
+        LuaType::Tuple(tuple_type) => infer_tuple_member(db, cache, tuple_type, index_expr),
         LuaType::Object(object_type) => infer_object_member(db, cache, object_type, index_expr),
         LuaType::Union(union_type) => infer_union_member(db, cache, union_type, index_expr),
         LuaType::Intersection(intersection_type) => {
@@ -188,14 +188,13 @@ fn infer_array_member(
 
 fn infer_table_member(
     db: &DbIndex,
+    cache: &mut LuaInferCache,
     inst: InFiled<TextRange>,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
     let owner = LuaMemberOwner::Element(inst);
-    let key: LuaMemberKey = index_expr
-        .get_index_key()
-        .ok_or(InferFailReason::None)?
-        .into();
+    let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
+    let key = LuaMemberKey::from_index_key(db, cache, &index_key)?;
     let member_item = match db.get_member_index().get_member_item(&owner, &key) {
         Some(member_item) => member_item,
         None => return Err(InferFailReason::FieldDotFound),
@@ -226,7 +225,7 @@ fn infer_custom_type_member(
 
     let owner = LuaMemberOwner::Type(prefix_type_id.clone());
     let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
-    let key: LuaMemberKey = index_key.clone().into();
+    let key = LuaMemberKey::from_index_key(db, cache, &index_key)?;
     if let Some(member_item) = db.get_member_index().get_member_item(&owner, &key) {
         return member_item.resolve_type(db);
     }
@@ -395,11 +394,14 @@ fn get_all_member_key(db: &DbIndex, origin_type: &LuaType) -> Option<Vec<LuaMemb
     Some(result)
 }
 
-fn infer_tuple_member(tuple_type: &LuaTupleType, index_expr: LuaIndexMemberExpr) -> InferResult {
-    let key = index_expr
-        .get_index_key()
-        .ok_or(InferFailReason::None)?
-        .into();
+fn infer_tuple_member(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
+    tuple_type: &LuaTupleType,
+    index_expr: LuaIndexMemberExpr,
+) -> InferResult {
+    let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
+    let key = LuaMemberKey::from_index_key(db, cache, &index_key)?;
     if let LuaMemberKey::Integer(i) = key {
         let index = if i > 0 { i - 1 } else { 0 };
         return match tuple_type.get_type(index as usize) {
@@ -417,12 +419,12 @@ fn infer_object_member(
     object_type: &LuaObjectType,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
-    let member_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
-    if let Some(member_type) = object_type.get_field(&member_key.clone().into()) {
+    let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
+    let member_key = LuaMemberKey::from_index_key(db, cache, &index_key)?;
+    if let Some(member_type) = object_type.get_field(&member_key) {
         return Ok(member_type.clone());
     }
 
-    let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
     // todo
     let index_accesses = object_type.get_index_access();
     for (key, value) in index_accesses {
@@ -607,7 +609,7 @@ fn infer_instance_member(
         Err(err) => return Err(err),
     }
 
-    infer_table_member(db, range.clone(), index_expr.clone())
+    infer_table_member(db, cache, range.clone(), index_expr.clone())
 }
 
 pub fn infer_member_by_operator(
@@ -1003,12 +1005,13 @@ fn infer_global_field_member(
 
 fn infer_namespace_member(
     db: &DbIndex,
-    _: &LuaInferCache,
+    cache: &mut LuaInferCache,
     ns: &str,
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
-    let member_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
-    let member_key = match member_key.into() {
+    let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
+    let member_key = LuaMemberKey::from_index_key(db, cache, &index_key)?;
+    let member_key = match member_key {
         LuaMemberKey::Name(name) => name.to_string(),
         LuaMemberKey::Integer(i) => i.to_string(),
         _ => return Err(InferFailReason::None),

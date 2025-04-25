@@ -154,7 +154,8 @@ fn infer_index_expr_semantic_decl(
 ) -> Option<LuaSemanticDeclId> {
     let prefix_expr = index_expr.get_prefix_expr()?;
     let prefix_type = infer_expr(db, cache, prefix_expr.into()).ok()?;
-    let member_key = index_expr.get_index_key()?.into();
+    let index_key = index_expr.get_index_key()?;
+    let member_key = LuaMemberKey::from_index_key(db, cache, &index_key).ok()?;
     infer_member_semantic_decl_by_member_key(
         db,
         cache,
