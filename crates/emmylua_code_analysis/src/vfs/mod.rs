@@ -99,6 +99,19 @@ impl Vfs {
         fid
     }
 
+    pub fn remove_file(&mut self, uri: &Uri) -> Option<FileId> {
+        let fid = self.get_file_id(uri)?;
+        if let Some(path) = self.file_path_map.remove(&fid.id) {
+            self.file_id_map.remove(&path);
+        }
+        if let Some(data) = self.file_data.get_mut(fid.id as usize) {
+            data.take();
+        }
+        self.line_index_map.remove(&fid);
+        self.tree_map.remove(&fid);
+        Some(fid)
+    }
+
     pub fn update_config(&mut self, emmyrc: Arc<Emmyrc>) {
         self.emmyrc = Some(emmyrc);
     }

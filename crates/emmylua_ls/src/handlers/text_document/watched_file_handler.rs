@@ -18,6 +18,11 @@ pub async fn on_did_change_watched_files(
         let file_type = get_file_type(&file_event.uri);
         match file_type {
             Some(WatchedFileType::Lua) => {
+                if file_event.typ == FileChangeType::DELETED {
+                    analysis.remove_file_by_uri(&file_event.uri);
+                    continue;
+                }
+
                 if !workspace.current_open_files.contains(&file_event.uri) {
                     collect_lua_files(
                         &mut watched_lua_files,

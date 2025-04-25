@@ -145,6 +145,15 @@ impl EmmyLuaAnalysis {
         updated_files
     }
 
+    pub fn remove_file_by_uri(&mut self, uri: &Uri) -> Option<FileId> {
+        if let Some(file_id) = self.compilation.get_db_mut().get_vfs_mut().remove_file(uri) {
+            self.compilation.remove_index(vec![file_id]);
+            return Some(file_id);
+        }
+
+        None
+    }
+
     pub fn update_files_by_path(&mut self, files: Vec<(PathBuf, Option<String>)>) -> Vec<FileId> {
         let files = files
             .into_iter()
