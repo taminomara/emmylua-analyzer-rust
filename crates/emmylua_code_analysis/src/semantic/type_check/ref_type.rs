@@ -178,11 +178,12 @@ pub fn check_ref_type_compact(
                     {
                         let is_match = enum_fields.get_types().iter().all(|field| {
                             let next_guard = check_guard.next_level();
-                            if next_guard.is_err() {
-                                return false;
+                            match next_guard {
+                                Ok(guard) => {
+                                    check_general_type_compact(db, &source, field, guard).is_ok()
+                                }
+                                Err(_) => return false,
                             }
-                            check_general_type_compact(db, &source, field, next_guard.unwrap())
-                                .is_ok()
                         });
                         if is_match {
                             return Ok(());

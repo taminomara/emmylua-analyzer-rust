@@ -230,7 +230,7 @@ fn get_alias_real_type<'a>(db: &'a DbIndex, compact_type: &'a LuaType) -> Option
         LuaType::Ref(type_decl_id) => {
             let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
             if type_decl.is_alias() {
-                return get_alias_real_type(db, type_decl.get_alias()?);
+                return get_alias_real_type(db, type_decl.get_alias_ref()?);
             }
             Some(compact_type)
         }
@@ -250,10 +250,10 @@ fn check_base_type_for_ref_compact(
             LuaType::MultiLineUnion(multi_line_union) => {
                 if multi_line_union.get_unions().iter().all(|(t, _)| {
                     let next_guard = check_guard.next_level();
-                    if next_guard.is_err() {
-                        return false;
+                    match next_guard {
+                        Ok(guard) => check_general_type_compact(db, source, t, guard).is_ok(),
+                        Err(_) => return false,
                     }
-                    check_general_type_compact(db, source, t, next_guard.unwrap()).is_ok()
                 }) {
                     return Ok(());
                 }
@@ -291,10 +291,10 @@ fn check_enum_fields_match_source(
         if let Some(LuaType::Union(enum_fields)) = decl.get_enum_field_type(db) {
             let is_match = enum_fields.get_types().iter().all(|field| {
                 let next_guard = check_guard.next_level();
-                if next_guard.is_err() {
-                    return false;
+                match next_guard {
+                    Ok(guard) => check_general_type_compact(db, source, field, guard).is_ok(),
+                    Err(_) => return false,
                 }
-                check_general_type_compact(db, source, field, next_guard.unwrap()).is_ok()
             });
             if is_match {
                 return Ok(());

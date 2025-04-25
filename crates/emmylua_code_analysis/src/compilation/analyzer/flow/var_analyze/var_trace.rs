@@ -92,8 +92,10 @@ impl<'a> VarTrace<'a> {
             old_info.1.add_trace_info(trace_info);
         } else {
             let trace_info = UnResolveTraceInfo::Trace(trace_info);
-            self.unresolve_traces
-                .insert(trace_id, (self.current_flow_id.unwrap(), trace_info));
+            if let Some(flow_id) = self.current_flow_id {
+                self.unresolve_traces
+                    .insert(trace_id, (flow_id, trace_info));
+            }
         }
     }
 

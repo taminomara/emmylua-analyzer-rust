@@ -147,7 +147,7 @@ impl LuaTypeDecl {
         }
     }
 
-    pub fn get_alias(&self) -> Option<&LuaType> {
+    pub fn get_alias_ref(&self) -> Option<&LuaType> {
         match &self.extra {
             LuaTypeExtra::Alias { origin, .. } => origin.as_ref(),
             _ => None,

@@ -142,7 +142,7 @@
     },
     "strict": {
       "default": {
-        "arrayIndex": false,
+        "arrayIndex": true,
         "metaOverrideFileDefine": true,
         "requirePath": false,
         "typeCall": false
@@ -850,7 +850,7 @@
       "properties": {
         "arrayIndex": {
           "description": "Whether to enable strict mode array indexing.",
-          "default": false,
+          "default": true,
           "type": "boolean"
         },
         "metaOverrideFileDefine": {

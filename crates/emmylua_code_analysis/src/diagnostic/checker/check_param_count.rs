@@ -254,7 +254,7 @@ fn is_nullable(db: &DbIndex, typ: &LuaType) -> bool {
             LuaType::Ref(decl_id) => {
                 if let Some(decl) = db.get_type_index().get_type_decl(decl_id) {
                     if decl.is_alias() {
-                        if let Some(alias_origin) = decl.get_alias() {
+                        if let Some(alias_origin) = decl.get_alias_ref() {
                             stack.push(alias_origin);
                         }
                     }

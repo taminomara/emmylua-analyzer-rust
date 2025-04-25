@@ -5,6 +5,7 @@ fn default_true() -> bool {
     true
 }
 
+#[allow(dead_code)]
 fn default_false() -> bool {
     false
 }
@@ -18,7 +19,7 @@ pub struct EmmyrcStrict {
     #[serde(default)]
     pub type_call: bool,
     /// Whether to enable strict mode array indexing.
-    #[serde(default = "default_false")]
+    #[serde(default = "default_true")]
     pub array_index: bool,
     /// meta define overrides file define
     #[serde(default = "default_true")]
@@ -30,7 +31,7 @@ impl Default for EmmyrcStrict {
         Self {
             require_path: false,
             type_call: false,
-            array_index: false,
+            array_index: true,
             meta_override_file_define: true,
         }
     }

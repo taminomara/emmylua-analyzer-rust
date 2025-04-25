@@ -316,7 +316,7 @@ function debug.traceback(thread, message, level) end
 --- access a same external local variable) will return identical ids for those
 --- upvalue indices.
 ---@version >5.2, JIT
----@param f async fun(...):any...
+---@param f function
 ---@param n integer
 ---@return lightuserdata id
 ---@nodiscard
