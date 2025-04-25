@@ -92,7 +92,7 @@ pub fn int_token_value(token: &LuaSyntaxToken) -> Result<i64, LuaParseError> {
         IntegerRepr::Normal
     };
 
-    let text = text.trim_end_matches(|c| c == 'u' || c == 'l' || c == 'U' || c == 'L');
+    let text = text.trim_end_matches(['u', 'l', 'U', 'L']);
 
     let value = match repr {
         IntegerRepr::Hex => {

@@ -308,15 +308,13 @@ impl LuaIndexExpr {
                     }
                     _ => return None,
                 }
-            } else {
-                if let Some(token) = child.as_token() {
-                    if token.kind() == LuaTokenKind::TkLeftBracket.into() {
-                        meet_left_bracket = true;
-                    } else if token.kind() == LuaTokenKind::TkName.into() {
-                        return Some(LuaIndexKey::Name(
-                            LuaNameToken::cast(token.clone()).unwrap(),
-                        ));
-                    }
+            } else if let Some(token) = child.as_token() {
+                if token.kind() == LuaTokenKind::TkLeftBracket.into() {
+                    meet_left_bracket = true;
+                } else if token.kind() == LuaTokenKind::TkName.into() {
+                    return Some(LuaIndexKey::Name(
+                        LuaNameToken::cast(token.clone()).unwrap(),
+                    ));
                 }
             }
         }
@@ -393,7 +391,7 @@ impl LuaCallExpr {
         if let Some(index_token) = self.get_colon_token() {
             return index_token.is_colon();
         }
-        return false;
+        false
     }
 
     pub fn get_colon_token(&self) -> Option<LuaIndexToken> {

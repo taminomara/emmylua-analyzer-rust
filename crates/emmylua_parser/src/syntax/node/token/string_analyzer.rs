@@ -1,7 +1,7 @@
 use crate::{kind::LuaTokenKind, parser_error::LuaParseError, LuaKind, LuaSyntaxToken};
 
 pub fn string_token_value(token: &LuaSyntaxToken) -> Result<String, LuaParseError> {
-    match LuaKind::from(token.kind()) {
+    match token.kind() {
         LuaKind::Token(LuaTokenKind::TkString) => normal_string_value(token),
         LuaKind::Token(LuaTokenKind::TkLongString) => long_string_value(token),
         _ => unreachable!(),
@@ -37,7 +37,7 @@ fn long_string_value(token: &LuaSyntaxToken) -> Result<String, LuaParseError> {
         ));
     }
 
-    while let Some((idx, c)) = chars.next() {
+    for (idx, c) in chars.by_ref() {
         // calc eq num
         if c == '=' {
             equal_num += 1;
@@ -142,7 +142,7 @@ fn normal_string_value(token: &LuaSyntaxToken) -> Result<String, LuaParseError> 
                             dec.push(next_char);
                             for _ in 0..2 {
                                 if let Some(digit) = chars.peek() {
-                                    if digit.is_digit(10) {
+                                    if digit.is_ascii_digit() {
                                         dec.push(*digit);
                                     } else {
                                         break;

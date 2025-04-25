@@ -624,15 +624,13 @@ impl LuaDocTagField {
                         _ => {}
                     },
                 }
-            } else {
-                if let Some(token) = child.as_token() {
-                    if token.kind() == LuaTokenKind::TkLeftBracket.into() {
-                        meet_left_bracket = true;
-                    } else if token.kind() == LuaTokenKind::TkName.into() {
-                        return Some(LuaDocFieldKey::Name(
-                            LuaNameToken::cast(token.clone()).unwrap(),
-                        ));
-                    }
+            } else if let Some(token) = child.as_token() {
+                if token.kind() == LuaTokenKind::TkLeftBracket.into() {
+                    meet_left_bracket = true;
+                } else if token.kind() == LuaTokenKind::TkName.into() {
+                    return Some(LuaDocFieldKey::Name(
+                        LuaNameToken::cast(token.clone()).unwrap(),
+                    ));
                 }
             }
         }

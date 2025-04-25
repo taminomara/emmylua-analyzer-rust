@@ -55,11 +55,11 @@ impl std::fmt::Display for SourceRange {
     }
 }
 
-impl Into<TextRange> for SourceRange {
-    fn into(self) -> TextRange {
+impl From<SourceRange> for TextRange {
+    fn from(val: SourceRange) -> Self {
         TextRange::new(
-            (self.start_offset as u32).into(),
-            (self.end_offset() as u32).into(),
+            (val.start_offset as u32).into(),
+            (val.end_offset() as u32).into(),
         )
     }
 }

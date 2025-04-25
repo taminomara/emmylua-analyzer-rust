@@ -22,7 +22,7 @@ mod test {
         }
         "#;
 
-        let tree = LuaParser::parse(&code, ParserConfig::default());
+        let tree = LuaParser::parse(code, ParserConfig::default());
         let root = tree.get_chunk_node();
         let mut comment_iter = root.descendants::<LuaComment>();
         let comment_1 = comment_iter.next().unwrap();

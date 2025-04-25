@@ -153,8 +153,8 @@ mod tests {
         reader.bump();
         reader.reset_buff();
         assert_eq!(reader.current_char(), 'e');
-        assert_eq!(reader.is_start_of_line(), false);
-        assert_eq!(reader.is_eof(), false);
+        assert!(!reader.is_start_of_line());
+        assert!(!reader.is_eof());
     }
 
     #[test]
@@ -162,9 +162,9 @@ mod tests {
         let text = "H";
         let mut reader = Reader::new(text);
         reader.reset_buff();
-        assert_eq!(reader.is_eof(), false);
+        assert!(!reader.is_eof());
         reader.bump();
-        assert_eq!(reader.is_eof(), true);
+        assert!(reader.is_eof());
     }
 
     #[test]
@@ -217,7 +217,7 @@ mod tests {
         let text = "12345Hello, world!";
         let mut reader = Reader::new(text);
         reader.reset_buff();
-        let count = reader.eat_while(|c| c.is_digit(10));
+        let count = reader.eat_while(|c| c.is_ascii_digit());
         assert_eq!(count, 5);
         assert_eq!(reader.current_char(), 'H');
     }

@@ -35,8 +35,8 @@ impl OutputWriter for TextOutputWriter {
         let mut warning_count = 0;
         let mut advice_count = 0;
         for diagnostic in &diagnostics {
-            match diagnostic.severity {
-                Some(severity) => match severity {
+            if let Some(severity) = diagnostic.severity {
+                match severity {
                     lsp_types::DiagnosticSeverity::ERROR => {
                         error_count += 1;
                     }
@@ -46,8 +46,7 @@ impl OutputWriter for TextOutputWriter {
                     _ => {
                         advice_count += 1;
                     }
-                },
-                _ => {}
+                }
             }
         }
 

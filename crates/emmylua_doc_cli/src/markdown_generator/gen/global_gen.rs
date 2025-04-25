@@ -32,9 +32,7 @@ pub fn generate_global_markdown(
     doc.name = name.to_string();
     doc.property = collect_property(db, LuaSemanticDeclId::LuaDecl(decl.get_id()));
 
-    let decl_type = db
-        .get_type_index()
-        .get_type_cache(&decl_id.clone().into())?;
+    let decl_type = db.get_type_index().get_type_cache(&(*decl_id).into())?;
     let mut template_name = "lua_global_template.tl";
     match decl_type.as_type() {
         LuaType::TableConst(table) => {
@@ -48,7 +46,7 @@ pub fn generate_global_markdown(
     }
     context.insert("doc", &doc);
 
-    let render_text = match tl.render(&template_name, &context) {
+    let render_text = match tl.render(template_name, &context) {
         Ok(text) => text,
         Err(e) => {
             eprintln!("Failed to render template: {}", e);
@@ -56,7 +54,7 @@ pub fn generate_global_markdown(
         }
     };
 
-    let file_name = format!("{}.md", escape_type_name(&decl.get_name()));
+    let file_name = format!("{}.md", escape_type_name(decl.get_name()));
     mkdocs_index.globals.push(IndexStruct {
         name: decl.get_name().to_string(),
         file: format!("globals/{}", file_name.clone()),
@@ -80,9 +78,7 @@ fn check_filter(db: &DbIndex, decl_id: &LuaDeclId) -> Option<()> {
     if !module.workspace_id.is_main() {
         return None;
     };
-    let decl_type = db
-        .get_type_index()
-        .get_type_cache(&decl_id.clone().into())?;
+    let decl_type = db.get_type_index().get_type_cache(&(*decl_id).into())?;
     match decl_type.as_type() {
         LuaType::Ref(_) | LuaType::Def(_) => return None,
         _ => {}
@@ -96,18 +92,16 @@ fn generate_simple_global(db: &DbIndex, decl: &LuaDecl, doc: &mut Doc) -> Option
     doc.property = collect_property(db, semantic_decl);
 
     let name = decl.get_name();
-    let ty = db
-        .get_type_index()
-        .get_type_cache(&decl.get_id().clone().into())?;
+    let ty = db.get_type_index().get_type_cache(&decl.get_id().into())?;
     if ty.is_function() {
-        let display = render_function_type(db, ty, &name, false);
+        let display = render_function_type(db, ty, name, false);
         doc.display = Some(display);
     } else if ty.is_const() {
-        let typ_display = render_const_type(db, &ty);
+        let typ_display = render_const_type(db, ty);
         let display = format!("```lua\n{}: {}\n```\n", name, typ_display);
         doc.display = Some(display);
     } else {
-        let typ_display = humanize_type(db, &ty, RenderLevel::Detailed);
+        let typ_display = humanize_type(db, ty, RenderLevel::Detailed);
         let display = format!("```lua\n{} : {}\n```\n", name, typ_display);
         doc.display = Some(display);
     }

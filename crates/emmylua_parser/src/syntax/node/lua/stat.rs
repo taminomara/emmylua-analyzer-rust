@@ -161,10 +161,8 @@ impl LuaAstNode for LuaLoopStat {
             Some(LuaLoopStat::RepeatStat(node))
         } else if let Some(node) = LuaForStat::cast(syntax.clone()) {
             Some(LuaLoopStat::ForStat(node))
-        } else if let Some(node) = LuaForRangeStat::cast(syntax.clone()) {
-            Some(LuaLoopStat::ForRangeStat(node))
         } else {
-            None
+            LuaForRangeStat::cast(syntax.clone()).map(LuaLoopStat::ForRangeStat)
         }
     }
 }
@@ -278,10 +276,8 @@ impl LuaAssignStat {
                     if let Some(var) = LuaExpr::cast(node) {
                         exprs.push(var);
                     }
-                } else {
-                    if let Some(var) = LuaVarExpr::cast(node) {
-                        vars.push(var);
-                    }
+                } else if let Some(var) = LuaVarExpr::cast(node) {
+                    vars.push(var);
                 }
             }
         }

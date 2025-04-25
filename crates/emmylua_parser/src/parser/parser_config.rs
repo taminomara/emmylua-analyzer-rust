@@ -54,7 +54,7 @@ impl<'cache> ParserConfig<'cache> {
     }
 }
 
-impl<'cache> Default for ParserConfig<'cache> {
+impl Default for ParserConfig<'_> {
     fn default() -> Self {
         Self {
             level: LuaLanguageLevel::Lua54,

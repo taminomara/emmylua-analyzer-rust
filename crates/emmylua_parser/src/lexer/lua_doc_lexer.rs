@@ -29,7 +29,7 @@ pub enum LuaDocLexerState {
 }
 
 impl LuaDocLexer<'_> {
-    pub fn new<'a>(origin_text: &'a str) -> LuaDocLexer<'a> {
+    pub fn new(origin_text: &str) -> LuaDocLexer<'_> {
         LuaDocLexer {
             origin_text,
             reader: None,
@@ -92,12 +92,12 @@ impl LuaDocLexer<'_> {
                             match reader.current_char() {
                                 '@' => {
                                     reader.bump();
-                                    return LuaTokenKind::TkDocLongStart;
+                                    LuaTokenKind::TkDocLongStart
                                 }
-                                _ => return LuaTokenKind::TkLongCommentStart,
+                                _ => LuaTokenKind::TkLongCommentStart,
                             }
                         } else {
-                            return LuaTokenKind::TkNormalStart;
+                            LuaTokenKind::TkNormalStart
                         }
                     }
                     3 => {
@@ -321,12 +321,12 @@ impl LuaDocLexer<'_> {
                             match reader.current_char() {
                                 '@' => {
                                     reader.bump();
-                                    return LuaTokenKind::TkDocLongStart;
+                                    LuaTokenKind::TkDocLongStart
                                 }
-                                _ => return LuaTokenKind::TkLongCommentStart,
+                                _ => LuaTokenKind::TkLongCommentStart,
                             }
                         } else {
-                            return LuaTokenKind::TkNormalStart;
+                            LuaTokenKind::TkNormalStart
                         }
                     }
                     3 => {
@@ -485,14 +485,14 @@ impl LuaDocLexer<'_> {
             ch if ch.is_ascii_alphabetic() => {
                 reader.eat_while(|c| c.is_ascii_alphabetic());
                 let text = reader.current_saved_text();
-                return match text {
+                match text {
                     "region" => LuaTokenKind::TkDocRegion,
                     "endregion" => LuaTokenKind::TkDocEndRegion,
                     _ => {
                         reader.eat_while(|_| true);
                         LuaTokenKind::TkDocDetail
                     }
-                };
+                }
             }
             '-' if reader.is_start_of_line() => {
                 let count = reader.consume_char_n_times('-', 3);
@@ -506,12 +506,12 @@ impl LuaDocLexer<'_> {
                             match reader.current_char() {
                                 '@' => {
                                     reader.bump();
-                                    return LuaTokenKind::TkDocLongStart;
+                                    LuaTokenKind::TkDocLongStart
                                 }
-                                _ => return LuaTokenKind::TkLongCommentStart,
+                                _ => LuaTokenKind::TkLongCommentStart,
                             }
                         } else {
-                            return LuaTokenKind::TkNormalStart;
+                            LuaTokenKind::TkNormalStart
                         }
                     }
                     3 => {

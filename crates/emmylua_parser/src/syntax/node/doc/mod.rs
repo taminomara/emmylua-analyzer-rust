@@ -64,9 +64,7 @@ impl LuaComment {
 fn find_inline_node(comment: &LuaSyntaxNode) -> Option<LuaSyntaxNode> {
     let mut prev_sibling = comment.prev_sibling_or_token();
     loop {
-        if prev_sibling.is_none() {
-            return None;
-        }
+        prev_sibling.as_ref()?;
 
         if let Some(sibling) = prev_sibling {
             match sibling.kind() {
@@ -78,14 +76,14 @@ fn find_inline_node(comment: &LuaSyntaxNode) -> Option<LuaSyntaxNode> {
                     return None;
                 }
                 LuaKind::Token(k) if k != LuaTokenKind::TkName => {
-                    return Some(comment.parent()?);
+                    return comment.parent();
                 }
                 _ => match sibling {
                     rowan::NodeOrToken::Node(node) => {
                         return Some(node);
                     }
                     rowan::NodeOrToken::Token(token) => {
-                        return Some(token.parent()?);
+                        return token.parent();
                     }
                 },
             }
@@ -101,9 +99,7 @@ fn find_attached_node(comment: &LuaSyntaxNode) -> Option<LuaSyntaxNode> {
 
     let mut next_sibling = comment.next_sibling_or_token();
     loop {
-        if next_sibling.is_none() {
-            return None;
-        }
+        next_sibling.as_ref()?;
 
         if let Some(sibling) = next_sibling {
             match sibling.kind() {
@@ -130,7 +126,7 @@ fn find_attached_node(comment: &LuaSyntaxNode) -> Option<LuaSyntaxNode> {
                         return Some(node);
                     }
                     rowan::NodeOrToken::Token(token) => {
-                        return Some(token.parent()?);
+                        return token.parent();
                     }
                 },
             }

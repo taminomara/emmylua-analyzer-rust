@@ -231,8 +231,7 @@ impl LuaAstNode for LuaTableField {
     where
         Self: Sized,
     {
-        kind == LuaSyntaxKind::TableFieldAssign.into()
-            || kind == LuaSyntaxKind::TableFieldValue.into()
+        kind == LuaSyntaxKind::TableFieldAssign || kind == LuaSyntaxKind::TableFieldValue
     }
 
     fn cast(syntax: LuaSyntaxNode) -> Option<Self>
@@ -299,15 +298,13 @@ impl LuaTableField {
                     }
                     _ => return None,
                 }
-            } else {
-                if let Some(token) = child.as_token() {
-                    if token.kind() == LuaTokenKind::TkLeftBracket.into() {
-                        meet_left_bracket = true;
-                    } else if token.kind() == LuaTokenKind::TkName.into() {
-                        return Some(LuaIndexKey::Name(
-                            LuaNameToken::cast(token.clone()).unwrap(),
-                        ));
-                    }
+            } else if let Some(token) = child.as_token() {
+                if token.kind() == LuaTokenKind::TkLeftBracket.into() {
+                    meet_left_bracket = true;
+                } else if token.kind() == LuaTokenKind::TkName.into() {
+                    return Some(LuaIndexKey::Name(
+                        LuaNameToken::cast(token.clone()).unwrap(),
+                    ));
                 }
             }
         }

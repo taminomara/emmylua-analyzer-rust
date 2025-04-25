@@ -90,7 +90,6 @@ impl<'a> LuaTreeBuilder<'a> {
     }
 
     pub fn finish(self) -> GreenNode {
-        let root = self.green_builder.finish(&self.text);
-        root
+        self.green_builder.finish(self.text)
     }
 }

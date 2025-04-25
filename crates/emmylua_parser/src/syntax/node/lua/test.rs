@@ -7,8 +7,8 @@ mod tests {
 
     fn get_tree(code: &str) -> LuaSyntaxTree {
         let config = ParserConfig::default();
-        let tree = LuaParser::parse(code, config);
-        tree
+
+        LuaParser::parse(code, config)
     }
 
     #[test]

@@ -104,8 +104,8 @@ mod tests {
                 }
                 LuaAst::LuaAssignStat(lua_assign_stat) => {
                     let (var_list, expr_list) = lua_assign_stat.get_var_and_expr_list();
-                    assert!(var_list.len() > 0);
-                    assert!(expr_list.len() > 0);
+                    assert!(!var_list.is_empty());
+                    assert!(!expr_list.is_empty());
                 }
                 LuaAst::LuaLocalStat(lua_local_stat) => {
                     let mut name_list = lua_local_stat.get_local_name_list();
@@ -203,21 +203,17 @@ mod tests {
         let tree = LuaParser::parse(code, ParserConfig::default());
         let chunk = tree.get_chunk_node();
         for node in chunk.descendants::<LuaAst>() {
-            match node {
-                LuaAst::LuaFuncStat(func_stat) => match func_stat.get_func_name().unwrap() {
+            if let LuaAst::LuaFuncStat(func_stat) = node {
+                match func_stat.get_func_name().unwrap() {
                     LuaVarExpr::NameExpr(name) => {
                         assert_eq!(name.get_name_token().unwrap().get_name_text(), "f");
                     }
                     LuaVarExpr::IndexExpr(field_exp) => {
-                        match field_exp.get_prefix_expr().unwrap() {
-                            LuaExpr::NameExpr(name) => {
-                                assert_eq!(name.get_name_token().unwrap().get_name_text(), "t");
-                            }
-                            _ => {}
+                        if let LuaExpr::NameExpr(name) = field_exp.get_prefix_expr().unwrap() {
+                            assert_eq!(name.get_name_token().unwrap().get_name_text(), "t");
                         }
                     }
-                },
-                _ => {}
+                }
             }
         }
     }

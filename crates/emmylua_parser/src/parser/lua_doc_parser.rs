@@ -36,7 +36,7 @@ impl MarkerEventContainer for LuaDocParser<'_, '_> {
 }
 
 impl LuaDocParser<'_, '_> {
-    pub fn parse<'a, 'b>(lua_parser: &'a mut LuaParser<'b>, tokens: &[LuaTokenData]) {
+    pub fn parse(lua_parser: &mut LuaParser<'_>, tokens: &[LuaTokenData]) {
         let lexer = LuaDocLexer::new(lua_parser.origin_text());
 
         let mut parser = LuaDocParser {

@@ -35,18 +35,18 @@ impl From<LuaTokenKind> for LuaKind {
     }
 }
 
-impl Into<LuaSyntaxKind> for LuaKind {
-    fn into(self) -> LuaSyntaxKind {
-        match self {
+impl From<LuaKind> for LuaSyntaxKind {
+    fn from(val: LuaKind) -> Self {
+        match val {
             LuaKind::Syntax(kind) => kind,
             _ => LuaSyntaxKind::None,
         }
     }
 }
 
-impl Into<LuaTokenKind> for LuaKind {
-    fn into(self) -> LuaTokenKind {
-        match self {
+impl From<LuaKind> for LuaTokenKind {
+    fn from(val: LuaKind) -> Self {
+        match val {
             LuaKind::Token(kind) => kind,
             _ => LuaTokenKind::None,
         }

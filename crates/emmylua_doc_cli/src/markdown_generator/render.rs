@@ -33,7 +33,7 @@ pub fn render_function_type(
             render_doc_function_type(db, lua_func, func_name, is_local)
         }
         LuaType::Signature(signature_id) => {
-            render_signature_type(db, signature_id.clone(), func_name, is_local).unwrap_or(format!(
+            render_signature_type(db, *signature_id, func_name, is_local).unwrap_or(format!(
                 "{}function {}",
                 if is_local { "local " } else { "" },
                 func_name
@@ -82,9 +82,9 @@ fn render_doc_function_type(
     result.push_str(local_prev);
     result.push_str("function ");
     result.push_str(func_name);
-    result.push_str("(");
+    result.push('(');
     if params.len() > 1 {
-        result.push_str("\n");
+        result.push('\n');
         for param in &params {
             result.push_str("  ");
             result.push_str(param);
@@ -92,13 +92,13 @@ fn render_doc_function_type(
         }
         result.pop(); // Remove the last comma
         result.pop(); // Remove the last newline
-        result.push_str("\n");
+        result.push('\n');
     } else {
         result.push_str(&params.join(", "));
     }
-    result.push_str(")");
+    result.push(')');
     if ret_strs.len() > 15 {
-        result.push_str("\n");
+        result.push('\n');
     }
 
     if !ret_strs.is_empty() {
@@ -144,9 +144,9 @@ fn render_signature_type(
     result.push_str(local_prev);
     result.push_str("function ");
     result.push_str(func_name);
-    result.push_str("(");
+    result.push('(');
     if params.len() > 1 {
-        result.push_str("\n");
+        result.push('\n');
         for param in &params {
             result.push_str("  ");
             result.push_str(param);
@@ -154,11 +154,11 @@ fn render_signature_type(
         }
         result.pop(); // Remove the last comma
         result.pop(); // Remove the last newline
-        result.push_str("\n");
+        result.push('\n');
     } else {
         result.push_str(&params.join(", "));
     }
-    result.push_str(")");
+    result.push(')');
     match rets.len() {
         0 => {}
         1 => {
@@ -168,7 +168,7 @@ fn render_signature_type(
             result.push_str(format!("{} {}", name, type_text).as_str());
         }
         _ => {
-            result.push_str("\n");
+            result.push('\n');
             for ret in rets {
                 let type_text = render_typ(db, &ret.type_ref);
                 let name = ret.name.clone().unwrap_or("".to_string());
@@ -191,7 +191,7 @@ fn render_signature_type(
             result.push_str("\n\n");
         }
     }
-    result.push_str("\n");
+    result.push('\n');
     for ret in rets {
         if let Some(description) = &ret.description {
             let name = match ret.name {
@@ -204,7 +204,7 @@ fn render_signature_type(
         }
     }
 
-    result.push_str("\n");
+    result.push('\n');
 
     Some(result)
 }

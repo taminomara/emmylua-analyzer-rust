@@ -11,13 +11,13 @@ pub fn load_workspace(workspace_folders: Vec<&str>) -> Option<EmmyLuaAnalysis> {
 
     let mut workspace_folders = workspace_folders
         .iter()
-        .map(|s| PathBuf::from(s))
+        .map(PathBuf::from)
         .collect::<Vec<_>>();
     for path in &workspace_folders {
         analysis.add_main_workspace(path.clone());
     }
 
-    let main_path = workspace_folders.get(0)?.clone();
+    let main_path = workspace_folders.first()?.clone();
     let config_files = vec![
         main_path.join(".luarc.json"),
         main_path.join(".emmyrc.json"),
@@ -59,7 +59,7 @@ pub fn collect_files(workspaces: &Vec<PathBuf>, emmyrc: &Emmyrc) -> Vec<LuaFileI
     );
     for workspace in workspaces {
         let loaded = load_workspace_files(
-            &workspace,
+            workspace,
             &match_pattern,
             &exclude,
             &exclude_dir,

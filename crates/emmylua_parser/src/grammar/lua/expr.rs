@@ -9,7 +9,7 @@ use crate::{
 use super::{expect_token, if_token_bump, parse_block};
 
 pub fn parse_expr(p: &mut LuaParser) -> ParseResult {
-    return parse_sub_expr(p, 0);
+    parse_sub_expr(p, 0)
 }
 
 fn parse_sub_expr(p: &mut LuaParser, limit: i32) -> ParseResult {

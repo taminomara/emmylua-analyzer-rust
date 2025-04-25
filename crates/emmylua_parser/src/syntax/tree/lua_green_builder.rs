@@ -163,7 +163,7 @@ impl LuaGreenNodeBuilder<'_> {
 
     #[inline]
     pub fn finish(mut self, text: &str) -> GreenNode {
-        if let Some(root_pos) = self.children.get(0) {
+        if let Some(root_pos) = self.children.first() {
             let is_chunk_root = matches!(
                 self.elements[*root_pos],
                 LuaGreenElement::Node {

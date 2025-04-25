@@ -91,7 +91,7 @@ fn generate_class_type_markdown(
                 .unwrap_or(&LuaTypeCache::InferType(LuaType::Unknown))
                 .as_type();
             let member_id = member.get_id();
-            let member_property_id = LuaSemanticDeclId::Member(member_id.clone());
+            let member_property_id = LuaSemanticDeclId::Member(member_id);
             let member_property = db.get_property_index().get_property(&member_property_id);
             if let Some(member_property) = member_property {
                 if member_property.visibility.unwrap_or(VisibilityKind::Public)
@@ -113,14 +113,14 @@ fn generate_class_type_markdown(
             let title_name = format!("{}.{}", typ_name, name);
             if member_typ.is_function() {
                 let func_name = format!("{}.{}", typ_name, name);
-                let display = render_function_type(db, &member_typ, &func_name, false);
+                let display = render_function_type(db, member_typ, &func_name, false);
                 method_members.push(MemberDoc {
                     name: title_name,
                     display,
                     property: member_property,
                 });
             } else if member_typ.is_const() {
-                let const_type_display = render_const_type(db, &member_typ);
+                let const_type_display = render_const_type(db, member_typ);
                 field_members.push(MemberDoc {
                     name: title_name,
                     display: format!(
@@ -130,7 +130,7 @@ fn generate_class_type_markdown(
                     property: member_property,
                 });
             } else {
-                let typ_display = humanize_type(db, &member_typ, RenderLevel::Detailed);
+                let typ_display = humanize_type(db, member_typ, RenderLevel::Detailed);
                 field_members.push(MemberDoc {
                     name: title_name,
                     display: format!("```lua\n{}.{} : {}\n```\n", typ_name, name, typ_display),
@@ -148,7 +148,7 @@ fn generate_class_type_markdown(
     }
 
     context.insert("doc", &doc);
-    let render_text = match tl.render("lua_type_template.tl", &context) {
+    let render_text = match tl.render("lua_type_template.tl", context) {
         Ok(text) => text,
         Err(e) => {
             eprintln!("Failed to render template: {}", e);
@@ -202,7 +202,7 @@ fn generate_enum_type_markdown(
                 .unwrap_or(&LuaTypeCache::InferType(LuaType::Unknown))
                 .as_type();
             let member_id = member.get_id();
-            let member_property_id = LuaSemanticDeclId::Member(member_id.clone());
+            let member_property_id = LuaSemanticDeclId::Member(member_id);
             let member_property = db.get_property_index().get_property(&member_property_id);
             if let Some(member_property) = member_property {
                 if member_property.visibility.unwrap_or(VisibilityKind::Public)
@@ -220,7 +220,7 @@ fn generate_enum_type_markdown(
                 _ => continue,
             };
 
-            let typ_display = humanize_type(db, &member_typ, RenderLevel::Simple);
+            let typ_display = humanize_type(db, member_typ, RenderLevel::Simple);
             field_members.push(MemberDoc {
                 name: name.to_string(),
                 display: typ_display,
@@ -234,7 +234,7 @@ fn generate_enum_type_markdown(
     }
 
     context.insert("doc", &doc);
-    let render_text = match tl.render("lua_enum_template.tl", &context) {
+    let render_text = match tl.render("lua_enum_template.tl", context) {
         Ok(text) => text,
         Err(e) => {
             eprintln!("Failed to render template: {}", e);
@@ -290,7 +290,7 @@ fn generate_alias_type_markdown(
 
     context.insert("doc", &doc);
 
-    let render_text = match tl.render("lua_alias_template.tl", &context) {
+    let render_text = match tl.render("lua_alias_template.tl", context) {
         Ok(text) => text,
         Err(e) => {
             eprintln!("Failed to render template: {}", e);

@@ -105,7 +105,7 @@ pub fn generate_member_owner_module(
                 .unwrap_or(&LuaTypeCache::InferType(LuaType::Unknown))
                 .as_type();
             let member_id = member.get_id();
-            let member_property_id = LuaSemanticDeclId::Member(member_id.clone());
+            let member_property_id = LuaSemanticDeclId::Member(member_id);
             let member_property = db.get_property_index().get_property(&member_property_id);
             if let Some(member_property) = member_property {
                 if member_property.visibility.unwrap_or(VisibilityKind::Public)
@@ -125,21 +125,21 @@ pub fn generate_member_owner_module(
             let title_name = format!("{}.{}", owner_name, name);
             if member_type.is_function() {
                 let func_name = format!("{}.{}", owner_name, name);
-                let display = render_function_type(db, &member_type, &func_name, false);
+                let display = render_function_type(db, member_type, &func_name, false);
                 method_members.push(MemberDoc {
                     name: title_name,
                     display,
                     property: member_property,
                 });
             } else if member_type.is_const() {
-                let display = render_const_type(db, &member_type);
+                let display = render_const_type(db, member_type);
                 field_members.push(MemberDoc {
                     name: title_name,
                     display: format!("```lua\n{}.{}: {}\n```\n", owner_name, name, display),
                     property: member_property,
                 });
             } else {
-                let typ_display = humanize_type(db, &member_type, RenderLevel::Detailed);
+                let typ_display = humanize_type(db, member_type, RenderLevel::Detailed);
                 field_members.push(MemberDoc {
                     name: title_name,
                     display: format!("```lua\n{}.{} : {}\n```\n", owner_name, name, typ_display),

@@ -178,22 +178,22 @@ impl<'a> LuaParser<'a> {
             match token.kind {
                 LuaTokenKind::TkShortComment | LuaTokenKind::TkLongComment => {
                     line_count = 0;
-                    doc_tokens.push(token.clone());
+                    doc_tokens.push(*token);
                 }
                 LuaTokenKind::TkEndOfLine => {
                     line_count += 1;
 
-                    if doc_tokens.len() == 0 {
+                    if doc_tokens.is_empty() {
                         self.events.push(MarkEvent::EatToken {
                             kind: token.kind,
                             range: token.range,
                         });
                     } else {
-                        doc_tokens.push(token.clone());
+                        doc_tokens.push(*token);
                     }
 
                     // If there are two EOFs after the comment, the previous comment is considered a group of comments
-                    if line_count > 1 && doc_tokens.len() > 0 {
+                    if line_count > 1 && !doc_tokens.is_empty() {
                         self.parse_comments(&doc_tokens);
                         doc_tokens.clear();
                     }
@@ -226,17 +226,17 @@ impl<'a> LuaParser<'a> {
                     }
                 }
                 LuaTokenKind::TkShebang | LuaTokenKind::TkWhitespace => {
-                    if doc_tokens.len() == 0 {
+                    if doc_tokens.is_empty() {
                         self.events.push(MarkEvent::EatToken {
                             kind: token.kind,
                             range: token.range,
                         });
                     } else {
-                        doc_tokens.push(token.clone());
+                        doc_tokens.push(*token);
                     }
                 }
                 _ => {
-                    if doc_tokens.len() > 0 {
+                    if !doc_tokens.is_empty() {
                         self.parse_comments(&doc_tokens);
                         doc_tokens.clear();
                     }
@@ -244,7 +244,7 @@ impl<'a> LuaParser<'a> {
             }
         }
 
-        if doc_tokens.len() > 0 {
+        if !doc_tokens.is_empty() {
             self.parse_comments(&doc_tokens);
         }
     }

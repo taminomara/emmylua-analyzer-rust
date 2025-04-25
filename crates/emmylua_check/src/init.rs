@@ -17,7 +17,7 @@ pub fn load_workspace(
         analysis.add_main_workspace(path.clone());
     }
 
-    let main_path = workspace_folders.get(0)?.clone();
+    let main_path = workspace_folders.first()?.clone();
     let (config_files, config_root) = if let Some(config_path) = config_path {
         (
             vec![config_path.clone()],
@@ -85,7 +85,7 @@ pub fn collect_files(
 
     for workspace in workspaces {
         let loaded = load_workspace_files(
-            &workspace,
+            workspace,
             &match_pattern,
             &exclude,
             &exclude_dir,

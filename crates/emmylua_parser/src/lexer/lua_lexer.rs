@@ -227,7 +227,7 @@ impl LuaLexer<'_> {
                 LuaTokenKind::TkString
             }
             '.' => {
-                if self.reader.next_char().is_digit(10) {
+                if self.reader.next_char().is_ascii_digit() {
                     return self.lex_number();
                 }
 
@@ -346,7 +346,7 @@ impl LuaLexer<'_> {
             _ if self.reader.is_eof() => LuaTokenKind::TkEof,
             ch if is_name_start(ch) => {
                 self.reader.bump();
-                self.reader.eat_while(|c| is_name_continue(c));
+                self.reader.eat_while(is_name_continue);
                 let name = self.reader.current_saved_text();
                 self.name_to_kind(name)
             }
@@ -502,7 +502,7 @@ impl LuaLexer<'_> {
                     }
                     _ => false,
                 },
-                NumberState::WithExpo => matches!(ch, '0'..='9'),
+                NumberState::WithExpo => ch.is_ascii_digit(),
                 NumberState::Bin => matches!(ch, '0' | '1'),
             };
 
@@ -513,22 +513,20 @@ impl LuaLexer<'_> {
             }
         }
 
-        if self.lexer_config.support_complex_number() {
-            if self.reader.current_char() == 'i' {
-                self.reader.bump();
-                return LuaTokenKind::TkComplex;
-            }
+        if self.lexer_config.support_complex_number() && self.reader.current_char() == 'i' {
+            self.reader.bump();
+            return LuaTokenKind::TkComplex;
         }
 
-        if self.lexer_config.support_ll_integer() {
-            if matches!(
+        if self.lexer_config.support_ll_integer()
+            && matches!(
                 state,
                 NumberState::Int | NumberState::Hex | NumberState::Bin
-            ) {
-                self.reader
-                    .eat_while(|ch| matches!(ch, 'u' | 'U' | 'l' | 'L'));
-                return LuaTokenKind::TkInt;
-            }
+            )
+        {
+            self.reader
+                .eat_while(|ch| matches!(ch, 'u' | 'U' | 'l' | 'L'));
+            return LuaTokenKind::TkInt;
         }
 
         if self.reader.current_char().is_alphabetic() {

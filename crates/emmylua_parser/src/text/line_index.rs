@@ -21,10 +21,8 @@ impl LineIndex {
                 line_offsets.push(TextSize::from(offset as u32));
                 line_only_ascii_vec.push(is_line_only_ascii);
                 is_line_only_ascii = true;
-            } else {
-                if !c.is_ascii() {
-                    is_line_only_ascii = false;
-                }
+            } else if !c.is_ascii() {
+                is_line_only_ascii = false;
             }
         }
 

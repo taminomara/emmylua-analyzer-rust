@@ -46,7 +46,7 @@ impl LuaAstToken for LuaNameToken {
     where
         Self: Sized,
     {
-        kind == LuaTokenKind::TkName.into()
+        kind == LuaTokenKind::TkName
     }
 
     fn cast(syntax: LuaSyntaxToken) -> Option<Self>
@@ -81,7 +81,7 @@ impl LuaAstToken for LuaStringToken {
     where
         Self: Sized,
     {
-        kind == LuaTokenKind::TkString.into() || kind == LuaTokenKind::TkLongString.into()
+        kind == LuaTokenKind::TkString || kind == LuaTokenKind::TkLongString
     }
 
     fn cast(syntax: LuaSyntaxToken) -> Option<Self>
@@ -98,10 +98,7 @@ impl LuaAstToken for LuaStringToken {
 
 impl LuaStringToken {
     pub fn get_value(&self) -> String {
-        match string_token_value(&self.token) {
-            Ok(str) => str,
-            Err(_) => String::new(),
-        }
+        string_token_value(&self.token).unwrap_or_default()
     }
 }
 
@@ -119,7 +116,7 @@ impl LuaAstToken for LuaNumberToken {
     where
         Self: Sized,
     {
-        kind == LuaTokenKind::TkFloat.into() || kind == LuaTokenKind::TkInt.into()
+        kind == LuaTokenKind::TkFloat || kind == LuaTokenKind::TkInt
     }
 
     fn cast(syntax: LuaSyntaxToken) -> Option<Self>
@@ -147,20 +144,14 @@ impl LuaNumberToken {
         if !self.is_float() {
             return 0.0;
         }
-        match float_token_value(&self.token) {
-            Ok(float) => float,
-            Err(_) => 0.0,
-        }
+        float_token_value(&self.token).unwrap_or(0.0)
     }
 
     pub fn get_int_value(&self) -> i64 {
         if !self.is_int() {
             return 0;
         }
-        match int_token_value(&self.token) {
-            Ok(int) => int,
-            Err(_) => 0,
-        }
+        int_token_value(&self.token).unwrap_or_default()
     }
 }
 
@@ -307,7 +298,7 @@ impl LuaAstToken for LuaBoolToken {
     where
         Self: Sized,
     {
-        kind == LuaTokenKind::TkTrue.into() || kind == LuaTokenKind::TkFalse.into()
+        kind == LuaTokenKind::TkTrue || kind == LuaTokenKind::TkFalse
     }
 
     fn cast(syntax: LuaSyntaxToken) -> Option<Self>
@@ -342,7 +333,7 @@ impl LuaAstToken for LuaNilToken {
     where
         Self: Sized,
     {
-        kind == LuaTokenKind::TkNil.into()
+        kind == LuaTokenKind::TkNil
     }
 
     fn cast(syntax: LuaSyntaxToken) -> Option<Self>
@@ -468,9 +459,9 @@ impl LuaAstToken for LuaIndexToken {
     where
         Self: Sized,
     {
-        kind == LuaTokenKind::TkDot.into()
-            || kind == LuaTokenKind::TkColon.into()
-            || kind == LuaTokenKind::TkLeftBracket.into()
+        kind == LuaTokenKind::TkDot
+            || kind == LuaTokenKind::TkColon
+            || kind == LuaTokenKind::TkLeftBracket
     }
 
     fn cast(syntax: LuaSyntaxToken) -> Option<Self>

@@ -77,21 +77,21 @@ impl LuaSyntaxId {
 
     pub fn from_ptr(ptr: LuaSyntaxNodePtr) -> Self {
         LuaSyntaxId {
-            kind: ptr.kind().into(),
+            kind: ptr.kind(),
             range: ptr.text_range(),
         }
     }
 
     pub fn from_node(node: &LuaSyntaxNode) -> Self {
         LuaSyntaxId {
-            kind: node.kind().into(),
+            kind: node.kind(),
             range: node.text_range(),
         }
     }
 
     pub fn from_token(token: &LuaSyntaxToken) -> Self {
         LuaSyntaxId {
-            kind: token.kind().into(),
+            kind: token.kind(),
             range: token.text_range(),
         }
     }
@@ -187,7 +187,7 @@ impl<'de> Deserialize<'de> for LuaSyntaxId {
     {
         struct LuaSyntaxIdVisitor;
 
-        impl<'de> Visitor<'de> for LuaSyntaxIdVisitor {
+        impl Visitor<'_> for LuaSyntaxIdVisitor {
             type Value = LuaSyntaxId;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
