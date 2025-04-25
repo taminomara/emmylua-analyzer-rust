@@ -65,7 +65,8 @@ It primarily follows this format:
   "strict": {
     "requirePath": false,
     "typeCall": false,
-    "arrayIndex": true
+    "arrayIndex": false,
+    "metaOverrideFileDefine": true
   },
   "hover": {
     "enable": true
@@ -139,6 +140,7 @@ This feature is mainly to make `require` work correctly. If you need to map modu
 - `requirePath`: Whether or not to enable strict mode for require. Default is `false`.
 - `typeCall`: Whether or not to enable strict type calls. Default is `false`.
 - `arrayIndex`: Whether or not to enable strict mode for array indexing. Default is `true`.
+- `metaOverrideFileDefine`: Whether or not to enable meta override file define. Default is `true`. When `false`, the behavior is similar to `luals`.
 
 ## hover
 - `enable`: Whether or not to enable hover support. Default is `true`.

@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod test {
+    use std::sync::Arc;
+
     use crate::{DiagnosticCode, VirtualWorkspace};
 
     #[test]
@@ -539,6 +541,382 @@ mod test {
             r#"
                 local a --- @type type|'a'
                 string.len(a)
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_super() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class py.ETypeMeta
+
+                ---@class py.Vector3: py.ETypeMeta
+                ---@class py.FVector3: py.ETypeMeta
+
+                ---@alias Point.HandleType py.FVector3
+
+                ---@class py.Point: py.Vector3
+
+                ---@param point py.Point
+                local function test(point)
+                end
+
+                ---@type Point.HandleType
+                local handle
+
+                test(handle)
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_union_type() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            ---@class py.Area
+            ---@class py.RecArea: py.Area
+            ---@class py.CirArea: py.Area
+
+            ---@param a py.Area
+            local function test(a)
+            end
+
+            ---@type py.RecArea | py.CirArea
+            local a
+
+            test(a)
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_super_1() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class py.SlotType: integer
+
+                ---@param a py.SlotType
+                local function test(a)
+                end
+
+                ---@type 0|1
+                local a
+
+                test(a)
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_alias_union_enum() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@alias EventType
+                ---| GlobalEventType
+                ---| UIEventType
+
+                ---@enum UIEventType
+                local UIEventType = {
+                    ['UI_CREATE'] = "ET_UI_PREFAB_CREATE_EVENT",
+                    ['UI_DELETE'] = "ET_UI_PREFAB_DEL_EVENT",
+                }
+
+                ---@enum GlobalEventType
+                local GlobalEventType = {
+                    ['GAME_INIT'] = "ET_GAME_INIT",
+                    ['GAME_PAUSE'] = "ET_GAME_PAUSE",
+                }
+
+                ---@param event_name string
+                local function get_py_event_name(event_name)
+                end
+
+                ---@param a EventType
+                local function test(a)
+                    get_py_event_name(a)
+                end
+
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_alias_union_enum_2() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(!ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@alias EventType
+                ---| GlobalEventType
+                ---| UIEventType
+
+                ---@enum UIEventType
+                local UIEventType = {
+                    ['UI_CREATE'] = "ET_UI_PREFAB_CREATE_EVENT",
+                    ['UI_DELETE'] = "ET_UI_PREFAB_DEL_EVENT",
+                }
+
+                ---@enum GlobalEventType
+                local GlobalEventType = {
+                    ['GAME_INIT'] = 1,
+                    ['GAME_PAUSE'] = "ET_GAME_PAUSE",
+                }
+
+                ---@param event_name string
+                local function get_py_event_name(event_name)
+                end
+
+                ---@param a EventType
+                local function test(a)
+                    get_py_event_name(a)
+                end
+
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_empty_class() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class D4.A: table<integer, string>
+
+                ---@param lua_conf D4.A 
+                local function enable_global_lua_trigger(lua_conf) end
+
+                ---@return { on_event: fun(trigger: table,  actor, data), [integer]: string }
+                function new_global_trigger() end
+
+                local a = new_global_trigger()
+
+                enable_global_lua_trigger(a)
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_super_and_enum_1() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@enum AbilityType
+                local AbilityType = {
+                    HIDE   = 0,
+                    NORMAL = 1,
+                    COMMON = 2,
+                    HERO   = 3,
+                }
+                ---@class py.AbilityType: integer
+
+                ---@param ability_type py.AbilityType
+                local function a(ability_type) end
+
+                ---@param type AbilityType
+                local function get(type)
+                    local py_list = a(type)
+                end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_super_and_enum_2() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(!ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@enum AbilityType
+                local AbilityType = {
+                    HIDE   = "a",
+                    NORMAL = 1,
+                    COMMON = 2,
+                    HERO   = 3,
+                }
+                ---@class py.AbilityType: integer
+
+                ---@param ability_type py.AbilityType
+                local function a(ability_type) end
+
+                ---@param type AbilityType
+                local function get(type)
+                    local py_list = a(type)
+                end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_generic_array() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            ---@class LocalTimer
+
+            ---@generic V
+            ---@param list V[]
+            ---@return integer
+            local function sort(list) end
+
+            ---@type { need_sort: true?, [integer]: LocalTimer }
+            local queue = {}
+            sort(queue)
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_function_union() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(!ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class (partial) D21.A
+                local M
+
+                ---@alias EventType
+                ---| GlobalEventType
+                ---| UIEventType
+
+                ---@enum UIEventType
+                local UIEventType = {
+                    ['UI_CREATE'] = "ET_UI_PREFAB_CREATE_EVENT",
+                }
+                ---@enum GlobalEventType
+                local GlobalEventType = {
+                    ['GAME_INIT'] = "ET_GAME_INIT",
+                }
+
+                ---@param event_type EventType
+                function M:event(event_type)
+                end
+
+                ---@class (partial) D21.A
+                ---@field event fun(self: self, event: "游戏-初始化")
+
+                ---@param p string
+                local function test(p)
+                    M:event(p)
+                end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_function_union_2() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class (partial) D21.A
+                local M
+
+                ---@alias EventType
+                ---| GlobalEventType
+                ---| UIEventType
+
+                ---@enum UIEventType
+                local UIEventType = {
+                    ['UI_CREATE'] = "ET_UI_PREFAB_CREATE_EVENT",
+                }
+                ---@enum GlobalEventType
+                local GlobalEventType = {
+                    ['GAME_INIT'] = "ET_GAME_INIT",
+                }
+
+                ---@param event_type EventType
+                function M:event(event_type)
+                end
+
+                ---@class (partial) D21.A
+                ---@field event fun(self: self, event: "游戏-初始化")
+
+                ---@param p EventType
+                local function test(p)
+                    M:event(p)
+                end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_function_union_meta() {
+        let mut ws = VirtualWorkspace::new();
+        let mut emmyrc = ws.analysis.emmyrc.as_ref().clone();
+        emmyrc.strict.meta_override_file_define = false;
+        ws.analysis.update_config(Arc::new(emmyrc));
+
+        ws.def(
+            r#"
+                ---@meta
+                ---@class (partial) D21.A
+                ---@field event fun(self: self, event: "游戏-初始化")
+            "#,
+        );
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class (partial) D21.A
+                local M
+
+                ---@alias EventType
+                ---| GlobalEventType
+                ---| UIEventType
+
+                ---@enum UIEventType
+                local UIEventType = {
+                    ['UI_CREATE'] = "ET_UI_PREFAB_CREATE_EVENT",
+                }
+                ---@enum GlobalEventType
+                local GlobalEventType = {
+                    ['GAME_INIT'] = "ET_GAME_INIT",
+                }
+
+                ---@param event_type EventType
+                function M:event(event_type)
+                end
+
+                ---@param p EventType
+                local function test(p)
+                    M:event(p)
+                end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_function_self() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class D23.A
+
+                ---@generic Extends: string
+                ---@param init? fun(self: self, super: Extends)
+                local function extends(init)
+                end
+
+                ---@generic Super: string
+                ---@param super? `Super`
+                ---@param superInit? fun(self: D23.A, super: Super, ...)
+                local function declare(super, superInit)
+                    extends(superInit)
+                end
         "#
         ));
     }

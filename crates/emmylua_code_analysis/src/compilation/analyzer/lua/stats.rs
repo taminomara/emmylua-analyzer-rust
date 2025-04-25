@@ -62,7 +62,9 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
                         }
                     }
                 }
-
+                if let LuaType::Variadic(variadic) = expr_type {
+                    expr_type = variadic.as_ref().clone();
+                }
                 bind_type(
                     analyzer.db,
                     decl_id.into(),
@@ -104,10 +106,14 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
                             let decl_id = LuaDeclId::new(analyzer.file_id, position);
                             let ret_type = multi.get_type(i - expr_count + 1);
                             if let Some(ty) = ret_type {
+                                let mut final_type = ty.clone();
+                                if let LuaType::Variadic(variadic) = final_type {
+                                    final_type = variadic.as_ref().clone();
+                                }
                                 bind_type(
                                     analyzer.db,
                                     decl_id.into(),
-                                    LuaTypeCache::InferType(ty.clone()),
+                                    LuaTypeCache::InferType(final_type),
                                 );
                             } else {
                                 analyzer.db.get_type_index_mut().bind_type(
@@ -298,14 +304,12 @@ pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignSta
                 continue;
             }
         };
-
-        merge_type_owner_and_expr_type(analyzer, type_owner, &expr_type, 0);
+        assign_merge_type_owner_and_expr_type(analyzer, type_owner, &expr_type, 0);
     }
 
     // The complexity brought by multiple return values is too high
     if var_count > expr_count {
-        let last_expr = expr_list.last();
-        if let Some(last_expr) = last_expr.clone() {
+        if let Some(last_expr) = expr_list.last() {
             match analyzer.infer_expr(last_expr) {
                 Ok(last_expr_type) => {
                     if last_expr_type.is_multi_return() {
@@ -313,7 +317,7 @@ pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignSta
                             let var = var_list.get(i)?;
                             let type_owner = get_var_owner(analyzer, var.clone());
                             set_index_expr_owner(analyzer, var.clone());
-                            merge_type_owner_and_expr_type(
+                            assign_merge_type_owner_and_expr_type(
                                 analyzer,
                                 type_owner,
                                 &last_expr_type,
@@ -344,7 +348,7 @@ pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignSta
     Some(())
 }
 
-fn merge_type_owner_and_expr_type(
+fn assign_merge_type_owner_and_expr_type(
     analyzer: &mut LuaAnalyzer,
     type_owner: LuaTypeOwner,
     expr_type: &LuaType,
@@ -353,6 +357,12 @@ fn merge_type_owner_and_expr_type(
     let mut expr_type = expr_type.clone();
     if let LuaType::MuliReturn(multi) = expr_type {
         expr_type = multi.get_type(idx).unwrap_or(&LuaType::Nil).clone();
+    }
+    match &expr_type {
+        LuaType::Variadic(variadic) => {
+            expr_type = variadic.as_ref().clone();
+        }
+        _ => {}
     }
 
     bind_type(analyzer.db, type_owner, LuaTypeCache::InferType(expr_type));
@@ -483,7 +493,7 @@ fn special_assign_pattern(
 
     match analyzer.infer_expr(&right) {
         Ok(right_expr_type) => {
-            merge_type_owner_and_expr_type(analyzer, type_owner, &right_expr_type, 0);
+            assign_merge_type_owner_and_expr_type(analyzer, type_owner, &right_expr_type, 0);
         }
         Err(_) => return None,
     }

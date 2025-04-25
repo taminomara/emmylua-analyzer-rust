@@ -4,9 +4,11 @@ use rowan::TextRange;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
 
-use crate::{instantiate_type_generic, DbIndex, FileId, TypeSubstitutor};
+use crate::{
+    instantiate_type_generic, DbIndex, FileId, LuaMemberKey, LuaMemberOwner, TypeSubstitutor,
+};
 
-use super::LuaType;
+use super::{LuaType, LuaUnionType};
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone, Copy)]
 pub enum LuaDeclTypeKind {
@@ -145,6 +147,13 @@ impl LuaTypeDecl {
         }
     }
 
+    pub fn get_alias_ref(&self) -> Option<&LuaType> {
+        match &self.extra {
+            LuaTypeExtra::Alias { origin, .. } => origin.as_ref(),
+            _ => None,
+        }
+    }
+
     pub fn add_alias_origin(&mut self, replace: LuaType) {
         match &mut self.extra {
             LuaTypeExtra::Alias { origin, .. } => {
@@ -165,6 +174,46 @@ impl LuaTypeDecl {
 
     pub fn merge_decl(&mut self, other: LuaTypeDecl) {
         self.locations.extend(other.locations);
+    }
+
+    /// 获取枚举字段的类型
+    pub fn get_enum_field_type(&self, db: &DbIndex) -> Option<LuaType> {
+        if !self.is_enum() {
+            return None;
+        }
+
+        let enum_member_owner = LuaMemberOwner::Type(self.get_id());
+        let enum_members = db.get_member_index().get_members(&enum_member_owner)?;
+
+        let mut union_types = Vec::new();
+        if self.is_enum_key() {
+            for enum_member in enum_members {
+                let member_key = enum_member.get_key();
+                let fake_type = match member_key {
+                    LuaMemberKey::Name(name) => LuaType::DocStringConst(name.clone().into()),
+                    LuaMemberKey::Integer(i) => LuaType::IntegerConst(i.clone()),
+                    LuaMemberKey::None | LuaMemberKey::Expr(_) => continue,
+                };
+
+                union_types.push(fake_type);
+            }
+        } else {
+            for member in enum_members {
+                if let Some(type_cache) =
+                    db.get_type_index().get_type_cache(&member.get_id().into())
+                {
+                    let member_fake_type = match type_cache.as_type() {
+                        LuaType::StringConst(s) => LuaType::DocStringConst(s.clone().into()),
+                        LuaType::IntegerConst(i) => LuaType::DocIntegerConst(i.clone()),
+                        _ => type_cache.as_type().clone(),
+                    };
+
+                    union_types.push(member_fake_type);
+                }
+            }
+        }
+
+        return Some(LuaType::Union(LuaUnionType::new(union_types).into()));
     }
 }
 

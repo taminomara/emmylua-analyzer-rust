@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::DiagnosticCode;
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema, Clone)]
 #[serde(rename_all = "camelCase")]
 /// Represents the diagnostic configuration for Emmyrc.
 pub struct EmmyrcDiagnostic {

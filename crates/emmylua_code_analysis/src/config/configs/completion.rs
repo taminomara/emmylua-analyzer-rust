@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnError};
 
 #[serde_as]
-#[derive(Serialize, Deserialize, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema, Clone)]
 #[serde(rename_all = "camelCase")]
 /// Configuration for EmmyLua code completion.
 pub struct EmmyrcCompletion {

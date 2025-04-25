@@ -76,15 +76,14 @@ pub fn infer_call_expr_func(
         LuaType::TableConst(meta_table) => infer_table_type_doc_function(db, meta_table),
         LuaType::Union(union) => {
             // 此时我们将其视为泛型实例化联合体
-            if union.get_types().len() > 1
-                && union
-                    .get_types()
-                    .iter()
-                    .all(|t| matches!(t, LuaType::DocFunction(_)))
+            if union
+                .get_types()
+                .iter()
+                .all(|t| matches!(t, LuaType::DocFunction(_)))
             {
                 infer_generic_doc_function_union(db, cache, &union, call_expr, args_count)
             } else {
-                Err(InferFailReason::None)
+                infer_union(db, cache, &union, call_expr, args_count)
             }
         }
         _ => return Err(InferFailReason::None),
@@ -154,7 +153,7 @@ fn infer_signature_doc_function(
             signature.is_async,
             signature.is_colon_define,
             signature.get_type_params(),
-            vec![],
+            signature.get_return_types(),
         );
         if signature.is_generic() {
             fake_doc_function = instantiate_func_generic(db, cache, &fake_doc_function, call_expr)?;
@@ -167,7 +166,7 @@ fn infer_signature_doc_function(
             signature.is_async,
             signature.is_colon_define,
             signature.get_type_params(),
-            vec![],
+            signature.get_return_types(),
         ));
         new_overloads.push(fake_doc_function);
 
@@ -383,4 +382,80 @@ fn infer_table_type_doc_function(db: &DbIndex, table: InFiled<TextRange>) -> Inf
     }
 
     Err(InferFailReason::None)
+}
+
+fn infer_union(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
+    union: &LuaUnionType,
+    call_expr: LuaCallExpr,
+    args_count: Option<usize>,
+) -> InferCallFuncResult {
+    // 此时一般是 signature + doc_function 的联合体
+    let mut all_overloads = Vec::new();
+    let mut base_signatures = Vec::new();
+
+    for ty in union.get_types() {
+        match ty {
+            LuaType::Signature(signature_id) => {
+                if let Some(signature) = db.get_signature_index().get(signature_id) {
+                    // 处理 overloads
+                    let overloads = if signature.is_generic() {
+                        signature
+                            .overloads
+                            .iter()
+                            .map(|func| {
+                                Ok(Arc::new(instantiate_func_generic(
+                                    db,
+                                    cache,
+                                    func,
+                                    call_expr.clone(),
+                                )?))
+                            })
+                            .collect::<Result<Vec<_>, _>>()?
+                    } else {
+                        signature.overloads.clone()
+                    };
+                    all_overloads.extend(overloads);
+
+                    // 处理 signature 本身的函数类型
+                    let mut fake_doc_function = LuaFunctionType::new(
+                        signature.is_async,
+                        signature.is_colon_define,
+                        signature.get_type_params(),
+                        signature.get_return_types(),
+                    );
+                    if signature.is_generic() {
+                        fake_doc_function = instantiate_func_generic(
+                            db,
+                            cache,
+                            &fake_doc_function,
+                            call_expr.clone(),
+                        )?;
+                    }
+                    base_signatures.push(Arc::new(fake_doc_function));
+                }
+            }
+            LuaType::DocFunction(func) => {
+                let func_to_push = if func.contain_tpl() {
+                    Arc::new(instantiate_func_generic(
+                        db,
+                        cache,
+                        func,
+                        call_expr.clone(),
+                    )?)
+                } else {
+                    func.clone()
+                };
+                base_signatures.push(func_to_push);
+            }
+            _ => {}
+        }
+    }
+
+    all_overloads.extend(base_signatures);
+    if all_overloads.is_empty() {
+        return Err(InferFailReason::None);
+    }
+    resolve_signature(db, cache, all_overloads, call_expr, false, args_count)
 }

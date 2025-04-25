@@ -67,6 +67,7 @@ fn check_general_type_compact(
         | LuaType::TplRef(_)
         | LuaType::StrTplRef(_)
         | LuaType::Namespace(_)
+        | LuaType::MuliReturn(_)
         | LuaType::Variadic(_) => check_simple_type_compact(db, source, compact_type, check_guard),
 
         // type ref
@@ -105,7 +106,6 @@ fn check_general_type_compact(
             check_generic_type_compact(db, generic, compact_type, check_guard)
         }
         // invalid source type
-        // LuaType::MuliReturn(_) |
         // LuaType::MemberPathExist(_) |
         LuaType::Instance(instantiate) => check_general_type_compact(
             db,

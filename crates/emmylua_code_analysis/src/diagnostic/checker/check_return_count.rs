@@ -168,7 +168,9 @@ fn check_if_stat(
     for if_stat in block.children::<LuaIfStat>() {
         // 检查`if`的主块
         if let Some(if_block) = if_stat.get_block() {
-            check_return_block(context, semantic_model, if_block.clone())?;
+            if check_return_block(context, semantic_model, if_block.clone()).is_err() {
+                has_return = false;
+            }
         } else {
             return Err(block.clone());
         }
@@ -176,7 +178,9 @@ fn check_if_stat(
         // 检查所有条件分支
         for clause in if_stat.get_all_clause() {
             if let Some(clause_block) = clause.get_block() {
-                check_return_block(context, semantic_model, clause_block.clone())?;
+                if check_return_block(context, semantic_model, clause_block.clone()).is_err() {
+                    has_return = false;
+                }
             } else {
                 return Err(block.clone());
             }

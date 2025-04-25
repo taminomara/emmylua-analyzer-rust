@@ -212,7 +212,10 @@ fn is_valid_member(
                 match &info.key {
                     LuaMemberKey::Expr(typ) => {
                         if typ.is_string() {
-                            if key_type_set.iter().any(|typ| typ.is_string()) {
+                            if key_type_set
+                                .iter()
+                                .any(|typ| typ.is_string() || typ.is_str_tpl_ref())
+                            {
                                 return Some(());
                             }
                         } else if typ.is_integer() {
@@ -222,7 +225,10 @@ fn is_valid_member(
                         }
                     }
                     LuaMemberKey::Name(_) => {
-                        if key_type_set.iter().any(|typ| typ.is_string()) {
+                        if key_type_set
+                            .iter()
+                            .any(|typ| typ.is_string() || typ.is_str_tpl_ref())
+                        {
                             return Some(());
                         }
                     }
@@ -259,8 +265,13 @@ fn is_valid_member(
 fn get_prefix_types(prefix_typ: &LuaType) -> HashSet<LuaType> {
     let mut type_set = HashSet::new();
     let mut stack = vec![prefix_typ.clone()];
+    let mut visited = HashSet::new();
 
     while let Some(current_type) = stack.pop() {
+        if visited.contains(&current_type) {
+            continue;
+        }
+        visited.insert(current_type.clone());
         match &current_type {
             LuaType::Union(union_typ) => {
                 for t in union_typ.get_types() {
@@ -279,8 +290,13 @@ fn get_prefix_types(prefix_typ: &LuaType) -> HashSet<LuaType> {
 fn get_key_types(typ: &LuaType) -> HashSet<LuaType> {
     let mut type_set = HashSet::new();
     let mut stack = vec![typ.clone()];
+    let mut visited = HashSet::new();
 
     while let Some(current_type) = stack.pop() {
+        if visited.contains(&current_type) {
+            continue;
+        }
+        visited.insert(current_type.clone());
         match &current_type {
             LuaType::String => {
                 type_set.insert(current_type);
@@ -293,7 +309,7 @@ fn get_key_types(typ: &LuaType) -> HashSet<LuaType> {
                     stack.push(t.clone());
                 }
             }
-            LuaType::Ref(_) => {
+            LuaType::StrTplRef(_) | LuaType::Ref(_) => {
                 type_set.insert(current_type);
             }
             _ => {}

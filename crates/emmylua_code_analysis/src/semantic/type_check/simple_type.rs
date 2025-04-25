@@ -1,6 +1,7 @@
-use crate::{DbIndex, LuaType};
+use crate::{semantic::type_check::is_sub_type_of, DbIndex, LuaType, LuaTypeDeclId};
 
 use super::{
+    check_general_type_compact, sub_type::get_base_type_id,
     type_check_fail_reason::TypeCheckFailReason, type_check_guard::TypeCheckGuard, TypeCheckResult,
 };
 
@@ -64,34 +65,30 @@ pub fn check_simple_type_compact(
             }
         }
         LuaType::String | LuaType::StringConst(_) => match compact_type {
-            LuaType::String | LuaType::StringConst(_) | LuaType::DocStringConst(_) => {
+            LuaType::String
+            | LuaType::StringConst(_)
+            | LuaType::DocStringConst(_)
+            | LuaType::StrTplRef(_) => {
                 return Ok(());
             }
             LuaType::Ref(_) => {
-                let real_type = get_alias_real_type(db, compact_type);
-                match real_type {
-                    Some(LuaType::MultiLineUnion(multi_line_union)) => {
-                        let all_are_string = multi_line_union
-                            .get_unions()
-                            .iter()
-                            .all(|(t, _)| t.is_string());
-                        if all_are_string {
-                            return Ok(());
-                        }
-                    }
-                    _ => {}
+                if check_base_type_for_ref_compact(db, source, compact_type, check_guard).is_ok() {
+                    return Ok(());
                 }
             }
             _ => {}
         },
-        LuaType::Integer | LuaType::IntegerConst(_) => {
-            if matches!(
-                compact_type,
-                LuaType::Integer | LuaType::IntegerConst(_) | LuaType::DocIntegerConst(_)
-            ) {
+        LuaType::Integer | LuaType::IntegerConst(_) => match compact_type {
+            LuaType::Integer | LuaType::IntegerConst(_) | LuaType::DocIntegerConst(_) => {
                 return Ok(());
             }
-        }
+            LuaType::Ref(_) => {
+                if check_base_type_for_ref_compact(db, source, compact_type, check_guard).is_ok() {
+                    return Ok(());
+                }
+            }
+            _ => {}
+        },
         LuaType::Number | LuaType::FloatConst(_) => {
             if matches!(
                 compact_type,
@@ -198,6 +195,17 @@ pub fn check_simple_type_compact(
                 );
             }
         }
+        LuaType::MuliReturn(multi_return) => {
+            match compact_type {
+                LuaType::MuliReturn(compact_multi_return) => {
+                    if multi_return == compact_multi_return {
+                        return Ok(());
+                    }
+                }
+                _ => {}
+            }
+            return Err(TypeCheckFailReason::TypeNotMatch);
+        }
         _ => {}
     }
 
@@ -217,15 +225,81 @@ pub fn check_simple_type_compact(
     Err(TypeCheckFailReason::TypeNotMatch)
 }
 
-fn get_alias_real_type(db: &DbIndex, compact_type: &LuaType) -> Option<LuaType> {
+fn get_alias_real_type<'a>(db: &'a DbIndex, compact_type: &'a LuaType) -> Option<&'a LuaType> {
     match compact_type {
         LuaType::Ref(type_decl_id) => {
             let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
             if type_decl.is_alias() {
-                return get_alias_real_type(db, &type_decl.get_alias_origin(db, None)?);
+                return get_alias_real_type(db, type_decl.get_alias_ref()?);
             }
-            Some(compact_type.clone())
+            Some(compact_type)
         }
-        _ => Some(compact_type.clone()),
+        _ => Some(compact_type),
     }
+}
+
+fn check_base_type_for_ref_compact(
+    db: &DbIndex,
+    source: &LuaType,
+    compact_type: &LuaType,
+    check_guard: TypeCheckGuard,
+) -> TypeCheckResult {
+    if let LuaType::Ref(_) = compact_type {
+        let real_type = get_alias_real_type(db, compact_type).unwrap_or(compact_type);
+        match &real_type {
+            LuaType::MultiLineUnion(multi_line_union) => {
+                if multi_line_union.get_unions().iter().all(|(t, _)| {
+                    let next_guard = check_guard.next_level();
+                    match next_guard {
+                        Ok(guard) => check_general_type_compact(db, source, t, guard).is_ok(),
+                        Err(_) => return false,
+                    }
+                }) {
+                    return Ok(());
+                }
+            }
+            LuaType::Ref(type_decl_id) => {
+                if let Some(source_id) = get_base_type_id(&source) {
+                    if is_sub_type_of(db, type_decl_id, &source_id) {
+                        return Ok(());
+                    }
+                }
+                if let Some(decl) = db.get_type_index().get_type_decl(type_decl_id) {
+                    if decl.is_enum() {
+                        if check_enum_fields_match_source(db, source, type_decl_id, check_guard)
+                            .is_ok()
+                        {
+                            return Ok(());
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    Err(TypeCheckFailReason::TypeNotMatch)
+}
+
+/// 检查`enum`的所有字段是否匹配`source`
+fn check_enum_fields_match_source(
+    db: &DbIndex,
+    source: &LuaType,
+    enum_type_decl_id: &LuaTypeDeclId,
+    check_guard: TypeCheckGuard,
+) -> TypeCheckResult {
+    if let Some(decl) = db.get_type_index().get_type_decl(enum_type_decl_id) {
+        if let Some(LuaType::Union(enum_fields)) = decl.get_enum_field_type(db) {
+            let is_match = enum_fields.get_types().iter().all(|field| {
+                let next_guard = check_guard.next_level();
+                match next_guard {
+                    Ok(guard) => check_general_type_compact(db, source, field, guard).is_ok(),
+                    Err(_) => return false,
+                }
+            });
+            if is_match {
+                return Ok(());
+            }
+        }
+    }
+    Err(TypeCheckFailReason::TypeNotMatch)
 }

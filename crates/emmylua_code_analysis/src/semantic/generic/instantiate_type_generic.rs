@@ -149,9 +149,7 @@ pub fn instantiate_doc_function(
                             }
                             SubstitutorValue::Type(ty) => new_returns.push(ty.clone()),
                             SubstitutorValue::MultiBase(base) => {
-                                new_returns.push(LuaType::MuliReturn(
-                                    LuaMultiReturn::Base(base.clone()).into(),
-                                ));
+                                new_returns.push(LuaType::Variadic(base.clone().into()));
                             }
                         }
                     }

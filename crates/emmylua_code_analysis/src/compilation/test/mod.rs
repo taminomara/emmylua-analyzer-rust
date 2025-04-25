@@ -3,6 +3,7 @@ mod annotation_test;
 mod closure_generic;
 mod closure_param_infer_test;
 mod closure_return_test;
+mod decl_test;
 mod diagnostic_disable_test;
 mod flow;
 mod for_range_var_infer_test;

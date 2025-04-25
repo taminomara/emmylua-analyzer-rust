@@ -63,6 +63,17 @@ function debug.gethook(thread) end
 ---@field ntransfer       integer
 ---@field activelines     table
 
+---@alias debuglib.InfoWhat
+---|+"n"     # `name` 和 `namewhat`
+---|+"S"     # `source`，`short_src`，`linedefined`，`lalinedefined`，和 `what`
+---|+"l"     # `currentline`
+---|+"t"     # `istailcall`
+---|+"u"     # `nups`、`nparams` 和 `isvararg`
+---|+"f"     # `func`
+---|+"r"     # `ftransfer` 和 `ntransfer`
+---|+"L"     # `activelines`
+---| string
+
 ---
 --- Returns a table with information about a function. You can give the
 --- function directly, or you can give a number as the value of `f`,
@@ -83,10 +94,10 @@ function debug.gethook(thread) end
 --- with a name for the current function, if a reasonable name can be found,
 --- and the expression `debug.getinfo(print)` returns a table with all available
 --- information about the `print` function.
----@overload fun(f: int|function, what?: string):debuglib.DebugInfo
+---@overload fun(f: int|function, what?: debuglib.InfoWhat):debuglib.DebugInfo
 ---@param thread thread
----@param f function
----@param what? string
+---@param f integer|function
+---@param what? debuglib.InfoWhat
 ---@return debuglib.DebugInfo
 ---@nodiscard
 function debug.getinfo(thread, f, what) end
@@ -146,10 +157,10 @@ function debug.getlocal(thread, lvl, index) end
 ---
 --- Returns the metatable of the given `value` or **nil** if it does not have
 --- a metatable.
----@param value table
+---@param object any
 ---@return table?
 ---@nodiscard
-function debug.getmetatable(value) end
+function debug.getmetatable(object) end
 
 ---
 --- Returns the registry table.
@@ -164,7 +175,7 @@ function debug.getregistry() end
 ---
 --- Variable names starting with '(' (open parenthesis) represent variables with
 --- no known names (variables from chunks saved without debug information).
----@param f async fun(...):any...
+---@param f function
 ---@param up integer
 ---@return string name
 ---@return any    value
@@ -176,6 +187,7 @@ function debug.getupvalue(f, up) end
 --- **false** if the userdata does not have that value.
 ---@param u userdata
 ---@param n integer
+---@return any
 ---@return boolean
 function debug.getuservalue(u, n) end
 
@@ -304,9 +316,10 @@ function debug.traceback(thread, message, level) end
 --- access a same external local variable) will return identical ids for those
 --- upvalue indices.
 ---@version >5.2, JIT
----@param f fun():integer
+---@param f function
 ---@param n integer
----@return integer
+---@return lightuserdata id
+---@nodiscard
 function debug.upvalueid(f, n) end
 
 
