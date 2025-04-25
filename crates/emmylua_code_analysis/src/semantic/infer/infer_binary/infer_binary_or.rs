@@ -6,7 +6,7 @@ pub fn special_or_rule(
     db: &DbIndex,
     left_type: &LuaType,
     right_type: &LuaType,
-    _: LuaExpr,
+    left_expr: LuaExpr,
     right_expr: LuaExpr,
 ) -> Option<LuaType> {
     match right_expr {
@@ -23,10 +23,17 @@ pub fn special_or_rule(
             }
         }
         LuaExpr::LiteralExpr(_) => {
-            if !right_type.is_nil() {
-                if check_type_compact(db, &left_type, &right_type).is_ok() {
-                    return Some(TypeOps::Remove.apply(&left_type, &LuaType::Nil));
-                }
+            match left_expr {
+                LuaExpr::CallExpr(_) | LuaExpr::NameExpr(_) | LuaExpr::IndexExpr(_) => {}
+                _ => return None,
+            }
+
+            if right_type.is_nil() || left_type.is_const() {
+                return None;
+            }
+
+            if check_type_compact(db, &left_type, &right_type).is_ok() {
+                return Some(TypeOps::Remove.apply(&left_type, &LuaType::Nil));
             }
         }
 
@@ -43,6 +50,5 @@ pub fn infer_binary_expr_or(left: LuaType, right: LuaType) -> InferResult {
         return Ok(right);
     }
 
-    // if check_type_compact(db, source, compact_type)
-    Ok(TypeOps::Union.apply(&TypeOps::Remove.apply(&left, &LuaType::Nil), &right))
+    Ok(TypeOps::Union.apply(&&TypeOps::RemoveNilOrFalse.apply_source(&left), &right))
 }

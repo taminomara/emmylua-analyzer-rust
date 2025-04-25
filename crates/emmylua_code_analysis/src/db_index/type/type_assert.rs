@@ -48,7 +48,7 @@ impl TypeAssertion {
         source: LuaType,
     ) -> Result<LuaType, InferFailReason> {
         match self {
-            TypeAssertion::Exist => Ok(TypeOps::Remove.apply(&source, &LuaType::Nil)),
+            TypeAssertion::Exist => Ok(TypeOps::RemoveNilOrFalse.apply_source(&source)),
             TypeAssertion::NotExist => Ok(TypeOps::NarrowFalseOrNil.apply_source(&source)),
             TypeAssertion::Narrow(t) => Ok(TypeOps::Narrow.apply(&source, t)),
             TypeAssertion::Add(lua_type) => Ok(TypeOps::Union.apply(&source, lua_type)),

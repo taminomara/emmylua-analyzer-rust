@@ -26,9 +26,37 @@ pub fn infer_binary_expr(
         if let Some(ty) = special_or_rule(db, &left_type, &right_type, left, right) {
             return Ok(ty);
         }
+    } else if !matches!(op, BinaryOperator::OpAnd | BinaryOperator::OpOr) {
+        if let Some(ty) = infer_union_binary_expr(db, op, &left_type, &right_type) {
+            return Ok(ty);
+        }
     }
 
     infer_binary_expr_type(db, left_type, right_type, op)
+}
+
+fn infer_union_binary_expr(
+    db: &DbIndex,
+    op: BinaryOperator,
+    left_type: &LuaType,
+    right_type: &LuaType,
+) -> Option<LuaType> {
+    let (u, other) = if let LuaType::Union(u) = left_type {
+        (u, right_type)
+    } else if let LuaType::Union(u) = right_type {
+        (u, left_type)
+    } else {
+        return None;
+    };
+
+    let mut result = LuaType::Unknown;
+    let types = u.get_types();
+    for ty in types.iter() {
+        if let Ok(ty) = infer_binary_expr_type(db, ty.clone(), other.clone(), op) {
+            result = TypeOps::Union.apply(&result, &ty);
+        }
+    }
+    return Some(result);
 }
 
 fn infer_binary_expr_type(

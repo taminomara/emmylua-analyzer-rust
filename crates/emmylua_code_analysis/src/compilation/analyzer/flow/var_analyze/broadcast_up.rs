@@ -84,12 +84,12 @@ pub fn broadcast_up(
 
                     if let LuaExpr::LiteralExpr(literal) = expr {
                         let type_assert = match literal.get_literal()? {
-                            LuaLiteralToken::Nil(_) => TypeAssertion::NotExist,
+                            LuaLiteralToken::Nil(_) => TypeAssertion::Force(LuaType::Nil),
                             LuaLiteralToken::Bool(b) => {
                                 if b.is_true() {
-                                    TypeAssertion::Exist
+                                    TypeAssertion::Force(LuaType::BooleanConst(true))
                                 } else {
-                                    TypeAssertion::NotExist
+                                    TypeAssertion::Force(LuaType::BooleanConst(false))
                                 }
                             }
                             LuaLiteralToken::Number(i) => {
@@ -127,12 +127,12 @@ pub fn broadcast_up(
 
                     if let LuaExpr::LiteralExpr(literal) = expr {
                         let type_assert = match literal.get_literal()? {
-                            LuaLiteralToken::Nil(_) => TypeAssertion::Exist,
+                            LuaLiteralToken::Nil(_) => TypeAssertion::Remove(LuaType::Nil),
                             LuaLiteralToken::Bool(b) => {
                                 if b.is_true() {
-                                    TypeAssertion::NotExist
+                                    TypeAssertion::Remove(LuaType::BooleanConst(true))
                                 } else {
-                                    TypeAssertion::Exist
+                                    TypeAssertion::Remove(LuaType::BooleanConst(false))
                                 }
                             }
                             LuaLiteralToken::Number(i) => {

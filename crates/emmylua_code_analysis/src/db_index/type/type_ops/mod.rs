@@ -13,6 +13,8 @@ pub enum TypeOps {
     Union,
     /// Remove a type from the source type
     Remove,
+    /// Remove a type from the source type, but keep the source type
+    RemoveNilOrFalse,
     /// Force a type to the source type
     Narrow,
     /// Only keep the false or nil type
@@ -38,6 +40,7 @@ impl TypeOps {
     pub fn apply_source(&self, source: &LuaType) -> LuaType {
         match self {
             TypeOps::NarrowFalseOrNil => false_or_nil_type::narrow_false_or_nil(source.clone()),
+            TypeOps::RemoveNilOrFalse => false_or_nil_type::remove_false_or_nil(source.clone()),
             _ => source.clone(),
         }
     }

@@ -10,24 +10,11 @@ pub fn remove_type(source: LuaType, removed_type: LuaType) -> Option<LuaType> {
     }
 
     match &removed_type {
-        LuaType::Nil => match &source {
-            LuaType::Boolean => return Some(LuaType::BooleanConst(true)),
-            LuaType::BooleanConst(b) => {
-                if *b {
-                    return Some(LuaType::BooleanConst(true));
-                } else {
-                    return None;
-                }
+        LuaType::Nil => {
+            if source.is_nil() {
+                return None;
             }
-            LuaType::DocBooleanConst(b) => {
-                if *b {
-                    return Some(LuaType::DocBooleanConst(true));
-                } else {
-                    return None;
-                }
-            }
-            _ => {}
-        },
+        }
         LuaType::Boolean => {
             if source.is_boolean() {
                 return None;

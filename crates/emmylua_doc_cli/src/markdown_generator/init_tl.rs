@@ -18,7 +18,10 @@ pub fn init_tl(override_template: Option<PathBuf>) -> Option<Tera> {
 
     if let Some(override_template) = override_template {
         if !override_template.exists() {
-            eprintln!("Override template directory does not exist: {:?}", override_template);
+            eprintln!(
+                "Override template directory does not exist: {:?}",
+                override_template
+            );
             return None;
         }
 
