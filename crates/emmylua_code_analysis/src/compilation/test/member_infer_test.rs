@@ -66,4 +66,40 @@ mod test {
         assert_eq!(c_ty, LuaType::String);
         assert_eq!(d_ty, LuaType::Integer);
     }
+
+    #[test]
+    fn test_issue_397() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+        --- @class A
+        --- @field field? integer
+
+        --- @class B : A
+        --- @field field integer
+
+        --- @type B
+        local b = { field = 1 }
+
+        local key1 --- @type 'field'
+        local key2 = 'field'
+
+        a = b.field -- type is integer - correct
+        d = b['field'] -- type is integer - correct
+        e = b[key1] -- type is integer? - wrong
+        f = b[key2] -- type is integer? - wrong
+        "#,
+        );
+
+        let a_ty = ws.expr_ty("a");
+        let d_ty = ws.expr_ty("d");
+        let e_ty = ws.expr_ty("e");
+        let f_ty = ws.expr_ty("f");
+
+        assert_eq!(a_ty, LuaType::Integer);
+        assert_eq!(d_ty, LuaType::Integer);
+        assert_eq!(e_ty, LuaType::Integer);
+        assert_eq!(f_ty, LuaType::Integer);
+    }
 }
