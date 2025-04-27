@@ -555,7 +555,9 @@ fn to_tag(text: &str) -> LuaTokenKind {
         "async" => LuaTokenKind::TkTagAsync,
         "cast" => LuaTokenKind::TkTagCast,
         "deprecated" => LuaTokenKind::TkTagDeprecated,
-        "private" | "protected" | "public" | "package" => LuaTokenKind::TkTagVisibility,
+        "private" | "protected" | "public" | "package" | "internal" => {
+            LuaTokenKind::TkTagVisibility
+        }
         "readonly" => LuaTokenKind::TkTagReadonly,
         "diagnostic" => LuaTokenKind::TkTagDiagnostic,
         "meta" => LuaTokenKind::TkTagMeta,

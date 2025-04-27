@@ -17,6 +17,7 @@ pub const DOC_TAGS: &[&str] = &[
     "protected",
     "private",
     "package",
+    "internal",
     "meta",
     "diagnostic",
     "version",

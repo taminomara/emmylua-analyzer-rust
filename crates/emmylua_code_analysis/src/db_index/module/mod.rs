@@ -409,7 +409,19 @@ impl LuaModuleIndex {
     }
 
     pub fn is_std(&self, file_id: &FileId) -> bool {
-        self.get_std_file_ids().contains(file_id)
+        if let Some(module_info) = self.file_module_map.get(file_id) {
+            return module_info.workspace_id == WorkspaceId::STD;
+        }
+
+        false
+    }
+
+    pub fn is_library(&self, file_id: &FileId) -> bool {
+        if let Some(module_info) = self.file_module_map.get(file_id) {
+            return module_info.workspace_id.is_library();
+        }
+
+        false
     }
 
     pub fn get_main_workspace_file_ids(&self) -> Vec<FileId> {
@@ -446,6 +458,14 @@ impl LuaModuleIndex {
         }
 
         false
+    }
+
+    pub fn get_workspace_id(&self, file_id: FileId) -> Option<WorkspaceId> {
+        if let Some(module_info) = self.file_module_map.get(&file_id) {
+            return Some(module_info.workspace_id);
+        }
+
+        None
     }
 }
 
