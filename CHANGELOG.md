@@ -4,6 +4,10 @@
 
 `FIX` Fix reading configuration file encoded with UTF-8 BOM
 
+`NEW` Support `Call hierarchy` but only support incomming call
+
+`NEW` Support new tag `@internal` for members or declarations. When a member or declaration is marked as `@internal`, it is only visible within its current library. This means that if you use `@internal` in one library, you cannot access this member or declaration from other libraries or workspace.
+
 # 0.7.1
 
 `NEW` Now language server configuration might be provided globally via the `<os-specific home dir>/.emmyrc.json`, `<os-specific config dir>/emmylua_ls/.emmyrc.json`, or by setting a variable `EMMYLUALS_CONFIG` with a path to the json configuration.
