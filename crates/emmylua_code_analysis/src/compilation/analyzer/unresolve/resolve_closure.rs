@@ -8,28 +8,38 @@ use crate::{
 };
 
 use super::{
-    resolve::try_resolve_return_point, UnResolveCallClosureParams, UnResolveClosureReturn,
-    UnResolveParentAst, UnResolveParentClosureParams, UnResolveReturn,
+    check_reason::check_reach_reason, resolve::try_resolve_return_point,
+    UnResolveCallClosureParams, UnResolveClosureReturn, UnResolveParentAst,
+    UnResolveParentClosureParams, UnResolveReturn,
 };
 
 pub fn try_resolve_closure_params(
     db: &mut DbIndex,
     cache: &mut LuaInferCache,
-    closure_params: &UnResolveCallClosureParams,
+    closure_params: &mut UnResolveCallClosureParams,
 ) -> Option<bool> {
+    if !check_reach_reason(db, cache, &closure_params.reason).unwrap_or(false) {
+        return None;
+    }
+
     let call_expr = closure_params.call_expr.clone();
     let prefix_expr = call_expr.get_prefix_expr()?;
     let call_expr_type = infer_expr(db, cache, prefix_expr.into()).ok()?;
 
-    let call_doc_func = infer_call_expr_func(
+    let call_doc_func = match infer_call_expr_func(
         db,
         cache,
         call_expr.clone(),
         call_expr_type,
         &mut InferGuard::new(),
         None,
-    )
-    .ok()?;
+    ) {
+        Ok(call_doc_func) => call_doc_func,
+        Err(reason) => {
+            closure_params.reason = reason;
+            return None;
+        }
+    };
 
     let colon_call = call_expr.is_colon_call();
     let colon_define = call_doc_func.is_colon_define();
@@ -105,19 +115,28 @@ pub fn try_resolve_closure_return(
     cache: &mut LuaInferCache,
     closure_return: &mut UnResolveClosureReturn,
 ) -> Option<bool> {
+    if !check_reach_reason(db, cache, &closure_return.reason).unwrap_or(false) {
+        return None;
+    }
+
     let call_expr = closure_return.call_expr.clone();
     let prefix_expr = call_expr.get_prefix_expr()?;
     let call_expr_type = infer_expr(db, cache, prefix_expr.into()).ok()?;
     let mut param_idx = closure_return.param_idx;
-    let call_doc_func = infer_call_expr_func(
+    let call_doc_func = match infer_call_expr_func(
         db,
         cache,
         call_expr.clone(),
         call_expr_type,
         &mut InferGuard::new(),
         None,
-    )
-    .ok()?;
+    ) {
+        Ok(call_doc_func) => call_doc_func,
+        Err(reason) => {
+            closure_return.reason = reason;
+            return None;
+        }
+    };
 
     let colon_define = call_doc_func.is_colon_define();
     let colon_call = call_expr.is_colon_call();
@@ -173,7 +192,7 @@ fn try_convert_to_func_body_infer(
         file_id: closure_return.file_id,
         signature_id: closure_return.signature_id,
         return_points: closure_return.return_points.clone(),
-        reason: InferFailReason::None,
+        reason: closure_return.reason.clone(),
     };
 
     try_resolve_return_point(db, cache, &mut unresolve)
@@ -182,8 +201,12 @@ fn try_convert_to_func_body_infer(
 pub fn try_resolve_closure_parent_params(
     db: &mut DbIndex,
     cache: &mut LuaInferCache,
-    closure_params: &UnResolveParentClosureParams,
+    closure_params: &mut UnResolveParentClosureParams,
 ) -> Option<bool> {
+    if !check_reach_reason(db, cache, &closure_params.reason).unwrap_or(false) {
+        return None;
+    }
+
     let signature = db.get_signature_index().get(&closure_params.signature_id)?;
 
     if !signature.param_docs.is_empty() {
@@ -195,7 +218,13 @@ pub fn try_resolve_closure_parent_params(
             let func_name = func_stat.get_func_name()?;
             match func_name {
                 LuaVarExpr::IndexExpr(index_expr) => {
-                    let typ = infer_expr(db, cache, index_expr.get_prefix_expr()?).ok()?;
+                    let typ = match infer_expr(db, cache, index_expr.get_prefix_expr()?) {
+                        Ok(typ) => typ,
+                        Err(reason) => {
+                            closure_params.reason = reason;
+                            return None;
+                        }
+                    };
                     self_type = Some(typ.clone());
 
                     find_best_function_type(db, cache, &typ, &closure_params.signature_id)
@@ -208,7 +237,13 @@ pub fn try_resolve_closure_parent_params(
                 .get_parent::<LuaTableExpr>()
                 .ok_or(InferFailReason::None)
                 .ok()?;
-            let typ = infer_table_should_be(db, cache, parnet_table_expr).ok()?;
+            let typ = match infer_table_should_be(db, cache, parnet_table_expr) {
+                Ok(typ) => typ,
+                Err(reason) => {
+                    closure_params.reason = reason;
+                    return None;
+                }
+            };
             self_type = Some(typ.clone());
             find_best_function_type(db, cache, &typ, &closure_params.signature_id)
         }
@@ -221,7 +256,13 @@ pub fn try_resolve_closure_parent_params(
             let var = vars.get(idx)?;
             match var {
                 LuaVarExpr::IndexExpr(index_expr) => {
-                    let typ = infer_expr(db, cache, index_expr.get_prefix_expr()?).ok()?;
+                    let typ = match infer_expr(db, cache, index_expr.get_prefix_expr()?) {
+                        Ok(typ) => typ,
+                        Err(reason) => {
+                            closure_params.reason = reason;
+                            return None;
+                        }
+                    };
                     self_type = Some(typ.clone());
                     find_best_function_type(db, cache, &typ, &closure_params.signature_id)
                 }

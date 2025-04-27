@@ -8,7 +8,7 @@ use crate::{
     profile::Profile,
     FileId, InferFailReason, LuaMemberFeature, LuaSemanticDeclId,
 };
-use check_reason::{resolve_all_reason, resolve_as_any};
+use check_reason::resolve_all_reason;
 use emmylua_parser::{
     LuaAssignStat, LuaCallExpr, LuaExpr, LuaFuncStat, LuaTableExpr, LuaTableField,
 };
@@ -27,24 +27,20 @@ pub fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     let _p = Profile::cond_new("resolve analyze", context.tree_list.len() > 1);
     let mut unresolves = std::mem::take(&mut context.unresolves);
     let mut infer_manager = InferCacheManager::new();
-    while try_resolve(db, &mut infer_manager, &mut unresolves) {
-        unresolves.retain(|un_resolve| match un_resolve {
-            UnResolve::None => false,
-            _ => true,
-        });
-    }
 
-    infer_manager.set_force();
     let mut loop_count = 0;
     while !unresolves.is_empty() {
-        resolve_all_reason(db, &mut infer_manager, &mut unresolves, resolve_as_any);
-
         while try_resolve(db, &mut infer_manager, &mut unresolves) {
             unresolves.retain(|un_resolve| match un_resolve {
                 UnResolve::None => false,
                 _ => true,
             });
         }
+        if loop_count == 0 {
+            infer_manager.set_force();
+        }
+
+        resolve_all_reason(db, &mut infer_manager, &mut unresolves);
 
         if loop_count >= 10 {
             break;
@@ -215,6 +211,7 @@ pub struct UnResolveCallClosureParams {
     pub signature_id: LuaSignatureId,
     pub call_expr: LuaCallExpr,
     pub param_idx: usize,
+    pub reason: InferFailReason,
 }
 
 impl From<UnResolveCallClosureParams> for UnResolve {
@@ -245,6 +242,7 @@ pub struct UnResolveClosureReturn {
     pub call_expr: LuaCallExpr,
     pub param_idx: usize,
     pub return_points: Vec<LuaReturnPoint>,
+    pub reason: InferFailReason,
 }
 
 impl From<UnResolveClosureReturn> for UnResolve {
@@ -257,6 +255,7 @@ impl From<UnResolveClosureReturn> for UnResolve {
 pub struct UnResolveModuleRef {
     pub owner_id: LuaSemanticDeclId,
     pub module_file_id: FileId,
+    pub reason: InferFailReason,
 }
 
 impl From<UnResolveModuleRef> for UnResolve {
@@ -277,6 +276,7 @@ pub struct UnResolveParentClosureParams {
     pub file_id: FileId,
     pub signature_id: LuaSignatureId,
     pub parent_ast: UnResolveParentAst,
+    pub reason: InferFailReason,
 }
 
 impl From<UnResolveParentClosureParams> for UnResolve {

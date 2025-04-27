@@ -10,7 +10,8 @@ use crate::{
         LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaSemanticDeclId,
         LuaSignatureId, LuaType,
     },
-    InFiled, LuaOperatorMetaMethod, LuaTypeCache, OperatorFunction, SignatureReturnStatus, TypeOps,
+    InFiled, InferFailReason, LuaOperatorMetaMethod, LuaTypeCache, OperatorFunction,
+    SignatureReturnStatus, TypeOps,
 };
 
 use super::{
@@ -240,6 +241,7 @@ pub fn analyze_module(analyzer: &mut DocAnalyzer, tag: LuaDocTagModule) -> Optio
         let unresolve = UnResolveModuleRef {
             module_file_id,
             owner_id,
+            reason: InferFailReason::None,
         };
 
         analyzer.context.add_unresolve(unresolve.into());

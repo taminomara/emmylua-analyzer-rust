@@ -298,9 +298,13 @@ pub fn try_resolve_iter_var(
 
 pub fn try_resolve_module_ref(
     db: &mut DbIndex,
-    _: &mut LuaInferCache,
+    cache: &mut LuaInferCache,
     module_ref: &UnResolveModuleRef,
 ) -> Option<bool> {
+    if !check_reach_reason(db, cache, &module_ref.reason).unwrap_or(false) {
+        return None;
+    }
+
     let module_index = db.get_module_index();
     let module = module_index.get_module(module_ref.module_file_id)?;
     let export_type = module.export_type.clone()?;

@@ -62,6 +62,7 @@ fn analyze_lambda_params(
                 signature_id: signature_id.clone(),
                 call_expr,
                 param_idx: founded_idx,
+                reason: InferFailReason::None,
             };
 
             analyzer.add_unresolved(unresolved.into());
@@ -71,6 +72,7 @@ fn analyze_lambda_params(
                 file_id: analyzer.file_id,
                 signature_id: signature_id.clone(),
                 parent_ast: UnResolveParentAst::LuaFuncStat(func_stat.clone()),
+                reason: InferFailReason::None,
             };
 
             analyzer.add_unresolved(unresolved.into());
@@ -80,6 +82,7 @@ fn analyze_lambda_params(
                 file_id: analyzer.file_id,
                 signature_id: signature_id.clone(),
                 parent_ast: UnResolveParentAst::LuaTableField(table_field.clone()),
+                reason: InferFailReason::None,
             };
 
             analyzer.add_unresolved(unresolved.into());
@@ -89,6 +92,7 @@ fn analyze_lambda_params(
                 file_id: analyzer.file_id,
                 signature_id: signature_id.clone(),
                 parent_ast: UnResolveParentAst::LuaAssignStat(assign_stat.clone()),
+                reason: InferFailReason::None,
             };
 
             analyzer.add_unresolved(unresolved.into());
@@ -181,6 +185,7 @@ fn analyze_lambda_returns(
         call_expr,
         param_idx: founded_idx,
         return_points,
+        reason: InferFailReason::None,
     };
 
     analyzer.add_unresolved(unresolved.into());
