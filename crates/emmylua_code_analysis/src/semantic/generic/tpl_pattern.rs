@@ -759,11 +759,11 @@ fn return_type_pattern_match_target_type(
 }
 
 fn func_varargs_tpl_pattern_match(
-    varidic: &VariadicType,
+    variadic: &VariadicType,
     target_rest_params: &[(String, Option<LuaType>)],
     substitutor: &mut TypeSubstitutor,
 ) -> TplPatternMatchResult {
-    match varidic {
+    match variadic {
         VariadicType::Base(base) => {
             if let LuaType::TplRef(tpl_ref) = base {
                 let tpl_id = tpl_ref.get_tpl_id();
