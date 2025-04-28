@@ -583,7 +583,17 @@ fn handle_name_node(
                         is_meta.then_some(SemanticTokenModifier::DEFAULT_LIBRARY),
                     )
                 }
-                _ => (SemanticTokenType::VARIABLE, None),
+                _ => {
+                    let decl = semantic_model
+                        .get_db()
+                        .get_decl_index()
+                        .get_decl(&decl_id)?;
+                    if decl.is_param() {
+                        (SemanticTokenType::PARAMETER, None)
+                    } else {
+                        (SemanticTokenType::VARIABLE, None)
+                    }
+                }
             };
 
             if let Some(modifier) = modifier {
