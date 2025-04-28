@@ -22,7 +22,7 @@ pub fn analyze_for_range_stat(
             let iter_doc_func = infer_for_range_iter_expr_func(analyzer.db, first_iter_type);
 
             if let Some(doc_func) = iter_doc_func {
-                let multi_return = doc_func.get_multi_return();
+                let multi_return = doc_func.get_variadic_ret();
                 let mut idx = 0;
                 for var_name in var_name_list {
                     let position = var_name.get_position();

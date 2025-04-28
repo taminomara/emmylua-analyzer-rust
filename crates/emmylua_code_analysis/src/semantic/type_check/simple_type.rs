@@ -1,4 +1,6 @@
-use crate::{semantic::type_check::is_sub_type_of, DbIndex, LuaType, LuaTypeDeclId};
+use std::ops::Deref;
+
+use crate::{semantic::type_check::is_sub_type_of, DbIndex, LuaType, LuaTypeDeclId, VariadicType};
 
 use super::{
     check_general_type_compact, sub_type::get_base_type_id,
@@ -179,32 +181,7 @@ pub fn check_simple_type_compact(
             }
         }
         LuaType::Variadic(source_type) => {
-            if let LuaType::Variadic(compact_type) = compact_type {
-                return check_simple_type_compact(
-                    db,
-                    source_type,
-                    compact_type,
-                    check_guard.next_level()?,
-                );
-            } else {
-                return check_simple_type_compact(
-                    db,
-                    source_type,
-                    compact_type,
-                    check_guard.next_level()?,
-                );
-            }
-        }
-        LuaType::MuliReturn(multi_return) => {
-            match compact_type {
-                LuaType::MuliReturn(compact_multi_return) => {
-                    if multi_return == compact_multi_return {
-                        return Ok(());
-                    }
-                }
-                _ => {}
-            }
-            return Err(TypeCheckFailReason::TypeNotMatch);
+            return check_variadic_type_compact(db, source_type, compact_type, check_guard);
         }
         _ => {}
     }
@@ -302,4 +279,42 @@ fn check_enum_fields_match_source(
         }
     }
     Err(TypeCheckFailReason::TypeNotMatch)
+}
+
+fn check_variadic_type_compact(
+    db: &DbIndex,
+    source_type: &VariadicType,
+    compact_type: &LuaType,
+    check_guard: TypeCheckGuard,
+) -> TypeCheckResult {
+    match &source_type {
+        VariadicType::Base(source_base) => {
+            if let LuaType::Variadic(compact_variadic) = compact_type {
+                match compact_variadic.deref() {
+                    VariadicType::Base(compact_base) => {
+                        if source_base == compact_base {
+                            return Ok(());
+                        }
+                    }
+                    VariadicType::Multi(compact_multi) => {
+                        for compact_type in compact_multi {
+                            if check_simple_type_compact(
+                                db,
+                                source_base,
+                                compact_type,
+                                check_guard.next_level()?,
+                            )
+                            .is_err()
+                            {
+                                return Err(TypeCheckFailReason::TypeNotMatch);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        VariadicType::Multi(_) => {}
+    }
+
+    Ok(())
 }

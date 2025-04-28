@@ -34,7 +34,7 @@ pub fn analyze_chunk_return(analyzer: &mut LuaAnalyzer, chunk: LuaChunk) -> Opti
                     .get_module_index_mut()
                     .get_module_mut(analyzer.file_id)?;
                 match expr_type {
-                    LuaType::MuliReturn(multi) => {
+                    LuaType::Variadic(multi) => {
                         let ty = multi.get_type(0)?;
                         module_info.export_type = Some(ty.clone());
                     }

@@ -153,7 +153,7 @@ pub fn try_resolve_closure_return(
         _ => {}
     }
 
-    let expr_closure_return = if let Some(param_type) = call_doc_func.get_params().get(param_idx) {
+    let ret_type = if let Some(param_type) = call_doc_func.get_params().get(param_idx) {
         if let Some(LuaType::DocFunction(func)) = &param_type.1 {
             func.get_ret()
         } else {
@@ -167,17 +167,15 @@ pub fn try_resolve_closure_return(
         .get_signature_index_mut()
         .get_mut(&closure_return.signature_id)?;
 
-    if expr_closure_return.iter().any(|it| it.contain_tpl()) {
+    if ret_type.contain_tpl() {
         return try_convert_to_func_body_infer(db, cache, closure_return);
     }
 
-    for ret_type in expr_closure_return {
-        signature.return_docs.push(LuaDocReturnInfo {
-            name: None,
-            type_ref: ret_type.clone(),
-            description: None,
-        });
-    }
+    signature.return_docs.push(LuaDocReturnInfo {
+        name: None,
+        type_ref: ret_type.clone(),
+        description: None,
+    });
 
     signature.resolve_return = SignatureReturnStatus::DocResolve;
     Some(true)
@@ -286,12 +284,7 @@ pub fn try_resolve_closure_parent_params(
             let signature = db.get_signature_index().get(id);
 
             if let Some(signature) = signature {
-                let fake_doc_function = LuaFunctionType::new(
-                    signature.is_async,
-                    signature.is_colon_define,
-                    signature.get_type_params(),
-                    signature.get_return_types(),
-                );
+                let fake_doc_function = signature.to_doc_func_type();
                 resolve_doc_function(db, closure_params, &fake_doc_function, self_type)
             } else {
                 Some(true)
@@ -356,13 +349,11 @@ fn resolve_doc_function(
     {
         signature.return_docs.clear();
         signature.resolve_return = SignatureReturnStatus::DocResolve;
-        for ret in doc_func.get_ret() {
-            signature.return_docs.push(LuaDocReturnInfo {
-                name: None,
-                type_ref: ret.clone(),
-                description: None,
-            });
-        }
+        signature.return_docs.push(LuaDocReturnInfo {
+            name: None,
+            type_ref: doc_func.get_ret().clone(),
+            description: None,
+        });
     }
 
     Some(true)

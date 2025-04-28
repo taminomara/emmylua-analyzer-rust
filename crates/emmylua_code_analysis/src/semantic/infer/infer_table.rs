@@ -8,7 +8,7 @@ use emmylua_parser::{
 use crate::{
     db_index::{DbIndex, LuaType},
     infer_call_expr_func, infer_expr, InferGuard, LuaDeclId, LuaInferCache, LuaMemberId,
-    LuaMultiReturn, LuaTupleType,
+    LuaTupleType, VariadicType,
 };
 
 use super::{
@@ -52,17 +52,14 @@ fn infer_table_tuple_or_array(
         if is_dots_expr(&first_value_expr).unwrap_or(false) {
             let first_expr_type = infer_expr(db, cache, first_value_expr)?;
             match &first_expr_type {
-                LuaType::MuliReturn(multi) => match &multi.deref() {
-                    LuaMultiReturn::Base(base) => {
+                LuaType::Variadic(multi) => match &multi.deref() {
+                    VariadicType::Base(base) => {
                         return Ok(LuaType::Array(base.clone().into()));
                     }
-                    LuaMultiReturn::Multi(tuple) => {
+                    VariadicType::Multi(tuple) => {
                         return Ok(LuaType::Tuple(LuaTupleType::new(tuple.clone()).into()));
                     }
                 },
-                LuaType::Variadic(base) => {
-                    return Ok(LuaType::Array(base.clone().into()));
-                }
                 _ => {
                     return Ok(LuaType::Array(first_expr_type.into()));
                 }
@@ -75,7 +72,7 @@ fn infer_table_tuple_or_array(
         let value_expr = field.get_value_expr().ok_or(InferFailReason::None)?;
         let typ = infer_expr(db, cache, value_expr)?;
         match typ {
-            LuaType::MuliReturn(multi) => flatten_multi_into_tuple(&mut types, &multi),
+            LuaType::Variadic(multi) => flatten_multi_into_tuple(&mut types, &multi),
             _ => {
                 types.push(typ);
             }
@@ -85,15 +82,15 @@ fn infer_table_tuple_or_array(
     Ok(LuaType::Tuple(LuaTupleType::new(types).into()))
 }
 
-fn flatten_multi_into_tuple(tuple_list: &mut Vec<LuaType>, multi: &LuaMultiReturn) {
+fn flatten_multi_into_tuple(tuple_list: &mut Vec<LuaType>, multi: &VariadicType) {
     match multi {
-        LuaMultiReturn::Base(base) => {
-            tuple_list.push(LuaType::Variadic(base.clone().into()));
+        VariadicType::Base(base) => {
+            tuple_list.push(LuaType::Variadic(VariadicType::Base(base.clone()).into()));
         }
-        LuaMultiReturn::Multi(multi) => {
+        VariadicType::Multi(multi) => {
             for typ in multi {
                 match typ {
-                    LuaType::MuliReturn(multi) => {
+                    LuaType::Variadic(multi) => {
                         flatten_multi_into_tuple(tuple_list, multi.deref());
                     }
                     _ => {

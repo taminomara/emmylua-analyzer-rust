@@ -15,7 +15,7 @@ use crate::{
         LuaIntersectionType, LuaObjectType, LuaStringTplType, LuaTupleType, LuaType, LuaUnionType,
     },
     DiagnosticCode, GenericTpl, InFiled, LuaAliasCallKind, LuaMultiLineUnion, LuaTypeDeclId,
-    TypeOps,
+    TypeOps, VariadicType,
 };
 
 use super::{preprocess_description, DocAnalyzer};
@@ -450,8 +450,16 @@ fn infer_func_type(analyzer: &mut DocAnalyzer, func: &LuaDocFuncType) -> LuaType
         }
     }
 
+    let return_type = if return_types.len() == 1 {
+        return_types[0].clone()
+    } else if return_types.len() > 1 {
+        LuaType::Variadic(VariadicType::Multi(return_types).into())
+    } else {
+        LuaType::Nil
+    };
+
     LuaType::DocFunction(
-        LuaFunctionType::new(is_async, is_colon, params_result, return_types).into(),
+        LuaFunctionType::new(is_async, is_colon, params_result, return_type).into(),
     )
 }
 
@@ -536,8 +544,8 @@ fn infer_variadic_type(
     let name_type = variadic_type.get_name_type()?;
     let name = name_type.get_name_text()?;
     let base = infer_buildin_or_ref_type(analyzer, &name, name_type.get_range(), node);
-
-    Some(LuaType::Variadic(base.into()))
+    let variadic = VariadicType::Base(base.clone());
+    Some(LuaType::Variadic(variadic.into()))
 }
 
 fn infer_multi_line_union_type(

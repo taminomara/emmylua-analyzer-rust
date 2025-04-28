@@ -8,8 +8,8 @@ use crate::{
     check_type_compact,
     db_index::{DbIndex, LuaGenericType, LuaType},
     semantic::{member::infer_member_map, LuaInferCache},
-    LuaFunctionType, LuaMemberKey, LuaMemberOwner, LuaMultiReturn, LuaObjectType, LuaTupleType,
-    LuaUnionType,
+    LuaFunctionType, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaTupleType, LuaUnionType,
+    VariadicType,
 };
 
 use super::type_substitutor::TypeSubstitutor;
@@ -30,16 +30,16 @@ pub fn tpl_pattern_match_args(
         };
 
         match (func_param_type, call_arg_type) {
-            (LuaType::Variadic(multi_tpl), _) => {
-                variadic_tpl_pattern_match(multi_tpl, &call_arg_types[i..], substitutor);
+            (LuaType::Variadic(variadic), _) => {
+                variadic_tpl_pattern_match(variadic, &call_arg_types[i..], substitutor);
                 break;
             }
-            (_, LuaType::MuliReturn(multi_return)) => {
+            (_, LuaType::Variadic(variadic)) => {
                 multi_param_tpl_pattern_match_multi_return(
                     db,
                     cache,
                     &func_param_types[i..],
-                    multi_return,
+                    variadic,
                     root,
                     substitutor,
                 );
@@ -58,16 +58,16 @@ fn multi_param_tpl_pattern_match_multi_return(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     func_param_types: &[LuaType],
-    multi_return: &LuaMultiReturn,
+    multi_return: &VariadicType,
     root: &LuaSyntaxNode,
     substitutor: &mut TypeSubstitutor,
 ) -> Option<()> {
     match &multi_return {
-        LuaMultiReturn::Base(base) => {
+        VariadicType::Base(base) => {
             let mut call_arg_types = Vec::new();
             for param in func_param_types {
                 if param.is_variadic() {
-                    call_arg_types.push(LuaType::MuliReturn(multi_return.clone().into()));
+                    call_arg_types.push(LuaType::Variadic(multi_return.clone().into()));
                     break;
                 } else {
                     call_arg_types.push(base.clone());
@@ -83,7 +83,7 @@ fn multi_param_tpl_pattern_match_multi_return(
                 substitutor,
             )
         }
-        LuaMultiReturn::Multi(_) => {
+        VariadicType::Multi(_) => {
             let mut call_arg_types = Vec::new();
             for (i, param) in func_param_types.iter().enumerate() {
                 let return_type = multi_return.get_type(i);
@@ -92,8 +92,8 @@ fn multi_param_tpl_pattern_match_multi_return(
                 }
 
                 if param.is_variadic() {
-                    call_arg_types.push(LuaType::MuliReturn(
-                        multi_return.get_new_multi_from(i).into(),
+                    call_arg_types.push(LuaType::Variadic(
+                        multi_return.get_new_variadic_from(i).into(),
                     ));
                     break;
                 } else {
@@ -587,7 +587,7 @@ fn func_tpl_pattern_match(
         LuaType::Signature(signature_id) => {
             let signature = db.get_signature_index().get(&signature_id)?;
             let typed_params = signature.get_type_params();
-            let rets = signature.get_return_types();
+            let rets = signature.get_return_type();
             let fake_doc_func = LuaFunctionType::new(
                 signature.is_async,
                 signature.is_colon_define,
@@ -630,9 +630,16 @@ fn func_tpl_pattern_match_doc_func(
         substitutor,
     );
 
-    let tpl_rets = tpl_func.get_ret();
-    let target_rets = target_func.get_ret();
-    return_type_list_pattern_match_type_list(db, cache, root, &tpl_rets, &target_rets, substitutor);
+    let tpl_return = tpl_func.get_ret();
+    let target_return = target_func.get_ret();
+    return_type_pattern_match_target_type(
+        db,
+        cache,
+        root,
+        &tpl_return,
+        &target_return,
+        substitutor,
+    );
     Some(())
 }
 
@@ -669,73 +676,131 @@ fn param_type_list_pattern_match_type_list(
     Some(())
 }
 
-fn return_type_list_pattern_match_type_list(
+fn return_type_pattern_match_target_type(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     root: &LuaSyntaxNode,
-    sources: &[LuaType],
-    targets: &[LuaType],
+    source: &LuaType,
+    target: &LuaType,
     substitutor: &mut TypeSubstitutor,
 ) {
-    let type_len = sources.len();
-    for i in 0..type_len {
-        let source = match sources.get(i) {
-            Some(t) => t,
-            None => break,
-        };
-        let target = match targets.get(i) {
-            Some(t) => t,
-            None => break,
-        };
+    match (source, target) {
+        // toooooo complex
+        (LuaType::Variadic(variadic_source), LuaType::Variadic(variadic_target)) => {
+            match variadic_target.deref() {
+                VariadicType::Base(target_base) => match variadic_source.deref() {
+                    VariadicType::Base(source_base) => {
+                        if let LuaType::TplRef(type_ref) = source_base {
+                            let tpl_id = type_ref.get_tpl_id();
+                            substitutor.insert_type(tpl_id, target_base.clone());
+                        }
+                    }
+                    VariadicType::Multi(source_multi) => {
+                        for ret_type in source_multi {
+                            match ret_type {
+                                LuaType::Variadic(inner) => {
+                                    if let VariadicType::Base(base) = inner.deref() {
+                                        if let LuaType::TplRef(type_ref) = base {
+                                            let tpl_id = type_ref.get_tpl_id();
+                                            substitutor.insert_type(tpl_id, target_base.clone());
+                                        }
+                                    }
 
-        match (&source, &target) {
-            (LuaType::Variadic(inner), _) => {
-                variadic_tpl_pattern_match(&inner, &targets[i..], substitutor);
-                break;
+                                    break;
+                                }
+                                LuaType::TplRef(tpl_ref) => {
+                                    let tpl_id = tpl_ref.get_tpl_id();
+                                    substitutor.insert_type(tpl_id, target_base.clone());
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                },
+                VariadicType::Multi(target_types) => {
+                    variadic_tpl_pattern_match(variadic_source, target_types, substitutor);
+                }
             }
-            (_, LuaType::MuliReturn(multi_return)) => {
-                multi_param_tpl_pattern_match_multi_return(
-                    db,
-                    cache,
-                    &sources[i..],
-                    multi_return,
-                    root,
-                    substitutor,
-                );
-                break;
-            }
-            _ => tpl_pattern_match(db, cache, root, &source, &target, substitutor),
-        };
+        }
+        (LuaType::Variadic(variadic), _) => {
+            variadic_tpl_pattern_match(variadic, &[target.clone()], substitutor);
+        }
+        (_, LuaType::Variadic(variadic)) => {
+            multi_param_tpl_pattern_match_multi_return(
+                db,
+                cache,
+                &[source.clone()],
+                variadic,
+                root,
+                substitutor,
+            );
+        }
+        _ => {
+            tpl_pattern_match(db, cache, root, source, target, substitutor);
+        }
     }
 }
 
 fn func_varargs_tpl_pattern_match(
-    tpl: &LuaType,
+    varidic: &VariadicType,
     target_rest_params: &[(String, Option<LuaType>)],
     substitutor: &mut TypeSubstitutor,
 ) -> Option<()> {
-    if let LuaType::TplRef(tpl_ref) = tpl {
-        let tpl_id = tpl_ref.get_tpl_id();
-        substitutor.insert_params(
-            tpl_id,
-            target_rest_params
-                .iter()
-                .map(|(n, t)| (n.clone(), t.clone()))
-                .collect(),
-        );
+    match varidic {
+        VariadicType::Base(base) => {
+            if let LuaType::TplRef(tpl_ref) = base {
+                let tpl_id = tpl_ref.get_tpl_id();
+                substitutor.insert_params(
+                    tpl_id,
+                    target_rest_params
+                        .iter()
+                        .map(|(n, t)| (n.clone(), t.clone()))
+                        .collect(),
+                );
+            }
+        }
+        VariadicType::Multi(_) => {}
     }
-
     Some(())
 }
 
 pub fn variadic_tpl_pattern_match(
-    tpl: &LuaType,
+    tpl: &VariadicType,
     target_rest_types: &[LuaType],
     substitutor: &mut TypeSubstitutor,
 ) -> Option<()> {
-    if let LuaType::TplRef(tpl_ref) = tpl {
-        let tpl_id = tpl_ref.get_tpl_id();
-        substitutor.insert_multi_types(tpl_id, target_rest_types.to_vec());
+    match tpl {
+        VariadicType::Base(base) => {
+            if let LuaType::TplRef(tpl_ref) = base {
+                let tpl_id = tpl_ref.get_tpl_id();
+                substitutor.insert_multi_types(tpl_id, target_rest_types.to_vec());
+            }
+        }
+        VariadicType::Multi(multi) => {
+            for (i, ret_type) in multi.iter().enumerate() {
+                match ret_type {
+                    LuaType::Variadic(inner) => {
+                        if i < target_rest_types.len() {
+                            variadic_tpl_pattern_match(inner, &target_rest_types[i..], substitutor);
+                        }
+
+                        break;
+                    }
+                    LuaType::TplRef(tpl_ref) => {
+                        let tpl_id = tpl_ref.get_tpl_id();
+                        match target_rest_types.get(i) {
+                            Some(t) => {
+                                substitutor.insert_type(tpl_id, t.clone());
+                            }
+                            None => {
+                                break;
+                            }
+                        };
+                    }
+                    _ => {}
+                }
+            }
+        }
     }
 
     Some(())
@@ -775,9 +840,15 @@ fn tuple_tpl_pattern_match(
             let tupl_tuple_types = tpl_tuple.get_types();
             let last_type = tupl_tuple_types.last()?;
             if let LuaType::Variadic(inner) = last_type {
-                if let LuaType::TplRef(tpl_ref) = inner.deref() {
-                    let tpl_id = tpl_ref.get_tpl_id();
-                    substitutor.insert_multi_base(tpl_id, target_array_base.deref().clone());
+                match inner.deref() {
+                    VariadicType::Base(base) => {
+                        if let LuaType::TplRef(tpl_ref) = base {
+                            let tpl_id = tpl_ref.get_tpl_id();
+                            substitutor
+                                .insert_multi_base(tpl_id, target_array_base.deref().clone());
+                        }
+                    }
+                    VariadicType::Multi(_) => {}
                 }
             }
         }

@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     hash::{Hash, Hasher},
+    ops::Deref,
     sync::Arc,
 };
 
@@ -48,14 +49,13 @@ pub enum LuaType {
     TableGeneric(Arc<Vec<LuaType>>),
     TplRef(Arc<GenericTpl>),
     StrTplRef(Arc<LuaStringTplType>),
-    MuliReturn(Arc<LuaMultiReturn>),
+    Variadic(Arc<VariadicType>),
     Signature(LuaSignatureId),
     Instance(Arc<LuaInstanceType>),
     DocStringConst(ArcIntern<SmolStr>),
     DocIntegerConst(i64),
     DocBooleanConst(bool),
     Namespace(ArcIntern<SmolStr>),
-    Variadic(Arc<LuaType>),
     Call(Arc<LuaAliasCallType>),
     MultiLineUnion(Arc<LuaMultiLineUnion>),
 }
@@ -95,14 +95,13 @@ impl PartialEq for LuaType {
             (LuaType::TableGeneric(a), LuaType::TableGeneric(b)) => a == b,
             (LuaType::TplRef(a), LuaType::TplRef(b)) => a == b,
             (LuaType::StrTplRef(a), LuaType::StrTplRef(b)) => a == b,
-            (LuaType::MuliReturn(a), LuaType::MuliReturn(b)) => a == b,
+            (LuaType::Variadic(a), LuaType::Variadic(b)) => a == b,
             (LuaType::DocBooleanConst(a), LuaType::DocBooleanConst(b)) => a == b,
             (LuaType::Signature(a), LuaType::Signature(b)) => a == b,
             (LuaType::Instance(a), LuaType::Instance(b)) => a == b,
             (LuaType::DocStringConst(a), LuaType::DocStringConst(b)) => a == b,
             (LuaType::DocIntegerConst(a), LuaType::DocIntegerConst(b)) => a == b,
             (LuaType::Namespace(a), LuaType::Namespace(b)) => a == b,
-            (LuaType::Variadic(a), LuaType::Variadic(b)) => a == b,
             (LuaType::MultiLineUnion(a), LuaType::MultiLineUnion(b)) => a == b,
             _ => false, // 不同变体之间不相等
         }
@@ -161,7 +160,7 @@ impl Hash for LuaType {
             }
             LuaType::TplRef(a) => (32, a).hash(state),
             LuaType::StrTplRef(a) => (33, a).hash(state),
-            LuaType::MuliReturn(a) => {
+            LuaType::Variadic(a) => {
                 let ptr = Arc::as_ptr(a);
                 (34, ptr).hash(state)
             }
@@ -171,7 +170,6 @@ impl Hash for LuaType {
             LuaType::DocStringConst(a) => (38, a).hash(state),
             LuaType::DocIntegerConst(a) => (39, a).hash(state),
             LuaType::Namespace(a) => (40, a).hash(state),
-            LuaType::Variadic(a) => (42, a).hash(state),
             LuaType::MultiLineUnion(a) => {
                 let ptr = Arc::as_ptr(a);
                 (43, ptr).hash(state)
@@ -365,7 +363,7 @@ impl LuaType {
     }
 
     pub fn is_multi_return(&self) -> bool {
-        matches!(self, LuaType::MuliReturn(_))
+        matches!(self, LuaType::Variadic(_))
     }
 
     pub fn is_global(&self) -> bool {
@@ -382,7 +380,7 @@ impl LuaType {
             LuaType::Union(base) => base.contain_tpl(),
             LuaType::Intersection(base) => base.contain_tpl(),
             LuaType::Generic(base) => base.contain_tpl(),
-            LuaType::MuliReturn(multi) => multi.contain_tpl(),
+            LuaType::Variadic(multi) => multi.contain_tpl(),
             LuaType::TableGeneric(params) => params.iter().any(|p| p.contain_tpl()),
             LuaType::Variadic(inner) => inner.contain_tpl(),
             LuaType::TplRef(_) => true,
@@ -466,7 +464,7 @@ pub struct LuaFunctionType {
     is_async: bool,
     is_colon_define: bool,
     params: Vec<(String, Option<LuaType>)>,
-    ret: Vec<LuaType>,
+    ret: LuaType,
 }
 
 impl LuaFunctionType {
@@ -474,7 +472,7 @@ impl LuaFunctionType {
         is_async: bool,
         is_colon_define: bool,
         params: Vec<(String, Option<LuaType>)>,
-        ret: Vec<LuaType>,
+        ret: LuaType,
     ) -> Self {
         Self {
             is_async,
@@ -496,32 +494,40 @@ impl LuaFunctionType {
         &self.params
     }
 
-    pub fn get_ret(&self) -> &[LuaType] {
+    pub fn get_ret(&self) -> &LuaType {
         &self.ret
     }
 
-    pub fn get_multi_return(&self) -> LuaMultiReturn {
-        LuaMultiReturn::Multi(self.ret.clone())
+    pub fn get_variadic_ret(&self) -> VariadicType {
+        if let LuaType::Variadic(variadic) = &self.ret {
+            return variadic.deref().clone();
+        }
+
+        VariadicType::Base(self.ret.clone())
     }
 
     pub fn contain_tpl(&self) -> bool {
         self.params
             .iter()
             .any(|(_, t)| t.as_ref().map_or(false, |t| t.contain_tpl()))
-            || self.ret.iter().any(|t| t.contain_tpl())
+            || self.ret.contain_tpl()
     }
 
     pub fn contain_self(&self) -> bool {
-        self.params
-            .iter()
-            .any(|(_, t)| t.as_ref().map_or(false, |t| t.is_self_infer()))
-            || self.ret.iter().any(|t| t.is_self_infer())
+        self.is_colon_define
+            || self
+                .params
+                .iter()
+                .any(|(name, t)| name == "self" || t.as_ref().map_or(false, |t| t.is_self_infer()))
+            || self.ret.is_self_infer()
     }
 
     pub fn first_param_is_self(&self) -> bool {
-        self.params.first().map_or(false, |(_, t)| {
-            t.as_ref().map_or(false, |t| t.is_self_infer())
-        })
+        if let Some((name, t)) = self.params.first() {
+            name == "self" || t.as_ref().map_or(false, |t| t.is_self_infer())
+        } else {
+            false
+        }
     }
 }
 
@@ -818,15 +824,15 @@ impl From<LuaGenericType> for LuaType {
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub enum LuaMultiReturn {
+pub enum VariadicType {
     Multi(Vec<LuaType>),
     Base(LuaType),
 }
 
-impl LuaMultiReturn {
+impl VariadicType {
     pub fn get_type(&self, idx: usize) -> Option<&LuaType> {
         match self {
-            LuaMultiReturn::Multi(types) => {
+            VariadicType::Multi(types) => {
                 let types_len = types.len();
                 if types_len == 0 {
                     return None;
@@ -839,10 +845,8 @@ impl LuaMultiReturn {
                     let last = types_len - 1;
                     let ty = &types[last];
                     let offset = idx - last;
-                    if let LuaType::MuliReturn(multi) = ty {
-                        multi.get_type(offset)
-                    } else if let LuaType::Variadic(t) = ty {
-                        Some(t)
+                    if let LuaType::Variadic(variadic) = ty {
+                        variadic.get_type(offset)
                     } else if offset == 0 {
                         Some(ty)
                     } else {
@@ -850,37 +854,15 @@ impl LuaMultiReturn {
                     }
                 }
             }
-            LuaMultiReturn::Base(t) => Some(t),
+            VariadicType::Base(t) => Some(t),
         }
     }
 
-    pub fn get_len(&self) -> Option<i64> {
+    pub fn get_new_variadic_from(&self, idx: usize) -> VariadicType {
         match self {
-            LuaMultiReturn::Base(_) => None,
-            LuaMultiReturn::Multi(types) => {
-                let basic_len = types.len() as i64;
-                if basic_len == 0 {
-                    return Some(0);
-                }
-
-                if let Some(LuaType::MuliReturn(last_multi)) = types.last() {
-                    let last_element_len = last_multi.get_len();
-                    return match last_element_len {
-                        Some(len) => Some(basic_len - 1 + len),
-                        None => Some(basic_len),
-                    };
-                }
-
-                Some(basic_len)
-            }
-        }
-    }
-
-    pub fn get_new_multi_from(&self, idx: usize) -> LuaMultiReturn {
-        match self {
-            LuaMultiReturn::Multi(types) => {
+            VariadicType::Multi(types) => {
                 if types.len() == 0 {
-                    return LuaMultiReturn::Multi(Vec::new());
+                    return VariadicType::Multi(Vec::new());
                 }
 
                 let mut new_types = Vec::new();
@@ -888,22 +870,61 @@ impl LuaMultiReturn {
                     new_types.extend_from_slice(&types[idx..]);
                 } else {
                     let last = types.len() - 1;
-                    if let LuaType::MuliReturn(multi) = &types[last] {
+                    if let LuaType::Variadic(multi) = &types[last] {
                         let rest_offset = idx - last;
-                        return multi.get_new_multi_from(rest_offset);
+                        return multi.get_new_variadic_from(rest_offset);
                     }
                 }
 
-                LuaMultiReturn::Multi(new_types)
+                VariadicType::Multi(new_types)
             }
-            LuaMultiReturn::Base(t) => LuaMultiReturn::Base(t.clone()),
+            VariadicType::Base(t) => VariadicType::Base(t.clone()),
         }
     }
 
     pub fn contain_tpl(&self) -> bool {
         match self {
-            LuaMultiReturn::Multi(types) => types.iter().any(|t| t.contain_tpl()),
-            LuaMultiReturn::Base(t) => t.contain_tpl(),
+            VariadicType::Multi(types) => types.iter().any(|t| t.contain_tpl()),
+            VariadicType::Base(t) => t.contain_tpl(),
+        }
+    }
+
+    pub fn get_min_len(&self) -> Option<usize> {
+        match self {
+            VariadicType::Base(_) => None,
+            VariadicType::Multi(types) => {
+                let mut total_len = 0;
+                for t in types {
+                    if let LuaType::Variadic(variadic) = t {
+                        let len = match variadic.get_min_len() {
+                            Some(len) => len,
+                            None => return Some(total_len),
+                        };
+                        total_len += len;
+                    } else {
+                        total_len += 1;
+                    }
+                }
+                Some(total_len)
+            }
+        }
+    }
+
+    pub fn get_max_len(&self) -> Option<usize> {
+        match self {
+            VariadicType::Base(_) => None,
+            VariadicType::Multi(types) => {
+                let mut total_len = 0;
+                for t in types {
+                    if let LuaType::Variadic(variadic) = t {
+                        let len = variadic.get_max_len()?;
+                        total_len += len;
+                    } else {
+                        total_len += 1;
+                    }
+                }
+                Some(total_len)
+            }
         }
     }
 }

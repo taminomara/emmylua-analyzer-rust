@@ -129,7 +129,7 @@ fn check_call_expr(
                 LuaExpr::CallExpr(call_expr) => {
                     if let Some(func) = semantic_model.infer_call_expr_func(call_expr.clone(), None)
                     {
-                        if func.get_ret().iter().any(|typ| typ.is_variadic()) {
+                        if func.get_ret().is_variadic() {
                             return Some(());
                         }
                     }
@@ -137,8 +137,13 @@ fn check_call_expr(
                 _ => {}
             }
 
-            if let Ok(LuaType::MuliReturn(types)) = semantic_model.infer_expr(last_arg.clone()) {
-                let len = types.get_len().unwrap_or(0);
+            if let Ok(LuaType::Variadic(variadic)) = semantic_model.infer_expr(last_arg.clone()) {
+                let len = match variadic.get_max_len() {
+                    Some(len) => len,
+                    None => {
+                        return Some(());
+                    }
+                };
                 call_args_count = call_args_count + len as usize - 1;
                 if call_args_count >= params.len() {
                     return Some(());

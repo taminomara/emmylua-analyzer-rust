@@ -1,7 +1,7 @@
 mod infer_require;
 mod infer_setmetatable;
 
-use std::{ops::Deref, sync::Arc};
+use std::sync::Arc;
 
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr, LuaSyntaxKind};
 use infer_require::infer_require_call;
@@ -10,8 +10,8 @@ use rowan::TextRange;
 
 use crate::{
     db_index::{
-        DbIndex, LuaFunctionType, LuaGenericType, LuaInstanceType, LuaMultiReturn,
-        LuaOperatorMetaMethod, LuaSignatureId, LuaType, LuaTypeDeclId,
+        DbIndex, LuaFunctionType, LuaGenericType, LuaInstanceType, LuaOperatorMetaMethod,
+        LuaSignatureId, LuaType, LuaTypeDeclId,
     },
     semantic::{
         generic::{
@@ -93,13 +93,8 @@ fn infer_call_result(
         _ => resolve_signature(db, cache, funcs, call_expr.clone(), false, None)?,
     };
 
-    let rets = resolve_func.get_ret();
-    let return_type = match rets.len() {
-        0 => LuaType::Nil,
-        1 => rets[0].clone(),
-        _ => LuaType::MuliReturn(LuaMultiReturn::Multi(rets.to_vec()).into()),
-    };
-    unwrapp_return_type(db, cache, return_type, call_expr)
+    let return_type = resolve_func.get_ret();
+    unwrapp_return_type(db, cache, return_type.clone(), call_expr)
 }
 
 fn collect_function_type(
@@ -212,7 +207,7 @@ fn collect_func_by_signature(
         signature.is_async,
         signature.is_colon_define,
         signature.get_type_params(),
-        signature.get_return_types(),
+        signature.get_return_type(),
     );
 
     overloads.push(signature_fake_func.into());
@@ -413,24 +408,15 @@ fn unwrapp_return_type(
             return Ok(return_type);
         }
 
-        LuaType::MuliReturn(multi) => {
+        LuaType::Variadic(variadic) => {
             if is_last_call_expr(&call_expr) {
                 return Ok(return_type);
             }
 
-            return match multi.get_type(0) {
+            return match variadic.get_type(0) {
                 Some(ty) => Ok(ty.clone()),
                 None => Ok(LuaType::Nil),
             };
-        }
-        LuaType::Variadic(inner) => {
-            if is_last_call_expr(&call_expr) {
-                return Ok(LuaType::MuliReturn(
-                    LuaMultiReturn::Base(inner.deref().clone()).into(),
-                ));
-            }
-
-            return Ok(inner.deref().clone());
         }
         LuaType::SelfInfer => {
             let prefix_expr = call_expr.get_prefix_expr();

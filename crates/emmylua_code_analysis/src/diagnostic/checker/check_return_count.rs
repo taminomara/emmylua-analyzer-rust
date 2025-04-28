@@ -5,7 +5,7 @@ use emmylua_parser::{
 
 use crate::{DiagnosticCode, LuaSignatureId, LuaType, SemanticModel, SignatureReturnStatus};
 
-use super::{get_own_return_stats, Checker, DiagnosticContext};
+use super::{get_return_stats, Checker, DiagnosticContext};
 
 pub struct CheckReturnCount;
 
@@ -30,23 +30,20 @@ fn get_function_return_info(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
     closure_expr: &LuaClosureExpr,
-) -> Option<(bool, Vec<LuaType>)> {
+) -> Option<(bool, LuaType)> {
     let typ = semantic_model
         .infer_left_value_type_from_right_value(closure_expr.clone().into())
         .unwrap_or(LuaType::Unknown);
 
     match typ {
         LuaType::DocFunction(func_type) => {
-            return Some((
-                true,
-                func_type.get_ret().iter().map(|ty| ty.clone()).collect(),
-            ));
+            return Some((true, func_type.get_ret().clone()));
         }
         LuaType::Signature(signature) => {
             let signature = context.db.get_signature_index().get(&signature)?;
             return Some((
                 signature.resolve_return == SignatureReturnStatus::DocResolve,
-                signature.get_return_types(),
+                signature.get_return_type(),
             ));
         }
         _ => {}
@@ -57,7 +54,7 @@ fn get_function_return_info(
 
     Some((
         signature.resolve_return == SignatureReturnStatus::DocResolve,
-        signature.get_return_types(),
+        signature.get_return_type(),
     ))
 }
 
@@ -66,7 +63,7 @@ fn check_missing_return(
     semantic_model: &SemanticModel,
     closure_expr: &LuaClosureExpr,
 ) -> Option<()> {
-    let (is_doc_resolve_return, return_types) =
+    let (is_doc_resolve_return, return_type) =
         get_function_return_info(context, semantic_model, closure_expr)?;
 
     // 如果返回状态不是 DocResolve, 则跳过检查
@@ -75,22 +72,22 @@ fn check_missing_return(
     }
 
     // 如果包含可变参数, 则跳过检查最大值
-    let skip_check_max = return_types.iter().any(|ty| ty.is_variadic());
+    // let skip_check_max =
 
     // 最小返回值数
-    let min_expected_return_count = return_types
-        .iter()
-        .filter(|ty| !ty.is_nullable() && !ty.is_unknown() && !ty.is_any() && !ty.is_variadic())
-        .count();
+    let min_expected_return_count = match &return_type {
+        LuaType::Variadic(variadic) => variadic.get_min_len()?,
+        LuaType::Nil | LuaType::Any | LuaType::Unknown => 0,
+        _ => 1,
+    };
 
-    for return_stat in get_own_return_stats(closure_expr) {
+    for return_stat in get_return_stats(closure_expr) {
         check_return_count(
             context,
             semantic_model,
             &return_stat,
-            &return_types,
+            &return_type,
             min_expected_return_count,
-            skip_check_max,
         );
     }
 
@@ -248,11 +245,14 @@ fn check_return_count(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
     return_stat: &LuaReturnStat,
-    return_types: &[LuaType],
+    return_type: &LuaType,
     min_expected_return_count: usize,
-    skip_check_max: bool,
 ) -> Option<()> {
-    let max_return_count = return_types.len();
+    let max_expected_return_count = match return_type {
+        LuaType::Variadic(variadic) => variadic.get_max_len(),
+        LuaType::Nil | LuaType::Any | LuaType::Unknown => Some(1),
+        _ => Some(1),
+    };
 
     // 计算实际返回的表达式数量并记录多余的范围
     let expr_list = return_stat.get_expr_list();
@@ -264,13 +264,13 @@ fn check_return_count(
             .infer_expr(expr.clone())
             .unwrap_or(LuaType::Unknown);
         match expr_type {
-            LuaType::MuliReturn(types) => {
-                total_return_count += types.get_len().unwrap_or(1) as usize;
+            LuaType::Variadic(variadic) => {
+                total_return_count += variadic.get_max_len()?;
             }
             _ => total_return_count += 1,
         };
 
-        if total_return_count > max_return_count {
+        if max_expected_return_count.is_some() && total_return_count > max_expected_return_count? {
             redundant_ranges.push(expr.get_range());
         }
     }
@@ -289,21 +289,20 @@ fn check_return_count(
             None,
         );
     }
+
     // 检查多余的返回值
-    if !skip_check_max {
-        for range in redundant_ranges {
-            context.add_diagnostic(
+    for range in redundant_ranges {
+        context.add_diagnostic(
             DiagnosticCode::RedundantReturnValue,
             range,
             t!(
                 "Annotations specify that at most %{max} return value(s) are required, found %{rmax} returned here instead.",
-                max = max_return_count,
+                max = max_expected_return_count?,
                 rmax = total_return_count
             )
             .to_string(),
             None,
         );
-        }
     }
 
     Some(())

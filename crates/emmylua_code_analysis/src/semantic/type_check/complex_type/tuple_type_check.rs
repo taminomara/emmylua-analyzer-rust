@@ -4,7 +4,7 @@ use crate::{
     humanize_type,
     semantic::type_check::{check_general_type_compact, type_check_guard::TypeCheckGuard},
     DbIndex, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaTupleType, LuaType, RenderLevel,
-    TypeCheckFailReason, TypeCheckResult,
+    TypeCheckFailReason, TypeCheckResult, VariadicType,
 };
 
 pub fn check_tuple_type_compact(
@@ -104,39 +104,43 @@ fn check_tuple_types_compact_tuple_types(
         }
         let compact_tuple_member_type = &compacts[i];
         match (source_tuple_member_type, compact_tuple_member_type) {
-            (LuaType::Variadic(inner), _) => {
-                let compact_rest_len = compact_size - i;
-                if compact_rest_len == 0 {
-                    return Ok(());
+            (LuaType::Variadic(variadic), _) => {
+                if let VariadicType::Base(inner) = variadic.deref() {
+                    let compact_rest_len = compact_size - i;
+                    if compact_rest_len == 0 {
+                        return Ok(());
+                    }
+                    let mut new_source_types = vec![];
+                    for _ in 0..compact_rest_len {
+                        new_source_types.push(inner.clone());
+                    }
+                    return check_tuple_types_compact_tuple_types(
+                        db,
+                        i,
+                        &new_source_types,
+                        &compacts[i..],
+                        check_guard.next_level()?,
+                    );
                 }
-                let mut new_source_types = vec![];
-                for _ in 0..compact_rest_len {
-                    new_source_types.push(inner.deref().clone());
-                }
-                return check_tuple_types_compact_tuple_types(
-                    db,
-                    i,
-                    &new_source_types,
-                    &compacts[i..],
-                    check_guard.next_level()?,
-                );
             }
-            (_, LuaType::Variadic(compact_inner)) => {
-                let source_rest_len = source_size - i;
-                if source_rest_len == 0 {
-                    return Ok(());
+            (_, LuaType::Variadic(variadic)) => {
+                if let VariadicType::Base(compact_inner) = variadic.deref() {
+                    let source_rest_len = source_size - i;
+                    if source_rest_len == 0 {
+                        return Ok(());
+                    }
+                    let mut new_compact_types = vec![];
+                    for _ in 0..source_rest_len {
+                        new_compact_types.push(compact_inner.clone());
+                    }
+                    return check_tuple_types_compact_tuple_types(
+                        db,
+                        i,
+                        &sources[i..],
+                        &new_compact_types,
+                        check_guard.next_level()?,
+                    );
                 }
-                let mut new_compact_types = vec![];
-                for _ in 0..source_rest_len {
-                    new_compact_types.push(compact_inner.deref().clone());
-                }
-                return check_tuple_types_compact_tuple_types(
-                    db,
-                    i,
-                    &sources[i..],
-                    &new_compact_types,
-                    check_guard.next_level()?,
-                );
             }
             _ => {
                 if check_general_type_compact(

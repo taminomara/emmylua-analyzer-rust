@@ -464,7 +464,7 @@ pub fn get_hover_type(builder: &HoverBuilder, semantic_model: &SemanticModel) ->
             let expr_type = semantic_model.infer_expr(expr.unwrap().clone());
             match expr_type {
                 Ok(expr_type) => match expr_type {
-                    LuaType::MuliReturn(muli_return) => {
+                    LuaType::Variadic(muli_return) => {
                         return muli_return.get_type(multi_return_index).map(|t| t.clone());
                     }
                     _ => return Some(expr_type),

@@ -8,8 +8,8 @@ use crate::{
         UnResolveParentClosureParams, UnResolveReturn,
     },
     db_index::{LuaDocReturnInfo, LuaSignatureId},
-    infer_expr, DbIndex, InferFailReason, LuaInferCache, LuaMultiReturn, LuaType,
-    SignatureReturnStatus, TypeOps,
+    infer_expr, DbIndex, InferFailReason, LuaInferCache, LuaType, SignatureReturnStatus, TypeOps,
+    VariadicType,
 };
 
 use super::{func_body::analyze_func_body_returns, LuaAnalyzer, LuaReturnPoint};
@@ -211,7 +211,7 @@ pub fn analyze_return_point(
                     let expr_type = infer_expr(db, cache, expr.clone())?;
                     multi_return.push(expr_type);
                 }
-                let typ = LuaType::MuliReturn(LuaMultiReturn::Multi(multi_return).into());
+                let typ = LuaType::Variadic(VariadicType::Multi(multi_return).into());
                 return_type = TypeOps::Union.apply(&return_type, &typ);
             }
             LuaReturnPoint::Nil => {

@@ -2,9 +2,9 @@ use std::collections::HashSet;
 
 use crate::{
     DbIndex, GenericTpl, LuaAliasCallType, LuaFunctionType, LuaGenericType, LuaInstanceType,
-    LuaIntersectionType, LuaMemberKey, LuaMemberOwner, LuaMultiReturn, LuaObjectType,
-    LuaSignatureId, LuaStringTplType, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType,
-    TypeSubstitutor,
+    LuaIntersectionType, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaSignatureId,
+    LuaStringTplType, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType, TypeSubstitutor,
+    VariadicType,
 };
 
 use super::LuaMultiLineUnion;
@@ -80,11 +80,11 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
         }
         LuaType::TplRef(tpl) => humanize_tpl_ref_type(tpl),
         LuaType::StrTplRef(str_tpl) => humanize_str_tpl_ref_type(str_tpl),
-        LuaType::MuliReturn(multi) => humanize_multi_return_type(db, multi, level),
+        LuaType::Variadic(multi) => humanize_multi_return_type(db, multi, level),
         LuaType::Instance(ins) => humanize_instance_type(db, ins, level),
         LuaType::Signature(signature_id) => humanize_signature_type(db, signature_id, level),
         LuaType::Namespace(ns) => format!("{{ {} }}", ns),
-        LuaType::Variadic(inner) => format!("{}...", humanize_type(db, inner, level.next_level())),
+        LuaType::Variadic(inner) => humanize_variadic_type(db, inner, level),
         LuaType::MultiLineUnion(multi_union) => {
             humanize_multi_line_union_type(db, multi_union, level)
         }
@@ -206,6 +206,35 @@ fn humanize_union_type(db: &DbIndex, union: &LuaUnionType, level: RenderLevel) -
     }
 }
 
+fn humanize_variadic_type(db: &DbIndex, multi: &VariadicType, level: RenderLevel) -> String {
+    match multi {
+        VariadicType::Base(base) => {
+            let base_str = humanize_type(db, base, level.next_level());
+            format!("{} ...", base_str)
+        }
+        VariadicType::Multi(types) => {
+            let num = match level {
+                RenderLevel::Detailed => 10,
+                RenderLevel::Simple => 8,
+                RenderLevel::Normal => 4,
+                RenderLevel::Brief => 2,
+                RenderLevel::Minimal => {
+                    return "multi<...>".to_string();
+                }
+            };
+
+            let dots = if types.len() > num { ", ..." } else { "" };
+            let type_str = types
+                .iter()
+                .take(num)
+                .map(|ty| humanize_type(db, ty, level.next_level()))
+                .collect::<Vec<_>>()
+                .join(",");
+            format!("({}{})", type_str, dots)
+        }
+    }
+}
+
 fn humanize_multi_line_union_type(
     db: &DbIndex,
     multi_union: &LuaMultiLineUnion,
@@ -317,22 +346,15 @@ fn humanize_doc_function_type(
         .collect::<Vec<_>>()
         .join(", ");
 
-    let rets = lua_func.get_ret();
+    let ret_type = lua_func.get_ret();
 
-    if rets.is_empty() {
+    if ret_type.is_nil() {
         return format!("{}({})", prev, params);
     }
 
-    let ret_strs = rets
-        .iter()
-        .map(|ty| humanize_type(db, ty, level.next_level()))
-        .collect::<Vec<_>>()
-        .join(", ");
+    let ret_str = humanize_type(db, ret_type, level.next_level());
 
-    if rets.len() > 1 {
-        return format!("{}({}) -> ({})", prev, params, ret_strs);
-    }
-    format!("{}({}) -> {}", prev, params, ret_strs)
+    format!("{}({}) -> {}", prev, params, ret_str)
 }
 
 fn humanize_object_type(db: &DbIndex, object: &LuaObjectType, level: RenderLevel) -> String {
@@ -564,13 +586,13 @@ fn humanize_str_tpl_ref_type(str_tpl: &LuaStringTplType) -> String {
     }
 }
 
-fn humanize_multi_return_type(db: &DbIndex, multi: &LuaMultiReturn, level: RenderLevel) -> String {
+fn humanize_multi_return_type(db: &DbIndex, multi: &VariadicType, level: RenderLevel) -> String {
     match multi {
-        LuaMultiReturn::Base(base) => {
+        VariadicType::Base(base) => {
             let base_str = humanize_type(db, base, level);
             format!("{} ...", base_str)
         }
-        LuaMultiReturn::Multi(types) => {
+        VariadicType::Multi(types) => {
             let num = match level {
                 RenderLevel::Detailed => 10,
                 RenderLevel::Simple => 8,

@@ -235,7 +235,7 @@ fn build_sig_id_signature_help(
         builder,
         &param_infos,
         signature.is_method(),
-        &signature.get_return_types(),
+        &signature.get_return_type(),
     );
 
     let signature_info = SignatureInformation {
@@ -418,7 +418,7 @@ pub fn build_function_label(
     builder: &SignatureHelperBuilder,
     param_infos: &[ParameterInformation],
     is_method: bool,
-    return_types: &[LuaType],
+    return_type: &LuaType,
 ) -> String {
     let mut label = String::new();
     if let Some(prefix_name) = &builder.prefix_name {
@@ -442,18 +442,17 @@ pub fn build_function_label(
             .join(", "),
     );
     label.push_str(")");
-    // 返回值
-    if !return_types.is_empty() {
-        label.push_str(": ");
-        for return_type in return_types {
-            label.push_str(&humanize_type(
+    match return_type {
+        LuaType::Nil => {}
+        _ => {
+            label.push_str(": ");
+            let detail = humanize_type(
                 builder.semantic_model.get_db(),
-                &return_type,
+                return_type,
                 RenderLevel::Simple,
-            ));
-            label.push_str(",");
+            );
+            label.push_str(&detail);
         }
-        label.pop();
     }
 
     label

@@ -153,7 +153,6 @@ fn check_doc_func_type_compact_for_signature(
         return Ok(());
     }
 
-    let signature_params = signature.get_type_params();
     for overload_func in &signature.overloads {
         if check_doc_func_type_compact_for_params(
             db,
@@ -167,12 +166,7 @@ fn check_doc_func_type_compact_for_signature(
         }
     }
 
-    let fake_doc_func = LuaFunctionType::new(
-        signature.is_async,
-        signature.is_colon_define,
-        signature_params.iter().cloned().collect(),
-        Vec::new(),
-    );
+    let fake_doc_func = signature.to_doc_func_type();
 
     check_doc_func_type_compact_for_params(
         db,
@@ -259,13 +253,7 @@ pub fn check_sig_type_compact(
         return Ok(());
     }
 
-    let signature_params = signature.get_type_params();
-    let fake_doc_func = LuaFunctionType::new(
-        signature.is_async,
-        signature.is_colon_define,
-        signature_params.iter().cloned().collect(),
-        Vec::new(),
-    );
+    let fake_doc_func = signature.to_doc_func_type();
 
     check_doc_func_type_compact(db, &fake_doc_func, compact_type, check_guard.next_level()?)
 }

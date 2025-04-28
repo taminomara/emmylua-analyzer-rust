@@ -148,21 +148,16 @@ fn hover_doc_function_type(
         .collect::<Vec<_>>()
         .join(", ");
 
-    let rets = {
-        let rets = lua_func.get_ret();
-        if rets.is_empty() {
-            "".to_string()
-        } else {
-            format!(
-                " -> {}",
-                rets.iter()
-                    .map(|ty| humanize_type(db, ty, RenderLevel::Simple))
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            )
+    let ret_detail = {
+        let ret_type = lua_func.get_ret();
+        match ret_type {
+            LuaType::Nil => "".to_string(),
+            _ => {
+                format!(" -> {}", humanize_type(db, ret_type, RenderLevel::Simple))
+            }
         }
     };
-    format_function_type(type_label, async_label, full_name, params, rets)
+    format_function_type(type_label, async_label, full_name, params, ret_detail)
 }
 
 fn hover_signature_type(
@@ -305,16 +300,12 @@ fn build_signature_rets(
     let mut result = String::new();
     // overload 的返回值固定为单行
     let overload_rets_string = if let Some(overload) = overload {
-        let rets = overload.get_ret();
-        let rets_string = rets
-            .iter()
-            .map(|typ| humanize_type(db, typ, RenderLevel::Simple))
-            .collect::<Vec<_>>()
-            .join(", ");
-        if rets_string.is_empty() {
-            "".to_string()
-        } else {
-            format!(" -> {}", rets_string)
+        let ret_type = overload.get_ret();
+        match ret_type {
+            LuaType::Nil => "".to_string(),
+            _ => {
+                format!(" -> {}", humanize_type(db, ret_type, RenderLevel::Simple))
+            }
         }
     } else {
         "".to_string()

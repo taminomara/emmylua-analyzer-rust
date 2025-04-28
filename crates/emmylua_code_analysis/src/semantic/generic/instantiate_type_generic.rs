@@ -2,8 +2,8 @@ use std::{collections::HashMap, ops::Deref};
 
 use crate::{
     db_index::{
-        LuaFunctionType, LuaGenericType, LuaIntersectionType, LuaMultiReturn, LuaObjectType,
-        LuaTupleType, LuaType, LuaUnionType,
+        LuaFunctionType, LuaGenericType, LuaIntersectionType, LuaObjectType, LuaTupleType, LuaType,
+        LuaUnionType, VariadicType,
     },
     semantic::{member::infer_members, type_check},
     DbIndex, GenericTpl, LuaAliasCallKind, LuaAliasCallType, LuaMemberKey, LuaSignatureId, TypeOps,
@@ -30,10 +30,9 @@ pub fn instantiate_type_generic(
             instantiate_table_generic(db, table_params, substitutor)
         }
         LuaType::TplRef(tpl) => instantiate_tpl_ref(db, tpl, substitutor),
-        LuaType::MuliReturn(multi) => instantiate_multi_return(db, multi, substitutor),
         LuaType::Signature(sig_id) => instantiate_signature(db, sig_id, substitutor),
         LuaType::Call(alias_call) => instantiate_alias_call(db, alias_call, substitutor),
-        LuaType::Variadic(inner) => instantiate_variadic_type(db, inner, substitutor),
+        LuaType::Variadic(variadic) => instantiate_variadic_type(db, variadic, substitutor),
         LuaType::SelfInfer => {
             if let Some(typ) = substitutor.get_self_type() {
                 typ.clone()
@@ -55,23 +54,28 @@ fn instantiate_tuple(db: &DbIndex, tuple: &LuaTupleType, substitutor: &TypeSubst
     let mut new_types = Vec::new();
     for t in tuple_types {
         if let LuaType::Variadic(inner) = t {
-            if let LuaType::TplRef(tpl) = inner.deref() {
-                if let Some(value) = substitutor.get(tpl.get_tpl_id()) {
-                    match value {
-                        SubstitutorValue::MultiTypes(types) => {
-                            for typ in types {
-                                new_types.push(typ.clone());
+            match inner.deref() {
+                VariadicType::Base(base) => {
+                    if let LuaType::TplRef(tpl) = base {
+                        if let Some(value) = substitutor.get(tpl.get_tpl_id()) {
+                            match value {
+                                SubstitutorValue::MultiTypes(types) => {
+                                    for typ in types {
+                                        new_types.push(typ.clone());
+                                    }
+                                }
+                                SubstitutorValue::Params(params) => {
+                                    for (_, ty) in params {
+                                        new_types.push(ty.clone().unwrap_or(LuaType::Unknown));
+                                    }
+                                }
+                                SubstitutorValue::Type(ty) => new_types.push(ty.clone()),
+                                SubstitutorValue::MultiBase(base) => new_types.push(base.clone()),
                             }
                         }
-                        SubstitutorValue::Params(params) => {
-                            for (_, ty) in params {
-                                new_types.push(ty.clone().unwrap_or(LuaType::Unknown));
-                            }
-                        }
-                        SubstitutorValue::Type(ty) => new_types.push(ty.clone()),
-                        SubstitutorValue::MultiBase(base) => new_types.push(base.clone()),
                     }
                 }
+                VariadicType::Multi(_) => (),
             }
 
             break;
@@ -96,32 +100,38 @@ pub fn instantiate_doc_function(
     let mut new_params = Vec::new();
     for i in 0..tpl_func_params.len() {
         let origin_param = &tpl_func_params[i];
-        if origin_param.1.is_none() {
+
+        let origin_param_type = if let Some(ty) = &origin_param.1 {
+            ty
+        } else {
             new_params.push((origin_param.0.clone(), None));
             continue;
-        }
-
-        let origin_param_type = origin_param.1.clone().unwrap();
-        match &origin_param_type {
-            LuaType::Variadic(inner) => {
-                if let LuaType::TplRef(tpl) = inner.deref() {
-                    if let Some(value) = substitutor.get(tpl.get_tpl_id()) {
-                        match value {
-                            SubstitutorValue::Params(params) => {
-                                for param in params {
-                                    new_params.push(param.clone());
+        };
+        match origin_param_type {
+            LuaType::Variadic(variadic) => match variadic.deref() {
+                VariadicType::Base(base) => {
+                    if let LuaType::TplRef(tpl) = base {
+                        if let Some(value) = substitutor.get(tpl.get_tpl_id()) {
+                            match value {
+                                SubstitutorValue::Params(params) => {
+                                    for param in params {
+                                        new_params.push(param.clone());
+                                    }
                                 }
-                            }
-                            _ => {
-                                new_params.push((
-                                    "...".to_string(),
-                                    Some(LuaType::Variadic(LuaType::Any.into())),
-                                ));
+                                _ => {
+                                    new_params.push((
+                                        "...".to_string(),
+                                        Some(LuaType::Variadic(
+                                            VariadicType::Base(LuaType::Any).into(),
+                                        )),
+                                    ));
+                                }
                             }
                         }
                     }
                 }
-            }
+                VariadicType::Multi(_) => (),
+            },
             _ => {
                 let new_type = instantiate_type_generic(db, &origin_param_type, &substitutor);
                 new_params.push((origin_param.0.clone(), Some(new_type)));
@@ -129,40 +139,9 @@ pub fn instantiate_doc_function(
         }
     }
 
-    let mut new_returns = Vec::new();
-    for i in 0..tpl_ret.len() {
-        let ret_type = &tpl_ret[i];
-        match &ret_type {
-            LuaType::Variadic(inner) => {
-                if let LuaType::TplRef(tpl) = inner.deref() {
-                    if let Some(value) = substitutor.get(tpl.get_tpl_id()) {
-                        match value {
-                            SubstitutorValue::MultiTypes(types) => {
-                                for typ in types {
-                                    new_returns.push(typ.clone());
-                                }
-                            }
-                            SubstitutorValue::Params(params) => {
-                                for (_, ty) in params {
-                                    new_returns.push(ty.clone().unwrap_or(LuaType::Unknown));
-                                }
-                            }
-                            SubstitutorValue::Type(ty) => new_returns.push(ty.clone()),
-                            SubstitutorValue::MultiBase(base) => {
-                                new_returns.push(LuaType::Variadic(base.clone().into()));
-                            }
-                        }
-                    }
-                }
-            }
-            _ => {
-                let new_type = instantiate_type_generic(db, &ret_type, &substitutor);
-                new_returns.push(new_type);
-            }
-        }
-    }
+    let inst_ret_type = instantiate_type_generic(db, &tpl_ret, substitutor);
     LuaType::DocFunction(
-        LuaFunctionType::new(is_async, colon_define, new_params, new_returns).into(),
+        LuaFunctionType::new(is_async, colon_define, new_params, inst_ret_type).into(),
     )
 }
 
@@ -291,27 +270,6 @@ fn instantiate_tpl_ref(_: &DbIndex, tpl: &GenericTpl, substitutor: &TypeSubstitu
     LuaType::TplRef(tpl.clone().into())
 }
 
-fn instantiate_multi_return(
-    db: &DbIndex,
-    multi_returns: &LuaMultiReturn,
-    substitutor: &TypeSubstitutor,
-) -> LuaType {
-    match multi_returns {
-        LuaMultiReturn::Base(base) => {
-            let new_base = instantiate_type_generic(db, base, substitutor);
-            LuaType::MuliReturn(LuaMultiReturn::Base(new_base).into())
-        }
-        LuaMultiReturn::Multi(types) => {
-            let mut new_types = Vec::new();
-            for t in types {
-                let t = instantiate_type_generic(db, t, substitutor);
-                new_types.push(t);
-            }
-            LuaType::MuliReturn(LuaMultiReturn::Multi(new_types).into())
-        }
-    }
-}
-
 fn instantiate_signature(
     db: &DbIndex,
     signature_id: &LuaSignatureId,
@@ -319,18 +277,7 @@ fn instantiate_signature(
 ) -> LuaType {
     if let Some(signature) = db.get_signature_index().get(&signature_id) {
         let origin_type = {
-            let rets = signature
-                .return_docs
-                .iter()
-                .map(|ret| ret.type_ref.clone())
-                .collect();
-            let is_async = signature.is_async;
-            let fake_doc_function = LuaFunctionType::new(
-                is_async,
-                signature.is_colon_define,
-                signature.get_type_params(),
-                rets,
-            );
+            let fake_doc_function = signature.to_doc_func_type();
             instantiate_doc_function(db, &fake_doc_function, substitutor)
         };
         if signature.overloads.is_empty() {
@@ -452,35 +399,35 @@ fn instantiate_select_call(source: &LuaType, index: &LuaType) -> LuaType {
         }
         _ => return LuaType::Unknown,
     };
-    let multi_return = if let LuaType::MuliReturn(multi) = source {
+    let multi_return = if let LuaType::Variadic(multi) = source {
         multi.deref()
     } else {
-        &LuaMultiReturn::Base(source.clone())
+        &VariadicType::Base(source.clone())
     };
 
     match num_or_len {
         NumOrLen::Num(i) => match multi_return {
-            LuaMultiReturn::Base(_) => LuaType::MuliReturn(multi_return.clone().into()),
-            LuaMultiReturn::Multi(_) => {
-                let total_len = multi_return.get_len();
+            VariadicType::Base(_) => LuaType::Variadic(multi_return.clone().into()),
+            VariadicType::Multi(_) => {
+                let total_len = multi_return.get_min_len();
                 if total_len.is_none() {
                     return source.clone();
                 }
 
                 let total_len = total_len.unwrap();
                 let start = if i < 0 { total_len as i64 + i } else { i - 1 };
-                if start < 0 || start >= total_len {
+                if start < 0 || start >= (total_len as i64) {
                     return source.clone();
                 }
 
-                let multi = multi_return.get_new_multi_from(start as usize);
-                LuaType::MuliReturn(multi.into())
+                let multi = multi_return.get_new_variadic_from(start as usize);
+                LuaType::Variadic(multi.into())
             }
         },
         NumOrLen::Len => {
-            let len = multi_return.get_len();
+            let len = multi_return.get_min_len();
             if let Some(len) = len {
-                LuaType::IntegerConst(len)
+                LuaType::IntegerConst(len as i64)
             } else {
                 LuaType::Integer
             }
@@ -491,29 +438,43 @@ fn instantiate_select_call(source: &LuaType, index: &LuaType) -> LuaType {
 
 fn instantiate_variadic_type(
     db: &DbIndex,
-    inner: &LuaType,
+    variadic: &VariadicType,
     substitutor: &TypeSubstitutor,
 ) -> LuaType {
-    if let LuaType::TplRef(tpl) = inner {
-        if let Some(value) = substitutor.get(tpl.get_tpl_id()) {
-            match value {
-                SubstitutorValue::Type(ty) => return ty.clone(),
-                SubstitutorValue::MultiTypes(types) => {
-                    return LuaType::MuliReturn(LuaMultiReturn::Multi(types.clone()).into())
+    match variadic {
+        VariadicType::Base(base) => {
+            if let LuaType::TplRef(tpl) = base {
+                if let Some(value) = substitutor.get(tpl.get_tpl_id()) {
+                    match value {
+                        SubstitutorValue::Type(ty) => return ty.clone(),
+                        SubstitutorValue::MultiTypes(types) => {
+                            return LuaType::Variadic(VariadicType::Multi(types.clone()).into())
+                        }
+                        SubstitutorValue::Params(params) => {
+                            let types = params
+                                .iter()
+                                .filter_map(|(_, ty)| ty.clone())
+                                .collect::<Vec<_>>();
+                            return LuaType::Variadic(VariadicType::Multi(types).into());
+                        }
+                        SubstitutorValue::MultiBase(base) => {
+                            return LuaType::Variadic(VariadicType::Base(base.clone()).into());
+                        }
+                    }
                 }
-                SubstitutorValue::Params(params) => {
-                    let types = params
-                        .iter()
-                        .filter_map(|(_, ty)| ty.clone())
-                        .collect::<Vec<_>>();
-                    return LuaType::MuliReturn(LuaMultiReturn::Multi(types).into());
+            }
+        }
+        VariadicType::Multi(types) => {
+            if types.iter().any(|it| it.contain_tpl()) {
+                let mut new_types = Vec::new();
+                for t in types {
+                    let t = instantiate_type_generic(db, t, substitutor);
+                    new_types.push(t);
                 }
-                SubstitutorValue::MultiBase(base) => {
-                    return LuaType::MuliReturn(LuaMultiReturn::Base(base.clone()).into());
-                }
+                return LuaType::Variadic(VariadicType::Multi(new_types).into());
             }
         }
     }
 
-    instantiate_type_generic(db, inner, substitutor)
+    LuaType::Variadic(variadic.clone().into())
 }

@@ -6,6 +6,7 @@ use std::{collections::HashMap, sync::Arc};
 use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaDocFuncType};
 use rowan::TextSize;
 
+use crate::VariadicType;
 use crate::{
     db_index::{LuaFunctionType, LuaType},
     FileId,
@@ -82,11 +83,20 @@ impl LuaSignature {
         None
     }
 
-    pub fn get_return_types(&self) -> Vec<LuaType> {
-        self.return_docs
-            .iter()
-            .map(|info| info.type_ref.clone())
-            .collect()
+    pub fn get_return_type(&self) -> LuaType {
+        match self.return_docs.len() {
+            0 => LuaType::Nil,
+            1 => self.return_docs[0].type_ref.clone(),
+            _ => LuaType::Variadic(
+                VariadicType::Multi(
+                    self.return_docs
+                        .iter()
+                        .map(|info| info.type_ref.clone())
+                        .collect(),
+                )
+                .into(),
+            ),
+        }
     }
 
     pub fn is_method(&self) -> bool {
@@ -103,7 +113,7 @@ impl LuaSignature {
 
     pub fn to_doc_func_type(&self) -> Arc<LuaFunctionType> {
         let params = self.get_type_params();
-        let return_types = self.get_return_types();
+        let return_types = self.get_return_type();
         let func_type =
             LuaFunctionType::new(self.is_async, self.is_colon_define, params, return_types);
         Arc::new(func_type)
@@ -115,7 +125,7 @@ impl LuaSignature {
             params.remove(0);
         }
 
-        let return_types = self.get_return_types();
+        let return_types = self.get_return_type();
         let func_type = LuaFunctionType::new(self.is_async, false, params, return_types);
         Arc::new(func_type)
     }

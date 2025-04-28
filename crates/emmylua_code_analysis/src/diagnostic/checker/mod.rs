@@ -254,9 +254,7 @@ fn get_closure_expr_comment(closure_expr: &LuaClosureExpr) -> Option<LuaComment>
 }
 
 /// 获取属于自身的返回语句
-pub fn get_own_return_stats(
-    closure_expr: &LuaClosureExpr,
-) -> impl Iterator<Item = LuaReturnStat> + '_ {
+pub fn get_return_stats(closure_expr: &LuaClosureExpr) -> impl Iterator<Item = LuaReturnStat> + '_ {
     closure_expr
         .descendants::<LuaReturnStat>()
         .filter(move |stat| {

@@ -4,7 +4,7 @@ use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaDocTagParam, LuaDocTagReturn
 
 use crate::{DiagnosticCode, LuaSemanticDeclId, LuaType, SemanticDeclLevel, SemanticModel};
 
-use super::{get_closure_expr_comment, get_own_return_stats, Checker, DiagnosticContext};
+use super::{get_closure_expr_comment, get_return_stats, Checker, DiagnosticContext};
 
 pub struct IncompleteSignatureDocChecker;
 
@@ -156,8 +156,8 @@ fn check_returns(
     code: DiagnosticCode,
     is_global: bool,
     function_name: &str,
-) {
-    for return_stat in get_own_return_stats(closure_expr) {
+) -> Option<()> {
+    for return_stat in get_return_stats(closure_expr) {
         let mut return_stat_len: usize = 0;
 
         for (i, expr) in return_stat.get_expr_list().enumerate() {
@@ -166,7 +166,7 @@ fn check_returns(
             };
 
             let expr_return_count = match infer_type {
-                LuaType::MuliReturn(types) => types.get_len().unwrap_or(1) as usize,
+                LuaType::Variadic(variadic) => variadic.get_min_len()?,
                 _ => 1,
             };
 
@@ -190,4 +190,6 @@ fn check_returns(
             }
         }
     }
+
+    Some(())
 }

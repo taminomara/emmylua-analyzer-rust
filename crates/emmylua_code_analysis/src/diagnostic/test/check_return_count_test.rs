@@ -10,7 +10,7 @@ mod tests {
             DiagnosticCode::RedundantReturnValue,
             r#"
             ---@class Completion2.A
-            ---@field event fun()
+            ---@field event fun(aaa)
 
             ---@type Completion2.A
             local a = {

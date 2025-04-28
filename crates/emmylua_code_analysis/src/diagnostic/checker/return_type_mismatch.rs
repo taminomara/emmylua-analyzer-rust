@@ -8,7 +8,7 @@ use crate::{
     SemanticDeclLevel, SemanticModel, SignatureReturnStatus, TypeCheckFailReason, TypeCheckResult,
 };
 
-use super::{get_own_return_stats, Checker, DiagnosticContext};
+use super::{get_return_stats, Checker, DiagnosticContext};
 
 pub struct ReturnTypeMismatch;
 
@@ -33,14 +33,14 @@ fn check_closure_expr(
     if signature.resolve_return != SignatureReturnStatus::DocResolve {
         return None;
     }
-    let return_types = signature.get_return_types();
+    let return_type = signature.get_return_type();
     let self_type = get_self_type(semantic_model, closure_expr);
-    for return_stat in get_own_return_stats(closure_expr) {
+    for return_stat in get_return_stats(closure_expr) {
         check_return_stat(
             context,
             semantic_model,
             &self_type,
-            &return_types,
+            &return_type,
             &return_stat,
         );
     }
@@ -51,7 +51,7 @@ fn check_return_stat(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
     self_type: &Option<LuaType>,
-    return_types: &[LuaType],
+    return_type: &LuaType,
     return_stat: &LuaReturnStat,
 ) -> Option<()> {
     let (return_expr_types, return_expr_ranges) = {
@@ -72,76 +72,85 @@ fn check_return_stat(
         (return_expr_types, return_expr_ranges)
     };
 
-    for (index, return_type) in return_types.iter().enumerate() {
-        if let LuaType::Variadic(variadic) = return_type {
-            if return_expr_types.len() < index {
-                break;
-            }
-            check_variadic_return_type_match(
-                context,
-                semantic_model,
-                index,
-                variadic,
-                &return_expr_types[index..],
-                &return_expr_ranges[index..],
-            );
-            break;
-        };
+    if return_expr_types.is_empty() || return_expr_ranges.is_empty() {
+        return None;
+    }
 
-        let return_expr_type = return_expr_types.get(index).unwrap_or(&LuaType::Any);
-        let mut check_type = return_type;
-        if return_type.is_self_infer() {
-            if let Some(self_type) = self_type {
-                check_type = self_type;
+    match return_type {
+        LuaType::Variadic(variadic) => {
+            for (index, return_expr_type) in return_expr_types.iter().enumerate() {
+                let doc_return_type = variadic.get_type(index)?;
+                let mut check_type = doc_return_type;
+                if doc_return_type.is_self_infer() {
+                    if let Some(self_type) = self_type {
+                        check_type = self_type;
+                    }
+                }
+
+                let result = semantic_model.type_check(check_type, return_expr_type);
+                if !result.is_ok() {
+                    add_type_check_diagnostic(
+                        context,
+                        semantic_model,
+                        index,
+                        *return_expr_ranges
+                            .get(index)
+                            .unwrap_or(&return_stat.get_range()),
+                        check_type,
+                        return_expr_type,
+                        result,
+                    );
+                }
             }
         }
-
-        let result = semantic_model.type_check(check_type, return_expr_type);
-        if !result.is_ok() {
-            add_type_check_diagnostic(
-                context,
-                semantic_model,
-                index,
-                *return_expr_ranges
-                    .get(index)
-                    .unwrap_or(&return_stat.get_range()),
-                return_type,
-                return_expr_type,
-                result,
-            );
+        _ => {
+            let return_expr_type = &return_expr_types[0];
+            let return_expr_range = return_expr_ranges[0];
+            let result = semantic_model.type_check(return_type, &return_expr_type);
+            if !result.is_ok() {
+                add_type_check_diagnostic(
+                    context,
+                    semantic_model,
+                    0,
+                    return_expr_range,
+                    return_type,
+                    &return_expr_type,
+                    result,
+                );
+            }
         }
     }
 
     Some(())
 }
 
-fn check_variadic_return_type_match(
-    context: &mut DiagnosticContext,
-    semantic_model: &SemanticModel,
-    start_idx: usize,
-    variadic_type: &LuaType,
-    return_expr_types: &[LuaType],
-    return_expr_ranges: &[TextRange],
-) {
-    let mut idx = start_idx;
-    for (return_expr_type, return_expr_range) in
-        return_expr_types.iter().zip(return_expr_ranges.iter())
-    {
-        let result = semantic_model.type_check(variadic_type, return_expr_type);
-        if !result.is_ok() {
-            add_type_check_diagnostic(
-                context,
-                semantic_model,
-                start_idx + idx,
-                *return_expr_range,
-                variadic_type,
-                return_expr_type,
-                result,
-            );
-        }
-        idx += 1;
-    }
-}
+// fn check_variadic_return_type_match(
+//     context: &mut DiagnosticContext,
+//     semantic_model: &SemanticModel,
+//     start_idx: usize,
+//     variadic_type: &LuaType,
+//     return_expr_types: &[LuaType],
+//     return_expr_ranges: &[TextRange],
+// ) {
+//     let mut idx = start_idx;
+//     for (return_expr_type, return_expr_range) in
+//         return_expr_types.iter().zip(return_expr_ranges.iter())
+//     {
+//         let result = semantic_model.type_check(variadic_type, return_expr_type);
+//         if !result.is_ok() {
+//             add_type_check_diagnostic(
+//                 context,
+//                 semantic_model,
+//                 start_idx + idx,
+//                 *return_expr_range,
+//                 variadic_type,
+//                 return_expr_type,
+//                 result,
+//             );
+//         }
+//         idx += 1;
+//     }
+// }
 
 fn add_type_check_diagnostic(
     context: &mut DiagnosticContext,

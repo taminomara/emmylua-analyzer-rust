@@ -29,7 +29,7 @@ fn check_assert_rule(
     if let Some(first_expr) = arg_exprs.first() {
         let expr_type = semantic_model.infer_expr(first_expr.clone()).ok()?;
         let first_type = match &expr_type {
-            LuaType::MuliReturn(multi) => multi.get_type(0)?.clone(),
+            LuaType::Variadic(multi) => multi.get_type(0)?.clone(),
             _ => expr_type,
         };
 

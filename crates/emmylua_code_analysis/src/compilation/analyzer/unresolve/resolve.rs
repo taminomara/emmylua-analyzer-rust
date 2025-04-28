@@ -37,7 +37,7 @@ pub fn try_resolve_decl(
     };
     let decl_id = decl.decl_id;
     let expr_type = match &expr_type {
-        LuaType::MuliReturn(multi) => multi
+        LuaType::Variadic(multi) => multi
             .get_type(decl.ret_idx)
             .cloned()
             .unwrap_or(LuaType::Unknown),
@@ -96,7 +96,7 @@ pub fn try_resolve_member(
         };
 
         let expr_type = match &expr_type {
-            LuaType::MuliReturn(multi) => multi
+            LuaType::Variadic(multi) => multi
                 .get_type(unresolve_member.ret_idx)
                 .cloned()
                 .unwrap_or(LuaType::Unknown),
@@ -221,7 +221,7 @@ pub fn try_resolve_module(
     };
 
     let expr_type = match &expr_type {
-        LuaType::MuliReturn(multi) => multi.get_type(0).cloned().unwrap_or(LuaType::Unknown),
+        LuaType::Variadic(multi) => multi.get_type(0).cloned().unwrap_or(LuaType::Unknown),
         _ => expr_type,
     };
     let module_info = db.get_module_index_mut().get_module_mut(module.file_id)?;
@@ -281,7 +281,7 @@ pub fn try_resolve_iter_var(
         }
     };
 
-    let multi_return = func.get_multi_return();
+    let multi_return = func.get_variadic_ret();
     let mut iter_type = multi_return
         .get_type(iter_var.ret_idx)
         .cloned()

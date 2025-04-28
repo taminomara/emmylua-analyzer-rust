@@ -69,16 +69,6 @@ pub fn add_member(db: &mut DbIndex, owner: LuaMemberOwner, member_id: LuaMemberI
     db.get_member_index_mut()
         .add_member_to_owner(owner.clone(), member_id);
 
-    // let item = db.get_member_index().get_member_item_by_member_id(member_id)?;
-    // if item.is_one() {
-    //     return Some(())
-    // }
-
-    // let resolve_member_id = item.resolve_type_owner_member_id(db)?;
-    // if resolve_member_id != member_id {
-    //     return None;
-    // }
-
     Some(())
 }
 

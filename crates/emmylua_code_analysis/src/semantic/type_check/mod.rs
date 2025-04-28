@@ -67,7 +67,6 @@ fn check_general_type_compact(
         | LuaType::TplRef(_)
         | LuaType::StrTplRef(_)
         | LuaType::Namespace(_)
-        | LuaType::MuliReturn(_)
         | LuaType::Variadic(_) => check_simple_type_compact(db, source, compact_type, check_guard),
 
         // type ref

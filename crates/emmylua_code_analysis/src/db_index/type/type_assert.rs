@@ -63,7 +63,7 @@ impl TypeAssertion {
                 .ok_or(InferFailReason::None)?;
                 let expr_type = infer_expr(db, config, expr)?;
                 let expr_type = match &expr_type {
-                    LuaType::MuliReturn(multi) => {
+                    LuaType::Variadic(multi) => {
                         multi.get_type(*idx as usize).unwrap_or(&LuaType::Nil)
                     }
                     t => t,

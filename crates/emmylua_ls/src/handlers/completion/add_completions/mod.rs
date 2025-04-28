@@ -130,23 +130,17 @@ fn get_detail(builder: &CompletionBuilder, typ: &LuaType, display: CallDisplay) 
                 }
                 _ => {}
             }
-            let rets = f.get_ret();
-            let rets_detail = if rets.len() == 1 {
-                let detail = humanize_type(
-                    builder.semantic_model.get_db(),
-                    &rets[0],
-                    RenderLevel::Minimal,
-                );
-                format!(" -> {}", detail)
-            } else if rets.len() > 1 {
-                let detail = humanize_type(
-                    builder.semantic_model.get_db(),
-                    &rets[0],
-                    RenderLevel::Minimal,
-                );
-                format!(" -> {} ...", detail)
-            } else {
-                "".to_string()
+            let ret_type = f.get_ret();
+            let rets_detail = match ret_type {
+                LuaType::Nil => "".to_string(),
+                _ => {
+                    let type_detail = humanize_type(
+                        builder.semantic_model.get_db(),
+                        &ret_type,
+                        RenderLevel::Minimal,
+                    );
+                    format!("-> {}", type_detail)
+                }
             };
             Some(format!("({}){}", params_str.join(", "), rets_detail))
         }

@@ -29,7 +29,7 @@ use smol_str::SmolStr;
 
 use crate::{
     db_index::{DbIndex, LuaOperator, LuaOperatorMetaMethod, LuaSignatureId, LuaType},
-    InFiled, LuaMultiReturn,
+    InFiled, VariadicType,
 };
 
 use super::{member::infer_members, CacheEntry, CacheKey, LuaInferCache};
@@ -130,7 +130,7 @@ fn infer_literal_expr(db: &DbIndex, config: &LuaInferCache, expr: LuaLiteralExpr
                 Some(decl) if decl.is_global() => LuaType::Any,
                 Some(decl) if decl.is_param() => {
                     let base = infer_param(db, decl).unwrap_or(LuaType::Unknown);
-                    LuaType::MuliReturn(LuaMultiReturn::Base(base).into())
+                    LuaType::Variadic(VariadicType::Base(base).into())
                 }
                 _ => LuaType::Any, // 默认返回 Any
             };
@@ -180,7 +180,7 @@ pub fn infer_multi_value_adjusted_expression_types(
     for (idx, expr) in exprs.iter().enumerate() {
         let expr_type = infer_expr(db, cache, expr.clone()).ok()?;
         match expr_type {
-            LuaType::MuliReturn(multi) => {
+            LuaType::Variadic(multi) => {
                 if let Some(var_count) = var_count {
                     if idx < var_count {
                         for i in idx..var_count {
@@ -193,10 +193,10 @@ pub fn infer_multi_value_adjusted_expression_types(
                     }
                 } else {
                     match multi.deref() {
-                        LuaMultiReturn::Base(base) => {
+                        VariadicType::Base(base) => {
                             value_types.push((base.clone(), expr.get_range()));
                         }
-                        LuaMultiReturn::Multi(vecs) => {
+                        VariadicType::Multi(vecs) => {
                             for typ in vecs {
                                 value_types.push((typ.clone(), expr.get_range()));
                             }

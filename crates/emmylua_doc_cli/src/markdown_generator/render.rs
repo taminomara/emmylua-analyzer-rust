@@ -68,13 +68,9 @@ fn render_doc_function_type(
         })
         .collect::<Vec<_>>();
 
-    let rets = lua_func.get_ret();
+    let ret_type = lua_func.get_ret();
 
-    let ret_strs = rets
-        .iter()
-        .map(|ty| render_typ(db, ty))
-        .collect::<Vec<_>>()
-        .join(",");
+    let ret_strs = render_typ(db, ret_type);
 
     let mut result = String::new();
     result.push_str("```lua\n");

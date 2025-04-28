@@ -76,13 +76,7 @@ impl LuaOperator {
 
     pub fn get_result(&self, db: &DbIndex) -> Result<LuaType, InferFailReason> {
         match &self.func {
-            OperatorFunction::Func(func) => {
-                let return_types = func.get_ret();
-                if return_types.is_empty() {
-                    return Ok(LuaType::Any);
-                }
-                return Ok(return_types[0].clone());
-            }
+            OperatorFunction::Func(func) => Ok(func.get_ret().clone()),
             OperatorFunction::Signature(signature_id) => {
                 let signature = db.get_signature_index().get(signature_id);
                 if let Some(signature) = signature {

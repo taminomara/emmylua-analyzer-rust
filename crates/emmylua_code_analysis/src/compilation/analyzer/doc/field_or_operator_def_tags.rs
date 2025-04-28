@@ -94,7 +94,7 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
                         ),
                         ("key".to_string(), Some(key_type_ref)),
                     ],
-                    vec![field_type],
+                    field_type,
                 ))),
             );
             analyzer.db.get_operator_index_mut().add_operator(operator);
@@ -178,7 +178,7 @@ pub fn analyze_operator(analyzer: &mut DocAnalyzer, tag: LuaDocTagOperator) -> O
             false,
             false,
             operands,
-            vec![return_type],
+            return_type,
         ))),
     );
 
