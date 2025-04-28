@@ -113,9 +113,9 @@ impl LuaSignature {
 
     pub fn to_doc_func_type(&self) -> Arc<LuaFunctionType> {
         let params = self.get_type_params();
-        let return_types = self.get_return_type();
+        let return_type = self.get_return_type();
         let func_type =
-            LuaFunctionType::new(self.is_async, self.is_colon_define, params, return_types);
+            LuaFunctionType::new(self.is_async, self.is_colon_define, params, return_type);
         Arc::new(func_type)
     }
 
@@ -125,8 +125,8 @@ impl LuaSignature {
             params.remove(0);
         }
 
-        let return_types = self.get_return_type();
-        let func_type = LuaFunctionType::new(self.is_async, false, params, return_types);
+        let return_type = self.get_return_type();
+        let func_type = LuaFunctionType::new(self.is_async, false, params, return_type);
         Arc::new(func_type)
     }
 }

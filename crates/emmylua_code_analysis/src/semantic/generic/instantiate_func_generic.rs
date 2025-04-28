@@ -50,7 +50,7 @@ pub fn instantiate_func_generic(
         &arg_types,
         &call_expr.get_root(),
         &mut substitutor,
-    );
+    )?;
 
     if func.contain_self() {
         infer_self_type(db, cache, &call_expr, &mut substitutor)?;

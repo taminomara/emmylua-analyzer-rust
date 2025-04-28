@@ -116,8 +116,7 @@ fn analyze_return(
     let parent = closure.get_parent::<LuaAst>()?;
     match &parent {
         LuaAst::LuaCallArgList(_) => {
-            analyze_lambda_returns(analyzer, signature_id, closure)?;
-            return Some(());
+            analyze_lambda_returns(analyzer, signature_id, closure);
         }
         _ => {}
     };

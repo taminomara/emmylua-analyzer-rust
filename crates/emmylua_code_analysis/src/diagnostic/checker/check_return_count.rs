@@ -71,13 +71,27 @@ fn check_missing_return(
         return None;
     }
 
-    // 如果包含可变参数, 则跳过检查最大值
-    // let skip_check_max =
-
     // 最小返回值数
     let min_expected_return_count = match &return_type {
-        LuaType::Variadic(variadic) => variadic.get_min_len()?,
+        LuaType::Variadic(variadic) => {
+            let min_len = variadic.get_min_len()?;
+            let mut real_min_len = min_len;
+            // 逆序检查
+            if min_len > 0 {
+                for i in (0..min_len).rev() {
+                    if let Some(ty) = variadic.get_type(i) {
+                        if ty.is_optional() {
+                            real_min_len -= 1;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+            real_min_len
+        }
         LuaType::Nil | LuaType::Any | LuaType::Unknown => 0,
+        _ if return_type.is_nullable() => 0,
         _ => 1,
     };
 
@@ -250,7 +264,8 @@ fn check_return_count(
 ) -> Option<()> {
     let max_expected_return_count = match return_type {
         LuaType::Variadic(variadic) => variadic.get_max_len(),
-        LuaType::Nil | LuaType::Any | LuaType::Unknown => Some(1),
+        LuaType::Any | LuaType::Unknown => Some(1),
+        LuaType::Nil => Some(0),
         _ => Some(1),
     };
 

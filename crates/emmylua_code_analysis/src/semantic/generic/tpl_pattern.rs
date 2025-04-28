@@ -8,11 +8,13 @@ use crate::{
     check_type_compact,
     db_index::{DbIndex, LuaGenericType, LuaType},
     semantic::{member::infer_member_map, LuaInferCache},
-    LuaFunctionType, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaTupleType, LuaUnionType,
-    VariadicType,
+    InferFailReason, LuaFunctionType, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaTupleType,
+    LuaUnionType, VariadicType,
 };
 
 use super::type_substitutor::TypeSubstitutor;
+
+type TplPatternMatchResult = Result<(), InferFailReason>;
 
 pub fn tpl_pattern_match_args(
     db: &DbIndex,
@@ -21,7 +23,7 @@ pub fn tpl_pattern_match_args(
     call_arg_types: &[LuaType],
     root: &LuaSyntaxNode,
     substitutor: &mut TypeSubstitutor,
-) -> Option<()> {
+) -> TplPatternMatchResult {
     for (i, func_param_type) in func_param_types.iter().enumerate() {
         let call_arg_type = if i < call_arg_types.len() {
             &call_arg_types[i]
@@ -31,7 +33,7 @@ pub fn tpl_pattern_match_args(
 
         match (func_param_type, call_arg_type) {
             (LuaType::Variadic(variadic), _) => {
-                variadic_tpl_pattern_match(variadic, &call_arg_types[i..], substitutor);
+                variadic_tpl_pattern_match(variadic, &call_arg_types[i..], substitutor)?;
                 break;
             }
             (_, LuaType::Variadic(variadic)) => {
@@ -42,16 +44,16 @@ pub fn tpl_pattern_match_args(
                     variadic,
                     root,
                     substitutor,
-                );
+                )?;
                 break;
             }
             _ => {
-                tpl_pattern_match(db, cache, root, func_param_type, call_arg_type, substitutor);
+                tpl_pattern_match(db, cache, root, func_param_type, call_arg_type, substitutor)?;
             }
         }
     }
 
-    Some(())
+    Ok(())
 }
 
 fn multi_param_tpl_pattern_match_multi_return(
@@ -61,7 +63,7 @@ fn multi_param_tpl_pattern_match_multi_return(
     multi_return: &VariadicType,
     root: &LuaSyntaxNode,
     substitutor: &mut TypeSubstitutor,
-) -> Option<()> {
+) -> TplPatternMatchResult {
     match &multi_return {
         VariadicType::Base(base) => {
             let mut call_arg_types = Vec::new();
@@ -81,7 +83,7 @@ fn multi_param_tpl_pattern_match_multi_return(
                 &call_arg_types,
                 root,
                 substitutor,
-            )
+            )?;
         }
         VariadicType::Multi(_) => {
             let mut call_arg_types = Vec::new();
@@ -108,9 +110,11 @@ fn multi_param_tpl_pattern_match_multi_return(
                 &call_arg_types,
                 root,
                 substitutor,
-            )
+            )?;
         }
     }
+
+    Ok(())
 }
 
 fn tpl_pattern_match(
@@ -120,7 +124,7 @@ fn tpl_pattern_match(
     pattern: &LuaType,
     target: &LuaType,
     substitutor: &mut TypeSubstitutor,
-) -> Option<()> {
+) -> TplPatternMatchResult {
     let target = escape_alias(db, target);
 
     match pattern {
@@ -139,7 +143,7 @@ fn tpl_pattern_match(
             _ => {}
         },
         LuaType::Array(base) => {
-            array_tpl_pattern_match(db, cache, root, base, &target, substitutor);
+            array_tpl_pattern_match(db, cache, root, base, &target, substitutor)?;
         }
         LuaType::TableGeneric(table_generic_params) => {
             table_generic_tpl_pattern_match(
@@ -149,27 +153,27 @@ fn tpl_pattern_match(
                 table_generic_params,
                 &target,
                 substitutor,
-            );
+            )?;
         }
         LuaType::Generic(generic) => {
-            generic_tpl_pattern_match(db, cache, root, generic, &target, substitutor);
+            generic_tpl_pattern_match(db, cache, root, generic, &target, substitutor)?;
         }
         LuaType::Union(union) => {
-            union_tpl_pattern_match(db, cache, root, union, &target, substitutor);
+            union_tpl_pattern_match(db, cache, root, union, &target, substitutor)?;
         }
         LuaType::DocFunction(doc_func) => {
-            func_tpl_pattern_match(db, cache, root, doc_func, &target, substitutor);
+            func_tpl_pattern_match(db, cache, root, doc_func, &target, substitutor)?;
         }
         LuaType::Tuple(tuple) => {
-            tuple_tpl_pattern_match(db, cache, root, tuple, &target, substitutor);
+            tuple_tpl_pattern_match(db, cache, root, tuple, &target, substitutor)?;
         }
         LuaType::Object(obj) => {
-            object_tpl_pattern_match(db, cache, root, obj, &target, substitutor);
+            object_tpl_pattern_match(db, cache, root, obj, &target, substitutor)?;
         }
         _ => {}
     }
 
-    Some(())
+    Ok(())
 }
 
 fn object_tpl_pattern_match(
@@ -179,14 +183,14 @@ fn object_tpl_pattern_match(
     origin_obj: &LuaObjectType,
     target: &LuaType,
     substitutor: &mut TypeSubstitutor,
-) -> Option<()> {
+) -> TplPatternMatchResult {
     match target {
         LuaType::Object(target_object) => {
             // 先匹配 fields
             for (k, v) in origin_obj.get_fields().iter().sorted_by_key(|(k, _)| *k) {
                 let target_value = target_object.get_fields().get(k);
                 if let Some(target_value) = target_value {
-                    tpl_pattern_match(db, cache, root, v, target_value, substitutor);
+                    tpl_pattern_match(db, cache, root, v, target_value, substitutor)?;
                 }
             }
             // 再匹配索引访问
@@ -197,8 +201,8 @@ fn object_tpl_pattern_match(
                     .iter()
                     .find(|(target_key, _)| check_type_compact(db, origin_key, target_key).is_ok());
                 if let Some(target_access) = target_access {
-                    tpl_pattern_match(db, cache, root, origin_key, &target_access.0, substitutor);
-                    tpl_pattern_match(db, cache, root, v, &target_access.1, substitutor);
+                    tpl_pattern_match(db, cache, root, origin_key, &target_access.0, substitutor)?;
+                    tpl_pattern_match(db, cache, root, v, &target_access.1, substitutor)?;
                 }
             }
         }
@@ -211,11 +215,12 @@ fn object_tpl_pattern_match(
                 origin_obj,
                 owner,
                 substitutor,
-            );
+            )?;
         }
         _ => {}
     }
-    Some(())
+
+    Ok(())
 }
 
 fn object_tpl_pattern_match_member_owner_match(
@@ -225,16 +230,16 @@ fn object_tpl_pattern_match_member_owner_match(
     object: &LuaObjectType,
     owner: LuaMemberOwner,
     substitutor: &mut TypeSubstitutor,
-) -> Option<()> {
+) -> TplPatternMatchResult {
     let owner_type = match &owner {
         LuaMemberOwner::Element(inst) => LuaType::TableConst(inst.clone()),
         LuaMemberOwner::Type(type_id) => LuaType::Ref(type_id.clone()),
         _ => {
-            return None;
+            return Err(InferFailReason::None);
         }
     };
 
-    let members = infer_member_map(db, &owner_type)?;
+    let members = infer_member_map(db, &owner_type).ok_or(InferFailReason::None)?;
     for (k, v) in members {
         let resolve_key = match &k {
             LuaMemberKey::Integer(i) => Some(LuaType::IntegerConst(i.clone())),
@@ -255,12 +260,12 @@ fn object_tpl_pattern_match_member_owner_match(
 
         if let Some(_) = resolve_key {
             if let Some(field_value) = object.get_field(&k) {
-                tpl_pattern_match(db, cache, root, field_value, &resolve_type, substitutor);
+                tpl_pattern_match(db, cache, root, field_value, &resolve_type, substitutor)?;
             }
         }
     }
 
-    Some(())
+    Ok(())
 }
 
 fn array_tpl_pattern_match(
@@ -270,23 +275,25 @@ fn array_tpl_pattern_match(
     base: &LuaType,
     target: &LuaType,
     substitutor: &mut TypeSubstitutor,
-) -> Option<()> {
+) -> TplPatternMatchResult {
     match target {
         LuaType::Array(target_base) => {
-            tpl_pattern_match(db, cache, root, base, target_base, substitutor);
+            tpl_pattern_match(db, cache, root, base, target_base, substitutor)?;
         }
         LuaType::Tuple(target_tuple) => {
             let target_base = target_tuple.cast_down_array_base();
-            tpl_pattern_match(db, cache, root, base, &target_base, substitutor);
+            tpl_pattern_match(db, cache, root, base, &target_base, substitutor)?;
         }
         LuaType::Object(target_object) => {
-            let target_base = target_object.cast_down_array_base()?;
-            tpl_pattern_match(db, cache, root, base, &target_base, substitutor);
+            let target_base = target_object
+                .cast_down_array_base()
+                .ok_or(InferFailReason::None)?;
+            tpl_pattern_match(db, cache, root, base, &target_base, substitutor)?;
         }
         _ => {}
     }
 
-    Some(())
+    Ok(())
 }
 
 fn table_generic_tpl_pattern_match(
@@ -296,9 +303,9 @@ fn table_generic_tpl_pattern_match(
     table_generic_params: &Vec<LuaType>,
     target: &LuaType,
     substitutor: &mut TypeSubstitutor,
-) -> Option<()> {
+) -> TplPatternMatchResult {
     if table_generic_params.len() != 2 {
-        return None;
+        return Err(InferFailReason::None);
     }
 
     match target {
@@ -314,7 +321,7 @@ fn table_generic_tpl_pattern_match(
                     &table_generic_params[i],
                     &target_table_generic_params[i],
                     substitutor,
-                );
+                )?;
             }
         }
         LuaType::Array(target_array_base) => {
@@ -325,7 +332,7 @@ fn table_generic_tpl_pattern_match(
                 &table_generic_params[0],
                 &LuaType::Integer,
                 substitutor,
-            );
+            )?;
             tpl_pattern_match(
                 db,
                 cache,
@@ -333,7 +340,7 @@ fn table_generic_tpl_pattern_match(
                 &table_generic_params[1],
                 target_array_base,
                 substitutor,
-            );
+            )?;
         }
         LuaType::Tuple(target_tuple) => {
             let len = target_tuple.get_types().len();
@@ -351,7 +358,7 @@ fn table_generic_tpl_pattern_match(
                 &table_generic_params[0],
                 &key_type,
                 substitutor,
-            );
+            )?;
             tpl_pattern_match(
                 db,
                 cache,
@@ -359,7 +366,7 @@ fn table_generic_tpl_pattern_match(
                 &table_generic_params[1],
                 &target_base,
                 substitutor,
-            );
+            )?;
         }
         LuaType::TableConst(inst) => {
             let owner = LuaMemberOwner::Element(inst.clone());
@@ -370,7 +377,7 @@ fn table_generic_tpl_pattern_match(
                 table_generic_params,
                 owner,
                 substitutor,
-            );
+            )?;
         }
         LuaType::Ref(type_id) => {
             let owner = LuaMemberOwner::Type(type_id.clone());
@@ -381,7 +388,7 @@ fn table_generic_tpl_pattern_match(
                 table_generic_params,
                 owner,
                 substitutor,
-            );
+            )?;
         }
         LuaType::Def(type_id) => {
             let owner = LuaMemberOwner::Type(type_id.clone());
@@ -392,7 +399,7 @@ fn table_generic_tpl_pattern_match(
                 table_generic_params,
                 owner,
                 substitutor,
-            );
+            )?;
         }
         LuaType::Object(obj) => {
             let mut keys = vec![];
@@ -419,7 +426,7 @@ fn table_generic_tpl_pattern_match(
                 &table_generic_params[0],
                 &key_type,
                 substitutor,
-            );
+            )?;
             tpl_pattern_match(
                 db,
                 cache,
@@ -427,7 +434,7 @@ fn table_generic_tpl_pattern_match(
                 &table_generic_params[1],
                 &value_type,
                 substitutor,
-            );
+            )?;
         }
 
         LuaType::Global | LuaType::Any | LuaType::Table | LuaType::Userdata => {
@@ -439,7 +446,7 @@ fn table_generic_tpl_pattern_match(
                 &table_generic_params[0],
                 &LuaType::Any,
                 substitutor,
-            );
+            )?;
             tpl_pattern_match(
                 db,
                 cache,
@@ -447,12 +454,12 @@ fn table_generic_tpl_pattern_match(
                 &table_generic_params[1],
                 &LuaType::Any,
                 substitutor,
-            );
+            )?;
         }
         _ => {}
     }
 
-    Some(())
+    Ok(())
 }
 
 fn table_generic_tpl_pattern_member_owner_match(
@@ -462,20 +469,20 @@ fn table_generic_tpl_pattern_member_owner_match(
     table_generic_params: &Vec<LuaType>,
     owner: LuaMemberOwner,
     substitutor: &mut TypeSubstitutor,
-) -> Option<()> {
+) -> TplPatternMatchResult {
     if table_generic_params.len() != 2 {
-        return None;
+        return Err(InferFailReason::None);
     }
 
     let owner_type = match &owner {
         LuaMemberOwner::Element(inst) => LuaType::TableConst(inst.clone()),
         LuaMemberOwner::Type(type_id) => LuaType::Ref(type_id.clone()),
         _ => {
-            return None;
+            return Err(InferFailReason::None);
         }
     };
 
-    let members = infer_member_map(db, &owner_type)?;
+    let members = infer_member_map(db, &owner_type).ok_or(InferFailReason::None)?;
     let mut keys = Vec::new();
     let mut values = Vec::new();
     for (k, v) in members {
@@ -509,7 +516,7 @@ fn table_generic_tpl_pattern_member_owner_match(
         &table_generic_params[0],
         &key_type,
         substitutor,
-    );
+    )?;
     tpl_pattern_match(
         db,
         cache,
@@ -517,8 +524,9 @@ fn table_generic_tpl_pattern_member_owner_match(
         &table_generic_params[1],
         &value_type,
         substitutor,
-    );
-    Some(())
+    )?;
+
+    Ok(())
 }
 
 fn generic_tpl_pattern_match(
@@ -528,26 +536,26 @@ fn generic_tpl_pattern_match(
     generic: &LuaGenericType,
     target: &LuaType,
     substitutor: &mut TypeSubstitutor,
-) -> Option<()> {
+) -> TplPatternMatchResult {
     match target {
         LuaType::Generic(target_generic) => {
             let base = generic.get_base_type();
             let target_base = target_generic.get_base_type();
             if target_base != base {
-                return None;
+                return Err(InferFailReason::None);
             }
 
             let params = generic.get_params();
             let target_params = target_generic.get_params();
             let min_len = params.len().min(target_params.len());
             for i in 0..min_len {
-                tpl_pattern_match(db, cache, root, &params[i], &target_params[i], substitutor);
+                tpl_pattern_match(db, cache, root, &params[i], &target_params[i], substitutor)?;
             }
         }
         _ => {}
     }
 
-    Some(())
+    Ok(())
 }
 
 fn union_tpl_pattern_match(
@@ -557,12 +565,12 @@ fn union_tpl_pattern_match(
     union: &LuaUnionType,
     target: &LuaType,
     substitutor: &mut TypeSubstitutor,
-) -> Option<()> {
+) -> TplPatternMatchResult {
     for u in union.get_types() {
-        tpl_pattern_match(db, cache, root, u, target, substitutor);
+        tpl_pattern_match(db, cache, root, u, target, substitutor)?;
     }
 
-    Some(())
+    Ok(())
 }
 
 fn func_tpl_pattern_match(
@@ -572,7 +580,7 @@ fn func_tpl_pattern_match(
     tpl_func: &LuaFunctionType,
     target: &LuaType,
     substitutor: &mut TypeSubstitutor,
-) -> Option<()> {
+) -> TplPatternMatchResult {
     match target {
         LuaType::DocFunction(target_doc_func) => {
             func_tpl_pattern_match_doc_func(
@@ -582,24 +590,30 @@ fn func_tpl_pattern_match(
                 tpl_func,
                 target_doc_func,
                 substitutor,
-            );
+            )?;
         }
         LuaType::Signature(signature_id) => {
-            let signature = db.get_signature_index().get(&signature_id)?;
-            let typed_params = signature.get_type_params();
-            let rets = signature.get_return_type();
-            let fake_doc_func = LuaFunctionType::new(
-                signature.is_async,
-                signature.is_colon_define,
-                typed_params,
-                rets,
-            );
-            func_tpl_pattern_match_doc_func(db, cache, root, tpl_func, &fake_doc_func, substitutor);
+            let signature = db
+                .get_signature_index()
+                .get(&signature_id)
+                .ok_or(InferFailReason::None)?;
+            if !signature.is_resolve_return() {
+                return Err(InferFailReason::UnResolveSignatureReturn(*signature_id));
+            }
+            let fake_doc_func = signature.to_doc_func_type();
+            func_tpl_pattern_match_doc_func(
+                db,
+                cache,
+                root,
+                tpl_func,
+                &fake_doc_func,
+                substitutor,
+            )?;
         }
         _ => {}
     }
 
-    Some(())
+    Ok(())
 }
 
 fn func_tpl_pattern_match_doc_func(
@@ -609,7 +623,7 @@ fn func_tpl_pattern_match_doc_func(
     tpl_func: &LuaFunctionType,
     target_func: &LuaFunctionType,
     substitutor: &mut TypeSubstitutor,
-) -> Option<()> {
+) -> TplPatternMatchResult {
     let mut tpl_func_params = tpl_func.get_params().to_vec();
     if tpl_func.is_colon_define() {
         tpl_func_params.insert(0, ("self".to_string(), Some(LuaType::Any)));
@@ -628,7 +642,7 @@ fn func_tpl_pattern_match_doc_func(
         &tpl_func_params,
         &target_func_params,
         substitutor,
-    );
+    )?;
 
     let tpl_return = tpl_func.get_ret();
     let target_return = target_func.get_ret();
@@ -639,8 +653,9 @@ fn func_tpl_pattern_match_doc_func(
         &tpl_return,
         &target_return,
         substitutor,
-    );
-    Some(())
+    )?;
+
+    Ok(())
 }
 
 fn param_type_list_pattern_match_type_list(
@@ -650,7 +665,7 @@ fn param_type_list_pattern_match_type_list(
     sources: &[(String, Option<LuaType>)],
     targets: &[(String, Option<LuaType>)],
     substitutor: &mut TypeSubstitutor,
-) -> Option<()> {
+) -> TplPatternMatchResult {
     let type_len = sources.len();
     for i in 0..type_len {
         let source = match sources.get(i) {
@@ -664,16 +679,16 @@ fn param_type_list_pattern_match_type_list(
 
         match (&source, &target) {
             (LuaType::Variadic(inner), _) => {
-                func_varargs_tpl_pattern_match(&inner, &targets[i..], substitutor);
+                func_varargs_tpl_pattern_match(&inner, &targets[i..], substitutor)?;
                 break;
             }
             _ => {
-                tpl_pattern_match(db, cache, root, &source, &target, substitutor);
+                tpl_pattern_match(db, cache, root, &source, &target, substitutor)?;
             }
         }
     }
 
-    Some(())
+    Ok(())
 }
 
 fn return_type_pattern_match_target_type(
@@ -683,7 +698,7 @@ fn return_type_pattern_match_target_type(
     source: &LuaType,
     target: &LuaType,
     substitutor: &mut TypeSubstitutor,
-) {
+) -> TplPatternMatchResult {
     match (source, target) {
         // toooooo complex
         (LuaType::Variadic(variadic_source), LuaType::Variadic(variadic_target)) => {
@@ -718,12 +733,12 @@ fn return_type_pattern_match_target_type(
                     }
                 },
                 VariadicType::Multi(target_types) => {
-                    variadic_tpl_pattern_match(variadic_source, target_types, substitutor);
+                    variadic_tpl_pattern_match(variadic_source, target_types, substitutor)?;
                 }
             }
         }
         (LuaType::Variadic(variadic), _) => {
-            variadic_tpl_pattern_match(variadic, &[target.clone()], substitutor);
+            variadic_tpl_pattern_match(variadic, &[target.clone()], substitutor)?;
         }
         (_, LuaType::Variadic(variadic)) => {
             multi_param_tpl_pattern_match_multi_return(
@@ -733,19 +748,21 @@ fn return_type_pattern_match_target_type(
                 variadic,
                 root,
                 substitutor,
-            );
+            )?;
         }
         _ => {
-            tpl_pattern_match(db, cache, root, source, target, substitutor);
+            tpl_pattern_match(db, cache, root, source, target, substitutor)?;
         }
     }
+
+    Ok(())
 }
 
 fn func_varargs_tpl_pattern_match(
     varidic: &VariadicType,
     target_rest_params: &[(String, Option<LuaType>)],
     substitutor: &mut TypeSubstitutor,
-) -> Option<()> {
+) -> TplPatternMatchResult {
     match varidic {
         VariadicType::Base(base) => {
             if let LuaType::TplRef(tpl_ref) = base {
@@ -761,19 +778,30 @@ fn func_varargs_tpl_pattern_match(
         }
         VariadicType::Multi(_) => {}
     }
-    Some(())
+
+    Ok(())
 }
 
 pub fn variadic_tpl_pattern_match(
     tpl: &VariadicType,
     target_rest_types: &[LuaType],
     substitutor: &mut TypeSubstitutor,
-) -> Option<()> {
+) -> TplPatternMatchResult {
     match tpl {
         VariadicType::Base(base) => {
             if let LuaType::TplRef(tpl_ref) = base {
                 let tpl_id = tpl_ref.get_tpl_id();
-                substitutor.insert_multi_types(tpl_id, target_rest_types.to_vec());
+                match target_rest_types.len() {
+                    0 => {
+                        substitutor.insert_type(tpl_id, LuaType::Nil);
+                    }
+                    1 => {
+                        substitutor.insert_type(tpl_id, target_rest_types[0].clone());
+                    }
+                    _ => {
+                        substitutor.insert_multi_types(tpl_id, target_rest_types.to_vec());
+                    }
+                }
             }
         }
         VariadicType::Multi(multi) => {
@@ -781,7 +809,11 @@ pub fn variadic_tpl_pattern_match(
                 match ret_type {
                     LuaType::Variadic(inner) => {
                         if i < target_rest_types.len() {
-                            variadic_tpl_pattern_match(inner, &target_rest_types[i..], substitutor);
+                            variadic_tpl_pattern_match(
+                                inner,
+                                &target_rest_types[i..],
+                                substitutor,
+                            )?;
                         }
 
                         break;
@@ -803,7 +835,7 @@ pub fn variadic_tpl_pattern_match(
         }
     }
 
-    Some(())
+    Ok(())
 }
 
 fn tuple_tpl_pattern_match(
@@ -813,7 +845,7 @@ fn tuple_tpl_pattern_match(
     tpl_tuple: &LuaTupleType,
     target: &LuaType,
     substitutor: &mut TypeSubstitutor,
-) -> Option<()> {
+) -> TplPatternMatchResult {
     match target {
         LuaType::Tuple(target_tuple) => {
             let tpl_tuple_types = tpl_tuple.get_types();
@@ -824,7 +856,7 @@ fn tuple_tpl_pattern_match(
 
                 if let LuaType::Variadic(inner) = tpl_type {
                     let target_rest_types = &target_tuple_types[i..];
-                    variadic_tpl_pattern_match(inner, target_rest_types, substitutor);
+                    variadic_tpl_pattern_match(inner, target_rest_types, substitutor)?;
                     break;
                 }
 
@@ -833,12 +865,12 @@ fn tuple_tpl_pattern_match(
                     None => break,
                 };
 
-                tpl_pattern_match(db, cache, root, tpl_type, target_type, substitutor);
+                tpl_pattern_match(db, cache, root, tpl_type, target_type, substitutor)?;
             }
         }
         LuaType::Array(target_array_base) => {
             let tupl_tuple_types = tpl_tuple.get_types();
-            let last_type = tupl_tuple_types.last()?;
+            let last_type = tupl_tuple_types.last().ok_or(InferFailReason::None)?;
             if let LuaType::Variadic(inner) = last_type {
                 match inner.deref() {
                     VariadicType::Base(base) => {
@@ -855,7 +887,7 @@ fn tuple_tpl_pattern_match(
         _ => {}
     }
 
-    Some(())
+    Ok(())
 }
 
 fn escape_alias(db: &DbIndex, may_alias: &LuaType) -> LuaType {

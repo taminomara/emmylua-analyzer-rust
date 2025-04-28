@@ -171,6 +171,14 @@ pub fn try_resolve_closure_return(
         return try_convert_to_func_body_infer(db, cache, closure_return);
     }
 
+    match signature.resolve_return {
+        SignatureReturnStatus::UnResolve => {}
+        SignatureReturnStatus::InferResolve => {
+            signature.return_docs.clear();
+        }
+        _ => return Some(true),
+    }
+
     signature.return_docs.push(LuaDocReturnInfo {
         name: None,
         type_ref: ret_type.clone(),

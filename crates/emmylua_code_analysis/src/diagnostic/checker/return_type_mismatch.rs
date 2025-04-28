@@ -104,9 +104,15 @@ fn check_return_stat(
             }
         }
         _ => {
+            let mut check_type = return_type;
+            if return_type.is_self_infer() {
+                if let Some(self_type) = self_type {
+                    check_type = self_type;
+                }
+            }
             let return_expr_type = &return_expr_types[0];
             let return_expr_range = return_expr_ranges[0];
-            let result = semantic_model.type_check(return_type, &return_expr_type);
+            let result = semantic_model.type_check(check_type, &return_expr_type);
             if !result.is_ok() {
                 add_type_check_diagnostic(
                     context,
