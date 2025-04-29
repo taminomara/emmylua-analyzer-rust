@@ -658,6 +658,10 @@ impl LuaDocTagField {
     pub fn get_visibility_token(&self) -> Option<LuaDocVisibilityToken> {
         self.token()
     }
+
+    pub fn get_attrib(&self) -> Option<LuaDocAttribute> {
+        self.child()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
