@@ -59,14 +59,21 @@ pub fn remove_type(db: &DbIndex, source: LuaType, removed_type: LuaType) -> Opti
             LuaType::TableConst(_)
             | LuaType::Table
             | LuaType::Userdata
-            | LuaType::Ref(_)
-            | LuaType::Def(_)
             | LuaType::Global
             | LuaType::Array(_)
             | LuaType::Tuple(_)
             | LuaType::Generic(_)
             | LuaType::Object(_)
             | LuaType::TableGeneric(_) => return None,
+            LuaType::Ref(type_decl_id) | LuaType::Def(type_decl_id) => {
+                let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
+                if type_decl.is_alias() {
+                    if let Some(alias_ref) = get_real_type(db, &source) {
+                        return remove_type(db, alias_ref.clone(), removed_type);
+                    }
+                }
+                return None;
+            }
             _ => {}
         },
         LuaType::DocStringConst(s) => match &source {
@@ -151,4 +158,17 @@ pub fn remove_type(db: &DbIndex, source: LuaType, removed_type: LuaType) -> Opti
     }
 
     Some(source)
+}
+
+fn get_real_type<'a>(db: &'a DbIndex, compact_type: &'a LuaType) -> Option<&'a LuaType> {
+    match compact_type {
+        LuaType::Ref(type_decl_id) => {
+            let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
+            if type_decl.is_alias() {
+                return get_real_type(db, type_decl.get_alias_ref()?);
+            }
+            Some(compact_type)
+        }
+        _ => Some(compact_type),
+    }
 }
