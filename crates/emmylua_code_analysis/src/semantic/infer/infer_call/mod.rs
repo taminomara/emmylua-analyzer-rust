@@ -369,7 +369,7 @@ fn unwrapp_return_type(
     call_expr: LuaCallExpr,
 ) -> InferResult {
     match &return_type {
-        LuaType::Table | LuaType::Any | LuaType::Unknown => {
+        LuaType::Table => {
             let id = InFiled {
                 file_id: cache.get_file_id(),
                 value: call_expr.get_range(),
