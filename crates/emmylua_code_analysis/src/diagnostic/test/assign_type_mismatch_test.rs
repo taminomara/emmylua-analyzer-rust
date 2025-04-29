@@ -805,4 +805,21 @@ return t
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_330() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            ---@enum MyEnum
+            local MyEnum = { A = 1, B = 2 }
+
+            local x --- @type MyEnum?
+
+            ---@type MyEnum
+            local a = x or MyEnum.A
+        "#
+        ));
+    }
 }
