@@ -8,8 +8,8 @@ use crate::{
     check_type_compact,
     db_index::{DbIndex, LuaGenericType, LuaType},
     semantic::{member::infer_member_map, LuaInferCache},
-    InferFailReason, LuaFunctionType, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaTupleType,
-    LuaUnionType, VariadicType,
+    InferFailReason, LuaFunctionType, LuaMemberKey, LuaMemberOwner, LuaObjectType,
+    LuaSemanticDeclId, LuaTupleType, LuaUnionType, VariadicType,
 };
 
 use super::type_substitutor::TypeSubstitutor;
@@ -251,12 +251,19 @@ fn object_tpl_pattern_match_member_owner_match(
             1 => v[0].typ.clone(),
             _ => {
                 let mut types = Vec::new();
-                for m in v {
+                for m in &v {
                     types.push(m.typ.clone());
                 }
                 LuaType::Union(LuaUnionType::new(types).into())
             }
         };
+
+        // this is a workaround, I need refactor infer member map
+        if resolve_type.is_unknown() && v.len() > 0 {
+            if let Some(LuaSemanticDeclId::Member(member_id)) = &v[0].property_owner_id {
+                return Err(InferFailReason::UnResolveMemberType(*member_id));
+            }
+        }
 
         if let Some(_) = resolve_key {
             if let Some(field_value) = object.get_field(&k) {

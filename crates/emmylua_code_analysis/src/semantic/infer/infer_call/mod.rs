@@ -203,14 +203,9 @@ fn collect_func_by_signature(
 
     let mut overloads = signature.overloads.clone();
 
-    let signature_fake_func = LuaFunctionType::new(
-        signature.is_async,
-        signature.is_colon_define,
-        signature.get_type_params(),
-        signature.get_return_type(),
-    );
+    let signature_fake_func = signature.to_doc_func_type();
 
-    overloads.push(signature_fake_func.into());
+    overloads.push(signature_fake_func);
 
     if signature.is_generic() {
         let func = resolve_signature(db, cache, overloads, call_expr, true, None)?;
