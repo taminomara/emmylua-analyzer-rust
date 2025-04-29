@@ -351,7 +351,7 @@ fn build_signature_rets(
             overload_rets_string
         } else {
             let rets = &signature.return_docs;
-            if rets.is_empty() {
+            if rets.is_empty() || signature.get_return_type().is_nil() {
                 "".to_string()
             } else {
                 format!(
@@ -372,7 +372,7 @@ fn build_signature_rets(
         overload_rets_string
     } else {
         let rets = &signature.return_docs;
-        if rets.is_empty() {
+        if rets.is_empty() || signature.get_return_type().is_nil() {
             "".to_string()
         } else {
             let mut rets_string_multiline = String::new();

@@ -163,4 +163,23 @@ mod tests {
             },
         ));
     }
+
+    #[test]
+    fn test_4() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_hover(
+            r#"
+                ---@class ClosureTest
+                ---@field e fun(a: string, b: number)
+                local Test
+
+                function Test.<??>e(a, b)
+                    A = a
+                end
+            "#,
+            VirtualHoverResult {
+                value: "\n```lua\nfunction ClosureTest.e(a: string, b: number)\n```\n\n---\n\n---\n\n```lua\n(field) ClosureTest.e(a: string, b: number)\n```\n".to_string(),
+            },
+        ));
+    }
 }
