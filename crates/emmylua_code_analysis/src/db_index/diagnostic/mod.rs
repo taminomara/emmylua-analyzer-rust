@@ -73,10 +73,7 @@ impl DiagnosticIndex {
     ) -> bool {
         if let Some(disabled) = self.diagnostic_actions.get(file_id) {
             for action in disabled {
-                if action.get_code() == *code
-                    && action.is_disable()
-                    && action.get_range().intersect(*range).is_some()
-                {
+                if action.is_match(true, range, code) {
                     return true;
                 }
             }

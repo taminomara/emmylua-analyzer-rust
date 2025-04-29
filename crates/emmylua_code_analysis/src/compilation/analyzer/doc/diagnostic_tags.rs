@@ -41,27 +41,32 @@ fn analyze_diagnostic_disable(
     };
 
     let diagnostic_index = analyzer.db.get_diagnostic_index_mut();
-    let diagnostic_code_list = diagnostic.get_code_list()?;
-    for code in diagnostic_code_list.get_codes() {
-        let name = code.get_name_text();
-        let diagnostic_code = if let Some(code) = DiagnosticCode::from_str(name).ok() {
-            code
-        } else {
-            continue;
-        };
+    if let Some(diagnostic_code_list) = diagnostic.get_code_list() {
+        for code in diagnostic_code_list.get_codes() {
+            let name = code.get_name_text();
+            let diagnostic_code = if let Some(code) = DiagnosticCode::from_str(name).ok() {
+                code
+            } else {
+                continue;
+            };
 
-        if is_file_disable {
-            diagnostic_index.add_file_diagnostic_disabled(analyzer.file_id, diagnostic_code);
-        } else {
-            diagnostic_index.add_diagnostic_action(
-                analyzer.file_id,
-                DiagnosticAction::new(
-                    owner_block_range,
-                    DiagnosticActionKind::Disable,
-                    diagnostic_code,
-                ),
-            );
+            if is_file_disable {
+                diagnostic_index.add_file_diagnostic_disabled(analyzer.file_id, diagnostic_code);
+            } else {
+                diagnostic_index.add_diagnostic_action(
+                    analyzer.file_id,
+                    DiagnosticAction::new(
+                        owner_block_range,
+                        DiagnosticActionKind::Disable(diagnostic_code),
+                    ),
+                );
+            }
         }
+    } else {
+        diagnostic_index.add_diagnostic_action(
+            analyzer.file_id,
+            DiagnosticAction::new(owner_block_range, DiagnosticActionKind::DisableAll),
+        );
     }
 
     Some(())
@@ -79,18 +84,24 @@ fn analyze_diagnostic_disable_next_line(
     let valid_range = TextRange::new(comment_range.start(), line_range.end());
 
     let diagnostic_index = analyzer.db.get_diagnostic_index_mut();
-    let diagnostic_code_list = diagnostic.get_code_list()?;
-    for code in diagnostic_code_list.get_codes() {
-        let name = code.get_name_text();
-        let diagnostic_code = if let Some(code) = DiagnosticCode::from_str(name).ok() {
-            code
-        } else {
-            continue;
-        };
+    if let Some(diagnostic_code_list) = diagnostic.get_code_list() {
+        for code in diagnostic_code_list.get_codes() {
+            let name = code.get_name_text();
+            let diagnostic_code = if let Some(code) = DiagnosticCode::from_str(name).ok() {
+                code
+            } else {
+                continue;
+            };
 
+            diagnostic_index.add_diagnostic_action(
+                analyzer.file_id,
+                DiagnosticAction::new(valid_range, DiagnosticActionKind::Disable(diagnostic_code)),
+            );
+        }
+    } else {
         diagnostic_index.add_diagnostic_action(
             analyzer.file_id,
-            DiagnosticAction::new(valid_range, DiagnosticActionKind::Disable, diagnostic_code),
+            DiagnosticAction::new(valid_range, DiagnosticActionKind::DisableAll),
         );
     }
 
@@ -108,18 +119,24 @@ fn analyze_diagnostic_disable_line(
     let valid_range = document.get_line_range(comment_end_line)?;
 
     let diagnostic_index = analyzer.db.get_diagnostic_index_mut();
-    let diagnostic_code_list = diagnostic.get_code_list()?;
-    for code in diagnostic_code_list.get_codes() {
-        let name = code.get_name_text();
-        let diagnostic_code = if let Some(code) = DiagnosticCode::from_str(name).ok() {
-            code
-        } else {
-            continue;
-        };
+    if let Some(diagnostic_code_list) = diagnostic.get_code_list() {
+        for code in diagnostic_code_list.get_codes() {
+            let name = code.get_name_text();
+            let diagnostic_code = if let Some(code) = DiagnosticCode::from_str(name).ok() {
+                code
+            } else {
+                continue;
+            };
 
+            diagnostic_index.add_diagnostic_action(
+                analyzer.file_id,
+                DiagnosticAction::new(valid_range, DiagnosticActionKind::Disable(diagnostic_code)),
+            );
+        }
+    } else {
         diagnostic_index.add_diagnostic_action(
             analyzer.file_id,
-            DiagnosticAction::new(valid_range, DiagnosticActionKind::Disable, diagnostic_code),
+            DiagnosticAction::new(valid_range, DiagnosticActionKind::DisableAll),
         );
     }
 
