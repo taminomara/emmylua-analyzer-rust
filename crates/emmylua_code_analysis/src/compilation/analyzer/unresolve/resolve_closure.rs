@@ -348,7 +348,7 @@ pub fn try_resolve_closure_parent_params(
                     signature.is_async,
                     signature.is_colon_define,
                     final_params,
-                    signature.get_return_types(),
+                    signature.get_return_type(),
                 ),
                 self_type,
             )
