@@ -166,19 +166,15 @@ fn humanize_simple_type(
 }
 
 fn humanize_union_type(db: &DbIndex, union: &LuaUnionType, level: RenderLevel) -> String {
-    format_union_type(
-        union,
-        level,
-        |ty, level| humanize_type(db, ty, level.next_level()),
-        true,
-    )
+    format_union_type(union, level, |ty, level| {
+        humanize_type(db, ty, level.next_level())
+    })
 }
 
 pub fn format_union_type<F>(
     union: &LuaUnionType,
     level: RenderLevel,
     mut type_formatter: F,
-    is_hover: bool,
 ) -> String
 where
     F: FnMut(&LuaType, RenderLevel) -> String,
@@ -199,7 +195,7 @@ where
     let mut has_nil = false;
     let mut has_function = false;
     for ty in types.iter() {
-        if (!is_hover && !ty.is_function() && ty.is_nil()) || (is_hover && ty.is_nil()) {
+        if ty.is_nil() {
             has_nil = true;
             continue;
         } else if ty.is_function() {

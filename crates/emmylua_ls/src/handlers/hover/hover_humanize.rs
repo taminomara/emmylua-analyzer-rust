@@ -485,12 +485,9 @@ fn hover_union_type(
     union: &LuaUnionType,
     level: RenderLevel,
 ) -> String {
-    format_union_type(
-        union,
-        level,
-        |ty, level| hover_type(builder, ty, Some(level)),
-        true,
-    )
+    format_union_type(union, level, |ty, level| {
+        hover_type(builder, ty, Some(level))
+    })
 }
 
 fn hover_multi_line_union_type(
