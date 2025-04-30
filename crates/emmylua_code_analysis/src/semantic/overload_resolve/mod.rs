@@ -86,6 +86,11 @@ fn resolve_signature_by_args(
             jump_param = 0;
         };
 
+        // 如果在不计算可空参数的情况下, 参数数量完全匹配, 则认为其权重更高
+        if params.len() == fake_expr_len {
+            total_weight += params.len() as i32 + 1;
+        }
+
         // 冒号定义且冒号调用
         if is_colon_call && func.is_colon_define() {
             total_weight += 100;

@@ -822,6 +822,7 @@ return t
         "#
         ));
     }
+
     #[test]
     fn test_issue_393() {
         let mut ws = VirtualWorkspace::new();
@@ -837,6 +838,23 @@ return t
                         callbacks = { callbacks }
                     end
                 end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_issue_374() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+                --- @param x? integer
+                --- @return integer?
+                --- @overload fun(): integer
+                function bar(x) end
+
+                --- @type integer
+                local _ = bar() -- - error cannot assign `integer?` to `integer`
         "#
         ));
     }
