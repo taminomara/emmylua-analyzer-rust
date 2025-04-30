@@ -14,4 +14,23 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_405() {
+        let mut ws = VirtualWorkspace::new();
+        let mut emmyrc = ws.analysis.emmyrc.as_ref().clone();
+        emmyrc.strict.array_index = false;
+        ws.analysis.update_config(emmyrc.into());
+        assert!(ws.check_code_for(
+            DiagnosticCode::NeedCheckNil,
+            r#"
+                ---@type false|fun(...)[]?
+                local calls
+
+                for i = 1, #calls do
+                    calls[i](...)
+                end
+        "#
+        ));
+    }
 }
