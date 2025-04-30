@@ -19,13 +19,21 @@ pub async fn on_formatting_handler(
     let client_id = config_manager.client_config.client_id;
 
     let file_id = analysis.get_file_id(&uri)?;
-    let syntax_tree = analysis.compilation.get_db().get_vfs().get_syntax_tree(&file_id)?;
-    
+    let syntax_tree = analysis
+        .compilation
+        .get_db()
+        .get_vfs()
+        .get_syntax_tree(&file_id)?;
+
     if !syntax_tree.get_errors().is_empty() {
         return None;
     }
 
-    let document = analysis.compilation.get_db().get_vfs().get_document(&file_id)?;
+    let document = analysis
+        .compilation
+        .get_db()
+        .get_vfs()
+        .get_document(&file_id)?;
     let text = document.get_text();
     let file_path = document.get_file_path();
     let normalized_path = file_path.to_string_lossy().to_string().replace("\\", "/");
