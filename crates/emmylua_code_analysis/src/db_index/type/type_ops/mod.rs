@@ -47,3 +47,16 @@ impl TypeOps {
         }
     }
 }
+
+pub fn get_real_type<'a>(db: &'a DbIndex, compact_type: &'a LuaType) -> Option<&'a LuaType> {
+    match compact_type {
+        LuaType::Ref(type_decl_id) => {
+            let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
+            if type_decl.is_alias() {
+                return get_real_type(db, type_decl.get_alias_ref()?);
+            }
+            Some(compact_type)
+        }
+        _ => Some(compact_type),
+    }
+}

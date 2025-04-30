@@ -1,5 +1,7 @@
 use crate::{DbIndex, LuaType, LuaUnionType};
 
+use super::get_real_type;
+
 // need to be optimized
 pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Option<LuaType> {
     if source == target {
@@ -45,9 +47,15 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
             LuaType::Ref(type_decl_id) | LuaType::Def(type_decl_id) => {
                 let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
                 // enum 在实际使用时实际上是 enum.field, 并不等于 table
-                if !type_decl.is_enum() {
-                    return Some(source);
+                if type_decl.is_enum() {
+                    return None;
                 }
+                if type_decl.is_alias() {
+                    if let Some(alias_ref) = get_real_type(db, &source) {
+                        return narrow_down_type(db, alias_ref.clone(), target);
+                    }
+                }
+                return Some(source);
             }
             _ => {}
         },

@@ -591,6 +591,34 @@ end
     }
 
     #[test]
+    fn test_issue_373() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+            --- @alias myalias string|string[]
+
+            --- @param x myalias
+            function foo(x)
+                if type(x) == 'string' then
+                    a = x
+                elseif type(x) == 'table' then
+                    b = x
+                end
+            end
+        "#,
+        );
+
+        let a = ws.expr_ty("a");
+        let a_expected = ws.ty("string");
+        assert_eq!(a, a_expected);
+
+        let b = ws.expr_ty("b");
+        let b_expected = ws.ty("string[]");
+        assert_eq!(b, b_expected);
+    }
+
+    #[test]
     fn test_issue_405() {
         let mut ws = VirtualWorkspace::new();
 
