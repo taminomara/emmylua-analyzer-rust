@@ -121,6 +121,10 @@ pub fn server_capabilities(client_capabilities: &ClientCapabilities) -> ServerCa
         &mut server_capabilities,
         client_capabilities,
     );
+    // register::<document_type_formatting::DocumentTypeFormatting>(
+    //     &mut server_capabilities,
+    //     client_capabilities,
+    // );
 
     server_capabilities
 }
