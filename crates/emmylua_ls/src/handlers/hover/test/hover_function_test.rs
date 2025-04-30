@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod tests {
 
-    use crate::handlers::hover::test::{HoverVirtualWorkspace, VirtualHoverResult};
+    use crate::handlers::test_lib::{ProviderVirtualWorkspace, VirtualHoverResult};
 
     #[test]
     fn test_1() {
-        let mut ws = HoverVirtualWorkspace::new();
+        let mut ws = ProviderVirtualWorkspace::new();
         assert!(ws.check_hover(
             r#"
                 ---@param a number 参数a
@@ -67,7 +67,7 @@ mod tests {
 
     #[test]
     fn test_2() {
-        let mut ws = HoverVirtualWorkspace::new();
+        let mut ws = ProviderVirtualWorkspace::new();
         ws.def(
             r#"
             ---@class Game
@@ -103,7 +103,7 @@ mod tests {
 
     #[test]
     fn test_3() {
-        let mut ws = HoverVirtualWorkspace::new();
+        let mut ws = ProviderVirtualWorkspace::new();
         ws.def(
             r#"
             ---@class Hover.Test3<T>
@@ -122,6 +122,63 @@ mod tests {
             "#,
             VirtualHoverResult {
                 value: "\n```lua\n(method) Test3:event(event: \"B\", key: string)\n```\n\n&nbsp;&nbsp;in class `Hover.Test3`\n\n---\n\n---\n\n```lua\n(method) Test3:event(event: \"A\", key: string)\n```\n".to_string(),
+            },
+        ));
+    }
+
+    #[test]
+    fn test_union_function() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_hover(
+            r#"
+                ---@diagnostic disable: missing-return
+                ---@class Trigger
+                ---@class EventTypeA
+
+                ---@class (partial) GameA
+                local M
+
+                -- 注册引擎事件
+                ---@param event_type EventTypeA
+                ---@param ... any
+                ---@return Trigger
+                function M:<??>event(event_type, ...)
+                end
+
+                ---@class (partial) GameA
+                ---@field event fun(self: self, event: "游戏-初始化"): Trigger
+                ---@field event fun(self: self, event: "游戏-追帧完成"): Trigger
+                ---@field event fun(self: self, event: "游戏-逻辑不同步"): Trigger
+                ---@field event fun(self: self, event: "游戏-地形预设加载完成"): Trigger
+                ---@field event fun(self: self, event: "游戏-结束"): Trigger
+                ---@field event fun(self: self, event: "游戏-暂停"): Trigger
+                ---@field event fun(self: self, event: "游戏-恢复"): Trigger
+                ---@field event fun(self: self, event: "游戏-昼夜变化"): Trigger
+                ---@field event fun(self: self, event: "区域-进入"): Trigger
+                ---@field event fun(self: self, event: "区域-离开"): Trigger
+                ---@field event fun(self: self, event: "游戏-http返回"): Trigger
+            "#,
+            VirtualHoverResult {
+                value: "\n```lua\n(method) GameA:event(event_type: EventTypeA, ...: any)\n  -> Trigger\n\n```\n\n---\n\n---\n\n```lua\n(method) GameA:event(event: \"游戏-初始化\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-追帧完成\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-逻辑不同步\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-地形预设加载完成\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-结束\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-暂停\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-恢复\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-昼夜变化\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"区域-进入\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"区域-离开\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-http返回\") -> Trigger\n```\n".to_string(),
+            },
+        ));
+    }
+
+    #[test]
+    fn test_4() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_hover(
+            r#"
+                ---@class ClosureTest
+                ---@field e fun(a: string, b: number)
+                local Test
+
+                function Test.<??>e(a, b)
+                    A = a
+                end
+            "#,
+            VirtualHoverResult {
+                value: "\n```lua\nfunction ClosureTest.e(a: string, b: number)\n```\n\n---\n\n---\n\n```lua\n(field) ClosureTest.e(a: string, b: number)\n```\n".to_string(),
             },
         ));
     }

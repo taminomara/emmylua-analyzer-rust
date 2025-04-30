@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 
 use emmylua_code_analysis::{
-    DbIndex, LuaDocReturnInfo, LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner,
-    LuaMultiLineUnion, LuaSemanticDeclId, LuaSignature, LuaSignatureId, LuaType, LuaUnionType,
-    RenderLevel, SemanticDeclLevel, SemanticModel,
+    format_union_type, DbIndex, LuaDocReturnInfo, LuaFunctionType, LuaMember, LuaMemberKey,
+    LuaMemberOwner, LuaMultiLineUnion, LuaSemanticDeclId, LuaSignature, LuaSignatureId, LuaType,
+    LuaUnionType, RenderLevel, SemanticDeclLevel, SemanticModel,
 };
 
 use emmylua_code_analysis::humanize_type;
@@ -41,51 +41,83 @@ pub fn hover_function_type(
             function_member,
             func_name,
         )),
-        LuaType::Signature(signature_id) => hover_signature_type(
-            builder,
-            db,
-            signature_id.clone(),
-            function_member,
-            func_name,
-            is_local,
-        )
-        .unwrap_or_else(|| {
-            builder.set_type_description(format!("function {}", func_name));
-            builder.signature_overload = None;
-        }),
+        LuaType::Signature(signature_id) => {
+            let type_description = hover_signature_type(
+                builder,
+                db,
+                signature_id.clone(),
+                function_member,
+                func_name,
+                is_local,
+                false,
+            )
+            .unwrap_or_else(|| {
+                builder.signature_overload = None;
+                format!("function {}", func_name)
+            });
+            builder.set_type_description(type_description);
+        }
         LuaType::Union(union) => {
-            // 泛型处理
-            if let Some(call) = builder.get_call_signature() {
-                builder.set_type_description(hover_doc_function_type(
-                    builder,
-                    db,
-                    &call,
-                    function_member,
-                    func_name,
-                ))
-            } else {
-                // 将最后一个作为 type_description
-                let mut overloads = Vec::new();
-                for typ in union.get_types() {
-                    if let LuaType::DocFunction(lua_func) = typ {
-                        overloads.push(hover_doc_function_type(
-                            builder,
-                            db,
-                            &lua_func,
-                            function_member,
-                            func_name,
-                        ));
-                    }
-                }
-                if let Some(signature) = overloads.pop() {
-                    builder.set_type_description(signature);
-                    for overload in overloads {
-                        builder.add_signature_overload(overload);
-                    }
-                }
-            }
+            hover_union_function_type(builder, db, union, function_member, func_name)
         }
         _ => builder.set_type_description(format!("function {}", func_name)),
+    }
+}
+
+fn hover_union_function_type(
+    builder: &mut HoverBuilder,
+    db: &DbIndex,
+    union: &LuaUnionType,
+    function_member: Option<&LuaMember>,
+    func_name: &str,
+) {
+    // 泛型处理
+    if let Some(call) = builder.get_call_signature() {
+        builder.set_type_description(hover_doc_function_type(
+            builder,
+            db,
+            &call,
+            function_member,
+            func_name,
+        ));
+        return;
+    }
+    let mut overloads = Vec::new();
+
+    let types = union.get_types();
+    for typ in types {
+        match typ {
+            LuaType::DocFunction(lua_func) => {
+                overloads.push(hover_doc_function_type(
+                    builder,
+                    db,
+                    &lua_func,
+                    function_member,
+                    func_name,
+                ));
+            }
+            LuaType::Signature(signature_id) => {
+                if let Some(type_description) = hover_signature_type(
+                    builder,
+                    db,
+                    signature_id.clone(),
+                    function_member,
+                    func_name,
+                    false,
+                    true,
+                ) {
+                    overloads.push(type_description);
+                }
+            }
+            _ => {}
+        }
+    }
+    // 将最后一个作为 type_description
+    if let Some(type_description) = overloads.pop() {
+        builder.set_type_description(type_description);
+        for overload in overloads {
+            builder.add_signature_overload(overload);
+        }
     }
 }
 
@@ -167,8 +199,12 @@ fn hover_signature_type(
     owner_member: Option<&LuaMember>,
     func_name: &str,
     is_local: bool,
-) -> Option<()> {
+    is_form_union: bool,
+) -> Option<String> {
     let signature = db.get_signature_index().get(&signature_id)?;
+    if is_form_union && signature.param_docs.is_empty() {
+        return None;
+    }
     let call_signature = builder.get_call_signature();
 
     let mut type_label = "function ";
@@ -235,9 +271,8 @@ fn hover_signature_type(
         if let Some(call_signature) = &call_signature {
             if call_signature.get_params() == signature.get_type_params() {
                 // 如果具有完全匹配的签名, 那么将其设置为当前签名, 且不显示重载
-                builder.set_type_description(result);
                 builder.signature_overload = None;
-                return Some(());
+                return Some(result);
             }
         }
         result
@@ -273,9 +308,8 @@ fn hover_signature_type(
             if let Some(call_signature) = &call_signature {
                 if *call_signature == **overload {
                     // 如果具有完全匹配的签名, 那么将其设置为当前签名, 且不显示重载
-                    builder.set_type_description(result);
                     builder.signature_overload = None;
-                    return Some(());
+                    return Some(result);
                 }
             };
             overloads.push(result);
@@ -283,11 +317,12 @@ fn hover_signature_type(
         overloads
     };
 
-    builder.set_type_description(signature_info);
+    // 设置重载信息
     for overload in overloads {
         builder.add_signature_overload(overload);
     }
-    Some(())
+
+    Some(signature_info)
 }
 
 fn build_signature_rets(
@@ -316,7 +351,7 @@ fn build_signature_rets(
             overload_rets_string
         } else {
             let rets = &signature.return_docs;
-            if rets.is_empty() {
+            if rets.is_empty() || signature.get_return_type().is_nil() {
                 "".to_string()
             } else {
                 format!(
@@ -330,42 +365,43 @@ fn build_signature_rets(
             }
         };
         result.push_str(rets.as_str());
+        return result;
+    }
+
+    let rets = if !overload_rets_string.is_empty() {
+        overload_rets_string
     } else {
-        let rets = if !overload_rets_string.is_empty() {
-            overload_rets_string
+        let rets = &signature.return_docs;
+        if rets.is_empty() || signature.get_return_type().is_nil() {
+            "".to_string()
         } else {
-            let rets = &signature.return_docs;
-            if rets.is_empty() {
-                "".to_string()
-            } else {
-                let mut rets_string_multiline = String::new();
-                rets_string_multiline.push_str("\n");
+            let mut rets_string_multiline = String::new();
+            rets_string_multiline.push_str("\n");
 
-                for (i, ret) in rets.iter().enumerate() {
-                    let type_text = build_signature_ret_type(builder, ret, i);
-                    let prefix = if i == 0 {
-                        "-> ".to_string()
+            for (i, ret) in rets.iter().enumerate() {
+                let type_text = build_signature_ret_type(builder, ret, i);
+                let prefix = if i == 0 {
+                    "-> ".to_string()
+                } else {
+                    format!("{}. ", i + 1)
+                };
+                let name = ret.name.clone().unwrap_or_default();
+
+                rets_string_multiline.push_str(&format!(
+                    "  {}{}{}\n",
+                    prefix,
+                    if !name.is_empty() {
+                        format!("{}: ", name)
                     } else {
-                        format!("{}. ", i + 1)
-                    };
-                    let name = ret.name.clone().unwrap_or_default();
-
-                    rets_string_multiline.push_str(&format!(
-                        "  {}{}{}\n",
-                        prefix,
-                        if !name.is_empty() {
-                            format!("{}: ", name)
-                        } else {
-                            "".to_string()
-                        },
-                        type_text,
-                    ));
-                }
-                rets_string_multiline
+                        "".to_string()
+                    },
+                    type_text,
+                ));
             }
-        };
-        result.push_str(rets.as_str());
+            rets_string_multiline
+        }
     };
+    result.push_str(rets.as_str());
     result
 }
 
@@ -449,44 +485,9 @@ fn hover_union_type(
     union: &LuaUnionType,
     level: RenderLevel,
 ) -> String {
-    let types = union.get_types();
-    let num = match level {
-        RenderLevel::Detailed => 10,
-        RenderLevel::Simple => 8,
-        RenderLevel::Normal => 4,
-        RenderLevel::Brief => 2,
-        RenderLevel::Minimal => {
-            return "union<...>".to_string();
-        }
-    };
-    // 需要确保顺序
-    let mut seen = HashSet::new();
-    let mut type_strings = Vec::new();
-    let mut has_nil = false;
-    for ty in types.iter() {
-        if ty.is_nil() {
-            has_nil = true;
-            continue;
-        }
-        let type_str = hover_type(builder, ty, Some(level.next_level()));
-        if seen.insert(type_str.clone()) {
-            type_strings.push(type_str);
-        }
-    }
-    // 取指定数量的类型
-    let display_types: Vec<_> = type_strings.into_iter().take(num).collect();
-    let type_str = display_types.join("|");
-    let dots = if display_types.len() < types.len() {
-        "..."
-    } else {
-        ""
-    };
-
-    if display_types.len() == 1 {
-        format!("{}{}", type_str, if has_nil { "?" } else { "" })
-    } else {
-        format!("({}{}){}", type_str, dots, if has_nil { "?" } else { "" })
-    }
+    format_union_type(union, level, |ty, level| {
+        hover_type(builder, ty, Some(level))
+    })
 }
 
 fn hover_multi_line_union_type(

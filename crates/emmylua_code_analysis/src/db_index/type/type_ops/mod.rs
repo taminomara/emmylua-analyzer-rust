@@ -5,6 +5,8 @@ mod remove_type;
 mod test;
 mod union_type;
 
+use crate::DbIndex;
+
 use super::LuaType;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -24,24 +26,37 @@ pub enum TypeOps {
 }
 
 impl TypeOps {
-    pub fn apply(&self, source: &LuaType, target: &LuaType) -> LuaType {
+    pub fn apply(&self, db: &DbIndex, source: &LuaType, target: &LuaType) -> LuaType {
         match self {
             TypeOps::Union => union_type::union_type(source.clone(), target.clone()),
             TypeOps::Remove => {
-                remove_type::remove_type(source.clone(), target.clone()).unwrap_or(LuaType::Any)
+                remove_type::remove_type(db, source.clone(), target.clone()).unwrap_or(LuaType::Any)
             }
-            TypeOps::Narrow => narrow_type::narrow_down_type(source.clone(), target.clone())
+            TypeOps::Narrow => narrow_type::narrow_down_type(db, source.clone(), target.clone())
                 .unwrap_or(target.clone()),
             TypeOps::And => and_type::and_type(source.clone(), target.clone()),
             _ => source.clone(),
         }
     }
 
-    pub fn apply_source(&self, source: &LuaType) -> LuaType {
+    pub fn apply_source(&self, db: &DbIndex, source: &LuaType) -> LuaType {
         match self {
-            TypeOps::NarrowFalseOrNil => false_or_nil_type::narrow_false_or_nil(source.clone()),
+            TypeOps::NarrowFalseOrNil => false_or_nil_type::narrow_false_or_nil(db, source.clone()),
             TypeOps::RemoveNilOrFalse => false_or_nil_type::remove_false_or_nil(source.clone()),
             _ => source.clone(),
         }
+    }
+}
+
+pub fn get_real_type<'a>(db: &'a DbIndex, compact_type: &'a LuaType) -> Option<&'a LuaType> {
+    match compact_type {
+        LuaType::Ref(type_decl_id) => {
+            let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
+            if type_decl.is_alias() {
+                return get_real_type(db, type_decl.get_alias_ref()?);
+            }
+            Some(compact_type)
+        }
+        _ => Some(compact_type),
     }
 }

@@ -166,10 +166,23 @@ fn humanize_simple_type(
 }
 
 fn humanize_union_type(db: &DbIndex, union: &LuaUnionType, level: RenderLevel) -> String {
+    format_union_type(union, level, |ty, level| {
+        humanize_type(db, ty, level.next_level())
+    })
+}
+
+pub fn format_union_type<F>(
+    union: &LuaUnionType,
+    level: RenderLevel,
+    mut type_formatter: F,
+) -> String
+where
+    F: FnMut(&LuaType, RenderLevel) -> String,
+{
     let types = union.get_types();
     let num = match level {
-        RenderLevel::Detailed => 10,
-        RenderLevel::Simple => 8,
+        RenderLevel::Detailed => 8,
+        RenderLevel::Simple => 6,
         RenderLevel::Normal => 4,
         RenderLevel::Brief => 2,
         RenderLevel::Minimal => {
@@ -180,27 +193,29 @@ fn humanize_union_type(db: &DbIndex, union: &LuaUnionType, level: RenderLevel) -
     let mut seen = HashSet::new();
     let mut type_strings = Vec::new();
     let mut has_nil = false;
+    let mut has_function = false;
     for ty in types.iter() {
         if ty.is_nil() {
             has_nil = true;
             continue;
+        } else if ty.is_function() {
+            has_function = true;
         }
-        let type_str = humanize_type(db, ty, level.next_level());
+        let type_str = type_formatter(ty, level.next_level());
         if seen.insert(type_str.clone()) {
             type_strings.push(type_str);
         }
     }
-    // 取指定数量的类型
+    let dots = if type_strings.len() > num { "..." } else { "" };
     let display_types: Vec<_> = type_strings.into_iter().take(num).collect();
     let type_str = display_types.join("|");
-    let dots = if display_types.len() < types.len() {
-        "..."
-    } else {
-        ""
-    };
 
     if display_types.len() == 1 {
-        format!("{}{}", type_str, if has_nil { "?" } else { "" })
+        if has_function && has_nil {
+            format!("({})?", type_str)
+        } else {
+            format!("{}{}", type_str, if has_nil { "?" } else { "" })
+        }
     } else {
         format!("({}{}){}", type_str, dots, if has_nil { "?" } else { "" })
     }

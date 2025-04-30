@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     humanize_type, semantic::member::infer_members, DbIndex, LuaMemberKey, LuaMemberOwner,
@@ -39,72 +39,57 @@ pub fn check_ref_type_compact(
 
     if type_decl.is_enum() {
         match compact_type {
-            LuaType::Def(compact_id) => {
-                if source_id == compact_id {
-                    return Ok(());
-                }
-            }
-            LuaType::Ref(compact_id) => {
+            LuaType::Def(compact_id) | LuaType::Ref(compact_id) => {
                 if source_id == compact_id {
                     return Ok(());
                 }
             }
             _ => {}
         };
-
-        let enum_member_owner = LuaMemberOwner::Type(source_id.clone());
-        let enum_members = db
-            .get_member_index()
-            .get_members(&enum_member_owner)
-            .ok_or(TypeCheckFailReason::TypeNotMatch)?;
-
-        let mut union_types = Vec::new();
-        if type_decl.is_enum_key() {
-            for enum_member in enum_members {
-                let member_key = enum_member.get_key();
-                let fake_type = match member_key {
-                    LuaMemberKey::Name(name) => LuaType::DocStringConst(name.clone().into()),
-                    LuaMemberKey::Integer(i) => LuaType::IntegerConst(i.clone()),
-                    LuaMemberKey::None => continue,
-                    LuaMemberKey::Expr(_) => continue,
-                };
-
-                union_types.push(fake_type);
+        // 移除掉枚举类型本身
+        let mut compact_type = compact_type.clone();
+        match compact_type {
+            LuaType::Union(union_types) => {
+                let mut new_union_types = Vec::new();
+                let union_types = union_types.get_types();
+                for typ in union_types {
+                    if let LuaType::Def(compact_id) | LuaType::Ref(compact_id) = typ {
+                        if compact_id != source_id {
+                            new_union_types.push(typ.clone());
+                        }
+                        continue;
+                    }
+                    new_union_types.push(typ.clone());
+                }
+                compact_type = LuaType::Union(Arc::new(LuaUnionType::new(new_union_types)));
             }
-        } else {
-            for member in enum_members {
-                if let Some(type_cache) =
-                    db.get_type_index().get_type_cache(&member.get_id().into())
-                {
-                    let member_fake_type = match type_cache.as_type() {
-                        LuaType::StringConst(s) => &LuaType::DocStringConst(s.clone().into()),
-                        LuaType::IntegerConst(i) => &LuaType::DocIntegerConst(i.clone()),
-                        _ => &type_cache.as_type(),
-                    };
+            _ => {}
+        }
 
-                    union_types.push(member_fake_type.clone());
+        let Some(enum_fields) = type_decl.get_enum_field_type(db) else {
+            return Err(TypeCheckFailReason::TypeNotMatch);
+        };
+
+        if let LuaType::Union(union_types) = &enum_fields {
+            // 当 enum 的值全为整数常量时, 可能会用于位运算, 此时右值推断为整数
+            if union_types
+                .get_types()
+                .iter()
+                .all(|t| matches!(t, LuaType::DocIntegerConst(_)))
+            {
+                match compact_type {
+                    LuaType::Integer => {
+                        return Ok(());
+                    }
+                    _ => {}
                 }
             }
         }
 
-        // 当 enum 的值全为整数常量时, 可能会用于位运算, 此时右值推断为整数
-        if union_types
-            .iter()
-            .all(|t| matches!(t, LuaType::DocIntegerConst(_)))
-        {
-            match compact_type {
-                LuaType::Integer => {
-                    return Ok(());
-                }
-                _ => {}
-            }
-        }
-
-        let fake_union_type = LuaType::Union(LuaUnionType::new(union_types).into());
         return check_general_type_compact(
             db,
-            &fake_union_type,
-            compact_type,
+            &enum_fields,
+            &compact_type,
             check_guard.next_level()?,
         );
     } else {

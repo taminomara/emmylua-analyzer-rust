@@ -160,8 +160,11 @@ fn analyze_return(
         .db
         .get_signature_index_mut()
         .get_or_create(signature_id.clone());
-    signature.return_docs = returns;
+
     signature.resolve_return = SignatureReturnStatus::InferResolve;
+
+    signature.return_docs = returns;
+
     Some(())
 }
 
@@ -202,7 +205,7 @@ pub fn analyze_return_point(
         match point {
             LuaReturnPoint::Expr(expr) => {
                 let expr_type = infer_expr(db, cache, expr.clone())?;
-                return_type = TypeOps::Union.apply(&return_type, &expr_type);
+                return_type = TypeOps::Union.apply(db, &return_type, &expr_type);
             }
             LuaReturnPoint::MuliExpr(exprs) => {
                 let mut multi_return = vec![];
@@ -211,10 +214,10 @@ pub fn analyze_return_point(
                     multi_return.push(expr_type);
                 }
                 let typ = LuaType::Variadic(VariadicType::Multi(multi_return).into());
-                return_type = TypeOps::Union.apply(&return_type, &typ);
+                return_type = TypeOps::Union.apply(db, &return_type, &typ);
             }
             LuaReturnPoint::Nil => {
-                return_type = TypeOps::Union.apply(&return_type, &LuaType::Nil);
+                return_type = TypeOps::Union.apply(db, &return_type, &LuaType::Nil);
             }
             _ => {}
         }

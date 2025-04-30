@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod tests {
 
-    use crate::handlers::hover::test::{HoverVirtualWorkspace, VirtualHoverResult};
+    use crate::handlers::test_lib::{ProviderVirtualWorkspace, VirtualHoverResult};
     #[test]
     fn test_1() {
-        let mut ws = HoverVirtualWorkspace::new();
+        let mut ws = ProviderVirtualWorkspace::new();
         assert!(ws.check_hover(
             r#"
                 ---@class <??>A
@@ -20,7 +20,7 @@ mod tests {
 
     #[test]
     fn test_right_to_left() {
-        let mut ws = HoverVirtualWorkspace::new();
+        let mut ws = ProviderVirtualWorkspace::new();
         assert!(ws.check_hover(
             r#"
                 ---@class H4
@@ -87,7 +87,7 @@ mod tests {
 
     #[test]
     fn test_hover_nil() {
-        let mut ws = HoverVirtualWorkspace::new();
+        let mut ws = ProviderVirtualWorkspace::new();
         assert!(ws.check_hover(
             r#"
                 ---@class A
@@ -100,6 +100,21 @@ mod tests {
             "#,
             VirtualHoverResult {
                 value: "\n```lua\n(field) a: number?\n```\n\n---\n".to_string(),
+            },
+        ));
+    }
+
+    #[test]
+    fn test_function_infer_return_val() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_hover(
+            r#"
+                local function <??>f(a, b)
+                    a = 1
+                end
+            "#,
+            VirtualHoverResult {
+                value: "\n```lua\nlocal function f(a, b)\n```\n\n---\n\n\n".to_string(),
             },
         ));
     }
