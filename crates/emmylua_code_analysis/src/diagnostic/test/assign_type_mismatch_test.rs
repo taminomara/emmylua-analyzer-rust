@@ -822,7 +822,6 @@ return t
         "#
         ));
     }
-
     #[test]
     fn test_issue_393() {
         let mut ws = VirtualWorkspace::new();

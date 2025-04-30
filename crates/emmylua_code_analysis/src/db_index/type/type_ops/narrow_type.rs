@@ -1,7 +1,7 @@
-use crate::{LuaType, LuaUnionType};
+use crate::{DbIndex, LuaType, LuaUnionType};
 
 // need to be optimized
-pub fn narrow_down_type(source: LuaType, target: LuaType) -> Option<LuaType> {
+pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Option<LuaType> {
     if source == target {
         return Some(source);
     }
@@ -31,16 +31,24 @@ pub fn narrow_down_type(source: LuaType, target: LuaType) -> Option<LuaType> {
             LuaType::TableConst(_) => {
                 return Some(source);
             }
+            LuaType::Object(_) => {
+                return Some(source);
+            }
             LuaType::Table | LuaType::Userdata | LuaType::Any | LuaType::Unknown => {
                 return Some(LuaType::Table);
             }
-            LuaType::Ref(_)
-            | LuaType::Def(_)
-            | LuaType::Global
+            LuaType::Global
             | LuaType::Array(_)
             | LuaType::Tuple(_)
             | LuaType::Generic(_)
             | LuaType::TableGeneric(_) => return Some(source),
+            LuaType::Ref(type_decl_id) | LuaType::Def(type_decl_id) => {
+                let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
+                // enum 在实际使用时实际上是 enum.field, 并不等于 table
+                if !type_decl.is_enum() {
+                    return Some(source);
+                }
+            }
             _ => {}
         },
         LuaType::Function => {
@@ -117,7 +125,7 @@ pub fn narrow_down_type(source: LuaType, target: LuaType) -> Option<LuaType> {
             | LuaType::TableGeneric(_) => return Some(source),
             _ => {}
         },
-        LuaType::Instance(base) => return narrow_down_type(source, base.get_base().clone()),
+        LuaType::Instance(base) => return narrow_down_type(db, source, base.get_base().clone()),
         LuaType::Unknown => return Some(source),
         _ => {
             if target.is_unknown() {
@@ -133,7 +141,7 @@ pub fn narrow_down_type(source: LuaType, target: LuaType) -> Option<LuaType> {
             let mut union_types = union
                 .get_types()
                 .iter()
-                .filter_map(|t| narrow_down_type(t.clone(), target.clone()))
+                .filter_map(|t| narrow_down_type(db, t.clone(), target.clone()))
                 .collect::<Vec<_>>();
 
             union_types.dedup();

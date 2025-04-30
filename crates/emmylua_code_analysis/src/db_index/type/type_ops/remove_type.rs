@@ -67,6 +67,10 @@ pub fn remove_type(db: &DbIndex, source: LuaType, removed_type: LuaType) -> Opti
             | LuaType::TableGeneric(_) => return None,
             LuaType::Ref(type_decl_id) | LuaType::Def(type_decl_id) => {
                 let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
+                // enum 在实际使用时实际上是 enum.field, 并不等于 table
+                if type_decl.is_enum() {
+                    return Some(source);
+                }
                 if type_decl.is_alias() {
                     if let Some(alias_ref) = get_real_type(db, &source) {
                         return remove_type(db, alias_ref.clone(), removed_type);

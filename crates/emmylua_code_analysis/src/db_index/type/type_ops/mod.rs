@@ -32,7 +32,7 @@ impl TypeOps {
             TypeOps::Remove => {
                 remove_type::remove_type(db, source.clone(), target.clone()).unwrap_or(LuaType::Any)
             }
-            TypeOps::Narrow => narrow_type::narrow_down_type(source.clone(), target.clone())
+            TypeOps::Narrow => narrow_type::narrow_down_type(db, source.clone(), target.clone())
                 .unwrap_or(target.clone()),
             TypeOps::And => and_type::and_type(source.clone(), target.clone()),
             _ => source.clone(),
