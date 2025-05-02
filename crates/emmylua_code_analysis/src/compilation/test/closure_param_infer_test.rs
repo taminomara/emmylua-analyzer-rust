@@ -274,4 +274,49 @@ mod test {
         let expected = ws.ty("number");
         assert_eq!(ws.humanize_type(ty), ws.humanize_type(expected));
     }
+
+    #[test]
+    fn test_issue_416() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def_files(vec![
+            (
+                "test.lua",
+                r#"
+                ---@class CustomEvent
+                ---@field private custom_event_manager? EventManager
+                local M = {}
+
+                ---@return EventManager
+                function newEventManager()
+                end
+
+                function M:event_on()
+                    if not self.custom_event_manager then
+                        self.custom_event_manager = newEventManager()
+                    end
+                    local trigger = self.custom_event_manager:get_trigger()
+                    A = trigger
+                    return trigger
+                end
+            "#,
+            ),
+            (
+                "test2.lua",
+                r#"
+                ---@class Trigger
+
+                ---@class EventManager
+                local EventManager
+
+                ---@return Trigger
+                function EventManager:get_trigger()
+                end
+            "#,
+            ),
+        ]);
+
+        let ty = ws.expr_ty("A");
+        let expected = ws.ty("Trigger");
+        assert_eq!(ws.humanize_type(ty), ws.humanize_type(expected));
+    }
 }

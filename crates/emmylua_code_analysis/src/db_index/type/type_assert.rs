@@ -95,7 +95,9 @@ impl TypeAssertion {
             TypeAssertion::Or(a) => {
                 let mut result = vec![];
                 for assertion in a.iter() {
-                    result.push(assertion.tighten_type(db, config, root, source.clone())?);
+                    if let Ok(t) = assertion.tighten_type(db, config, root, source.clone()) {
+                        result.push(t);
+                    }
                 }
 
                 match result.len() {
