@@ -67,7 +67,7 @@ fn build_name_expr_flow(
 ) -> Option<()> {
     let parent = name_expr.get_parent::<LuaAst>()?;
     let mut is_assign = false;
-    match parent {
+    match &parent {
         LuaAst::LuaIndexExpr(_) | LuaAst::LuaCallExpr(_) | LuaAst::LuaFuncStat(_) => return None,
         LuaAst::LuaAssignStat(assign_stat) => {
             let eq_pos = assign_stat
@@ -87,7 +87,20 @@ fn build_name_expr_flow(
     let mut ref_id: Option<VarRefId> = None;
     if let Some(local_refs) = db.get_reference_index().get_local_reference(&file_id) {
         if let Some(decl_id) = local_refs.get_decl_id(&name_expr.get_range()) {
-            ref_id = Some(VarRefId::DeclId(decl_id.clone()));
+            if let Some(decl) = db.get_decl_index().get_decl(&decl_id) {
+                // 处理`self`作为参数传入的特殊情况
+                if decl.is_param()
+                    && name_expr
+                        .get_name_text()
+                        .map_or(false, |name| name == "self")
+                {
+                    ref_id = Some(VarRefId::Name(SmolStr::new("self")));
+                } else {
+                    ref_id = Some(VarRefId::DeclId(decl_id.clone()));
+                }
+            } else {
+                ref_id = Some(VarRefId::DeclId(decl_id.clone()));
+            }
         }
     }
 
