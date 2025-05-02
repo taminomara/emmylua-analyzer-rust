@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
 use emmylua_parser::{
-    BinaryOperator, LuaAst, LuaAstNode, LuaBinaryExpr, LuaExpr, LuaForStat, LuaLiteralToken,
-    UnaryOperator,
+    BinaryOperator, LuaAst, LuaAstNode, LuaBinaryExpr, LuaExpr, LuaLiteralToken, UnaryOperator,
 };
 use smol_str::SmolStr;
 
@@ -182,17 +181,6 @@ pub fn broadcast_up(
                             )
                             .into(),
                             unary_expr.get_parent::<LuaAst>()?,
-                        );
-                    }
-                }
-                UnaryOperator::OpLen => {
-                    if let Some(for_stat) = unary_expr.get_parent::<LuaForStat>() {
-                        broadcast_inside_condition_block(
-                            db,
-                            var_trace,
-                            trace_info.with_type_assertion(TypeAssertion::Narrow(LuaType::Table)),
-                            for_stat.get_block()?,
-                            false,
                         );
                     }
                 }
