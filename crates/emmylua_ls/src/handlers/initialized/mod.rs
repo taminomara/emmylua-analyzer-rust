@@ -37,9 +37,6 @@ pub async fn initialized_handler(
     // init locale
     locale::set_ls_locale(&params);
 
-    // init std lib
-    init_std_lib(context.analysis.clone(), &cmd_args).await;
-
     // init logger
     init_logger(main_root, &cmd_args);
     info!("client_id: {:?}", client_id);
@@ -55,6 +52,9 @@ pub async fn initialized_handler(
 
     let emmyrc = load_emmy_config(config_root, client_config.clone());
     load_editorconfig(workspace_folders.clone());
+
+    // init std lib
+    init_std_lib(context.analysis.clone(), &cmd_args, emmyrc.clone()).await;
 
     let mut workspace_manager = context.workspace_manager.write().await;
     workspace_manager.workspace_folders = workspace_folders.clone();
@@ -177,9 +177,15 @@ fn get_workspace_folders(params: &InitializeParams) -> Vec<PathBuf> {
     workspace_folders
 }
 
-pub async fn init_std_lib(analysis: Arc<RwLock<EmmyLuaAnalysis>>, cmd_args: &CmdArgs) {
+pub async fn init_std_lib(
+    analysis: Arc<RwLock<EmmyLuaAnalysis>>,
+    cmd_args: &CmdArgs,
+    emmyrc: Arc<Emmyrc>,
+) {
     let mut analysis = analysis.write().await;
     if cmd_args.load_std_lib.0 {
+        // double upate config
+        analysis.update_config(emmyrc);
         analysis.init_std_lib(cmd_args.resources_path.0.clone());
     }
 }
