@@ -77,9 +77,9 @@ function string.dump(func, strip) end
 ---@param pattern string|number
 ---@param init?   integer
 ---@param plain?  boolean
----@return integer|nil start
----@return integer|nil end
----@return string ... captured
+---@return integer? start
+---@return integer? end
+---@return string?... captured
 ---@nodiscard
 function string.find(s, pattern, init, plain) end
 
@@ -222,7 +222,7 @@ function string.lower(s) end
 ---@param s string
 ---@param pattern string
 ---@param init? integer
----@return string...
+---@return string?...
 function string.match(s, pattern, init) end
 
 ---@version >5.3
