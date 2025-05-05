@@ -3,7 +3,7 @@ mod index_gen;
 mod mod_gen;
 mod typ_gen;
 
-use emmylua_code_analysis::{DbIndex, LuaSemanticDeclId};
+use emmylua_code_analysis::{DbIndex, LuaDeprecated, LuaSemanticDeclId};
 pub use global_gen::generate_global_markdown;
 pub use index_gen::generate_index;
 pub use mod_gen::generate_module_markdown;
@@ -23,11 +23,14 @@ fn collect_property(db: &DbIndex, semantic_decl: LuaSemanticDeclId) -> Property 
             doc_property.see = Some(see.to_string());
         }
 
-        if property.is_deprecated {
-            if let Some(deprecated) = property.deprecated_message.clone() {
-                doc_property.deprecated = Some(deprecated.to_string());
-            } else {
-                doc_property.deprecated = Some("Deprecated".to_string());
+        if let Some(deprecated) = &property.deprecated {
+            match deprecated {
+                LuaDeprecated::Deprecated => {
+                    doc_property.deprecated = Some("Deprecated".to_string())
+                }
+                LuaDeprecated::DeprecatedWithMessage(message) => {
+                    doc_property.deprecated = Some(message.to_string())
+                }
             }
         }
         if let Some(other) = property.other_content.clone() {

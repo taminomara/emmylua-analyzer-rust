@@ -62,8 +62,8 @@ pub fn analyze_tag(analyzer: &mut DocAnalyzer, tag: LuaDocTag) -> Option<()> {
         LuaDocTag::Source(source) => {
             analyze_source(analyzer, source)?;
         }
-        LuaDocTag::Nodiscard(_) => {
-            analyze_nodiscard(analyzer)?;
+        LuaDocTag::Nodiscard(nodiscard) => {
+            analyze_nodiscard(analyzer, nodiscard)?;
         }
         LuaDocTag::Deprecated(deprecated) => {
             analyze_deprecated(analyzer, deprecated)?;

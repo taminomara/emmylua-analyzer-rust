@@ -1,27 +1,31 @@
 use emmylua_parser::{LuaVersionCondition, VisibilityKind};
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub struct LuaDeclProperty {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LuaCommonProperty {
     pub id: LuaPropertyId,
     pub description: Option<Box<String>>,
     pub visibility: Option<VisibilityKind>,
     pub source: Option<Box<String>>,
-    pub is_deprecated: bool,
-    pub deprecated_message: Option<Box<String>>,
+    pub deprecated: Option<LuaDeprecated>,
     pub version_conds: Option<Box<Vec<LuaVersionCondition>>>,
     pub see_content: Option<Box<String>>,
     pub other_content: Option<Box<String>>,
 }
 
-impl LuaDeclProperty {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LuaDeprecated {
+    Deprecated,
+    DeprecatedWithMessage(Box<String>),
+}
+
+impl LuaCommonProperty {
     pub fn new(id: LuaPropertyId) -> Self {
         Self {
             id,
             description: None,
             visibility: None,
             source: None,
-            is_deprecated: false,
-            deprecated_message: None,
+            deprecated: None,
             version_conds: None,
             see_content: None,
             other_content: None,

@@ -1,7 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
 pub use signature::{
-    LuaDocParamInfo, LuaDocReturnInfo, LuaSignature, LuaSignatureId, SignatureReturnStatus,
+    LuaDocParamInfo, LuaDocReturnInfo, LuaNoDiscard, LuaSignature, LuaSignatureId,
+    SignatureReturnStatus,
 };
 
 use crate::FileId;

@@ -3,8 +3,8 @@ mod property;
 use std::collections::{HashMap, HashSet};
 
 use emmylua_parser::{LuaVersionCondition, VisibilityKind};
-use property::LuaDeclProperty;
-pub use property::LuaPropertyId;
+use property::LuaCommonProperty;
+pub use property::{LuaDeprecated, LuaPropertyId};
 
 use crate::FileId;
 
@@ -12,7 +12,7 @@ use super::{traits::LuaIndex, LuaSemanticDeclId};
 
 #[derive(Debug)]
 pub struct LuaPropertyIndex {
-    properties: HashMap<LuaPropertyId, LuaDeclProperty>,
+    properties: HashMap<LuaPropertyId, LuaCommonProperty>,
     property_owners_map: HashMap<LuaSemanticDeclId, LuaPropertyId>,
 
     id_count: u32,
@@ -32,14 +32,15 @@ impl LuaPropertyIndex {
     fn get_or_create_property(
         &mut self,
         owner_id: LuaSemanticDeclId,
-    ) -> Option<&mut LuaDeclProperty> {
+    ) -> Option<&mut LuaCommonProperty> {
         if let Some(property_id) = self.property_owners_map.get(&owner_id) {
             self.properties.get_mut(property_id)
         } else {
             let id = LuaPropertyId::new(self.id_count);
             self.id_count += 1;
             self.property_owners_map.insert(owner_id.clone(), id);
-            self.properties.insert(id, LuaDeclProperty::new(id.clone()));
+            self.properties
+                .insert(id, LuaCommonProperty::new(id.clone()));
             self.properties.get_mut(&id)
         }
     }
@@ -123,8 +124,10 @@ impl LuaPropertyIndex {
         message: Option<String>,
     ) -> Option<()> {
         let property = self.get_or_create_property(owner_id.clone())?;
-        property.is_deprecated = true;
-        property.deprecated_message = message.map(Box::new);
+        property.deprecated = match message {
+            Some(msg) => Some(LuaDeprecated::DeprecatedWithMessage(Box::new(msg))),
+            None => Some(LuaDeprecated::Deprecated),
+        };
 
         self.in_filed_owner
             .entry(file_id)
@@ -192,7 +195,7 @@ impl LuaPropertyIndex {
         Some(())
     }
 
-    pub fn get_property(&self, owner_id: &LuaSemanticDeclId) -> Option<&LuaDeclProperty> {
+    pub fn get_property(&self, owner_id: &LuaSemanticDeclId) -> Option<&LuaCommonProperty> {
         self.property_owners_map
             .get(&owner_id)
             .and_then(|id| self.properties.get(id))

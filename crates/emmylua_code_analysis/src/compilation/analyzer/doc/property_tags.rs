@@ -1,12 +1,12 @@
-use crate::LuaSignatureId;
+use crate::{LuaNoDiscard, LuaSignatureId};
 
 use super::{
     tags::{find_owner_closure, get_owner_id},
     DocAnalyzer,
 };
 use emmylua_parser::{
-    LuaDocDescriptionOwner, LuaDocTagDeprecated, LuaDocTagSource, LuaDocTagVersion,
-    LuaDocTagVisibility,
+    LuaDocDescriptionOwner, LuaDocTagDeprecated, LuaDocTagNodiscard, LuaDocTagSource,
+    LuaDocTagVersion, LuaDocTagVisibility,
 };
 
 pub fn analyze_visibility(
@@ -37,7 +37,7 @@ pub fn analyze_source(analyzer: &mut DocAnalyzer, source: LuaDocTagSource) -> Op
     Some(())
 }
 
-pub fn analyze_nodiscard(analyzer: &mut DocAnalyzer) -> Option<()> {
+pub fn analyze_nodiscard(analyzer: &mut DocAnalyzer, nodiscard: LuaDocTagNodiscard) -> Option<()> {
     let closure = find_owner_closure(analyzer)?;
     let signature_id = LuaSignatureId::from_closure(analyzer.file_id, &closure);
     let signature = analyzer
@@ -45,7 +45,21 @@ pub fn analyze_nodiscard(analyzer: &mut DocAnalyzer) -> Option<()> {
         .get_signature_index_mut()
         .get_mut(&signature_id)?;
 
-    signature.is_nodiscard = true;
+    let message = if let Some(desc) = nodiscard.get_description() {
+        let message_text = desc.get_description_text().to_string();
+        if message_text.is_empty() {
+            None
+        } else {
+            Some(message_text)
+        }
+    } else {
+        None
+    };
+
+    signature.nodiscard = match message {
+        Some(message) => Some(LuaNoDiscard::NoDiscardWithMessage(Box::new(message))),
+        None => Some(LuaNoDiscard::NoDiscard),
+    };
 
     Some(())
 }

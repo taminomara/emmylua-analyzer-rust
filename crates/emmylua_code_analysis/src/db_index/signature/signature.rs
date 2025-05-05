@@ -22,7 +22,13 @@ pub struct LuaSignature {
     pub resolve_return: SignatureReturnStatus,
     pub is_colon_define: bool,
     pub is_async: bool,
-    pub is_nodiscard: bool,
+    pub nodiscard: Option<LuaNoDiscard>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LuaNoDiscard {
+    NoDiscard,
+    NoDiscardWithMessage(Box<String>),
 }
 
 impl LuaSignature {
@@ -36,7 +42,7 @@ impl LuaSignature {
             resolve_return: SignatureReturnStatus::UnResolve,
             is_colon_define: false,
             is_async: false,
-            is_nodiscard: false,
+            nodiscard: None,
         }
     }
 
