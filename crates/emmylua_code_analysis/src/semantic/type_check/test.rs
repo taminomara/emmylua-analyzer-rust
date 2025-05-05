@@ -146,7 +146,7 @@ mod test {
     fn test_issue_86() {
         let mut ws = VirtualWorkspace::new_with_init_std_lib();
 
-        let ty = ws.ty("string");
+        let ty = ws.ty("string?");
         let ty2 = ws.expr_ty("(\"hello\"):match(\".*\")");
         assert!(ws.check_type(&ty, &ty2));
     }
