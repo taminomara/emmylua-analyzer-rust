@@ -2519,4 +2519,33 @@ Syntax(Chunk)@0..135
 
     //         assert_ast_eq!(code, result);
     //     }
+
+    #[test]
+    fn test_any_type_variadic() {
+        let code = r#"
+        ---@return string? ...
+        "#;
+        let result = r#"
+Syntax(Chunk)@0..40
+  Syntax(Block)@0..40
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..31
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagReturn)@13..31
+        Token(TkTagReturn)@13..19 "return"
+        Token(TkWhitespace)@19..20 " "
+        Syntax(TypeVariadic)@20..31
+          Syntax(TypeNullable)@20..27
+            Syntax(TypeName)@20..26
+              Token(TkName)@20..26 "string"
+            Token(TkDocQuestion)@26..27 "?"
+          Token(TkWhitespace)@27..28 " "
+          Token(TkDots)@28..31 "..."
+    Token(TkEndOfLine)@31..32 "\n"
+    Token(TkWhitespace)@32..40 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
 }

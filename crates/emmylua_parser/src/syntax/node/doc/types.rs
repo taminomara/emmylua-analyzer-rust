@@ -527,7 +527,7 @@ impl LuaAstNode for LuaDocVariadicType {
 }
 
 impl LuaDocVariadicType {
-    pub fn get_name_type(&self) -> Option<LuaDocNameType> {
+    pub fn get_type(&self) -> Option<LuaDocType> {
         self.child()
     }
 }

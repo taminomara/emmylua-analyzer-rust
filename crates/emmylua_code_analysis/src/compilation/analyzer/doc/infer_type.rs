@@ -103,7 +103,7 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
             return infer_str_tpl(analyzer, str_tpl, &node);
         }
         LuaDocType::Variadic(variadic_type) => {
-            return infer_variadic_type(analyzer, variadic_type, &node).unwrap_or(LuaType::Unknown);
+            return infer_variadic_type(analyzer, variadic_type).unwrap_or(LuaType::Unknown);
         }
         LuaDocType::MultiLineUnion(multi_union) => {
             return infer_multi_line_union_type(analyzer, multi_union);
@@ -539,11 +539,9 @@ fn infer_str_tpl(
 fn infer_variadic_type(
     analyzer: &mut DocAnalyzer,
     variadic_type: &LuaDocVariadicType,
-    node: &LuaDocType,
 ) -> Option<LuaType> {
-    let name_type = variadic_type.get_name_type()?;
-    let name = name_type.get_name_text()?;
-    let base = infer_buildin_or_ref_type(analyzer, &name, name_type.get_range(), node);
+    let inner_type = variadic_type.get_type()?;
+    let base = infer_type(analyzer, inner_type);
     let variadic = VariadicType::Base(base.clone());
     Some(LuaType::Variadic(variadic.into()))
 }

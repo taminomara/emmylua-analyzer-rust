@@ -13,25 +13,42 @@ pub fn parse_type(p: &mut LuaDocParser) -> ParseResult {
         return parse_multi_line_union_type(p);
     }
 
-    let cm = parse_sub_type(p, 0)?;
+    let mut cm = parse_sub_type(p, 0)?;
 
-    // <type>?
-    if p.current_token() == LuaTokenKind::TkDocQuestion {
-        let m = cm.precede(p, LuaSyntaxKind::TypeNullable);
-        p.bump();
-        Ok(m.complete(p))
+    loop {
+        match p.current_token() {
+            // <type>?
+            LuaTokenKind::TkDocQuestion => {
+                let m = cm.precede(p, LuaSyntaxKind::TypeNullable);
+                p.bump();
+                cm = m.complete(p);
+            }
+            // <type> and <true type> or <false type>
+            LuaTokenKind::TkAnd => {
+                let m = cm.precede(p, LuaSyntaxKind::TypeConditional);
+                p.bump();
+                parse_sub_type(p, 0)?;
+                expect_token(p, LuaTokenKind::TkOr)?;
+                parse_sub_type(p, 0)?;
+                cm = m.complete(p);
+                break;
+            }
+            LuaTokenKind::TkDots => {
+                // donot support  'xxx... ...'
+                if matches!(cm.kind, LuaSyntaxKind::TypeVariadic) {
+                    break;
+                }
+
+                let m = cm.precede(p, LuaSyntaxKind::TypeVariadic);
+                p.bump();
+                cm = m.complete(p);
+                break;
+            }
+            _ => break,
+        }
     }
-    // <type> and <true type> or <false type>
-    else if p.current_token() == LuaTokenKind::TkAnd {
-        let m = cm.precede(p, LuaSyntaxKind::TypeConditional);
-        p.bump();
-        parse_sub_type(p, 0)?;
-        expect_token(p, LuaTokenKind::TkOr)?;
-        parse_sub_type(p, 0)?;
-        Ok(m.complete(p))
-    } else {
-        Ok(cm)
-    }
+
+    Ok(cm)
 }
 
 // <type>
