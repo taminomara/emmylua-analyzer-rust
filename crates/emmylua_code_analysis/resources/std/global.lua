@@ -447,7 +447,7 @@ function xpcall(f, msgh, ...) end
 ---@param i? integer
 ---@param j? integer
 ---@param list [T...]
----@return T...
+---@return T?...
 function unpack(list, i, j) end
 
 ---@version > 5.4
