@@ -184,7 +184,7 @@ pub async fn init_std_lib(
 ) {
     let mut analysis = analysis.write().await;
     if cmd_args.load_std_lib.0 {
-        // double upate config
+        // double update config
         analysis.update_config(emmyrc);
         analysis.init_std_lib(cmd_args.resources_path.0.clone());
     }
