@@ -24,6 +24,7 @@
         "autoRequire": true,
         "autoRequireFunction": "require",
         "autoRequireNamingConvention": "keep",
+        "autoRequireSeparator": ".",
         "callSnippet": false,
         "enable": true,
         "postfix": "@"
@@ -556,8 +557,12 @@
             }
           ]
         },
-        "callSnippet": {
+        "autoRequireSeparator": {
           "description": "Whether to use call snippets in completions.",
+          "default": ".",
+          "type": "string"
+        },
+        "callSnippet": {
           "default": false,
           "type": "boolean"
         },

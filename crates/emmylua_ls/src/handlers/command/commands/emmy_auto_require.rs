@@ -33,9 +33,17 @@ impl CommandSpec for AutoRequireCommand {
         let auto_require_func = emmyrc.completion.auto_require_function.clone();
         let file_conversion = emmyrc.completion.auto_require_naming_convention;
         let local_name = module_name_convert(&module_info.name, file_conversion);
+        let require_separator = emmyrc.completion.auto_require_separator.clone();
+        let full_module_path = match require_separator.as_str() {
+            "." | "" => module_info.full_module_name.clone(),
+            _ => module_info
+                .full_module_name
+                .replace(".", &require_separator),
+        };
+
         let require_str = format!(
             "local {} = {}(\"{}\")",
-            local_name, auto_require_func, module_info.full_module_name
+            local_name, auto_require_func, full_module_path
         );
         let document = semantic_model.get_document();
         let offset = document.get_offset(position.line as usize, position.character as usize)?;

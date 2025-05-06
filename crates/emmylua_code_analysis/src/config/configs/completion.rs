@@ -20,6 +20,8 @@ pub struct EmmyrcCompletion {
     #[serde(default)]
     pub auto_require_naming_convention: EmmyrcFilenameConvention,
     /// Whether to use call snippets in completions.
+    #[serde(default = "default_auto_require_separator")]
+    pub auto_require_separator: String,
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnError")]
     pub call_snippet: bool,
@@ -36,6 +38,7 @@ impl Default for EmmyrcCompletion {
             auto_require_function: default_require_function(),
             auto_require_naming_convention: Default::default(),
             call_snippet: false,
+            auto_require_separator: default_auto_require_separator(),
             postfix: default_postfix(),
         }
     }
@@ -51,6 +54,10 @@ fn default_require_function() -> String {
 
 fn default_postfix() -> String {
     "@".to_string()
+}
+
+fn default_auto_require_separator() -> String {
+    ".".to_string()
 }
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema, Clone, Copy)]
