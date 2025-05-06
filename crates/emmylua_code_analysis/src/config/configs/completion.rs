@@ -19,9 +19,10 @@ pub struct EmmyrcCompletion {
     /// The naming convention for auto-required filenames.
     #[serde(default)]
     pub auto_require_naming_convention: EmmyrcFilenameConvention,
-    /// Whether to use call snippets in completions.
+    /// A separator used in auto-require paths.
     #[serde(default = "default_auto_require_separator")]
     pub auto_require_separator: String,
+    /// Whether to use call snippets in completions.
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnError")]
     pub call_snippet: bool,

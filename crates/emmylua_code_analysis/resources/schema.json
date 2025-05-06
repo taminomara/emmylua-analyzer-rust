@@ -558,11 +558,12 @@
           ]
         },
         "autoRequireSeparator": {
-          "description": "Whether to use call snippets in completions.",
+          "description": "A separator used in auto-require paths.",
           "default": ".",
           "type": "string"
         },
         "callSnippet": {
+          "description": "Whether to use call snippets in completions.",
           "default": false,
           "type": "boolean"
         },
