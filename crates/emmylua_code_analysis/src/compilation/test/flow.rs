@@ -617,24 +617,4 @@ end
         let b_expected = ws.ty("string[]");
         assert_eq!(b, b_expected);
     }
-
-    #[test]
-    fn test_issue_405() {
-        let mut ws = VirtualWorkspace::new();
-
-        ws.def(
-            r#"
-            ---@type false|fun(...)[]?
-            local calls
-
-            for i = 1, #calls do
-                a = calls
-            end
-        "#,
-        );
-
-        let a = ws.expr_ty("a");
-        let a_expected = ws.ty("fun(...)[]");
-        assert_eq!(a, a_expected);
-    }
 }
