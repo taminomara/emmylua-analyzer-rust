@@ -207,4 +207,31 @@ function math.type(x) end
 ---@return boolean
 function math.ult(m, n) end
 
+---@version 5.1, JIT
+---
+--- Returns the value of `x` raised to the power `y`. (x^y)
+---@param x number The base
+---@param y number The exponent
+---@return number
+function math.pow(x, y) end
+
+---@version 5.1, JIT
+---
+--- Returns the arc tangent of `y/x` (in radians), but uses the signs of both
+--- parameters to find the quadrant of the result. (It also handles correctly
+--- the case of `x` being zero.)
+---
+--- Note: In some Lua implementations, this function is equivalent to `math.atan(y, x)`.
+---@param y number
+---@param x number
+---@return number
+function math.atan2(y, x) end
+
+---@version 5.1, JIT
+---
+--- Returns the base-10 logarithm of `x`.
+---@param x number
+---@return number
+function math.log10(x) end
+
 return math
