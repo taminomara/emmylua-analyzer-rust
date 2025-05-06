@@ -90,8 +90,9 @@ pub async fn init_analysis(
     // update config
     mut_analysis.update_config(emmyrc.clone());
 
-    let emmyrc_json = serde_json::to_string_pretty(emmyrc.as_ref()).unwrap();
-    info!("current config : {}", emmyrc_json);
+    if let Ok(emmyrc_json) = serde_json::to_string_pretty(emmyrc.as_ref()) {
+        info!("current config : {}", emmyrc_json);
+    }
 
     status_bar.create_progress_task(client_id, ProgressTask::LoadWorkspace);
     status_bar.update_progress_task(

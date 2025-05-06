@@ -37,7 +37,7 @@ fn infer_table_tuple_or_array(
     table: LuaTableExpr,
 ) -> InferResult {
     let fields = table.get_fields().collect::<Vec<_>>();
-    if fields.len() > 10 {
+    if fields.len() > 50 {
         let first_type = infer_expr(
             db,
             cache,

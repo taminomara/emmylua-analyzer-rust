@@ -842,13 +842,13 @@ impl VariadicType {
                 if idx + 1 < types.len() {
                     Some(&types[idx])
                 } else {
-                    let last = types_len - 1;
-                    let ty = &types[last];
-                    let offset = idx - last;
-                    if let LuaType::Variadic(variadic) = ty {
+                    let last_idx = types_len - 1;
+                    let last_ty = &types[last_idx];
+                    let offset = idx - last_idx;
+                    if let LuaType::Variadic(variadic) = last_ty {
                         variadic.get_type(offset)
                     } else if offset == 0 {
-                        Some(ty)
+                        Some(last_ty)
                     } else {
                         None
                     }

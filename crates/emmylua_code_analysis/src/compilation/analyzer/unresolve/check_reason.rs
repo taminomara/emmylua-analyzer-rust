@@ -127,48 +127,23 @@ pub fn resolve_as_any(
         InferFailReason::UnResolveExpr(expr) => {
             let file_id = cache.get_file_id();
             let key = InFiled::new(file_id, expr.get_syntax_id());
+
             db.get_type_index_mut()
                 .bind_type(key.into(), LuaTypeCache::InferType(LuaType::Any));
         }
         InferFailReason::UnResolveSignatureReturn(signature_id) => {
             let signature = db.get_signature_index_mut().get_mut(signature_id)?;
-            signature.return_docs = vec![LuaDocReturnInfo {
-                name: None,
-                type_ref: LuaType::Any,
-                description: None,
-            }];
-            signature.resolve_return = SignatureReturnStatus::InferResolve;
+            if !signature.is_resolve_return() {
+                signature.return_docs = vec![LuaDocReturnInfo {
+                    name: None,
+                    type_ref: LuaType::Any,
+                    description: None,
+                }];
+                signature.resolve_return = SignatureReturnStatus::InferResolve;
+            }
         }
     }
 
     *reason = InferFailReason::None;
     Some(false)
 }
-
-// fn set_param_decl_type(db: &mut DbIndex, decl_id: &LuaDeclId, typ: LuaType) -> Option<()> {
-//     let decl = db.get_decl_index_mut().get_decl_mut(decl_id)?;
-
-//     let (param_idx, signature_id) = match &decl.extra {
-//         LuaDeclExtra::Param {
-//             idx, signature_id, ..
-//         } => (*idx, *signature_id),
-//         _ => unreachable!(),
-//     };
-
-//     // find local annotation
-//     if let Some(signature) = db.get_signature_index_mut().get_mut(&signature_id) {
-//         if signature.param_docs.get(&param_idx).is_none() {
-//             let name = signature.params.get(param_idx)?;
-//             signature.param_docs.insert(
-//                 param_idx,
-//                 LuaDocParamInfo {
-//                     name: name.clone(),
-//                     type_ref: typ,
-//                     description: None,
-//                     nullable: false,
-//                 },
-//             );
-//         }
-//     }
-//     Some(())
-// }
