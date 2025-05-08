@@ -427,6 +427,7 @@ mod tests {
         let mut ws = VirtualWorkspace::new();
         ws.def(
             r#"
+        ---@meta
         ---@class oslib
         os = {}
         ---@param code integer

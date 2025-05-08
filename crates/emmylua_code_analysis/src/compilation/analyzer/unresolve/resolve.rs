@@ -14,27 +14,17 @@ use crate::{
 };
 
 use super::{
-    check_reason::check_reach_reason, UnResolveDecl, UnResolveIterVar, UnResolveMember,
-    UnResolveModule, UnResolveModuleRef, UnResolveReturn, UnResolveTableField,
+    ResolveResult, UnResolveDecl, UnResolveIterVar, UnResolveMember, UnResolveModule,
+    UnResolveModuleRef, UnResolveReturn, UnResolveTableField,
 };
 
 pub fn try_resolve_decl(
     db: &mut DbIndex,
     cache: &mut LuaInferCache,
     decl: &mut UnResolveDecl,
-) -> Option<bool> {
-    if !check_reach_reason(db, cache, &decl.reason).unwrap_or(false) {
-        return None;
-    }
-
+) -> ResolveResult {
     let expr = decl.expr.clone();
-    let expr_type = match infer_expr(db, cache, expr) {
-        Ok(t) => t,
-        Err(reason) => {
-            decl.reason = reason;
-            return None;
-        }
-    };
+    let expr_type = infer_expr(db, cache, expr)?;
     let decl_id = decl.decl_id;
     let expr_type = match &expr_type {
         LuaType::Variadic(multi) => multi
@@ -45,40 +35,33 @@ pub fn try_resolve_decl(
     };
 
     bind_type(db, decl_id.into(), LuaTypeCache::InferType(expr_type));
-    Some(true)
+    Ok(())
 }
 
 pub fn try_resolve_member(
     db: &mut DbIndex,
     cache: &mut LuaInferCache,
     unresolve_member: &mut UnResolveMember,
-) -> Option<bool> {
-    if !check_reach_reason(db, cache, &unresolve_member.reason).unwrap_or(false) {
-        return None;
-    }
-
+) -> ResolveResult {
     if let Some(prefix_expr) = &unresolve_member.prefix {
-        let prefix_type = match infer_expr(db, cache, prefix_expr.clone()) {
-            Ok(t) => t,
-            Err(reason) => {
-                unresolve_member.reason = reason;
-                return None;
-            }
-        };
+        let prefix_type = infer_expr(db, cache, prefix_expr.clone())?;
         let member_owner = match prefix_type {
             LuaType::TableConst(in_file_range) => LuaMemberOwner::Element(in_file_range),
             LuaType::Def(def_id) => {
-                let type_decl = db.get_type_index().get_type_decl(&def_id)?;
+                let type_decl = db
+                    .get_type_index()
+                    .get_type_decl(&def_id)
+                    .ok_or(InferFailReason::None)?;
                 // if is exact type, no need to extend field
                 if type_decl.is_exact() {
-                    return None;
+                    return Ok(());
                 }
                 LuaMemberOwner::Type(def_id)
             }
             LuaType::Instance(instance) => LuaMemberOwner::Element(instance.get_range().clone()),
             // is ref need extend field?
             _ => {
-                return None;
+                return Ok(()); // Changed from return None to return Ok(())
             }
         };
         let member_id = unresolve_member.member_id.clone();
@@ -87,14 +70,7 @@ pub fn try_resolve_member(
     }
 
     if let Some(expr) = unresolve_member.expr.clone() {
-        let expr_type = match infer_expr(db, cache, expr) {
-            Ok(t) => t,
-            Err(reason) => {
-                unresolve_member.reason = reason;
-                return None;
-            }
-        };
-
+        let expr_type = infer_expr(db, cache, expr)?;
         let expr_type = match &expr_type {
             LuaType::Variadic(multi) => multi
                 .get_type(unresolve_member.ret_idx)
@@ -106,33 +82,19 @@ pub fn try_resolve_member(
         let member_id = unresolve_member.member_id;
         bind_type(db, member_id.into(), LuaTypeCache::InferType(expr_type));
     }
-    Some(true)
+
+    Ok(())
 }
 
 pub fn try_resolve_table_field(
     db: &mut DbIndex,
     cache: &mut LuaInferCache,
     unresolve_table_field: &mut UnResolveTableField,
-) -> Option<bool> {
-    if !check_reach_reason(db, cache, &unresolve_table_field.reason).unwrap_or(false) {
-        return None;
-    }
-    if !matches!(
-        unresolve_table_field.reason,
-        InferFailReason::UnResolveExpr(_)
-    ) {
-        return Some(true);
-    }
+) -> ResolveResult {
     let field = unresolve_table_field.field.clone();
-    let field_key = field.get_field_key()?;
-    let field_expr = field_key.get_expr()?;
-    let field_type = match infer_expr(db, cache, field_expr.clone()) {
-        Ok(t) => t,
-        Err(reason) => {
-            unresolve_table_field.reason = reason;
-            return None;
-        }
-    };
+    let field_key = field.get_field_key().ok_or(InferFailReason::None)?;
+    let field_expr = field_key.get_expr().ok_or(InferFailReason::None)?;
+    let field_type = infer_expr(db, cache, field_expr.clone())?;
     let member_key: LuaMemberKey = match field_type {
         LuaType::StringConst(s) => LuaMemberKey::Name((*s).clone()),
         LuaType::IntegerConst(i) => LuaMemberKey::Integer(i),
@@ -140,7 +102,7 @@ pub fn try_resolve_table_field(
             if field_type.is_table() {
                 LuaMemberKey::Expr(field_type)
             } else {
-                return None;
+                return Err(InferFailReason::None);
             }
         }
     };
@@ -157,10 +119,10 @@ pub fn try_resolve_table_field(
         field.get_syntax_id(),
     );
 
-    let decl_type = field.get_value_expr().map_or(None, |expr| {
-        let expr_type = infer_expr(db, cache, expr).ok()?;
-        Some(expr_type)
-    })?;
+    let decl_type = match field.get_value_expr() {
+        Some(expr) => infer_expr(db, cache, expr)?,
+        None => return Err(InferFailReason::None),
+    };
 
     let member_id = LuaMemberId::new(field.get_syntax_id(), file_id);
     let member = LuaMember::new(
@@ -176,7 +138,7 @@ pub fn try_resolve_table_field(
     );
 
     merge_table_field_to_def(db, cache, table_expr, member_id);
-    Some(true)
+    Ok(())
 }
 
 fn merge_table_field_to_def(
@@ -206,78 +168,51 @@ pub fn try_resolve_module(
     db: &mut DbIndex,
     cache: &mut LuaInferCache,
     module: &mut UnResolveModule,
-) -> Option<bool> {
-    if !check_reach_reason(db, cache, &module.reason).unwrap_or(false) {
-        return None;
-    }
-
+) -> ResolveResult {
     let expr = module.expr.clone();
-    let expr_type = match infer_expr(db, cache, expr) {
-        Ok(t) => t,
-        Err(reason) => {
-            module.reason = reason;
-            return None;
-        }
-    };
-
+    let expr_type = infer_expr(db, cache, expr)?;
     let expr_type = match &expr_type {
         LuaType::Variadic(multi) => multi.get_type(0).cloned().unwrap_or(LuaType::Unknown),
         _ => expr_type,
     };
-    let module_info = db.get_module_index_mut().get_module_mut(module.file_id)?;
+    let module_info = db
+        .get_module_index_mut()
+        .get_module_mut(module.file_id)
+        .ok_or(InferFailReason::None)?;
     module_info.export_type = Some(expr_type);
-    Some(true)
+    Ok(())
 }
 
 pub fn try_resolve_return_point(
     db: &mut DbIndex,
     cache: &mut LuaInferCache,
     return_: &mut UnResolveReturn,
-) -> Option<bool> {
-    if !check_reach_reason(db, cache, &return_.reason).unwrap_or(false) {
-        return None;
-    }
-
-    let return_docs = match analyze_return_point(&db, cache, &return_.return_points) {
-        Ok(docs) => docs,
-        Err(reason) => {
-            return_.reason = reason;
-            return None;
-        }
-    };
+) -> ResolveResult {
+    let return_docs = analyze_return_point(&db, cache, &return_.return_points)?;
 
     let signature = db
         .get_signature_index_mut()
-        .get_mut(&return_.signature_id)?;
+        .get_mut(&return_.signature_id)
+        .ok_or(InferFailReason::None)?;
 
     if signature.resolve_return == SignatureReturnStatus::UnResolve {
         signature.resolve_return = SignatureReturnStatus::InferResolve;
         signature.return_docs = return_docs;
     }
-    Some(true)
+
+    Ok(())
 }
 
 pub fn try_resolve_iter_var(
     db: &mut DbIndex,
     cache: &mut LuaInferCache,
     iter_var: &mut UnResolveIterVar,
-) -> Option<bool> {
-    if !check_reach_reason(db, cache, &iter_var.reason).unwrap_or(false) {
-        return None;
-    }
-
-    let expr_type = match infer_expr(db, cache, iter_var.iter_expr.clone()) {
-        Ok(t) => t,
-        Err(InferFailReason::None) => return Some(true),
-        Err(reason) => {
-            iter_var.reason = reason;
-            return None;
-        }
-    };
+) -> ResolveResult {
+    let expr_type = infer_expr(db, cache, iter_var.iter_expr.clone())?;
     let func = match infer_for_range_iter_expr_func(db, expr_type.clone()) {
         Some(func) => func,
         None => {
-            return Some(true);
+            return Ok(());
         }
     };
 
@@ -293,21 +228,19 @@ pub fn try_resolve_iter_var(
         decl_id.into(),
         LuaTypeCache::InferType(iter_type.clone()),
     );
-    Some(true)
+    Ok(())
 }
 
 pub fn try_resolve_module_ref(
     db: &mut DbIndex,
-    cache: &mut LuaInferCache,
+    _: &mut LuaInferCache,
     module_ref: &UnResolveModuleRef,
-) -> Option<bool> {
-    if !check_reach_reason(db, cache, &module_ref.reason).unwrap_or(false) {
-        return None;
-    }
-
+) -> ResolveResult {
     let module_index = db.get_module_index();
-    let module = module_index.get_module(module_ref.module_file_id)?;
-    let export_type = module.export_type.clone()?;
+    let module = module_index
+        .get_module(module_ref.module_file_id)
+        .ok_or(InferFailReason::None)?;
+    let export_type = module.export_type.clone().ok_or(InferFailReason::None)?;
     match &module_ref.owner_id {
         LuaSemanticDeclId::LuaDecl(decl_id) => {
             db.get_type_index_mut()
@@ -320,7 +253,7 @@ pub fn try_resolve_module_ref(
             );
         }
         _ => {}
-    }
+    };
 
-    Some(true)
+    Ok(())
 }

@@ -1,12 +1,12 @@
 use emmylua_parser::LuaExpr;
 
-use crate::{LuaDeclId, LuaMemberId, LuaSignatureId};
+use crate::{InFiled, LuaDeclId, LuaMemberId, LuaSignatureId};
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum InferFailReason {
     None,
     RecursiveInfer,
-    UnResolveExpr(LuaExpr),
+    UnResolveExpr(InFiled<LuaExpr>),
     UnResolveSignatureReturn(LuaSignatureId),
     FieldDotFound,
     UnResolveDeclType(LuaDeclId),

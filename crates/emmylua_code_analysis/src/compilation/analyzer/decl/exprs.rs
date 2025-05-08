@@ -208,9 +208,14 @@ pub fn analyze_table_expr(analyzer: &mut DeclAnalyzer, table_expr: LuaTableExpr)
                             table_expr: table_expr.clone(),
                             field: field.clone(),
                             decl_feature,
-                            reason: InferFailReason::UnResolveExpr(field_expr.clone()),
                         };
-                        analyzer.add_unresolved(unresolve_member.into());
+                        analyzer.context.add_unresolve(
+                            unresolve_member.into(),
+                            InferFailReason::UnResolveExpr(InFiled::new(
+                                analyzer.get_file_id(),
+                                field_expr.clone(),
+                            )),
+                        );
                         continue;
                     }
                 };

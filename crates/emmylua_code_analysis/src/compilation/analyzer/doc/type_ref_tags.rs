@@ -241,10 +241,11 @@ pub fn analyze_module(analyzer: &mut DocAnalyzer, tag: LuaDocTagModule) -> Optio
         let unresolve = UnResolveModuleRef {
             module_file_id,
             owner_id,
-            reason: InferFailReason::None,
         };
 
-        analyzer.context.add_unresolve(unresolve.into());
+        analyzer
+            .context
+            .add_unresolve(unresolve.into(), InferFailReason::None);
     }
 
     Some(())

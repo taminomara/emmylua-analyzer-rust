@@ -7,7 +7,9 @@ mod unresolve;
 
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{db_index::DbIndex, profile::Profile, Emmyrc, InFiled, LuaType, WorkspaceId};
+use crate::{
+    db_index::DbIndex, profile::Profile, Emmyrc, InFiled, InferFailReason, LuaType, WorkspaceId,
+};
 use emmylua_parser::{LuaChunk, LuaSyntaxId};
 use unresolve::UnResolve;
 
@@ -97,7 +99,7 @@ pub struct AnalyzeContext {
     #[allow(unused)]
     config: Arc<Emmyrc>,
     cast_flow: HashMap<InFiled<LuaSyntaxId>, LuaType>,
-    unresolves: Vec<UnResolve>,
+    unresolves: Vec<(UnResolve, InferFailReason)>,
 }
 
 impl AnalyzeContext {
@@ -114,7 +116,7 @@ impl AnalyzeContext {
         self.tree_list.push(tree);
     }
 
-    pub fn add_unresolve(&mut self, un_resolve: UnResolve) {
-        self.unresolves.push(un_resolve);
+    pub fn add_unresolve(&mut self, un_resolve: UnResolve, reason: InferFailReason) {
+        self.unresolves.push((un_resolve, reason));
     }
 }

@@ -9,7 +9,7 @@ use crate::{
         unresolve::{UnResolveDecl, UnResolveMember},
     },
     db_index::{LuaDeclId, LuaMemberId, LuaMemberOwner, LuaType},
-    InferFailReason, LuaTypeCache, LuaTypeOwner,
+    InFiled, InferFailReason, LuaTypeCache, LuaTypeOwner,
 };
 
 use super::LuaAnalyzer;
@@ -56,9 +56,14 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
                                 decl_id,
                                 expr: expr.clone(),
                                 ret_idx: 0,
-                                reason: InferFailReason::UnResolveExpr(expr.clone()),
                             };
-                            analyzer.add_unresolved(unresolve.into());
+                            analyzer.context.add_unresolve(
+                                unresolve.into(),
+                                InferFailReason::UnResolveExpr(InFiled::new(
+                                    analyzer.file_id,
+                                    expr.clone(),
+                                )),
+                            );
                             continue;
                         }
                     }
@@ -84,10 +89,9 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
                     decl_id,
                     expr: expr.clone(),
                     ret_idx: 0,
-                    reason,
                 };
 
-                analyzer.add_unresolved(unresolve.into());
+                analyzer.context.add_unresolve(unresolve.into(), reason);
             }
         }
     }
@@ -130,10 +134,11 @@ pub fn analyze_local_stat(analyzer: &mut LuaAnalyzer, local_stat: LuaLocalStat) 
                             decl_id,
                             expr: last_expr.clone(),
                             ret_idx: i - expr_count + 1,
-                            reason: reason.clone(),
                         };
 
-                        analyzer.add_unresolved(unresolve.into());
+                        analyzer
+                            .context
+                            .add_unresolve(unresolve.into(), reason.clone());
                     }
                 }
             }
@@ -233,9 +238,10 @@ fn set_index_expr_owner(analyzer: &mut LuaAnalyzer, var_expr: LuaVarExpr) -> Opt
                 expr: None,
                 prefix: Some(prefix_expr.into()),
                 ret_idx: 0,
-                reason,
             };
-            analyzer.add_unresolved(unresolve_member.into());
+            analyzer
+                .context
+                .add_unresolve(unresolve_member.into(), reason);
         }
     }
 
@@ -278,10 +284,11 @@ pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignSta
                             decl_id,
                             expr: expr.clone(),
                             ret_idx: 0,
-                            reason,
                         };
 
-                        analyzer.add_unresolved(unresolve_decl.into());
+                        analyzer
+                            .context
+                            .add_unresolve(unresolve_decl.into(), reason);
                     }
                     LuaTypeOwner::Member(member_id) => {
                         let unresolve_member = UnResolveMember {
@@ -290,9 +297,10 @@ pub fn analyze_assign_stat(analyzer: &mut LuaAnalyzer, assign_stat: LuaAssignSta
                             expr: Some(expr.clone()),
                             prefix: None,
                             ret_idx: 0,
-                            reason,
                         };
-                        analyzer.add_unresolved(unresolve_member.into());
+                        analyzer
+                            .context
+                            .add_unresolve(unresolve_member.into(), reason);
                     }
                     _ => {}
                 }
@@ -372,10 +380,12 @@ fn merge_type_owner_and_unresolve_expr(
                 decl_id,
                 expr: expr.clone(),
                 ret_idx: idx,
-                reason: InferFailReason::UnResolveExpr(expr),
             };
 
-            analyzer.add_unresolved(unresolve_decl.into());
+            analyzer.context.add_unresolve(
+                unresolve_decl.into(),
+                InferFailReason::UnResolveExpr(InFiled::new(analyzer.file_id, expr.clone())),
+            );
         }
         LuaTypeOwner::Member(member_id) => {
             let unresolve_member = UnResolveMember {
@@ -384,9 +394,11 @@ fn merge_type_owner_and_unresolve_expr(
                 expr: Some(expr.clone()),
                 prefix: None,
                 ret_idx: idx,
-                reason: InferFailReason::UnResolveExpr(expr),
             };
-            analyzer.add_unresolved(unresolve_member.into());
+            analyzer.context.add_unresolve(
+                unresolve_member.into(),
+                InferFailReason::UnResolveExpr(InFiled::new(analyzer.file_id, expr.clone())),
+            );
         }
         _ => {}
     }
@@ -439,10 +451,9 @@ pub fn analyze_table_field(analyzer: &mut LuaAnalyzer, field: LuaTableField) -> 
                 expr: Some(value_expr.clone()),
                 prefix: None,
                 ret_idx: 0,
-                reason,
             };
 
-            analyzer.add_unresolved(unresolve.into());
+            analyzer.context.add_unresolve(unresolve.into(), reason);
             return None;
         }
     };

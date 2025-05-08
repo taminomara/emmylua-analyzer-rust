@@ -62,40 +62,44 @@ fn analyze_lambda_params(
                 signature_id: signature_id.clone(),
                 call_expr,
                 param_idx: founded_idx,
-                reason: InferFailReason::None,
             };
 
-            analyzer.add_unresolved(unresolved.into());
+            analyzer
+                .context
+                .add_unresolve(unresolved.into(), InferFailReason::None);
         }
         LuaAst::LuaFuncStat(func_stat) => {
             let unresolved = UnResolveParentClosureParams {
                 file_id: analyzer.file_id,
                 signature_id: signature_id.clone(),
                 parent_ast: UnResolveParentAst::LuaFuncStat(func_stat.clone()),
-                reason: InferFailReason::None,
             };
 
-            analyzer.add_unresolved(unresolved.into());
+            analyzer
+                .context
+                .add_unresolve(unresolved.into(), InferFailReason::None);
         }
         LuaAst::LuaTableField(table_field) => {
             let unresolved = UnResolveParentClosureParams {
                 file_id: analyzer.file_id,
                 signature_id: signature_id.clone(),
                 parent_ast: UnResolveParentAst::LuaTableField(table_field.clone()),
-                reason: InferFailReason::None,
             };
 
-            analyzer.add_unresolved(unresolved.into());
+            analyzer
+                .context
+                .add_unresolve(unresolved.into(), InferFailReason::None);
         }
         LuaAst::LuaAssignStat(assign_stat) => {
             let unresolved = UnResolveParentClosureParams {
                 file_id: analyzer.file_id,
                 signature_id: signature_id.clone(),
                 parent_ast: UnResolveParentAst::LuaAssignStat(assign_stat.clone()),
-                reason: InferFailReason::None,
             };
 
-            analyzer.add_unresolved(unresolved.into());
+            analyzer
+                .context
+                .add_unresolve(unresolved.into(), InferFailReason::None);
         }
         _ => {}
     }
@@ -149,10 +153,9 @@ fn analyze_return(
                     file_id: analyzer.file_id,
                     signature_id: signature_id.clone(),
                     return_points,
-                    reason,
                 };
 
-                analyzer.add_unresolved(unresolve.into());
+                analyzer.context.add_unresolve(unresolve.into(), reason);
                 return None;
             }
         };
@@ -187,10 +190,11 @@ fn analyze_lambda_returns(
         call_expr,
         param_idx: founded_idx,
         return_points,
-        reason: InferFailReason::None,
     };
 
-    analyzer.add_unresolved(unresolved.into());
+    analyzer
+        .context
+        .add_unresolve(unresolved.into(), InferFailReason::None);
 
     Some(())
 }

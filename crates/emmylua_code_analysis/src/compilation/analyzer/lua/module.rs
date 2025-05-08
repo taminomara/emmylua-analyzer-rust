@@ -20,9 +20,8 @@ pub fn analyze_chunk_return(analyzer: &mut LuaAnalyzer, chunk: LuaChunk) -> Opti
                         let unresolve = UnResolveModule {
                             file_id: analyzer.file_id,
                             expr,
-                            reason,
                         };
-                        analyzer.add_unresolved(unresolve.into());
+                        analyzer.context.add_unresolve(unresolve.into(), reason);
                         return None;
                     }
                 };

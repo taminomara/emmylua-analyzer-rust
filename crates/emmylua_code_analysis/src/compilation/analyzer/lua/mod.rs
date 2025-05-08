@@ -27,7 +27,7 @@ use crate::{
     CacheOptions, FileId, InferFailReason, LuaAnalysisPhase,
 };
 
-use super::{unresolve::UnResolve, AnalyzeContext};
+use super::AnalyzeContext;
 
 pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     let _p = Profile::cond_new("lua analyze", context.tree_list.len() > 1);
@@ -48,15 +48,11 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
                     analysis_phase: LuaAnalysisPhase::Ordered,
                 },
             );
-            let mut analyzer = LuaAnalyzer::new(db, file_id, cache);
+            let mut analyzer = LuaAnalyzer::new(db, file_id, cache, context);
             for node in root.descendants::<LuaAst>() {
                 analyze_node(&mut analyzer, node);
             }
             analyze_chunk_return(&mut analyzer, root.clone());
-            let unresolved = analyzer.move_unresolved();
-            for unresolve in unresolved {
-                context.add_unresolve(unresolve);
-            }
         }
     }
 }
@@ -98,7 +94,7 @@ struct LuaAnalyzer<'a> {
     file_id: FileId,
     db: &'a mut DbIndex,
     infer_cache: LuaInferCache,
-    unresolved: Vec<UnResolve>,
+    context: &'a mut AnalyzeContext,
 }
 
 impl LuaAnalyzer<'_> {
@@ -106,12 +102,13 @@ impl LuaAnalyzer<'_> {
         db: &'a mut DbIndex,
         file_id: FileId,
         infer_config: LuaInferCache,
+        context: &'a mut AnalyzeContext,
     ) -> LuaAnalyzer<'a> {
         LuaAnalyzer {
             file_id,
             db,
             infer_cache: infer_config,
-            unresolved: Vec::new(),
+            context,
         }
     }
 }
@@ -119,13 +116,5 @@ impl LuaAnalyzer<'_> {
 impl LuaAnalyzer<'_> {
     pub fn infer_expr(&mut self, expr: &LuaExpr) -> Result<LuaType, InferFailReason> {
         infer_expr(self.db, &mut self.infer_cache, expr.clone())
-    }
-
-    pub fn add_unresolved(&mut self, unresolved: UnResolve) {
-        self.unresolved.push(unresolved);
-    }
-
-    pub fn move_unresolved(self) -> Vec<UnResolve> {
-        self.unresolved
     }
 }

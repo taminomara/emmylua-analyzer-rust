@@ -72,9 +72,10 @@ pub fn analyze_for_range_stat(
                     decl_id,
                     iter_expr: first_iter_expr.clone(),
                     ret_idx: idx,
-                    reason: reason.clone(),
                 };
-                analyzer.add_unresolved(unresolved.into());
+                analyzer
+                    .context
+                    .add_unresolve(unresolved.into(), reason.clone());
                 idx += 1;
             }
         }

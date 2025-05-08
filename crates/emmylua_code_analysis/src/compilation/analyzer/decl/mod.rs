@@ -8,7 +8,7 @@ use crate::{
     profile::Profile,
 };
 
-use super::{unresolve::UnResolve, AnalyzeContext};
+use super::AnalyzeContext;
 use emmylua_parser::{LuaAst, LuaAstNode, LuaChunk, LuaFuncStat, LuaSyntaxKind, LuaVarExpr};
 use rowan::{TextRange, TextSize, WalkEvent};
 
@@ -23,14 +23,15 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     for in_filed_tree in tree_list.iter() {
         db.get_reference_index_mut()
             .create_local_reference(in_filed_tree.file_id);
-        let mut analyzer =
-            DeclAnalyzer::new(db, in_filed_tree.file_id, in_filed_tree.value.clone());
+        let mut analyzer = DeclAnalyzer::new(
+            db,
+            in_filed_tree.file_id,
+            in_filed_tree.value.clone(),
+            context,
+        );
         analyzer.analyze();
-        let (decl_tree, unresolved) = analyzer.get_decl_tree();
+        let decl_tree = analyzer.get_decl_tree();
         db.get_decl_index_mut().add_decl_tree(decl_tree);
-        for unresolve in unresolved {
-            context.add_unresolve(unresolve);
-        }
     }
 }
 
@@ -143,18 +144,23 @@ pub struct DeclAnalyzer<'a> {
     decl: LuaDeclarationTree,
     scopes: Vec<LuaScopeId>,
     is_meta: bool,
-    pub unresolved: Vec<UnResolve>,
+    context: &'a mut AnalyzeContext,
 }
 
 impl<'a> DeclAnalyzer<'a> {
-    pub fn new(db: &'a mut DbIndex, file_id: FileId, root: LuaChunk) -> DeclAnalyzer<'a> {
+    pub fn new(
+        db: &'a mut DbIndex,
+        file_id: FileId,
+        root: LuaChunk,
+        context: &'a mut AnalyzeContext,
+    ) -> DeclAnalyzer<'a> {
         DeclAnalyzer {
             db,
             root,
             decl: LuaDeclarationTree::new(file_id),
             scopes: Vec::new(),
             is_meta: false,
-            unresolved: Vec::new(),
+            context,
         }
     }
 
@@ -172,12 +178,8 @@ impl<'a> DeclAnalyzer<'a> {
         self.decl.file_id()
     }
 
-    pub fn add_unresolved(&mut self, unresolved: UnResolve) {
-        self.unresolved.push(unresolved);
-    }
-
-    pub fn get_decl_tree(self) -> (LuaDeclarationTree, Vec<UnResolve>) {
-        (self.decl, self.unresolved)
+    pub fn get_decl_tree(self) -> LuaDeclarationTree {
+        self.decl
     }
 
     pub fn create_scope(&mut self, range: TextRange, kind: LuaScopeKind) {
