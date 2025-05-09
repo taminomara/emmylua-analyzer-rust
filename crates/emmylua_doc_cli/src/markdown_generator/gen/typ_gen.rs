@@ -73,7 +73,7 @@ fn generate_class_type_markdown(
     if let Some(supers) = supers {
         let mut super_type_texts = Vec::new();
         for super_typ in supers {
-            let super_type_text = humanize_type(db, &super_typ, RenderLevel::Detailed);
+            let super_type_text = humanize_type(db, &super_typ, RenderLevel::Simple);
             super_type_texts.push(super_type_text);
         }
         doc.supers = Some(super_type_texts.join(", "));
