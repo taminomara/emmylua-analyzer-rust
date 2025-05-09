@@ -1,6 +1,9 @@
 # CHANGELOG
 
-# 0.7.2 (unreleased)
+# 0.7.3(unreleased)
+
+
+# 0.7.2
 
 `FIX` Fix reading configuration file encoded with UTF-8 BOM
 
