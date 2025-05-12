@@ -329,7 +329,9 @@ fn resolve_closure_member_type(
                     }
                     (false, true) => {
                         // 原始签名不是冒号定义, 但未解析的签名是冒号定义, 即要删除第一个参数
-                        doc_params.remove(0);
+                        if doc_params.len() > 0 {
+                            doc_params.remove(0);
+                        }
                     }
                     _ => {}
                 }
