@@ -1,0 +1,37 @@
+name: Bump Version & Upload
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  bump:
+    name: Bump version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - id: version
+        name: Bump version
+        run: |
+          echo "current ref ${{ github.ref }}"
+          cargo run -p edit_version -- ${{ github.ref }}
+          echo "VERSION=$(sed 's:refs/tags/::' <<< ${{ github.ref }})" >> "$GITHUB_OUTPUT"
+
+      - name: Push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Bump version to ${{ steps.version.outputs.VERSION }}
+          file_pattern: 'crates/*/Cargo.toml'
+          
+  upload-crates:
+    uses: ./.github/workflows/upload-crates.yml
+  upload-cachix:
+    uses: ./.github/workflows/upload-cachix.yml

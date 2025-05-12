@@ -1,10 +1,8 @@
 name: "Upload to Cachix"
 
 on:
-  push:
-    tags:
-      - '*'
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   build-and-cache:
@@ -18,14 +16,8 @@ jobs:
           
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-      
-    - name: Set version
-      run: |
-        echo "current ref ${{ github.ref }}"
-        cargo run -p edit_version -- ${{ github.ref }}
+    - name: Clone repo
+      uses: actions/checkout@v4
       
     - name: Setup Nix
       uses: cachix/install-nix-action@v30
@@ -47,4 +39,7 @@ jobs:
         
     - name: Build emmylua-analyzer
       run: |
-        nix build .#emmylua_{ls,doc_cli,check}
+        for x in emmylua_{ls,doc_cli,check}; do
+          nix build --impure --expr \
+            "with import <nixpkgs> {}; callPackage (import ./nix/packages.nix).$x {}"
+        done
