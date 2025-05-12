@@ -21,7 +21,7 @@ jobs:
       - name: Publish
         run: |
           for dir in emmylua_{code_analysis,ls,doc_cli,check}; do
-            pushd "crates/$x"
+            pushd "crates/$dir"
             cargo publish --allow-dirty
             popd
           done
