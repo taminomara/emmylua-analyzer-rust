@@ -33,5 +33,6 @@ jobs:
           
   upload-crates:
     uses: ./.github/workflows/upload-crates.yml
+
   upload-cachix:
     uses: ./.github/workflows/upload-cachix.yml
