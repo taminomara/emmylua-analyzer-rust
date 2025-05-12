@@ -518,10 +518,10 @@ fn find_best_function_type(
 ) -> Option<LuaType> {
     // 寻找非自身定义的签名
     match find_decl_function_type(db, cache, prefix_type, index_member_expr) {
-        Ok((decl_function, is_current_owner)) => {
-            if is_current_owner {
+        Ok(result) => {
+            if result.is_current_owner {
                 // 对应当前类型下的声明, 我们需要过滤掉所有`signature`类型
-                if let Some(filtered_types) = filter_signature_type(&decl_function) {
+                if let Some(filtered_types) = filter_signature_type(&result.typ) {
                     match filtered_types.len() {
                         0 => {}
                         1 => return Some(LuaType::DocFunction(filtered_types[0].clone())),
@@ -536,7 +536,7 @@ fn find_best_function_type(
                     }
                 }
             } else {
-                return Some(decl_function);
+                return Some(result.typ);
             }
         }
         _ => {}

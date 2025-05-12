@@ -212,58 +212,13 @@ fn get_function_member_owner(
     semantic_model: &SemanticModel,
     member_id: LuaMemberId,
 ) -> Option<LuaSemanticDeclId> {
-    fn resolve_owner(
-        semantic_model: &SemanticModel,
-        member_id: LuaMemberId,
-    ) -> Option<LuaSemanticDeclId> {
-        let root = semantic_model
-            .get_db()
-            .get_vfs()
-            .get_syntax_tree(&member_id.file_id)?
-            .get_red_root();
-        let cur_node = member_id.get_syntax_id().to_node_from_root(&root)?;
-
-        match member_id.get_syntax_id().get_kind() {
-            LuaSyntaxKind::TableFieldAssign => match cur_node {
-                table_field_node if LuaTableField::can_cast(table_field_node.kind().into()) => {
-                    let table_field = LuaTableField::cast(table_field_node)?;
-                    let value_expr_syntax_id = table_field.get_value_expr()?.get_syntax_id();
-                    let expr = value_expr_syntax_id.to_node_from_root(&root)?;
-                    semantic_model.find_decl(expr.clone().into(), SemanticDeclLevel::default())
-                }
-                _ => None,
-            },
-            LuaSyntaxKind::IndexExpr => {
-                let assign_node = cur_node.parent()?;
-                match assign_node {
-                    assign_node if LuaAssignStat::can_cast(assign_node.kind().into()) => {
-                        let assign_stat = LuaAssignStat::cast(assign_node)?;
-                        let (vars, exprs) = assign_stat.get_var_and_expr_list();
-                        let mut semantic_decl = None;
-                        for (var, expr) in vars.iter().zip(exprs.iter()) {
-                            if var.syntax().text_range() == cur_node.text_range() {
-                                let expr = expr.get_syntax_id().to_node_from_root(&root)?;
-                                semantic_decl = semantic_model
-                                    .find_decl(expr.clone().into(), SemanticDeclLevel::default())
-                            } else {
-                                semantic_decl = None;
-                            }
-                        }
-                        semantic_decl
-                    }
-                    _ => None,
-                }
-            }
-            _ => None,
-        }
-    }
-
-    let mut current_property_owner = resolve_owner(semantic_model, member_id);
+    let mut current_property_owner = resolve_function_member_owner(semantic_model, member_id);
     let mut resolved_property_owner = current_property_owner.clone();
     while let Some(property_owner) = &current_property_owner {
         match property_owner {
             LuaSemanticDeclId::Member(member_id) => {
-                if let Some(next_property_owner) = resolve_owner(semantic_model, member_id.clone())
+                if let Some(next_property_owner) =
+                    resolve_function_member_owner(semantic_model, member_id.clone())
                 {
                     resolved_property_owner = Some(next_property_owner.clone());
                     current_property_owner = Some(next_property_owner.clone());
@@ -277,26 +232,48 @@ fn get_function_member_owner(
     resolved_property_owner
 }
 
-/// Check if colon call is possible. This check can only be performed
-/// when it's a colon call but not a colon definition.
-#[allow(unused)]
-fn check_first_param_colon_call(
+fn resolve_function_member_owner(
     semantic_model: &SemanticModel,
-    call_expr: LuaCallExpr,
-    self_type: &LuaType,
-) -> TypeCheckResult {
-    if !matches!(self_type, LuaType::SelfInfer | LuaType::Any) {
-        if let Some(LuaExpr::IndexExpr(index_expr)) = call_expr.get_prefix_expr() {
-            // We need to narrow `SelfInfer` to the actual type
-            return if let Some(prefix_expr) = index_expr.get_prefix_expr() {
-                let expr_type = semantic_model
-                    .infer_expr(prefix_expr.clone())
-                    .unwrap_or(LuaType::SelfInfer);
-                semantic_model.type_check(self_type, &expr_type)
-            } else {
-                Err(TypeCheckFailReason::TypeNotMatch)
-            };
+    member_id: LuaMemberId,
+) -> Option<LuaSemanticDeclId> {
+    let root = semantic_model
+        .get_db()
+        .get_vfs()
+        .get_syntax_tree(&member_id.file_id)?
+        .get_red_root();
+    let cur_node = member_id.get_syntax_id().to_node_from_root(&root)?;
+
+    match member_id.get_syntax_id().get_kind() {
+        LuaSyntaxKind::TableFieldAssign => match cur_node {
+            table_field_node if LuaTableField::can_cast(table_field_node.kind().into()) => {
+                let table_field = LuaTableField::cast(table_field_node)?;
+                let value_expr_syntax_id = table_field.get_value_expr()?.get_syntax_id();
+                let expr = value_expr_syntax_id.to_node_from_root(&root)?;
+                semantic_model.find_decl(expr.clone().into(), SemanticDeclLevel::default())
+            }
+            _ => None,
+        },
+        LuaSyntaxKind::IndexExpr => {
+            let assign_node = cur_node.parent()?;
+            match assign_node {
+                assign_node if LuaAssignStat::can_cast(assign_node.kind().into()) => {
+                    let assign_stat = LuaAssignStat::cast(assign_node)?;
+                    let (vars, exprs) = assign_stat.get_var_and_expr_list();
+                    let mut semantic_decl = None;
+                    for (var, expr) in vars.iter().zip(exprs.iter()) {
+                        if var.syntax().text_range() == cur_node.text_range() {
+                            let expr = expr.get_syntax_id().to_node_from_root(&root)?;
+                            semantic_decl = semantic_model
+                                .find_decl(expr.clone().into(), SemanticDeclLevel::default())
+                        } else {
+                            semantic_decl = None;
+                        }
+                    }
+                    semantic_decl
+                }
+                _ => None,
+            }
         }
+        _ => None,
     }
-    Ok(())
 }

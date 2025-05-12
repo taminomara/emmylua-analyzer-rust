@@ -16,9 +16,15 @@ use crate::{
 
 type FunctionTypeResult = Result<LuaType, InferFailReason>;
 
-/// 返回结果为 (类型, 是否是当前类型下的声明)
-pub type FindFunctionResult = Result<(LuaType, bool), InferFailReason>;
+pub type FindFunctionResult = Result<FindFunctionType, InferFailReason>;
 
+#[derive(Debug)]
+pub struct FindFunctionType {
+    pub typ: LuaType,
+    pub is_current_owner: bool,
+}
+
+#[derive(Debug)]
 struct DeepGuard {
     deep: usize,
 }
@@ -32,9 +38,6 @@ impl DeepGuard {
     }
     pub fn get(&self) -> usize {
         self.deep
-    }
-    pub fn reset(&mut self) {
-        self.deep = 0;
     }
 }
 
@@ -72,13 +75,16 @@ pub fn find_decl_function_type(
         &mut deep_guard,
     ) {
         Ok(member_type) => {
-            return Ok((member_type, deep_guard.get() == 0));
+            return Ok(FindFunctionType {
+                typ: member_type,
+                is_current_owner: deep_guard.get() == 0,
+            });
         }
         Err(InferFailReason::FieldDotFound) => InferFailReason::FieldDotFound,
         Err(err) => return Err(err),
     };
 
-    deep_guard.reset();
+    let mut deep_guard = DeepGuard::new();
     match find_function_type_by_operator(
         db,
         cache,
@@ -88,7 +94,10 @@ pub fn find_decl_function_type(
         &mut deep_guard,
     ) {
         Ok(member_type) => {
-            return Ok((member_type, deep_guard.get() == 0));
+            return Ok(FindFunctionType {
+                typ: member_type,
+                is_current_owner: deep_guard.get() == 0,
+            });
         }
         Err(InferFailReason::FieldDotFound) => {}
         Err(err) => return Err(err),
