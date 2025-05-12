@@ -368,10 +368,18 @@ pub fn infer_global_type(db: &DbIndex, name: &str) -> InferResult {
         };
     }
 
+    let mut sorted_decl_ids = decl_ids.to_vec();
+    sorted_decl_ids.sort_by(|a, b| {
+        let a_is_std = db.get_module_index().is_std(&a.file_id);
+        let b_is_std = db.get_module_index().is_std(&b.file_id);
+        b_is_std.cmp(&a_is_std)
+    });
+
+    // TODO: 或许应该联合所有定义的类型?
     let mut valid_type = LuaType::Unknown;
     let mut last_resolve_reason = InferFailReason::None;
-    for decl_id in decl_ids {
-        let decl_type_cache = db.get_type_index().get_type_cache(&decl_id.clone().into());
+    for decl_id in sorted_decl_ids {
+        let decl_type_cache = db.get_type_index().get_type_cache(&decl_id.into());
         match decl_type_cache {
             Some(type_cache) => {
                 let typ = type_cache.as_type();
@@ -384,7 +392,7 @@ pub fn infer_global_type(db: &DbIndex, name: &str) -> InferResult {
                 }
             }
             None => {
-                last_resolve_reason = InferFailReason::UnResolveDeclType(*decl_id);
+                last_resolve_reason = InferFailReason::UnResolveDeclType(decl_id);
             }
         }
     }

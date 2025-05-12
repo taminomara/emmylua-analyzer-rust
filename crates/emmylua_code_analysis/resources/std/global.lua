@@ -454,7 +454,7 @@ function unpack(list, i, j) end
 ---@param message string
 function warn(message) end
 
----@type string[] | table<string, string>
+---@type string[]
 arg = {}
 
 --- This is an incorrect annotation, but truly supporting _ENV would completely break the variable analysis path.
