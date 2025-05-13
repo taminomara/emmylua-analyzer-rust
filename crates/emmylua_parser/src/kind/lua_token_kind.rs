@@ -116,6 +116,7 @@ pub enum LuaTokenKind {
     TkTagNamespace,  // namespace
     TkTagUsing,      // using
     TkTagSource,     // source
+    TkTagReturnCast, // return cast
 
     TkDocOr,              // |
     TkDocAnd,             // &

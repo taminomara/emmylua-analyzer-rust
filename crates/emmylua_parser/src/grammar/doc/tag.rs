@@ -39,6 +39,7 @@ fn parse_tag_detail(p: &mut LuaDocParser) -> ParseResult {
         LuaTokenKind::TkTagType => parse_tag_type(p),
         LuaTokenKind::TkTagParam => parse_tag_param(p),
         LuaTokenKind::TkTagReturn => parse_tag_return(p),
+        LuaTokenKind::TkTagReturnCast => parse_tag_return_cast(p),
         // other tag
         LuaTokenKind::TkTagModule => parse_tag_module(p),
         LuaTokenKind::TkTagSee => parse_tag_see(p),
@@ -337,6 +338,19 @@ fn parse_tag_return(p: &mut LuaDocParser) -> ParseResult {
         if_token_bump(p, LuaTokenKind::TkName);
     }
 
+    p.set_state(LuaDocLexerState::Description);
+    parse_description(p);
+    Ok(m.complete(p))
+}
+
+// ---@return_cast <param name> <type>
+fn parse_tag_return_cast(p: &mut LuaDocParser) -> ParseResult {
+    p.set_state(LuaDocLexerState::Normal);
+    let m = p.mark(LuaSyntaxKind::DocTagReturnCast);
+    p.bump();
+    expect_token(p, LuaTokenKind::TkName)?;
+
+    parse_op_type(p)?;
     p.set_state(LuaDocLexerState::Description);
     parse_description(p);
     Ok(m.complete(p))

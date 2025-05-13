@@ -626,7 +626,7 @@ end
             r#"
 
             ---@return boolean
-            ---@cast n integer
+            ---@return_cast n integer
             local function isInteger(n)
                 return true
             end

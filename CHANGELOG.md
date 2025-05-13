@@ -4,10 +4,10 @@
 
 `FIX` Fix a crash issue
 
-`NEW` Support `@cast` for functions. When a function's return value is boolean (must be annotated as boolean), you can add an additional annotation `---@cast <param> <cast op>`, indicating that when the function returns true, the parameter `<param>` will be transformed to the corresponding type according to the cast. For example:
+`NEW` Support `@return_cast` for functions. When a function's return value is boolean (must be annotated as boolean), you can add an additional annotation `---@return_cast <param> <cast op>`, indicating that when the function returns true, the parameter `<param>` will be transformed to the corresponding type according to the cast. For example:
 ```lua
 ---@return boolean
----@cast n integer
+---@return_cast n integer
 local function isInteger(n)
     return n == math.floor(n)
 end

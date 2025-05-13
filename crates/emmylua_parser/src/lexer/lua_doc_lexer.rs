@@ -549,6 +549,7 @@ fn to_tag(text: &str) -> LuaTokenKind {
         "type" => LuaTokenKind::TkTagType,
         "param" => LuaTokenKind::TkTagParam,
         "return" => LuaTokenKind::TkTagReturn,
+        "return_cast" => LuaTokenKind::TkTagReturnCast,
         "generic" => LuaTokenKind::TkTagGeneric,
         "see" => LuaTokenKind::TkTagSee,
         "overload" => LuaTokenKind::TkTagOverload,
