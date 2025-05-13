@@ -1,7 +1,8 @@
 use emmylua_parser::{
     BinaryOperator, LuaAst, LuaAstNode, LuaAstToken, LuaBlock, LuaDocDescriptionOwner, LuaDocTagAs,
     LuaDocTagCast, LuaDocTagModule, LuaDocTagOther, LuaDocTagOverload, LuaDocTagParam,
-    LuaDocTagReturn, LuaDocTagSee, LuaDocTagType, LuaExpr, LuaLocalName, LuaTokenKind, LuaVarExpr,
+    LuaDocTagReturn, LuaDocTagReturnCast, LuaDocTagSee, LuaDocTagType, LuaExpr, LuaLocalName,
+    LuaTokenKind, LuaVarExpr,
 };
 
 use crate::{
@@ -187,6 +188,71 @@ pub fn analyze_return(analyzer: &mut DocAnalyzer, tag: LuaDocTagReturn) -> Optio
     Some(())
 }
 
+pub fn analyze_return_cast(analyzer: &mut DocAnalyzer, tag: LuaDocTagReturnCast) -> Option<()> {
+    if let Some(LuaSemanticDeclId::Signature(signature_id)) = get_owner_id(analyzer) {
+        let name_token = tag.get_name_token()?;
+        let name = name_token.get_name_text();
+        let cast_op_type = tag.get_op_type()?;
+        let action = match cast_op_type.get_op() {
+            Some(op) => {
+                if op.get_op() == BinaryOperator::OpAdd {
+                    CastAction::Add
+                } else {
+                    CastAction::Remove
+                }
+            }
+            None => CastAction::Force,
+        };
+
+        if cast_op_type.is_nullable() {
+            match action {
+                CastAction::Add => {
+                    analyzer.db.get_flow_index_mut().add_call_cast(
+                        signature_id,
+                        name,
+                        TypeAssertion::Add(LuaType::Nil),
+                    );
+                }
+                CastAction::Remove => {
+                    analyzer.db.get_flow_index_mut().add_call_cast(
+                        signature_id,
+                        name,
+                        TypeAssertion::Remove(LuaType::Nil),
+                    );
+                }
+                _ => {}
+            }
+        } else if let Some(doc_type) = cast_op_type.get_type() {
+            let typ = infer_type(analyzer, doc_type.clone());
+            match action {
+                CastAction::Add => {
+                    analyzer.db.get_flow_index_mut().add_call_cast(
+                        signature_id,
+                        name,
+                        TypeAssertion::Add(typ),
+                    );
+                }
+                CastAction::Remove => {
+                    analyzer.db.get_flow_index_mut().add_call_cast(
+                        signature_id,
+                        name,
+                        TypeAssertion::Remove(typ),
+                    );
+                }
+                CastAction::Force => {
+                    analyzer.db.get_flow_index_mut().add_call_cast(
+                        signature_id,
+                        name,
+                        TypeAssertion::Force(typ),
+                    );
+                }
+            }
+        }
+    }
+
+    Some(())
+}
+
 pub fn analyze_overload(analyzer: &mut DocAnalyzer, tag: LuaDocTagOverload) -> Option<()> {
     if let Some(decl_id) = analyzer.current_type_id.clone() {
         let type_ref = infer_type(analyzer, tag.get_type()?);
@@ -285,70 +351,6 @@ pub fn analyze_as(analyzer: &mut DocAnalyzer, tag: LuaDocTagAs) -> Option<()> {
 }
 
 pub fn analyze_cast(analyzer: &mut DocAnalyzer, tag: LuaDocTagCast) -> Option<()> {
-    if let Some(LuaSemanticDeclId::Signature(signature_id)) = get_owner_id(analyzer) {
-        let name_token = tag.get_name_token()?;
-        let name = name_token.get_name_text();
-        for cast_op_type in tag.get_op_types() {
-            let action = match cast_op_type.get_op() {
-                Some(op) => {
-                    if op.get_op() == BinaryOperator::OpAdd {
-                        CastAction::Add
-                    } else {
-                        CastAction::Remove
-                    }
-                }
-                None => CastAction::Force,
-            };
-
-            if cast_op_type.is_nullable() {
-                match action {
-                    CastAction::Add => {
-                        analyzer.db.get_flow_index_mut().add_call_cast(
-                            signature_id,
-                            name,
-                            TypeAssertion::Add(LuaType::Nil),
-                        );
-                    }
-                    CastAction::Remove => {
-                        analyzer.db.get_flow_index_mut().add_call_cast(
-                            signature_id,
-                            name,
-                            TypeAssertion::Remove(LuaType::Nil),
-                        );
-                    }
-                    _ => {}
-                }
-            } else if let Some(doc_type) = cast_op_type.get_type() {
-                let typ = infer_type(analyzer, doc_type.clone());
-                match action {
-                    CastAction::Add => {
-                        analyzer.db.get_flow_index_mut().add_call_cast(
-                            signature_id,
-                            name,
-                            TypeAssertion::Add(typ),
-                        );
-                    }
-                    CastAction::Remove => {
-                        analyzer.db.get_flow_index_mut().add_call_cast(
-                            signature_id,
-                            name,
-                            TypeAssertion::Remove(typ),
-                        );
-                    }
-                    CastAction::Force => {
-                        analyzer.db.get_flow_index_mut().add_call_cast(
-                            signature_id,
-                            name,
-                            TypeAssertion::Force(typ),
-                        );
-                    }
-                }
-            }
-        }
-
-        return Some(());
-    }
-
     for op in tag.get_op_types() {
         if let Some(doc_type) = op.get_type() {
             let typ = infer_type(analyzer, doc_type.clone());

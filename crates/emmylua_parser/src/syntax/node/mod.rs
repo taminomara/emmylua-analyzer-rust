@@ -85,6 +85,7 @@ pub enum LuaAst {
     LuaDocTagGeneric(LuaDocTagGeneric),
     LuaDocTagAsync(LuaDocTagAsync),
     LuaDocTagAs(LuaDocTagAs),
+    LuaDocTagReturnCast(LuaDocTagReturnCast),
 
     // doc type
     LuaDocNameType(LuaDocNameType),
@@ -167,6 +168,7 @@ impl LuaAstNode for LuaAst {
             LuaAst::LuaDocTagGeneric(node) => node.syntax(),
             LuaAst::LuaDocTagAsync(node) => node.syntax(),
             LuaAst::LuaDocTagAs(node) => node.syntax(),
+            LuaAst::LuaDocTagReturnCast(node) => node.syntax(),
             LuaAst::LuaDocNameType(node) => node.syntax(),
             LuaAst::LuaDocArrayType(node) => node.syntax(),
             LuaAst::LuaDocFuncType(node) => node.syntax(),
@@ -256,6 +258,7 @@ impl LuaAstNode for LuaAst {
             LuaSyntaxKind::DocTagGeneric => true,
             LuaSyntaxKind::DocTagAsync => true,
             LuaSyntaxKind::DocTagAs => true,
+            LuaSyntaxKind::DocTagReturnCast => true,
             LuaSyntaxKind::TypeName => true,
             LuaSyntaxKind::TypeArray => true,
             LuaSyntaxKind::TypeFun => true,
@@ -388,6 +391,9 @@ impl LuaAstNode for LuaAst {
             }
             LuaSyntaxKind::DocTagAsync => LuaDocTagAsync::cast(syntax).map(LuaAst::LuaDocTagAsync),
             LuaSyntaxKind::DocTagAs => LuaDocTagAs::cast(syntax).map(LuaAst::LuaDocTagAs),
+            LuaSyntaxKind::DocTagReturnCast => {
+                LuaDocTagReturnCast::cast(syntax).map(LuaAst::LuaDocTagReturnCast)
+            }
             LuaSyntaxKind::TypeName => LuaDocNameType::cast(syntax).map(LuaAst::LuaDocNameType),
             LuaSyntaxKind::TypeArray => LuaDocArrayType::cast(syntax).map(LuaAst::LuaDocArrayType),
             LuaSyntaxKind::TypeFun => LuaDocFuncType::cast(syntax).map(LuaAst::LuaDocFuncType),

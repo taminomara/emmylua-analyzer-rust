@@ -38,6 +38,7 @@ pub enum LuaDocTag {
     Async(LuaDocTagAsync),
     As(LuaDocTagAs),
     Visibility(LuaDocTagVisibility),
+    ReturnCast(LuaDocTagReturnCast),
 }
 
 impl LuaAstNode for LuaDocTag {
@@ -69,6 +70,7 @@ impl LuaAstNode for LuaDocTag {
             LuaDocTag::Async(it) => it.syntax(),
             LuaDocTag::As(it) => it.syntax(),
             LuaDocTag::Visibility(it) => it.syntax(),
+            LuaDocTag::ReturnCast(it) => it.syntax(),
         }
     }
 
@@ -102,6 +104,7 @@ impl LuaAstNode for LuaDocTag {
             || kind == LuaSyntaxKind::DocTagAsync
             || kind == LuaSyntaxKind::DocTagAs
             || kind == LuaSyntaxKind::DocTagVisibility
+            || kind == LuaSyntaxKind::DocTagReturnCast
     }
 
     fn cast(syntax: LuaSyntaxNode) -> Option<Self>
@@ -182,6 +185,9 @@ impl LuaAstNode for LuaDocTag {
             LuaSyntaxKind::DocTagAs => Some(LuaDocTag::As(LuaDocTagAs::cast(syntax).unwrap())),
             LuaSyntaxKind::DocTagVisibility => Some(LuaDocTag::Visibility(
                 LuaDocTagVisibility::cast(syntax).unwrap(),
+            )),
+            LuaSyntaxKind::DocTagReturnCast => Some(LuaDocTag::ReturnCast(
+                LuaDocTagReturnCast::cast(syntax).unwrap(),
             )),
             _ => None,
         }
@@ -1405,6 +1411,44 @@ impl LuaAstNode for LuaDocTagVisibility {
 
 impl LuaDocTagVisibility {
     pub fn get_visibility_token(&self) -> Option<LuaDocVisibilityToken> {
+        self.token()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaDocTagReturnCast {
+    syntax: LuaSyntaxNode,
+}
+
+impl LuaAstNode for LuaDocTagReturnCast {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        &self.syntax
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool {
+        kind == LuaSyntaxKind::DocTagReturnCast
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaDocDescriptionOwner for LuaDocTagReturnCast {}
+
+impl LuaDocTagReturnCast {
+    pub fn get_op_type(&self) -> Option<LuaDocOpType> {
+        self.child()
+    }
+
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
         self.token()
     }
 }
