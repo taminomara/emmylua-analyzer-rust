@@ -29,6 +29,7 @@ type ResolveResult = Result<(), InferFailReason>;
 pub fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     let _p = Profile::cond_new("resolve analyze", context.tree_list.len() > 1);
     let mut infer_manager = std::mem::take(&mut context.infer_manager);
+    infer_manager.clear();
     let mut reason_resolve: HashMap<InferFailReason, Vec<UnResolve>> = HashMap::new();
     for (unresolve, reason) in context.unresolves.drain(..) {
         reason_resolve
@@ -200,7 +201,12 @@ fn try_resolve(
                     Ok(_) => {
                         changed = true;
                     }
-                    Err(InferFailReason::None) => {}
+                    Err(InferFailReason::None | InferFailReason::RecursiveInfer) => {}
+                    Err(InferFailReason::FieldDotFound) => {
+                        if !cache.get_config().analysis_phase.is_force() {
+                            retain_unresolve.push((unresolve, InferFailReason::FieldDotFound));
+                        }
+                    }
                     Err(reason) => {
                         if reason != *check_reason {
                             changed = true;

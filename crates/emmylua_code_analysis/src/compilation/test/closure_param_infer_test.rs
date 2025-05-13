@@ -294,6 +294,7 @@ mod test {
                     if not self.custom_event_manager then
                         self.custom_event_manager = newEventManager()
                     end
+                    B = self.custom_event_manager
                     local trigger = self.custom_event_manager:get_trigger()
                     A = trigger
                     return trigger
@@ -303,6 +304,7 @@ mod test {
             (
                 "test2.lua",
                 r#"
+                require "test1"
                 ---@class Trigger
 
                 ---@class EventManager

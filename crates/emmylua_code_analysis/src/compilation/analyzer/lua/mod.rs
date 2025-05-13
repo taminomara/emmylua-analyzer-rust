@@ -37,9 +37,8 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
         .iter()
         .map(|x| (x.file_id, x.value.clone()))
         .collect::<HashMap<_, _>>();
-    let file_denpendency = db.get_file_dependencies_index().get_file_dependencies();
-    let order = file_denpendency.get_best_analysis_order(file_ids);
-
+    let file_dependency = db.get_file_dependencies_index().get_file_dependencies();
+    let order = file_dependency.get_best_analysis_order(file_ids.clone());
     for file_id in order {
         if let Some(root) = tree_map.get(&file_id) {
             let mut analyzer = LuaAnalyzer::new(db, file_id, context);

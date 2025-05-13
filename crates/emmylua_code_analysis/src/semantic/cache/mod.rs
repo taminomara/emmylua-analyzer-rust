@@ -63,4 +63,8 @@ impl LuaInferCache {
     pub fn set_phase(&mut self, phase: LuaAnalysisPhase) {
         self.config.analysis_phase = phase;
     }
+
+    pub fn clear(&mut self) {
+        self.cache.clear();
+    }
 }
