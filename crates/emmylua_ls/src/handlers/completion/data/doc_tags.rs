@@ -29,5 +29,5 @@ pub const DOC_TAGS: &[&str] = &[
     "using",
     "source",
     "readonly",
-    "return_cast"
+    "return_cast",
 ];
