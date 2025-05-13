@@ -138,27 +138,33 @@ fn analyze_return(
     };
 
     let return_points = analyze_func_body_returns(block);
-    let returns =
-        match analyze_return_point(&analyzer.db, &mut analyzer.infer_cache, &return_points) {
-            Ok(returns) => returns,
-            Err(InferFailReason::None) => {
-                vec![LuaDocReturnInfo {
-                    type_ref: LuaType::Unknown,
-                    description: None,
-                    name: None,
-                }]
-            }
-            Err(reason) => {
-                let unresolve = UnResolveReturn {
-                    file_id: analyzer.file_id,
-                    signature_id: signature_id.clone(),
-                    return_points,
-                };
+    let returns = match analyze_return_point(
+        &analyzer.db,
+        &mut analyzer
+            .context
+            .infer_manager
+            .get_infer_cache(analyzer.file_id),
+        &return_points,
+    ) {
+        Ok(returns) => returns,
+        Err(InferFailReason::None) => {
+            vec![LuaDocReturnInfo {
+                type_ref: LuaType::Unknown,
+                description: None,
+                name: None,
+            }]
+        }
+        Err(reason) => {
+            let unresolve = UnResolveReturn {
+                file_id: analyzer.file_id,
+                signature_id: signature_id.clone(),
+                return_points,
+            };
 
-                analyzer.context.add_unresolve(unresolve.into(), reason);
-                return None;
-            }
-        };
+            analyzer.context.add_unresolve(unresolve.into(), reason);
+            return None;
+        }
+    };
     let signature = analyzer
         .db
         .get_signature_index_mut()

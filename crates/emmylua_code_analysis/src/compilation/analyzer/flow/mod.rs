@@ -1,16 +1,17 @@
 mod build_flow_tree;
 mod cast_analyze;
 mod flow_node;
-mod flow_tree;
 mod var_analyze;
 
 use std::collections::HashMap;
 
-use crate::{db_index::DbIndex, profile::Profile, FileId, TypeAssertion, VarRefId};
-use build_flow_tree::build_flow_tree;
+use crate::{
+    db_index::DbIndex, profile::Profile, FileId, LuaVarRefId, LuaVarRefNode, TypeAssertion,
+};
+use build_flow_tree::{build_flow_tree, LuaFlowTreeBuilder};
 use cast_analyze::analyze_cast;
+pub use cast_analyze::CastAction;
 use emmylua_parser::{BinaryOperator, LuaAst, LuaAstNode, LuaBinaryExpr, LuaBlock};
-use flow_tree::{FlowTree, VarRefNode};
 use rowan::TextRange;
 use var_analyze::{
     analyze_ref_assign, analyze_ref_expr, broadcast_up, UnResolveTraceId, VarTrace, VarTraceInfo,
@@ -31,11 +32,11 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
 fn analyze_flow(
     db: &mut DbIndex,
     file_id: FileId,
-    flow_tree: FlowTree,
+    flow_tree: LuaFlowTreeBuilder,
     context: &mut AnalyzeContext,
 ) {
     let var_ref_ids = flow_tree.get_var_ref_ids();
-    let mut var_trace_map: HashMap<VarRefId, VarTrace> = HashMap::new();
+    let mut var_trace_map: HashMap<LuaVarRefId, VarTrace> = HashMap::new();
     for var_ref_id in var_ref_ids {
         let var_ref_nodes = match flow_tree.get_var_ref_nodes(&var_ref_id) {
             Some(nodes) => nodes,
@@ -48,13 +49,13 @@ fn analyze_flow(
         for (var_ref_node, flow_id) in var_ref_nodes {
             var_trace.set_current_flow_id(*flow_id);
             match var_ref_node {
-                VarRefNode::UseRef(var_expr) => {
+                LuaVarRefNode::UseRef(var_expr) => {
                     analyze_ref_expr(db, &mut var_trace, &var_expr);
                 }
-                VarRefNode::AssignRef(var_expr) => {
+                LuaVarRefNode::AssignRef(var_expr) => {
                     analyze_ref_assign(db, &mut var_trace, &var_expr, file_id);
                 }
-                VarRefNode::CastRef(tag_cast) => {
+                LuaVarRefNode::CastRef(tag_cast) => {
                     analyze_cast(&mut var_trace, file_id, tag_cast.clone(), context);
                 }
             }

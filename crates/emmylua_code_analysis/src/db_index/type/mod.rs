@@ -1,6 +1,5 @@
 mod humanize_type;
 mod test;
-mod type_assert;
 mod type_decl;
 mod type_ops;
 mod type_owner;
@@ -10,7 +9,6 @@ use super::traits::LuaIndex;
 use crate::{FileId, InFiled};
 pub use humanize_type::{format_union_type, humanize_type, RenderLevel};
 use std::collections::{HashMap, HashSet};
-pub use type_assert::TypeAssertion;
 pub use type_decl::{
     LuaDeclLocation, LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId,
 };

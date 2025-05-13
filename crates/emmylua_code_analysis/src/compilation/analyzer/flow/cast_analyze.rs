@@ -6,7 +6,7 @@ use crate::{compilation::analyzer::AnalyzeContext, FileId, InFiled, LuaType, Typ
 use super::var_analyze::VarTrace;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum CastAction {
+pub enum CastAction {
     Force,
     Add,
     Remove,

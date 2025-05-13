@@ -10,15 +10,9 @@ use std::sync::Arc;
 
 use broadcast_down::broadcast_down_after_node;
 pub use broadcast_up::broadcast_up;
-use emmylua_parser::{
-    BinaryOperator, LuaAssignStat, LuaAst, LuaAstNode, LuaBinaryExpr, LuaCallArgList, LuaCallExpr,
-    LuaCallExprStat, LuaCommentOwner, LuaDocTag, LuaExpr, LuaLiteralToken, LuaVarExpr,
-};
+use emmylua_parser::{LuaAssignStat, LuaAst, LuaAstNode, LuaCommentOwner, LuaDocTag, LuaVarExpr};
 
-use crate::{
-    db_index::{LuaType, TypeAssertion},
-    DbIndex, FileId, LuaDeclId, LuaMemberId, LuaTypeDeclId, LuaTypeOwner,
-};
+use crate::{db_index::TypeAssertion, DbIndex, FileId, LuaDeclId, LuaMemberId, LuaTypeOwner};
 #[allow(unused)]
 pub use unresolve_trace::{UnResolveTraceId, UnResolveTraceInfo};
 pub use var_trace::VarTrace;
@@ -92,7 +86,10 @@ pub fn analyze_ref_assign(
         )
     };
 
-    let type_assert = TypeAssertion::Reassign((value_expr.get_syntax_id(), idx));
+    let type_assert = TypeAssertion::Reassign {
+        id: value_expr.get_syntax_id(),
+        idx,
+    };
     broadcast_down_after_node(
         db,
         var_trace,
@@ -122,88 +119,4 @@ fn is_decl_assign_stat(assign_stat: LuaAssignStat) -> Option<bool> {
         }
     }
     Some(false)
-}
-
-fn infer_call_arg_list(
-    db: &mut DbIndex,
-    var_trace: &mut VarTrace,
-    trace_info: Arc<VarTraceInfo>,
-    call_arg: LuaCallArgList,
-) -> Option<()> {
-    let parent = call_arg.get_parent::<LuaAst>()?;
-    match parent {
-        LuaAst::LuaCallExpr(call_expr) => {
-            if call_expr.is_type() && trace_info.type_assertion.is_exist() {
-                infer_lua_type_assert(db, var_trace, call_expr);
-            } else if call_expr.is_assert() {
-                broadcast_down_after_node(
-                    db,
-                    var_trace,
-                    trace_info,
-                    LuaAst::LuaCallExprStat(call_expr.get_parent::<LuaCallExprStat>()?),
-                    true,
-                );
-            }
-        }
-        _ => {}
-    }
-
-    Some(())
-}
-
-fn infer_lua_type_assert(
-    db: &mut DbIndex,
-    var_trace: &mut VarTrace,
-    call_expr: LuaCallExpr,
-) -> Option<()> {
-    let binary_expr = call_expr.get_parent::<LuaBinaryExpr>()?;
-    let op = binary_expr.get_op_token()?;
-    let mut is_eq = true;
-    match op.get_op() {
-        BinaryOperator::OpEq => {}
-        BinaryOperator::OpNe => {
-            is_eq = false;
-        }
-        _ => return None,
-    };
-
-    let operands = binary_expr.get_exprs()?;
-    let literal_expr = if let LuaExpr::LiteralExpr(literal) = operands.0 {
-        literal
-    } else if let LuaExpr::LiteralExpr(literal) = operands.1 {
-        literal
-    } else {
-        return None;
-    };
-
-    let type_literal = match literal_expr.get_literal()? {
-        LuaLiteralToken::String(string) => string.get_value(),
-        _ => return None,
-    };
-
-    let mut type_assert = match type_literal.as_str() {
-        "number" => TypeAssertion::Narrow(LuaType::Number),
-        "string" => TypeAssertion::Narrow(LuaType::String),
-        "boolean" => TypeAssertion::Narrow(LuaType::Boolean),
-        "table" => TypeAssertion::Narrow(LuaType::Table),
-        "function" => TypeAssertion::Narrow(LuaType::Function),
-        "thread" => TypeAssertion::Narrow(LuaType::Thread),
-        "userdata" => TypeAssertion::Narrow(LuaType::Userdata),
-        "nil" => TypeAssertion::Narrow(LuaType::Nil),
-        // extend usage
-        str => TypeAssertion::Narrow(LuaType::Ref(LuaTypeDeclId::new(str))),
-    };
-
-    if !is_eq {
-        type_assert = type_assert.get_negation()?;
-    }
-
-    broadcast_up(
-        db,
-        var_trace,
-        VarTraceInfo::new(type_assert, LuaAst::cast(binary_expr.syntax().clone())?).into(),
-        binary_expr.get_parent::<LuaAst>()?,
-    );
-
-    Some(())
 }

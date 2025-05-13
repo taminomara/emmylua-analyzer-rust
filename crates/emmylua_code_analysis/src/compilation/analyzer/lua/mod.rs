@@ -23,8 +23,8 @@ use stats::{
 use crate::{
     db_index::{DbIndex, LuaType},
     profile::Profile,
-    semantic::{infer_expr, LuaInferCache},
-    CacheOptions, FileId, InferFailReason, LuaAnalysisPhase,
+    semantic::infer_expr,
+    FileId, InferFailReason,
 };
 
 use super::AnalyzeContext;
@@ -42,13 +42,7 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
 
     for file_id in order {
         if let Some(root) = tree_map.get(&file_id) {
-            let cache = LuaInferCache::new(
-                file_id,
-                CacheOptions {
-                    analysis_phase: LuaAnalysisPhase::Ordered,
-                },
-            );
-            let mut analyzer = LuaAnalyzer::new(db, file_id, cache, context);
+            let mut analyzer = LuaAnalyzer::new(db, file_id, context);
             for node in root.descendants::<LuaAst>() {
                 analyze_node(&mut analyzer, node);
             }
@@ -93,7 +87,6 @@ fn analyze_node(analyzer: &mut LuaAnalyzer, node: LuaAst) {
 struct LuaAnalyzer<'a> {
     file_id: FileId,
     db: &'a mut DbIndex,
-    infer_cache: LuaInferCache,
     context: &'a mut AnalyzeContext,
 }
 
@@ -101,13 +94,11 @@ impl LuaAnalyzer<'_> {
     pub fn new<'a>(
         db: &'a mut DbIndex,
         file_id: FileId,
-        infer_config: LuaInferCache,
         context: &'a mut AnalyzeContext,
     ) -> LuaAnalyzer<'a> {
         LuaAnalyzer {
             file_id,
             db,
-            infer_cache: infer_config,
             context,
         }
     }
@@ -115,6 +106,7 @@ impl LuaAnalyzer<'_> {
 
 impl LuaAnalyzer<'_> {
     pub fn infer_expr(&mut self, expr: &LuaExpr) -> Result<LuaType, InferFailReason> {
-        infer_expr(self.db, &mut self.infer_cache, expr.clone())
+        let cache = self.context.infer_manager.get_infer_cache(self.file_id);
+        infer_expr(self.db, cache, expr.clone())
     }
 }

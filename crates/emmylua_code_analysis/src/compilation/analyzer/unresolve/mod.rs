@@ -1,6 +1,5 @@
 mod check_reason;
 mod find_decl_function;
-mod infer_manager;
 mod resolve;
 mod resolve_closure;
 
@@ -15,7 +14,6 @@ use check_reason::{check_reach_reason, resolve_all_reason};
 use emmylua_parser::{
     LuaAssignStat, LuaCallExpr, LuaExpr, LuaFuncStat, LuaTableExpr, LuaTableField,
 };
-use infer_manager::InferCacheManager;
 use resolve::{
     try_resolve_decl, try_resolve_iter_var, try_resolve_member, try_resolve_module,
     try_resolve_module_ref, try_resolve_return_point, try_resolve_table_field,
@@ -24,13 +22,13 @@ use resolve_closure::{
     try_resolve_closure_params, try_resolve_closure_parent_params, try_resolve_closure_return,
 };
 
-use super::{lua::LuaReturnPoint, AnalyzeContext};
+use super::{infer_manager::InferCacheManager, lua::LuaReturnPoint, AnalyzeContext};
 
 type ResolveResult = Result<(), InferFailReason>;
 
 pub fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
     let _p = Profile::cond_new("resolve analyze", context.tree_list.len() > 1);
-    let mut infer_manager = InferCacheManager::new();
+    let mut infer_manager = std::mem::take(&mut context.infer_manager);
     let mut reason_resolve: HashMap<InferFailReason, Vec<UnResolve>> = HashMap::new();
     for (unresolve, reason) in context.unresolves.drain(..) {
         reason_resolve

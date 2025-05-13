@@ -77,6 +77,18 @@ impl LuaSignature {
         self.param_docs.get(&idx)
     }
 
+    pub fn get_param_name_by_id(&self, idx: usize) -> Option<String> {
+        if idx < self.params.len() {
+            return Some(self.params[idx].clone());
+        } else if let Some(name) = self.params.last() {
+            if name == "..." {
+                return Some(name.clone());
+            }
+        }
+
+        None
+    }
+
     pub fn get_param_info_by_id(&self, idx: usize) -> Option<&LuaDocParamInfo> {
         if idx < self.params.len() {
             return self.param_docs.get(&idx);

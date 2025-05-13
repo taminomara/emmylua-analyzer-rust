@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{semantic::LuaInferCache, FileId, LuaAnalysisPhase};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct InferCacheManager {
     infer_map: HashMap<FileId, LuaInferCache>,
 }
@@ -19,7 +19,7 @@ impl InferCacheManager {
             LuaInferCache::new(
                 file_id,
                 crate::CacheOptions {
-                    analysis_phase: LuaAnalysisPhase::Unordered,
+                    analysis_phase: LuaAnalysisPhase::Ordered,
                 },
             )
         })
