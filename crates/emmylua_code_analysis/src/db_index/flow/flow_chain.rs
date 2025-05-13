@@ -1,13 +1,11 @@
 use emmylua_parser::{LuaAstNode, LuaChunk, LuaClosureExpr, LuaSyntaxKind, LuaSyntaxNode};
 use rowan::{TextRange, TextSize};
 
-use crate::db_index::TypeAssertion;
-
-use super::VarRefId;
+use super::{type_assert::TypeAssertion, LuaVarRefId};
 
 #[derive(Debug)]
 pub struct LuaFlowChain {
-    var_ref_id: VarRefId,
+    var_ref_id: LuaVarRefId,
     type_asserts: Vec<LuaFlowChainInfo>,
 }
 
@@ -19,14 +17,14 @@ pub struct LuaFlowChainInfo {
 }
 
 impl LuaFlowChain {
-    pub fn new(var_ref_id: VarRefId, asserts: Vec<LuaFlowChainInfo>) -> Self {
+    pub fn new(var_ref_id: LuaVarRefId, asserts: Vec<LuaFlowChainInfo>) -> Self {
         Self {
             var_ref_id,
             type_asserts: asserts,
         }
     }
 
-    pub fn get_var_ref_id(&self) -> VarRefId {
+    pub fn get_var_ref_id(&self) -> LuaVarRefId {
         self.var_ref_id.clone()
     }
 

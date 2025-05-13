@@ -3,8 +3,8 @@ use std::{collections::HashMap, sync::Arc};
 use rowan::TextRange;
 
 use crate::{
-    compilation::analyzer::flow::flow_tree::{FlowTree, VarRefNode},
-    LuaFlowChain, LuaFlowChainInfo, LuaFlowId, TypeAssertion, VarRefId,
+    compilation::analyzer::flow::build_flow_tree::LuaFlowTreeBuilder, LuaFlowChain,
+    LuaFlowChainInfo, LuaFlowId, LuaVarRefId, LuaVarRefNode, TypeAssertion,
 };
 
 use super::{
@@ -14,20 +14,20 @@ use super::{
 
 #[derive(Debug, Clone)]
 pub struct VarTrace<'a> {
-    var_ref_id: VarRefId,
-    var_refs: Vec<(VarRefNode, LuaFlowId)>,
+    var_ref_id: LuaVarRefId,
+    var_refs: Vec<(LuaVarRefNode, LuaFlowId)>,
     assertions: Vec<LuaFlowChainInfo>,
     current_flow_id: Option<LuaFlowId>,
     unresolve_traces: HashMap<UnResolveTraceId, (LuaFlowId, UnResolveTraceInfo)>,
-    flow_tree: &'a FlowTree,
+    flow_tree: &'a LuaFlowTreeBuilder,
 }
 
 #[allow(unused)]
 impl<'a> VarTrace<'a> {
     pub fn new(
-        var_ref_id: VarRefId,
-        var_refs: Vec<(VarRefNode, LuaFlowId)>,
-        flow_tree: &'a FlowTree,
+        var_ref_id: LuaVarRefId,
+        var_refs: Vec<(LuaVarRefNode, LuaFlowId)>,
+        flow_tree: &'a LuaFlowTreeBuilder,
     ) -> Self {
         Self {
             var_ref_id,
@@ -47,7 +47,7 @@ impl<'a> VarTrace<'a> {
         self.current_flow_id.clone()
     }
 
-    pub fn get_var_ref_id(&self) -> &VarRefId {
+    pub fn get_var_ref_id(&self) -> &LuaVarRefId {
         &self.var_ref_id
     }
 

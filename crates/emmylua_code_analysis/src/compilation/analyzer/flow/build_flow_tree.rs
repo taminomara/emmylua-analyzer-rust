@@ -1,19 +1,130 @@
+use std::collections::HashMap;
+
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaBlock, LuaBreakStat, LuaChunk, LuaDocTagCast, LuaGotoStat,
     LuaIndexExpr, LuaLabelStat, LuaLoopStat, LuaNameExpr, LuaStat, LuaTokenKind, PathTrait,
 };
-use rowan::WalkEvent;
+use rowan::{TextRange, TextSize, WalkEvent};
 use smol_str::SmolStr;
 
-use crate::{AnalyzeError, DbIndex, DiagnosticCode, FileId, LuaDeclId, LuaFlowId, VarRefId};
-
-use super::{
-    flow_node::BlockId,
-    flow_tree::{FlowTree, VarRefNode},
+use crate::{
+    AnalyzeError, DbIndex, DiagnosticCode, FileId, LuaDeclId, LuaFlowId, LuaVarRefId, LuaVarRefNode,
 };
 
-pub fn build_flow_tree(db: &mut DbIndex, file_id: FileId, root: LuaChunk) -> FlowTree {
-    let mut flow_tree = FlowTree::new(root.clone());
+use super::flow_node::{BlockId, FlowNode};
+
+#[derive(Debug)]
+pub struct LuaFlowTreeBuilder {
+    current_flow_id: LuaFlowId,
+    flow_id_stack: Vec<LuaFlowId>,
+    flow_nodes: HashMap<LuaFlowId, FlowNode>,
+    var_flow_ref: HashMap<LuaVarRefId, Vec<(LuaVarRefNode, LuaFlowId)>>,
+    root_flow_id: LuaFlowId,
+}
+
+#[allow(unused)]
+impl LuaFlowTreeBuilder {
+    pub fn new(root: LuaChunk) -> LuaFlowTreeBuilder {
+        let current_flow_id = LuaFlowId::from_chunk(root.clone());
+        let mut builder = LuaFlowTreeBuilder {
+            current_flow_id,
+            flow_id_stack: Vec::new(),
+            flow_nodes: HashMap::new(),
+            var_flow_ref: HashMap::new(),
+            root_flow_id: current_flow_id,
+        };
+
+        builder.flow_nodes.insert(
+            current_flow_id,
+            FlowNode::new(current_flow_id, current_flow_id.get_range(), None),
+        );
+        builder
+    }
+
+    pub fn enter_flow(&mut self, flow_id: LuaFlowId, range: TextRange) {
+        let parent = self.current_flow_id;
+        self.flow_id_stack.push(flow_id);
+        self.current_flow_id = flow_id;
+        self.flow_nodes
+            .insert(flow_id, FlowNode::new(flow_id, range, Some(parent)));
+        if let Some(parent_tree) = self.flow_nodes.get_mut(&parent) {
+            parent_tree.add_child(flow_id);
+        }
+    }
+
+    pub fn pop_flow(&mut self) {
+        self.flow_id_stack.pop();
+        self.current_flow_id = self
+            .flow_id_stack
+            .last()
+            .unwrap_or(&self.root_flow_id)
+            .clone();
+    }
+
+    pub fn add_flow_node(&mut self, ref_id: LuaVarRefId, ref_node: LuaVarRefNode) -> Option<()> {
+        let flow_id = self.current_flow_id;
+        self.var_flow_ref
+            .entry(ref_id.clone())
+            .or_insert_with(Vec::new)
+            .push((ref_node.clone(), flow_id));
+
+        Some(())
+    }
+
+    pub fn get_flow_node(&self, flow_id: LuaFlowId) -> Option<&FlowNode> {
+        self.flow_nodes.get(&flow_id)
+    }
+
+    pub fn get_flow_node_mut(&mut self, flow_id: LuaFlowId) -> Option<&mut FlowNode> {
+        self.flow_nodes.get_mut(&flow_id)
+    }
+
+    pub fn get_current_flow_node(&self) -> Option<&FlowNode> {
+        self.flow_nodes.get(&self.current_flow_id)
+    }
+
+    pub fn get_current_flow_node_mut(&mut self) -> Option<&mut FlowNode> {
+        self.flow_nodes.get_mut(&self.current_flow_id)
+    }
+
+    pub fn get_current_flow_id(&self) -> LuaFlowId {
+        self.current_flow_id
+    }
+
+    pub fn get_var_ref_ids(&self) -> Vec<LuaVarRefId> {
+        self.var_flow_ref.keys().cloned().collect()
+    }
+
+    pub fn get_flow_id_from_position(&self, position: TextSize) -> LuaFlowId {
+        let mut result = self.root_flow_id;
+        let mut stack = vec![self.root_flow_id];
+
+        while let Some(flow_id) = stack.pop() {
+            if let Some(node) = self.flow_nodes.get(&flow_id) {
+                if node.get_range().contains(position) {
+                    result = flow_id;
+                    if node.get_children().is_empty() {
+                        break;
+                    }
+
+                    stack.extend(node.get_children().iter().rev().copied());
+                }
+            }
+        }
+
+        result
+    }
+
+    pub fn get_var_ref_nodes(
+        &self,
+        var_ref_id: &LuaVarRefId,
+    ) -> Option<&Vec<(LuaVarRefNode, LuaFlowId)>> {
+        self.var_flow_ref.get(var_ref_id)
+    }
+}
+
+pub fn build_flow_tree(db: &mut DbIndex, file_id: FileId, root: LuaChunk) -> LuaFlowTreeBuilder {
+    let mut flow_tree = LuaFlowTreeBuilder::new(root.clone());
     let mut goto_vecs: Vec<(LuaFlowId, LuaGotoStat)> = vec![];
     for walk_node in root.walk_descendants::<LuaAst>() {
         match walk_node {
@@ -61,7 +172,7 @@ pub fn build_flow_tree(db: &mut DbIndex, file_id: FileId, root: LuaChunk) -> Flo
 
 fn build_name_expr_flow(
     db: &DbIndex,
-    builder: &mut FlowTree,
+    builder: &mut LuaFlowTreeBuilder,
     file_id: FileId,
     name_expr: LuaNameExpr,
 ) -> Option<()> {
@@ -84,7 +195,7 @@ fn build_name_expr_flow(
         }
         _ => {}
     }
-    let mut ref_id: Option<VarRefId> = None;
+    let mut ref_id: Option<LuaVarRefId> = None;
     if let Some(local_refs) = db.get_reference_index().get_local_reference(&file_id) {
         if let Some(decl_id) = local_refs.get_decl_id(&name_expr.get_range()) {
             if let Some(decl) = db.get_decl_index().get_decl(&decl_id) {
@@ -94,25 +205,25 @@ fn build_name_expr_flow(
                         .get_name_text()
                         .map_or(false, |name| name == "self")
                 {
-                    ref_id = Some(VarRefId::Name(SmolStr::new("self")));
+                    ref_id = Some(LuaVarRefId::Name(SmolStr::new("self")));
                 } else {
-                    ref_id = Some(VarRefId::DeclId(decl_id.clone()));
+                    ref_id = Some(LuaVarRefId::DeclId(decl_id.clone()));
                 }
             } else {
-                ref_id = Some(VarRefId::DeclId(decl_id.clone()));
+                ref_id = Some(LuaVarRefId::DeclId(decl_id.clone()));
             }
         }
     }
 
     if ref_id.is_none() {
-        ref_id = Some(VarRefId::Name(SmolStr::new(&name_expr.get_name_text()?)));
+        ref_id = Some(LuaVarRefId::Name(SmolStr::new(&name_expr.get_name_text()?)));
     }
 
     let ref_id = ref_id?;
     if is_assign {
-        builder.add_flow_node(ref_id, VarRefNode::AssignRef(name_expr.into()));
+        builder.add_flow_node(ref_id, LuaVarRefNode::AssignRef(name_expr.into()));
     } else {
-        builder.add_flow_node(ref_id, VarRefNode::UseRef(name_expr.into()));
+        builder.add_flow_node(ref_id, LuaVarRefNode::UseRef(name_expr.into()));
     }
 
     Some(())
@@ -120,7 +231,7 @@ fn build_name_expr_flow(
 
 fn build_index_expr_flow(
     db: &DbIndex,
-    builder: &mut FlowTree,
+    builder: &mut LuaFlowTreeBuilder,
     file_id: FileId,
     index_expr: LuaIndexExpr,
 ) -> Option<()> {
@@ -145,11 +256,11 @@ fn build_index_expr_flow(
         _ => {}
     }
 
-    let ref_id = VarRefId::Name(SmolStr::new(&index_expr.get_access_path()?));
+    let ref_id = LuaVarRefId::Name(SmolStr::new(&index_expr.get_access_path()?));
     if is_assign {
-        builder.add_flow_node(ref_id, VarRefNode::AssignRef(index_expr.into()));
+        builder.add_flow_node(ref_id, LuaVarRefNode::AssignRef(index_expr.into()));
     } else {
-        builder.add_flow_node(ref_id, VarRefNode::UseRef(index_expr.into()));
+        builder.add_flow_node(ref_id, LuaVarRefNode::UseRef(index_expr.into()));
     }
 
     Some(())
@@ -157,7 +268,7 @@ fn build_index_expr_flow(
 
 fn build_cast_flow(
     db: &DbIndex,
-    builder: &mut FlowTree,
+    builder: &mut LuaFlowTreeBuilder,
     file_id: FileId,
     tag_cast: LuaDocTagCast,
 ) -> Option<()> {
@@ -167,17 +278,17 @@ fn build_cast_flow(
     if let Some(decl) = decl_tree.find_local_decl(text, name_token.get_position()) {
         let decl_id = decl.get_id();
         builder.add_flow_node(
-            VarRefId::DeclId(decl_id),
-            VarRefNode::CastRef(tag_cast.clone()),
+            LuaVarRefId::DeclId(decl_id),
+            LuaVarRefNode::CastRef(tag_cast.clone()),
         );
     } else {
-        let ref_id = VarRefId::Name(SmolStr::new(text));
+        let ref_id = LuaVarRefId::Name(SmolStr::new(text));
         if db
             .get_decl_index()
             .get_decl(&LuaDeclId::new(file_id, name_token.get_position()))
             .is_none()
         {
-            builder.add_flow_node(ref_id, VarRefNode::CastRef(tag_cast.clone()));
+            builder.add_flow_node(ref_id, LuaVarRefNode::CastRef(tag_cast.clone()));
         }
     }
 
@@ -186,7 +297,7 @@ fn build_cast_flow(
 
 fn build_label_flow(
     db: &mut DbIndex,
-    builder: &mut FlowTree,
+    builder: &mut LuaFlowTreeBuilder,
     file_id: FileId,
     label: LuaLabelStat,
 ) -> Option<()> {
@@ -221,7 +332,7 @@ fn build_label_flow(
 
 fn build_goto_flow(
     db: &mut DbIndex,
-    builder: &mut FlowTree,
+    builder: &mut LuaFlowTreeBuilder,
     file_id: FileId,
     goto_stat: LuaGotoStat,
     flow_id: LuaFlowId,
@@ -253,7 +364,7 @@ fn build_goto_flow(
 
 fn build_break_flow(
     db: &mut DbIndex,
-    builder: &mut FlowTree,
+    builder: &mut LuaFlowTreeBuilder,
     file_id: FileId,
     break_stat: LuaBreakStat,
 ) -> Option<()> {

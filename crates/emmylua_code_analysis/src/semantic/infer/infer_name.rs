@@ -3,7 +3,7 @@ use smol_str::SmolStr;
 
 use crate::{
     db_index::{DbIndex, LuaDeclOrMemberId},
-    LuaDecl, LuaDeclExtra, LuaFlowId, LuaInferCache, LuaMemberId, LuaType, TypeOps, VarRefId,
+    LuaDecl, LuaDeclExtra, LuaFlowId, LuaInferCache, LuaMemberId, LuaType, LuaVarRefId, TypeOps,
 };
 
 use super::{InferFailReason, InferResult};
@@ -34,7 +34,7 @@ pub fn infer_name_expr(
             .get_decl(&decl_id)
             .ok_or(InferFailReason::None)?;
         let mut decl_type = get_decl_type(db, decl)?;
-        let var_ref_id = VarRefId::DeclId(decl_id);
+        let var_ref_id = LuaVarRefId::DeclId(decl_id);
         let flow_chain = db.get_flow_index().get_flow_chain(file_id, var_ref_id);
         let root = name_expr.get_root();
         if let Some(flow_chain) = flow_chain {
@@ -82,7 +82,7 @@ fn infer_self(db: &DbIndex, cache: &mut LuaInferCache, name_expr: LuaNameExpr) -
             }
 
             // let flow_id = LuaFlowId::from_node(name_expr.syntax());
-            let var_ref_id = VarRefId::Name(SmolStr::new("self"));
+            let var_ref_id = LuaVarRefId::Name(SmolStr::new("self"));
             let flow_chain = db.get_flow_index().get_flow_chain(file_id, var_ref_id);
             let root = name_expr.get_root();
             if let Some(flow_chain) = flow_chain {

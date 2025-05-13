@@ -3,11 +3,12 @@ use std::collections::HashMap;
 use emmylua_parser::LuaAstNode;
 
 use crate::{
-    infer_expr, infer_param, DbIndex, InFiled, InferFailReason, LuaDocReturnInfo,
-    LuaSemanticDeclId, LuaType, LuaTypeCache, SignatureReturnStatus,
+    compilation::analyzer::infer_manager::InferCacheManager, infer_expr, infer_param, DbIndex,
+    InFiled, InferFailReason, LuaDocReturnInfo, LuaSemanticDeclId, LuaType, LuaTypeCache,
+    SignatureReturnStatus,
 };
 
-use super::{infer_manager::InferCacheManager, UnResolve};
+use super::UnResolve;
 
 pub fn check_reach_reason(
     db: &DbIndex,

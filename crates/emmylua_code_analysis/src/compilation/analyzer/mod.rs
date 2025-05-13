@@ -2,6 +2,7 @@ mod bind_type;
 mod decl;
 mod doc;
 mod flow;
+mod infer_manager;
 mod lua;
 mod unresolve;
 
@@ -11,6 +12,7 @@ use crate::{
     db_index::DbIndex, profile::Profile, Emmyrc, InFiled, InferFailReason, LuaType, WorkspaceId,
 };
 use emmylua_parser::{LuaChunk, LuaSyntaxId};
+use infer_manager::InferCacheManager;
 use unresolve::UnResolve;
 
 pub fn analyze(db: &mut DbIndex, need_analyzed_files: Vec<InFiled<LuaChunk>>, config: Arc<Emmyrc>) {
@@ -100,6 +102,7 @@ pub struct AnalyzeContext {
     config: Arc<Emmyrc>,
     cast_flow: HashMap<InFiled<LuaSyntaxId>, LuaType>,
     unresolves: Vec<(UnResolve, InferFailReason)>,
+    infer_manager: InferCacheManager,
 }
 
 impl AnalyzeContext {
@@ -109,6 +112,7 @@ impl AnalyzeContext {
             config: emmyrc,
             cast_flow: HashMap::new(),
             unresolves: Vec::new(),
+            infer_manager: InferCacheManager::new(),
         }
     }
 

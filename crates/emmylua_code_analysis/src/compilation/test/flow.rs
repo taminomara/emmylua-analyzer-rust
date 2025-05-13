@@ -617,4 +617,37 @@ end
         let b_expected = ws.ty("string[]");
         assert_eq!(b, b_expected);
     }
+
+    #[test]
+    fn test_call_cast() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+
+            ---@return boolean
+            ---@cast n integer
+            local function isInteger(n)
+                return true
+            end
+            
+            local a ---@type integer | string
+            
+            if isInteger(a) then
+                d = a
+            else
+                e = a
+            end 
+            
+        "#,
+        );
+
+        let d = ws.expr_ty("d");
+        let d_expected = ws.ty("integer");
+        assert_eq!(d, d_expected);
+
+        let e = ws.expr_ty("e");
+        let e_expected = ws.ty("string");
+        assert_eq!(e, e_expected);
+    }
 }

@@ -4,6 +4,24 @@
 
 `FIX` Fix a crash issue
 
+`NEW` Support `@cast` for functions. When a function's return value is boolean (must be annotated as boolean), you can add an additional annotation `---@cast <param> <cast op>`, indicating that when the function returns true, the parameter `<param>` will be transformed to the corresponding type according to the cast. For example:
+```lua
+---@return boolean
+---@cast n integer
+local function isInteger(n)
+    return n == math.floor(n)
+end
+
+local a ---@type integer | string
+
+if isInteger(a) then
+    print(a) -- a: integer
+else
+    print(a) -- a: string
+end
+```
+
+
 # 0.7.2
 
 `FIX` Fix reading configuration file encoded with UTF-8 BOM
@@ -12,9 +30,9 @@
 
 `NEW` Support new tag `@internal` for members or declarations. When a member or declaration is marked as `@internal`, it is only visible within its current library. This means that if you use `@internal` in one library, you cannot access this member or declaration from other libraries or workspace.
 
-`NEW` Support `Goto to implementation`
+`NEW` Support `Go to implementation`
 
-`NEW` Support `@nodisacrd` with reason
+`NEW` Support `@nodiscard` with reason
 
 `FIX` Fix Some performance issue
 
