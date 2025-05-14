@@ -112,21 +112,50 @@ mod test {
                 return A
             "#,
         );
-        // TODO: 这里应该报错, 但底层存在问题, 暂时不报错, issue: #430
-        assert!(ws.check_code_for(
+        assert!(!ws.check_code_for(
             DiagnosticCode::DuplicateSetField,
             r#"
             local A = require("1")
 
-            ---@class D31.B
-            local B = {}
-
-            function B:__init()
-                self.originalExecute = A.execute
-                A.execute = function(trg, ...)
-                    self.originalExecute(trg, ...)
-                end
+            A.execute = function(trg, ...)
             end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_duplicate_function_3() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(!ws.check_code_for(
+            DiagnosticCode::DuplicateSetField,
+            r#"
+                ---@class D31.A
+                local A = {}
+                A.a = function() end
+
+                function A:init()
+                    self.a = function()
+                    end
+                end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_duplicate_function_4() {
+        let mut ws = VirtualWorkspace::new();
+        // 如果是 .member = 参数, 则不报错
+        assert!(ws.check_code_for(
+            DiagnosticCode::DuplicateSetField,
+            r#"
+                ---@class D31.A
+                local A = {}
+                A.a = function() end
+
+                ---@param a fun()
+                function A:init(a)
+                    self.a = a
+                end
         "#
         ));
     }
