@@ -76,6 +76,10 @@ pub fn broadcast_up(
                     broadcast_up_or(db, var_trace, trace_info, binary_expr.clone());
                 }
                 BinaryOperator::OpEq => {
+                    if !trace_info.type_assertion.is_exist() {
+                        return None;
+                    }
+
                     let (left, right) = binary_expr.get_exprs()?;
                     let expr = if left.get_position() == trace_info.node.get_position() {
                         right
@@ -119,6 +123,10 @@ pub fn broadcast_up(
                     }
                 }
                 BinaryOperator::OpNe => {
+                    if !trace_info.type_assertion.is_exist() {
+                        return None;
+                    }
+
                     let (left, right) = binary_expr.get_exprs()?;
                     let expr = if left.get_position() == trace_info.node.get_position() {
                         right
