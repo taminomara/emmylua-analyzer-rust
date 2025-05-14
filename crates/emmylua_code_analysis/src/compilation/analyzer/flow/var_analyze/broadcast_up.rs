@@ -310,13 +310,19 @@ fn broadcast_up_call_arg_list(
                     true,
                 );
             } else if trace_info.type_assertion.is_exist() {
+                let current_pos = trace_info.node.get_position();
+                let param_idx = call_arg
+                    .get_args()
+                    .position(|it| it.get_position() == current_pos)?
+                    as i32;
+
                 broadcast_up(
                     db,
                     var_trace,
                     VarTraceInfo::new(
                         TypeAssertion::Call {
                             id: call_expr.get_syntax_id(),
-                            param_idx: 0,
+                            param_idx,
                         },
                         LuaAst::cast(call_expr.syntax().clone())?,
                     )
