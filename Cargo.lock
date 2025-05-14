@@ -534,6 +534,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "emmylua_code_style"
+version = "0.1.0"
+dependencies = [
+ "emmylua_parser",
+ "rowan",
+ "serde",
+]
+
+[[package]]
 name = "emmylua_codestyle"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

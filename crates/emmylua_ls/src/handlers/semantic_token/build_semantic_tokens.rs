@@ -135,7 +135,8 @@ fn build_tokens_semantic_token(
         | LuaTokenKind::TkTagMapping
         | LuaTokenKind::TkTagNamespace
         | LuaTokenKind::TkTagUsing
-        | LuaTokenKind::TkTagSource => {
+        | LuaTokenKind::TkTagSource
+        | LuaTokenKind::TkTagReturnCast => {
             builder.push_with_modifier(
                 token,
                 SemanticTokenType::KEYWORD,
