@@ -630,27 +630,23 @@ fn find_member_by_index_intersection(
     intersection: &LuaIntersectionType,
     index_expr: LuaIndexMemberExpr,
 ) -> FunctionTypeResult {
-    let mut member_type = LuaType::Unknown;
     for member in intersection.get_types() {
-        let sub_member_type = find_function_type_by_operator(
+        match find_function_type_by_operator(
             db,
             cache,
             member,
             index_expr.clone(),
             &mut InferGuard::new(),
-        )?;
-        if member_type.is_unknown() {
-            member_type = sub_member_type;
-        } else if member_type != sub_member_type {
-            return Err(InferFailReason::FieldDotFound);
-        }
+        ) {
+            Ok(ty) => return Ok(ty),
+            Err(InferFailReason::FieldDotFound) => {
+                continue;
+            }
+            Err(reason) => return Err(reason),
+        };
     }
 
-    if member_type.is_unknown() {
-        return Err(InferFailReason::FieldDotFound);
-    }
-
-    Ok(member_type)
+    Err(InferFailReason::FieldDotFound)
 }
 
 fn find_member_by_index_generic(

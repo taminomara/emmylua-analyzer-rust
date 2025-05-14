@@ -88,8 +88,8 @@ pub fn check_complex_type_compact(
             );
         }
 
-        // donot check for now
-        // LuaType::Intersection(_) |
+        // check later
+        LuaType::Intersection(_) => return Ok(()),
         _ => {}
     }
     // Do I need to check union types?

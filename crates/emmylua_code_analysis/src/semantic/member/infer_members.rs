@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::HashSet;
 
 use smol_str::SmolStr;
 
@@ -204,25 +204,23 @@ fn infer_intersection_members(
         return Some(members.remove(0));
     } else {
         let mut result = Vec::new();
-        let mut member_count = HashMap::new();
+        let mut member_set = HashSet::new();
 
         for member in members.iter().flatten() {
             let key = member.key.clone();
             let typ = member.typ.clone();
-            let entry = member_count.entry((key, typ)).or_insert(1);
-            *entry += 1;
-        }
-
-        for ((key, typ), count) in member_count {
-            if count >= members.len() {
-                result.push(LuaMemberInfo {
-                    property_owner_id: None,
-                    key,
-                    typ,
-                    feature: None,
-                    overload_index: None,
-                });
+            if member_set.contains(&key) {
+                continue;
             }
+            member_set.insert(key.clone());
+
+            result.push(LuaMemberInfo {
+                property_owner_id: None,
+                key,
+                typ,
+                feature: None,
+                overload_index: None,
+            });
         }
 
         return Some(result);

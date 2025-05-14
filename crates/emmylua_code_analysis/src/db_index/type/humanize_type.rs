@@ -445,7 +445,7 @@ fn humanize_intersect_type(
         .take(num)
         .map(|ty| humanize_type(db, ty, level.next_level()))
         .collect::<Vec<_>>()
-        .join("&");
+        .join(" & ");
     format!("({}{})", type_str, dots)
 }
 
