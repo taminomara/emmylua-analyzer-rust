@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaBlock, LuaBreakStat, LuaChunk, LuaDocTagCast, LuaGotoStat,
-    LuaIndexExpr, LuaLabelStat, LuaLoopStat, LuaNameExpr, LuaStat, LuaTokenKind, PathTrait,
+    LuaIndexExpr, LuaLabelStat, LuaLoopStat, LuaNameExpr, LuaStat, LuaSyntaxKind, LuaTokenKind,
+    PathTrait,
 };
 use rowan::{TextRange, TextSize, WalkEvent};
 use smol_str::SmolStr;
@@ -179,7 +180,13 @@ fn build_name_expr_flow(
     let parent = name_expr.get_parent::<LuaAst>()?;
     let mut is_assign = false;
     match &parent {
-        LuaAst::LuaIndexExpr(_) | LuaAst::LuaCallExpr(_) | LuaAst::LuaFuncStat(_) => return None,
+        LuaAst::LuaIndexExpr(index_expr) => {
+            let parent = index_expr.get_parent::<LuaAst>()?;
+            if parent.syntax().kind() != LuaSyntaxKind::CallExpr.into() {
+                return None;
+            }
+        }
+        LuaAst::LuaCallExpr(_) | LuaAst::LuaFuncStat(_) => return None,
         LuaAst::LuaAssignStat(assign_stat) => {
             let eq_pos = assign_stat
                 .token_by_kind(LuaTokenKind::TkAssign)?
@@ -238,7 +245,13 @@ fn build_index_expr_flow(
     let parent = index_expr.get_parent::<LuaAst>()?;
     let mut is_assign = false;
     match parent {
-        LuaAst::LuaIndexExpr(_) | LuaAst::LuaCallExpr(_) | LuaAst::LuaFuncStat(_) => return None,
+        LuaAst::LuaIndexExpr(index_expr) => {
+            let parent = index_expr.get_parent::<LuaAst>()?;
+            if parent.syntax().kind() != LuaSyntaxKind::CallExpr.into() {
+                return None;
+            }
+        }
+        LuaAst::LuaCallExpr(_) | LuaAst::LuaFuncStat(_) => return None,
         LuaAst::LuaAssignStat(assign_stat) => {
             let eq_pos = assign_stat
                 .token_by_kind(LuaTokenKind::TkAssign)?

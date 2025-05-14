@@ -650,4 +650,46 @@ end
         let e_expected = ws.ty("string");
         assert_eq!(e, e_expected);
     }
+
+    #[test]
+    fn test_call_cast2() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+
+        ---@class My2
+
+        ---@class My1
+
+        ---@class My3:My2,My1
+        local m = {}
+
+
+        ---@return boolean
+        ---@return_cast self My1
+        function m:isMy1()
+        end
+
+        ---@return boolean
+        ---@return_cast self My2
+        function m:isMy2()
+        end
+
+        if m:isMy1() then
+            a = m
+        elseif m:isMy2() then
+            b = m
+        end
+        "#,
+        );
+
+        let a = ws.expr_ty("a");
+        let a_expected = ws.ty("My1");
+        assert_eq!(a, a_expected);
+
+        let b = ws.expr_ty("b");
+        let b_expected = ws.ty("My2");
+        assert_eq!(b, b_expected);
+    }
 }

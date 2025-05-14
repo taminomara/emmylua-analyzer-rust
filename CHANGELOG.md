@@ -21,6 +21,33 @@ else
 end
 ```
 
+`@return_cast` support self param. For example:
+```lua
+---@class My2
+
+---@class My1
+
+---@class My3:My2,My1
+local m = {}
+
+
+---@return boolean
+---@return_cast self My1
+function m:isMy1()
+end
+
+---@return boolean
+---@return_cast self My2
+function m:isMy2()
+end
+
+if m:isMy1() then
+    print(m) -- m: My1
+elseif m:isMy2() then
+    print(m) -- m: My2
+end
+```
+
 
 # 0.7.2
 

@@ -176,6 +176,29 @@ pub fn broadcast_up(
         LuaAst::LuaCallArgList(call_args_list) => {
             broadcast_up_call_arg_list(db, var_trace, trace_info, call_args_list)?;
         }
+        // self:IsXXX()
+        LuaAst::LuaIndexExpr(index_expr) => {
+            if !trace_info.type_assertion.is_exist() {
+                return None;
+            }
+
+            let call_expr = index_expr.get_parent::<LuaCallExpr>()?;
+            let param_idx = -1;
+
+            broadcast_up(
+                db,
+                var_trace,
+                VarTraceInfo::new(
+                    TypeAssertion::Call {
+                        id: call_expr.get_syntax_id(),
+                        param_idx,
+                    },
+                    LuaAst::cast(call_expr.syntax().clone())?,
+                )
+                .into(),
+                call_expr.get_parent::<LuaAst>()?,
+            );
+        }
         LuaAst::LuaUnaryExpr(unary_expr) => {
             let op = unary_expr.get_op_token()?;
             match op.get_op() {
