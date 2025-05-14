@@ -55,6 +55,7 @@ impl LuaModuleIndex {
     pub fn set_module_extract_patterns(&mut self, patterns: Vec<String>) {
         let mut patterns = patterns;
         patterns.sort_by(|a, b| b.len().cmp(&a.len()));
+        patterns.dedup();
         self.module_patterns.clear();
         for item in patterns {
             let regex_str = format!(
@@ -379,9 +380,18 @@ impl LuaModuleIndex {
         }
 
         let mut patterns = Vec::new();
-        for extension in extension_names {
+        for extension in &extension_names {
             patterns.push(format!("?.{}", extension));
-            patterns.push(format!("?/init.{}", extension));
+        }
+
+        let require_pattern = config.runtime.require_pattern.clone();
+        if require_pattern.is_empty() {
+            // add default require pattern
+            for extension in &extension_names {
+                patterns.push(format!("?/init.{}", extension));
+            }
+        } else {
+            patterns.extend(require_pattern);
         }
 
         self.set_module_extract_patterns(patterns);

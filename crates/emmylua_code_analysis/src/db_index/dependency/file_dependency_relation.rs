@@ -2,11 +2,11 @@ use crate::FileId;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 #[derive(Debug)]
-pub struct FileDenpendencyRelation<'a> {
+pub struct FileDependencyRelation<'a> {
     dependencies: &'a HashMap<FileId, HashSet<FileId>>,
 }
 
-impl<'a> FileDenpendencyRelation<'a> {
+impl<'a> FileDependencyRelation<'a> {
     pub fn new(dependencies: &'a HashMap<FileId, HashSet<FileId>>) -> Self {
         Self { dependencies }
     }
@@ -102,7 +102,7 @@ mod tests {
             s
         });
         map.insert(FileId::new(2), HashSet::new());
-        let rel = FileDenpendencyRelation::new(&map);
+        let rel = FileDependencyRelation::new(&map);
         let result = rel.get_best_analysis_order(vec![FileId::new(1), FileId::new(2)]);
         assert_eq!(result, vec![FileId::new(2), FileId::new(1)]);
     }
@@ -121,7 +121,7 @@ mod tests {
             s.insert(3.into());
             s
         });
-        let rel = FileDenpendencyRelation::new(&map);
+        let rel = FileDependencyRelation::new(&map);
         let result = rel.get_best_analysis_order(vec![1.into(), 2.into(), 3.into()]);
         assert_eq!(result, vec![3.into(), 2.into(), 1.into()]);
     }
@@ -137,7 +137,7 @@ mod tests {
         deps.insert(FileId::new(3), HashSet::new());
         deps.insert(FileId::new(4), [FileId::new(3)].iter().cloned().collect());
 
-        let rel = FileDenpendencyRelation::new(&deps);
+        let rel = FileDependencyRelation::new(&deps);
         let mut result = rel.collect_file_dependents(vec![FileId::new(3)]);
         result.sort();
         assert_eq!(result, vec![FileId::new(1), FileId::new(2), FileId::new(4)]);

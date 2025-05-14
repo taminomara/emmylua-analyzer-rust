@@ -18,7 +18,7 @@ use std::sync::Arc;
 
 use crate::{Emmyrc, FileId, Vfs};
 pub use declaration::*;
-use dependency::LuaDenpendencyIndex;
+use dependency::LuaDependencyIndex;
 pub use diagnostic::{AnalyzeError, DiagnosticAction, DiagnosticActionKind, DiagnosticIndex};
 pub use flow::*;
 pub use global::GlobalId;
@@ -47,7 +47,7 @@ pub struct DbIndex {
     operator_index: LuaOperatorIndex,
     flow_index: LuaFlowIndex,
     vfs: Vfs,
-    file_dependencies_index: LuaDenpendencyIndex,
+    file_dependencies_index: LuaDependencyIndex,
     metatable_index: LuaMetatableIndex,
     global_index: LuaGlobalIndex,
     emmyrc: Arc<Emmyrc>,
@@ -68,7 +68,7 @@ impl DbIndex {
             operator_index: LuaOperatorIndex::new(),
             flow_index: LuaFlowIndex::new(),
             vfs: Vfs::new(),
-            file_dependencies_index: LuaDenpendencyIndex::new(),
+            file_dependencies_index: LuaDependencyIndex::new(),
             metatable_index: LuaMetatableIndex::new(),
             global_index: LuaGlobalIndex::new(),
             emmyrc: Arc::new(Emmyrc::default()),
@@ -177,11 +177,11 @@ impl DbIndex {
         &mut self.vfs
     }
 
-    pub fn get_file_dependencies_index(&self) -> &LuaDenpendencyIndex {
+    pub fn get_file_dependencies_index(&self) -> &LuaDependencyIndex {
         &self.file_dependencies_index
     }
 
-    pub fn get_file_dependencies_index_mut(&mut self) -> &mut LuaDenpendencyIndex {
+    pub fn get_file_dependencies_index_mut(&mut self) -> &mut LuaDependencyIndex {
         &mut self.file_dependencies_index
     }
 

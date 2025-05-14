@@ -2,18 +2,18 @@ mod file_dependency_relation;
 
 use std::collections::{HashMap, HashSet};
 
-use file_dependency_relation::FileDenpendencyRelation;
+use file_dependency_relation::FileDependencyRelation;
 
 use crate::FileId;
 
 use super::LuaIndex;
 
 #[derive(Debug)]
-pub struct LuaDenpendencyIndex {
+pub struct LuaDependencyIndex {
     dependencies: HashMap<FileId, HashSet<FileId>>,
 }
 
-impl LuaDenpendencyIndex {
+impl LuaDependencyIndex {
     pub fn new() -> Self {
         Self {
             dependencies: HashMap::new(),
@@ -31,12 +31,12 @@ impl LuaDenpendencyIndex {
         self.dependencies.get(file_id)
     }
 
-    pub fn get_file_dependencies<'a>(&'a self) -> FileDenpendencyRelation<'a> {
-        FileDenpendencyRelation::new(&self.dependencies)
+    pub fn get_file_dependencies<'a>(&'a self) -> FileDependencyRelation<'a> {
+        FileDependencyRelation::new(&self.dependencies)
     }
 }
 
-impl LuaIndex for LuaDenpendencyIndex {
+impl LuaIndex for LuaDependencyIndex {
     fn remove(&mut self, file_id: FileId) {
         self.dependencies.remove(&file_id);
     }
