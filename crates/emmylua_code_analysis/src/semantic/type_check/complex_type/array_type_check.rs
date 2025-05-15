@@ -1,6 +1,6 @@
 use crate::{
     semantic::type_check::{check_general_type_compact, type_check_guard::TypeCheckGuard},
-    DbIndex, LuaMemberKey, LuaMemberOwner, LuaType, TypeCheckFailReason, TypeCheckResult,
+    DbIndex, LuaMemberKey, LuaMemberOwner, LuaType, TypeCheckFailReason, TypeCheckResult, TypeOps,
 };
 
 pub fn check_array_type_compact(
@@ -9,6 +9,8 @@ pub fn check_array_type_compact(
     compact_type: &LuaType,
     check_guard: TypeCheckGuard,
 ) -> TypeCheckResult {
+    let source_base = TypeOps::Union.apply(db, source_base, &LuaType::Nil);
+
     match compact_type {
         LuaType::Array(compact_base) => {
             return check_general_type_compact(
@@ -22,7 +24,7 @@ pub fn check_array_type_compact(
             for element_type in tuple_type.get_types() {
                 if check_general_type_compact(
                     db,
-                    source_base,
+                    &source_base,
                     element_type,
                     check_guard.next_level()?,
                 )
@@ -49,7 +51,7 @@ pub fn check_array_type_compact(
                 .ok_or(TypeCheckFailReason::TypeNotMatch)?;
             return check_general_type_compact(
                 db,
-                source_base,
+                &source_base,
                 &compact_base,
                 check_guard.next_level()?,
             );
@@ -58,7 +60,7 @@ pub fn check_array_type_compact(
         LuaType::TableGeneric(compact_types) => {
             if compact_types.len() == 2 {
                 for typ in compact_types.iter() {
-                    if check_general_type_compact(db, source_base, typ, check_guard.next_level()?)
+                    if check_general_type_compact(db, &source_base, typ, check_guard.next_level()?)
                         .is_err()
                     {
                         return Err(TypeCheckFailReason::TypeNotMatch);
