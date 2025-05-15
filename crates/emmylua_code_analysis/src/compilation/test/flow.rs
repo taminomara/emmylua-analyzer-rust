@@ -692,4 +692,28 @@ end
         let b_expected = ws.ty("My2");
         assert_eq!(b, b_expected);
     }
+
+    #[test]
+    fn test_issue_423() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+        --- @return string?
+        local function bar() end
+
+        --- @param a? string
+        function foo(a)
+        if not a then
+            a = bar()
+            assert(a)
+        end
+
+        --- @type string
+        local _ = a -- incorrect error
+        end
+        "#,
+        ));
+    }
 }

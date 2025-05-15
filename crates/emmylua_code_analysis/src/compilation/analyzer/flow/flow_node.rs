@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use emmylua_parser::{LuaAstNode, LuaBlock, LuaGotoStat, LuaLabelStat, LuaStat, LuaSyntaxId};
+use emmylua_parser::{
+    LuaAst, LuaAstNode, LuaBlock, LuaGotoStat, LuaLabelStat, LuaStat, LuaSyntaxId,
+};
 use rowan::{TextRange, TextSize};
 use smol_str::SmolStr;
 
@@ -104,5 +106,14 @@ pub struct BlockId(TextSize);
 impl BlockId {
     pub fn from_block(block: LuaBlock) -> BlockId {
         BlockId(block.get_position())
+    }
+
+    pub fn from_ast(ast: LuaAst) -> Option<BlockId> {
+        if LuaBlock::can_cast(ast.syntax().kind().into()) {
+            Some(BlockId(ast.get_position()))
+        } else {
+            let block = ast.ancestors::<LuaBlock>().next()?;
+            Some(BlockId(block.get_position()))
+        }
     }
 }

@@ -12,6 +12,7 @@ use build_flow_tree::{build_flow_tree, LuaFlowTreeBuilder};
 use cast_analyze::analyze_cast;
 pub use cast_analyze::CastAction;
 use emmylua_parser::{BinaryOperator, LuaAst, LuaAstNode, LuaBinaryExpr, LuaBlock};
+use flow_node::BlockId;
 use rowan::TextRange;
 use var_analyze::{
     analyze_ref_assign, analyze_ref_expr, broadcast_up, UnResolveTraceId, VarTrace, VarTraceInfo,
@@ -103,18 +104,41 @@ fn resolve_flow_analyze(db: &mut DbIndex, var_trace: &mut VarTrace) -> Option<()
                 }
             }
             UnResolveTraceId::If(if_stat) => {
-                let asserts = uresolve_trace_info
-                    .1
-                    .get_trace_infos()?
-                    .into_iter()
-                    .map(|trace_info| trace_info.type_assertion.clone())
-                    .collect::<Vec<_>>();
+                let var_trace_infos = uresolve_trace_info.1.get_trace_infos()?;
+                let mut trace_map = HashMap::new();
+                for trace_info in var_trace_infos {
+                    let block_id = BlockId::from_ast(trace_info.node.clone())?;
+                    trace_map
+                        .entry(block_id)
+                        .or_insert_with(Vec::new)
+                        .push(trace_info);
+                }
+
+                let mut or_asserts = Vec::new();
+                for (_, mut trace_infos) in trace_map {
+                    match trace_infos.len() {
+                        0 => {}
+                        1 => {
+                            or_asserts.push(trace_infos[0].type_assertion.clone());
+                        }
+                        _ => {
+                            trace_infos
+                                .sort_by(|a, b| a.node.get_position().cmp(&b.node.get_position()));
+                            let and_asserts = trace_infos
+                                .iter()
+                                .map(|x| x.type_assertion.clone())
+                                .collect::<Vec<_>>();
+                            or_asserts.push(TypeAssertion::And(and_asserts.into()));
+                        }
+                    }
+                }
+
                 let block = if_stat.get_parent::<LuaBlock>()?;
                 let block_end = block.get_range().end();
                 let if_end = if_stat.get_range().end();
                 if if_end < block_end {
                     let range = TextRange::new(if_end, block_end);
-                    var_trace.add_assert(TypeAssertion::Or(asserts.into()), range);
+                    var_trace.add_assert(TypeAssertion::Or(or_asserts.into()), range);
                 }
             }
         }
