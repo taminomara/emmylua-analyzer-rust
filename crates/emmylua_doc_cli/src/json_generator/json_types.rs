@@ -37,6 +37,8 @@ pub struct GlobalField {
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Module {
     pub name: String,
+    #[serde(flatten)]
+    pub property: Property,
     pub file: Option<PathBuf>,
     pub members: Vec<Member>,
 }

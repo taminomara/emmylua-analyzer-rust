@@ -1,8 +1,8 @@
 use crate::common::{render_const, render_typ};
 use crate::json_generator::json_types::*;
 use emmylua_code_analysis::{
-    DbIndex, FileId, LuaDeprecated, LuaMemberKey, LuaMemberOwner, LuaNoDiscard,
-    LuaSemanticDeclId, LuaSignature, LuaType, LuaTypeCache, LuaTypeDecl, Vfs,
+    DbIndex, FileId, LuaDeprecated, LuaMemberKey, LuaMemberOwner, LuaNoDiscard, LuaSemanticDeclId,
+    LuaSignature, LuaType, LuaTypeCache, LuaTypeDecl, Vfs,
 };
 use rowan::TextRange;
 
@@ -41,8 +41,15 @@ fn export_modules(db: &DbIndex) -> Vec<Module> {
                 _ => return None,
             };
 
+            let property = module
+                .property_owner_id
+                .as_ref()
+                .map(|decl_id| export_property(db, decl_id))
+                .unwrap_or_default();
+
             Some(Module {
                 name: module.full_module_name.clone(),
+                property,
                 file: vfs.get_file_path(&module.file_id).cloned(),
                 members,
             })
@@ -91,7 +98,7 @@ fn export_globals(db: &DbIndex) -> Vec<Global> {
         .filter_map(|global| {
             let decl = db.get_decl_index().get_decl(&global)?;
             let typ = type_index.get_type_cache(&global.into())?.as_type();
-            let property = export_property(db, LuaSemanticDeclId::LuaDecl(global.clone()));
+            let property = export_property(db, &LuaSemanticDeclId::LuaDecl(global.clone()));
             let loc = export_loc(vfs, decl.get_file_id(), decl.get_range());
             match typ {
                 LuaType::TableConst(table) => {
@@ -118,7 +125,7 @@ fn export_globals(db: &DbIndex) -> Vec<Global> {
 fn export_class(db: &DbIndex, type_decl: &LuaTypeDecl) -> Class {
     let type_decl_id = type_decl.get_id();
     let type_index = db.get_type_index();
-    let property = export_property(db, LuaSemanticDeclId::TypeDecl(type_decl.get_id().clone()));
+    let property = export_property(db, &LuaSemanticDeclId::TypeDecl(type_decl.get_id().clone()));
     let member_owner = LuaMemberOwner::Type(type_decl_id.clone());
 
     Class {
@@ -147,7 +154,7 @@ fn export_class(db: &DbIndex, type_decl: &LuaTypeDecl) -> Class {
 
 fn export_alias(db: &DbIndex, type_decl: &LuaTypeDecl) -> Alias {
     let type_decl_id = type_decl.get_id();
-    let property = export_property(db, LuaSemanticDeclId::TypeDecl(type_decl.get_id().clone()));
+    let property = export_property(db, &LuaSemanticDeclId::TypeDecl(type_decl.get_id().clone()));
     let member_owner = LuaMemberOwner::Type(type_decl_id);
 
     Alias {
@@ -161,7 +168,7 @@ fn export_alias(db: &DbIndex, type_decl: &LuaTypeDecl) -> Alias {
 
 fn export_enum(db: &DbIndex, type_decl: &LuaTypeDecl) -> Enum {
     let type_decl_id = type_decl.get_id();
-    let property = export_property(db, LuaSemanticDeclId::TypeDecl(type_decl.get_id().clone()));
+    let property = export_property(db, &LuaSemanticDeclId::TypeDecl(type_decl.get_id().clone()));
     let member_owner = LuaMemberOwner::Type(type_decl_id);
 
     Enum {
@@ -197,7 +204,7 @@ fn export_members(db: &DbIndex, member_owner: LuaMemberOwner) -> Vec<Member> {
 
                 let member_id = member.get_id();
                 let member_property_id = LuaSemanticDeclId::Member(member_id);
-                let property = export_property(db, member_property_id);
+                let property = export_property(db, &member_property_id);
 
                 let loc = export_loc(vfs, member.get_file_id(), member.get_range());
 
@@ -292,8 +299,8 @@ fn export_field(
     }
 }
 
-fn export_property(db: &DbIndex, semantic_decl: LuaSemanticDeclId) -> Property {
-    match db.get_property_index().get_property(&semantic_decl) {
+fn export_property(db: &DbIndex, semantic_decl: &LuaSemanticDeclId) -> Property {
+    match db.get_property_index().get_property(semantic_decl) {
         Some(property) => Property {
             description: property.description.as_ref().map(|s| s.to_string()),
             visibility: property
