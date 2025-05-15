@@ -132,7 +132,7 @@ fn get_name_decl_id(
 
 fn infer_self_semantic_decl(
     db: &DbIndex,
-    cache: &LuaInferCache,
+    cache: &mut LuaInferCache,
     name_expr: LuaNameExpr,
 ) -> Option<LuaSemanticDeclId> {
     let id = find_self_decl_or_member_id(db, cache, &name_expr)?;

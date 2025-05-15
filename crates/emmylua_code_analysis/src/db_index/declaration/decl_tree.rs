@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
 use super::{decl, scope, LuaDeclId};
-use crate::{db_index::LuaMemberId, DbIndex, FileId};
+use crate::{
+    db_index::LuaMemberId, infer_node_semantic_decl, DbIndex, FileId, LuaInferCache,
+    LuaSemanticDeclId, SemanticDeclLevel,
+};
 use decl::LuaDecl;
 use emmylua_parser::{
     LuaAstNode, LuaChunk, LuaExpr, LuaFuncStat, LuaNameExpr, LuaSyntaxId, LuaSyntaxKind, LuaVarExpr,
@@ -271,6 +274,7 @@ impl LuaDeclarationTree {
     pub fn find_self_decl(
         &self,
         db: &DbIndex,
+        cache: &mut LuaInferCache,
         name_expr: LuaNameExpr,
     ) -> Option<LuaDeclOrMemberId> {
         let position = name_expr.get_position();
@@ -295,7 +299,7 @@ impl LuaDeclarationTree {
                         if scope.get_kind() == LuaScopeKind::MethodStat {
                             let range = scope.get_range();
                             let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::FuncStat.into(), range);
-                            let id = self.find_self_decl_id(&db, &root, syntax_id);
+                            let id = self.find_self_decl_id(&db, cache, &root, syntax_id);
                             if id.is_some() {
                                 result = id;
                                 return true;
@@ -313,6 +317,7 @@ impl LuaDeclarationTree {
     fn find_self_decl_id(
         &self,
         db: &DbIndex,
+        cache: &mut LuaInferCache,
         root: &LuaChunk,
         syntax_id: LuaSyntaxId,
     ) -> Option<LuaDeclOrMemberId> {
@@ -333,9 +338,23 @@ impl LuaDeclarationTree {
                     let id = db.get_global_index().resolve_global_decl_id(db, &name)?;
                     return Some(LuaDeclOrMemberId::Decl(id));
                 }
-                LuaExpr::IndexExpr(prefx_index) => {
-                    let member_id = LuaMemberId::new(prefx_index.get_syntax_id(), self.file_id);
-                    return Some(LuaDeclOrMemberId::Member(member_id));
+                LuaExpr::IndexExpr(prefix_index) => {
+                    let semantic_id = infer_node_semantic_decl(
+                        db,
+                        cache,
+                        prefix_index.syntax().clone(),
+                        SemanticDeclLevel::NoTrace,
+                    )?;
+
+                    match semantic_id {
+                        LuaSemanticDeclId::Member(member_id) => {
+                            return Some(LuaDeclOrMemberId::Member(member_id));
+                        }
+                        LuaSemanticDeclId::LuaDecl(decl_id) => {
+                            return Some(LuaDeclOrMemberId::Decl(decl_id));
+                        }
+                        _ => {}
+                    }
                 }
                 _ => return None,
             }

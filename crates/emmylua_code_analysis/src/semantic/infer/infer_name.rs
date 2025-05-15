@@ -69,7 +69,7 @@ fn get_decl_type(db: &DbIndex, decl: &LuaDecl) -> InferResult {
 fn infer_self(db: &DbIndex, cache: &mut LuaInferCache, name_expr: LuaNameExpr) -> InferResult {
     let file_id = cache.get_file_id();
     let semantic_id =
-        find_self_decl_or_member_id(db, &cache, &name_expr).ok_or(InferFailReason::None)?;
+        find_self_decl_or_member_id(db, cache, &name_expr).ok_or(InferFailReason::None)?;
     match semantic_id {
         LuaDeclOrMemberId::Decl(decl_id) => {
             let decl = db
@@ -319,11 +319,11 @@ pub fn infer_global_type(db: &DbIndex, name: &str) -> InferResult {
 
 pub fn find_self_decl_or_member_id(
     db: &DbIndex,
-    cache: &LuaInferCache,
+    cache: &mut LuaInferCache,
     name_expr: &LuaNameExpr,
 ) -> Option<LuaDeclOrMemberId> {
     let file_id = cache.get_file_id();
     let tree = db.get_decl_index().get_decl_tree(&file_id)?;
 
-    tree.find_self_decl(db, name_expr.clone())
+    tree.find_self_decl(db, cache, name_expr.clone())
 }
