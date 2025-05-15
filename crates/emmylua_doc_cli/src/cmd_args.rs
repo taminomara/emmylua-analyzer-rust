@@ -18,7 +18,7 @@ pub struct CmdArgs {
         help = "Format of the output, default is Markdown"
     )]
     pub format: Format,
-    
+
     #[structopt(
         parse(from_os_str),
         default_value = "./output",

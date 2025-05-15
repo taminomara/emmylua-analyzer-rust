@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Index {
@@ -9,7 +9,7 @@ pub struct Index {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all="snake_case")]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum Global {
     Table(GlobalTable),
     Field(GlobalField),
@@ -44,7 +44,7 @@ pub struct Module {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all="snake_case")]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum Type {
     Class(Class),
     Enum(Enum),
@@ -83,7 +83,7 @@ pub struct Alias {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all="snake_case")]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum Member {
     Fn(Fn),
     Field(Field),
