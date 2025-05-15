@@ -21,9 +21,7 @@ fn export_modules(db: &DbIndex) -> Vec<Module> {
 
     modules
         .into_iter()
-        .filter(|module| {
-            !(module_index.is_std(&module.file_id) || module_index.is_library(&module.file_id))
-        })
+        .filter(|module| module_index.is_main(&module.file_id))
         .filter_map(|module| {
             let members = match module.export_type.as_ref()? {
                 LuaType::Def(type_id) => {
@@ -65,9 +63,10 @@ fn export_types(db: &DbIndex) -> Vec<Type> {
     types
         .into_iter()
         .filter(|type_decl| {
-            type_decl.get_locations().iter().any(|loc| {
-                !(module_index.is_std(&loc.file_id) || module_index.is_library(&loc.file_id))
-            })
+            type_decl
+                .get_locations()
+                .iter()
+                .any(|loc| module_index.is_main(&loc.file_id))
         })
         .flat_map(|type_decl| {
             if type_decl.is_class() {
@@ -92,9 +91,7 @@ fn export_globals(db: &DbIndex) -> Vec<Global> {
 
     globals
         .into_iter()
-        .filter(|global| {
-            !(module_index.is_std(&global.file_id) || module_index.is_library(&global.file_id))
-        })
+        .filter(|global| module_index.is_main(&global.file_id))
         .filter_map(|global| {
             let decl = db.get_decl_index().get_decl(&global)?;
             let typ = type_index.get_type_cache(&global.into())?.as_type();

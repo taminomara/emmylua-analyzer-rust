@@ -12,7 +12,7 @@ pub struct CmdArgs {
     pub input: std::path::PathBuf,
 
     #[structopt(
-        default_value = "Markdown",
+        default_value = "markdown",
         long = "format",
         short = "f",
         help = "Format of the output, default is Markdown"
