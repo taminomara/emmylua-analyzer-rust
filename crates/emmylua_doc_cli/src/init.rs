@@ -53,7 +53,7 @@ pub fn collect_files(workspaces: &Vec<PathBuf>, emmyrc: &Emmyrc) -> Vec<LuaFileI
 
     let encoding = &emmyrc.workspace.encoding;
 
-    println!(
+    eprintln!(
         "collect_files from: {:?} match_pattern: {:?} exclude: {:?}",
         workspaces, match_pattern, exclude
     );
@@ -71,10 +71,10 @@ pub fn collect_files(workspaces: &Vec<PathBuf>, emmyrc: &Emmyrc) -> Vec<LuaFileI
         }
     }
 
-    println!("load files from workspace count: {:?}", files.len());
+    eprintln!("load files from workspace count: {:?}", files.len());
 
     for file in &files {
-        println!("loaded file: {:?}", file.path);
+        eprintln!("loaded file: {:?}", file.path);
     }
     files
 }

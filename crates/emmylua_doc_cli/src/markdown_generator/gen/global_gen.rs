@@ -61,7 +61,7 @@ pub fn generate_global_markdown(
     });
 
     let outpath = output.join(file_name);
-    println!("output global file: {}", outpath.display());
+    eprintln!("output global file: {}", outpath.display());
     match std::fs::write(outpath, render_text) {
         Ok(_) => {}
         Err(e) => {

@@ -1,3 +1,4 @@
+use crate::common::render_typ;
 use emmylua_code_analysis::{
     humanize_type, DbIndex, LuaFunctionType, LuaSignatureId, LuaType, RenderLevel,
 };
@@ -203,14 +204,4 @@ fn render_signature_type(
     result.push('\n');
 
     Some(result)
-}
-
-fn render_typ(db: &DbIndex, typ: &LuaType) -> String {
-    match typ {
-        LuaType::IntegerConst(_) => "integer".to_string(),
-        LuaType::FloatConst(_) => "number".to_string(),
-        LuaType::StringConst(_) => "string".to_string(),
-        LuaType::BooleanConst(_) => "boolean".to_string(),
-        _ => humanize_type(db, typ, RenderLevel::Simple),
-    }
 }

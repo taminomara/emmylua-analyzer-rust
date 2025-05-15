@@ -163,7 +163,7 @@ fn generate_class_type_markdown(
     });
 
     let outpath = output.join(file_type_name);
-    println!("output class file: {}", outpath.display());
+    eprintln!("output class file: {}", outpath.display());
     match std::fs::write(outpath, render_text) {
         Ok(_) => {}
         Err(e) => {
@@ -249,7 +249,7 @@ fn generate_enum_type_markdown(
     });
 
     let outpath = output.join(file_type_name);
-    println!("output enum file: {}", outpath.display());
+    eprintln!("output enum file: {}", outpath.display());
     match std::fs::write(outpath, render_text) {
         Ok(_) => {}
         Err(e) => {
@@ -305,7 +305,7 @@ fn generate_alias_type_markdown(
     });
 
     let outpath = output.join(file_type_name);
-    println!("output alias file: {}", outpath.display());
+    eprintln!("output alias file: {}", outpath.display());
     match std::fs::write(outpath, render_text) {
         Ok(_) => {}
         Err(e) => {

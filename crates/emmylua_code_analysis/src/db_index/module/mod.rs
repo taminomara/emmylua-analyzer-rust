@@ -418,6 +418,14 @@ impl LuaModuleIndex {
         file_ids
     }
 
+    pub fn is_main(&self, file_id: &FileId) -> bool {
+        if let Some(module_info) = self.file_module_map.get(file_id) {
+            return module_info.workspace_id == WorkspaceId::MAIN;
+        }
+
+        false
+    }
+
     pub fn is_std(&self, file_id: &FileId) -> bool {
         if let Some(module_info) = self.file_module_map.get(file_id) {
             return module_info.workspace_id == WorkspaceId::STD;
