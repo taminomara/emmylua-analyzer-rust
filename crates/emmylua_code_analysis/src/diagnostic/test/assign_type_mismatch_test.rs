@@ -597,12 +597,12 @@ return t
         ));
 
         // 数组类型匹配允许可空, 但在初始化赋值时, 不允许直接赋值`nil`(其实是偷懒了, table_expr 推断没有处理边缘情况, 可能后续会做处理允许)
-        assert!(!ws.check_code_for_namespace(
+        assert!(ws.check_code_for_namespace(
             DiagnosticCode::AssignTypeMismatch,
             r#"
         ---@type boolean[]
         local t = { true, false, nil }
-                    "#
+        "#
         ));
     }
 
