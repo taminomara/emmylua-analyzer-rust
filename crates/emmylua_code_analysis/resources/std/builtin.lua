@@ -126,6 +126,4 @@
 
 ---@alias int integer
 
----@alias str string
-
 ---@alias bool boolean
