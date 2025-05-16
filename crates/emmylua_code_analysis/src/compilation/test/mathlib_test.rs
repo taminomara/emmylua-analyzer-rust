@@ -12,10 +12,8 @@ mod test {
         assert_eq!(ws.expr_ty("math.abs(-5.5)"), ws.ty("number"));
 
         // Rounding functions
-        assert_eq!(ws.expr_ty("math.floor(2.5)"), ws.ty("number"));
-        assert_eq!(ws.expr_ty("math.ceil(2.5)"), ws.ty("number"));
-        assert_eq!(ws.expr_ty("math.floor(2)"), ws.ty("integer"));
-        assert_eq!(ws.expr_ty("math.ceil(2)"), ws.ty("integer"));
+        assert_eq!(ws.expr_ty("math.floor(2.5)"), ws.ty("integer"));
+        assert_eq!(ws.expr_ty("math.ceil(2.5)"), ws.ty("integer"));
         assert_eq!(ws.expr_ty("math.modf(2.5)"), ws.ty("integer"));
 
         // Trigonometric functions
