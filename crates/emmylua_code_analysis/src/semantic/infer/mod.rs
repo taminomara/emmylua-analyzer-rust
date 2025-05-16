@@ -1,5 +1,5 @@
 mod infer_binary;
-mod infer_call_func;
+mod infer_call;
 mod infer_fail_reason;
 mod infer_index;
 mod infer_name;
@@ -14,8 +14,8 @@ use emmylua_parser::{
     LuaVarExpr,
 };
 use infer_binary::infer_binary_expr;
-use infer_call_func::infer_call_expr;
-pub use infer_call_func::infer_call_expr_func;
+use infer_call::infer_call_expr;
+pub use infer_call::infer_call_expr_func;
 pub use infer_fail_reason::InferFailReason;
 use infer_index::infer_index_expr;
 use infer_name::infer_name_expr;
@@ -35,7 +35,7 @@ use crate::{
 use super::{member::infer_members, CacheEntry, CacheKey, LuaInferCache};
 
 pub type InferResult = Result<LuaType, InferFailReason>;
-pub use infer_call_func::InferCallFuncResult;
+pub use infer_call::InferCallFuncResult;
 
 pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> InferResult {
     let syntax_id = expr.get_syntax_id();
