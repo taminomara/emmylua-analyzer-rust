@@ -15,7 +15,7 @@ use emmylua_parser::{
     LuaVarExpr,
 };
 use infer_binary::infer_binary_expr;
-use infer_call::infer_call_expr;
+use infer_call_func::infer_call_expr;
 pub use infer_call_func::infer_call_expr_func;
 pub use infer_fail_reason::InferFailReason;
 use infer_index::infer_index_expr;
