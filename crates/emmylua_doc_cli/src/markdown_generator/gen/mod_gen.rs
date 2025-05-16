@@ -67,7 +67,7 @@ pub fn generate_module_markdown(
     });
 
     let outpath = output.join(file_name);
-    println!("output module file: {}", outpath.display());
+    eprintln!("output module file: {}", outpath.display());
     match std::fs::write(outpath, render_text) {
         Ok(_) => {}
         Err(e) => {

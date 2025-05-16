@@ -12,46 +12,44 @@ use gen::{
 };
 use markdown_types::MkdocsIndex;
 
-#[allow(unused)]
 pub fn generate_markdown(
     analysis: &mut EmmyLuaAnalysis,
-    input: PathBuf,
     output: PathBuf,
     override_template: Option<PathBuf>,
     mixin: Option<PathBuf>,
-) -> Option<()> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let docs_dir = output.join("docs");
     let types_out = docs_dir.join("types");
     if !types_out.exists() {
-        println!("Creating types directory: {:?}", types_out);
-        std::fs::create_dir_all(&types_out).ok()?;
+        eprintln!("Creating types directory: {:?}", types_out);
+        std::fs::create_dir_all(&types_out)?;
     } else {
-        println!("Clearing types directory: {:?}", types_out);
-        std::fs::remove_dir_all(&types_out).ok()?;
-        std::fs::create_dir_all(&types_out).ok()?;
+        eprintln!("Clearing types directory: {:?}", types_out);
+        std::fs::remove_dir_all(&types_out)?;
+        std::fs::create_dir_all(&types_out)?;
     }
 
     let module_out = docs_dir.join("modules");
     if !module_out.exists() {
-        println!("Creating modules directory: {:?}", module_out);
-        std::fs::create_dir_all(&module_out).ok()?;
+        eprintln!("Creating modules directory: {:?}", module_out);
+        std::fs::create_dir_all(&module_out)?;
     } else {
-        println!("Clearing modules directory: {:?}", module_out);
-        std::fs::remove_dir_all(&module_out).ok()?;
-        std::fs::create_dir_all(&module_out).ok()?;
+        eprintln!("Clearing modules directory: {:?}", module_out);
+        std::fs::remove_dir_all(&module_out)?;
+        std::fs::create_dir_all(&module_out)?;
     }
 
     let global_out = docs_dir.join("globals");
     if !global_out.exists() {
-        println!("Creating globals directory: {:?}", global_out);
-        std::fs::create_dir_all(&global_out).ok()?;
+        eprintln!("Creating globals directory: {:?}", global_out);
+        std::fs::create_dir_all(&global_out)?;
     } else {
-        println!("Clearing globals directory: {:?}", global_out);
-        std::fs::remove_dir_all(&global_out).ok()?;
-        std::fs::create_dir_all(&global_out).ok()?;
+        eprintln!("Clearing globals directory: {:?}", global_out);
+        std::fs::remove_dir_all(&global_out)?;
+        std::fs::create_dir_all(&global_out)?;
     }
 
-    let tl = init_tl::init_tl(override_template)?;
+    let tl = init_tl::init_tl(override_template).ok_or("Failed to initialize TL")?;
     let mut mkdocs_index = MkdocsIndex::default();
     let db = analysis.compilation.get_db();
     let type_index = db.get_type_index();
@@ -78,7 +76,7 @@ pub fn generate_markdown(
         mixin_copy::mixin_copy(&output, mixin);
     }
 
-    Some(())
+    Ok(())
 }
 
 fn escape_type_name(name: &str) -> String {

@@ -20,4 +20,16 @@ impl VisibilityKind {
             _ => VisibilityKind::None,
         }
     }
+
+    #[allow(unused)]
+    pub fn to_str(&self) -> Option<&'static str> {
+        match self {
+            VisibilityKind::None => None,
+            VisibilityKind::Public => Some("public"),
+            VisibilityKind::Protected => Some("protected"),
+            VisibilityKind::Private => Some("private"),
+            VisibilityKind::Internal => Some("internal"),
+            VisibilityKind::Package => Some("package"),
+        }
+    }
 }
