@@ -208,15 +208,15 @@ fn infer_union_members(
             seen_keys
                 .into_iter()
                 .filter_map(|key| {
-                    let typs = members_per_key.get_mut(&key).unwrap();
+                    let types = members_per_key.get_mut(&key).unwrap();
 
-                    if typs.len() == union_types.len() {
+                    if types.len() == union_types.len() {
                         // Member is present in all union types.
-                        typs.dedup();
+                        types.dedup();
                         Some(LuaMemberInfo {
                             property_owner_id: None,
                             key,
-                            typ: LuaType::Union(LuaUnionType::new(std::mem::take(typs)).into()),
+                            typ: LuaType::Union(LuaUnionType::new(std::mem::take(types)).into()),
                             feature: None,
                             overload_index: None,
                         })
