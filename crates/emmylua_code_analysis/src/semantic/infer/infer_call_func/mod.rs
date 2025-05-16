@@ -11,13 +11,16 @@ use super::{
     InferFailReason, InferResult,
 };
 use crate::semantic::generic::instantiate_doc_function;
-use crate::semantic::infer::infer_call::infer_require::infer_require_call;
-use crate::semantic::infer::infer_call::infer_setmetatable::infer_setmetatable_call;
 use crate::semantic::infer_expr;
 use crate::{
     CacheEntry, CacheKey, DbIndex, InFiled, LuaFunctionType, LuaGenericType, LuaInstanceType,
     LuaOperatorMetaMethod, LuaOperatorOwner, LuaSignatureId, LuaType, LuaTypeDeclId, LuaUnionType,
 };
+use infer_require::infer_require_call;
+use infer_setmetatable::infer_setmetatable_call;
+
+mod infer_require;
+mod infer_setmetatable;
 
 pub type InferCallFuncResult = Result<Arc<LuaFunctionType>, InferFailReason>;
 

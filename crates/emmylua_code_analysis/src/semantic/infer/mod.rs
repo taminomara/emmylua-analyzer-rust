@@ -1,5 +1,4 @@
 mod infer_binary;
-mod infer_call;
 mod infer_call_func;
 mod infer_fail_reason;
 mod infer_index;
