@@ -140,24 +140,46 @@ impl LuaGreenNodeBuilder<'_> {
     }
 
     fn build_rowan_green(&mut self, parent: usize, text: &str) {
-        let element = std::mem::replace(&mut self.elements[parent], LuaGreenElement::None);
-        match element {
-            LuaGreenElement::Node { kind, children } => {
-                self.builder.start_node(kind.into());
+        struct StackItem {
+            index: usize,
+            is_close: bool,
+        }
 
-                for child in children {
-                    self.build_rowan_green(child, text);
-                }
+        let mut stack = vec![StackItem {
+            index: parent,
+            is_close: false,
+        }];
 
+        while let Some(item) = stack.pop() {
+            if item.is_close {
                 self.builder.finish_node();
+                continue;
             }
-            LuaGreenElement::Token { kind, range } => {
-                let start = range.start_offset;
-                let end = range.end_offset();
-                let text = &text[start..end];
-                self.builder.token(kind.into(), text)
+
+            let element = std::mem::replace(&mut self.elements[item.index], LuaGreenElement::None);
+            match element {
+                LuaGreenElement::Node { kind, children } => {
+                    self.builder.start_node(kind.into());
+                    stack.push(StackItem {
+                        index: item.index,
+                        is_close: true,
+                    });
+
+                    for child in children.iter().rev() {
+                        stack.push(StackItem {
+                            index: *child,
+                            is_close: false,
+                        });
+                    }
+                }
+                LuaGreenElement::Token { kind, range } => {
+                    let start = range.start_offset;
+                    let end = range.end_offset();
+                    let token_text = &text[start..end];
+                    self.builder.token(kind.into(), token_text);
+                }
+                _ => {}
             }
-            _ => {}
         }
     }
 
