@@ -455,8 +455,8 @@ function xpcall(f, msgh, ...) end
 ---@param i? I
 ---@param j? J
 ---@return T...
---XXX: @return std.Unpack<T..., I, J>
 function unpack(list, i, j) end
+--XXX: @return std.Unpack<T..., I, J>
 
 ---@version > 5.4
 ---@param message string

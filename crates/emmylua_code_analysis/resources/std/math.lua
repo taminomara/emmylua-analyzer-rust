@@ -52,9 +52,8 @@ function math.atan(y, x) end
 ---
 --- Return type is integer if input is a definite floating-point value that fits
 --- into a lua integer.
----@overload fun(x: integer): integer
 ---@param x number
----@return number
+---@return integer
 function math.ceil(x) return 0 end
 
 ---
@@ -77,12 +76,8 @@ function math.exp(x) end
 
 ---
 --- Returns the largest whole number smaller than or equal to `x`.
----
---- Return type is integer if input is a definite floating-point value that fits
---- into a lua integer.
----@overload fun(x: integer): integer
 ---@param x number
----@return number
+---@return integer
 function math.floor(x) end
 
 ---
