@@ -13,11 +13,6 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Set version
-        run: |
-          echo "current ref ${{ github.ref }}"
-          cargo run -p edit_version -- ${{ github.ref }}
-
       - name: Publish
         run: |
           for dir in emmylua_{code_analysis,ls,doc_cli,check}; do
