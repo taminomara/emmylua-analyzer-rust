@@ -10,7 +10,8 @@ jobs:
       fail-fast: true
       matrix:
         nixChannel:
-          - nixos-24.11 # make sure to update this after a NixOS stable release
+          - nixos-25.05
+          - nixos-24.11 # remove this when 25.05 is out of beta
           - nixos-unstable
           - nixpkgs-unstable
           
