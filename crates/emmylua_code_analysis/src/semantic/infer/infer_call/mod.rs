@@ -515,9 +515,7 @@ pub(crate) fn unwrapp_return_type(
                 value: call_expr.get_range(),
             };
 
-            return Ok(LuaType::Instance(
-                LuaInstanceType::new(return_type, id).into(),
-            ));
+            return Ok(LuaType::TableConst(id));
         }
         LuaType::TableConst(inst) => {
             if is_need_wrap_instance(cache, &call_expr, inst) {
@@ -582,7 +580,7 @@ fn is_need_wrap_instance(
     inst: &InFiled<TextRange>,
 ) -> bool {
     if cache.get_file_id() != inst.file_id {
-        return false;
+        return true;
     }
 
     return !call_expr.get_range().contains(inst.value.start());

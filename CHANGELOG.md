@@ -52,6 +52,8 @@ end
 
 `FIX` Fix format issue, Now When exist `syntax-error`, the format never return value
 
+`FIX` Fix a performance issue: prevent large union types when functions return tables
+
 # 0.7.2
 
 `FIX` Fix reading configuration file encoded with UTF-8 BOM
