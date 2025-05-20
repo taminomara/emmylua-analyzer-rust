@@ -58,6 +58,7 @@ pub enum LuaType {
     Namespace(ArcIntern<SmolStr>),
     Call(Arc<LuaAliasCallType>),
     MultiLineUnion(Arc<LuaMultiLineUnion>),
+    TypeGuard(Arc<LuaType>),
 }
 
 impl PartialEq for LuaType {
@@ -103,6 +104,7 @@ impl PartialEq for LuaType {
             (LuaType::DocIntegerConst(a), LuaType::DocIntegerConst(b)) => a == b,
             (LuaType::Namespace(a), LuaType::Namespace(b)) => a == b,
             (LuaType::MultiLineUnion(a), LuaType::MultiLineUnion(b)) => a == b,
+            (LuaType::TypeGuard(a), LuaType::TypeGuard(b)) => a == b,
             _ => false, // 不同变体之间不相等
         }
     }
@@ -173,6 +175,10 @@ impl Hash for LuaType {
             LuaType::MultiLineUnion(a) => {
                 let ptr = Arc::as_ptr(a);
                 (43, ptr).hash(state)
+            }
+            LuaType::TypeGuard(a) => {
+                let ptr = Arc::as_ptr(a);
+                (44, ptr).hash(state)
             }
         }
     }
@@ -401,6 +407,10 @@ impl LuaType {
 
     pub fn is_member_owner(&self) -> bool {
         matches!(self, LuaType::Ref(_) | LuaType::TableConst(_))
+    }
+
+    pub fn is_type_guard(&self) -> bool {
+        matches!(self, LuaType::TypeGuard(_))
     }
 }
 

@@ -58,6 +58,24 @@ end
 
 `NEW` Support `Lua 5.5` global decl grammar
 
+`NEW` Support `TypeGuard<T>` as return type. For example:
+```lua
+
+---@return TypeGuard<string>
+local function is_string(value)
+    return type(value) == "string"
+end
+
+local a
+
+if is_string(a) then
+    print(a:sub(1, 1))
+else
+    print("a is not a string")
+end
+```
+
+
 # 0.7.2
 
 `FIX` Fix reading configuration file encoded with UTF-8 BOM

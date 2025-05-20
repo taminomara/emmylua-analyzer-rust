@@ -112,6 +112,12 @@ fn check_general_type_compact(
             compact_type,
             check_guard.next_level()?,
         ),
+        LuaType::TypeGuard(_) => {
+            if compact_type.is_boolean() {
+                return Ok(());
+            }
+            return Err(TypeCheckFailReason::TypeNotMatch);
+        }
         _ => Err(TypeCheckFailReason::TypeNotMatch),
     }
 }
@@ -142,6 +148,7 @@ fn escape_type(db: &DbIndex, typ: &LuaType) -> Option<LuaType> {
             let union = multi_union.to_union();
             return Some(union);
         }
+        LuaType::TypeGuard(_) => return Some(LuaType::Boolean),
         _ => {}
     }
 

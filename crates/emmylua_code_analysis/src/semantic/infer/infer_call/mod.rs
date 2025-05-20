@@ -568,6 +568,7 @@ pub(crate) fn unwrapp_return_type(
                 }
             }
         }
+        LuaType::TypeGuard(_) => return Ok(LuaType::Boolean),
         _ => {}
     }
 

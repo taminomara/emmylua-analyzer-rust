@@ -125,3 +125,5 @@
 ---@alias collectgarbage_opt std.collectgarbage_opt
 
 ---@alias metatable std.metatable
+
+---@alias TypeGuard<T> boolean

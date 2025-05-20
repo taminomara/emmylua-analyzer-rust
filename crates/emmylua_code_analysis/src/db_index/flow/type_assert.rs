@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{ops::Deref, sync::Arc};
 
 use crate::{infer_expr, DbIndex, InferFailReason, LuaInferCache, LuaType, TypeOps};
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr, LuaSyntaxId, LuaSyntaxNode};
@@ -182,28 +182,32 @@ fn call_assertion(
     let Some(signature) = db.get_signature_index().get(&signature_id) else {
         return Err(InferFailReason::None);
     };
+
+    let return_type = signature.get_return_type();
     // donot change the condition
-    if !signature.get_return_type().is_boolean() {
-        return Err(InferFailReason::None);
+    match return_type {
+        LuaType::Boolean => {
+            let Some(cast) = db.get_flow_index().get_call_cast(signature_id) else {
+                return Err(InferFailReason::None);
+            };
+
+            let param_name = if param_idx >= 0 {
+                let Some(param_name) = signature.get_param_name_by_id(param_idx as usize) else {
+                    return Err(InferFailReason::None);
+                };
+
+                param_name
+            } else {
+                "self".to_string()
+            };
+
+            let Some(typeassert) = cast.get(&param_name) else {
+                return Err(InferFailReason::None);
+            };
+
+            Ok(typeassert.clone())
+        }
+        LuaType::TypeGuard(inner) => Ok(TypeAssertion::Force(inner.deref().clone())),
+        _ => return Err(InferFailReason::None),
     }
-
-    let Some(cast) = db.get_flow_index().get_call_cast(signature_id) else {
-        return Err(InferFailReason::None);
-    };
-
-    let param_name = if param_idx >= 0 {
-        let Some(param_name) = signature.get_param_name_by_id(param_idx as usize) else {
-            return Err(InferFailReason::None);
-        };
-
-        param_name
-    } else {
-        "self".to_string()
-    };
-
-    let Some(typeassert) = cast.get(&param_name) else {
-        return Err(InferFailReason::None);
-    };
-
-    Ok(typeassert.clone())
 }

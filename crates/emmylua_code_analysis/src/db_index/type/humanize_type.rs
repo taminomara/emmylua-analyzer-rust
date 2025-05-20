@@ -88,6 +88,10 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
         LuaType::MultiLineUnion(multi_union) => {
             humanize_multi_line_union_type(db, multi_union, level)
         }
+        LuaType::TypeGuard(inner) => {
+            let type_str = humanize_type(db, inner, level.next_level());
+            format!("TypeGuard<{}>", type_str)
+        }
         _ => "unknown".to_string(),
     }
 }
