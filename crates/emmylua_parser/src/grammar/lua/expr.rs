@@ -21,7 +21,7 @@ fn parse_sub_expr(p: &mut LuaParser, limit: i32) -> ParseResult {
         match parse_sub_expr(p, UNARY_PRIORITY) {
             Ok(_) => {}
             Err(err) => {
-                p.push_error(LuaParseError::from_source_range(
+                p.push_error(LuaParseError::syntax_error_from(
                     &t!("unary operator not followed by expression"),
                     range,
                 ));
@@ -41,7 +41,7 @@ fn parse_sub_expr(p: &mut LuaParser, limit: i32) -> ParseResult {
         match parse_sub_expr(p, bop.get_priority().right) {
             Ok(_) => {}
             Err(err) => {
-                p.push_error(LuaParseError::from_source_range(
+                p.push_error(LuaParseError::syntax_error_from(
                     &t!("binary operator not followed by expression"),
                     range,
                 ));
@@ -114,7 +114,7 @@ fn parse_param_name(p: &mut LuaParser) -> ParseResult {
     if p.current_token() == LuaTokenKind::TkName || p.current_token() == LuaTokenKind::TkDots {
         p.bump();
     } else {
-        return Err(LuaParseError::from_source_range(
+        return Err(LuaParseError::syntax_error_from(
             &t!("expect parameter name"),
             p.current_token_range(),
         ));
@@ -197,7 +197,7 @@ fn parse_suffixed_expr(p: &mut LuaParser) -> ParseResult {
             m.complete(p)
         }
         _ => {
-            return Err(LuaParseError::from_source_range(
+            return Err(LuaParseError::syntax_error_from(
                 &t!("expect primary expression"),
                 p.current_token_range(),
             ))
@@ -278,14 +278,14 @@ fn parse_index_struct(p: &mut LuaParser) -> Result<(), LuaParseError> {
                     | LuaTokenKind::TkString
                     | LuaTokenKind::TkLongString
             ) {
-                return Err(LuaParseError::from_source_range(
+                return Err(LuaParseError::syntax_error_from(
                     &t!("colon accessor must be followed by a function call or table constructor or string literal"),
                     p.current_token_range(),
                 ));
             }
         }
         _ => {
-            return Err(LuaParseError::from_source_range(
+            return Err(LuaParseError::syntax_error_from(
                 &t!("expect index struct"),
                 p.current_token_range(),
             ));
@@ -305,7 +305,7 @@ fn parse_args(p: &mut LuaParser) -> ParseResult {
                 while p.current_token() == LuaTokenKind::TkComma {
                     p.bump();
                     if p.current_token() == LuaTokenKind::TkRightParen {
-                        p.push_error(LuaParseError::from_source_range(
+                        p.push_error(LuaParseError::syntax_error_from(
                             &t!("expect expression"),
                             p.current_token_range(),
                         ));
@@ -325,7 +325,7 @@ fn parse_args(p: &mut LuaParser) -> ParseResult {
             m1.complete(p);
         }
         _ => {
-            return Err(LuaParseError::from_source_range(
+            return Err(LuaParseError::syntax_error_from(
                 &t!("expect args"),
                 p.current_token_range(),
             ));

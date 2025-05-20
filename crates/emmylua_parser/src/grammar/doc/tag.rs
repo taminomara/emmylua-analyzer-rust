@@ -255,7 +255,7 @@ fn parse_tag_field(p: &mut LuaDocParser) -> ParseResult {
             expect_token(p, LuaTokenKind::TkRightBracket)?;
         }
         _ => {
-            return Err(LuaParseError::from_source_range(
+            return Err(LuaParseError::doc_error_from(
                 &t!(
                     "expect field name or '[', but get %{current}",
                     current = p.current_token()
@@ -302,7 +302,7 @@ fn parse_tag_param(p: &mut LuaDocParser) -> ParseResult {
     ) {
         p.bump();
     } else {
-        return Err(LuaParseError::from_source_range(
+        return Err(LuaParseError::doc_error_from(
             &t!(
                 "expect param name or '...', but get %{current}",
                 current = p.current_token()

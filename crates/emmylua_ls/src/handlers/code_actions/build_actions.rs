@@ -67,7 +67,7 @@ fn add_disable_code_action(
     range: Range,
 ) -> Option<()> {
     // LuaSyntaxError no need to disable
-    if diagnostic_code == DiagnosticCode::LuaSyntaxError {
+    if diagnostic_code == DiagnosticCode::SyntaxError {
         return Some(());
     }
 

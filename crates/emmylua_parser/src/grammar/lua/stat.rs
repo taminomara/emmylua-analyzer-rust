@@ -151,7 +151,7 @@ fn parse_for(p: &mut LuaParser) -> ParseResult {
             }
         }
         _ => {
-            return Err(LuaParseError::from_source_range(
+            return Err(LuaParseError::syntax_error_from(
                 &t!("unexpected token"),
                 p.current_token_range(),
             ));
@@ -230,7 +230,7 @@ fn parse_local(p: &mut LuaParser) -> ParseResult {
             }
         }
         _ => {
-            return Err(LuaParseError::from_source_range(
+            return Err(LuaParseError::syntax_error_from(
                 &t!("unexpected token %{token}", token = p.current_token()),
                 p.current_token_range(),
             ));
@@ -258,7 +258,7 @@ fn parse_attrib(p: &mut LuaParser) -> ParseResult {
     expect_token(p, LuaTokenKind::TkName)?;
     expect_token(p, LuaTokenKind::TkGt)?;
     if !p.parse_config.support_local_attrib() {
-        p.errors.push(LuaParseError::from_source_range(
+        p.errors.push(LuaParseError::syntax_error_from(
             &t!(
                 "local attribute is not supported for current version: %{level}",
                 level = p.parse_config.level
@@ -335,7 +335,7 @@ fn parse_assign_or_expr_stat(p: &mut LuaParser) -> ParseResult {
     }
 
     if cm.kind != LuaSyntaxKind::NameExpr && cm.kind != LuaSyntaxKind::IndexExpr {
-        return Err(LuaParseError::from_source_range(
+        return Err(LuaParseError::syntax_error_from(
             &t!("unexpected expr for varList"),
             range,
         ));
@@ -345,7 +345,7 @@ fn parse_assign_or_expr_stat(p: &mut LuaParser) -> ParseResult {
         p.bump();
         cm = parse_expr(p)?;
         if cm.kind != LuaSyntaxKind::NameExpr && cm.kind != LuaSyntaxKind::IndexExpr {
-            return Err(LuaParseError::from_source_range(
+            return Err(LuaParseError::syntax_error_from(
                 &t!("unexpected expr for varList"),
                 range,
             ));
@@ -360,7 +360,7 @@ fn parse_assign_or_expr_stat(p: &mut LuaParser) -> ParseResult {
             parse_expr(p)?;
         }
     } else {
-        return Err(LuaParseError::from_source_range(
+        return Err(LuaParseError::syntax_error_from(
             &t!("unfinished stat"),
             range,
         ));

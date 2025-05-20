@@ -190,10 +190,10 @@
           ]
         },
         {
-          "description": "Lua syntax error",
+          "description": "Doc syntax error",
           "type": "string",
           "enum": [
-            "lua-syntax-error"
+            "doc-syntax-error"
           ]
         },
         {

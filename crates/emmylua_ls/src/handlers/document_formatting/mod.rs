@@ -25,7 +25,7 @@ pub async fn on_formatting_handler(
         .get_vfs()
         .get_syntax_tree(&file_id)?;
 
-    if !syntax_tree.get_errors().is_empty() {
+    if syntax_tree.has_syntax_errors() {
         return None;
     }
 

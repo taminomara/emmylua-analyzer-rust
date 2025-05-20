@@ -186,7 +186,7 @@ mod tests {
         let mut ws = VirtualWorkspace::new();
 
         assert!(!ws.check_code_for(
-            DiagnosticCode::LuaSyntaxError,
+            DiagnosticCode::SyntaxError,
             r#"
             function bar()
                 return ...
@@ -194,7 +194,7 @@ mod tests {
             "#
         ));
         assert!(!ws.check_code_for(
-            DiagnosticCode::LuaSyntaxError,
+            DiagnosticCode::SyntaxError,
             r#"
             function bar()
                 local args = {...}

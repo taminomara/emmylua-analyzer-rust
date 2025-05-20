@@ -48,6 +48,9 @@ elseif m:isMy2() then
 end
 ```
 
+`CHG` Remove diagnostic `lua-syntax-error`, it merges into `syntax-error`, add `doc-syntax-error` for doc syntax error
+
+`FIX` Fix format issue, Now When exist `syntax-error`, the format never return value
 
 # 0.7.2
 

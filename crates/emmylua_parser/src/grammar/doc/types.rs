@@ -63,7 +63,7 @@ fn parse_sub_type(p: &mut LuaDocParser, limit: i32) -> ParseResult {
         match parse_sub_type(p, 0) {
             Ok(_) => {}
             Err(err) => {
-                p.push_error(LuaParseError::from_source_range(
+                p.push_error(LuaParseError::doc_error_from(
                     &t!("unary operator not followed by type"),
                     range,
                 ));
@@ -84,7 +84,7 @@ fn parse_sub_type(p: &mut LuaDocParser, limit: i32) -> ParseResult {
             match parse_sub_type(p, bop.get_priority().right) {
                 Ok(_) => {}
                 Err(err) => {
-                    p.push_error(LuaParseError::from_source_range(
+                    p.push_error(LuaParseError::doc_error_from(
                         &t!("binary operator not followed by type"),
                         range,
                     ));
@@ -133,7 +133,7 @@ fn parse_primary_type(p: &mut LuaDocParser) -> ParseResult {
         LuaTokenKind::TkName => parse_name_or_func_type(p),
         LuaTokenKind::TkStringTemplateType => parse_string_template_type(p),
         LuaTokenKind::TkDots => parse_vararg_type(p),
-        _ => Err(LuaParseError::from_source_range(
+        _ => Err(LuaParseError::doc_error_from(
             &t!("expect type"),
             p.current_token_range(),
         )),
@@ -187,7 +187,7 @@ fn parse_typed_field(p: &mut LuaDocParser) -> ParseResult {
             if_token_bump(p, LuaTokenKind::TkDocQuestion);
         }
         _ => {
-            return Err(LuaParseError::from_source_range(
+            return Err(LuaParseError::doc_error_from(
                 &t!("expect name or [<number>] or [<string>]"),
                 p.current_token_range(),
             ));
@@ -250,7 +250,7 @@ pub fn parse_fun_type(p: &mut LuaDocParser) -> ParseResult {
     }
 
     if p.current_token_text() != "fun" {
-        return Err(LuaParseError::from_source_range(
+        return Err(LuaParseError::doc_error_from(
             &t!("expect fun"),
             p.current_token_range(),
         ));
@@ -329,7 +329,7 @@ fn parse_typed_param(p: &mut LuaDocParser) -> ParseResult {
             if_token_bump(p, LuaTokenKind::TkDocQuestion);
         }
         _ => {
-            return Err(LuaParseError::from_source_range(
+            return Err(LuaParseError::doc_error_from(
                 &t!("expect name or ..."),
                 p.current_token_range(),
             ));

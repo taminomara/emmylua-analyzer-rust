@@ -101,7 +101,7 @@ fn expect_token(p: &mut LuaDocParser, token: LuaTokenKind) -> Result<(), LuaPars
         p.bump();
         Ok(())
     } else {
-        Err(LuaParseError::from_source_range(
+        Err(LuaParseError::syntax_error_from(
             &t!(
                 "expected %{token}, but get %{current}",
                 token = token,

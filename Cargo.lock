@@ -606,7 +606,7 @@ dependencies = [
 
 [[package]]
 name = "emmylua_parser"
-version = "0.10.5"
+version = "0.10.6"
 dependencies = [
  "rowan",
  "rust-i18n",

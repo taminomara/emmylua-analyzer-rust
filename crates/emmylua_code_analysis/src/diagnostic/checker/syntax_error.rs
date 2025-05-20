@@ -1,6 +1,6 @@
 use emmylua_parser::{
     float_token_value, int_token_value, LuaAstNode, LuaClosureExpr, LuaLiteralExpr, LuaParamName,
-    LuaSyntaxKind, LuaSyntaxToken, LuaTokenKind,
+    LuaParseErrorKind, LuaSyntaxKind, LuaSyntaxToken, LuaTokenKind,
 };
 
 use crate::{DiagnosticCode, LuaSignatureId, SemanticModel};
@@ -10,17 +10,17 @@ use super::{Checker, DiagnosticContext};
 pub struct SyntaxErrorChecker;
 
 impl Checker for SyntaxErrorChecker {
-    const CODES: &[DiagnosticCode] = &[DiagnosticCode::SyntaxError, DiagnosticCode::LuaSyntaxError];
+    const CODES: &[DiagnosticCode] = &[DiagnosticCode::SyntaxError, DiagnosticCode::DocSyntaxError];
 
     fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
         if let Some(parse_errors) = semantic_model.get_file_parse_error() {
             for parse_error in parse_errors {
-                context.add_diagnostic(
-                    DiagnosticCode::SyntaxError,
-                    parse_error.1,
-                    parse_error.0,
-                    None,
-                );
+                let code = match parse_error.kind {
+                    LuaParseErrorKind::SyntaxError => DiagnosticCode::SyntaxError,
+                    LuaParseErrorKind::DocError => DiagnosticCode::DocSyntaxError,
+                };
+
+                context.add_diagnostic(code, parse_error.range, parse_error.message, None);
             }
         }
 
@@ -174,7 +174,7 @@ fn check_dots_literal_error(
                 let signature = context.db.get_signature_index().get(&signature_id)?;
                 if !signature.params.iter().any(|param| param == "...") {
                     context.add_diagnostic(
-                        DiagnosticCode::LuaSyntaxError,
+                        DiagnosticCode::SyntaxError,
                         literal_expr.get_range(),
                         t!("Cannot use `...` outside a vararg function.").to_string(),
                         None,
@@ -190,7 +190,7 @@ fn check_dots_literal_error(
                 // 确保 ... 位于最后一个参数
                 if signature.params.last()? != "..." {
                     context.add_diagnostic(
-                        DiagnosticCode::LuaSyntaxError,
+                        DiagnosticCode::SyntaxError,
                         param_name.get_range(),
                         t!("`...` should be the last arg.").to_string(),
                         None,

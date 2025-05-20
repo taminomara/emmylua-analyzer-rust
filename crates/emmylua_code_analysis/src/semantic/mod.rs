@@ -14,7 +14,8 @@ use std::{collections::HashSet, sync::Arc};
 
 pub use cache::{CacheEntry, CacheKey, CacheOptions, LuaAnalysisPhase, LuaInferCache};
 use emmylua_parser::{
-    LuaCallExpr, LuaChunk, LuaExpr, LuaIndexKey, LuaSyntaxNode, LuaSyntaxToken, LuaTableExpr,
+    LuaCallExpr, LuaChunk, LuaExpr, LuaIndexKey, LuaParseError, LuaSyntaxNode, LuaSyntaxToken,
+    LuaTableExpr,
 };
 use infer::{infer_left_value_type_from_right_value, infer_multi_value_adjusted_expression_types};
 pub use infer::{infer_table_field_value_should_be, infer_table_should_be};
@@ -98,7 +99,7 @@ impl<'a> SemanticModel<'a> {
         )
     }
 
-    pub fn get_file_parse_error(&self) -> Option<Vec<(String, TextRange)>> {
+    pub fn get_file_parse_error(&self) -> Option<Vec<LuaParseError>> {
         self.db.get_vfs().get_file_parse_error(&self.file_id)
     }
 

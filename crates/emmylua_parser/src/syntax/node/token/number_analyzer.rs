@@ -1,4 +1,7 @@
-use crate::{parser_error::LuaParseError, LuaSyntaxToken};
+use crate::{
+    parser_error::{LuaParseError, LuaParseErrorKind},
+    LuaSyntaxToken,
+};
 
 pub fn float_token_value(token: &LuaSyntaxToken) -> Result<f64, LuaParseError> {
     let text = token.text();
@@ -55,6 +58,7 @@ pub fn float_token_value(token: &LuaSyntaxToken) -> Result<f64, LuaParseError> {
 
         let mut value = float_part.parse::<f64>().map_err(|e| {
             LuaParseError::new(
+                LuaParseErrorKind::SyntaxError,
                 &t!(
                     "The float literal '%{text}' is invalid, %{err}",
                     text = text,
@@ -113,6 +117,7 @@ pub fn int_token_value(token: &LuaSyntaxToken) -> Result<i64, LuaParseError> {
                 || *e.kind() == std::num::IntErrorKind::NegOverflow
             {
                 Err(LuaParseError::new(
+                    LuaParseErrorKind::SyntaxError,
                     &t!(
                         "The integer literal '%{text}' is too large to be represented in type 'long'",
                         text = text
@@ -121,6 +126,7 @@ pub fn int_token_value(token: &LuaSyntaxToken) -> Result<i64, LuaParseError> {
                 ))
             } else {
                 Err(LuaParseError::new(
+                    LuaParseErrorKind::SyntaxError,
                     &t!(
                         "The integer literal '%{text}' is invalid, %{err}",
                         text = text,

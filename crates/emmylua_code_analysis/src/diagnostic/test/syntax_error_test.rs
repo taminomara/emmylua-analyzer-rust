@@ -7,7 +7,7 @@ mod test {
         let mut ws = VirtualWorkspace::new();
 
         assert!(!ws.check_code_for(
-            DiagnosticCode::LuaSyntaxError,
+            DiagnosticCode::SyntaxError,
             r#"
             local function aaa(..., n)
             end

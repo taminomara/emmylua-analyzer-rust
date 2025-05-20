@@ -10,8 +10,8 @@ use serde::{Deserialize, Serialize};
 pub enum DiagnosticCode {
     /// Syntax error
     SyntaxError,
-    /// Lua syntax error
-    LuaSyntaxError,
+    /// Doc syntax error
+    DocSyntaxError,
     /// Type not found
     TypeNotFound,
     /// Missing return statement
@@ -105,7 +105,7 @@ pub enum DiagnosticCode {
 pub fn get_default_severity(code: DiagnosticCode) -> DiagnosticSeverity {
     match code {
         DiagnosticCode::SyntaxError => DiagnosticSeverity::ERROR,
-        DiagnosticCode::LuaSyntaxError => DiagnosticSeverity::ERROR,
+        DiagnosticCode::DocSyntaxError => DiagnosticSeverity::ERROR,
         DiagnosticCode::TypeNotFound => DiagnosticSeverity::WARNING,
         DiagnosticCode::MissingReturn => DiagnosticSeverity::WARNING,
         DiagnosticCode::ParamTypeNotMatch => DiagnosticSeverity::WARNING,

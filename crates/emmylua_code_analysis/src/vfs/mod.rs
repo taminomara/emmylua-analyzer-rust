@@ -5,12 +5,12 @@ mod loader;
 mod virtual_url;
 
 pub use document::LuaDocument;
-use emmylua_parser::{LineIndex, LuaParser, LuaSyntaxTree};
+use emmylua_parser::{LineIndex, LuaParseError, LuaParser, LuaSyntaxTree};
 pub use file_id::{FileId, InFiled};
 pub use file_uri_handler::{file_path_to_uri, uri_to_file_path};
 pub use loader::{load_workspace_files, read_file_with_encoding, LuaFileInfo};
 use lsp_types::Uri;
-use rowan::{NodeCache, TextRange};
+use rowan::NodeCache;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -136,18 +136,14 @@ impl Vfs {
         self.tree_map.get(id)
     }
 
-    pub fn get_file_parse_error(&self, id: &FileId) -> Option<Vec<(String, TextRange)>> {
-        let mut errors = Vec::new();
+    pub fn get_file_parse_error(&self, id: &FileId) -> Option<Vec<LuaParseError>> {
         let tree = self.tree_map.get(id)?;
-        for error in tree.get_errors() {
-            errors.push((error.message.clone(), error.range.clone()));
+        let errors = tree.get_errors();
+        if errors.is_empty() {
+            return None;
         }
 
-        if errors.is_empty() {
-            None
-        } else {
-            Some(errors)
-        }
+        Some(errors.iter().map(|e| e.clone()).collect::<Vec<_>>())
     }
 
     pub fn get_all_file_ids(&self) -> Vec<FileId> {
