@@ -61,6 +61,14 @@ impl LuaTypeCache {
             LuaTypeCache::InferType(ty) => ty,
         }
     }
+
+    pub fn is_infer(&self) -> bool {
+        matches!(self, LuaTypeCache::InferType(_))
+    }
+
+    pub fn is_doc(&self) -> bool {
+        matches!(self, LuaTypeCache::DocType(_))
+    }
 }
 
 impl std::ops::Deref for LuaTypeCache {

@@ -11,11 +11,39 @@ use crate::{
 pub fn bind_type(
     db: &mut DbIndex,
     type_owner: LuaTypeOwner,
-    type_cache: LuaTypeCache,
+    mut type_cache: LuaTypeCache,
 ) -> Option<()> {
     let decl_type_cache = db.get_type_index().get_type_cache(&type_owner);
 
     if decl_type_cache.is_none() {
+        // type backward
+        if type_cache.is_infer() {
+            if let LuaTypeOwner::Decl(decl_id) = &type_owner {
+                if let Some(refs) = db
+                    .get_reference_index()
+                    .get_decl_references(&decl_id.file_id, decl_id)
+                {
+                    if refs.iter().any(|it| it.is_write) {
+                        match &type_cache.as_type() {
+                            LuaType::IntegerConst(_) => {
+                                type_cache = LuaTypeCache::InferType(LuaType::Integer)
+                            }
+                            LuaType::StringConst(_) => {
+                                type_cache = LuaTypeCache::InferType(LuaType::String)
+                            }
+                            LuaType::BooleanConst(_) => {
+                                type_cache = LuaTypeCache::InferType(LuaType::Boolean)
+                            }
+                            LuaType::FloatConst(_) => {
+                                type_cache = LuaTypeCache::InferType(LuaType::Number)
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+
         db.get_type_index_mut()
             .bind_type(type_owner.clone(), type_cache);
         migrate_global_members_when_type_resolve(db, type_owner);

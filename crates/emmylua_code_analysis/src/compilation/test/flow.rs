@@ -716,4 +716,31 @@ end
         "#,
         ));
     }
+
+    #[test]
+    fn test_issue_472() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::UnnecessaryIf,
+            r#"
+            worldLightLevel = 0
+            worldLightColor = 0
+            Gmae = {}
+            ---@param color integer
+            ---@param level integer
+            function Game.setWorldLight(color, level)
+                local previousColor = worldLightColor
+                local previousLevel = worldLightLevel
+
+                worldLightColor = color
+                worldLightLevel = level
+
+                if worldLightColor ~= previousColor or worldLightLevel ~= previousLevel then
+                    -- Do something...
+                end
+            end
+            "#
+        ))
+    }
 }
