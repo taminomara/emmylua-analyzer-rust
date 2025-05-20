@@ -1,5 +1,4 @@
 name: Bump Version & Upload
-
 on:
   push:
     tags:
@@ -32,7 +31,9 @@ jobs:
           file_pattern: 'crates/*/Cargo.toml'
           
   upload-crates:
+    needs: bump
     uses: ./.github/workflows/upload_crates.yml
 
   upload-cachix:
+    needs: bump
     uses: ./.github/workflows/upload_cachix.yml
