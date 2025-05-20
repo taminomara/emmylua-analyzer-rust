@@ -52,6 +52,17 @@ impl<'cache> ParserConfig<'cache> {
                 .unwrap_or(&SpecialFunction::None),
         }
     }
+
+    pub fn with_level(level: LuaLanguageLevel) -> Self {
+        Self {
+            level,
+            lexer_config: LexerConfig {
+                language_level: level,
+            },
+            node_cache: None,
+            special_like: HashMap::new(),
+        }
+    }
 }
 
 impl Default for ParserConfig<'_> {

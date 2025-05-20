@@ -66,6 +66,13 @@ impl LuaLexer<'_> {
             "true" => LuaTokenKind::TkTrue,
             "until" => LuaTokenKind::TkUntil,
             "while" => LuaTokenKind::TkWhile,
+            "global" => {
+                if self.lexer_config.support_global_decl() {
+                    LuaTokenKind::TkGlobal
+                } else {
+                    LuaTokenKind::TkName
+                }
+            }
             _ => LuaTokenKind::TkName,
         }
     }

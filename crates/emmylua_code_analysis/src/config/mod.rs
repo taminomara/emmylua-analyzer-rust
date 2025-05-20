@@ -70,6 +70,7 @@ impl Emmyrc {
             EmmyrcLuaVersion::Lua54 => LuaLanguageLevel::Lua54,
             EmmyrcLuaVersion::LuaJIT => LuaLanguageLevel::LuaJIT,
             EmmyrcLuaVersion::LuaLatest => LuaLanguageLevel::Lua54,
+            EmmyrcLuaVersion::Lua55 => LuaLanguageLevel::Lua55,
         };
 
         let mut special_like = HashMap::new();

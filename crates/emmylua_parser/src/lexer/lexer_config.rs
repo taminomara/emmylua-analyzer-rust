@@ -44,6 +44,10 @@ impl LexerConfig {
                 | LuaLanguageLevel::LuaJIT
         )
     }
+
+    pub fn support_global_decl(&self) -> bool {
+        matches!(self.language_level, LuaLanguageLevel::Lua55)
+    }
 }
 
 impl Default for LexerConfig {

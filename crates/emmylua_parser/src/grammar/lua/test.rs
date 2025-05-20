@@ -1,10 +1,16 @@
 #[cfg(test)]
 mod tests {
-    use crate::{parser::ParserConfig, LuaParser};
+    use crate::{parser::ParserConfig, LuaLanguageLevel, LuaParser};
 
     macro_rules! assert_ast_eq {
         ($lua_code:expr, $expected:expr) => {
             let tree = LuaParser::parse($lua_code, ParserConfig::default());
+            let result = format!("{:#?}", tree.get_red_root()).trim().to_string();
+            let expected = $expected.trim().to_string();
+            assert_eq!(result, expected);
+        };
+        ($lua_code:expr, $expected:expr, $config:expr) => {
+            let tree = LuaParser::parse($lua_code, $config);
             let result = format!("{:#?}", tree.get_red_root()).trim().to_string();
             let expected = $expected.trim().to_string();
             assert_eq!(result, expected);
@@ -14,6 +20,12 @@ mod tests {
     #[allow(unused)]
     fn print_ast(lua_code: &str) {
         let tree = LuaParser::parse(lua_code, ParserConfig::default());
+        println!("{:#?}", tree.get_red_root());
+    }
+
+    #[allow(unused)]
+    fn print_ast_config(lua_code: &str, config: ParserConfig) {
+        let tree = LuaParser::parse(lua_code, config);
         println!("{:#?}", tree.get_red_root());
     }
 
@@ -1114,5 +1126,28 @@ Syntax(Chunk)@0..4
         "#;
 
         assert_ast_eq!(code, result);
+    }
+
+    #[test]
+    fn test_lua55_global_grammar() {
+        let code = "global a, b;";
+        let result = r#"
+Syntax(Chunk)@0..12
+  Syntax(Block)@0..12
+    Syntax(GlobalStat)@0..12
+      Token(TkGlobal)@0..6 "global"
+      Token(TkWhitespace)@6..7 " "
+      Token(TkName)@7..8 "a"
+      Token(TkComma)@8..9 ","
+      Token(TkWhitespace)@9..10 " "
+      Token(TkName)@10..11 "b"
+      Token(TkSemicolon)@11..12 ";"
+        "#;
+
+        assert_ast_eq!(
+            code,
+            result,
+            ParserConfig::with_level(LuaLanguageLevel::Lua55)
+        );
     }
 }

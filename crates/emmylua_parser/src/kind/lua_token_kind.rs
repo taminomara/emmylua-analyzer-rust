@@ -27,6 +27,7 @@ pub enum LuaTokenKind {
     TkTrue,
     TkUntil,
     TkWhile,
+    TkGlobal, // global *
 
     TkWhitespace,   // whitespace
     TkEndOfLine,    // end of line

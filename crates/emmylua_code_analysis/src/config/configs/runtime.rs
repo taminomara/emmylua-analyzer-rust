@@ -51,6 +51,9 @@ pub enum EmmyrcLuaVersion {
     /// Lua 5.4
     #[serde(rename = "Lua5.4", alias = "Lua 5.4")]
     Lua54,
+    /// Lua 5.5
+    #[serde(rename = "Lua5.5", alias = "Lua 5.5")]
+    Lua55,
     /// Lua Latest
     #[serde(rename = "LuaLatest", alias = "Lua Latest")]
     LuaLatest,
@@ -71,6 +74,7 @@ impl EmmyrcLuaVersion {
             EmmyrcLuaVersion::Lua53 => LuaVersionNumber::new(5, 3, 0),
             EmmyrcLuaVersion::Lua54 => LuaVersionNumber::new(5, 4, 0),
             EmmyrcLuaVersion::LuaLatest => LuaVersionNumber::new(5, 4, 0),
+            EmmyrcLuaVersion::Lua55 => LuaVersionNumber::new(5, 5, 0),
         }
     }
 }

@@ -56,6 +56,8 @@ end
 
 `CHG` When an object returned by require function is a class/enum, defining new members on it is prohibited, while tables are not restricted
 
+`NEW` Support `Lua 5.5` global decl grammar
+
 # 0.7.2
 
 `FIX` Fix reading configuration file encoded with UTF-8 BOM
