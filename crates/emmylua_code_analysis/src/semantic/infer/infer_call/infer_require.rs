@@ -25,7 +25,10 @@ pub fn infer_require_call(
         .find_module(&module_path)
         .ok_or(InferFailReason::None)?;
     match &module_info.export_type {
-        Some(ty) => Ok(ty.clone()),
+        Some(ty) => match ty {
+            LuaType::Def(id) => Ok(LuaType::Ref(id.clone())),
+            _ => Ok(ty.clone()),
+        },
         None => Err(InferFailReason::UnResolveExpr(InFiled::new(
             cache.get_file_id(),
             call_expr.into(),
