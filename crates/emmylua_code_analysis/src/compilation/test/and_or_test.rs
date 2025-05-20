@@ -74,4 +74,37 @@ mod test {
         let c_desc = ws.humanize_type(c);
         assert_eq!(c_desc, "string?");
     }
+
+    #[test]
+    fn test_issue_470() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+            ---@class Player : PlayerBase
+
+            ---@class PlayerBase
+            local Player = {}
+
+            ---@return boolean
+            ---@return_cast self Player
+            function Player:isPlayer()
+                return true
+            end
+
+            local topCreature ---@type PlayerBase?
+
+
+            if not topCreature or not topCreature:isPlayer() then
+                return
+            end
+
+            a = topCreature
+            "#,
+        );
+
+        let a = ws.expr_ty("a");
+        let desc = ws.humanize_type(a);
+        assert_eq!(desc, "Player");
+    }
 }

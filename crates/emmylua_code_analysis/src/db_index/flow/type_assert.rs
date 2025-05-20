@@ -75,26 +75,12 @@ impl TypeAssertion {
                 Ok(TypeOps::Narrow.apply(db, &source, &expr_type))
             }
             TypeAssertion::And(a) => {
-                let mut result = vec![];
+                let mut result = source;
                 for assertion in a.iter() {
-                    result.push(assertion.tighten_type(db, cache, root, source.clone())?);
+                    result = assertion.tighten_type(db, cache, root, result.clone())?;
                 }
 
-                match result.len() {
-                    0 => Ok(source),
-                    1 => Ok(result.remove(0)),
-                    _ => {
-                        let mut result_type = result.remove(0);
-                        for t in result {
-                            result_type = TypeOps::And.apply(db, &result_type, &t);
-                            if result_type.is_nil() {
-                                return Ok(LuaType::Nil);
-                            }
-                        }
-
-                        Ok(result_type)
-                    }
-                }
+                Ok(result)
             }
             TypeAssertion::Or(a) => {
                 let mut result = vec![];

@@ -21,8 +21,8 @@ pub enum TypeOps {
     Narrow,
     /// Only keep the false or nil type
     NarrowFalseOrNil,
-    /// And operation
-    And,
+    // /// And operation
+    // And,
 }
 
 impl TypeOps {
@@ -34,7 +34,7 @@ impl TypeOps {
             }
             TypeOps::Narrow => narrow_type::narrow_down_type(db, source.clone(), target.clone())
                 .unwrap_or(target.clone()),
-            TypeOps::And => and_type::and_type(source.clone(), target.clone()),
+            // TypeOps::And => and_type::and_type(source.clone(), target.clone()),
             _ => source.clone(),
         }
     }
