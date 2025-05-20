@@ -2,6 +2,9 @@ name: Upload Crates
 
 on:
   workflow_call:
+  push:
+    tags:
+      - "*"
 
 jobs:
   upload:
