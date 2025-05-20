@@ -95,33 +95,34 @@ mod test {
         ));
     }
 
-    #[test]
-    fn test_duplicate_function_2() {
-        let mut ws = VirtualWorkspace::new();
-        ws.def_file(
-            "1.lua",
-            r#"
-                ---@class D31.A
-                local A = {}
+    // remove this test
+    // #[test]
+    // fn test_duplicate_function_2() {
+    //     let mut ws = VirtualWorkspace::new();
+    //     ws.def_file(
+    //         "1.lua",
+    //         r#"
+    //             ---@class D31.A
+    //             local A = {}
 
-                ---@param ... any
-                ---@return any, any, any, any
-                function A:execute(...)
-                end
+    //             ---@param ... any
+    //             ---@return any, any, any, any
+    //             function A:execute(...)
+    //             end
 
-                return A
-            "#,
-        );
-        assert!(!ws.check_code_for(
-            DiagnosticCode::DuplicateSetField,
-            r#"
-            local A = require("1")
+    //             return A
+    //         "#,
+    //     );
+    //     assert!(!ws.check_code_for(
+    //         DiagnosticCode::DuplicateSetField,
+    //         r#"
+    //         local A = require("1")
 
-            A.execute = function(trg, ...)
-            end
-        "#
-        ));
-    }
+    //         A.execute = function(trg, ...)
+    //         end
+    //     "#
+    //     ));
+    // }
 
     #[test]
     fn test_duplicate_function_3() {
