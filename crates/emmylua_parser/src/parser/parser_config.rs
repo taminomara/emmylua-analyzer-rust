@@ -32,7 +32,7 @@ impl<'cache> ParserConfig<'cache> {
     }
 
     pub fn support_local_attrib(&self) -> bool {
-        self.level == LuaLanguageLevel::Lua54
+        self.level >= LuaLanguageLevel::Lua54
     }
 
     pub fn node_cache(&mut self) -> Option<&mut NodeCache> {

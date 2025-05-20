@@ -1,12 +1,12 @@
 use core::fmt;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum LuaLanguageLevel {
     Lua51,
+    LuaJIT,
     Lua52,
     Lua53,
     Lua54,
-    LuaJIT,
     Lua55,
 }
 
