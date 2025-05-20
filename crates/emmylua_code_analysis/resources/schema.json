@@ -759,6 +759,13 @@
           ]
         },
         {
+          "description": "Lua 5.5",
+          "type": "string",
+          "enum": [
+            "Lua5.5"
+          ]
+        },
+        {
           "description": "Lua Latest",
           "type": "string",
           "enum": [
