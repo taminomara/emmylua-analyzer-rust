@@ -154,7 +154,7 @@ function ipairs(t) end
 ---@param chunkname? string
 ---@param mode? std.loadmode
 ---@param env? table
----@return fun(...:any):any
+---@return function? chunk
 ---@return string?   error_message
 ---@nodiscard
 function load(chunk, chunkname, mode, env) end
@@ -167,7 +167,7 @@ function load(chunk, chunkname, mode, env) end
 ---@version 5.1, JIT
 ---@param text       string
 ---@param chunkname? string
----@return function?
+---@return function? chunk
 ---@return string?   error_message
 ---@nodiscard
 function loadstring(text, chunkname) end
@@ -179,6 +179,8 @@ function loadstring(text, chunkname) end
 ---@param filename string
 ---@param mode? string
 ---@param env? any
+---@return function? chunk
+---@return string? error_message
 function loadfile(filename, mode, env) end
 
 ---@version 5.1, JIT
