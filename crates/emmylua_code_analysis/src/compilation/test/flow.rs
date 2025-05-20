@@ -743,4 +743,21 @@ end
             "#
         ))
     }
+
+    #[test]
+    fn test_issue_478() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+            --- @param line string
+            --- @param b boolean
+            --- @return string
+            function foo(line, b)
+                return b and line or line
+            end
+            "#
+        ));
+    }
 }

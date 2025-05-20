@@ -240,6 +240,17 @@ pub fn broadcast_up_and(
             return Some(());
         }
     } else {
+        // disable b broadcast_up in `a and <b> or c``
+        if let Some(parent_binary) = binary_expr.get_parent::<LuaBinaryExpr>() {
+            let op = parent_binary.get_op_token()?;
+            match op.get_op() {
+                BinaryOperator::OpOr => {
+                    return None;
+                }
+                _ => {}
+            }
+        }
+
         let left_id = UnResolveTraceId::Expr(left);
         if let Some(left_unresolve_trace_info) = var_trace.pop_unresolve_trace(&left_id) {
             let left_trace_info = left_unresolve_trace_info.1.get_trace_info()?;

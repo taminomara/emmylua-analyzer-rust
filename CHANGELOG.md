@@ -1,6 +1,8 @@
 # CHANGELOG
 
-# 0.7.3(unreleased)
+# 0.8.0 (unreleased)
+
+# 0.7.3
 
 `FIX` Fix a crash issue
 
