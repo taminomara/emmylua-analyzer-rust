@@ -5,6 +5,7 @@ use crate::{
         LuaFunctionType, LuaGenericType, LuaIntersectionType, LuaObjectType, LuaTupleType, LuaType,
         LuaUnionType, VariadicType,
     },
+    infer_member_map,
     semantic::{member::infer_members, type_check},
     DbIndex, GenericTpl, LuaAliasCallKind, LuaAliasCallType, LuaMemberKey, LuaSignatureId, TypeOps,
 };
@@ -466,7 +467,7 @@ fn instantiate_unpack_call(db: &DbIndex, operands: &[LuaType]) -> LuaType {
         }
     }
 
-    match need_unpack_type {
+    match &need_unpack_type {
         LuaType::Tuple(tuple) => {
             let mut types = tuple.get_types().to_vec();
             if start > 0 {
@@ -494,7 +495,30 @@ fn instantiate_unpack_call(db: &DbIndex, operands: &[LuaType]) -> LuaType {
                 VariadicType::Base(TypeOps::Union.apply(db, &value, &LuaType::Nil)).into(),
             )
         }
-        _ => LuaType::Unknown,
+        LuaType::Unknown | LuaType::Any => LuaType::Unknown,
+        _ => {
+            // may cost many
+            let mut multi_types = vec![];
+            let members = match infer_member_map(db, need_unpack_type) {
+                Some(members) => members,
+                None => return LuaType::Unknown,
+            };
+
+            for i in 1..10 {
+                let member_key = LuaMemberKey::Integer(i);
+                if let Some(member_info) = members.get(&member_key) {
+                    let mut member_type = LuaType::Unknown;
+                    for sub_member_info in member_info {
+                        member_type = TypeOps::Union.apply(db, &member_type, &sub_member_info.typ);
+                    }
+                    multi_types.push(member_type);
+                } else {
+                    break;
+                }
+            }
+
+            LuaType::Variadic(VariadicType::Multi(multi_types).into())
+        }
     }
 }
 
