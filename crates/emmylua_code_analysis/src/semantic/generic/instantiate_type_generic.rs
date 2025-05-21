@@ -357,6 +357,9 @@ fn instantiate_alias_call(
 
             return instantiate_select_call(&operands[0], &operands[1]);
         }
+        LuaAliasCallKind::Unpack => {
+            return instantiate_unpack_call(db, &operands);
+        }
         _ => {}
     }
 
@@ -433,6 +436,65 @@ fn instantiate_select_call(source: &LuaType, index: &LuaType) -> LuaType {
             }
         }
         NumOrLen::LenUnknown => LuaType::Integer,
+    }
+}
+
+fn instantiate_unpack_call(db: &DbIndex, operands: &[LuaType]) -> LuaType {
+    if operands.len() < 1 {
+        return LuaType::Unknown;
+    }
+
+    let need_unpack_type = &operands[0];
+    let mut start = -1;
+    // todo use end
+    #[allow(unused)]
+    let mut end = -1;
+    if operands.len() > 1 {
+        if let LuaType::DocIntegerConst(i) = &operands[1] {
+            start = *i - 1;
+        } else if let LuaType::IntegerConst(i) = &operands[1] {
+            start = *i - 1;
+        }
+    }
+
+    #[allow(unused)]
+    if operands.len() > 2 {
+        if let LuaType::DocIntegerConst(i) = &operands[2] {
+            end = *i;
+        } else if let LuaType::IntegerConst(i) = &operands[2] {
+            end = *i;
+        }
+    }
+
+    match need_unpack_type {
+        LuaType::Tuple(tuple) => {
+            let mut types = tuple.get_types().to_vec();
+            if start > 0 {
+                if start as usize > types.len() {
+                    return LuaType::Unknown;
+                }
+
+                if start < types.len() as i64 {
+                    types = types[start as usize..].to_vec();
+                }
+            }
+
+            LuaType::Variadic(VariadicType::Multi(types).into())
+        }
+        LuaType::Array(base) => LuaType::Variadic(
+            VariadicType::Base(TypeOps::Union.apply(db, base, &LuaType::Nil)).into(),
+        ),
+        LuaType::TableGeneric(table) => {
+            if table.len() != 2 {
+                return LuaType::Unknown;
+            }
+
+            let value = table[1].clone();
+            LuaType::Variadic(
+                VariadicType::Base(TypeOps::Union.apply(db, &value, &LuaType::Nil)).into(),
+            )
+        }
+        _ => LuaType::Unknown,
     }
 }
 

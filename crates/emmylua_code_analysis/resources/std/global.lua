@@ -445,11 +445,11 @@ _VERSION = "Lua 5.4"
 function xpcall(f, msgh, ...) end
 
 ---@version 5.1, JIT
----@generic T
----@param i? integer
----@param j? integer
----@param list [T...]
----@return T?...
+---@generic T, Start: integer, End: integer
+---@param i? Start
+---@param j? End
+---@param list T
+---@return std.Unpack<T, Start, End>
 function unpack(list, i, j) end
 
 ---@version > 5.4
