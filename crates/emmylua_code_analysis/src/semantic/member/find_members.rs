@@ -12,45 +12,45 @@ use crate::{
     LuaUnionType,
 };
 
-use super::{get_buildin_type_map_type_id, InferMembersResult, LuaMemberInfo};
+use super::{get_buildin_type_map_type_id, FindMembersResult, LuaMemberInfo};
 
-pub fn infer_members(db: &DbIndex, prefix_type: &LuaType) -> InferMembersResult {
-    infer_members_guard(db, prefix_type, &mut InferGuard::new())
+pub fn find_members(db: &DbIndex, prefix_type: &LuaType) -> FindMembersResult {
+    find_members_guard(db, prefix_type, &mut InferGuard::new())
 }
 
-pub fn infer_members_guard(
+pub fn find_members_guard(
     db: &DbIndex,
     prefix_type: &LuaType,
     infer_guard: &mut InferGuard,
-) -> InferMembersResult {
+) -> FindMembersResult {
     match &prefix_type {
         LuaType::TableConst(id) => {
             let member_owner = LuaMemberOwner::Element(id.clone());
-            infer_normal_members(db, member_owner)
+            find_normal_members(db, member_owner)
         }
-        LuaType::TableGeneric(table_type) => infer_table_generic_members(table_type),
+        LuaType::TableGeneric(table_type) => find_table_generic_members(table_type),
         LuaType::String | LuaType::Io | LuaType::StringConst(_) => {
             let type_decl_id = get_buildin_type_map_type_id(&prefix_type)?;
-            infer_custom_type_members(db, &type_decl_id, infer_guard)
+            find_custom_type_members(db, &type_decl_id, infer_guard)
         }
-        LuaType::Ref(type_decl_id) => infer_custom_type_members(db, type_decl_id, infer_guard),
-        LuaType::Def(type_decl_id) => infer_custom_type_members(db, type_decl_id, infer_guard),
+        LuaType::Ref(type_decl_id) => find_custom_type_members(db, type_decl_id, infer_guard),
+        LuaType::Def(type_decl_id) => find_custom_type_members(db, type_decl_id, infer_guard),
         // // LuaType::Module(_) => todo!(),
-        LuaType::Tuple(tuple_type) => infer_tuple_members(tuple_type),
-        LuaType::Object(object_type) => infer_object_members(object_type),
-        LuaType::Union(union_type) => infer_union_members(db, union_type, infer_guard),
+        LuaType::Tuple(tuple_type) => find_tuple_members(tuple_type),
+        LuaType::Object(object_type) => find_object_members(object_type),
+        LuaType::Union(union_type) => find_union_members(db, union_type, infer_guard),
         LuaType::Intersection(intersection_type) => {
-            infer_intersection_members(db, intersection_type, infer_guard)
+            find_intersection_members(db, intersection_type, infer_guard)
         }
-        LuaType::Generic(generic_type) => infer_generic_members(db, generic_type, infer_guard),
-        LuaType::Global => infer_global_members(db),
-        LuaType::Instance(inst) => infer_instance_members(db, inst, infer_guard),
-        LuaType::Namespace(ns) => infer_namespace_members(db, ns),
+        LuaType::Generic(generic_type) => find_generic_members(db, generic_type, infer_guard),
+        LuaType::Global => find_global_members(db),
+        LuaType::Instance(inst) => find_instance_members(db, inst, infer_guard),
+        LuaType::Namespace(ns) => find_namespace_members(db, ns),
         _ => None,
     }
 }
 
-fn infer_table_generic_members(table_type: &Vec<LuaType>) -> InferMembersResult {
+fn find_table_generic_members(table_type: &Vec<LuaType>) -> FindMembersResult {
     let mut members = Vec::new();
     if table_type.len() != 2 {
         return None;
@@ -69,7 +69,7 @@ fn infer_table_generic_members(table_type: &Vec<LuaType>) -> InferMembersResult 
     Some(members)
 }
 
-fn infer_normal_members(db: &DbIndex, member_owner: LuaMemberOwner) -> InferMembersResult {
+fn find_normal_members(db: &DbIndex, member_owner: LuaMemberOwner) -> FindMembersResult {
     let mut members = Vec::new();
     let member_index = db.get_member_index();
     let owner_members = member_index.get_members(&member_owner)?;
@@ -90,19 +90,19 @@ fn infer_normal_members(db: &DbIndex, member_owner: LuaMemberOwner) -> InferMemb
     Some(members)
 }
 
-fn infer_custom_type_members(
+fn find_custom_type_members(
     db: &DbIndex,
     type_decl_id: &LuaTypeDeclId,
     infer_guard: &mut InferGuard,
-) -> InferMembersResult {
+) -> FindMembersResult {
     infer_guard.check(&type_decl_id).ok()?;
     let type_index = db.get_type_index();
     let type_decl = type_index.get_type_decl(&type_decl_id)?;
     if type_decl.is_alias() {
         if let Some(origin) = type_decl.get_alias_origin(db, None) {
-            return infer_members_guard(db, &origin, infer_guard);
+            return find_members_guard(db, &origin, infer_guard);
         } else {
-            return infer_members_guard(db, &LuaType::String, infer_guard);
+            return find_members_guard(db, &LuaType::String, infer_guard);
         }
     }
 
@@ -129,7 +129,7 @@ fn infer_custom_type_members(
     if type_decl.is_class() {
         if let Some(super_types) = type_index.get_super_types(&type_decl_id) {
             for super_type in super_types {
-                if let Some(super_members) = infer_members_guard(db, &super_type, infer_guard) {
+                if let Some(super_members) = find_members_guard(db, &super_type, infer_guard) {
                     members.extend(super_members);
                 }
             }
@@ -139,7 +139,7 @@ fn infer_custom_type_members(
     Some(members)
 }
 
-fn infer_tuple_members(tuple_type: &LuaTupleType) -> InferMembersResult {
+fn find_tuple_members(tuple_type: &LuaTupleType) -> FindMembersResult {
     let mut members = Vec::new();
     for (idx, typ) in tuple_type.get_types().iter().enumerate() {
         members.push(LuaMemberInfo {
@@ -154,7 +154,7 @@ fn infer_tuple_members(tuple_type: &LuaTupleType) -> InferMembersResult {
     Some(members)
 }
 
-fn infer_object_members(object_type: &LuaObjectType) -> InferMembersResult {
+fn find_object_members(object_type: &LuaObjectType) -> FindMembersResult {
     let mut members = Vec::new();
     for (key, typ) in object_type.get_fields().iter() {
         members.push(LuaMemberInfo {
@@ -169,14 +169,14 @@ fn infer_object_members(object_type: &LuaObjectType) -> InferMembersResult {
     Some(members)
 }
 
-fn infer_union_members(
+fn find_union_members(
     db: &DbIndex,
     union_type: &LuaUnionType,
     infer_guard: &mut InferGuard,
-) -> InferMembersResult {
+) -> FindMembersResult {
     let mut members = Vec::new();
     for typ in union_type.get_types().iter() {
-        let sub_members = infer_members_guard(db, typ, infer_guard);
+        let sub_members = find_members_guard(db, typ, infer_guard);
         if let Some(sub_members) = sub_members {
             members.extend(sub_members);
         }
@@ -185,14 +185,14 @@ fn infer_union_members(
     Some(members)
 }
 
-fn infer_intersection_members(
+fn find_intersection_members(
     db: &DbIndex,
     intersection_type: &LuaIntersectionType,
     infer_guard: &mut InferGuard,
-) -> InferMembersResult {
+) -> FindMembersResult {
     let mut members = Vec::new();
     for typ in intersection_type.get_types().iter() {
-        let sub_members = infer_members_guard(db, typ, infer_guard);
+        let sub_members = find_members_guard(db, typ, infer_guard);
         if let Some(sub_members) = sub_members {
             members.push(sub_members);
         }
@@ -227,7 +227,7 @@ fn infer_intersection_members(
     }
 }
 
-fn infer_generic_members_from_super_generics(
+fn find_generic_members_from_super_generics(
     db: &DbIndex,
     type_decl_id: &LuaTypeDeclId,
     substitutor: &TypeSubstitutor,
@@ -256,7 +256,7 @@ fn infer_generic_members_from_super_generics(
             })
             .filter_map(|super_type| {
                 let super_type = instantiate_type_generic(db, &super_type, &substitutor);
-                infer_members_guard(db, &super_type, infer_guard)
+                find_members_guard(db, &super_type, infer_guard)
             })
             .flatten()
             .collect()
@@ -265,13 +265,13 @@ fn infer_generic_members_from_super_generics(
     }
 }
 
-fn infer_generic_members(
+fn find_generic_members(
     db: &DbIndex,
     generic_type: &LuaGenericType,
     infer_guard: &mut InferGuard,
-) -> InferMembersResult {
+) -> FindMembersResult {
     let base_type = generic_type.get_base_type();
-    let mut members = infer_members_guard(db, &base_type, infer_guard)?;
+    let mut members = find_members_guard(db, &base_type, infer_guard)?;
 
     let generic_params = generic_type.get_params();
     let substitutor = TypeSubstitutor::from_type_array(generic_params.clone());
@@ -284,7 +284,7 @@ fn infer_generic_members(
     // be passed to the called instantiate_type_generic() in some kind of a
     // context.
     if let LuaType::Ref(base_type_decl_id) = base_type {
-        members.extend(infer_generic_members_from_super_generics(
+        members.extend(find_generic_members_from_super_generics(
             db,
             &base_type_decl_id,
             &substitutor,
@@ -295,7 +295,7 @@ fn infer_generic_members(
     Some(members)
 }
 
-fn infer_global_members(db: &DbIndex) -> InferMembersResult {
+fn find_global_members(db: &DbIndex) -> FindMembersResult {
     let mut members = Vec::new();
     let global_decls = db.get_global_index().get_all_global_decl_ids();
     for decl_id in global_decls {
@@ -317,27 +317,27 @@ fn infer_global_members(db: &DbIndex) -> InferMembersResult {
     Some(members)
 }
 
-fn infer_instance_members(
+fn find_instance_members(
     db: &DbIndex,
     inst: &LuaInstanceType,
     infer_guard: &mut InferGuard,
-) -> InferMembersResult {
+) -> FindMembersResult {
     let mut members = Vec::new();
     let range = inst.get_range();
     let member_owner = LuaMemberOwner::Element(range.clone());
-    if let Some(normal_members) = infer_normal_members(db, member_owner) {
+    if let Some(normal_members) = find_normal_members(db, member_owner) {
         members.extend(normal_members);
     }
 
     let origin_type = inst.get_base();
-    if let Some(origin_members) = infer_members_guard(db, origin_type, infer_guard) {
+    if let Some(origin_members) = find_members_guard(db, origin_type, infer_guard) {
         members.extend(origin_members);
     }
 
     Some(members)
 }
 
-fn infer_namespace_members(db: &DbIndex, ns: &str) -> InferMembersResult {
+fn find_namespace_members(db: &DbIndex, ns: &str) -> FindMembersResult {
     let mut members = Vec::new();
 
     let prefix = format!("{}.", ns);

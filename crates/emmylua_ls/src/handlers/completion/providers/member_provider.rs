@@ -25,7 +25,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
 
     let prefix_expr = index_expr.get_prefix_expr()?;
     let prefix_type = builder.semantic_model.infer_expr(prefix_expr.into()).ok()?;
-    let member_info_map = builder.semantic_model.infer_member_map(&prefix_type)?;
+    let member_info_map = builder.semantic_model.get_member_map(&prefix_type)?;
     for (_, member_infos) in member_info_map.iter() {
         add_resolve_member_infos(builder, &member_infos, completion_status);
     }

@@ -1,4 +1,5 @@
 mod instantiate_func_generic;
+mod instantiate_special_generic;
 mod instantiate_type_generic;
 mod test;
 mod tpl_pattern;

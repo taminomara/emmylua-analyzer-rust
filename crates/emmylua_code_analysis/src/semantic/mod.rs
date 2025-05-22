@@ -20,8 +20,8 @@ use emmylua_parser::{
 use infer::{infer_left_value_type_from_right_value, infer_multi_value_adjusted_expression_types};
 pub use infer::{infer_table_field_value_should_be, infer_table_should_be};
 use lsp_types::Uri;
-pub use member::infer_member_map;
-use member::infer_members;
+use member::find_members;
+pub use member::get_member_map;
 pub use member::LuaMemberInfo;
 use reference::is_reference_to;
 use rowan::{NodeOrToken, TextRange};
@@ -112,14 +112,14 @@ impl<'a> SemanticModel<'a> {
     }
 
     pub fn infer_member_infos(&self, prefix_type: &LuaType) -> Option<Vec<LuaMemberInfo>> {
-        infer_members(self.db, prefix_type)
+        find_members(self.db, prefix_type)
     }
 
-    pub fn infer_member_map(
+    pub fn get_member_map(
         &self,
         prefix_type: &LuaType,
     ) -> Option<HashMap<LuaMemberKey, Vec<LuaMemberInfo>>> {
-        infer_member_map(self.db, prefix_type)
+        get_member_map(self.db, prefix_type)
     }
 
     pub fn type_check(&self, source: &LuaType, compact_type: &LuaType) -> TypeCheckResult {

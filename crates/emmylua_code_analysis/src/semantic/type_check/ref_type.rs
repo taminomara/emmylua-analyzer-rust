@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use crate::{
-    humanize_type, semantic::member::infer_members, DbIndex, LuaMemberKey, LuaMemberOwner,
+    humanize_type, semantic::member::find_members, DbIndex, LuaMemberKey, LuaMemberOwner,
     LuaObjectType, LuaType, LuaTypeCache, LuaTypeDeclId, LuaUnionType, RenderLevel,
 };
 
@@ -278,7 +278,7 @@ fn check_ref_type_compact_object(
     check_guard: TypeCheckGuard,
 ) -> TypeCheckResult {
     // ref 可能继承自其他类型, 所以需要使用 infer_members 来获取所有成员
-    let source_type_members = match infer_members(db, &LuaType::Ref(source_type_id.clone())) {
+    let source_type_members = match find_members(db, &LuaType::Ref(source_type_id.clone())) {
         Some(members) => members,
         None => return Ok(()),
     };

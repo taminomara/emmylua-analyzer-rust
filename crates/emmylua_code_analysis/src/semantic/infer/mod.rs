@@ -32,7 +32,7 @@ use crate::{
     InFiled, VariadicType,
 };
 
-use super::{member::infer_members, CacheEntry, CacheKey, LuaInferCache};
+use super::{member::find_members, CacheEntry, CacheKey, LuaInferCache};
 
 pub type InferResult = Result<LuaType, InferFailReason>;
 pub use infer_call::InferCallFuncResult;
@@ -85,7 +85,7 @@ pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> Inf
             cache.add_cache(&key, CacheEntry::ExprCache(LuaType::Unknown));
             return Ok(LuaType::Unknown);
         }
-        Err(InferFailReason::FieldDotFound) => {
+        Err(InferFailReason::FieldNotFound) => {
             if cache.get_config().analysis_phase.is_force() {
                 cache.add_cache(&key, CacheEntry::ExprCache(LuaType::Nil));
                 return Ok(LuaType::Nil);
@@ -254,7 +254,7 @@ pub fn infer_left_value_type_from_right_value(
             let field_key = table_field.get_field_key()?;
             let table_expr = table_field.get_parent::<LuaTableExpr>()?;
             let table_type = infer_table_should_be(db, cache, table_expr.clone()).ok()?;
-            let member_infos = infer_members(db, &table_type)?;
+            let member_infos = find_members(db, &table_type)?;
             let mut typ = None;
             for member_info in member_infos.iter() {
                 if member_info.key.to_path() == field_key.get_path_part() {

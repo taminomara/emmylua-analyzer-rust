@@ -7,7 +7,7 @@ use smol_str::SmolStr;
 use crate::{
     check_type_compact,
     db_index::{DbIndex, LuaGenericType, LuaType},
-    semantic::{member::infer_member_map, LuaInferCache},
+    semantic::{member::get_member_map, LuaInferCache},
     InferFailReason, LuaFunctionType, LuaMemberKey, LuaMemberOwner, LuaObjectType,
     LuaSemanticDeclId, LuaTupleType, LuaUnionType, VariadicType,
 };
@@ -239,7 +239,7 @@ fn object_tpl_pattern_match_member_owner_match(
         }
     };
 
-    let members = infer_member_map(db, &owner_type).ok_or(InferFailReason::None)?;
+    let members = get_member_map(db, &owner_type).ok_or(InferFailReason::None)?;
     for (k, v) in members {
         let resolve_key = match &k {
             LuaMemberKey::Integer(i) => Some(LuaType::IntegerConst(i.clone())),
@@ -489,7 +489,7 @@ fn table_generic_tpl_pattern_member_owner_match(
         }
     };
 
-    let members = infer_member_map(db, &owner_type).ok_or(InferFailReason::None)?;
+    let members = get_member_map(db, &owner_type).ok_or(InferFailReason::None)?;
     let mut keys = Vec::new();
     let mut values = Vec::new();
     for (k, v) in members {

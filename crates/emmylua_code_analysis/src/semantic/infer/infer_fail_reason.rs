@@ -8,7 +8,7 @@ pub enum InferFailReason {
     RecursiveInfer,
     UnResolveExpr(InFiled<LuaExpr>),
     UnResolveSignatureReturn(LuaSignatureId),
-    FieldDotFound,
+    FieldNotFound,
     UnResolveDeclType(LuaDeclId),
     UnResolveMemberType(LuaMemberId),
 }
@@ -18,7 +18,7 @@ impl InferFailReason {
         match self {
             InferFailReason::UnResolveExpr(_)
             | InferFailReason::UnResolveSignatureReturn(_)
-            | InferFailReason::FieldDotFound
+            | InferFailReason::FieldNotFound
             | InferFailReason::UnResolveDeclType(_)
             | InferFailReason::UnResolveMemberType(_) => true,
             _ => false,

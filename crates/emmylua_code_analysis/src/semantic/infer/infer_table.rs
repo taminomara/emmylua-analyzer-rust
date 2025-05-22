@@ -150,7 +150,7 @@ pub fn infer_table_field_value_should_be(
         &mut InferGuard::new(),
     ) {
         Ok(member_type) => return Ok(member_type),
-        Err(InferFailReason::FieldDotFound) => InferFailReason::FieldDotFound,
+        Err(InferFailReason::FieldNotFound) => InferFailReason::FieldNotFound,
         Err(err) => return Err(err),
     };
 
@@ -162,7 +162,7 @@ pub fn infer_table_field_value_should_be(
         &mut InferGuard::new(),
     ) {
         Ok(member_type) => return Ok(member_type),
-        Err(InferFailReason::FieldDotFound) => {}
+        Err(InferFailReason::FieldNotFound) => {}
         Err(err) => return Err(err),
     }
 
@@ -248,7 +248,7 @@ fn infer_table_field_type_by_parent(
         &mut InferGuard::new(),
     ) {
         Ok(member_type) => return Ok(member_type),
-        Err(InferFailReason::FieldDotFound) => InferFailReason::FieldDotFound,
+        Err(InferFailReason::FieldNotFound) => InferFailReason::FieldNotFound,
         Err(err) => return Err(err),
     };
 
@@ -260,7 +260,7 @@ fn infer_table_field_type_by_parent(
         &mut InferGuard::new(),
     ) {
         Ok(member_type) => return Ok(member_type),
-        Err(InferFailReason::FieldDotFound) => {}
+        Err(InferFailReason::FieldNotFound) => {}
         Err(err) => return Err(err),
     }
 

@@ -7,7 +7,7 @@ use crate::{
     VariadicType,
 };
 
-use super::LuaMultiLineUnion;
+use super::{LuaAliasCallKind, LuaMultiLineUnion};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RenderLevel {
@@ -329,12 +329,24 @@ fn humanize_array_type(db: &DbIndex, inner: &LuaType, level: RenderLevel) -> Str
 
 #[allow(unused)]
 fn humanize_call_type(db: &DbIndex, inner: &LuaAliasCallType, level: RenderLevel) -> String {
-    // if level == RenderLevel::Minimal {
-    //     return "(keyof)".to_string();
-    // }
-    // let element_type = humanize_type(db, inner, level.next_level());
-    // format!("keyof {}", element_type)
-    "(call)".to_string()
+    let basic = match inner.get_call_kind() {
+        LuaAliasCallKind::Sub => "sub",
+        LuaAliasCallKind::Add => "add",
+        LuaAliasCallKind::KeyOf => "keyof",
+        LuaAliasCallKind::Extends => "extends",
+        LuaAliasCallKind::Select => "select",
+        LuaAliasCallKind::Unpack => "unpack",
+        LuaAliasCallKind::Index => "index",
+        LuaAliasCallKind::RawGet => "rawget",
+    };
+    let operands = inner
+        .get_operands()
+        .iter()
+        .map(|ty| humanize_type(db, ty, level.next_level()))
+        .collect::<Vec<_>>()
+        .join(",");
+
+    format!("{}<{}>", basic, operands)
 }
 
 fn humanize_doc_function_type(

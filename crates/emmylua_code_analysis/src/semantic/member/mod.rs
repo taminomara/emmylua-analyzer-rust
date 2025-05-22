@@ -1,12 +1,16 @@
-mod infer_member_map;
-mod infer_members;
+mod find_members;
+mod get_member_map;
+mod infer_raw_member;
 
 use crate::{
     db_index::{LuaType, LuaTypeDeclId},
     LuaMemberFeature, LuaMemberKey, LuaSemanticDeclId,
 };
-pub use infer_member_map::infer_member_map;
-pub use infer_members::infer_members;
+pub use find_members::find_members;
+pub use get_member_map::get_member_map;
+pub use infer_raw_member::infer_raw_member_type;
+
+use super::InferFailReason;
 
 pub fn get_buildin_type_map_type_id(type_: &LuaType) -> Option<LuaTypeDeclId> {
     match type_ {
@@ -27,4 +31,5 @@ pub struct LuaMemberInfo {
     pub overload_index: Option<usize>,
 }
 
-type InferMembersResult = Option<Vec<LuaMemberInfo>>;
+type FindMembersResult = Option<Vec<LuaMemberInfo>>;
+type RawGetMemberTypeResult = Result<LuaType, InferFailReason>;

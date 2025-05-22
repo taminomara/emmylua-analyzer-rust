@@ -2,7 +2,7 @@ use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr, LuaIndexKey, LuaTableExpr
 
 use crate::{
     infer_expr,
-    semantic::{infer::InferResult, member::infer_members},
+    semantic::{infer::InferResult, member::find_members},
     DbIndex, InFiled, InferFailReason, LuaInferCache, LuaType,
 };
 
@@ -55,12 +55,12 @@ fn meta_type_contain_table(
     meta_type: LuaType,
     table_expr: LuaTableExpr,
 ) -> Option<LuaType> {
-    let meta_members = infer_members(db, &meta_type)?;
+    let meta_members = find_members(db, &meta_type)?;
     for member in meta_members {
         if member.key.get_name() == Some("__index") {
-            let index_members = infer_members(db, &member.typ)?;
+            let index_members = find_members(db, &member.typ)?;
             let table_type = infer_expr(db, cache, LuaExpr::TableExpr(table_expr.clone())).ok()?;
-            let table_members = infer_members(db, &table_type)?;
+            let table_members = find_members(db, &table_type)?;
             // 如果 index_members 包含了 table_members 中的所有成员，则返回 meta_type
             if table_members.iter().all(|table_member| {
                 index_members

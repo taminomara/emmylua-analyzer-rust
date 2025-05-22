@@ -42,7 +42,7 @@ pub fn infer_index_expr(
         Ok(member_type) => {
             return infer_member_type_pass_flow(db, cache, index_expr, &prefix_type, member_type);
         }
-        Err(InferFailReason::FieldDotFound) => InferFailReason::FieldDotFound,
+        Err(InferFailReason::FieldNotFound) => InferFailReason::FieldNotFound,
         Err(err) => return Err(err),
     };
 
@@ -56,7 +56,7 @@ pub fn infer_index_expr(
         Ok(member_type) => {
             return infer_member_type_pass_flow(db, cache, index_expr, &prefix_type, member_type)
         }
-        Err(InferFailReason::FieldDotFound) => {}
+        Err(InferFailReason::FieldNotFound) => {}
         Err(err) => return Err(err),
     }
 
@@ -156,7 +156,7 @@ pub fn infer_member_by_member_key(
         LuaType::Instance(inst) => infer_instance_member(db, cache, inst, index_expr, infer_guard),
         LuaType::Namespace(ns) => infer_namespace_member(db, cache, ns, index_expr),
         LuaType::Array(array_type) => infer_array_member(db, cache, array_type, index_expr),
-        _ => Err(InferFailReason::FieldDotFound),
+        _ => Err(InferFailReason::FieldNotFound),
     }
 }
 
@@ -179,10 +179,10 @@ fn infer_array_member(
             if expr_type.is_integer() {
                 Ok(expression_type)
             } else {
-                Err(InferFailReason::FieldDotFound)
+                Err(InferFailReason::FieldNotFound)
             }
         }
-        _ => Err(InferFailReason::FieldDotFound),
+        _ => Err(InferFailReason::FieldNotFound),
     }
 }
 
@@ -197,7 +197,7 @@ fn infer_table_member(
     let key = LuaMemberKey::from_index_key(db, cache, &index_key)?;
     let member_item = match db.get_member_index().get_member_item(&owner, &key) {
         Some(member_item) => member_item,
-        None => return Err(InferFailReason::FieldDotFound),
+        None => return Err(InferFailReason::FieldNotFound),
     };
 
     member_item.resolve_type(db)
@@ -245,7 +245,7 @@ fn infer_custom_type_member(
                     Ok(member_type) => {
                         return Ok(member_type);
                     }
-                    Err(InferFailReason::FieldDotFound) => {}
+                    Err(InferFailReason::FieldNotFound) => {}
                     Err(err) => return Err(err),
                 }
             }
@@ -281,7 +281,7 @@ fn infer_custom_type_member(
         }
     }
 
-    Err(InferFailReason::FieldDotFound)
+    Err(InferFailReason::FieldNotFound)
 }
 
 fn get_expr_key_members(
@@ -406,11 +406,11 @@ fn infer_tuple_member(
         let index = if i > 0 { i - 1 } else { 0 };
         return match tuple_type.get_type(index as usize) {
             Some(typ) => Ok(typ.clone()),
-            None => Err(InferFailReason::FieldDotFound),
+            None => Err(InferFailReason::FieldNotFound),
         };
     }
 
-    Err(InferFailReason::FieldDotFound)
+    Err(InferFailReason::FieldNotFound)
 }
 
 fn infer_object_member(
@@ -433,14 +433,14 @@ fn infer_object_member(
             Ok(typ) => {
                 return Ok(typ);
             }
-            Err(InferFailReason::FieldDotFound) => {}
+            Err(InferFailReason::FieldNotFound) => {}
             Err(err) => {
                 return Err(err);
             }
         }
     }
 
-    Err(InferFailReason::FieldDotFound)
+    Err(InferFailReason::FieldNotFound)
 }
 
 fn infer_index_metamethod(
@@ -462,7 +462,7 @@ fn infer_index_metamethod(
         return Ok(value_type.clone());
     }
 
-    Err(InferFailReason::FieldDotFound)
+    Err(InferFailReason::FieldNotFound)
 }
 
 fn infer_union_member(
@@ -513,12 +513,12 @@ fn infer_intersection_member(
             &mut InferGuard::new(),
         ) {
             Ok(ty) => return Ok(ty),
-            Err(InferFailReason::FieldDotFound) => continue,
+            Err(InferFailReason::FieldNotFound) => continue,
             Err(reason) => return Err(reason),
         }
     }
 
-    Err(InferFailReason::FieldDotFound)
+    Err(InferFailReason::FieldNotFound)
 }
 
 fn infer_generic_members_from_super_generics(
@@ -603,7 +603,7 @@ fn infer_instance_member(
         Ok(typ) => {
             return Ok(typ);
         }
-        Err(InferFailReason::FieldDotFound) => {}
+        Err(InferFailReason::FieldNotFound) => {}
         Err(err) => return Err(err),
     }
 
@@ -642,7 +642,7 @@ pub fn infer_member_by_operator(
             let base = inst.get_base();
             infer_member_by_operator(db, cache, &base, index_expr, infer_guard)
         }
-        _ => Err(InferFailReason::FieldDotFound),
+        _ => Err(InferFailReason::FieldNotFound),
     }
 }
 
@@ -659,7 +659,7 @@ fn infer_member_by_index_table(
             let operator_ids = db
                 .get_operator_index()
                 .get_operators(&meta_owner, LuaOperatorMetaMethod::Index)
-                .ok_or(InferFailReason::FieldDotFound)?;
+                .ok_or(InferFailReason::FieldNotFound)?;
 
             let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
 
@@ -715,7 +715,7 @@ fn infer_member_by_index_table(
         }
     }
 
-    Err(InferFailReason::FieldDotFound)
+    Err(InferFailReason::FieldNotFound)
 }
 
 fn infer_member_by_index_custom_type(
@@ -771,14 +771,14 @@ fn infer_member_by_index_custom_type(
                     Ok(member_type) => {
                         return Ok(member_type);
                     }
-                    Err(InferFailReason::FieldDotFound) => {}
+                    Err(InferFailReason::FieldNotFound) => {}
                     Err(err) => return Err(err),
                 }
             }
         }
     }
 
-    Err(InferFailReason::FieldDotFound)
+    Err(InferFailReason::FieldNotFound)
 }
 
 fn infer_member_by_index_array(
@@ -803,7 +803,7 @@ fn infer_member_by_index_array(
         }
     }
 
-    Err(InferFailReason::FieldDotFound)
+    Err(InferFailReason::FieldNotFound)
 }
 
 fn infer_member_by_index_object(
@@ -824,7 +824,7 @@ fn infer_member_by_index_object(
         }
     }
 
-    Err(InferFailReason::FieldDotFound)
+    Err(InferFailReason::FieldNotFound)
 }
 
 fn infer_member_by_index_union(
@@ -846,7 +846,7 @@ fn infer_member_by_index_union(
             Ok(typ) => {
                 member_type = TypeOps::Union.apply(db, &member_type, &typ);
             }
-            Err(InferFailReason::FieldDotFound) => {}
+            Err(InferFailReason::FieldNotFound) => {}
             Err(err) => {
                 return Err(err);
             }
@@ -854,7 +854,7 @@ fn infer_member_by_index_union(
     }
 
     if member_type.is_unknown() {
-        return Err(InferFailReason::FieldDotFound);
+        return Err(InferFailReason::FieldNotFound);
     }
 
     Ok(member_type)
@@ -875,12 +875,12 @@ fn infer_member_by_index_intersection(
             &mut InferGuard::new(),
         ) {
             Ok(ty) => return Ok(ty),
-            Err(InferFailReason::FieldDotFound) => continue,
+            Err(InferFailReason::FieldNotFound) => continue,
             Err(reason) => return Err(reason),
         }
     }
 
-    Err(InferFailReason::FieldDotFound)
+    Err(InferFailReason::FieldNotFound)
 }
 
 fn infer_member_by_index_generic(
@@ -937,7 +937,7 @@ fn infer_member_by_index_generic(
                         return Ok(member_type);
                     }
                 }
-                Err(InferFailReason::FieldDotFound) => {}
+                Err(InferFailReason::FieldNotFound) => {}
                 Err(err) => return Err(err),
             }
         }
@@ -957,13 +957,13 @@ fn infer_member_by_index_generic(
                 Ok(member_type) => {
                     return Ok(member_type);
                 }
-                Err(InferFailReason::FieldDotFound) => {}
+                Err(InferFailReason::FieldNotFound) => {}
                 Err(err) => return Err(err),
             }
         }
     }
 
-    Err(InferFailReason::FieldDotFound)
+    Err(InferFailReason::FieldNotFound)
 }
 
 fn infer_member_by_index_table_generic(

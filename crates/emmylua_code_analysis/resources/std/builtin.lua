@@ -114,9 +114,14 @@
 
 --- built-in type for Select function
 ---@alias std.Select<T, StartOrLen> unknown
+
 ---
 --- built-in type for Unpack function
 ---@alias std.Unpack<T, Start, End> unknown
+
+---
+--- built-in type for Rawget
+---@alias std.Rawget<T, K> unknown
 
 --- compact luals
 

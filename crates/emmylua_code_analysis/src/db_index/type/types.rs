@@ -773,6 +773,7 @@ pub enum LuaAliasCallKind {
     Sub,
     Select,
     Unpack,
+    RawGet,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
