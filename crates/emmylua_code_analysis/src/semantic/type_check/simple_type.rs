@@ -78,6 +78,11 @@ pub fn check_simple_type_compact(
                     return Ok(());
                 }
             }
+            LuaType::Def(id) => {
+                if id.get_name() == "string" {
+                    return Ok(());
+                }
+            }
             _ => {}
         },
         LuaType::Integer | LuaType::IntegerConst(_) => match compact_type {
