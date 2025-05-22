@@ -74,4 +74,31 @@ mod test {
 
         assert_eq!(ws.expr_ty("d"), LuaType::String);
     }
+
+    #[test]
+    fn test_issue_490() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+        ---@generic T: table, K, V
+        ---@param t T
+        ---@return fun(table: table<K, V>, index?: K):K, V
+        ---@return T
+        local function spairs(t) end
+
+        --- @type table<string, integer>
+        local t = { a = 1, b = 2, c = 3 }
+        for name, value in spairs(t) do
+            a = name
+            b = value
+        end
+        "#,
+        );
+
+        let a = ws.expr_ty("a");
+        let b = ws.expr_ty("b");
+        assert_eq!(a, LuaType::String);
+        assert_eq!(b, LuaType::Integer);
+    }
 }

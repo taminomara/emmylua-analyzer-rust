@@ -12,7 +12,7 @@ use crate::{
 };
 use check_reason::{check_reach_reason, resolve_all_reason};
 use emmylua_parser::{
-    LuaAssignStat, LuaCallExpr, LuaExpr, LuaFuncStat, LuaTableExpr, LuaTableField,
+    LuaAssignStat, LuaCallExpr, LuaExpr, LuaFuncStat, LuaNameToken, LuaTableExpr, LuaTableField,
 };
 use resolve::{
     try_resolve_decl, try_resolve_iter_var, try_resolve_member, try_resolve_module,
@@ -346,9 +346,8 @@ impl From<UnResolveCallClosureParams> for UnResolve {
 #[derive(Debug)]
 pub struct UnResolveIterVar {
     pub file_id: FileId,
-    pub decl_id: LuaDeclId,
-    pub iter_expr: LuaExpr,
-    pub ret_idx: usize,
+    pub iter_exprs: Vec<LuaExpr>,
+    pub iter_vars: Vec<LuaNameToken>,
 }
 
 impl From<UnResolveIterVar> for UnResolve {

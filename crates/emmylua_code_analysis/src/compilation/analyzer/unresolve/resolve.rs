@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use emmylua_parser::{LuaAstNode, LuaExpr, LuaLocalStat, LuaTableExpr};
+use emmylua_parser::{LuaAstNode, LuaAstToken, LuaExpr, LuaLocalStat, LuaTableExpr};
 
 use crate::{
     compilation::analyzer::{
@@ -206,28 +206,23 @@ pub fn try_resolve_return_point(
 pub fn try_resolve_iter_var(
     db: &mut DbIndex,
     cache: &mut LuaInferCache,
-    iter_var: &mut UnResolveIterVar,
+    unresolve_iter_var: &mut UnResolveIterVar,
 ) -> ResolveResult {
-    let expr_type = infer_expr(db, cache, iter_var.iter_expr.clone())?;
-    let func = match infer_for_range_iter_expr_func(db, expr_type.clone()) {
-        Some(func) => func,
-        None => {
-            return Ok(());
-        }
-    };
+    let iter_var_types = infer_for_range_iter_expr_func(db, cache, &unresolve_iter_var.iter_exprs)?;
+    let mut idx = 0;
+    for var_name in &unresolve_iter_var.iter_vars {
+        let position = var_name.get_position();
+        let decl_id = LuaDeclId::new(unresolve_iter_var.file_id, position);
+        let ret_type = iter_var_types
+            .get_type(idx)
+            .cloned()
+            .unwrap_or(LuaType::Unknown);
+        let ret_type = TypeOps::Remove.apply(db, &ret_type, &LuaType::Nil);
 
-    let multi_return = func.get_variadic_ret();
-    let mut iter_type = multi_return
-        .get_type(iter_var.ret_idx)
-        .cloned()
-        .unwrap_or(LuaType::Unknown);
-    iter_type = TypeOps::Remove.apply(db, &iter_type, &LuaType::Nil);
-    let decl_id = iter_var.decl_id;
-    bind_type(
-        db,
-        decl_id.into(),
-        LuaTypeCache::InferType(iter_type.clone()),
-    );
+        db.get_type_index_mut()
+            .bind_type(decl_id.into(), LuaTypeCache::InferType(ret_type));
+        idx += 1;
+    }
     Ok(())
 }
 

@@ -40,7 +40,7 @@ use crate::{
     FileId,
 };
 use crate::{LuaFunctionType, LuaMemberKey, LuaTypeOwner};
-pub use generic::{instantiate_func_generic, instantiate_type_generic, TypeSubstitutor};
+pub use generic::*;
 pub use infer::infer_param;
 pub use infer::InferFailReason;
 pub(crate) use infer::{infer_call_expr_func, infer_expr};

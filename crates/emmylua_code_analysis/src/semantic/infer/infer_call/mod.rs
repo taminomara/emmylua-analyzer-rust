@@ -602,6 +602,7 @@ fn is_last_call_expr(call_expr: &LuaCallExpr) -> bool {
             LuaSyntaxKind::TableFieldValue => {
                 opt_parent = parent.parent();
             }
+            LuaSyntaxKind::ForRangeStat => return true,
             _ => return false,
         }
     }
