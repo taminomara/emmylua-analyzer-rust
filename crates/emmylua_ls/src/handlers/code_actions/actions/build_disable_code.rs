@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use emmylua_code_analysis::{DiagnosticCode, LuaDocument, SemanticModel};
+use emmylua_code_analysis::{DiagnosticCode, Emmyrc, LuaDocument, SemanticModel};
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaComment, LuaCommentOwner, LuaDocTag, LuaDocTagDiagnostic, LuaExpr,
     LuaKind, LuaStat, LuaSyntaxNode, LuaTokenKind,
@@ -71,6 +71,7 @@ pub fn build_disable_next_line_changes(
     start: Position,
     code: DiagnosticCode,
 ) -> Option<HashMap<Uri, Vec<TextEdit>>> {
+    let emmyrc = semantic_model.get_emmyrc();
     let document = semantic_model.get_document();
     let offset = document.get_offset(start.line as usize, start.character as usize)?;
     let root = semantic_model.get_root();
@@ -127,6 +128,7 @@ pub fn build_disable_next_line_changes(
         } else {
             text_edit = get_disable_next_line_text_edit(
                 &document,
+                &emmyrc,
                 comment.syntax().clone(),
                 comment.get_position(),
                 code,
@@ -137,6 +139,7 @@ pub fn build_disable_next_line_changes(
     if text_edit.is_none() {
         text_edit = get_disable_next_line_text_edit(
             &document,
+            &emmyrc,
             ast.syntax().clone(),
             ast.get_position(),
             code,
@@ -152,6 +155,7 @@ pub fn build_disable_next_line_changes(
 
 fn get_disable_next_line_text_edit(
     document: &LuaDocument,
+    emmyrc: &Emmyrc,
     node: LuaSyntaxNode,
     offset: TextSize,
     code: DiagnosticCode,
@@ -167,6 +171,11 @@ fn get_disable_next_line_text_edit(
     };
 
     let line = document.get_line(offset)?;
+    let space = if emmyrc.code_action.insert_space {
+        " "
+    } else {
+        ""
+    };
     Some(TextEdit {
         range: Range {
             start: Position {
@@ -179,8 +188,9 @@ fn get_disable_next_line_text_edit(
             },
         },
         new_text: format!(
-            "{}---@diagnostic disable-next-line: {}\n",
+            "{}---{}@diagnostic disable-next-line: {}\n",
             indent_text,
+            space,
             code.get_name()
         ),
     })
@@ -194,6 +204,12 @@ pub fn build_disable_file_changes(
     let first_block = root.get_block()?;
     let first_child = first_block.children::<LuaAst>().next()?;
     let document = semantic_model.get_document();
+    let emmyrc = semantic_model.get_emmyrc();
+    let space = if emmyrc.code_action.insert_space {
+        " "
+    } else {
+        ""
+    };
     let text_edit = if let LuaAst::LuaComment(comment) = first_child {
         if let Some(diagnostic_tag) =
             find_diagnostic_disable_tag(comment.clone(), DisableAction::DisableFile)
@@ -230,7 +246,7 @@ pub fn build_disable_file_changes(
                         character: 0,
                     },
                 },
-                new_text: format!("---@diagnostic disable: {}\n", code.get_name()),
+                new_text: format!("---{}@diagnostic disable: {}\n", space, code.get_name()),
             }
         }
     } else {
@@ -245,7 +261,7 @@ pub fn build_disable_file_changes(
                     character: 0,
                 },
             },
-            new_text: format!("---@diagnostic disable: {}\n", code.get_name()),
+            new_text: format!("---{}@diagnostic disable: {}\n", space, code.get_name()),
         }
     };
 

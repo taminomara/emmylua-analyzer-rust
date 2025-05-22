@@ -8,9 +8,9 @@ use std::{
 };
 
 pub use config_loader::load_configs;
-use configs::EmmyrcDocumentColor;
 pub use configs::EmmyrcFilenameConvention;
 pub use configs::EmmyrcLuaVersion;
+use configs::{EmmyrcCodeAction, EmmyrcDocumentColor};
 use configs::{
     EmmyrcCodeLen, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcHover, EmmyrcInlayHint,
     EmmyrcReference, EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken, EmmyrcSignature,
@@ -54,6 +54,8 @@ pub struct Emmyrc {
     pub hover: EmmyrcHover,
     #[serde(default)]
     pub document_color: EmmyrcDocumentColor,
+    #[serde(default)]
+    pub code_action: EmmyrcCodeAction,
 }
 
 impl Emmyrc {

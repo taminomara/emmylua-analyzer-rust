@@ -9,6 +9,16 @@
         "null"
       ]
     },
+    "codeAction": {
+      "default": {
+        "insertSpace": false
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/EmmyrcCodeAction"
+        }
+      ]
+    },
     "codeLens": {
       "default": {
         "enable": true
@@ -523,6 +533,16 @@
           ]
         }
       ]
+    },
+    "EmmyrcCodeAction": {
+      "type": "object",
+      "properties": {
+        "insertSpace": {
+          "description": "Whether to insert space after '---'",
+          "default": false,
+          "type": "boolean"
+        }
+      }
     },
     "EmmyrcCodeLen": {
       "type": "object",

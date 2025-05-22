@@ -1,3 +1,4 @@
+mod code_action;
 mod codelen;
 mod completion;
 mod diagnostics;
@@ -12,6 +13,7 @@ mod signature;
 mod strict;
 mod workspace;
 
+pub use code_action::EmmyrcCodeAction;
 pub use codelen::EmmyrcCodeLen;
 pub use completion::{EmmyrcCompletion, EmmyrcFilenameConvention};
 pub use diagnostics::EmmyrcDiagnostic;
