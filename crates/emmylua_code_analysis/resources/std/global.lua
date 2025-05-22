@@ -375,7 +375,7 @@ function select(index, ...) end
 ---
 --- This function returns `table`.
 ---@param table table
----@param metatable std.metatable|table
+---@param metatable std.metatable|table|nil
 ---@return table
 function setmetatable(table, metatable) end
 
