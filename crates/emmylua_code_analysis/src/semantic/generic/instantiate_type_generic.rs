@@ -326,6 +326,8 @@ fn instantiate_variadic_type(
                             return LuaType::Variadic(VariadicType::Base(base.clone()).into());
                         }
                     }
+                } else {
+                    return LuaType::Never;
                 }
             }
         }
@@ -334,7 +336,9 @@ fn instantiate_variadic_type(
                 let mut new_types = Vec::new();
                 for t in types {
                     let t = instantiate_type_generic(db, t, substitutor);
-                    new_types.push(t);
+                    if !t.is_never() {
+                        new_types.push(t);
+                    }
                 }
                 return LuaType::Variadic(VariadicType::Multi(new_types).into());
             }

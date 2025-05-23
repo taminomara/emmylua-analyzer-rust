@@ -24,4 +24,21 @@ mod test {
         let expected = LuaType::Table;
         assert_eq!(a_ty, expected);
     }
+
+    #[test]
+    fn test_issue_476() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            crate::DiagnosticCode::ParamTypeNotMatch,
+            r#"
+        ---Converts hex to char
+        ---@param hex string
+        ---@return string
+        function hex_to_char2(hex)
+            return string.char(assert(tonumber(hex, 16)))
+        end
+        "#,
+        ));
+    }
 }

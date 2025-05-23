@@ -32,6 +32,7 @@ pub enum LuaType {
     Io,
     SelfInfer,
     Global,
+    Never,
     BooleanConst(bool),
     StringConst(ArcIntern<SmolStr>),
     IntegerConst(i64),
@@ -105,6 +106,7 @@ impl PartialEq for LuaType {
             (LuaType::Namespace(a), LuaType::Namespace(b)) => a == b,
             (LuaType::MultiLineUnion(a), LuaType::MultiLineUnion(b)) => a == b,
             (LuaType::TypeGuard(a), LuaType::TypeGuard(b)) => a == b,
+            (LuaType::Never, LuaType::Never) => true,
             _ => false, // 不同变体之间不相等
         }
     }
@@ -180,6 +182,7 @@ impl Hash for LuaType {
                 let ptr = Arc::as_ptr(a);
                 (44, ptr).hash(state)
             }
+            LuaType::Never => 45.hash(state),
         }
     }
 }
@@ -192,6 +195,10 @@ impl LuaType {
 
     pub fn is_nil(&self) -> bool {
         matches!(self, LuaType::Nil)
+    }
+
+    pub fn is_never(&self) -> bool {
+        matches!(self, LuaType::Never)
     }
 
     pub fn is_table(&self) -> bool {
