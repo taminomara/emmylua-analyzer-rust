@@ -760,4 +760,26 @@ end
             "#
         ));
     }
+
+    #[test]
+    fn test_issue_491() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+            ---@param srow integer?
+            function foo(srow)
+                srow = srow or 0
+
+                return function()
+                    ---@return integer
+                    return function()
+                        return srow
+                    end
+                end
+            end
+            "#
+        ));
+    }
 }

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc, vec};
 
 use rowan::TextRange;
 
@@ -53,12 +53,23 @@ impl<'a> VarTrace<'a> {
 
     pub fn add_assert(&mut self, assertion: TypeAssertion, effect_range: TextRange) -> Option<()> {
         let current_flow_id = self.current_flow_id?;
+        let mut allow_add_flow = vec![current_flow_id];
+        self.collect_allow_flow_id(current_flow_id, &mut allow_add_flow);
         let mut assert_info = LuaFlowChainInfo {
             range: effect_range,
             type_assert: assertion.clone(),
-            allow_flow_id: vec![current_flow_id],
+            allow_flow_id: allow_add_flow,
         };
 
+        self.assertions.push(assert_info);
+        Some(())
+    }
+
+    fn collect_allow_flow_id(
+        &self,
+        current_flow_id: LuaFlowId,
+        allow_flow_ids: &mut Vec<LuaFlowId>,
+    ) -> Option<()> {
         if let Some(flow_node) = self.flow_tree.get_flow_node(current_flow_id) {
             let children = flow_node.get_children();
             for child in children {
@@ -74,12 +85,17 @@ impl<'a> VarTrace<'a> {
                     }
                 }
                 if allow_add_flow_id {
-                    assert_info.allow_flow_id.push(*child);
+                    allow_flow_ids.push(*child);
+                    let mut stack = vec![*child];
+                    while let Some(node) = stack.pop() {
+                        for child in self.flow_tree.get_flow_node(node)?.get_children() {
+                            stack.push(*child);
+                            allow_flow_ids.push(*child);
+                        }
+                    }
                 }
             }
         }
-
-        self.assertions.push(assert_info);
         Some(())
     }
 
