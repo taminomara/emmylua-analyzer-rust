@@ -687,14 +687,14 @@ fn param_type_list_pattern_match_type_list(
         match (&source, &target) {
             (LuaType::Variadic(inner), _) => {
                 let mut target_rest_params = &targets[i..];
-                // 如果可变参数不是最后一个参数, 则target_rest_params 需要减去后面的参数
+                // If the variadic parameter is not the last one, then target_rest_params should exclude the parameters that come after it.
                 if i + 1 < type_len {
                     let source_rest_len = type_len - i - 1;
                     if source_rest_len >= target_rest_params.len() {
                         continue;
                     }
-                    let targt_rest_len = target_rest_params.len() - source_rest_len;
-                    target_rest_params = &target_rest_params[..targt_rest_len]
+                    let target_rest_len = target_rest_params.len() - source_rest_len;
+                    target_rest_params = &target_rest_params[..target_rest_len]
                 }
 
                 func_varargs_tpl_pattern_match(&inner, &target_rest_params, substitutor)?;
