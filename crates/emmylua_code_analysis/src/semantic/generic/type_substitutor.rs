@@ -43,7 +43,7 @@ impl TypeSubstitutor {
     }
 
     pub fn insert_type(&mut self, tpl_id: GenericTplId, replace_type: LuaType) {
-        if self.tpl_replace_map.contains_key(&tpl_id) {
+        if !self.can_insert_type(tpl_id) {
             return;
         }
 
@@ -51,8 +51,20 @@ impl TypeSubstitutor {
             .insert(tpl_id, SubstitutorValue::Type(replace_type));
     }
 
+    fn can_insert_type(&self, tpl_id: GenericTplId) -> bool {
+        if let Some(value) = self.tpl_replace_map.get(&tpl_id) {
+            if let SubstitutorValue::Type(typ) = value {
+                return typ.is_any();
+            }
+
+            return false;
+        }
+
+        true
+    }
+
     pub fn insert_params(&mut self, tpl_id: GenericTplId, params: Vec<(String, Option<LuaType>)>) {
-        if self.tpl_replace_map.contains_key(&tpl_id) {
+        if !self.can_insert_type(tpl_id) {
             return;
         }
 
@@ -61,7 +73,7 @@ impl TypeSubstitutor {
     }
 
     pub fn insert_multi_types(&mut self, tpl_id: GenericTplId, types: Vec<LuaType>) {
-        if self.tpl_replace_map.contains_key(&tpl_id) {
+        if !self.can_insert_type(tpl_id) {
             return;
         }
 
