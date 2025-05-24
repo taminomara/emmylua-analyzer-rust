@@ -41,4 +41,46 @@ mod test {
             "Signature(LuaSignatureId { file_id: FileId { id: 14 }, position: 76 })"
         );
     }
+
+    #[test]
+    fn test_issue_493() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+        local async = {}
+        --- @async
+        --- @generic T, R
+        --- @param argc integer
+        --- @param func fun(...:T..., cb: fun(...:R...))
+        --- @param ... T...
+        --- @return R...
+        function async.await(argc, func, ...)
+            error('not implemented')
+        end
+
+        --- @param func async fun()
+        function async.run(func)
+            error('not implemented')
+        end
+
+        --- @alias FsStat {path: string, type:string, size:integer}
+
+        --- @param path string
+        --- @param callback fun(stat: FsStat)
+        local function fs_stat(path, callback)
+            error('not implemented')
+        end
+
+        async.run(function ()
+            stat = async.await(2, fs_stat, 'a.lua')
+        end)
+ 
+        "#,
+        );
+
+        let ty = ws.expr_ty("stat");
+        let expected = ws.ty("FsStat");
+        assert_eq!(ty, expected);
+    }
 }
