@@ -95,10 +95,11 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
                     return Some(LuaType::IntegerConst(*i));
                 }
             }
-            LuaType::Number | LuaType::Integer | LuaType::Any | LuaType::Unknown => {
-                return Some(LuaType::IntegerConst(*i));
-            }
-            LuaType::IntegerConst(_) => {
+            LuaType::Number
+            | LuaType::Integer
+            | LuaType::Any
+            | LuaType::Unknown
+            | LuaType::IntegerConst(_) => {
                 return Some(LuaType::Integer);
             }
             _ => {}
@@ -109,10 +110,7 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
                     return Some(LuaType::DocStringConst(s.clone()));
                 }
             }
-            LuaType::String | LuaType::Any | LuaType::Unknown => {
-                return Some(LuaType::StringConst(s.clone()));
-            }
-            LuaType::StringConst(_) => {
+            LuaType::String | LuaType::Any | LuaType::Unknown | LuaType::StringConst(_) => {
                 return Some(LuaType::String);
             }
             _ => {}
@@ -135,6 +133,13 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
         },
         LuaType::Instance(base) => return narrow_down_type(db, source, base.get_base().clone()),
         LuaType::Unknown => return Some(source),
+        LuaType::BooleanConst(_) => {
+            if source.is_boolean() {
+                return Some(LuaType::Boolean);
+            } else if source.is_unknown() {
+                return Some(LuaType::BooleanConst(true));
+            }
+        }
         _ => {
             if target.is_unknown() {
                 return Some(source);
