@@ -165,4 +165,34 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_450() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(!ws.check_code_for_namespace(
+            DiagnosticCode::MissingParameter,
+            r#"
+                ---@class D31.A
+                local A = {}
+
+                function A:foo()
+                end
+
+                local a = A.foo()
+        "#
+        ));
+
+        assert!(ws.check_code_for_namespace(
+            DiagnosticCode::MissingParameter,
+            r#"
+                ---@class D31.A
+                local A = {}
+
+                function A:foo()
+                end
+
+                local a = A.foo(A)
+        "#
+        ));
+    }
 }
