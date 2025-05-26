@@ -1,7 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
+use emmylua_parser::LuaSyntaxKind;
+
 use crate::{
-    DiagnosticCode, LuaDeclId, LuaDeclarationTree, LuaScope, LuaScopeKind, ScopeOrDeclId,
+    DiagnosticCode, LuaDecl, LuaDeclId, LuaDeclarationTree, LuaScope, LuaScopeKind, ScopeOrDeclId,
     SemanticModel,
 };
 
@@ -68,6 +70,15 @@ fn check_scope_for_redefined_locals(
                 let name = decl.get_name().to_string();
                 if decl.is_local() && name != "..." && !name.starts_with("_") {
                     if current_locals.contains_key(&name) {
+                        let old_decl = current_locals
+                            .get(&name)
+                            .and_then(|id| decl_tree.get_decl(id));
+                        if var_name_not_conflicts_with_function_param_name(&decl, old_decl)
+                            .is_some()
+                        {
+                            continue;
+                        }
+
                         // 发现重定义，记录诊断
                         diagnostics.insert(*decl_id);
                     }
@@ -99,6 +110,32 @@ fn check_scope_for_redefined_locals(
             parent_locals.insert(name, decl_id);
         }
     }
+}
+
+/// 处理 a = function(a)
+fn var_name_not_conflicts_with_function_param_name(
+    current_decl: &LuaDecl,
+    old_decl: Option<&LuaDecl>,
+) -> Option<()> {
+    let old_decl = old_decl?;
+    if old_decl.is_param() || !current_decl.is_param() {
+        return None;
+    }
+    if let Some(value_syntax_id) = old_decl.get_value_syntax_id() {
+        if value_syntax_id.get_kind() != LuaSyntaxKind::ClosureExpr {
+            return None;
+        }
+        match current_decl.extra {
+            crate::LuaDeclExtra::Param { signature_id, .. } => {
+                if value_syntax_id.get_range().start() == signature_id.get_position() {
+                    return Some(()); // 不冲突
+                }
+            }
+            _ => {}
+        }
+    }
+
+    None
 }
 
 /// 检查是否需要加入到父作用域
