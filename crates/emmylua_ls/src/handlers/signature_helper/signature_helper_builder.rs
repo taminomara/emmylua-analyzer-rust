@@ -37,7 +37,7 @@ impl<'a> SignatureHelperBuilder<'a> {
         };
         builder.self_type = builder.infer_self_type();
         builder.build_full_name();
-        builder.set_best_call_params_info();
+        builder.generate_best_call_params_info();
         builder
     }
 
@@ -146,7 +146,7 @@ impl<'a> SignatureHelperBuilder<'a> {
         }));
     }
 
-    fn set_best_call_params_info(&mut self) -> Option<()> {
+    fn generate_best_call_params_info(&mut self) -> Option<()> {
         if !self.params_info.is_empty() {
             return Some(());
         }

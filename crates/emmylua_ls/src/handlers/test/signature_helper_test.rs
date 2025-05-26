@@ -21,4 +21,23 @@ mod tests {
             },
         ));
     }
+
+    #[test]
+    fn test_2() {
+        let mut ws = ProviderVirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_signature_helper(
+            r#"
+                ---@param path string
+                local function readFile(path)
+                end
+
+                pcall(readFile, <??>)
+            "#,
+            VirtualSignatureHelp {
+                target_label: "pcall(f: fun(path: string), path: string): boolean".to_string(),
+                active_signature: 0,
+                active_parameter: 1,
+            },
+        ));
+    }
 }
