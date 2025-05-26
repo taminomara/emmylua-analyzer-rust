@@ -160,6 +160,27 @@ impl<'a> SignatureHelperBuilder<'a> {
                 documentation: None,
             });
         }
+        match (func.is_colon_define(), self.call_expr.is_colon_call()) {
+            (true, false) => {
+                let param_label = generate_param_label(
+                    self.semantic_model.get_db(),
+                    (String::from("self"), Some(LuaType::SelfInfer)),
+                );
+                self.params_info.insert(
+                    0,
+                    ParameterInformation {
+                        label: ParameterLabel::Simple(param_label),
+                        documentation: None,
+                    },
+                );
+            }
+            (false, true) => {
+                if !self.params_info.is_empty() {
+                    self.params_info.remove(0);
+                }
+            }
+            _ => {}
+        }
         self.best_call_function_label = build_function_label(
             self,
             &self.params_info,

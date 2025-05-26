@@ -1,13 +1,16 @@
 use emmylua_code_analysis::{EmmyLuaAnalysis, FileId, VirtualUrlGenerator};
 use lsp_types::{
     CompletionItemKind, CompletionResponse, CompletionTriggerKind, GotoDefinitionResponse, Hover,
-    HoverContents, MarkupContent, Position,
+    HoverContents, MarkupContent, Position, SignatureHelpContext, SignatureHelpTriggerKind,
 };
 use tokio_util::sync::CancellationToken;
 
 use crate::{
     context::ClientId,
-    handlers::completion::{completion, completion_resolve},
+    handlers::{
+        completion::{completion, completion_resolve},
+        signature_helper::signature_help,
+    },
 };
 
 use super::{hover::hover, implementation::implementation};
@@ -35,6 +38,13 @@ pub struct VirtualCompletionItem {
 #[derive(Debug)]
 pub struct VirtualCompletionResolveItem {
     pub detail: String,
+}
+
+#[derive(Debug)]
+pub struct VirtualSignatureHelp {
+    pub target_label: String,
+    pub active_signature: usize,
+    pub active_parameter: usize,
 }
 
 #[allow(unused)]
@@ -244,5 +254,38 @@ impl ProviderVirtualWorkspace {
             GotoDefinitionResponse::Array(_) => true,
             GotoDefinitionResponse::Link(_) => true,
         }
+    }
+
+    pub fn check_signature_helper(
+        &mut self,
+        block_str: &str,
+        expect: VirtualSignatureHelp,
+    ) -> bool {
+        let content = Self::handle_file_content(block_str);
+        let Some((content, position)) = content else {
+            return false;
+        };
+        let file_id = self.def(&content);
+        let param_context = SignatureHelpContext {
+            trigger_kind: SignatureHelpTriggerKind::INVOKED,
+            trigger_character: None,
+            is_retrigger: false,
+            active_signature_help: None,
+        };
+        let result = signature_help(&self.analysis, file_id, position, param_context);
+        dbg!(&result);
+        let Some(result) = result else {
+            return false;
+        };
+        let Some(signature) = result.signatures.get(expect.active_signature) else {
+            return false;
+        };
+        if signature.label != expect.target_label {
+            return false;
+        }
+        if signature.active_parameter != Some(expect.active_parameter as u32) {
+            return false;
+        }
+        true
     }
 }

@@ -4,7 +4,9 @@ mod signature_helper_builder;
 use crate::context::ServerContextSnapshot;
 use build_signature_helper::build_signature_helper;
 pub use build_signature_helper::get_current_param_index;
+use emmylua_code_analysis::{EmmyLuaAnalysis, FileId};
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxKind, LuaTokenKind};
+use lsp_types::Position;
 use lsp_types::{
     ClientCapabilities, ServerCapabilities, SignatureHelp, SignatureHelpContext,
     SignatureHelpOptions, SignatureHelpParams, SignatureHelpTriggerKind,
@@ -22,9 +24,24 @@ pub async fn on_signature_helper_handler(
     let uri = params.text_document_position_params.text_document.uri;
     let analysis = context.analysis.read().await;
     let file_id = analysis.get_file_id(&uri)?;
+    let position = params.text_document_position_params.position;
+    let param_context = params.context.unwrap_or(SignatureHelpContext {
+        trigger_kind: SignatureHelpTriggerKind::INVOKED,
+        trigger_character: None,
+        is_retrigger: false,
+        active_signature_help: None,
+    });
+    signature_help(&analysis, file_id, position, param_context)
+}
+
+pub fn signature_help(
+    analysis: &EmmyLuaAnalysis,
+    file_id: FileId,
+    position: Position,
+    param_context: SignatureHelpContext,
+) -> Option<SignatureHelp> {
     let mut semantic_model = analysis.compilation.get_semantic_model(file_id)?;
     let root = semantic_model.get_root();
-    let position = params.text_document_position_params.position;
     let position_offset = {
         let document = semantic_model.get_document();
         document.get_offset(position.line as usize, position.character as usize)?
@@ -41,14 +58,6 @@ pub async fn on_signature_helper_handler(
             return None;
         }
     };
-
-    let param_context = params.context.unwrap_or(SignatureHelpContext {
-        trigger_kind: SignatureHelpTriggerKind::INVOKED,
-        trigger_character: None,
-        is_retrigger: false,
-        active_signature_help: None,
-    });
-
     if !param_context.is_retrigger {
         let node = token.parent()?;
         match node.kind().into() {
