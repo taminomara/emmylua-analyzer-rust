@@ -30,12 +30,9 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     };
 
     let mut duplicated_name = HashSet::new();
-    builder.env_range.0 = builder.get_completion_items_mut().len();
     add_local_env(builder, &mut duplicated_name, &parent_node);
     add_global_env(builder, &mut duplicated_name);
     add_self(builder, &mut duplicated_name, &parent_node);
-    builder.env_range.1 = builder.get_completion_items_mut().len();
-
     builder.env_duplicate_name.extend(duplicated_name);
 
     Some(())
@@ -92,6 +89,7 @@ fn add_self(
                 detail: None,
                 description: None,
             }),
+            sort_text: Some("0001".to_string()),
             ..Default::default()
         };
 
@@ -107,8 +105,6 @@ fn add_local_env(
     duplicated_name: &mut HashSet<String>,
     node: &LuaAst,
 ) -> Option<()> {
-    // let flow_id = LuaFlowId::from_node(node.syntax());
-
     let file_id = builder.semantic_model.get_file_id();
     let decl_tree = builder
         .semantic_model

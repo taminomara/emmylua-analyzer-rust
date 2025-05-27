@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use emmylua_code_analysis::{LuaMemberInfo, LuaMemberKey};
+use emmylua_code_analysis::{LuaMemberInfo, LuaMemberKey, LuaType};
 use emmylua_parser::{LuaAst, LuaAstNode, LuaTableExpr, LuaTableField};
 use lsp_types::CompletionItem;
 use rowan::NodeOrToken;
@@ -39,8 +39,6 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         add_table_field_completion(builder, member_info);
     }
 
-    // 删除env补全项
-    builder.remove_env_completion_items();
     // 中止补全
     builder.stop_here();
     Some(())
@@ -75,7 +73,6 @@ fn add_table_field_completion(
     builder: &mut CompletionBuilder,
     member_info: LuaMemberInfo,
 ) -> Option<()> {
-    let env_completion = &builder.env_duplicate_name;
     let name = match member_info.key {
         LuaMemberKey::Name(name) => name.to_string(),
         LuaMemberKey::Integer(index) => format!("[{}]", index),
@@ -85,7 +82,7 @@ fn add_table_field_completion(
 
     let (label, insert_text) = {
         let is_nullable = if typ.is_nullable() { "?" } else { "" };
-        if env_completion.contains(&name) {
+        if in_env(builder, &name, &typ).is_some() {
             (
                 format!("{0}{1} = {0},", name, is_nullable),
                 format!("{0} = {0},", name),
@@ -125,4 +122,50 @@ fn add_table_field_completion(
 
     builder.add_completion_item(completion_item);
     Some(())
+}
+
+fn in_env(builder: &mut CompletionBuilder, target_name: &str, target_type: &LuaType) -> Option<()> {
+    let file_id = builder.semantic_model.get_file_id();
+    let decl_tree = builder
+        .semantic_model
+        .get_db()
+        .get_decl_index()
+        .get_decl_tree(&file_id)?;
+    let local_env = decl_tree.get_env_decls(builder.trigger_token.text_range().start())?;
+    let global_env = builder
+        .semantic_model
+        .get_db()
+        .get_global_index()
+        .get_all_global_decl_ids();
+    let all_env = [local_env, global_env].concat();
+
+    for decl_id in all_env.iter() {
+        let decl = builder
+            .semantic_model
+            .get_db()
+            .get_decl_index()
+            .get_decl(&decl_id)?;
+        let (name, typ) = {
+            (
+                decl.get_name().to_string(),
+                builder
+                    .semantic_model
+                    .get_db()
+                    .get_type_index()
+                    .get_type_cache(&decl_id.clone().into())
+                    .map(|cache| cache.as_type().clone())
+                    .unwrap_or(LuaType::Unknown),
+            )
+        };
+        // 必须要名称相同 + 类型兼容
+        if name == target_name
+            && builder
+                .semantic_model
+                .type_check(&target_type, &typ)
+                .is_ok()
+        {
+            return Some(());
+        }
+    }
+    None
 }

@@ -13,7 +13,6 @@ pub struct CompletionBuilder<'a> {
     cancel_token: CancellationToken,
     stopped: bool,
     pub trigger_kind: CompletionTriggerKind,
-    pub env_range: (usize, usize),
     /// 是否为空格字符触发的补全(非主动触发)
     pub is_space_trigger_character: bool,
 }
@@ -40,7 +39,6 @@ impl<'a> CompletionBuilder<'a> {
             cancel_token,
             stopped: false,
             trigger_kind,
-            env_range: (0, 0),
             is_space_trigger_character,
         }
     }
@@ -70,18 +68,7 @@ impl<'a> CompletionBuilder<'a> {
         self.trigger_token.text().trim_end().to_string()
     }
 
-    pub fn remove_env_completion_items(&mut self) {
-        if self.env_range == (0, 0) {
-            return;
-        }
-        if self.env_range.0 <= self.env_range.1 && self.env_range.1 < self.completion_items.len() {
-            self.completion_items
-                .drain(self.env_range.0..=self.env_range.1 - 1);
-        }
-        self.env_range = (0, 0);
-    }
-
-    /// 是否是触发主动补全
+    /// 主动补全
     pub fn is_invoked(&self) -> bool {
         self.trigger_kind == CompletionTriggerKind::INVOKED
     }
