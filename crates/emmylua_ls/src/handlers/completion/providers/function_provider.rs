@@ -83,53 +83,6 @@ pub fn dispatch_type(
     Some(())
 }
 
-fn add_str_tpl_ref_completion(
-    builder: &mut CompletionBuilder,
-    str_tpl: &LuaStringTplType,
-) -> Option<()> {
-    let db = builder.semantic_model.get_db();
-    let module_index = db.get_module_index();
-    let types = db.get_type_index().get_all_types();
-
-    let mut completion_items: Vec<_> = types
-        .into_iter()
-        .filter(|type_decl| type_decl.is_class())
-        .filter(|type_decl| {
-            !type_decl
-                .get_locations()
-                .iter()
-                .any(|loc| module_index.is_std(&loc.file_id))
-        })
-        .filter(|type_decl| {
-            let name = type_decl.get_full_name();
-            let prefix = str_tpl.get_prefix();
-            let suffix = str_tpl.get_suffix();
-
-            (prefix.is_empty() || name.starts_with(prefix))
-                && (suffix.is_empty() || name.ends_with(suffix))
-        })
-        .map(|type_decl| {
-            let trimmed_name = type_decl
-                .get_full_name()
-                .trim_start_matches(str_tpl.get_prefix())
-                .trim_end_matches(str_tpl.get_suffix());
-
-            CompletionItem {
-                label: to_enum_label(builder, trimmed_name),
-                kind: Some(lsp_types::CompletionItemKind::ENUM_MEMBER),
-                ..Default::default()
-            }
-        })
-        .collect();
-
-    completion_items.sort_by(|a, b| a.label.cmp(&b.label));
-    for item in completion_items {
-        builder.add_completion_item(item);
-    }
-
-    Some(())
-}
-
 fn add_type_ref_completion(
     builder: &mut CompletionBuilder,
     type_ref_id: LuaTypeDeclId,
@@ -692,6 +645,107 @@ fn get_closure_expr_comment(closure_expr: &LuaClosureExpr) -> Option<LuaComment>
         LuaSyntaxKind::Comment => {
             let comment = LuaComment::cast(comment)?;
             Some(comment)
+        }
+        _ => None,
+    }
+}
+
+fn add_str_tpl_ref_completion(
+    builder: &mut CompletionBuilder,
+    str_tpl: &LuaStringTplType,
+) -> Option<()> {
+    let db = builder.semantic_model.get_db();
+    let module_index = db.get_module_index();
+    let types = db.get_type_index().get_all_types();
+
+    // 泛型约束
+    let extend_type = get_str_tpl_ref_extend_type(builder, str_tpl).unwrap_or(LuaType::Any);
+
+    let mut completion_items: Vec<_> = types
+        .into_iter()
+        // 过滤非类
+        .filter(|type_decl| type_decl.is_class())
+        .filter(|type_decl| {
+            // 过滤标准库
+            !type_decl
+                .get_locations()
+                .iter()
+                .any(|loc| module_index.is_std(&loc.file_id))
+        })
+        .filter(|type_decl| {
+            // 检查名称是否匹配
+            let name = type_decl.get_full_name();
+            let prefix = str_tpl.get_prefix();
+            let suffix = str_tpl.get_suffix();
+
+            (prefix.is_empty() || name.starts_with(prefix))
+                && (suffix.is_empty() || name.ends_with(suffix))
+        })
+        .filter(|type_decl| {
+            // 检查泛型约束
+            let current_type = LuaType::Ref(type_decl.get_id());
+            // 去掉约束自身
+            if extend_type == current_type {
+                return false;
+            }
+            builder
+                .semantic_model
+                .type_check(&extend_type, &current_type)
+                .is_ok()
+        })
+        .map(|type_decl| {
+            let trimmed_name = type_decl
+                .get_full_name()
+                .trim_start_matches(str_tpl.get_prefix())
+                .trim_end_matches(str_tpl.get_suffix());
+
+            CompletionItem {
+                label: to_enum_label(builder, trimmed_name),
+                kind: Some(lsp_types::CompletionItemKind::ENUM_MEMBER),
+                ..Default::default()
+            }
+        })
+        .collect();
+
+    completion_items.sort_by(|a, b| a.label.cmp(&b.label));
+    for item in completion_items {
+        builder.add_completion_item(item);
+    }
+
+    Some(())
+}
+
+fn get_str_tpl_ref_extend_type(
+    builder: &CompletionBuilder,
+    str_tpl: &LuaStringTplType,
+) -> Option<LuaType> {
+    let token = builder.trigger_token.clone();
+    let mut parent_node = token.parent()?;
+    if LuaLiteralExpr::can_cast(parent_node.kind().into()) {
+        parent_node = parent_node.parent()?;
+    }
+    match parent_node.kind().into() {
+        LuaSyntaxKind::CallArgList => {
+            let call_expr = LuaCallArgList::cast(parent_node)?.get_parent::<LuaCallExpr>()?;
+            let function = builder
+                .semantic_model
+                .infer_expr(call_expr.get_prefix_expr()?.clone())
+                .ok()?;
+            if let LuaType::Signature(signature_id) = function {
+                let signature = builder
+                    .semantic_model
+                    .get_db()
+                    .get_signature_index()
+                    .get(&signature_id)?;
+                let generic_param = signature
+                    .generic_params
+                    .iter()
+                    .find(|it| it.0 == str_tpl.get_name());
+                if let Some(generic_param) = generic_param {
+                    return Some(generic_param.1.clone().unwrap_or(LuaType::Any));
+                }
+            }
+            None
         }
         _ => None,
     }

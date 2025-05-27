@@ -515,7 +515,7 @@ mod tests {
             ---@class B
             ---@class C
 
-            ---@generic T: string
+            ---@generic T
             ---@param name `T`
             ---@return T
             local function new(name)
@@ -556,7 +556,7 @@ mod tests {
             ---@class A
             ---@class B
 
-            ---@generic T: string
+            ---@generic T
             ---@param name N.`T`
             ---@return T
             local function new(name)
@@ -569,6 +569,45 @@ mod tests {
                 label: "\"C\"".to_string(),
                 kind: CompletionItemKind::ENUM_MEMBER,
             },],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
+
+    #[test]
+    fn test_str_tpl_ref_3() {
+        let mut ws = ProviderVirtualWorkspace::new_with_init_std_lib();
+        ws.def(
+            r#"
+            ---@class Component
+            ---@class C: Component
+
+            ---@class D: C
+            "#,
+        );
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@class A
+            ---@class B
+
+            ---@generic T: Component
+            ---@param name `T`
+            ---@return T
+            local function new(name)
+                return name
+            end
+
+            local a = new(<??>)
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "\"C\"".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+                VirtualCompletionItem {
+                    label: "\"D\"".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+            ],
             CompletionTriggerKind::TRIGGER_CHARACTER,
         ));
     }
