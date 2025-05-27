@@ -119,4 +119,27 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_class_2() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(!ws.check_code_for(
+            DiagnosticCode::GenericConstraintMismatch,
+            r#"
+            ---@class Component
+            ---@class G.A
+            ---@class G.B: Component
+
+            ---@class GenericTest<T: Component>
+            local M = {}
+
+            ---@param a T
+            function M.new(a)
+            end
+
+            ---@type GenericTest<G.A>
+            local a
+        "#
+        ));
+    }
 }

@@ -1,13 +1,15 @@
-use emmylua_parser::{LuaAst, LuaAstNode, LuaCallExpr};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaCallExpr, LuaDocTagType};
 use rowan::TextRange;
 
+use crate::diagnostic::checker::generic::infer_type::infer_type;
 use crate::{
     humanize_type, DiagnosticCode, GenericTplId, LuaMemberOwner, LuaSemanticDeclId, LuaSignature,
     LuaStringTplType, LuaType, LuaTypeDeclId, RenderLevel, SemanticDeclLevel, SemanticModel,
     TypeCheckFailReason, TypeCheckResult,
 };
 
-use super::{Checker, DiagnosticContext};
+use crate::diagnostic::checker::Checker;
+use crate::diagnostic::lua_diagnostic::DiagnosticContext;
 
 pub struct GenericConstraintMismatchChecker;
 
@@ -21,10 +23,47 @@ impl Checker for GenericConstraintMismatchChecker {
                 LuaAst::LuaCallExpr(call_expr) => {
                     check_call_expr(context, semantic_model, call_expr);
                 }
+                LuaAst::LuaDocTagType(doc_tag_type) => {
+                    check_doc_tag_type(context, semantic_model, doc_tag_type);
+                }
                 _ => {}
             }
         }
     }
+}
+
+fn check_doc_tag_type(
+    context: &mut DiagnosticContext,
+    semantic_model: &SemanticModel,
+    doc_tag_type: LuaDocTagType,
+) -> Option<()> {
+    let type_list = doc_tag_type.get_type_list();
+    for doc_type in type_list {
+        let type_ref = infer_type(semantic_model, &doc_type);
+        let generic_type = match type_ref {
+            LuaType::Generic(generic_type) => generic_type,
+            _ => continue,
+        };
+
+        let generic_params = semantic_model
+            .get_db()
+            .get_type_index()
+            .get_generic_params(&generic_type.get_base_type_id())?;
+        for (i, param_type) in generic_type.get_params().iter().enumerate() {
+            let extend_type = generic_params.get(i)?.1.clone()?;
+            let result = semantic_model.type_check(&extend_type, &param_type);
+            if !result.is_ok() {
+                add_type_check_diagnostic(
+                    context,
+                    semantic_model,
+                    doc_type.get_range(),
+                    &extend_type,
+                    result,
+                );
+            }
+        }
+    }
+    Some(())
 }
 
 fn check_call_expr(
