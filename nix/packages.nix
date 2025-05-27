@@ -3,6 +3,7 @@ let
   mkPackage =
     x:
     {
+      lib,
       rustPlatform,
       stdenv,
       pkg-config,
@@ -22,7 +23,7 @@ let
 
       buildAndTestSubdir = "crates/${x}";
 
-      postFixup = ''
+      postFixup = lib.optionalString (!stdenv.hostPlatform.isDarwin) ''
         patchelf --set-rpath "${stdenv.cc.cc.lib}/lib" $out/bin/${x}
       '';
     };
