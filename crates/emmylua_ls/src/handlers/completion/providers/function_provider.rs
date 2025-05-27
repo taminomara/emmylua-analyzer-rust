@@ -1,7 +1,7 @@
 use emmylua_code_analysis::{
     DbIndex, InferGuard, LuaDeclLocation, LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner,
-    LuaMultiLineUnion, LuaSemanticDeclId, LuaType, LuaTypeCache, LuaTypeDeclId, LuaUnionType,
-    RenderLevel, SemanticDeclLevel,
+    LuaMultiLineUnion, LuaSemanticDeclId, LuaStringTplType, LuaType, LuaTypeCache, LuaTypeDeclId,
+    LuaUnionType, RenderLevel, SemanticDeclLevel,
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaClosureExpr, LuaComment,
@@ -73,7 +73,58 @@ pub fn dispatch_type(
         LuaType::MultiLineUnion(multi_union) => {
             add_multi_line_union_member_completion(builder, &multi_union, infer_guard);
         }
+        LuaType::StrTplRef(key) => {
+            add_str_tpl_ref_completion(builder, &key);
+        }
+
         _ => {}
+    }
+
+    Some(())
+}
+
+fn add_str_tpl_ref_completion(
+    builder: &mut CompletionBuilder,
+    str_tpl: &LuaStringTplType,
+) -> Option<()> {
+    let db = builder.semantic_model.get_db();
+    let module_index = db.get_module_index();
+    let types = db.get_type_index().get_all_types();
+
+    let mut completion_items: Vec<_> = types
+        .into_iter()
+        .filter(|type_decl| type_decl.is_class())
+        .filter(|type_decl| {
+            !type_decl
+                .get_locations()
+                .iter()
+                .any(|loc| module_index.is_std(&loc.file_id))
+        })
+        .filter(|type_decl| {
+            let name = type_decl.get_full_name();
+            let prefix = str_tpl.get_prefix();
+            let suffix = str_tpl.get_suffix();
+
+            (prefix.is_empty() || name.starts_with(prefix))
+                && (suffix.is_empty() || name.ends_with(suffix))
+        })
+        .map(|type_decl| {
+            let trimmed_name = type_decl
+                .get_full_name()
+                .trim_start_matches(str_tpl.get_prefix())
+                .trim_end_matches(str_tpl.get_suffix());
+
+            CompletionItem {
+                label: to_enum_label(builder, trimmed_name),
+                kind: Some(lsp_types::CompletionItemKind::ENUM_MEMBER),
+                ..Default::default()
+            }
+        })
+        .collect();
+
+    completion_items.sort_by(|a, b| a.label.cmp(&b.label));
+    for item in completion_items {
+        builder.add_completion_item(item);
     }
 
     Some(())

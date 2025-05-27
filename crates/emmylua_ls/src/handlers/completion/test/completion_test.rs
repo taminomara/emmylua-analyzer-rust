@@ -505,4 +505,71 @@ mod tests {
             CompletionTriggerKind::TRIGGER_CHARACTER,
         ));
     }
+
+    #[test]
+    fn test_str_tpl_ref_1() {
+        let mut ws = ProviderVirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@class A
+            ---@class B
+            ---@class C
+
+            ---@generic T: string
+            ---@param name `T`
+            ---@return T
+            local function new(name)
+                return name
+            end
+
+            local a = new(<??>)
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "\"A\"".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+                VirtualCompletionItem {
+                    label: "\"B\"".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+                VirtualCompletionItem {
+                    label: "\"C\"".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                },
+            ],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
+
+    #[test]
+    fn test_str_tpl_ref_2() {
+        let mut ws = ProviderVirtualWorkspace::new_with_init_std_lib();
+        ws.def(
+            r#"
+            ---@namespace N
+            ---@class C
+            "#,
+        );
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@class A
+            ---@class B
+
+            ---@generic T: string
+            ---@param name N.`T`
+            ---@return T
+            local function new(name)
+                return name
+            end
+
+            local a = new(<??>)
+            "#,
+            vec![VirtualCompletionItem {
+                label: "\"C\"".to_string(),
+                kind: CompletionItemKind::ENUM_MEMBER,
+            },],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
 }
