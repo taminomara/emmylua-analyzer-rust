@@ -499,6 +499,13 @@
           "enum": [
             "duplicate-index"
           ]
+        },
+        {
+          "description": "generic-constraint-mismatch",
+          "type": "string",
+          "enum": [
+            "generic-constraint-mismatch"
+          ]
         }
       ]
     },
