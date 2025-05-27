@@ -107,4 +107,19 @@ mod test {
         let desc = ws.humanize_type(a);
         assert_eq!(desc, "Player");
     }
+
+    #[test]
+    fn test_issue_482() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            local command_provider --- @type {commands: string[]}?
+
+            --- @type string[]
+            local commands = type(command_provider) == 'table' and command_provider.commands or {}
+            "#,
+        ));
+    }
 }

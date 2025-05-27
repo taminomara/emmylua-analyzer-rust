@@ -13,13 +13,13 @@ pub fn special_or_rule(
         // workaround for x or error('')
         LuaExpr::CallExpr(call_expr) => {
             if call_expr.is_error() {
-                return Some(TypeOps::Remove.apply(db, &left_type, &LuaType::Nil));
+                return Some(TypeOps::RemoveNilOrFalse.apply_source(db, &left_type));
             }
         }
         LuaExpr::TableExpr(table_expr) => {
             if table_expr.is_empty() && check_type_compact(db, &left_type, &LuaType::Table).is_ok()
             {
-                return Some(TypeOps::Remove.apply(db, &left_type, &LuaType::Nil));
+                return Some(TypeOps::RemoveNilOrFalse.apply_source(db, &left_type));
             }
         }
         LuaExpr::LiteralExpr(_) => {
@@ -33,7 +33,7 @@ pub fn special_or_rule(
             }
 
             if check_type_compact(db, &left_type, &right_type).is_ok() {
-                return Some(TypeOps::Remove.apply(db, &left_type, &LuaType::Nil));
+                return Some(TypeOps::RemoveNilOrFalse.apply_source(db, &left_type));
             }
         }
 
