@@ -680,13 +680,17 @@ fn param_type_list_pattern_match_type_list(
             Some(t) => t.1.clone().unwrap_or(LuaType::Any),
             None => break,
         };
-        let target = match targets.get(i + target_offset) {
-            Some(t) => t.1.clone().unwrap_or(LuaType::Any),
-            None => break,
-        };
 
-        match (&source, &target) {
-            (LuaType::Variadic(inner), _) => {
+        match &source {
+            LuaType::Variadic(inner) => {
+                if i >= targets.len() {
+                    if let VariadicType::Base(LuaType::TplRef(tpl_ref)) = inner.deref() {
+                        let tpl_id = tpl_ref.get_tpl_id();
+                        substitutor.insert_type(tpl_id, LuaType::Nil);
+                    }
+                    break;
+                }
+
                 let mut target_rest_params = &targets[i..];
                 // If the variadic parameter is not the last one, then target_rest_params should exclude the parameters that come after it.
                 if i + 1 < type_len {
@@ -704,6 +708,10 @@ fn param_type_list_pattern_match_type_list(
                 func_varargs_tpl_pattern_match(&inner, &target_rest_params, substitutor)?;
             }
             _ => {
+                let target = match targets.get(i + target_offset) {
+                    Some(t) => t.1.clone().unwrap_or(LuaType::Any),
+                    None => break,
+                };
                 tpl_pattern_match(db, cache, root, &source, &target, substitutor)?;
             }
         }
