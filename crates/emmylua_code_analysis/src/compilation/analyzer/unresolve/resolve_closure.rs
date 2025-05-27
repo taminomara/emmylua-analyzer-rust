@@ -300,6 +300,7 @@ fn resolve_closure_member_type(
                 .get(&closure_params.signature_id)
                 .ok_or(InferFailReason::None)?;
             let mut final_params = signature.get_type_params().to_vec();
+            let mut final_ret = LuaType::Unknown;
 
             let mut multi_function_type = Vec::new();
             for typ in union_types.get_types() {
@@ -374,6 +375,8 @@ fn resolve_closure_member_type(
                         final_params.push((param.0.clone(), param.1.clone()));
                     }
                 }
+
+                final_ret = TypeOps::Union.apply(db, &final_ret, doc_func.get_ret());
             }
 
             if !variadic_type.is_unknown() {
@@ -389,7 +392,7 @@ fn resolve_closure_member_type(
                     signature.is_async,
                     signature.is_colon_define,
                     final_params,
-                    signature.get_return_type(),
+                    final_ret,
                 ),
                 self_type,
             )
