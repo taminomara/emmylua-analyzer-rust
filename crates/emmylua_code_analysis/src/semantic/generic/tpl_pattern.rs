@@ -674,12 +674,13 @@ fn param_type_list_pattern_match_type_list(
     substitutor: &mut TypeSubstitutor,
 ) -> TplPatternMatchResult {
     let type_len = sources.len();
+    let mut target_offset = 0;
     for i in 0..type_len {
         let source = match sources.get(i) {
             Some(t) => t.1.clone().unwrap_or(LuaType::Any),
             None => break,
         };
-        let target = match targets.get(i) {
+        let target = match targets.get(i + target_offset) {
             Some(t) => t.1.clone().unwrap_or(LuaType::Any),
             None => break,
         };
@@ -694,7 +695,10 @@ fn param_type_list_pattern_match_type_list(
                         continue;
                     }
                     let target_rest_len = target_rest_params.len() - source_rest_len;
-                    target_rest_params = &target_rest_params[..target_rest_len]
+                    target_rest_params = &target_rest_params[..target_rest_len];
+                    if target_rest_len > 1 {
+                        target_offset += target_rest_len - 1;
+                    }
                 }
 
                 func_varargs_tpl_pattern_match(&inner, &target_rest_params, substitutor)?;

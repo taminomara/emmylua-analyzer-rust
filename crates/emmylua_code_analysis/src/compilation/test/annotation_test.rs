@@ -83,4 +83,33 @@ mod test {
         let expected = ws.ty("FsStat");
         assert_eq!(ty, expected);
     }
+
+    #[test]
+    fn test_issue_497() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+        --- @generic T, R
+        --- @param argc integer
+        --- @param func fun(...:T..., cb: fun(...:R...))
+        --- @return async fun(...:T...):R...
+        local function wrap(argc, func) end
+
+        --- @param a string
+        --- @param b string
+        --- @param callback fun(out: string)
+        local function system(a, b, callback) end
+
+        local wrapped = wrap(3, system)
+        -- type is 'async fun(a: string, b: string): unknown'
+
+        d = wrapped("a", "b")
+        "#,
+        );
+
+        let ty = ws.expr_ty("d");
+        let expected = ws.ty("string");
+        assert_eq!(ty, expected);
+    }
 }
