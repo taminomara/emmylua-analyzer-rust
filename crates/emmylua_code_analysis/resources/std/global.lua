@@ -268,7 +268,7 @@ function rawequal(v1, v2) end
 ---
 --- Gets the real value of `table[index]`, the `__index` metamethod. `table`
 --- must be a table; `index` may be any value.
----@generic T, K: integer
+---@generic T, K
 ---@param table T
 ---@param index K
 ---@return std.RawGet<T, K>
