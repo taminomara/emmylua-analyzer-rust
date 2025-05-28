@@ -376,4 +376,29 @@ mod tests {
             "#
         ));
     }
+    #[test]
+    fn test_issue_343() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+                --- @return integer, integer
+                function range() return 0, 0 end
+
+                ---@class MyType
+                ---@field [1] integer
+                ---@field [2] integer
+
+                --- @return MyType
+                function foo()
+                return { range() }
+                end
+
+                --- @return MyType
+                function bar()
+                return { 0, 0 }
+                end
+            "#
+        ));
+    }
 }

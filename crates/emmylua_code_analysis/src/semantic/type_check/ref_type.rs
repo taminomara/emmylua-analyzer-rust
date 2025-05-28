@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     humanize_type, semantic::member::find_members, DbIndex, LuaMemberKey, LuaMemberOwner,
-    LuaObjectType, LuaType, LuaTypeCache, LuaTypeDeclId, LuaUnionType, RenderLevel,
+    LuaObjectType, LuaTupleType, LuaType, LuaTypeCache, LuaTypeDeclId, LuaUnionType, RenderLevel,
 };
 
 use super::{
@@ -133,6 +133,14 @@ pub fn check_ref_type_compact(
                     }
                 }
                 return Ok(());
+            }
+            LuaType::Tuple(tuple_type) => {
+                return check_ref_type_compact_tuple(
+                    db,
+                    tuple_type,
+                    source_id,
+                    check_guard.next_level()?,
+                );
             }
             _ => match get_base_type_id(compact_type) {
                 Some(base_type_id) => compact_id = base_type_id.clone(),
@@ -335,4 +343,40 @@ fn get_object_field_type<'a>(
         _ => {}
     }
     None
+}
+
+fn check_ref_type_compact_tuple(
+    db: &DbIndex,
+    tuple_type: &LuaTupleType,
+    source_type_id: &LuaTypeDeclId,
+    check_guard: TypeCheckGuard,
+) -> TypeCheckResult {
+    let source_type_members = match find_members(db, &LuaType::Ref(source_type_id.clone())) {
+        Some(members) => members,
+        None => return Ok(()),
+    };
+
+    let tuple_types = tuple_type.get_types();
+    for member in source_type_members {
+        match member.key {
+            LuaMemberKey::Integer(index) => {
+                // 在 lua 中数组索引从 1 开始, 当数组被解析为元组时也必然从 1 开始
+                if index <= 0 {
+                    return Err(TypeCheckFailReason::TypeNotMatch);
+                }
+                if let Some(tuple_type) = tuple_types.get(index as usize - 1) {
+                    check_general_type_compact(
+                        db,
+                        &member.typ,
+                        tuple_type,
+                        check_guard.next_level()?,
+                    )?;
+                } else {
+                    return Err(TypeCheckFailReason::TypeNotMatch);
+                }
+            }
+            _ => return Err(TypeCheckFailReason::TypeNotMatch),
+        }
+    }
+    return Ok(());
 }
