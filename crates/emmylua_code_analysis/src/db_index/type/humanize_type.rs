@@ -428,6 +428,8 @@ fn humanize_object_type(db: &DbIndex, object: &LuaObjectType, level: RenderLevel
 
     if access.is_empty() {
         return format!("{{ {}{} }}", fields, dots);
+    } else if fields.is_empty() {
+        return format!("{{ {}{} }}", access, dots);
     }
     format!("{{ {}, {}{} }}", fields, access, dots)
 }
