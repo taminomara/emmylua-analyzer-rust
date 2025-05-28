@@ -1,3 +1,4 @@
+mod find_index;
 mod find_members;
 mod get_member_map;
 mod infer_raw_member;
@@ -6,6 +7,7 @@ use crate::{
     db_index::{LuaType, LuaTypeDeclId},
     LuaMemberFeature, LuaMemberKey, LuaSemanticDeclId,
 };
+pub use find_index::find_index_operations;
 pub use find_members::find_members;
 pub use get_member_map::get_member_map;
 pub use infer_raw_member::infer_raw_member_type;

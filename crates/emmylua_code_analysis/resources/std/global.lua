@@ -112,7 +112,7 @@ function getmetatable(object) end
 --- will iterate over the key–value pairs (1,`t[1]`), (2,`t[2]`), ..., up to
 --- the first absent index.
 ---@generic V
----@param t V[] | table<any, V> | {[any]: V}
+---@param t V[] | table<int, V> | {[int]: V}
 ---@return fun(tbl: any):int, V
 function ipairs(t) end
 
