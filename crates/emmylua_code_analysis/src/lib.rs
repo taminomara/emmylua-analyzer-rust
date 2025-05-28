@@ -153,6 +153,36 @@ impl EmmyLuaAnalysis {
         updated_files
     }
 
+    #[allow(unused)]
+    pub(crate) fn update_files_by_uri_sorted(
+        &mut self,
+        files: Vec<(Uri, Option<String>)>,
+    ) -> Vec<FileId> {
+        let mut removed_files = HashSet::new();
+        let mut updated_files = HashSet::new();
+        {
+            let _p = Profile::new("update files");
+            for (uri, text) in files {
+                let is_new_text = text.is_some();
+                let file_id = self
+                    .compilation
+                    .get_db_mut()
+                    .get_vfs_mut()
+                    .set_file_content(&uri, text);
+                removed_files.insert(file_id);
+                if is_new_text {
+                    updated_files.insert(file_id);
+                }
+            }
+        }
+        self.compilation
+            .remove_index(removed_files.into_iter().collect());
+        let mut updated_files: Vec<FileId> = updated_files.into_iter().collect();
+        updated_files.sort();
+        self.compilation.update_index(updated_files.clone());
+        updated_files
+    }
+
     pub fn remove_file_by_uri(&mut self, uri: &Uri) -> Option<FileId> {
         if let Some(file_id) = self.compilation.get_db_mut().get_vfs_mut().remove_file(uri) {
             self.compilation.remove_index(vec![file_id]);

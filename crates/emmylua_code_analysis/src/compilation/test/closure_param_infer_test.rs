@@ -402,4 +402,65 @@ mod test {
         let expected = ws.ty("any");
         assert_eq!(ws.humanize_type(ty), ws.humanize_type(expected));
     }
+
+    #[test]
+    fn test_issue_498() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def_files(vec![
+            (
+                "test.lua",
+                r#"
+                ---@class CustomEvent
+                ---@field private custom_event_manager? EventManager
+                local M = {}
+
+                function M:event_on()
+                    if not self.custom_event_manager then
+                        self.custom_event_manager = New 'EventManager' (self)
+                    end
+                    local trigger = self.custom_event_manager:get_trigger()
+                    A = trigger
+                    return trigger
+                end
+            "#,
+            ),
+            (
+                "test2.lua",
+                r#"
+                ---@class Trigger
+
+                ---@class EventManager
+                ---@overload fun(object?: table): self
+                local EventManager
+
+                ---@return Trigger
+                function EventManager:get_trigger()
+                end
+            "#,
+            ),
+            (
+                "class.lua",
+                r#"
+                local M = {}
+
+                ---@generic T: string
+                ---@param name `T`
+                ---@param tbl? table
+                ---@return T
+                function M.declare(name, tbl)
+                end
+                return M
+            "#,
+            ),
+            (
+                "init.lua",
+                r#"
+                New = require "class".declare
+            "#,
+            ),
+        ]);
+        let ty = ws.expr_ty("A");
+        let expected = ws.ty("Trigger");
+        assert_eq!(ws.humanize_type(ty), ws.humanize_type(expected));
+    }
 }

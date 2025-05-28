@@ -76,7 +76,7 @@ impl VirtualWorkspace {
             })
             .collect();
 
-        let mut file_ids = self.analysis.update_files_by_uri(file_infos);
+        let mut file_ids = self.analysis.update_files_by_uri_sorted(file_infos);
         file_ids.sort();
 
         file_ids

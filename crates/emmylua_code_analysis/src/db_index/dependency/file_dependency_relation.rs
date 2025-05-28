@@ -12,6 +12,10 @@ impl<'a> FileDependencyRelation<'a> {
     }
 
     pub fn get_best_analysis_order(&self, file_ids: Vec<FileId>) -> Vec<FileId> {
+        if self.dependencies.is_empty() {
+            return file_ids;
+        }
+
         let file_set: HashSet<_> = file_ids.iter().copied().collect();
 
         let mut in_degree: HashMap<FileId, usize> = HashMap::new();

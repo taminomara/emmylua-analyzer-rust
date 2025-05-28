@@ -106,9 +106,7 @@ fn infer_member_type_pass_flow(
     if let Some(flow_chain) = flow_chain {
         let root = index_expr.get_root();
         for type_assert in flow_chain.get_type_asserts(index_expr.get_position(), flow_id) {
-            let new_type = type_assert
-                .tighten_type(db, cache, &root, member_type.clone())
-                .unwrap_or(LuaType::Unknown);
+            let new_type = type_assert.tighten_type(db, cache, &root, member_type.clone())?;
             if type_assert.is_reassign() && !allow_reassign {
                 // 允许仅去除 nil
                 if member_type.is_nullable() && !new_type.is_nullable() {
