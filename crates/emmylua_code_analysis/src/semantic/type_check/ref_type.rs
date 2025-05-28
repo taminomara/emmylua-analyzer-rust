@@ -161,18 +161,16 @@ pub fn check_ref_type_compact(
                     let source = LuaType::Ref(source_id.clone());
                     if let Some(LuaType::Union(enum_fields)) = compact_decl.get_enum_field_type(db)
                     {
-                        let is_match = enum_fields.get_types().iter().all(|field| {
-                            let next_guard = check_guard.next_level();
-                            match next_guard {
-                                Ok(guard) => {
-                                    check_general_type_compact(db, &source, field, guard).is_ok()
-                                }
-                                Err(_) => return false,
-                            }
-                        });
-                        if is_match {
-                            return Ok(());
+                        for field in enum_fields.get_types() {
+                            check_general_type_compact(
+                                db,
+                                &source,
+                                field,
+                                check_guard.next_level()?,
+                            )?;
                         }
+
+                        return Ok(());
                     }
                 }
             }
@@ -224,23 +222,25 @@ fn check_ref_type_compact_table(
                 .get_type_cache(&table_member.get_id().into())
                 .unwrap_or(&LuaTypeCache::InferType(LuaType::Any))
                 .as_type();
-            if !check_general_type_compact(
+            match check_general_type_compact(
                 db,
                 &source_member_type,
                 &table_member_type,
                 check_guard.next_level()?,
-            )
-            .is_ok()
-            {
-                return Err(TypeCheckFailReason::TypeNotMatchWithReason(
-                    t!(
-                        "member %{name} type not match, expect %{expect}, got %{got}",
-                        name = key.to_path(),
-                        expect = humanize_type(db, &source_member_type, RenderLevel::Simple),
-                        got = humanize_type(db, &&table_member_type, RenderLevel::Simple)
-                    )
-                    .to_string(),
-                ));
+            ) {
+                Ok(_) => {}
+                Err(TypeCheckFailReason::TypeNotMatch) => {
+                    return Err(TypeCheckFailReason::TypeNotMatchWithReason(
+                        t!(
+                            "member %{name} type not match, expect %{expect}, got %{got}",
+                            name = key.to_path(),
+                            expect = humanize_type(db, &source_member_type, RenderLevel::Simple),
+                            got = humanize_type(db, &&table_member_type, RenderLevel::Simple)
+                        )
+                        .to_string(),
+                    ))
+                }
+                Err(e) => return Err(e),
             }
         } else if source_member_type.is_optional() {
             continue;
@@ -260,11 +260,7 @@ fn check_ref_type_compact_table(
                 .clone(),
         );
         for super_type in supers {
-            let result =
-                check_general_type_compact(db, &super_type, &table_type, check_guard.next_level()?);
-            if !result.is_ok() {
-                return result;
-            }
+            check_general_type_compact(db, &super_type, &table_type, check_guard.next_level()?)?;
         }
     }
 
@@ -288,23 +284,25 @@ fn check_ref_type_compact_object(
         let key = source_member.key;
         let field_type = get_object_field_type(object_type, &key);
         if let Some(field_type) = field_type {
-            if check_general_type_compact(
+            match check_general_type_compact(
                 db,
                 &source_member_type,
                 &field_type,
                 check_guard.next_level()?,
-            )
-            .is_err()
-            {
-                return Err(TypeCheckFailReason::TypeNotMatchWithReason(
-                    t!(
-                        "member %{name} type not match, expect %{expect}, got %{got}",
-                        name = key.to_path(),
-                        expect = humanize_type(db, &source_member_type, RenderLevel::Simple),
-                        got = humanize_type(db, &field_type, RenderLevel::Simple)
-                    )
-                    .to_string(),
-                ));
+            ) {
+                Ok(_) => {}
+                Err(TypeCheckFailReason::TypeNotMatch) => {
+                    return Err(TypeCheckFailReason::TypeNotMatchWithReason(
+                        t!(
+                            "member %{name} type not match, expect %{expect}, got %{got}",
+                            name = key.to_path(),
+                            expect = humanize_type(db, &source_member_type, RenderLevel::Simple),
+                            got = humanize_type(db, &field_type, RenderLevel::Simple)
+                        )
+                        .to_string(),
+                    ));
+                }
+                Err(e) => return Err(e),
             }
         } else if source_member_type.is_optional() {
             continue;

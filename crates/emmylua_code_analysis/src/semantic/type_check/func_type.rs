@@ -28,16 +28,12 @@ pub fn check_doc_func_type_compact(
         }
         LuaType::Union(union) => {
             for union_type in union.get_types() {
-                if check_doc_func_type_compact(
+                check_doc_func_type_compact(
                     db,
                     source_func,
                     union_type,
                     check_guard.next_level()?,
-                )
-                .is_err()
-                {
-                    return Err(TypeCheckFailReason::TypeNotMatch);
-                }
+                )?;
             }
 
             Ok(())
@@ -75,12 +71,7 @@ fn check_doc_func_type_compact_for_params(
         let source_param_type = &source_param.1;
         // too many complex session to handle varargs
         if source_param.0 == "..." {
-            if check_doc_func_type_compact_for_varargs(db, source_param_type, &compact_params[i..])
-            {
-                break;
-            }
-
-            return Err(TypeCheckFailReason::TypeNotMatch);
+            check_doc_func_type_compact_for_varargs(db, source_param_type, &compact_params[i..])?;
         }
 
         if compact_param.0 == "..." {
@@ -91,19 +82,23 @@ fn check_doc_func_type_compact_for_params(
 
         match (source_param_type, compact_param_type) {
             (Some(source_type), Some(compact_type)) => {
-                if check_general_type_compact(
+                match check_general_type_compact(
                     db,
                     source_type,
                     compact_type,
                     check_guard.next_level()?,
-                )
-                .is_err()
-                {
-                    if i == 0 && source_type.is_self_infer() && compact_param.0 == "self" {
-                        continue;
+                ) {
+                    Ok(()) => {}
+                    Err(e) if e.is_type_not_match() => {
+                        if i == 0 && source_type.is_self_infer() && compact_param.0 == "self" {
+                            continue;
+                        }
+                        // add error message
+                        return Err(e);
                     }
-                    // add error message
-                    return Err(TypeCheckFailReason::TypeNotMatch);
+                    Err(e) => {
+                        return Err(e);
+                    }
                 }
             }
             _ => {}
@@ -119,7 +114,7 @@ fn check_doc_func_type_compact_for_varargs(
     db: &DbIndex,
     varargs: &Option<LuaType>,
     compact_params: &[(String, Option<LuaType>)],
-) -> bool {
+) -> TypeCheckResult {
     if let Some(varargs) = varargs {
         let varargs_len = compact_params.len();
         let varargs_type = varargs;
@@ -127,14 +122,12 @@ fn check_doc_func_type_compact_for_varargs(
             let compact_param = &compact_params[i];
             let compact_param_type = &compact_param.1;
             if let Some(compact_param_type) = compact_param_type {
-                if check_type_compact(db, varargs_type, compact_param_type).is_err() {
-                    return false;
-                }
+                check_type_compact(db, varargs_type, compact_param_type)?;
             }
         }
     }
 
-    true
+    Ok(())
 }
 
 fn check_doc_func_type_compact_for_signature(
@@ -154,15 +147,22 @@ fn check_doc_func_type_compact_for_signature(
     }
 
     for overload_func in &signature.overloads {
-        if check_doc_func_type_compact_for_params(
+        match check_doc_func_type_compact_for_params(
             db,
             source_func,
             overload_func,
             check_guard.next_level()?,
-        )
-        .is_ok()
-        {
-            return Ok(());
+        ) {
+            Ok(()) => {
+                return Ok(());
+            }
+            Err(e) if e.is_type_not_match() => {
+                // continue to check next overload
+                continue;
+            }
+            Err(e) => {
+                return Err(e);
+            }
         }
     }
 
@@ -201,15 +201,15 @@ fn check_doc_func_type_compact_for_custom_type(
             let call_type = operator.get_operator_func();
             match call_type {
                 LuaType::DocFunction(doc_func) => {
-                    if check_doc_func_type_compact_for_params(
+                    match check_doc_func_type_compact_for_params(
                         db,
                         source_func,
                         &doc_func,
                         check_guard.next_level()?,
-                    )
-                    .is_ok()
-                    {
-                        return Ok(());
+                    ) {
+                        Ok(()) => return Ok(()),
+                        Err(e) if e.is_type_not_match() => continue,
+                        Err(e) => return Err(e),
                     }
                 }
                 LuaType::Signature(signature_id) => {
@@ -218,15 +218,15 @@ fn check_doc_func_type_compact_for_custom_type(
                         .get(&signature_id)
                         .ok_or(TypeCheckFailReason::TypeNotMatch)?;
                     let doc_f = signature.to_call_operator_func_type();
-                    if check_doc_func_type_compact_for_params(
+                    match check_doc_func_type_compact_for_params(
                         db,
                         source_func,
                         &doc_f,
                         check_guard.next_level()?,
-                    )
-                    .is_ok()
-                    {
-                        return Ok(());
+                    ) {
+                        Ok(()) => return Ok(()),
+                        Err(e) if e.is_type_not_match() => continue,
+                        Err(e) => return Err(e),
                     }
                 }
                 _ => {}

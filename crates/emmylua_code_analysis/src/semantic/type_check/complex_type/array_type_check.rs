@@ -22,16 +22,12 @@ pub fn check_array_type_compact(
         }
         LuaType::Tuple(tuple_type) => {
             for element_type in tuple_type.get_types() {
-                if check_general_type_compact(
+                check_general_type_compact(
                     db,
                     &source_base,
                     element_type,
                     check_guard.next_level()?,
-                )
-                .is_err()
-                {
-                    return Err(TypeCheckFailReason::TypeNotMatch);
-                }
+                )?;
             }
 
             return Ok(());
@@ -60,11 +56,7 @@ pub fn check_array_type_compact(
         LuaType::TableGeneric(compact_types) => {
             if compact_types.len() == 2 {
                 for typ in compact_types.iter() {
-                    if check_general_type_compact(db, &source_base, typ, check_guard.next_level()?)
-                        .is_err()
-                    {
-                        return Err(TypeCheckFailReason::TypeNotMatch);
-                    }
+                    check_general_type_compact(db, &source_base, typ, check_guard.next_level()?)?;
                 }
 
                 return Ok(());
@@ -92,11 +84,7 @@ fn check_array_type_compact_table(
             let member_type = member_item
                 .resolve_type(db)
                 .map_err(|_| TypeCheckFailReason::TypeNotMatch)?;
-            if check_general_type_compact(db, source_base, &member_type, check_guard.next_level()?)
-                .is_err()
-            {
-                return Err(TypeCheckFailReason::TypeNotMatch);
-            }
+            check_general_type_compact(db, source_base, &member_type, check_guard.next_level()?)?;
         } else {
             return Err(TypeCheckFailReason::TypeNotMatch);
         }

@@ -20,23 +20,13 @@ pub fn check_table_generic_type_compact(
                 let compact_key = &compact_generic_param[0];
                 let compact_value = &compact_generic_param[1];
 
-                if check_general_type_compact(
+                check_general_type_compact(db, source_key, compact_key, check_guard.next_level()?)?;
+                check_general_type_compact(
                     db,
-                    source_key,
-                    compact_key,
+                    source_value,
+                    compact_value,
                     check_guard.next_level()?,
-                )
-                .is_err()
-                    || check_general_type_compact(
-                        db,
-                        source_value,
-                        compact_value,
-                        check_guard.next_level()?,
-                    )
-                    .is_err()
-                {
-                    return Err(TypeCheckFailReason::TypeNotMatch);
-                }
+                )?;
                 return Ok(());
             }
         }
@@ -53,8 +43,8 @@ pub fn check_table_generic_type_compact(
             if source_generic_param.len() == 2 {
                 let key = &source_generic_param[0];
                 let value = &source_generic_param[1];
-                if key.is_any() || key.is_integer() && check_type_compact(db, value, base).is_ok() {
-                    return Ok(());
+                if key.is_any() || key.is_integer() {
+                    return check_type_compact(db, value, base);
                 }
             }
         }
@@ -64,16 +54,12 @@ pub fn check_table_generic_type_compact(
                 let value = &source_generic_param[1];
                 if key.is_any() {
                     for tuple_type in tuple.get_types() {
-                        if check_general_type_compact(
+                        check_general_type_compact(
                             db,
                             value,
                             tuple_type,
                             check_guard.next_level()?,
-                        )
-                        .is_err()
-                        {
-                            return Err(TypeCheckFailReason::TypeNotMatch);
-                        }
+                        )?;
                     }
 
                     return Ok(());
@@ -87,17 +73,15 @@ pub fn check_table_generic_type_compact(
         LuaType::Ref(_) | LuaType::Def(_) | LuaType::Userdata => return Ok(()),
         LuaType::Union(union) => {
             for union_type in union.get_types() {
-                if check_table_generic_type_compact(
+                check_table_generic_type_compact(
                     db,
                     source_generic_param,
                     union_type,
                     check_guard,
-                )
-                .is_ok()
-                {
-                    return Ok(());
-                }
+                )?;
             }
+
+            return Ok(());
         }
         _ => {}
     }
@@ -137,12 +121,8 @@ fn check_table_generic_compact_member_owner(
             .get_type_cache(&member.get_id().into())
             .unwrap_or(&LuaTypeCache::InferType(LuaType::Unknown))
             .as_type();
-        if check_general_type_compact(db, source_key, &key_type, check_guard.next_level()?).is_err()
-            || check_general_type_compact(db, source_value, &member_type, check_guard.next_level()?)
-                .is_err()
-        {
-            return Err(TypeCheckFailReason::TypeNotMatch);
-        }
+        check_general_type_compact(db, source_key, &key_type, check_guard.next_level()?)?;
+        check_general_type_compact(db, source_value, &member_type, check_guard.next_level()?)?;
     }
 
     Ok(())

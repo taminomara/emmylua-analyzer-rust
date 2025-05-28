@@ -72,11 +72,7 @@ fn check_generic_type_compact_generic(
     for i in 0..source_params.len() {
         let source_param = &source_params[i];
         let compact_param = &compact_params[i];
-        if check_general_type_compact(db, source_param, compact_param, check_guard.next_level()?)
-            .is_err()
-        {
-            return Err(TypeCheckFailReason::TypeNotMatch);
-        }
+        check_general_type_compact(db, source_param, compact_param, check_guard.next_level()?)?;
     }
 
     Ok(())

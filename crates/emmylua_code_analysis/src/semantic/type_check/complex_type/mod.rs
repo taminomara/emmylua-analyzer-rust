@@ -65,10 +65,15 @@ pub fn check_complex_type_compact(
                 _ => {}
             }
             for sub_type in union_type.get_types() {
-                if check_general_type_compact(db, sub_type, compact_type, check_guard.next_level()?)
-                    .is_ok()
-                {
-                    return Ok(());
+                match check_general_type_compact(
+                    db,
+                    sub_type,
+                    compact_type,
+                    check_guard.next_level()?,
+                ) {
+                    Ok(_) => return Ok(()),
+                    Err(e) if e.is_type_not_match() => {}
+                    Err(e) => return Err(e),
                 }
             }
 
@@ -95,10 +100,9 @@ pub fn check_complex_type_compact(
     // Do I need to check union types?
     if let LuaType::Union(union) = compact_type {
         for sub_compact in union.get_types() {
-            if check_complex_type_compact(db, source, sub_compact, check_guard.next_level()?)
-                .is_err()
-            {
-                return Err(TypeCheckFailReason::TypeNotMatch);
+            match check_complex_type_compact(db, source, sub_compact, check_guard.next_level()?) {
+                Ok(_) => {}
+                Err(e) => return Err(e),
             }
         }
 
@@ -117,11 +121,7 @@ fn check_union_type_compact_union(
 ) -> TypeCheckResult {
     let compact_types = compact_union.get_types();
     for compact_sub_type in compact_types {
-        if check_general_type_compact(db, source, compact_sub_type, check_guard.next_level()?)
-            .is_err()
-        {
-            return Err(TypeCheckFailReason::TypeNotMatch);
-        }
+        check_general_type_compact(db, source, compact_sub_type, check_guard.next_level()?)?;
     }
 
     Ok(())

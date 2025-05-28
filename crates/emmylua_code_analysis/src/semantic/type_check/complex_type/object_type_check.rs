@@ -81,11 +81,7 @@ fn check_object_type_compact_object_type(
                 }
             }
         };
-        if check_general_type_compact(db, source_type, compact_type, check_guard.next_level()?)
-            .is_err()
-        {
-            return Err(TypeCheckFailReason::TypeNotMatch);
-        }
+        check_general_type_compact(db, source_type, compact_type, check_guard.next_level()?)?;
     }
 
     Ok(())
@@ -119,18 +115,22 @@ fn check_object_type_compact_member_owner(
             }
         };
 
-        if check_general_type_compact(db, source_type, &member_type, check_guard.next_level()?)
-            .is_err()
-        {
-            return Err(TypeCheckFailReason::TypeNotMatchWithReason(
-                t!(
-                    "member %{key} not match, expect %{typ}, but got %{got}",
-                    key = key.to_path().to_string(),
-                    typ = humanize_type(db, source_type, RenderLevel::Simple),
-                    got = humanize_type(db, &member_type, RenderLevel::Simple)
-                )
-                .to_string(),
-            ));
+        match check_general_type_compact(db, source_type, &member_type, check_guard.next_level()?) {
+            Ok(_) => {}
+            Err(TypeCheckFailReason::TypeNotMatch) => {
+                return Err(TypeCheckFailReason::TypeNotMatchWithReason(
+                    t!(
+                        "member %{key} not match, expect %{typ}, but got %{got}",
+                        key = key.to_path().to_string(),
+                        typ = humanize_type(db, source_type, RenderLevel::Simple),
+                        got = humanize_type(db, &member_type, RenderLevel::Simple)
+                    )
+                    .to_string(),
+                ));
+            }
+            Err(e) => {
+                return Err(e);
+            }
         }
     }
 
@@ -172,16 +172,12 @@ fn check_object_type_compact_tuple(
             }
         };
 
-        if check_general_type_compact(
+        check_general_type_compact(
             db,
             source_type,
             tuple_member_type,
             check_guard.next_level()?,
-        )
-        .is_err()
-        {
-            return Err(TypeCheckFailReason::TypeNotMatch);
-        }
+        )?;
     }
 
     Ok(())
@@ -205,7 +201,10 @@ fn check_object_type_compact_array(
             Ok(_) => {
                 return Ok(());
             }
-            Err(_) => {}
+            Err(e) if e.is_type_not_match() => {}
+            Err(e) => {
+                return Err(e);
+            }
         }
     }
     Err(TypeCheckFailReason::TypeNotMatch)

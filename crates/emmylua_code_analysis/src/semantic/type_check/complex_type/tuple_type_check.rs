@@ -24,16 +24,7 @@ pub fn check_tuple_type_compact(
         }
         LuaType::Array(array_base) => {
             for source_type in tuple.get_types() {
-                if check_general_type_compact(
-                    db,
-                    array_base,
-                    source_type,
-                    check_guard.next_level()?,
-                )
-                .is_err()
-                {
-                    return Err(TypeCheckFailReason::TypeNotMatch);
-                }
+                check_general_type_compact(db, array_base, source_type, check_guard.next_level()?)?;
             }
 
             return Ok(());
@@ -143,23 +134,35 @@ fn check_tuple_types_compact_tuple_types(
                 }
             }
             _ => {
-                if check_general_type_compact(
+                match check_general_type_compact(
                     db,
                     source_tuple_member_type,
                     compact_tuple_member_type,
                     check_guard.next_level()?,
-                )
-                .is_err()
-                {
-                    return Err(TypeCheckFailReason::TypeNotMatchWithReason(
-                        t!(
-                            "tuple member %{idx} not match, expect %{typ}, but got %{got}",
-                            idx = i + source_start + 1,
-                            typ = humanize_type(db, source_tuple_member_type, RenderLevel::Simple),
-                            got = humanize_type(db, compact_tuple_member_type, RenderLevel::Simple)
-                        )
-                        .to_string(),
-                    ));
+                ) {
+                    Ok(_) => {}
+                    Err(TypeCheckFailReason::TypeNotMatch) => {
+                        return Err(TypeCheckFailReason::TypeNotMatchWithReason(
+                            t!(
+                                "tuple member %{idx} not match, expect %{typ}, but got %{got}",
+                                idx = i + source_start + 1,
+                                typ = humanize_type(
+                                    db,
+                                    source_tuple_member_type,
+                                    RenderLevel::Simple
+                                ),
+                                got = humanize_type(
+                                    db,
+                                    compact_tuple_member_type,
+                                    RenderLevel::Simple
+                                )
+                            )
+                            .to_string(),
+                        ));
+                    }
+                    Err(e) => {
+                        return Err(e);
+                    }
                 }
             }
         }
@@ -184,23 +187,27 @@ fn check_tuple_type_compact_table(
             let member_type = member_item
                 .resolve_type(db)
                 .map_err(|_| TypeCheckFailReason::TypeNotMatch)?;
-            if check_general_type_compact(
+            match check_general_type_compact(
                 db,
                 source_tuple_member_type,
                 &member_type,
                 check_guard.next_level()?,
-            )
-            .is_err()
-            {
-                return Err(TypeCheckFailReason::TypeNotMatchWithReason(
-                    t!(
-                        "tuple member %{idx} not match, expect %{typ}, but got %{got}",
-                        idx = i + 1,
-                        typ = humanize_type(db, source_tuple_member_type, RenderLevel::Simple),
-                        got = humanize_type(db, &member_type, RenderLevel::Simple)
-                    )
-                    .to_string(),
-                ));
+            ) {
+                Ok(_) => {}
+                Err(TypeCheckFailReason::TypeNotMatch) => {
+                    return Err(TypeCheckFailReason::TypeNotMatchWithReason(
+                        t!(
+                            "tuple member %{idx} not match, expect %{typ}, but got %{got}",
+                            idx = i + 1,
+                            typ = humanize_type(db, source_tuple_member_type, RenderLevel::Simple),
+                            got = humanize_type(db, &member_type, RenderLevel::Simple)
+                        )
+                        .to_string(),
+                    ));
+                }
+                Err(e) => {
+                    return Err(e);
+                }
             }
         } else if source_tuple_member_type.is_optional() {
             continue;
@@ -228,23 +235,27 @@ fn check_tuple_type_compact_object_type(
         let source_tuple_member_type = &tuple_members[i];
         let key = LuaMemberKey::Integer((i + 1) as i64);
         if let Some(object_member_type) = object_members.get(&key) {
-            if check_general_type_compact(
+            match check_general_type_compact(
                 db,
                 source_tuple_member_type,
                 object_member_type,
                 check_guard.next_level()?,
-            )
-            .is_err()
-            {
-                return Err(TypeCheckFailReason::TypeNotMatchWithReason(
-                    t!(
-                        "tuple member %{idx} not match, expect %{typ}, but got %{got}",
-                        idx = i + 1,
-                        typ = humanize_type(db, source_tuple_member_type, RenderLevel::Simple),
-                        got = humanize_type(db, object_member_type, RenderLevel::Simple)
-                    )
-                    .to_string(),
-                ));
+            ) {
+                Ok(_) => {}
+                Err(TypeCheckFailReason::TypeNotMatch) => {
+                    return Err(TypeCheckFailReason::TypeNotMatchWithReason(
+                        t!(
+                            "tuple member %{idx} not match, expect %{typ}, but got %{got}",
+                            idx = i + 1,
+                            typ = humanize_type(db, source_tuple_member_type, RenderLevel::Simple),
+                            got = humanize_type(db, object_member_type, RenderLevel::Simple)
+                        )
+                        .to_string(),
+                    ));
+                }
+                Err(e) => {
+                    return Err(e);
+                }
             }
         } else if source_tuple_member_type.is_nullable() || source_tuple_member_type.is_any() {
             continue;

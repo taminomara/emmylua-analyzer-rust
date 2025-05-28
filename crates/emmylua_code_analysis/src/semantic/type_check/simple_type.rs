@@ -74,8 +74,10 @@ pub fn check_simple_type_compact(
                 return Ok(());
             }
             LuaType::Ref(_) => {
-                if check_base_type_for_ref_compact(db, source, compact_type, check_guard).is_ok() {
-                    return Ok(());
+                match check_base_type_for_ref_compact(db, source, compact_type, check_guard) {
+                    Ok(_) => return Ok(()),
+                    Err(err) if err.is_type_not_match() => {}
+                    Err(err) => return Err(err),
                 }
             }
             LuaType::Def(id) => {
@@ -90,8 +92,10 @@ pub fn check_simple_type_compact(
                 return Ok(());
             }
             LuaType::Ref(_) => {
-                if check_base_type_for_ref_compact(db, source, compact_type, check_guard).is_ok() {
-                    return Ok(());
+                match check_base_type_for_ref_compact(db, source, compact_type, check_guard) {
+                    Ok(_) => return Ok(()),
+                    Err(err) if err.is_type_not_match() => {}
+                    Err(err) => return Err(err),
                 }
             }
             _ => {}
@@ -193,10 +197,9 @@ pub fn check_simple_type_compact(
 
     if let LuaType::Union(union) = compact_type {
         for sub_compact in union.get_types() {
-            if check_simple_type_compact(db, source, sub_compact, check_guard.next_level()?)
-                .is_err()
-            {
-                return Err(TypeCheckFailReason::TypeNotMatch);
+            match check_simple_type_compact(db, source, sub_compact, check_guard.next_level()?) {
+                Ok(_) => {}
+                Err(err) => return Err(err),
             }
         }
 
@@ -207,17 +210,31 @@ pub fn check_simple_type_compact(
     Err(TypeCheckFailReason::TypeNotMatch)
 }
 
-fn get_alias_real_type<'a>(db: &'a DbIndex, compact_type: &'a LuaType) -> Option<&'a LuaType> {
+fn get_alias_real_type<'a>(
+    db: &'a DbIndex,
+    compact_type: &'a LuaType,
+    check_guard: TypeCheckGuard,
+) -> Result<&'a LuaType, TypeCheckFailReason> {
     match compact_type {
         LuaType::Ref(type_decl_id) => {
-            let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
+            let type_decl = db
+                .get_type_index()
+                .get_type_decl(type_decl_id)
+                .ok_or(TypeCheckFailReason::DonotCheck)?;
             if type_decl.is_alias() {
-                return get_alias_real_type(db, type_decl.get_alias_ref()?);
+                return get_alias_real_type(
+                    db,
+                    type_decl
+                        .get_alias_ref()
+                        .ok_or(TypeCheckFailReason::DonotCheck)?,
+                    check_guard.next_level()?,
+                );
             }
-            Some(compact_type)
         }
-        _ => Some(compact_type),
+        _ => {}
     }
+
+    Ok(compact_type)
 }
 
 fn check_base_type_for_ref_compact(
@@ -227,18 +244,22 @@ fn check_base_type_for_ref_compact(
     check_guard: TypeCheckGuard,
 ) -> TypeCheckResult {
     if let LuaType::Ref(_) = compact_type {
-        let real_type = get_alias_real_type(db, compact_type).unwrap_or(compact_type);
+        let real_type = get_alias_real_type(db, compact_type, check_guard.next_level()?)?;
         match &real_type {
             LuaType::MultiLineUnion(multi_line_union) => {
-                if multi_line_union.get_unions().iter().all(|(t, _)| {
-                    let next_guard = check_guard.next_level();
-                    match next_guard {
-                        Ok(guard) => check_general_type_compact(db, source, t, guard).is_ok(),
-                        Err(_) => return false,
+                for (sub_type, _) in multi_line_union.get_unions() {
+                    match check_general_type_compact(
+                        db,
+                        source,
+                        sub_type,
+                        check_guard.next_level()?,
+                    ) {
+                        Ok(_) => {}
+                        Err(e) => return Err(e),
                     }
-                }) {
-                    return Ok(());
                 }
+
+                return Ok(());
             }
             LuaType::Ref(type_decl_id) => {
                 if let Some(source_id) = get_base_type_id(&source) {
@@ -248,11 +269,12 @@ fn check_base_type_for_ref_compact(
                 }
                 if let Some(decl) = db.get_type_index().get_type_decl(type_decl_id) {
                     if decl.is_enum() {
-                        if check_enum_fields_match_source(db, source, type_decl_id, check_guard)
-                            .is_ok()
-                        {
-                            return Ok(());
-                        }
+                        return check_enum_fields_match_source(
+                            db,
+                            source,
+                            type_decl_id,
+                            check_guard,
+                        );
                     }
                 }
             }
@@ -271,16 +293,11 @@ fn check_enum_fields_match_source(
 ) -> TypeCheckResult {
     if let Some(decl) = db.get_type_index().get_type_decl(enum_type_decl_id) {
         if let Some(LuaType::Union(enum_fields)) = decl.get_enum_field_type(db) {
-            let is_match = enum_fields.get_types().iter().all(|field| {
-                let next_guard = check_guard.next_level();
-                match next_guard {
-                    Ok(guard) => check_general_type_compact(db, source, field, guard).is_ok(),
-                    Err(_) => return false,
-                }
-            });
-            if is_match {
-                return Ok(());
+            for field in enum_fields.get_types() {
+                check_general_type_compact(db, source, field, check_guard.next_level()?)?;
             }
+
+            return Ok(());
         }
     }
     Err(TypeCheckFailReason::TypeNotMatch)
@@ -303,16 +320,12 @@ fn check_variadic_type_compact(
                     }
                     VariadicType::Multi(compact_multi) => {
                         for compact_type in compact_multi {
-                            if check_simple_type_compact(
+                            check_simple_type_compact(
                                 db,
                                 source_base,
                                 compact_type,
                                 check_guard.next_level()?,
-                            )
-                            .is_err()
-                            {
-                                return Err(TypeCheckFailReason::TypeNotMatch);
-                            }
+                            )?;
                         }
                     }
                 }
