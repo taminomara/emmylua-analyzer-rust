@@ -189,9 +189,7 @@ where
         RenderLevel::Simple => 6,
         RenderLevel::Normal => 4,
         RenderLevel::Brief => 2,
-        RenderLevel::Minimal => {
-            return "union<...>".to_string();
-        }
+        RenderLevel::Minimal => 2,
     };
     // 需要确保顺序
     let mut seen = HashSet::new();
@@ -265,9 +263,7 @@ fn humanize_multi_line_union_type(
         RenderLevel::Simple => 8,
         RenderLevel::Normal => 4,
         RenderLevel::Brief => 2,
-        RenderLevel::Minimal => {
-            return "union<...>".to_string();
-        }
+        RenderLevel::Minimal => 2,
     };
     let dots = if members.len() > num { "..." } else { "" };
 
@@ -306,9 +302,7 @@ fn humanize_tuple_type(db: &DbIndex, tuple: &LuaTupleType, level: RenderLevel) -
         RenderLevel::Simple => 8,
         RenderLevel::Normal => 4,
         RenderLevel::Brief => 2,
-        RenderLevel::Minimal => {
-            return "tuple<...>".to_string();
-        }
+        RenderLevel::Minimal => 2,
     };
 
     let dots = if types.len() > num { "..." } else { "" };
@@ -448,9 +442,7 @@ fn humanize_intersect_type(
         RenderLevel::Simple => 8,
         RenderLevel::Normal => 4,
         RenderLevel::Brief => 2,
-        RenderLevel::Minimal => {
-            return "intersect<...>".to_string();
-        }
+        RenderLevel::Minimal => 2,
     };
 
     let types = inter.get_types();
@@ -536,16 +528,16 @@ fn humanize_table_const_type_detail_and_simple(
             }
             RenderLevel::Simple => {
                 let member_string_len = member_string.chars().count();
+                if total_length != 0 {
+                    members_string.push_str(", ");
+                    total_length += 2; // account for ", "
+                }
+
                 total_length += member_string_len;
                 members_string.push_str(&member_string);
                 if total_length > 54 {
                     members_string.push_str(", ...");
                     break;
-                }
-
-                if !members_string.is_empty() {
-                    members_string.push_str(", ");
-                    total_length += 2; // account for ", "
                 }
             }
             _ => return None,
