@@ -130,16 +130,17 @@ pub async fn init_analysis(
     let files = collect_files(&workspace_folders, &emmyrc);
     let files: Vec<(PathBuf, Option<String>)> =
         files.into_iter().map(|file| file.into_tuple()).collect();
-
     let file_count = files.len();
-    status_bar.update_progress_task(
-        client_id,
-        ProgressTask::LoadWorkspace,
-        None,
-        Some(format!("Indexing {} files", file_count)),
-    );
+    if file_count != 0 {
+        status_bar.update_progress_task(
+            client_id,
+            ProgressTask::LoadWorkspace,
+            None,
+            Some(format!("Indexing {} files", file_count)),
+        );
 
-    mut_analysis.update_files_by_path(files);
+        mut_analysis.update_files_by_path(files);
+    }
 
     status_bar.finish_progress_task(
         client_id,

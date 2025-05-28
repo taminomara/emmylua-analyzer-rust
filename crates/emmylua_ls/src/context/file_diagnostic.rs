@@ -177,18 +177,20 @@ async fn workspace_diagnostic(
             let text = format!("diagnose {} files", valid_file_count);
             let _p = Profile::new(text.as_str());
             status_bar.create_progress_task(client_id, ProgressTask::DiagnoseWorkspace);
+            let mut last_percentage = 0;
             while let Some(_) = rx.recv().await {
                 count += 1;
-
-                let message = format!("diagnostic {}/{}", count, valid_file_count);
                 let percentage_done = ((count as f32 / valid_file_count as f32) * 100.0) as u32;
-                status_bar.update_progress_task(
-                    client_id,
-                    ProgressTask::DiagnoseWorkspace,
-                    Some(percentage_done),
-                    Some(message),
-                );
-
+                if last_percentage != percentage_done {
+                    last_percentage = percentage_done;
+                    let message = format!("diagnostic {}%", percentage_done);
+                    status_bar.update_progress_task(
+                        client_id,
+                        ProgressTask::DiagnoseWorkspace,
+                        Some(percentage_done),
+                        Some(message),
+                    );
+                }
                 if count == valid_file_count {
                     status_bar.finish_progress_task(
                         client_id,
