@@ -176,13 +176,9 @@ fn parse_typed_field(p: &mut LuaDocParser) -> ParseResult {
         }
         LuaTokenKind::TkLeftBracket => {
             p.bump();
-            if p.current_token() == LuaTokenKind::TkInt
-                || p.current_token() == LuaTokenKind::TkString
-            {
-                p.bump();
-            } else {
-                parse_type(p)?;
-            }
+
+            parse_type(p)?;
+
             expect_token(p, LuaTokenKind::TkRightBracket)?;
             if_token_bump(p, LuaTokenKind::TkDocQuestion);
         }

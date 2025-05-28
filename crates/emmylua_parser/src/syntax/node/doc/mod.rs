@@ -7,7 +7,9 @@ pub use description::*;
 pub use tag::*;
 pub use types::*;
 
-use super::{LuaAst, LuaBinaryOpToken, LuaNameToken, LuaNumberToken, LuaStringToken};
+use super::{
+    LuaAst, LuaBinaryOpToken, LuaLiteralToken, LuaNameToken, LuaNumberToken, LuaStringToken,
+};
 use crate::{
     kind::{LuaSyntaxKind, LuaTokenKind},
     syntax::traits::LuaAstNode,
@@ -328,17 +330,22 @@ impl LuaDocObjectField {
                     return LuaNameToken::cast(child.into_token().unwrap())
                         .map(LuaDocObjectFieldKey::Name);
                 }
-                LuaKind::Token(LuaTokenKind::TkString) => {
-                    return LuaStringToken::cast(child.into_token().unwrap())
-                        .map(LuaDocObjectFieldKey::String);
-                }
-                LuaKind::Token(LuaTokenKind::TkInt) => {
-                    return LuaNumberToken::cast(child.into_token().unwrap())
-                        .map(LuaDocObjectFieldKey::Integer);
-                }
                 kind if LuaDocType::can_cast(kind.into()) => {
-                    return LuaDocType::cast(child.into_node().unwrap())
-                        .map(LuaDocObjectFieldKey::Type);
+                    let doc_type = LuaDocType::cast(child.into_node().unwrap())?;
+                    if let LuaDocType::Literal(literal) = &doc_type {
+                        let literal = literal.get_literal()?;
+                        match literal {
+                            LuaLiteralToken::Number(num) => {
+                                return Some(LuaDocObjectFieldKey::Integer(num));
+                            }
+                            LuaLiteralToken::String(str) => {
+                                return Some(LuaDocObjectFieldKey::String(str));
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    return LuaDocObjectFieldKey::Type(doc_type).into();
                 }
                 LuaKind::Token(LuaTokenKind::TkColon) => {
                     return None;

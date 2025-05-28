@@ -2548,4 +2548,44 @@ Syntax(Chunk)@0..40
 
         assert_ast_eq!(code, result);
     }
+
+    #[test]
+    fn test_object_type_grammar() {
+        let code = r#"
+        ---@type { ["string"|"number"] :string }
+        "#;
+        let result = r#"
+Syntax(Chunk)@0..58
+  Syntax(Block)@0..58
+    Token(TkEndOfLine)@0..1 "\n"
+    Token(TkWhitespace)@1..9 "        "
+    Syntax(Comment)@9..49
+      Token(TkDocStart)@9..13 "---@"
+      Syntax(DocTagType)@13..49
+        Token(TkTagType)@13..17 "type"
+        Token(TkWhitespace)@17..18 " "
+        Syntax(TypeObject)@18..49
+          Token(TkLeftBrace)@18..19 "{"
+          Token(TkWhitespace)@19..20 " "
+          Syntax(DocObjectField)@20..47
+            Token(TkLeftBracket)@20..21 "["
+            Syntax(TypeBinary)@21..38
+              Syntax(TypeLiteral)@21..29
+                Token(TkString)@21..29 "\"string\""
+              Token(TkDocOr)@29..30 "|"
+              Syntax(TypeLiteral)@30..38
+                Token(TkString)@30..38 "\"number\""
+            Token(TkRightBracket)@38..39 "]"
+            Token(TkWhitespace)@39..40 " "
+            Token(TkColon)@40..41 ":"
+            Syntax(TypeName)@41..47
+              Token(TkName)@41..47 "string"
+          Token(TkWhitespace)@47..48 " "
+          Token(TkRightBrace)@48..49 "}"
+    Token(TkEndOfLine)@49..50 "\n"
+    Token(TkWhitespace)@50..58 "        "
+        "#;
+
+        assert_ast_eq!(code, result);
+    }
 }
