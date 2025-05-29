@@ -8,8 +8,7 @@ pub fn goto_module_file(
     semantic_model: &SemanticModel,
     string_token: LuaStringToken,
 ) -> Option<GotoDefinitionResponse> {
-    let emmyrc = semantic_model.get_emmyrc();
-    if !is_require_path(string_token.clone(), &emmyrc).unwrap_or(false) {
+    if !is_require_path(string_token.clone()).unwrap_or(false) {
         return None;
     }
 

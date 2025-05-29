@@ -1,8 +1,8 @@
-use emmylua_code_analysis::Emmyrc;
+use emmylua_code_analysis::{DbIndex, FileId};
 use emmylua_parser::{
-    LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaExpr, LuaLiteralExpr, LuaStringToken,
+    LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaLiteralExpr, LuaStringToken,
 };
-use lsp_types::{CompletionItem, CompletionTextEdit, TextEdit};
+use lsp_types::{CompletionItem, CompletionTextEdit, Documentation, MarkupContent, TextEdit};
 
 use crate::handlers::completion::completion_builder::CompletionBuilder;
 
@@ -14,21 +14,14 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     }
 
     let string_token = LuaStringToken::cast(builder.trigger_token.clone())?;
-    let call_expr_prefix = string_token
+    let call_expr = string_token
         .get_parent::<LuaLiteralExpr>()?
         .get_parent::<LuaCallArgList>()?
-        .get_parent::<LuaCallExpr>()?
-        .get_prefix_expr()?;
+        .get_parent::<LuaCallExpr>()?;
 
     let emmyrc = builder.semantic_model.get_emmyrc();
-    match call_expr_prefix {
-        LuaExpr::NameExpr(name_expr) => {
-            let name = name_expr.get_name_text()?;
-            if !is_require_call(emmyrc, &name) {
-                return None;
-            }
-        }
-        _ => return None,
+    if !call_expr.is_require() {
+        return None;
     }
 
     let version_number = emmyrc.runtime.version.to_lua_version_number();
@@ -72,6 +65,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
                     filter_text: Some(filter_text.clone()),
                     text_edit: Some(CompletionTextEdit::Edit(text_edit)),
                     detail: Some(uri.to_string()),
+                    documentation: get_module_description(db, *child_file_id),
                     ..Default::default()
                 };
                 module_completions.push(completion_item);
@@ -98,12 +92,16 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     Some(())
 }
 
-fn is_require_call(emmyrc: &Emmyrc, name: &str) -> bool {
-    for fun in &emmyrc.runtime.require_like_function {
-        if name == fun {
-            return true;
-        }
+pub fn get_module_description(db: &DbIndex, file_id: FileId) -> Option<Documentation> {
+    let module_info = db.get_module_index().get_module(file_id)?;
+    let semantic_id = module_info.property_owner_id.clone()?;
+    let property = db.get_property_index().get_property(&semantic_id)?;
+    if let Some(description) = &property.description {
+        return Some(Documentation::MarkupContent(MarkupContent {
+            kind: lsp_types::MarkupKind::Markdown,
+            value: description.to_string(),
+        }));
     }
 
-    name == "require"
+    None
 }

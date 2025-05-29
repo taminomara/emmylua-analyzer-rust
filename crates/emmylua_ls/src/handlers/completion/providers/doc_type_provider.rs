@@ -1,6 +1,6 @@
 use emmylua_code_analysis::LuaTypeDeclId;
 use emmylua_parser::{LuaAstNode, LuaDocNameType, LuaSyntaxKind, LuaTokenKind};
-use lsp_types::CompletionItem;
+use lsp_types::{CompletionItem, Documentation, MarkupContent};
 
 use crate::handlers::completion::completion_builder::CompletionBuilder;
 
@@ -91,8 +91,26 @@ fn add_type_completion_item(
     let completion_item = CompletionItem {
         label: name.to_string(),
         kind: Some(kind),
+        documentation: get_documentation(builder, type_decl),
         ..CompletionItem::default()
     };
 
     builder.add_completion_item(completion_item)
+}
+
+fn get_documentation(
+    builder: &CompletionBuilder,
+    type_decl: Option<LuaTypeDeclId>,
+) -> Option<Documentation> {
+    let db = builder.semantic_model.get_db();
+    let semantic_id = type_decl?.into();
+    let property = db.get_property_index().get_property(&semantic_id)?;
+    if let Some(description) = &property.description {
+        return Some(Documentation::MarkupContent(MarkupContent {
+            kind: lsp_types::MarkupKind::Markdown,
+            value: description.to_string(),
+        }));
+    }
+
+    None
 }

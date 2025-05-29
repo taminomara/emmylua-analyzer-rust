@@ -7,6 +7,8 @@ use crate::{
     util::module_name_convert,
 };
 
+use super::module_path_provider::get_module_description;
+
 pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     if builder.is_cancelled() {
         return None;
@@ -74,6 +76,7 @@ fn add_module_completion_item(
         return None;
     }
 
+    let db = builder.semantic_model.get_db();
     let completion_item = CompletionItem {
         label: completion_name,
         kind: Some(lsp_types::CompletionItemKind::MODULE),
@@ -87,6 +90,7 @@ fn add_module_completion_item(
             module_info.file_id,
             position,
         )),
+        documentation: get_module_description(db, module_info.file_id),
         ..Default::default()
     };
 
