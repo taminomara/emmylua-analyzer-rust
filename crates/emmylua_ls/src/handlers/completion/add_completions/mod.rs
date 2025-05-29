@@ -5,10 +5,8 @@ mod check_match_word;
 pub use add_decl_completion::add_decl_completion;
 pub use add_member_completion::{add_member_completion, CompletionTriggerStatus};
 pub use check_match_word::check_match_word;
-use emmylua_code_analysis::{FileId, LuaSemanticDeclId, LuaType, RenderLevel};
+use emmylua_code_analysis::{LuaSemanticDeclId, LuaType, RenderLevel};
 use lsp_types::CompletionItemKind;
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 use emmylua_code_analysis::humanize_type;
 
@@ -171,59 +169,5 @@ fn get_description(builder: &CompletionBuilder, typ: &LuaType) -> Option<String>
             typ,
             RenderLevel::Minimal,
         )),
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub enum CompletionDataType {
-    PropertyOwnerId(LuaSemanticDeclId),
-    Module(String),
-    Overload((LuaSemanticDeclId, usize)),
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct CompletionData {
-    pub field_id: FileId,
-    pub typ: CompletionDataType,
-    /// 函数重载总数
-    pub function_overload_count: Option<usize>,
-}
-
-#[allow(unused)]
-impl CompletionData {
-    pub fn from_property_owner_id(
-        builder: &CompletionBuilder,
-        id: LuaSemanticDeclId,
-        function_overload_count: Option<usize>,
-    ) -> Option<Value> {
-        let data = Self {
-            field_id: builder.semantic_model.get_file_id(),
-            typ: CompletionDataType::PropertyOwnerId(id),
-            function_overload_count,
-        };
-        Some(serde_json::to_value(data).unwrap())
-    }
-
-    pub fn from_overload(
-        builder: &CompletionBuilder,
-        id: LuaSemanticDeclId,
-        index: usize,
-        function_overload_count: Option<usize>,
-    ) -> Option<Value> {
-        let data = Self {
-            field_id: builder.semantic_model.get_file_id(),
-            typ: CompletionDataType::Overload((id, index)),
-            function_overload_count,
-        };
-        Some(serde_json::to_value(data).unwrap())
-    }
-
-    pub fn from_module(builder: &CompletionBuilder, module: String) -> Option<Value> {
-        let data = Self {
-            field_id: builder.semantic_model.get_file_id(),
-            typ: CompletionDataType::Module(module),
-            function_overload_count: None,
-        };
-        Some(serde_json::to_value(data).unwrap())
     }
 }

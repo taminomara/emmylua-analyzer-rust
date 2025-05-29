@@ -1,11 +1,12 @@
 use emmylua_code_analysis::{DbIndex, LuaDeclId, LuaSemanticDeclId, LuaType};
 use lsp_types::CompletionItem;
 
-use crate::handlers::completion::completion_builder::CompletionBuilder;
+use crate::handlers::completion::{
+    completion_builder::CompletionBuilder, completion_data::CompletionData,
+};
 
 use super::{
     check_visibility, get_completion_kind, get_description, get_detail, is_deprecated, CallDisplay,
-    CompletionData,
 };
 
 pub fn add_decl_completion(

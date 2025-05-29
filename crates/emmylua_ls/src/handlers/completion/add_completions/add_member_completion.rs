@@ -2,11 +2,12 @@ use emmylua_code_analysis::{DbIndex, LuaMemberInfo, LuaMemberKey, LuaSemanticDec
 use emmylua_parser::LuaTokenKind;
 use lsp_types::CompletionItem;
 
-use crate::handlers::completion::completion_builder::CompletionBuilder;
+use crate::handlers::completion::{
+    completion_builder::CompletionBuilder, completion_data::CompletionData,
+};
 
 use super::{
     check_visibility, get_completion_kind, get_description, get_detail, is_deprecated, CallDisplay,
-    CompletionData,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]

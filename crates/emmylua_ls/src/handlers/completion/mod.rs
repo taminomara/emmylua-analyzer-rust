@@ -1,12 +1,13 @@
 mod add_completions;
 mod completion_builder;
+mod completion_data;
 mod data;
 mod providers;
 mod resolve_completion;
 mod test;
 
-use add_completions::CompletionData;
 use completion_builder::CompletionBuilder;
+use completion_data::CompletionData;
 use emmylua_code_analysis::{EmmyLuaAnalysis, FileId};
 use emmylua_parser::LuaAstNode;
 use log::error;

@@ -6,8 +6,9 @@ use lsp_types::CompletionItem;
 use rowan::NodeOrToken;
 
 use crate::handlers::completion::{
-    add_completions::{check_visibility, is_deprecated, CompletionData},
+    add_completions::{check_visibility, is_deprecated},
     completion_builder::CompletionBuilder,
+    completion_data::CompletionData,
 };
 
 pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {

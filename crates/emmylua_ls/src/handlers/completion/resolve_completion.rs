@@ -6,7 +6,7 @@ use crate::{
     handlers::hover::{build_hover_content_for_completion, HoverBuilder},
 };
 
-use super::add_completions::{CompletionData, CompletionDataType};
+use super::completion_data::{CompletionData, CompletionDataType};
 
 pub fn resolve_completion(
     semantic_model: &SemanticModel,

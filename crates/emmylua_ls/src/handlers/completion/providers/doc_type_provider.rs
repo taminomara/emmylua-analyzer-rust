@@ -1,8 +1,10 @@
 use emmylua_code_analysis::LuaTypeDeclId;
 use emmylua_parser::{LuaAstNode, LuaDocNameType, LuaSyntaxKind, LuaTokenKind};
-use lsp_types::{CompletionItem, Documentation, MarkupContent};
+use lsp_types::CompletionItem;
 
-use crate::handlers::completion::completion_builder::CompletionBuilder;
+use crate::handlers::completion::{
+    completion_builder::CompletionBuilder, completion_data::CompletionData,
+};
 
 pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     if builder.is_cancelled() {
@@ -88,29 +90,18 @@ fn add_type_completion_item(
         None => lsp_types::CompletionItemKind::MODULE,
     };
 
+    let data = if let Some(id) = type_decl {
+        CompletionData::from_property_owner_id(builder, id.into(), None)
+    } else {
+        None
+    };
+
     let completion_item = CompletionItem {
         label: name.to_string(),
         kind: Some(kind),
-        documentation: get_documentation(builder, type_decl),
+        data,
         ..CompletionItem::default()
     };
 
     builder.add_completion_item(completion_item)
-}
-
-fn get_documentation(
-    builder: &CompletionBuilder,
-    type_decl: Option<LuaTypeDeclId>,
-) -> Option<Documentation> {
-    let db = builder.semantic_model.get_db();
-    let semantic_id = type_decl?.into();
-    let property = db.get_property_index().get_property(&semantic_id)?;
-    if let Some(description) = &property.description {
-        return Some(Documentation::MarkupContent(MarkupContent {
-            kind: lsp_types::MarkupKind::Markdown,
-            value: description.to_string(),
-        }));
-    }
-
-    None
 }
