@@ -6,6 +6,8 @@ use emmylua_code_analysis::{
 use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaNameToken, LuaSyntaxNode};
 use lsp_types::Uri;
 
+use crate::handlers::hover::find_member_origin_owner;
+
 pub fn rename_member_references(
     semantic_model: &SemanticModel,
     compilation: &LuaCompilation,
@@ -23,7 +25,8 @@ pub fn rename_member_references(
         .get_reference_index()
         .get_index_references(&key)?;
 
-    let property_owner = LuaSemanticDeclId::Member(member_id);
+    let property_owner = find_member_origin_owner(semantic_model, member_id)
+        .unwrap_or(LuaSemanticDeclId::Member(member_id));
     let mut semantic_cache = HashMap::new();
     for in_filed_syntax_id in index_references {
         let semantic_model =
