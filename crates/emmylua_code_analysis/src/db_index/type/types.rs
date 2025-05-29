@@ -11,7 +11,7 @@ use smol_str::SmolStr;
 
 use crate::{
     db_index::{LuaMemberKey, LuaSignatureId},
-    DbIndex, InFiled,
+    DbIndex, InFiled, SemanticModel,
 };
 
 use super::{type_decl::LuaTypeDeclId, TypeOps};
@@ -539,9 +539,26 @@ impl LuaFunctionType {
             || self.ret.is_self_infer()
     }
 
-    pub fn first_param_is_self(&self) -> bool {
+    pub fn first_param_is_self(
+        &self,
+        semantic_model: &SemanticModel,
+        owner_type: &Option<LuaType>,
+    ) -> bool {
         if let Some((name, t)) = self.params.first() {
-            name == "self" || t.as_ref().map_or(false, |t| t.is_self_infer())
+            match t {
+                Some(t) => {
+                    if t.is_self_infer() {
+                        return true;
+                    }
+                    match owner_type {
+                        Some(owner_type) => semantic_model.type_check(owner_type, t).is_ok(),
+                        None => name == "self",
+                    }
+                }
+                None => {
+                    return name == "self";
+                }
+            }
         } else {
             false
         }

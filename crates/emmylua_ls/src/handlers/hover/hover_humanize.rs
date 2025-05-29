@@ -137,18 +137,26 @@ fn hover_doc_function_type(
         let parent_owner = db
             .get_member_index()
             .get_current_owner(&owner_member.get_id());
-        if let Some(LuaMemberOwner::Type(ty)) = parent_owner {
+        let mut is_method = lua_func.is_colon_define();
+        if let Some(LuaMemberOwner::Type(type_decl_id)) = parent_owner {
             // 如果是全局定义, 则使用定义时的名称
             if let Some(global_name) = global_name {
                 name.push_str(global_name);
             } else {
-                name.push_str(ty.get_simple_name());
+                name.push_str(type_decl_id.get_simple_name());
             }
             if owner_member.is_field() {
                 type_label = "(field) ";
             }
+            if !is_method {
+                is_method = lua_func.first_param_is_self(
+                    builder.semantic_model,
+                    &Some(LuaType::Ref(type_decl_id.clone())),
+                );
+            }
         }
-        if lua_func.is_colon_define() || lua_func.first_param_is_self() {
+
+        if is_method {
             type_label = "(method) ";
             name.push_str(":");
         } else {

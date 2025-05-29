@@ -707,5 +707,4 @@ mod tests {
             CompletionTriggerKind::INVOKED,
         ));
     }
-
 }

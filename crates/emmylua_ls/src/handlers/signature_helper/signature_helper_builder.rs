@@ -184,7 +184,7 @@ impl<'a> SignatureHelperBuilder<'a> {
         self.best_call_function_label = build_function_label(
             self,
             &self.params_info,
-            func.is_colon_define() || func.first_param_is_self(),
+            func.is_colon_define() || func.first_param_is_self(self.semantic_model, &None),
             &func.get_ret(),
         );
 

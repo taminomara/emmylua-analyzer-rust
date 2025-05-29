@@ -6,7 +6,7 @@ use lsp_types::{CompletionItem, InsertTextFormat, InsertTextMode};
 use rowan::NodeOrToken;
 
 use crate::handlers::completion::{
-    add_completions::{check_visibility, get_detail, is_deprecated, CallDisplay, CompletionData},
+    add_completions::{check_visibility, get_detail, is_deprecated, CallDisplay},
     completion_builder::CompletionBuilder,
     completion_data::CompletionData,
 };
@@ -83,6 +83,11 @@ fn add_field_key_completion(
     builder: &mut CompletionBuilder,
     member_info: LuaMemberInfo,
 ) -> Option<()> {
+    let property_owner = &member_info.property_owner_id;
+    if let Some(property_owner) = &property_owner {
+        check_visibility(builder, property_owner.clone())?;
+    }
+
     let name = match member_info.key {
         LuaMemberKey::Name(name) => name.to_string(),
         LuaMemberKey::Integer(index) => format!("[{}]", index),
@@ -207,7 +212,7 @@ fn add_table_field_value_completion(builder: &mut CompletionBuilder) -> Option<(
             let key = builder
                 .semantic_model
                 .get_member_key(&field.get_field_key()?)?;
-            let member_infos = builder.semantic_model.infer_member_infos(&table_type)?;
+            let member_infos = builder.semantic_model.get_member_infos(&table_type)?;
             let member_info = member_infos.iter().find(|m| m.key == key)?;
 
             if add_field_value_completion(builder, member_info.clone()).is_some() {
