@@ -141,6 +141,7 @@ impl ProviderVirtualWorkspace {
         let HoverContents::Markup(MarkupContent { kind, value }) = contents else {
             return false;
         };
+        dbg!(&value);
         if value != expect.value {
             return false;
         }
@@ -182,6 +183,7 @@ impl ProviderVirtualWorkspace {
             CompletionResponse::Array(items) => items,
             CompletionResponse::List(list) => list.items,
         };
+        dbg!(&items);
         if items.len() != expect.len() {
             return false;
         }
