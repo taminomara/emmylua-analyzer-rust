@@ -129,6 +129,7 @@ fn hover_doc_function_type(
     func_name: &str,
 ) -> String {
     let async_label = if lua_func.is_async() { "async " } else { "" };
+    let mut is_method = lua_func.is_colon_define();
     let mut type_label = "function ";
     // 有可能来源于类. 例如: `local add = class.add`, `add()`应被视为类方法
     let full_name = if let Some(owner_member) = owner_member {
@@ -137,7 +138,6 @@ fn hover_doc_function_type(
         let parent_owner = db
             .get_member_index()
             .get_current_owner(&owner_member.get_id());
-        let mut is_method = lua_func.is_colon_define();
         if let Some(LuaMemberOwner::Type(type_decl_id)) = parent_owner {
             // 如果是全局定义, 则使用定义时的名称
             if let Some(global_name) = global_name {
@@ -148,12 +148,10 @@ fn hover_doc_function_type(
             if owner_member.is_field() {
                 type_label = "(field) ";
             }
-            if !is_method {
-                is_method = lua_func.first_param_is_self(
-                    builder.semantic_model,
-                    &Some(LuaType::Ref(type_decl_id.clone())),
-                );
-            }
+            is_method = lua_func.is_method(
+                builder.semantic_model,
+                Some(&LuaType::Ref(type_decl_id.clone())),
+            );
         }
 
         if is_method {
@@ -176,7 +174,7 @@ fn hover_doc_function_type(
         .enumerate()
         .map(|(index, param)| {
             let name = param.0.clone();
-            if index == 0 && param.1.is_some() && param.1.as_ref().unwrap().is_self_infer() {
+            if index == 0 && is_method {
                 "".to_string()
             } else if let Some(ty) = &param.1 {
                 format!("{}: {}", name, humanize_type(db, ty, RenderLevel::Normal))
@@ -210,10 +208,13 @@ fn hover_signature_type(
     is_form_union: bool,
 ) -> Option<String> {
     let signature = db.get_signature_index().get(&signature_id)?;
+
     if is_form_union && signature.param_docs.is_empty() {
         return None;
     }
     let call_signature = builder.get_call_signature();
+    let mut is_method = signature.is_colon_define;
+    let mut self_real_type = LuaType::SelfInfer;
 
     let mut type_label = "function ";
     // 有可能来源于类. 例如: `local add = class.add`, `add()`应被视为类定义的内容
@@ -223,15 +224,17 @@ fn hover_signature_type(
         let parent_owner = db
             .get_member_index()
             .get_current_owner(&owner_member.get_id());
-        if let Some(LuaMemberOwner::Type(ty)) = parent_owner {
+        if let Some(LuaMemberOwner::Type(type_decl_id)) = parent_owner {
+            self_real_type = LuaType::Ref(type_decl_id.clone());
             // 如果是全局定义, 则使用定义时的名称
             if let Some(global_name) = global_name {
                 name.push_str(global_name);
             } else {
-                name.push_str(ty.get_simple_name());
+                name.push_str(type_decl_id.get_simple_name());
             }
             // `field`定义的function也被视为`signature`, 因此这里需要额外处理
-            if signature.is_method() {
+            is_method = signature.is_method(builder.semantic_model, Some(&self_real_type));
+            if is_method {
                 type_label = "(method) ";
                 name.push_str(":");
             } else {
@@ -262,7 +265,7 @@ fn hover_signature_type(
             .enumerate()
             .map(|(index, param)| {
                 let name = param.0.clone();
-                if index == 0 && param.1.is_some() && param.1.as_ref().unwrap().is_self_infer() {
+                if index == 0 && !signature.is_colon_define && is_method {
                     "".to_string()
                 } else if let Some(ty) = &param.1 {
                     format!("{}: {}", name, humanize_type(db, ty, RenderLevel::Simple))
@@ -296,7 +299,9 @@ fn hover_signature_type(
                 .enumerate()
                 .map(|(index, param)| {
                     let name = param.0.clone();
-                    if index == 0 && param.1.is_some() && param.1.as_ref().unwrap().is_self_infer()
+                    if index == 0
+                        && param.1.is_some()
+                        && overload.is_method(builder.semantic_model, Some(&self_real_type))
                     {
                         "".to_string()
                     } else if let Some(ty) = &param.1 {
@@ -419,7 +424,7 @@ fn build_signature_ret_type(
     i: usize,
 ) -> String {
     let type_expansion_count = builder.get_type_expansion_count();
-    let type_text = hover_type(builder, &ret_info.type_ref, Some(RenderLevel::Simple));
+    let type_text = hover_humanize_type(builder, &ret_info.type_ref, Some(RenderLevel::Simple));
     if builder.get_type_expansion_count() > type_expansion_count {
         // 重新设置`type_expansion`
         if let Some(pop_type_expansion) =
@@ -456,8 +461,7 @@ fn format_function_type(
     format!("{}{}({}){}", prefix, full_name, params, rets)
 }
 
-/// 有限的处理
-pub fn hover_type(
+pub fn hover_humanize_type(
     builder: &mut HoverBuilder,
     ty: &LuaType,
     fallback_level: Option<RenderLevel>, // 当有值时, 若获取类型描述为空会回退到使用`humanize_type()`
@@ -494,7 +498,7 @@ fn hover_union_type(
     level: RenderLevel,
 ) -> String {
     format_union_type(union, level, |ty, level| {
-        hover_type(builder, ty, Some(level))
+        hover_humanize_type(builder, ty, Some(level))
     })
 }
 

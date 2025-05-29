@@ -539,11 +539,10 @@ impl LuaFunctionType {
             || self.ret.is_self_infer()
     }
 
-    pub fn first_param_is_self(
-        &self,
-        semantic_model: &SemanticModel,
-        owner_type: &Option<LuaType>,
-    ) -> bool {
+    pub fn is_method(&self, semantic_model: &SemanticModel, owner_type: Option<&LuaType>) -> bool {
+        if self.is_colon_define {
+            return true;
+        }
         if let Some((name, t)) = self.params.first() {
             match t {
                 Some(t) => {

@@ -1,18 +1,19 @@
 use emmylua_code_analysis::{
     DbIndex, LuaDeclId, LuaDocument, LuaMember, LuaMemberId, LuaMemberKey, LuaSemanticDeclId,
-    LuaSignatureId, LuaType, LuaTypeDeclId, RenderLevel, SemanticDeclLevel, SemanticInfo,
-    SemanticModel,
+    LuaSignatureId, LuaType, LuaTypeDeclId, RenderLevel, SemanticInfo, SemanticModel,
 };
-use emmylua_parser::{
-    LuaAssignStat, LuaAstNode, LuaExpr, LuaSyntaxKind, LuaSyntaxToken, LuaTableField,
-};
+use emmylua_parser::{LuaAssignStat, LuaAstNode, LuaExpr, LuaSyntaxToken};
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
 
 use emmylua_code_analysis::humanize_type;
 
-use crate::handlers::hover::hover_humanize::hover_type;
+use crate::handlers::hover::{
+    find_function_member_origin_owner, function_humanize::is_function,
+    hover_humanize::hover_humanize_type,
+};
 
 use super::{
+    function_humanize::find_function_decl_origin_owner,
     hover_builder::HoverBuilder,
     hover_humanize::{hover_const_type, hover_function_type},
 };
@@ -118,7 +119,8 @@ fn build_decl_hover(
 
     // 处理类型签名
     if is_function(&typ) {
-        let origin_decl_id = get_function_decl_owner(builder.semantic_model, decl_id.clone());
+        let origin_decl_id =
+            find_function_decl_origin_owner(builder.semantic_model, decl_id.clone());
         match origin_decl_id {
             Some(LuaSemanticDeclId::Member(member_id)) => {
                 origin_member = Some(db.get_member_index().get_member(&member_id).unwrap());
@@ -157,7 +159,8 @@ fn build_decl_hover(
     } else {
         let decl_hover_type =
             get_hover_type(builder, builder.semantic_model).unwrap_or(typ.clone());
-        let type_humanize_text = hover_type(builder, &decl_hover_type, Some(RenderLevel::Detailed));
+        let type_humanize_text =
+            hover_humanize_type(builder, &decl_hover_type, Some(RenderLevel::Detailed));
         let prefix = if decl.is_local() {
             "local "
         } else {
@@ -206,14 +209,13 @@ fn build_member_hover(
     let mut origin_function_member = None;
     let mut origin_decl = None;
     if is_function(&typ) {
-        let origin_decl_id = get_function_member_owner(&builder.semantic_model, member_id);
+        let origin_decl_id = find_function_member_origin_owner(&builder.semantic_model, member_id);
         match origin_decl_id {
             Some(LuaSemanticDeclId::Member(member_id)) => {
-                origin_function_member =
-                    Some(db.get_member_index().get_member(&member_id).unwrap());
+                origin_function_member = Some(db.get_member_index().get_member(&member_id)?);
             }
             Some(LuaSemanticDeclId::LuaDecl(decl_id)) => {
-                origin_decl = Some(db.get_decl_index().get_decl(&decl_id).unwrap());
+                origin_decl = Some(db.get_decl_index().get_decl(&decl_id)?);
             }
             _ => {}
         }
@@ -248,7 +250,8 @@ fn build_member_hover(
     } else {
         let member_hover_type =
             get_hover_type(builder, builder.semantic_model).unwrap_or(typ.clone());
-        let type_humanize_text = hover_type(builder, &member_hover_type, Some(RenderLevel::Simple));
+        let type_humanize_text =
+            hover_humanize_type(builder, &member_hover_type, Some(RenderLevel::Simple));
         builder.set_type_description(format!("(field) {}: {}", member_name, type_humanize_text));
         builder.set_location_path(Some(&member));
     }
@@ -348,102 +351,6 @@ pub fn add_signature_ret_description(
     Some(())
 }
 
-// 获取`decl`可能的来源
-fn get_function_decl_owner(
-    semantic_model: &SemanticModel,
-    decl_id: LuaDeclId,
-) -> Option<LuaSemanticDeclId> {
-    let root = semantic_model
-        .get_db()
-        .get_vfs()
-        .get_syntax_tree(&decl_id.file_id)?
-        .get_red_root();
-    let node = semantic_model
-        .get_db()
-        .get_decl_index()
-        .get_decl(&decl_id)?
-        .get_value_syntax_id()?
-        .to_node_from_root(&root)?;
-    let semantic_decl = semantic_model.find_decl(node.into(), SemanticDeclLevel::default());
-    match semantic_decl {
-        Some(LuaSemanticDeclId::Member(member_id)) => {
-            get_function_member_owner(semantic_model, member_id).or(semantic_decl)
-        }
-        Some(LuaSemanticDeclId::LuaDecl(_)) => semantic_decl,
-        _ => None,
-    }
-}
-
-// 获取`member_id`可能的来源
-pub fn get_function_member_owner(
-    semantic_model: &SemanticModel,
-    member_id: LuaMemberId,
-) -> Option<LuaSemanticDeclId> {
-    fn resolve_owner(
-        semantic_model: &SemanticModel,
-        member_id: LuaMemberId,
-    ) -> Option<LuaSemanticDeclId> {
-        let root = semantic_model
-            .get_db()
-            .get_vfs()
-            .get_syntax_tree(&member_id.file_id)?
-            .get_red_root();
-        let cur_node = member_id.get_syntax_id().to_node_from_root(&root)?;
-
-        match member_id.get_syntax_id().get_kind() {
-            LuaSyntaxKind::TableFieldAssign => match cur_node {
-                table_field_node if LuaTableField::can_cast(table_field_node.kind().into()) => {
-                    let table_field = LuaTableField::cast(table_field_node)?;
-                    let value_expr_syntax_id = table_field.get_value_expr()?.get_syntax_id();
-                    let expr = value_expr_syntax_id.to_node_from_root(&root)?;
-                    semantic_model.find_decl(expr.clone().into(), SemanticDeclLevel::default())
-                }
-                _ => None,
-            },
-            LuaSyntaxKind::IndexExpr => {
-                let assign_node = cur_node.parent()?;
-                match assign_node {
-                    assign_node if LuaAssignStat::can_cast(assign_node.kind().into()) => {
-                        let assign_stat = LuaAssignStat::cast(assign_node)?;
-                        let (vars, exprs) = assign_stat.get_var_and_expr_list();
-                        let mut semantic_decl = None;
-                        for (var, expr) in vars.iter().zip(exprs.iter()) {
-                            if var.syntax().text_range() == cur_node.text_range() {
-                                let expr = expr.get_syntax_id().to_node_from_root(&root)?;
-                                semantic_decl = semantic_model
-                                    .find_decl(expr.clone().into(), SemanticDeclLevel::default())
-                            } else {
-                                semantic_decl = None;
-                            }
-                        }
-                        semantic_decl
-                    }
-                    _ => None,
-                }
-            }
-            _ => None,
-        }
-    }
-
-    let mut current_property_owner = resolve_owner(semantic_model, member_id);
-    let mut resolved_property_owner = current_property_owner.clone();
-    while let Some(property_owner) = &current_property_owner {
-        match property_owner {
-            LuaSemanticDeclId::Member(member_id) => {
-                if let Some(next_property_owner) = resolve_owner(semantic_model, member_id.clone())
-                {
-                    resolved_property_owner = Some(next_property_owner.clone());
-                    current_property_owner = Some(next_property_owner.clone());
-                } else {
-                    break;
-                }
-            }
-            _ => break,
-        }
-    }
-    resolved_property_owner
-}
-
 pub fn get_hover_type(builder: &HoverBuilder, semantic_model: &SemanticModel) -> Option<LuaType> {
     let assign_stat = LuaAssignStat::cast(builder.get_trigger_token()?.parent()?.parent()?)?;
     let (vars, exprs) = assign_stat.get_var_and_expr_list();
@@ -475,15 +382,4 @@ pub fn get_hover_type(builder: &HoverBuilder, semantic_model: &SemanticModel) ->
     }
 
     None
-}
-
-fn is_function(typ: &LuaType) -> bool {
-    typ.is_function()
-        || match &typ {
-            LuaType::Union(union) => union
-                .get_types()
-                .iter()
-                .all(|t| matches!(t, LuaType::DocFunction(_) | LuaType::Signature(_))),
-            _ => false,
-        }
 }

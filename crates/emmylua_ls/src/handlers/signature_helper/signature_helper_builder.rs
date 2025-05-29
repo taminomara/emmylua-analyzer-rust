@@ -6,7 +6,7 @@ use lsp_types::{Documentation, MarkupContent, MarkupKind, ParameterInformation, 
 use rowan::NodeOrToken;
 
 use crate::handlers::hover::{
-    get_function_member_owner, hover_std_description, infer_prefix_global_name, is_std,
+    find_function_member_origin_owner, hover_std_description, infer_prefix_global_name, is_std,
 };
 
 use super::build_signature_helper::{build_function_label, generate_param_label};
@@ -69,7 +69,7 @@ impl<'a> SignatureHelperBuilder<'a> {
         // 推断为来源
         semantic_decl = match semantic_decl {
             Some(LuaSemanticDeclId::Member(member_id)) => {
-                get_function_member_owner(semantic_model, member_id).or(semantic_decl)
+                find_function_member_origin_owner(semantic_model, member_id).or(semantic_decl)
             }
             Some(LuaSemanticDeclId::LuaDecl(_)) => semantic_decl,
             _ => None,
@@ -184,7 +184,7 @@ impl<'a> SignatureHelperBuilder<'a> {
         self.best_call_function_label = build_function_label(
             self,
             &self.params_info,
-            func.is_colon_define() || func.first_param_is_self(self.semantic_model, &None),
+            func.is_method(self.semantic_model, None),
             &func.get_ret(),
         );
 

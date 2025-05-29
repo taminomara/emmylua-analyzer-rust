@@ -104,7 +104,7 @@ fn check_self_name(semantic_model: &SemanticModel, name_expr: LuaNameExpr) -> Op
             .get_db()
             .get_signature_index()
             .get(&signature_id)?;
-        if signature.is_method() {
+        if signature.is_method(semantic_model, None) {
             return Some(());
         }
     }

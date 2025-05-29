@@ -137,7 +137,7 @@ fn build_doc_function_signature_help(
     let label = build_function_label(
         builder,
         &param_infos,
-        func_type.is_colon_define() || func_type.first_param_is_self(builder.semantic_model, &None),
+        func_type.is_method(builder.semantic_model, None),
         &func_type.get_ret(),
     );
 
@@ -234,7 +234,7 @@ fn build_sig_id_signature_help(
     let label = build_function_label(
         builder,
         &param_infos,
-        signature.is_method(),
+        signature.is_method(&semantic_model, None),
         &signature.get_return_type(),
     );
 
