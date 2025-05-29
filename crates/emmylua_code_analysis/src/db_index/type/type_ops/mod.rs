@@ -49,11 +49,25 @@ impl TypeOps {
 }
 
 pub fn get_real_type<'a>(db: &'a DbIndex, compact_type: &'a LuaType) -> Option<&'a LuaType> {
+    get_real_type_with_depth(db, compact_type, 0)
+}
+
+fn get_real_type_with_depth<'a>(
+    db: &'a DbIndex,
+    compact_type: &'a LuaType,
+    depth: u32,
+) -> Option<&'a LuaType> {
+    const MAX_RECURSION_DEPTH: u32 = 100;
+
+    if depth >= MAX_RECURSION_DEPTH {
+        return Some(compact_type);
+    }
+
     match compact_type {
         LuaType::Ref(type_decl_id) => {
             let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
             if type_decl.is_alias() {
-                return get_real_type(db, type_decl.get_alias_ref()?);
+                return get_real_type_with_depth(db, type_decl.get_alias_ref()?, depth + 1);
             }
             Some(compact_type)
         }

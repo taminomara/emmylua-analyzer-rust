@@ -782,4 +782,24 @@ end
             "#
         ));
     }
+
+    #[test]
+    fn test_issue_288() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.def(
+            r#"
+                --- @alias MyFun fun(): string[]
+                local f --- @type MyFun
+
+                if type(f) == 'function' then
+                     _, res = pcall(f)
+                end
+            "#,
+        );
+
+        let res = ws.expr_ty("res");
+        let res_desc = ws.humanize_type(res);
+        assert_eq!(res_desc, "(string[]|string)");
+    }
 }
