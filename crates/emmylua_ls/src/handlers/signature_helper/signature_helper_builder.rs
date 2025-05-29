@@ -6,7 +6,7 @@ use lsp_types::{Documentation, MarkupContent, MarkupKind, ParameterInformation, 
 use rowan::NodeOrToken;
 
 use crate::handlers::hover::{
-    find_function_member_origin_owner, hover_std_description, infer_prefix_global_name, is_std,
+    find_member_origin_owner, hover_std_description, infer_prefix_global_name, is_std,
 };
 
 use super::build_signature_helper::{build_function_label, generate_param_label};
@@ -69,7 +69,7 @@ impl<'a> SignatureHelperBuilder<'a> {
         // 推断为来源
         semantic_decl = match semantic_decl {
             Some(LuaSemanticDeclId::Member(member_id)) => {
-                find_function_member_origin_owner(semantic_model, member_id).or(semantic_decl)
+                find_member_origin_owner(semantic_model, member_id).or(semantic_decl)
             }
             Some(LuaSemanticDeclId::LuaDecl(_)) => semantic_decl,
             _ => None,

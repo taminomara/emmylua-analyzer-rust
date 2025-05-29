@@ -67,7 +67,7 @@ pub fn definition(
     if let Some(semantic_decl) =
         semantic_model.find_decl(token.clone().into(), SemanticDeclLevel::default())
     {
-        return goto_def_definition(&semantic_model, semantic_decl);
+        return goto_def_definition(&semantic_model, semantic_decl, &token);
     } else if let Some(string_token) = LuaStringToken::cast(token.clone()) {
         if let Some(module_response) = goto_module_file(&semantic_model, string_token.clone()) {
             return Some(module_response);
