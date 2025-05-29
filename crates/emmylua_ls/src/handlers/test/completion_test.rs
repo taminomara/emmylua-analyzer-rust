@@ -17,6 +17,7 @@ mod tests {
             vec![VirtualCompletionItem {
                 label: "zabcde".to_string(),
                 kind: CompletionItemKind::VARIABLE,
+                ..Default::default()
             }],
         ));
     }
@@ -39,14 +40,17 @@ mod tests {
                 VirtualCompletionItem {
                     label: "data".to_string(),
                     kind: CompletionItemKind::VARIABLE,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "trg".to_string(),
                     kind: CompletionItemKind::VARIABLE,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "test".to_string(),
                     kind: CompletionItemKind::FUNCTION,
+                    label_detail: Some("(event, callback)".to_string()),
                 },
             ],
         ));
@@ -64,14 +68,17 @@ mod tests {
                 VirtualCompletionItem {
                     label: "\"AAA\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "\"BBB\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "test".to_string(),
                     kind: CompletionItemKind::FUNCTION,
+                    label_detail: Some("(event, callback)".to_string()),
                 },
             ],
         ));
@@ -89,10 +96,12 @@ mod tests {
                 VirtualCompletionItem {
                     label: "\"AAA\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "\"BBB\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
             ],
             CompletionTriggerKind::TRIGGER_CHARACTER,
@@ -115,10 +124,12 @@ mod tests {
                 VirtualCompletionItem {
                     label: "\"A\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "\"B\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
             ],
             CompletionTriggerKind::TRIGGER_CHARACTER,
@@ -137,14 +148,17 @@ mod tests {
                 VirtualCompletionItem {
                     label: "\"A\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "\"B\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "Test".to_string(),
                     kind: CompletionItemKind::CLASS,
+                    ..Default::default()
                 },
             ],
         ));
@@ -160,6 +174,7 @@ mod tests {
             vec![VirtualCompletionItem {
                 label: "event".to_string(),
                 kind: CompletionItemKind::FUNCTION,
+                label_detail: Some("(a, b)".to_string()),
             }],
         ));
     }
@@ -193,10 +208,12 @@ mod tests {
                 VirtualCompletionItem {
                     label: "A".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "B".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
             ],
         ));
@@ -213,10 +230,12 @@ mod tests {
                 VirtualCompletionItem {
                     label: "AAA".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "BBB".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
             ],
         ));
@@ -245,10 +264,12 @@ mod tests {
                 VirtualCompletionItem {
                     label: "EP.A".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "EP.B".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
             ],
         ));
@@ -277,10 +298,12 @@ mod tests {
                 VirtualCompletionItem {
                     label: "A".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "B".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
             ],
         ));
@@ -313,14 +336,17 @@ mod tests {
                 VirtualCompletionItem {
                     label: "nil".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "number".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "string".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
             ],
         ));
@@ -336,14 +362,17 @@ mod tests {
                 VirtualCompletionItem {
                     label: "\"nil\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "\"number\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "\"string\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
             ],
             CompletionTriggerKind::TRIGGER_CHARACTER,
@@ -361,14 +390,17 @@ mod tests {
                 VirtualCompletionItem {
                     label: "\"nil\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "\"number\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "\"string\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
             ],
             CompletionTriggerKind::TRIGGER_CHARACTER,
@@ -396,6 +428,7 @@ mod tests {
             vec![VirtualCompletionItem {
                 label: "box".to_string(),
                 kind: CompletionItemKind::VARIABLE,
+                ..Default::default()
             },],
             CompletionTriggerKind::TRIGGER_CHARACTER,
         ));
@@ -415,6 +448,7 @@ mod tests {
             vec![VirtualCompletionItem {
                 label: "self".to_string(),
                 kind: CompletionItemKind::VARIABLE,
+                ..Default::default()
             },],
             CompletionTriggerKind::TRIGGER_CHARACTER,
         ));
@@ -432,22 +466,27 @@ mod tests {
                 VirtualCompletionItem {
                     label: "partial".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "key".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "constructor".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "exact".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "meta".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
             ],
             CompletionTriggerKind::TRIGGER_CHARACTER,
@@ -462,18 +501,22 @@ mod tests {
                 VirtualCompletionItem {
                     label: "key".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "constructor".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "exact".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "meta".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
             ],
             CompletionTriggerKind::TRIGGER_CHARACTER,
@@ -488,18 +531,22 @@ mod tests {
                 VirtualCompletionItem {
                     label: "key".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "constructor".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "exact".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "meta".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
             ],
             CompletionTriggerKind::TRIGGER_CHARACTER,
@@ -528,14 +575,17 @@ mod tests {
                 VirtualCompletionItem {
                     label: "\"A\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "\"B\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "\"C\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
             ],
             CompletionTriggerKind::TRIGGER_CHARACTER,
@@ -568,6 +618,7 @@ mod tests {
             vec![VirtualCompletionItem {
                 label: "\"C\"".to_string(),
                 kind: CompletionItemKind::ENUM_MEMBER,
+                ..Default::default()
             },],
             CompletionTriggerKind::TRIGGER_CHARACTER,
         ));
@@ -602,13 +653,59 @@ mod tests {
                 VirtualCompletionItem {
                     label: "\"C\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
                 VirtualCompletionItem {
                     label: "\"D\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
                 },
             ],
             CompletionTriggerKind::TRIGGER_CHARACTER,
         ));
     }
+
+    #[test]
+    fn test_table_field_function_1() {
+        let mut ws = ProviderVirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@class T
+            ---@field func fun(self:string) 注释注释
+
+            ---@type T
+            local t = {
+                <??>
+            }
+            "#,
+            vec![VirtualCompletionItem {
+                label: "func =".to_string(),
+                kind: CompletionItemKind::PROPERTY,
+                ..Default::default()
+            },],
+            CompletionTriggerKind::INVOKED,
+        ));
+    }
+    #[test]
+    fn test_table_field_function_2() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@class T
+            ---@field func fun(self:string) 注释注释
+
+            ---@type T
+            local t = {
+                func = <??>
+            }
+            "#,
+            vec![VirtualCompletionItem {
+                label: "fun".to_string(),
+                kind: CompletionItemKind::SNIPPET,
+                label_detail: Some("(self)".to_string()),
+            },],
+            CompletionTriggerKind::INVOKED,
+        ));
+    }
+
 }

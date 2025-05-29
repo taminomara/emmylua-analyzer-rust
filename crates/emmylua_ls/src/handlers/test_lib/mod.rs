@@ -33,6 +33,17 @@ pub struct VirtualHoverResult {
 pub struct VirtualCompletionItem {
     pub label: String,
     pub kind: CompletionItemKind,
+    pub label_detail: Option<String>,
+}
+
+impl Default for VirtualCompletionItem {
+    fn default() -> Self {
+        Self {
+            label: String::new(),
+            kind: CompletionItemKind::VARIABLE,
+            label_detail: None,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -178,6 +189,11 @@ impl ProviderVirtualWorkspace {
         for (item, expect) in items.iter().zip(expect.iter()) {
             if item.label != expect.label || item.kind != Some(expect.kind) {
                 return false;
+            }
+            if let Some(label_detail) = item.label_details.as_ref() {
+                if label_detail.detail != expect.label_detail {
+                    return false;
+                }
             }
         }
         true
