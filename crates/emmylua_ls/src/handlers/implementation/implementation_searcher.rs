@@ -5,9 +5,11 @@ use emmylua_code_analysis::{
     SemanticDeclLevel, SemanticModel,
 };
 use emmylua_parser::{
-    LuaAstNode, LuaDocTagField, LuaIndexExpr, LuaStat, LuaSyntaxNode, LuaSyntaxToken,
+    LuaAstNode, LuaDocTagField, LuaIndexExpr, LuaStat, LuaSyntaxNode, LuaSyntaxToken, LuaTableField,
 };
 use lsp_types::Location;
+
+use crate::handlers::hover::find_member_origin_owner;
 
 pub fn search_implementations(
     semantic_model: &SemanticModel,
@@ -45,15 +47,17 @@ pub fn search_member_implementations(
         .get_db()
         .get_member_index()
         .get_member(&member_id)?;
-    let key = member.get_key();
+    let member_key = member.get_key();
+
     let index_references = semantic_model
         .get_db()
         .get_reference_index()
-        .get_index_references(&key)?;
+        .get_index_references(&member_key)?;
 
     let mut semantic_cache = HashMap::new();
 
-    let property_owner = LuaSemanticDeclId::Member(member_id);
+    let property_owner = find_member_origin_owner(semantic_model, member_id)
+        .unwrap_or(LuaSemanticDeclId::Member(member_id));
     for in_filed_syntax_id in index_references {
         let semantic_model =
             if let Some(semantic_model) = semantic_cache.get_mut(&in_filed_syntax_id.file_id) {
@@ -94,6 +98,21 @@ fn check_member_reference(semantic_model: &SemanticModel, node: LuaSyntaxNode) -
             let prefix_type = semantic_model
                 .infer_expr(expr.get_prefix_expr()?.into())
                 .ok()?;
+            // TODO: 需要实现更复杂的逻辑, 即当为`Ref`时, 针对指定的实例定义到其实现
+            /*
+               ---@class A
+               ---@field a number -- 这里寻找实现只匹配到`A.a`, 不能穿透到`a.a`与`b.a`
+               local A = {}
+               A.a = 1
+
+               ---@type A
+               local a = {}
+               a.a = 1 -- 这里寻找实现不能匹配到`b.a`
+
+               ---@type A
+               local b = a
+               b.a = 2 -- 这里寻找实现不能匹配到`a.a`
+            */
             match prefix_type {
                 LuaType::Ref(_) => {
                     return None;
@@ -127,6 +146,14 @@ fn check_member_reference(semantic_model: &SemanticModel, node: LuaSyntaxNode) -
         }
         tag_field_node if LuaDocTagField::can_cast(tag_field_node.kind().into()) => {
             return Some(());
+        }
+        table_field_node if LuaTableField::can_cast(table_field_node.kind().into()) => {
+            let table_field = LuaTableField::cast(table_field_node.clone())?;
+            if table_field.is_assign_field() {
+                return Some(());
+            } else {
+                return None;
+            }
         }
         _ => {}
     }

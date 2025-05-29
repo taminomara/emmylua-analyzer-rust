@@ -20,15 +20,15 @@ mod tests {
                delete()
             "#,
         );
-
-        ws.check_implementation(
+        assert!(ws.check_implementation(
             r#"
                 local M = {}
                 function M.de<??>lete(a)
                 end
                 return M
             "#,
-        );
+            1,
+        ));
     }
 
     #[test]
@@ -57,11 +57,12 @@ mod tests {
                 local a = test.a
             "#,
         );
-        ws.check_implementation(
+        assert!(ws.check_implementation(
             r#"
                 t<??>est
             "#,
-        );
+            3,
+        ));
     }
 
     #[test]
@@ -82,10 +83,49 @@ mod tests {
 
             "#,
         );
-        ws.check_implementation(
+        assert!(ws.check_implementation(
             r#"
                 yyy.<??>a = 2
             "#,
-        );
+            3,
+        ));
+    }
+
+    #[test]
+    fn test_table_field_definition_1() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_implementation(
+            r#"
+                ---@class T
+                ---@field func fun(self: T) 注释注释
+
+                ---@type T
+                local t = {
+                    func = function(self)
+                    end,
+                }
+
+                t:fun<??>c()
+            "#,
+            2,
+        ));
+    }
+
+    #[test]
+    fn test_table_field_definition_2() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_implementation(
+            r#"
+                ---@class T
+                ---@field func fun(self: T) 注释注释
+
+                ---@type T
+                local t = {
+                    f<??>unc = function(self)
+                    end,
+                }
+            "#,
+            2,
+        ));
     }
 }

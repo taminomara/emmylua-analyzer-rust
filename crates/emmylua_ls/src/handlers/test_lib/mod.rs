@@ -236,7 +236,7 @@ impl ProviderVirtualWorkspace {
         true
     }
 
-    pub fn check_implementation(&mut self, block_str: &str) -> bool {
+    pub fn check_implementation(&mut self, block_str: &str, len: usize) -> bool {
         let content = Self::handle_file_content(block_str);
         let Some((content, position)) = content else {
             return false;
@@ -251,7 +251,10 @@ impl ProviderVirtualWorkspace {
             return false;
         };
         dbg!(&implementations.len());
-        true
+        if implementations.len() == len {
+            return true;
+        }
+        false
     }
 
     pub fn check_definition(&mut self, block_str: &str) -> bool {

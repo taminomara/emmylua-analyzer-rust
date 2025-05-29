@@ -179,7 +179,7 @@ pub fn goto_str_tpl_ref_definition(
     None
 }
 
-fn find_table_member_definition(
+pub fn find_table_member_definition(
     semantic_model: &SemanticModel,
     trigger_token: &LuaSyntaxToken,
     member_key: &LuaMemberKey,
