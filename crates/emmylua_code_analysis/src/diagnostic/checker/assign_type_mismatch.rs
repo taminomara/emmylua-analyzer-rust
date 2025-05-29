@@ -38,7 +38,7 @@ fn check_assign_stat(
 ) -> Option<()> {
     let (vars, exprs) = assign.get_var_and_expr_list();
     let value_types =
-        semantic_model.infer_multi_value_adjusted_expression_types(&exprs, Some(vars.len()))?;
+        semantic_model.infer_multi_value_adjusted_expression_types(&exprs, Some(vars.len()));
 
     for (idx, var) in vars.iter().enumerate() {
         match var {
@@ -113,6 +113,7 @@ fn check_name_expr(
     if let Some(expr) = expr {
         handle_value_is_table_expr(context, semantic_model, origin_type, &expr);
     }
+
     Some(())
 }
 
@@ -169,8 +170,8 @@ fn check_local_stat(
 ) -> Option<()> {
     let vars = local.get_local_name_list().collect::<Vec<_>>();
     let value_exprs = local.get_value_exprs().collect::<Vec<_>>();
-    let value_types = semantic_model
-        .infer_multi_value_adjusted_expression_types(&value_exprs, Some(vars.len()))?;
+    let value_types =
+        semantic_model.infer_multi_value_adjusted_expression_types(&value_exprs, Some(vars.len()));
 
     for (idx, var) in vars.iter().enumerate() {
         let name_token = var.get_name_token()?;
@@ -208,8 +209,14 @@ fn handle_value_is_table_expr(
     value_expr: &LuaExpr,
 ) -> Option<()> {
     let table_type = table_type?;
-    let member_infos = semantic_model.infer_member_infos(&table_type)?;
-    let fields = LuaTableExpr::cast(value_expr.syntax().clone())?.get_fields();
+    let fields = LuaTableExpr::cast(value_expr.syntax().clone())?
+        .get_fields()
+        .collect::<Vec<_>>();
+    if fields.len() > 50 {
+        // 如果字段过多, 则不进行类型检查
+        return Some(());
+    }
+
     for field in fields {
         if field.is_value_field() {
             continue;
@@ -217,11 +224,14 @@ fn handle_value_is_table_expr(
 
         let field_key = field.get_field_key();
         if let Some(field_key) = field_key {
-            let field_path_part = field_key.get_path_part();
-            let source_type = member_infos
-                .iter()
-                .find(|info| info.key.to_path() == field_path_part)
-                .map(|info| info.typ.clone());
+            let member_key = semantic_model.get_member_key(&field_key)?;
+            let source_type = match semantic_model.infer_member_type(&table_type, &member_key) {
+                Ok(typ) => Some(typ),
+                Err(_) => {
+                    continue;
+                }
+            };
+
             let expr = field.get_value_expr();
             if let Some(expr) = expr {
                 let expr_type = semantic_model.infer_expr(expr).unwrap_or(LuaType::Any);

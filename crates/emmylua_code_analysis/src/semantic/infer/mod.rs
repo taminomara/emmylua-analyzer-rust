@@ -29,10 +29,10 @@ use smol_str::SmolStr;
 
 use crate::{
     db_index::{DbIndex, LuaOperator, LuaOperatorMetaMethod, LuaSignatureId, LuaType},
-    InFiled, VariadicType,
+    InFiled, LuaMemberKey, VariadicType,
 };
 
-use super::{member::find_members, CacheEntry, CacheKey, LuaInferCache};
+use super::{member::infer_raw_member_type, CacheEntry, CacheKey, LuaInferCache};
 
 pub type InferResult = Result<LuaType, InferFailReason>;
 pub use infer_call::InferCallFuncResult;
@@ -175,16 +175,16 @@ pub fn infer_multi_value_adjusted_expression_types(
     cache: &mut LuaInferCache,
     exprs: &[LuaExpr],
     var_count: Option<usize>,
-) -> Option<Vec<(LuaType, TextRange)>> {
+) -> Vec<(LuaType, TextRange)> {
     let mut value_types = Vec::new();
     for (idx, expr) in exprs.iter().enumerate() {
-        let expr_type = infer_expr(db, cache, expr.clone()).ok()?;
+        let expr_type = infer_expr(db, cache, expr.clone()).unwrap_or(LuaType::Unknown);
         match expr_type {
-            LuaType::Variadic(multi) => {
+            LuaType::Variadic(variadic) => {
                 if let Some(var_count) = var_count {
                     if idx < var_count {
                         for i in idx..var_count {
-                            if let Some(typ) = multi.get_type(i - idx) {
+                            if let Some(typ) = variadic.get_type(i - idx) {
                                 value_types.push((typ.clone(), expr.get_range()));
                             } else {
                                 break;
@@ -192,7 +192,7 @@ pub fn infer_multi_value_adjusted_expression_types(
                         }
                     }
                 } else {
-                    match multi.deref() {
+                    match variadic.deref() {
                         VariadicType::Base(base) => {
                             value_types.push((base.clone(), expr.get_range()));
                         }
@@ -210,7 +210,7 @@ pub fn infer_multi_value_adjusted_expression_types(
         }
     }
 
-    Some(value_types)
+    value_types
 }
 
 /// 从右值推断左值已绑定的类型
@@ -254,14 +254,15 @@ pub fn infer_left_value_type_from_right_value(
             let field_key = table_field.get_field_key()?;
             let table_expr = table_field.get_parent::<LuaTableExpr>()?;
             let table_type = infer_table_should_be(db, cache, table_expr.clone()).ok()?;
-            let member_infos = find_members(db, &table_type)?;
-            let mut typ = None;
-            for member_info in member_infos.iter() {
-                if member_info.key.to_path() == field_key.get_path_part() {
-                    typ = Some(member_info.typ.clone());
-                }
+            let member_key = match LuaMemberKey::from_index_key(db, cache, &field_key) {
+                Ok(key) => key,
+                Err(_) => return None,
+            };
+            match infer_raw_member_type(db, &table_type, &member_key) {
+                Ok(typ) => Some(typ),
+                Err(InferFailReason::FieldNotFound) => None,
+                Err(_) => Some(LuaType::Unknown),
             }
-            typ
         }
         _ => None,
     };

@@ -207,7 +207,7 @@ fn is_valid_member(
 
     let prefix_types = get_prefix_types(prefix_typ);
     for prefix_type in prefix_types {
-        if let Some(members) = semantic_model.infer_member_infos(&prefix_type) {
+        if let Some(members) = semantic_model.get_member_infos(&prefix_type) {
             for info in &members {
                 match &info.key {
                     LuaMemberKey::Expr(typ) => {

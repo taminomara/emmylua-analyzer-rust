@@ -111,11 +111,11 @@ impl<'a> SemanticModel<'a> {
         infer_table_should_be(self.db, &mut self.infer_cache.borrow_mut(), table).ok()
     }
 
-    pub fn infer_member_infos(&self, prefix_type: &LuaType) -> Option<Vec<LuaMemberInfo>> {
+    pub fn get_member_infos(&self, prefix_type: &LuaType) -> Option<Vec<LuaMemberInfo>> {
         find_members(self.db, prefix_type)
     }
 
-    pub fn get_member_map(
+    pub fn get_member_info_map(
         &self,
         prefix_type: &LuaType,
     ) -> Option<HashMap<LuaMemberKey, Vec<LuaMemberInfo>>> {
@@ -154,7 +154,7 @@ impl<'a> SemanticModel<'a> {
         &self,
         exprs: &[LuaExpr],
         var_count: Option<usize>,
-    ) -> Option<Vec<(LuaType, TextRange)>> {
+    ) -> Vec<(LuaType, TextRange)> {
         infer_multi_value_adjusted_expression_types(
             self.db,
             &mut self.infer_cache.borrow_mut(),
@@ -268,6 +268,14 @@ impl<'a> SemanticModel<'a> {
 
     pub fn get_member_key(&self, index_key: &LuaIndexKey) -> Option<LuaMemberKey> {
         LuaMemberKey::from_index_key(self.db, &mut self.infer_cache.borrow_mut(), index_key).ok()
+    }
+
+    pub fn infer_member_type(
+        &self,
+        prefix_type: &LuaType,
+        member_key: &LuaMemberKey,
+    ) -> Result<LuaType, InferFailReason> {
+        member::infer_raw_member_type(self.db, prefix_type, member_key)
     }
 }
 

@@ -19,7 +19,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     let table_type = builder
         .semantic_model
         .infer_table_should_be(table_expr.clone())?;
-    let member_infos = builder.semantic_model.infer_member_infos(&table_type)?;
+    let member_infos = builder.semantic_model.get_member_infos(&table_type)?;
 
     let mut duplicated_set = HashSet::new();
     for field in table_expr.get_fields() {
