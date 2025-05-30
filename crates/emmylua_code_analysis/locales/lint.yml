@@ -245,3 +245,11 @@ Cannot use `...` outside a vararg function.:
   en: "the generic constraint must be a subclass of `%{source}`. %{reason}"
   zh_CN: "泛型约束要求类型为 `%{source}` 子类。%{reason}"
   zh_HK: "泛型約束要求類型為 `%{source}` 子類。%{reason}"
+"the string template type does not match any type declaration":
+  en: "the string template type does not match any type declaration"
+  zh_CN: "字符串模板类型与任何类型声明不匹配"
+  zh_HK: "字串模板類型與任何類型聲明不匹配"
+"the string template type must be a string constant":
+  en: "the string template type must be a string constant"
+  zh_CN: "字符串模板类型必须是字符串常量"
+  zh_HK: "字串模板類型必須是字串常量"

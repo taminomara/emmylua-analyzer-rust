@@ -4,8 +4,8 @@ use rowan::TextRange;
 use crate::diagnostic::checker::generic::infer_type::infer_type;
 use crate::{
     humanize_type, DiagnosticCode, GenericTplId, LuaMemberOwner, LuaSemanticDeclId, LuaSignature,
-    LuaStringTplType, LuaType, LuaTypeDeclId, RenderLevel, SemanticDeclLevel, SemanticModel,
-    TypeCheckFailReason, TypeCheckResult,
+    LuaStringTplType, LuaType, RenderLevel, SemanticDeclLevel, SemanticModel, TypeCheckFailReason,
+    TypeCheckResult,
 };
 
 use crate::diagnostic::checker::Checker;
@@ -101,20 +101,7 @@ fn check_call_expr(
 
             match param_type {
                 LuaType::StrTplRef(str_tpl_ref) => {
-                    let extend_type = get_extend_type(
-                        semantic_model,
-                        &call_expr,
-                        str_tpl_ref.get_tpl_id(),
-                        signature,
-                    );
-                    check_str_tpl_ref(
-                        context,
-                        semantic_model,
-                        &call_expr,
-                        i,
-                        &extend_type,
-                        str_tpl_ref,
-                    );
+                    check_str_tpl_ref(context, semantic_model, &call_expr, i, str_tpl_ref);
                 }
                 LuaType::TplRef(tpl_ref) => {
                     let extend_type = get_extend_type(
@@ -173,43 +160,41 @@ fn check_str_tpl_ref(
     semantic_model: &SemanticModel,
     call_expr: &LuaCallExpr,
     param_index: usize,
-    extend_type: &Option<LuaType>,
     str_tpl_ref: &LuaStringTplType,
 ) -> Option<()> {
-    let extend_type = extend_type.clone()?;
-
     let arg_expr = call_expr.get_args_list()?.get_args().nth(param_index)?;
     let arg_type = semantic_model.infer_expr(arg_expr.clone()).ok()?;
-    /* 兼容 luals 的语法:
-       ---@generic T: string
-       ---@param name `T`
-    */
-    if extend_type.is_string() && arg_type.is_string() {
-        return Some(());
-    }
+    let range = arg_expr.get_range();
     match arg_type {
-        LuaType::StringConst(str) => {
+        LuaType::StringConst(str) | LuaType::DocStringConst(str) => {
             let full_type_name = format!(
                 "{}{}{}",
                 str_tpl_ref.get_prefix(),
                 str,
                 str_tpl_ref.get_suffix()
             );
-            let result = semantic_model.type_check(
-                &extend_type,
-                &LuaType::Ref(LuaTypeDeclId::new(&full_type_name)),
-            );
-            if !result.is_ok() {
-                add_type_check_diagnostic(
-                    context,
-                    semantic_model,
-                    arg_expr.get_range(),
-                    &extend_type,
-                    result,
+            let founded_type_decl = semantic_model
+                .get_db()
+                .get_type_index()
+                .find_type_decl(semantic_model.get_file_id(), &full_type_name);
+            if founded_type_decl.is_none() {
+                context.add_diagnostic(
+                    DiagnosticCode::GenericConstraintMismatch,
+                    range,
+                    t!("the string template type does not match any type declaration").to_string(),
+                    None,
                 );
             }
         }
-        _ => {}
+        LuaType::String | LuaType::Any | LuaType::Unknown => {}
+        _ => {
+            context.add_diagnostic(
+                DiagnosticCode::GenericConstraintMismatch,
+                range,
+                t!("the string template type must be a string constant").to_string(),
+                None,
+            );
+        }
     }
     Some(())
 }
