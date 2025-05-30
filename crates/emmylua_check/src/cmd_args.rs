@@ -41,7 +41,7 @@ pub struct CmdArgs {
     pub verbose: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum OutputFormat {
     Json,
     Text,
