@@ -4,9 +4,30 @@ use emmylua_code_analysis::{
     load_configs, load_workspace_files, update_code_style, EmmyLuaAnalysis, Emmyrc, LuaFileInfo,
 };
 
+fn root_from_configs(config_paths: &Vec<PathBuf>, fallback: &PathBuf) -> PathBuf {
+    if config_paths.len() > 1 {
+        fallback.clone()
+    } else {
+        let config_path = &config_paths[0];
+        // Need to convert to canonical path to ensure parent() is not an empty
+        // string in the case the path is a relative basename.
+        match config_path.canonicalize() {
+            Ok(path) => path.parent().unwrap().to_path_buf(),
+            Err(err) => {
+                log::error!(
+                    "Failed to canonicalize config path: \"{:?}\": {}",
+                    config_path,
+                    err
+                );
+                fallback.clone()
+            }
+        }
+    }
+}
+
 pub fn load_workspace(
     workspace_folder: PathBuf,
-    config_path: Option<PathBuf>,
+    config_paths: Option<Vec<PathBuf>>,
     ignore: Option<Vec<String>>,
 ) -> Option<EmmyLuaAnalysis> {
     let mut analysis = EmmyLuaAnalysis::new();
@@ -18,22 +39,27 @@ pub fn load_workspace(
     }
 
     let main_path = workspace_folders.first()?.clone();
-    let (config_files, config_root) = if let Some(config_path) = config_path {
-        (
-            vec![config_path.clone()],
-            config_path.parent().unwrap().to_path_buf(),
-        )
-    } else {
-        (
-            vec![
-                main_path.join(".luarc.json"),
-                main_path.join(".emmyrc.json"),
-            ],
-            main_path.clone(),
-        )
-    };
+    let (config_files, config_root): (Vec<PathBuf>, PathBuf) =
+        if let Some(config_paths) = config_paths {
+            (
+                config_paths.clone(),
+                root_from_configs(&config_paths, &main_path),
+            )
+        } else {
+            (
+                vec![
+                    main_path.join(".luarc.json"),
+                    main_path.join(".emmyrc.json"),
+                ],
+                main_path.clone(),
+            )
+        };
 
     let mut emmyrc = load_configs(config_files, None);
+    log::info!(
+        "Pre processing configurations using root: \"{}\"",
+        config_root.display()
+    );
     emmyrc.pre_process_emmyrc(&config_root);
 
     for root in &emmyrc.workspace.workspace_roots {

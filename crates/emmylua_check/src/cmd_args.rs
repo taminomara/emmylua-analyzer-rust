@@ -4,11 +4,11 @@ use structopt::StructOpt;
 #[derive(Debug, StructOpt, Clone)]
 #[structopt(name = "emmylua-check", about = "EmmyLua Check")]
 pub struct CmdArgs {
-    /// Specify configuration file path.
+    /// Configuration file paths.
     /// If not provided, both ".emmyrc.json" and ".luarc.json" will be searched in the workspace
     /// directory
-    #[structopt(short, long, parse(from_os_str))]
-    pub config: Option<std::path::PathBuf>,
+    #[structopt(short, long, use_delimiter = true, parse(from_os_str))]
+    pub config: Option<Vec<std::path::PathBuf>>,
 
     /// Path to the workspace directory
     #[structopt(parse(from_os_str))]
