@@ -4,6 +4,8 @@ mod output;
 
 use cmd_args::CmdArgs;
 use emmylua_code_analysis::{DbIndex, FileId};
+use fern::Dispatch;
+use log::LevelFilter;
 use output::output_result;
 use std::{error::Error, path::PathBuf, sync::Arc};
 use structopt::StructOpt;
@@ -15,6 +17,37 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     let mut workspace = cmd_args.workspace;
     if !workspace.is_absolute() {
         workspace = std::env::current_dir()?.join(workspace);
+    }
+
+    let verbose = cmd_args.verbose;
+    let logger = Dispatch::new()
+        .format(move |out, message, record| {
+            let (color, reset) = match record.level() {
+                log::Level::Error => ("\x1b[31m", "\x1b[0m"), // Red
+                log::Level::Warn => ("\x1b[33m", "\x1b[0m"),  // Yellow
+                log::Level::Info | log::Level::Debug | log::Level::Trace => ("", ""),
+            };
+            out.finish(format_args!(
+                "{}{}: {}{}",
+                color,
+                record.level(),
+                if verbose {
+                    format!("({}) {}", record.target(), message)
+                } else {
+                    message.to_string()
+                },
+                reset
+            ))
+        })
+        .level(if verbose {
+            LevelFilter::Info
+        } else {
+            LevelFilter::Warn
+        })
+        .chain(std::io::stderr());
+
+    if let Err(e) = logger.apply() {
+        eprintln!("Failed to apply logger: {:?}", e);
     }
 
     let analysis = match init::load_workspace(workspace.clone(), cmd_args.config, cmd_args.ignore) {

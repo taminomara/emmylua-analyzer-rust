@@ -110,23 +110,29 @@ pub fn calculate_include_and_exclude(
 
     for extension in &emmyrc.runtime.extensions {
         if extension.starts_with(".") {
+            log::info!("Adding extension: **/*{}", extension);
             include.push(format!("**/*{}", extension));
         } else if extension.starts_with("*.") {
+            log::info!("Adding extension: **/{}", extension);
             include.push(format!("**/{}", extension));
         } else {
+            log::info!("Adding extension: {}", extension);
             include.push(extension.clone());
         }
     }
 
     for ignore_glob in &emmyrc.workspace.ignore_globs {
+        log::info!("Adding ignore glob: {}", ignore_glob);
         exclude.push(ignore_glob.clone());
     }
 
     if let Some(ignore) = ignore {
+        log::info!("Adding ignores from \"--ignore\": {:?}", ignore);
         exclude.extend(ignore);
     }
 
     for dir in &emmyrc.workspace.ignore_dir {
+        log::info!("Adding ignore dir: {}", dir);
         exclude_dirs.push(PathBuf::from(dir));
     }
 
