@@ -1,6 +1,8 @@
 # CHANGELOG
 
-# 0.8.0 (unreleased)
+# 0.8.1 (unreleased)
+
+# 0.8.0
 
 `NEW` Implement `std.Unpack` type for better type inference of the `unpack` function, and `std.Rawget` type for better type inference of the `rawget` function
 
@@ -36,6 +38,7 @@ local wrapped = wrap(3, system)
 
 `NEW` Support for generic constraint checking, string template parameter type checking and code completion
 
+`FIX` Fix performance issue where type checking drastically slows down when large Lua tables are present in the project, causing the entire project to become unresponsive
 
 # 0.7.3
 
