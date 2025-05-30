@@ -136,6 +136,13 @@ fn rename_references(
 
     let changes = result
         .into_iter()
+        .filter(|(uri, _)| {
+            if let Some(file_id) = semantic_model.get_db().get_vfs().get_file_id(uri) {
+                !semantic_model.get_db().get_module_index().is_std(&file_id)
+            } else {
+                true
+            }
+        })
         .map(|(uri, ranges)| {
             let text_edits = ranges
                 .into_iter()

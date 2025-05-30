@@ -7,7 +7,10 @@ use smol_str::SmolStr;
 use crate::{
     check_type_compact,
     db_index::{DbIndex, LuaGenericType, LuaType},
-    semantic::{member::get_member_map, LuaInferCache},
+    semantic::{
+        member::{find_index_operations, get_member_map},
+        LuaInferCache,
+    },
     InferFailReason, LuaFunctionType, LuaMemberKey, LuaMemberOwner, LuaObjectType,
     LuaSemanticDeclId, LuaTupleType, LuaUnionType, VariadicType,
 };
@@ -490,14 +493,23 @@ fn table_generic_tpl_pattern_member_owner_match(
     };
 
     let members = get_member_map(db, &owner_type).ok_or(InferFailReason::None)?;
+    let target_key_type = table_generic_params[0].clone();
     let mut keys = Vec::new();
     let mut values = Vec::new();
     for (k, v) in members {
-        match k {
-            LuaMemberKey::Integer(i) => keys.push(LuaType::IntegerConst(i.clone())),
-            LuaMemberKey::Name(s) => keys.push(LuaType::StringConst(s.clone().into())),
-            _ => {}
+        let key_type = match k {
+            LuaMemberKey::Integer(i) => LuaType::IntegerConst(i.clone()),
+            LuaMemberKey::Name(s) => LuaType::StringConst(s.clone().into()),
+            _ => continue,
         };
+
+        if !target_key_type.is_generic() {
+            if !check_type_compact(db, &target_key_type, &key_type).is_ok() {
+                continue;
+            }
+        }
+
+        keys.push(key_type);
 
         let resolve_type = match v.len() {
             0 => LuaType::Any,
@@ -514,8 +526,35 @@ fn table_generic_tpl_pattern_member_owner_match(
         values.push(resolve_type);
     }
 
-    let key_type = LuaType::Union(LuaUnionType::new(keys).into());
-    let value_type = LuaType::Union(LuaUnionType::new(values).into());
+    if keys.is_empty() {
+        find_index_operations(db, &owner_type)
+            .ok_or(InferFailReason::None)?
+            .iter()
+            .for_each(|m| {
+                if target_key_type.is_generic() {
+                    return;
+                }
+                let key_type = match &m.key {
+                    LuaMemberKey::Expr(typ) => typ.clone(),
+                    _ => return,
+                };
+                if check_type_compact(db, &target_key_type, &key_type).is_ok() {
+                    keys.push(key_type);
+                    values.push(m.typ.clone());
+                }
+            });
+    }
+
+    let key_type = match keys.len() {
+        0 => return Err(InferFailReason::None),
+        1 => keys[0].clone(),
+        _ => LuaType::Union(LuaUnionType::new(keys).into()),
+    };
+    let value_type = match values.len() {
+        1 => values[0].clone(),
+        _ => LuaType::Union(LuaUnionType::new(values).into()),
+    };
+
     tpl_pattern_match(
         db,
         cache,

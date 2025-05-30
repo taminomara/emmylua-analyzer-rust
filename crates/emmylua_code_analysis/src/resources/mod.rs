@@ -64,7 +64,8 @@ fn remove_jit_resource(files: &mut Vec<LuaFileInfo>) {
             || path.ends_with("std/jit/util.lua")
             || path.ends_with("std/string/buffer.lua")
             || path.ends_with("std/table/clear.lua")
-            || path.ends_with("std/table/new.lua");
+            || path.ends_with("std/table/new.lua")
+            || path.ends_with("std/ffi.lua");
 
         !should_remove
     });

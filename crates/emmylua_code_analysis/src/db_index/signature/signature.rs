@@ -6,11 +6,11 @@ use std::{collections::HashMap, sync::Arc};
 use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaDocFuncType};
 use rowan::TextSize;
 
-use crate::VariadicType;
 use crate::{
     db_index::{LuaFunctionType, LuaType},
     FileId,
 };
+use crate::{SemanticModel, VariadicType};
 
 #[derive(Debug)]
 pub struct LuaSignature {
@@ -117,13 +117,21 @@ impl LuaSignature {
         }
     }
 
-    pub fn is_method(&self) -> bool {
+    pub fn is_method(&self, semantic_model: &SemanticModel, owner_type: Option<&LuaType>) -> bool {
         if self.is_colon_define {
             return true;
         }
 
-        if let Some(name) = self.params.first() {
-            name == "self"
+        if let Some(param_info) = self.get_param_info_by_id(0) {
+            if param_info.type_ref.is_self_infer() {
+                return true;
+            }
+            match owner_type {
+                Some(owner_type) => semantic_model
+                    .type_check(owner_type, &param_info.type_ref)
+                    .is_ok(),
+                None => param_info.name == "self",
+            }
         } else {
             false
         }

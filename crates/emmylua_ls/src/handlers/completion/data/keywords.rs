@@ -111,7 +111,7 @@ pub const KEYWORD_COMPLETIONS: &[KeywordCompletionInfo] = &[
     },
     KeywordCompletionInfo {
         label: "function",
-        detail: " (function name(...) .. end)",
+        detail: " name(...) .. end",
         insert_text: "function ${1:name}(${2:})\n\t${0}\nend",
         kind: CompletionItemKind::SNIPPET,
     },
@@ -123,7 +123,7 @@ pub const KEYWORD_COMPLETIONS: &[KeywordCompletionInfo] = &[
     },
     KeywordCompletionInfo {
         label: "local function",
-        detail: " (local function name(...) .. end)",
+        detail: " name(...) .. end",
         insert_text: "local function ${1:name}(${2:})\n\t${0}\nend",
         kind: CompletionItemKind::SNIPPET,
     },
@@ -174,7 +174,7 @@ pub const KEYWORD_EXPR_COMPLETIONS: &[KeywordCompletionInfo] = &[
     },
     KeywordCompletionInfo {
         label: "function",
-        detail: "(function (...) .. end)",
+        detail: "(...) .. end",
         insert_text: "function(${1:})\n\t${0}\nend",
         kind: CompletionItemKind::SNIPPET,
     },

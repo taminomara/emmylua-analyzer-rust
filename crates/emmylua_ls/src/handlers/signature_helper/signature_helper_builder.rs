@@ -6,7 +6,7 @@ use lsp_types::{Documentation, MarkupContent, MarkupKind, ParameterInformation, 
 use rowan::NodeOrToken;
 
 use crate::handlers::hover::{
-    get_function_member_owner, hover_std_description, infer_prefix_global_name, is_std,
+    find_member_origin_owner, hover_std_description, infer_prefix_global_name, is_std,
 };
 
 use super::build_signature_helper::{build_function_label, generate_param_label};
@@ -37,7 +37,7 @@ impl<'a> SignatureHelperBuilder<'a> {
         };
         builder.self_type = builder.infer_self_type();
         builder.build_full_name();
-        builder.set_best_call_params_info();
+        builder.generate_best_call_params_info();
         builder
     }
 
@@ -69,7 +69,7 @@ impl<'a> SignatureHelperBuilder<'a> {
         // 推断为来源
         semantic_decl = match semantic_decl {
             Some(LuaSemanticDeclId::Member(member_id)) => {
-                get_function_member_owner(semantic_model, member_id).or(semantic_decl)
+                find_member_origin_owner(semantic_model, member_id).or(semantic_decl)
             }
             Some(LuaSemanticDeclId::LuaDecl(_)) => semantic_decl,
             _ => None,
@@ -146,7 +146,7 @@ impl<'a> SignatureHelperBuilder<'a> {
         }));
     }
 
-    fn set_best_call_params_info(&mut self) -> Option<()> {
+    fn generate_best_call_params_info(&mut self) -> Option<()> {
         if !self.params_info.is_empty() {
             return Some(());
         }
@@ -160,10 +160,31 @@ impl<'a> SignatureHelperBuilder<'a> {
                 documentation: None,
             });
         }
+        match (func.is_colon_define(), self.call_expr.is_colon_call()) {
+            (true, false) => {
+                let param_label = generate_param_label(
+                    self.semantic_model.get_db(),
+                    (String::from("self"), Some(LuaType::SelfInfer)),
+                );
+                self.params_info.insert(
+                    0,
+                    ParameterInformation {
+                        label: ParameterLabel::Simple(param_label),
+                        documentation: None,
+                    },
+                );
+            }
+            (false, true) => {
+                if !self.params_info.is_empty() {
+                    self.params_info.remove(0);
+                }
+            }
+            _ => {}
+        }
         self.best_call_function_label = build_function_label(
             self,
             &self.params_info,
-            func.is_colon_define() || func.first_param_is_self(),
+            func.is_method(self.semantic_model, None),
             &func.get_ret(),
         );
 

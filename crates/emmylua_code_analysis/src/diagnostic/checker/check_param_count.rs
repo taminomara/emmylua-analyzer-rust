@@ -92,7 +92,7 @@ fn check_call_expr(
     call_expr: LuaCallExpr,
 ) -> Option<()> {
     let func = semantic_model.infer_call_expr_func(call_expr.clone(), None)?;
-    let params = func.get_params();
+    let mut fake_params = func.get_params().to_vec();
     let call_args = call_expr.get_args_list()?.get_args().collect::<Vec<_>>();
     let mut call_args_count = call_args.len();
     // 根据冒号定义与冒号调用的情况来调整调用参数的数量
@@ -101,9 +101,7 @@ fn check_call_expr(
     match (colon_call, colon_define) {
         (true, true) | (false, false) => {}
         (false, true) => {
-            if call_args_count > 0 {
-                call_args_count -= 1;
-            }
+            fake_params.insert(0, ("self".to_string(), Some(LuaType::SelfInfer)));
         }
         (true, false) => {
             call_args_count += 1;
@@ -111,7 +109,7 @@ fn check_call_expr(
     }
 
     // Check for missing parameters
-    if call_args_count < params.len() {
+    if call_args_count < fake_params.len() {
         // 调用参数包含 `...`
         for arg in call_args.iter() {
             if let LuaExpr::LiteralExpr(literal_expr) = arg {
@@ -132,7 +130,7 @@ fn check_call_expr(
                     }
                 };
                 call_args_count = call_args_count + len as usize - 1;
-                if call_args_count >= params.len() {
+                if call_args_count >= fake_params.len() {
                     return Some(());
                 }
             }
@@ -140,8 +138,8 @@ fn check_call_expr(
 
         let mut miss_parameter_info = Vec::new();
 
-        for i in call_args_count..params.len() {
-            let param_info = params.get(i)?;
+        for i in call_args_count..fake_params.len() {
+            let param_info = fake_params.get(i)?;
             if param_info.0 == "..." {
                 break;
             }
@@ -165,7 +163,7 @@ fn check_call_expr(
                 right_paren.get_range(),
                 t!(
                     "expected %{num} parameters but found %{found_num}. %{infos}",
-                    num = params.len(),
+                    num = fake_params.len(),
                     found_num = call_args_count,
                     infos = miss_parameter_info.join(" \n ")
                 )
@@ -175,9 +173,9 @@ fn check_call_expr(
         }
     }
     // Check for redundant parameters
-    else if call_args_count > params.len() {
+    else if call_args_count > fake_params.len() {
         // 参数定义中最后一个参数是 `...`
-        if params.last().map_or(false, |(name, typ)| {
+        if fake_params.last().map_or(false, |(name, typ)| {
             name == "..."
                 || if let Some(typ) = typ {
                     typ.is_variadic()
@@ -196,7 +194,7 @@ fn check_call_expr(
         for (i, arg) in call_args.iter().enumerate() {
             let param_index = i as isize + adjusted_index;
 
-            if param_index < 0 || param_index < params.len() as isize {
+            if param_index < 0 || param_index < fake_params.len() as isize {
                 continue;
             }
 
@@ -205,7 +203,7 @@ fn check_call_expr(
                 arg.get_range(),
                 t!(
                     "expected %{num} parameters but found %{found_num}",
-                    num = params.len(),
+                    num = fake_params.len(),
                     found_num = call_args_count,
                 )
                 .to_string(),

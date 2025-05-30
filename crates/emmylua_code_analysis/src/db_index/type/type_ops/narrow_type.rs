@@ -8,28 +8,30 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
         return Some(source);
     }
 
+    let real_source_ref = get_real_type(db, &source).unwrap_or(&source);
+
     match &target {
         LuaType::Number => {
-            if source.is_number() {
+            if real_source_ref.is_number() {
                 return Some(source);
             }
         }
         LuaType::Integer => {
-            if source.is_integer() {
+            if real_source_ref.is_integer() {
                 return Some(source);
             }
         }
         LuaType::String => {
-            if source.is_string() {
+            if real_source_ref.is_string() {
                 return Some(source);
             }
         }
         LuaType::Boolean => {
-            if source.is_boolean() {
+            if real_source_ref.is_boolean() {
                 return Some(source);
             }
         }
-        LuaType::Table => match &source {
+        LuaType::Table => match real_source_ref {
             LuaType::TableConst(_) => {
                 return Some(source);
             }
@@ -60,22 +62,22 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
             _ => {}
         },
         LuaType::Function => {
-            if source.is_function() {
+            if real_source_ref.is_function() {
                 return Some(source);
             }
         }
         LuaType::Thread => {
-            if source.is_thread() {
+            if real_source_ref.is_thread() {
                 return Some(source);
             }
         }
         LuaType::Userdata => {
-            if source.is_userdata() {
+            if real_source_ref.is_userdata() {
                 return Some(source);
             }
         }
         LuaType::Nil => {
-            if source.is_nil() {
+            if real_source_ref.is_nil() {
                 return Some(source);
             }
         }
@@ -83,13 +85,13 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
             return Some(source);
         }
         LuaType::FloatConst(f) => {
-            if source.is_number() {
+            if real_source_ref.is_number() {
                 return Some(LuaType::Number);
-            } else if source.is_unknown() {
+            } else if real_source_ref.is_unknown() {
                 return Some(LuaType::FloatConst(*f));
             }
         }
-        LuaType::IntegerConst(i) => match &source {
+        LuaType::IntegerConst(i) => match real_source_ref {
             LuaType::DocIntegerConst(i2) => {
                 if i == i2 {
                     return Some(LuaType::IntegerConst(*i));
@@ -104,7 +106,7 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
             }
             _ => {}
         },
-        LuaType::StringConst(s) => match &source {
+        LuaType::StringConst(s) => match real_source_ref {
             LuaType::DocStringConst(s2) => {
                 if s == s2 {
                     return Some(LuaType::DocStringConst(s.clone()));
@@ -115,7 +117,7 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
             }
             _ => {}
         },
-        LuaType::TableConst(t) => match &source {
+        LuaType::TableConst(t) => match real_source_ref {
             LuaType::TableConst(s) => {
                 return Some(LuaType::TableConst(s.clone()));
             }
@@ -134,9 +136,9 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
         LuaType::Instance(base) => return narrow_down_type(db, source, base.get_base().clone()),
         LuaType::Unknown => return Some(source),
         LuaType::BooleanConst(_) => {
-            if source.is_boolean() {
+            if real_source_ref.is_boolean() {
                 return Some(LuaType::Boolean);
-            } else if source.is_unknown() {
+            } else if real_source_ref.is_unknown() {
                 return Some(LuaType::BooleanConst(true));
             }
         }
@@ -149,7 +151,7 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
         }
     }
 
-    match &source {
+    match real_source_ref {
         LuaType::Union(union) => {
             let mut union_types = union
                 .get_types()

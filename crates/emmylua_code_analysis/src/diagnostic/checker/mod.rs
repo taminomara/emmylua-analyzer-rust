@@ -14,6 +14,7 @@ mod duplicate_field;
 mod duplicate_index;
 mod duplicate_require;
 mod duplicate_type;
+mod generic;
 mod incomplete_signature_doc;
 mod local_const_reassign;
 mod missing_fields;
@@ -91,6 +92,10 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
     run_check::<check_param_count::CheckParamCountChecker>(context, semantic_model);
     run_check::<duplicate_field::DuplicateFieldChecker>(context, semantic_model);
     run_check::<duplicate_index::DuplicateIndexChecker>(context, semantic_model);
+    run_check::<generic::generic_constraint_mismatch::GenericConstraintMismatchChecker>(
+        context,
+        semantic_model,
+    );
 
     run_check::<code_style::non_literal_expressions_in_assert::NonLiteralExpressionsInAssertChecker>(
         context,

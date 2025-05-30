@@ -1,5 +1,4 @@
 mod implementation_searcher;
-mod test;
 
 use crate::context::ServerContextSnapshot;
 use emmylua_code_analysis::{EmmyLuaAnalysis, FileId};

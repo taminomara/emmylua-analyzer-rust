@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod test {
-    use crate::{LuaType, VirtualWorkspace};
+    use std::sync::Arc;
+
+    use crate::{LuaType, LuaUnionType, VirtualWorkspace};
 
     #[test]
     fn test_closure_param_infer() {
@@ -100,5 +102,52 @@ mod test {
         let b = ws.expr_ty("b");
         assert_eq!(a, LuaType::String);
         assert_eq!(b, LuaType::Integer);
+    }
+
+    #[test]
+    fn test_issue_291() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.def(
+            r#"
+            --- @class A
+            --- @field [integer] string
+            --- @field a boolean
+            --- @field b number
+            local a
+
+            for _, v in ipairs(a) do
+                d = v
+            end
+        "#,
+        );
+
+        assert_eq!(ws.expr_ty("d"), LuaType::String);
+    }
+
+    #[test]
+    fn test_issue_291_2() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.def(
+            r#"
+            --- @class A
+            --- @field [1] string
+            --- @field [2] number
+            local a
+
+            for _, v in ipairs(a) do
+                d = v
+            end
+        "#,
+        );
+
+        assert_eq!(
+            ws.expr_ty("d"),
+            LuaType::Union(Arc::new(LuaUnionType::new(vec![
+                LuaType::String,
+                LuaType::Number,
+            ])))
+        );
     }
 }

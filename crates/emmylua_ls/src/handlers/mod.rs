@@ -26,6 +26,7 @@ mod request_handler;
 mod response_handler;
 mod semantic_token;
 mod signature_helper;
+mod test;
 mod test_lib;
 mod text_document;
 mod workspace_symbol;

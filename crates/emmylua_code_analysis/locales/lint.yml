@@ -241,4 +241,7 @@ Cannot use `...` outside a vararg function.:
   en: "Duplicate index `%{name}`."
   zh_CN: "重复定义的索引 `%{name}`."
   zh_HK: "重複定義的索引 `%{name}`."
-
+"the generic constraint must be a subclass of `%{source}`. %{reason}":
+  en: "the generic constraint must be a subclass of `%{source}`. %{reason}"
+  zh_CN: "泛型约束要求类型为 `%{source}` 子类。%{reason}"
+  zh_HK: "泛型約束要求類型為 `%{source}` 子類。%{reason}"

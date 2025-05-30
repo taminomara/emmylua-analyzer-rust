@@ -214,4 +214,26 @@ foo({})
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_449() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(!ws.check_code_for(
+            DiagnosticCode::MissingFields,
+            r#"
+            ---@class D31.A
+            ---@field public a string
+
+            ---@class D31.B
+            ---@field public b string
+
+
+            ---@param ab D31.A & D31.B
+            local function f(ab)
+            end
+
+            f({})
+        "#
+        ));
+    }
 }

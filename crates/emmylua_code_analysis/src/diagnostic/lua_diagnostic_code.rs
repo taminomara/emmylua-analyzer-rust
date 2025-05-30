@@ -96,6 +96,8 @@ pub enum DiagnosticCode {
     DuplicateSetField,
     /// duplicate-index
     DuplicateIndex,
+    /// generic-constraint-mismatch
+    GenericConstraintMismatch,
 
     #[serde(other)]
     None,

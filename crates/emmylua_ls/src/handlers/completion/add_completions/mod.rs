@@ -66,7 +66,11 @@ pub enum CallDisplay {
     RemoveFirst,
 }
 
-fn get_detail(builder: &CompletionBuilder, typ: &LuaType, display: CallDisplay) -> Option<String> {
+pub fn get_detail(
+    builder: &CompletionBuilder,
+    typ: &LuaType,
+    display: CallDisplay,
+) -> Option<String> {
     match typ {
         LuaType::Signature(signature_id) => {
             let signature = builder

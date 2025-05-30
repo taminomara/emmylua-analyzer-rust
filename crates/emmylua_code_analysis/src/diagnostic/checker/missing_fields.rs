@@ -29,7 +29,6 @@ fn check_table_expr(
     type_cache: &mut HashMap<LuaType, HashSet<String>>,
 ) -> Option<()> {
     let db = context.db;
-    // TODO 前缀为 idnex expr 的表推断异常
     let table_type = semantic_model.infer_table_should_be(expr.clone())?;
 
     let current_fields = expr
@@ -53,6 +52,18 @@ fn check_table_expr(
         LuaType::Object(_) => type_cache.entry(table_type.clone()).or_insert_with(|| {
             get_required_fields(context, &vec![table_type.clone()]).unwrap_or_default()
         }),
+        LuaType::Intersection(intersections) => {
+            type_cache.entry(table_type.clone()).or_insert_with(|| {
+                let mut computed_fields = HashSet::new();
+                for intersection_component in intersections.get_types() {
+                    computed_fields.extend(
+                        get_required_fields(context, &vec![intersection_component.clone()])
+                            .unwrap_or_default(),
+                    );
+                }
+                computed_fields
+            })
+        }
         _ => return Some(()),
     };
 

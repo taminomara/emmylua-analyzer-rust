@@ -30,7 +30,6 @@ impl RenderLevel {
     }
 }
 
-#[allow(unused)]
 pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
     match ty {
         LuaType::Any => "any".to_string(),
@@ -80,11 +79,10 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
         }
         LuaType::TplRef(tpl) => humanize_tpl_ref_type(tpl),
         LuaType::StrTplRef(str_tpl) => humanize_str_tpl_ref_type(str_tpl),
-        LuaType::Variadic(multi) => humanize_multi_return_type(db, multi, level),
+        LuaType::Variadic(multi) => humanize_variadic_type(db, multi, level),
         LuaType::Instance(ins) => humanize_instance_type(db, ins, level),
         LuaType::Signature(signature_id) => humanize_signature_type(db, signature_id, level),
         LuaType::Namespace(ns) => format!("{{ {} }}", ns),
-        LuaType::Variadic(inner) => humanize_variadic_type(db, inner, level),
         LuaType::MultiLineUnion(multi_union) => {
             humanize_multi_line_union_type(db, multi_union, level)
         }
@@ -223,35 +221,6 @@ where
     }
 }
 
-fn humanize_variadic_type(db: &DbIndex, multi: &VariadicType, level: RenderLevel) -> String {
-    match multi {
-        VariadicType::Base(base) => {
-            let base_str = humanize_type(db, base, level.next_level());
-            format!("{} ...", base_str)
-        }
-        VariadicType::Multi(types) => {
-            let num = match level {
-                RenderLevel::Detailed => 10,
-                RenderLevel::Simple => 8,
-                RenderLevel::Normal => 4,
-                RenderLevel::Brief => 2,
-                RenderLevel::Minimal => {
-                    return "multi<...>".to_string();
-                }
-            };
-
-            let dots = if types.len() > num { ", ..." } else { "" };
-            let type_str = types
-                .iter()
-                .take(num)
-                .map(|ty| humanize_type(db, ty, level.next_level()))
-                .collect::<Vec<_>>()
-                .join(",");
-            format!("({}{})", type_str, dots)
-        }
-    }
-}
-
 fn humanize_multi_line_union_type(
     db: &DbIndex,
     multi_union: &LuaMultiLineUnion,
@@ -372,8 +341,15 @@ fn humanize_doc_function_type(
         .join(", ");
 
     let ret_type = lua_func.get_ret();
+    let return_nil = match ret_type {
+        LuaType::Variadic(variadic) => match variadic.get_type(0) {
+            Some(LuaType::Nil) => true,
+            _ => false,
+        },
+        _ => ret_type.is_nil(),
+    };
 
-    if ret_type.is_nil() {
+    if return_nil {
         return format!("{}({})", prev, params);
     }
 
@@ -611,14 +587,14 @@ fn humanize_str_tpl_ref_type(str_tpl: &LuaStringTplType) -> String {
     }
 }
 
-fn humanize_multi_return_type(db: &DbIndex, multi: &VariadicType, level: RenderLevel) -> String {
+fn humanize_variadic_type(db: &DbIndex, multi: &VariadicType, level: RenderLevel) -> String {
     match multi {
         VariadicType::Base(base) => {
             let base_str = humanize_type(db, base, level);
             format!("{} ...", base_str)
         }
         VariadicType::Multi(types) => {
-            let num = match level {
+            let max_num = match level {
                 RenderLevel::Detailed => 10,
                 RenderLevel::Simple => 8,
                 RenderLevel::Normal => 4,
@@ -628,10 +604,10 @@ fn humanize_multi_return_type(db: &DbIndex, multi: &VariadicType, level: RenderL
                 }
             };
 
-            let dots = if types.len() > num { ", ..." } else { "" };
+            let dots = if types.len() > max_num { ", ..." } else { "" };
             let type_str = types
                 .iter()
-                .take(num)
+                .take(max_num)
                 .map(|ty| humanize_type(db, ty, level.next_level()))
                 .collect::<Vec<_>>()
                 .join(",");

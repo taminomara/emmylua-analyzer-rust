@@ -12,6 +12,8 @@ mod module_path_provider;
 mod postfix_provider;
 mod table_field_provider;
 
+use emmylua_code_analysis::DbIndex;
+use emmylua_code_analysis::LuaType;
 use emmylua_parser::LuaAstToken;
 use emmylua_parser::LuaStringToken;
 use rowan::TextRange;
@@ -23,11 +25,9 @@ pub fn add_completions(builder: &mut CompletionBuilder) -> Option<()> {
     // `function_provider`优先级必须高于`env_provider`
     function_provider::add_completion(builder);
     equality_comparison_provider::add_completion(builder);
-    // `env_provider`在某些情况下是不需要的, 但有些补全功能依赖于他, 因此我们先添加`env_provider`的补全, 再在某些补全中移除掉他的补全.
-    // 目前可能移除掉他的补全为: `table_field_provider`
-    env_provider::add_completion(builder);
-    // 如果`table_field_provider`执行成功会中止补全
+    // 如果`table_field_provider`执行成功会中止补全, 同时优先级必须高于`env_provider`
     table_field_provider::add_completion(builder);
+    env_provider::add_completion(builder);
     keywords_provider::add_completion(builder);
     member_provider::add_completion(builder);
 
@@ -74,4 +74,31 @@ fn get_text_edit_range_in_string(
         .to_lsp_range(new_text_range);
 
     lsp_range
+}
+
+pub fn get_real_type<'a>(db: &'a DbIndex, compact_type: &'a LuaType) -> Option<&'a LuaType> {
+    get_real_type_with_depth(db, compact_type, 0)
+}
+
+fn get_real_type_with_depth<'a>(
+    db: &'a DbIndex,
+    compact_type: &'a LuaType,
+    depth: u32,
+) -> Option<&'a LuaType> {
+    const MAX_RECURSION_DEPTH: u32 = 100;
+
+    if depth >= MAX_RECURSION_DEPTH {
+        return Some(compact_type);
+    }
+
+    match compact_type {
+        LuaType::Ref(type_decl_id) => {
+            let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
+            if type_decl.is_alias() {
+                return get_real_type_with_depth(db, type_decl.get_alias_ref()?, depth + 1);
+            }
+            Some(compact_type)
+        }
+        _ => Some(compact_type),
+    }
 }

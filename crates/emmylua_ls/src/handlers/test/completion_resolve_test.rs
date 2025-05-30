@@ -46,4 +46,42 @@ mod tests {
             },
         ));
     }
+
+    #[test]
+    fn test_table_field_function_1() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_completion_resolve(
+            r#"
+            ---@class T
+            ---@field func fun(self:string) 注释注释
+
+            ---@type T
+            local t = {
+                <??>
+            }
+            "#,
+            VirtualCompletionResolveItem {
+                detail: "(field) T.func(self: string)".to_string(),
+            },
+        ));
+    }
+
+    #[test]
+    fn test_table_field_function_2() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_completion_resolve(
+            r#"
+            ---@class T
+            ---@field func fun(self: T) 注释注释
+
+            ---@type T
+            local t = {
+                <??>
+            }
+            "#,
+            VirtualCompletionResolveItem {
+                detail: "(method) T:func()".to_string(),
+            },
+        ));
+    }
 }

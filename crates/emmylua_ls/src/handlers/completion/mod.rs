@@ -4,7 +4,6 @@ mod completion_data;
 mod data;
 mod providers;
 mod resolve_completion;
-mod test;
 
 use completion_builder::CompletionBuilder;
 use completion_data::CompletionData;

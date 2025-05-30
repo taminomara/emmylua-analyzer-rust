@@ -106,4 +106,24 @@ mod tests {
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_481() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::RedefinedLocal,
+            r#"
+                local a = function(a) -- 不应该报错, 参数`a`先被定义, 然后再是局部变量`a`
+                end
+        "#
+        ));
+        assert!(!ws.check_code_for(
+            DiagnosticCode::RedefinedLocal,
+            r#"
+                local a
+                a = function(a) -- 报错
+                end
+        "#
+        ));
+    }
 }
