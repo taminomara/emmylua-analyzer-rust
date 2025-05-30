@@ -137,8 +137,19 @@ impl<'a> LuaDocument<'a> {
     }
 
     pub fn get_range_span(&self, range: lsp_types::Range) -> Option<(usize, usize)> {
+        let text = self.get_text();
         let start = self.get_offset(range.start.line as usize, range.start.character as usize)?;
         let end = self.get_offset(range.end.line as usize, range.end.character as usize)?;
+        // char count
+        let start = text
+            .get(..start.into())
+            .map(|s| s.chars().count())
+            .unwrap_or(0);
+        let end = text
+            .get(..end.into())
+            .map(|s| s.chars().count())
+            .unwrap_or(0);
+
         Some((start.into(), end.into()))
     }
 }
