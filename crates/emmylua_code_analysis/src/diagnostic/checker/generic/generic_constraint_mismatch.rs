@@ -101,7 +101,20 @@ fn check_call_expr(
 
             match param_type {
                 LuaType::StrTplRef(str_tpl_ref) => {
-                    check_str_tpl_ref(context, semantic_model, &call_expr, i, str_tpl_ref);
+                    let extend_type = get_extend_type(
+                        semantic_model,
+                        &call_expr,
+                        str_tpl_ref.get_tpl_id(),
+                        signature,
+                    );
+                    check_str_tpl_ref(
+                        context,
+                        semantic_model,
+                        &call_expr,
+                        i,
+                        str_tpl_ref,
+                        extend_type,
+                    );
                 }
                 LuaType::TplRef(tpl_ref) => {
                     let extend_type = get_extend_type(
@@ -161,10 +174,12 @@ fn check_str_tpl_ref(
     call_expr: &LuaCallExpr,
     param_index: usize,
     str_tpl_ref: &LuaStringTplType,
+    extend_type: Option<LuaType>,
 ) -> Option<()> {
     let arg_expr = call_expr.get_args_list()?.get_args().nth(param_index)?;
     let arg_type = semantic_model.infer_expr(arg_expr.clone()).ok()?;
     let range = arg_expr.get_range();
+
     match arg_type {
         LuaType::StringConst(str) | LuaType::DocStringConst(str) => {
             let full_type_name = format!(
@@ -184,6 +199,25 @@ fn check_str_tpl_ref(
                     t!("the string template type does not match any type declaration").to_string(),
                     None,
                 );
+            }
+
+            if let Some(extend_type) = extend_type {
+                if !extend_type.is_string() {
+                    if let Some(type_decl) = founded_type_decl {
+                        let type_id = type_decl.get_id();
+                        let ref_type = LuaType::Ref(type_id);
+                        let result = semantic_model.type_check(&extend_type, &ref_type);
+                        if result.is_err() {
+                            add_type_check_diagnostic(
+                                context,
+                                semantic_model,
+                                range,
+                                &extend_type,
+                                result,
+                            );
+                        }
+                    }
+                }
             }
         }
         LuaType::String | LuaType::Any | LuaType::Unknown => {}
