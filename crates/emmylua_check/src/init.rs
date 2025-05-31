@@ -5,7 +5,7 @@ use emmylua_code_analysis::{
 };
 
 fn root_from_configs(config_paths: &Vec<PathBuf>, fallback: &PathBuf) -> PathBuf {
-    if config_paths.len() > 1 {
+    if config_paths.len() != 1 {
         fallback.clone()
     } else {
         let config_path = &config_paths[0];
@@ -50,7 +50,10 @@ pub fn load_workspace(
                 vec![
                     main_path.join(".luarc.json"),
                     main_path.join(".emmyrc.json"),
-                ],
+                ]
+                .into_iter()
+                .filter(|path| path.exists())
+                .collect(),
                 main_path.clone(),
             )
         };
