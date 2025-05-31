@@ -1,55 +1,36 @@
-use std::str::FromStr;
-use structopt::StructOpt;
+use clap::{Parser, ValueEnum};
+use std::path::PathBuf;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct CmdArgs {
-    #[structopt(
-        parse(from_os_str),
-        long = "input",
-        short = "i",
-        help = "The path of the lua project"
-    )]
-    pub input: std::path::PathBuf,
+    /// The path of the lua project
+    #[arg(long, short)]
+    pub input: PathBuf,
 
-    #[structopt(
-        default_value = "markdown",
-        long = "format",
-        short = "f",
-        help = "Format of the output, default is Markdown"
-    )]
+    /// Format of the output, default is Markdown
+    #[arg(long, short, default_value = "markdown")]
     pub format: Format,
 
-    #[structopt(
-        parse(from_os_str),
-        default_value = "./output",
-        long = "output",
-        short = "o",
-        help = "The output path of the docs file"
-    )]
-    pub output: std::path::PathBuf,
+    /// The output path of the docs file
+    #[arg(long, short, default_value = "./output")]
+    pub output: PathBuf,
 
-    #[structopt(
-        parse(from_os_str),
-        long = "override-template",
-        help = "The path of the override template"
-    )]
-    pub override_template: Option<std::path::PathBuf>,
+    /// The path of the override template
+    #[arg(long)]
+    pub override_template: Option<PathBuf>,
 
-    #[structopt(
-        parse(from_os_str),
-        long = "mixin",
-        help = "The path of the mixin md file"
-    )]
-    pub mixin: Option<std::path::PathBuf>,
+    /// The path of the mixin md file
+    #[arg(long)]
+    pub mixin: Option<PathBuf>,
 }
 
-#[derive(Debug, Eq, PartialEq, StructOpt)]
+#[derive(Debug, Clone, Eq, PartialEq, ValueEnum)]
 pub enum Format {
     Markdown,
     Json,
 }
 
-impl FromStr for Format {
+impl std::str::FromStr for Format {
     type Err = &'static str;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {

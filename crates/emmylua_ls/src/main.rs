@@ -5,6 +5,7 @@ mod logger;
 mod meta_text;
 mod util;
 
+use clap::Parser;
 use cmd_args::CmdArgs;
 use handlers::{
     initialized_handler, on_notification_handler, on_req_handler, on_response_handler,
@@ -13,7 +14,6 @@ use handlers::{
 use lsp_server::{Connection, Message};
 use lsp_types::InitializeParams;
 use std::{env, error::Error};
-use structopt::StructOpt;
 
 #[macro_use]
 extern crate rust_i18n;
@@ -24,7 +24,7 @@ const CRATE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
-    let cmd_args = CmdArgs::from_args();
+    let cmd_args = CmdArgs::parse();
     let (connection, threads) = match cmd_args.communication {
         cmd_args::Communication::Stdio => Connection::stdio(),
         cmd_args::Communication::Tcp => {

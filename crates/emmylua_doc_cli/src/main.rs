@@ -1,7 +1,7 @@
 use crate::cmd_args::Format;
+use clap::Parser;
 use cmd_args::CmdArgs;
 use std::process::exit;
-use structopt::StructOpt;
 
 mod cmd_args;
 mod common;
@@ -10,7 +10,7 @@ mod json_generator;
 mod markdown_generator;
 
 fn main() {
-    let args = CmdArgs::from_args();
+    let args = CmdArgs::parse();
     let mut input = args.input;
     if input.is_relative() {
         input = std::env::current_dir().ok().unwrap().join(&input);

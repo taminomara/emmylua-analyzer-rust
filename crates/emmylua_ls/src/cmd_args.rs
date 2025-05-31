@@ -1,66 +1,39 @@
-use structopt::StructOpt;
+use clap::{Parser, ValueEnum};
 
 #[allow(unused)]
-#[derive(Debug, StructOpt, Clone)]
-#[structopt(name = "emmylua-ls", about = "EmmyLua Language Server")]
+#[derive(Debug, Parser, Clone)]
 pub struct CmdArgs {
     /// Communication method
-    #[structopt(
-        long = "communication",
-        short = "c",
-        help = "Communication method",
-        default_value = "stdio"
-    )]
+    #[structopt(long, short, default_value = "stdio")]
     pub communication: Communication,
 
     /// IP address to listen on (only valid when using TCP)
-    #[structopt(
-        long = "ip",
-        help = "IP address to listen on",
-        default_value = "127.0.0.1"
-    )]
+    #[structopt(long, default_value = "127.0.0.1")]
     pub ip: String,
 
     /// Port number to listen on (only valid when using TCP)
-    #[structopt(
-        long = "port",
-        help = "Port number to listen on",
-        default_value = "5007"
-    )]
+    #[structopt(long, default_value = "5007")]
     pub port: u16,
 
-    /// Logging level (e.g., "error", "warn", "info", "debug", "trace")
-    #[structopt(long = "log-level", help = "Logging level", default_value = "info")]
+    /// Logging level
+    #[structopt(long, default_value = "info")]
     pub log_level: LogLevel,
 
-    /// Path to the log file
-    #[structopt(
-        long = "log-path",
-        help = "Path to the log file. Use 'none' to disable log file output.",
-        default_value = ""
-    )]
+    /// Path to the log file. Use 'none' to disable log file output.
+    #[structopt(long, default_value = "")]
     pub log_path: NoneableString,
 
     /// Path to the resources and logs directory. Use 'none' to indicate that assets should not be output to the file system.
-    #[structopt(
-        long = "resources-path",
-        help = "Path to the resources. Use 'none' to disable resources file output.",
-        default_value = ""
-    )]
+    #[structopt(long, default_value = "")]
     pub resources_path: NoneableString,
 
     /// Whether to load the standard library.
-    #[structopt(
-        long = "load-stdlib",
-        help = "Whether to load the standard library",
-        default_value = "true"
-    )]
-    pub load_std_lib: CmdBool,
+    #[structopt(long, default_value = "true")]
+    pub load_stdlib: CmdBool,
 }
 
 /// Logging level enum
-#[derive(Debug, StructOpt, Clone, Copy)]
-#[structopt(rename_all = "lowercase")]
+#[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum LogLevel {
     /// Error level
     Error,
@@ -89,8 +62,7 @@ impl std::str::FromStr for LogLevel {
     }
 }
 
-#[derive(Debug, StructOpt, Clone, Copy)]
-#[structopt(rename_all = "lowercase")]
+#[derive(Debug, ValueEnum, Clone, Copy)]
 pub enum Communication {
     Stdio,
     Tcp,
