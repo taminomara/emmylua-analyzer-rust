@@ -185,7 +185,7 @@ pub async fn init_std_lib(
     emmyrc: Arc<Emmyrc>,
 ) {
     let mut analysis = analysis.write().await;
-    if cmd_args.load_std_lib.0 {
+    if cmd_args.load_stdlib.0 {
         // double update config
         analysis.update_config(emmyrc);
         analysis.init_std_lib(cmd_args.resources_path.0.clone());

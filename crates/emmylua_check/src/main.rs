@@ -2,18 +2,18 @@ mod cmd_args;
 mod init;
 mod output;
 
+use clap::Parser;
 use cmd_args::CmdArgs;
 use emmylua_code_analysis::{DbIndex, FileId};
 use fern::Dispatch;
 use log::LevelFilter;
 use output::output_result;
 use std::{error::Error, path::PathBuf, sync::Arc};
-use structopt::StructOpt;
 use tokio_util::sync::CancellationToken;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
-    let cmd_args = CmdArgs::from_args();
+    let cmd_args = CmdArgs::parse();
     let mut workspace = cmd_args.workspace;
     if !workspace.is_absolute() {
         workspace = std::env::current_dir()?.join(workspace);

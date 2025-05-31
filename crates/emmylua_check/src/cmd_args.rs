@@ -1,74 +1,51 @@
-use structopt::StructOpt;
+use clap::{Parser, ValueEnum};
+use std::path::PathBuf;
 
 #[allow(unused)]
-#[derive(Debug, StructOpt, Clone)]
-#[structopt(name = "emmylua-check", about = "EmmyLua Check")]
+#[derive(Debug, Parser, Clone)]
 pub struct CmdArgs {
     /// Configuration file paths.
     /// If not provided, both ".emmyrc.json" and ".luarc.json" will be searched in the workspace
     /// directory
-    #[structopt(short, long, use_delimiter = true, parse(from_os_str))]
-    pub config: Option<Vec<std::path::PathBuf>>,
+    #[arg(short, long, value_delimiter = ',')]
+    pub config: Option<Vec<PathBuf>>,
 
     /// Path to the workspace directory
-    #[structopt(parse(from_os_str))]
-    pub workspace: std::path::PathBuf,
+    pub workspace: PathBuf,
 
     /// Comma separated list of ignore patterns.
     /// Patterns must follow glob syntax
-    #[structopt(short, long, use_delimiter = true)]
+    #[arg(short, long, value_delimiter = ',')]
     pub ignore: Option<Vec<String>>,
 
     /// Specify output format
-    #[structopt(
-        long,
-        default_value = "text",
-        possible_values = &OutputFormat::variants(),
-        case_insensitive = true
-    )]
+    #[arg(long, default_value = "text", value_enum, ignore_case = true)]
     pub output_format: OutputFormat,
 
     /// Specify output destination (stdout or a file path, only used when output_format is json).
-    #[structopt(long, default_value = "stdout", parse(try_from_str))]
+    #[arg(long, default_value = "stdout")]
     pub output: OutputDestination,
 
     /// Treat warnings as errors
-    #[structopt(long)]
+    #[arg(long)]
     pub warnings_as_errors: bool,
 
     /// Verbose output
-    #[structopt(long)]
+    #[arg(long)]
     pub verbose: bool,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, ValueEnum)]
 pub enum OutputFormat {
     Json,
     Text,
-}
-
-impl std::str::FromStr for OutputFormat {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "json" => Ok(OutputFormat::Json),
-            "text" => Ok(OutputFormat::Text),
-            _ => Err(format!("Invalid output format: {}", s)),
-        }
-    }
-}
-
-impl OutputFormat {
-    pub fn variants() -> [&'static str; 2] {
-        ["json", "text"]
-    }
 }
 
 #[allow(unused)]
 #[derive(Debug, Clone)]
 pub enum OutputDestination {
     Stdout,
-    File(std::path::PathBuf),
+    File(PathBuf),
 }
 
 impl std::str::FromStr for OutputDestination {
@@ -76,7 +53,7 @@ impl std::str::FromStr for OutputDestination {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "stdout" => Ok(OutputDestination::Stdout),
-            _ => Ok(OutputDestination::File(std::path::PathBuf::from(s))),
+            _ => Ok(OutputDestination::File(PathBuf::from(s))),
         }
     }
 }
