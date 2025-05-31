@@ -493,6 +493,8 @@ dependencies = [
  "ariadne",
  "emmylua_code_analysis",
  "emmylua_parser",
+ "fern",
+ "log",
  "lsp-types",
  "rowan",
  "serde",

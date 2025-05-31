@@ -25,18 +25,33 @@ pub async fn output_result(
 
     let mut has_error = false;
     let mut count = 0;
+    let mut error_count = 0;
+    let mut warning_count = 0;
+    let mut info_count = 0;
+    let mut hint_count = 0;
+
     while let Some((file_id, diagnostics)) = receiver.recv().await {
         count += 1;
         if let Some(diagnostics) = diagnostics {
             for diagnostic in &diagnostics {
-                if diagnostic.severity == Some(lsp_types::DiagnosticSeverity::ERROR) {
-                    has_error = true;
-                    break;
-                } else if warnings_as_errors
-                    && diagnostic.severity == Some(lsp_types::DiagnosticSeverity::WARNING)
-                {
-                    has_error = true;
-                    break;
+                match diagnostic.severity {
+                    Some(lsp_types::DiagnosticSeverity::ERROR) => {
+                        has_error = true;
+                        error_count += 1;
+                    }
+                    Some(lsp_types::DiagnosticSeverity::WARNING) => {
+                        if warnings_as_errors {
+                            has_error = true;
+                        }
+                        warning_count += 1;
+                    }
+                    Some(lsp_types::DiagnosticSeverity::INFORMATION) => {
+                        info_count += 1;
+                    }
+                    Some(lsp_types::DiagnosticSeverity::HINT) => {
+                        hint_count += 1;
+                    }
+                    _ => {}
                 }
             }
             writer.write(db, file_id, diagnostics);
@@ -48,6 +63,21 @@ pub async fn output_result(
     }
 
     writer.finish();
+
+    if output_format == OutputFormat::Text {
+        if error_count > 0 {
+            println!("Errors: {}", error_count);
+        }
+        if warning_count > 0 {
+            println!("Warnings: {}", warning_count);
+        }
+        if info_count > 0 {
+            println!("Information: {}", info_count);
+        }
+        if hint_count > 0 {
+            println!("Hints: {}", hint_count);
+        }
+    }
 
     if has_error {
         1
