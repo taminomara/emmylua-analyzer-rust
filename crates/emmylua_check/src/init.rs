@@ -5,7 +5,7 @@ use emmylua_code_analysis::{
 };
 
 fn root_from_configs(config_paths: &Vec<PathBuf>, fallback: &PathBuf) -> PathBuf {
-    if config_paths.len() > 1 {
+    if config_paths.len() != 1 {
         fallback.clone()
     } else {
         let config_path = &config_paths[0];
