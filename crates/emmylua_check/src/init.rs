@@ -30,14 +30,7 @@ pub fn load_workspace(
     config_paths: Option<Vec<PathBuf>>,
     ignore: Option<Vec<String>>,
 ) -> Option<EmmyLuaAnalysis> {
-    let mut analysis = EmmyLuaAnalysis::new();
-    analysis.init_std_lib(None);
-
     let mut workspace_folders = vec![workspace_folder];
-    for path in &workspace_folders {
-        analysis.add_main_workspace(path.clone());
-    }
-
     let main_path = workspace_folders.first()?.clone();
     let (config_files, config_root): (Vec<PathBuf>, PathBuf) =
         if let Some(config_paths) = config_paths {
@@ -65,16 +58,22 @@ pub fn load_workspace(
     );
     emmyrc.pre_process_emmyrc(&config_root);
 
+    for lib in &emmyrc.workspace.library {
+        workspace_folders.push(PathBuf::from_str(lib).unwrap());
+    }
+
+    let mut analysis = EmmyLuaAnalysis::new();
+
+    for path in &workspace_folders {
+        analysis.add_main_workspace(path.clone());
+    }
+
     for root in &emmyrc.workspace.workspace_roots {
         analysis.add_main_workspace(PathBuf::from_str(root).unwrap());
     }
 
-    for lib in &emmyrc.workspace.library {
-        analysis.add_main_workspace(PathBuf::from_str(lib).unwrap());
-        workspace_folders.push(PathBuf::from_str(lib).unwrap());
-    }
-
     analysis.update_config(Arc::new(emmyrc));
+    analysis.init_std_lib(None);
 
     let file_infos = collect_files(&workspace_folders, &analysis.emmyrc, ignore);
     let files = file_infos
