@@ -37,7 +37,9 @@ impl<'a> FileDependencyRelation<'a> {
         }
 
         let mut queue = VecDeque::new();
-        for &file in adjacency.keys() {
+        let mut sorted_keys: Vec<_> = adjacency.keys().copied().collect();
+        sorted_keys.sort();
+        for &file in &sorted_keys {
             if *in_degree.get(&file).unwrap_or(&0) == 0 {
                 queue.push_back(file);
             }
