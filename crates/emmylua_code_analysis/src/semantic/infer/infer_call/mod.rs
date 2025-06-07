@@ -252,7 +252,7 @@ fn infer_type_doc_function(
         let operator = operator_index
             .get_operator(overload_id)
             .ok_or(InferFailReason::None)?;
-        let func = operator.get_operator_func();
+        let func = operator.get_operator_func(db);
         match func {
             LuaType::DocFunction(f) => {
                 if f.contain_self() {
@@ -326,7 +326,7 @@ fn infer_generic_type_doc_function(
         let operator = operator_index
             .get_operator(overload_id)
             .ok_or(InferFailReason::None)?;
-        let func = operator.get_operator_func();
+        let func = operator.get_operator_func(db);
         match func {
             LuaType::DocFunction(_) => {
                 let new_f = instantiate_type_generic(db, &func, &substitutor);
@@ -403,7 +403,7 @@ fn infer_table_type_doc_function(db: &DbIndex, table: InFiled<TextRange>) -> Inf
             .get_operator_index()
             .get_operator(operator_id)
             .ok_or(InferFailReason::None)?;
-        let func = operator.get_operator_func();
+        let func = operator.get_operator_func(db);
         match func {
             LuaType::DocFunction(func) => {
                 return Ok(func.into());

@@ -24,7 +24,7 @@ use crate::{
     db_index::{DbIndex, LuaType},
     profile::Profile,
     semantic::infer_expr,
-    FileId, InferFailReason,
+    Emmyrc, FileId, InferFailReason,
 };
 
 use super::AnalyzeContext;
@@ -100,6 +100,10 @@ impl LuaAnalyzer<'_> {
             db,
             context,
         }
+    }
+
+    pub fn get_emmyrc(&self) -> &Emmyrc {
+        self.db.get_emmyrc()
     }
 }
 

@@ -20,6 +20,9 @@ pub struct EmmyrcRuntime {
     #[serde(default)]
     /// Require pattern. eg. "?.lua", "?/init.lua"
     pub require_pattern: Vec<String>,
+    #[serde(default)]
+    /// class default overload function.
+    pub class_default_call: ClassDefaultCall,
 }
 
 impl Default for EmmyrcRuntime {
@@ -30,6 +33,7 @@ impl Default for EmmyrcRuntime {
             framework_versions: Default::default(),
             extensions: Default::default(),
             require_pattern: Default::default(),
+            class_default_call: Default::default(),
         }
     }
 }
@@ -77,6 +81,24 @@ impl EmmyrcLuaVersion {
             EmmyrcLuaVersion::Lua55 => LuaVersionNumber::new(5, 5, 0),
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, JsonSchema, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ClassDefaultCall {
+    #[serde(default)]
+    /// class default overload function. eg. "__init".
+    pub function_name: String,
+    #[serde(default = "default_true")]
+    /// Mandatory non`:` definition. When `function_name` is not empty, it takes effect.
+    pub force_non_colon: bool,
+    /// Force to return `self`.
+    #[serde(default = "default_true")]
+    pub force_return_self: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 #[cfg(test)]

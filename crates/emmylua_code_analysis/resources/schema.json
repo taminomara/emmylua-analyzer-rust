@@ -119,6 +119,11 @@
     },
     "runtime": {
       "default": {
+        "classDefaultCall": {
+          "forceNonColon": false,
+          "forceReturnSelf": false,
+          "functionName": ""
+        },
         "extensions": [],
         "frameworkVersions": [],
         "requireLikeFunction": [],
@@ -184,6 +189,26 @@
     }
   },
   "definitions": {
+    "ClassDefaultCall": {
+      "type": "object",
+      "properties": {
+        "forceNonColon": {
+          "description": "Mandatory non`:` definition. When `function_name` is not empty, it takes effect.",
+          "default": true,
+          "type": "boolean"
+        },
+        "forceReturnSelf": {
+          "description": "Force to return `self`.",
+          "default": true,
+          "type": "boolean"
+        },
+        "functionName": {
+          "description": "class default overload function. eg. \"__init\".",
+          "default": "",
+          "type": "string"
+        }
+      }
+    },
     "DiagnosticCode": {
       "oneOf": [
         {
@@ -836,6 +861,19 @@
     "EmmyrcRuntime": {
       "type": "object",
       "properties": {
+        "classDefaultCall": {
+          "description": "class default overload function.",
+          "default": {
+            "forceNonColon": false,
+            "forceReturnSelf": false,
+            "functionName": ""
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/ClassDefaultCall"
+            }
+          ]
+        },
         "extensions": {
           "description": "file Extensions. eg: .lua, .lua.txt",
           "default": [],
