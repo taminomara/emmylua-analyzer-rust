@@ -1,6 +1,9 @@
 use std::collections::HashSet;
 
-use emmylua_parser::{LuaAst, LuaAstNode, LuaIndexExpr, LuaIndexKey, LuaVarExpr};
+use emmylua_parser::{
+    LuaAst, LuaAstNode, LuaElseIfClauseStat, LuaForRangeStat, LuaForStat, LuaIfStat, LuaIndexExpr,
+    LuaIndexKey, LuaRepeatStat, LuaSyntaxKind, LuaVarExpr, LuaWhileStat,
+};
 
 use crate::{DiagnosticCode, InferFailReason, LuaMemberKey, LuaType, SemanticModel};
 
@@ -63,6 +66,17 @@ fn check_index_expr(
     }
 
     let index_key = index_expr.get_index_key()?;
+
+    // 检查是否为判断语句
+    if matches!(code, DiagnosticCode::UndefinedField) {
+        if is_in_conditional_statement(index_expr) {
+            return Some(());
+        }
+    }
+
+    if is_in_conditional_statement(index_expr) {
+        return Some(());
+    }
 
     if is_valid_member(semantic_model, &prefix_typ, index_expr, &index_key, code).is_some() {
         return Some(());
@@ -323,4 +337,85 @@ fn get_key_types(typ: &LuaType) -> HashSet<LuaType> {
         }
     }
     type_set
+}
+
+/// 判断给定的AST节点是否位于判断语句的条件表达式中
+///
+/// 该函数检查节点是否位于以下语句的条件部分：
+/// - if语句的条件表达式
+/// - while循环的条件表达式
+/// - for循环的迭代表达式
+/// - repeat循环的条件表达式
+/// - elseif子句的条件表达式
+///
+/// # 参数
+/// * `node` - 要检查的AST节点
+///
+/// # 返回值
+/// * `true` - 如果节点位于判断语句的条件表达式中
+/// * `false` - 如果节点不在判断语句的条件表达式中
+fn is_in_conditional_statement<T: LuaAstNode>(node: &T) -> bool {
+    let node_range = node.get_range();
+
+    // 遍历所有祖先节点，查找条件语句
+    for ancestor in node.syntax().ancestors() {
+        match ancestor.kind().into() {
+            LuaSyntaxKind::IfStat => {
+                if let Some(if_stat) = LuaIfStat::cast(ancestor) {
+                    if let Some(condition_expr) = if_stat.get_condition_expr() {
+                        if condition_expr.get_range().contains_range(node_range) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            LuaSyntaxKind::WhileStat => {
+                if let Some(while_stat) = LuaWhileStat::cast(ancestor) {
+                    if let Some(condition_expr) = while_stat.get_condition_expr() {
+                        if condition_expr.get_range().contains_range(node_range) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            LuaSyntaxKind::ForStat => {
+                if let Some(for_stat) = LuaForStat::cast(ancestor) {
+                    for iter_expr in for_stat.get_iter_expr() {
+                        if iter_expr.get_range().contains_range(node_range) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            LuaSyntaxKind::ForRangeStat => {
+                if let Some(for_range_stat) = LuaForRangeStat::cast(ancestor) {
+                    for expr in for_range_stat.get_expr_list() {
+                        if expr.get_range().contains_range(node_range) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            LuaSyntaxKind::RepeatStat => {
+                if let Some(repeat_stat) = LuaRepeatStat::cast(ancestor) {
+                    if let Some(condition_expr) = repeat_stat.get_condition_expr() {
+                        if condition_expr.get_range().contains_range(node_range) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            LuaSyntaxKind::ElseIfClauseStat => {
+                if let Some(elseif_clause) = LuaElseIfClauseStat::cast(ancestor) {
+                    if let Some(condition_expr) = elseif_clause.get_condition_expr() {
+                        if condition_expr.get_range().contains_range(node_range) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    false
 }

@@ -598,4 +598,18 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_if_1() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+            ---@type table<int, string>
+            local arg = {}
+            if arg['test'] == 'true' then
+            end
+        "#
+        ));
+    }
 }
