@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use emmylua_code_analysis::{
     DbIndex, LuaDeclId, LuaDocument, LuaMemberId, LuaMemberKey, LuaSemanticDeclId, LuaSignatureId,
     LuaType, LuaTypeDeclId, RenderLevel, SemanticInfo, SemanticModel,
@@ -174,8 +176,11 @@ fn build_decl_hover(
         }
 
         // 添加注释文本
-        builder.add_description(&LuaSemanticDeclId::LuaDecl(decl_id));
-        for (semantic_decl, _) in semantic_decls {
+        let mut semantic_decl_set = HashSet::new();
+        let decl_decl = LuaSemanticDeclId::LuaDecl(decl_id);
+        semantic_decl_set.insert(&decl_decl);
+        semantic_decl_set.extend(semantic_decls.iter().map(|(decl, _)| decl));
+        for semantic_decl in semantic_decl_set {
             builder.add_description(&semantic_decl);
         }
     }
@@ -239,9 +244,12 @@ fn build_member_hover(
         }
 
         // 添加注释文本
-        builder.add_description(&LuaSemanticDeclId::Member(member.get_id()));
-        for (semantic_decl, _) in semantic_decls {
-            builder.add_description(&semantic_decl);
+        let mut semantic_decl_set = HashSet::new();
+        let member_decl = LuaSemanticDeclId::Member(member.get_id());
+        semantic_decl_set.insert(&member_decl);
+        semantic_decl_set.extend(semantic_decls.iter().map(|(decl, _)| decl));
+        for semantic_decl in semantic_decl_set {
+            builder.add_description(semantic_decl);
         }
     }
 

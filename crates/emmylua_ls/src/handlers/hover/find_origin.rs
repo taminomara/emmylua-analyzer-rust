@@ -250,15 +250,22 @@ pub fn replace_semantic_type(
     match origin_type {
         LuaType::Union(union) => {
             for typ in union.get_types() {
-                type_vec.push(typ.clone());
+                type_vec.push(typ);
             }
         }
         _ => {
-            type_vec.push(origin_type.clone());
+            type_vec.push(origin_type);
         }
     }
     if type_vec.len() != semantic_decls.len() {
         return;
+    }
+
+    // 判断是否存在泛型, 如果有任意类型不匹配我们就认为存在泛型
+    for (_, typ) in semantic_decls.iter() {
+        if !type_vec.iter().any(|t| *t == typ) {
+            break;
+        }
     }
 
     // 替换`semantic_decls`中的类型

@@ -118,4 +118,23 @@ mod tests {
             },
         ));
     }
+
+    #[test]
+    fn test_decl_desc() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_hover(
+            r#"
+                ---@class Buff.AddData
+                ---@field pulse? number 心跳周期
+
+                ---@type Buff.AddData
+                local data
+
+                data.pu<??>lse
+            "#,
+            VirtualHoverResult {
+                value: "\n```lua\n(field) pulse: number?\n```\n\n&nbsp;&nbsp;in class `Buff.AddData`\n\n---\n\n心跳周期\n".to_string(),
+            },
+        ));
+    }
 }
