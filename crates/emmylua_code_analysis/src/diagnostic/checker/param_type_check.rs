@@ -85,7 +85,7 @@ fn check_call_expr(
             }
             let result = semantic_model.type_check(&check_type, arg_type);
             if !result.is_ok() {
-                add_type_check_diagnostic(
+                try_add_diagnostic(
                     context,
                     semantic_model,
                     *arg_ranges.get(idx)?,
@@ -110,7 +110,7 @@ fn check_variadic_param_match_args(
     for (arg_type, arg_range) in arg_types.iter().zip(arg_ranges.iter()) {
         let result = semantic_model.type_check(variadic_type, arg_type);
         if !result.is_ok() {
-            add_type_check_diagnostic(
+            try_add_diagnostic(
                 context,
                 semantic_model,
                 *arg_range,
@@ -120,6 +120,33 @@ fn check_variadic_param_match_args(
             );
         }
     }
+}
+
+fn try_add_diagnostic(
+    context: &mut DiagnosticContext,
+    semantic_model: &SemanticModel,
+    range: TextRange,
+    param_type: &LuaType,
+    expr_type: &LuaType,
+    result: TypeCheckResult,
+) {
+    match (param_type, expr_type) {
+        (LuaType::Integer, LuaType::FloatConst(f)) => {
+            if f.fract() == 0.0 {
+                return;
+            }
+        }
+        _ => {}
+    }
+
+    add_type_check_diagnostic(
+        context,
+        semantic_model,
+        range,
+        param_type,
+        expr_type,
+        result,
+    );
 }
 
 fn add_type_check_diagnostic(

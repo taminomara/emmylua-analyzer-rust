@@ -42,7 +42,15 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
         LuaType::Thread => "thread".to_string(),
         LuaType::Userdata => "userdata".to_string(),
         LuaType::IntegerConst(i) => i.to_string(),
-        LuaType::FloatConst(f) => f.to_string(),
+        LuaType::FloatConst(f) => {
+            let s = f.to_string();
+            // 如果字符串不包含小数点，添加 ".0"
+            if !s.contains('.') {
+                format!("{}.0", s)
+            } else {
+                s
+            }
+        }
         LuaType::TableConst(v) => {
             let member_owner = LuaMemberOwner::Element(v.clone());
             humanize_table_const_type(db, member_owner, level)

@@ -1004,4 +1004,19 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_int() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            ---@param count integer
+            local function loop_count(count)
+            end
+
+            loop_count(45 / 3)
+        "#
+        ));
+    }
 }
