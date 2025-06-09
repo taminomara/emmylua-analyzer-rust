@@ -207,6 +207,8 @@ fn parse_tag_alias(p: &mut LuaDocParser) -> ParseResult {
         parse_generic_decl_list(p, true)?;
     }
 
+    if_token_bump(p, LuaTokenKind::TkDocDetail);
+
     parse_type(p)?;
 
     p.set_state(LuaDocLexerState::Description);
