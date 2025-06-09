@@ -10,8 +10,8 @@ mod test;
 use std::ops::Deref;
 
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLiteralToken, LuaTableExpr,
-    LuaVarExpr,
+    LuaAst, LuaAstNode, LuaCallExpr, LuaClosureExpr, LuaExpr, LuaLiteralExpr, LuaLiteralToken,
+    LuaTableExpr, LuaVarExpr,
 };
 use infer_binary::infer_binary_expr;
 use infer_call::infer_call_expr;
@@ -213,15 +213,14 @@ pub fn infer_multi_value_adjusted_expression_types(
     value_types
 }
 
-/// 从右值推断左值已绑定的类型
-pub fn infer_left_value_type_from_right_value(
+/// 推断值已经绑定的类型(不是推断值的类型). 例如从右值推断左值类型, 从调用参数推断函数参数类型参数类型
+pub fn infer_bind_value_type(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     expr: LuaExpr,
 ) -> Option<LuaType> {
-    let ast = expr.syntax().parent().map(LuaAst::cast).flatten()?;
-
-    let typ = match ast {
+    let parent_node = expr.syntax().parent().map(LuaAst::cast).flatten()?;
+    let typ = match parent_node {
         LuaAst::LuaAssignStat(assign) => {
             let (vars, exprs) = assign.get_var_and_expr_list();
             let mut typ = None;
@@ -263,6 +262,42 @@ pub fn infer_left_value_type_from_right_value(
                 Err(InferFailReason::FieldNotFound) => None,
                 Err(_) => Some(LuaType::Unknown),
             }
+        }
+        LuaAst::LuaCallArgList(call_arg_list) => {
+            let call_expr = call_arg_list.get_parent::<LuaCallExpr>()?;
+            // 获取调用位置
+            let mut param_pos = 0;
+            for (idx, arg) in call_arg_list.get_args().enumerate() {
+                if arg == expr {
+                    param_pos = idx;
+                    break;
+                }
+            }
+            let is_colon_call = call_expr.is_colon_call();
+
+            let expr_type = infer_expr(db, cache, call_expr.get_prefix_expr()?).ok()?;
+            match expr_type {
+                LuaType::Signature(signature_id) => {
+                    let signature = db.get_signature_index().get(&signature_id)?;
+                    match (signature.is_colon_define, is_colon_call) {
+                        (true, false) => {
+                            param_pos += 1;
+                        }
+                        (false, true) => {
+                            if param_pos == 0 {
+                                return None;
+                            }
+                            param_pos -= 1;
+                        }
+                        _ => {}
+                    }
+                    let param_info = signature.get_param_info_by_id(param_pos)?;
+                    return Some(param_info.type_ref.clone());
+                }
+                _ => {}
+            }
+
+            return None;
         }
         _ => None,
     };

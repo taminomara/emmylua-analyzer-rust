@@ -32,7 +32,7 @@ fn get_function_return_info(
     closure_expr: &LuaClosureExpr,
 ) -> Option<(bool, LuaType)> {
     let typ = semantic_model
-        .infer_left_value_type_from_right_value(closure_expr.clone().into())
+        .infer_bind_value_type(closure_expr.clone().into())
         .unwrap_or(LuaType::Unknown);
 
     match typ {
