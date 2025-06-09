@@ -278,13 +278,6 @@ impl LuaLexer<'_> {
                 LuaTokenKind::TkMod
             }
             '^' => {
-                if !self.lexer_config.support_pow_operator() {
-                    self.errors.push(LuaParseError::syntax_error_from(
-                        &t!("power operator is not supported, Please use `math.pow` instead"),
-                        self.reader.saved_range(),
-                    ));
-                }
-
                 self.reader.bump();
                 LuaTokenKind::TkPow
             }

@@ -27,11 +27,6 @@ impl LexerConfig {
         self.language_level >= LuaLanguageLevel::Lua53
     }
 
-    pub fn support_pow_operator(&self) -> bool {
-        self.language_level >= LuaLanguageLevel::Lua52
-            || self.language_level == LuaLanguageLevel::LuaJIT
-    }
-
     pub fn support_global_decl(&self) -> bool {
         self.language_level >= LuaLanguageLevel::Lua55
     }
