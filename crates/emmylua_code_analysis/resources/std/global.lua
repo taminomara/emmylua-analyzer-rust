@@ -30,7 +30,8 @@ function assert(v, ...) end
 ---| "restart" # restarts automatic execution of the garbage collector.
 ---| "count" # returns the total memory in use by Lua in Kbytes. The value has a fractional part, so that it multiplied by 1024 gives the exact number of bytes in use by Lua (except for overflows).
 ---| "step" # performs a garbage-collection step. The step "size" is controlled by `arg`. With a zero value, the collector will perform one basic (indivisible) step. For non-zero values, the collector will perform as if Lua had allocated that amount of memory (in KBytes). Returns true if the step finished a collection cycle.
----| "setpause" # sets `arg` as the new value for the *pause* of the collector (see §2.5). Returns the previous value for *pause`.
+---| "setpause" # sets `arg` as the new value for the *pause* of the collector (see §2.5). Returns the previous value for *pause*.
+---| "setstepmul" # sets `arg` as the new value for the *step multiplier* of the collector (see §2.5). Returns the previous value for *step*.
 ---| "incremental" # Change the collector mode to incremental. This option can be followed by three numbers: the garbage-collector pause, the step multiplier, and the step size.
 ---| "generational" # Change the collector mode to generational. This option can be followed by two numbers: the garbage-collector minor multiplier and the major multiplier.
 ---| "isrunning" # returns a boolean that tells whether the collector is running (i.e., not stopped).
@@ -274,6 +275,8 @@ function rawequal(v1, v2) end
 ---@return std.RawGet<T, K>
 function rawget(table, index) end
 
+---@version >5.2
+---
 --- Returns the length of the object `v`, which must be a table or a string, without
 --- invoking any metamethod. Returns an integer number.
 ---@param v string|table

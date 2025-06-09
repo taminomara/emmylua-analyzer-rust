@@ -41,6 +41,7 @@ function table.concat(list, sep, i, j) end
 ---@return integer
 function table.insert(list, pos, value) end
 
+---@version > 5.3
 ---
 --- Moves elements from table a1 to table `a2`, performing the equivalent to
 --- the following multiple assignment: `a2[t]`,`··· = a1[f]`,`···,a1[e]`. The
