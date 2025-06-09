@@ -159,6 +159,7 @@
     "strict": {
       "default": {
         "arrayIndex": true,
+        "docIntegerMatchInt": true,
         "metaOverrideFileDefine": true,
         "requirePath": false,
         "typeCall": false
@@ -943,6 +944,11 @@
         "arrayIndex": {
           "description": "Whether to enable strict mode array indexing.",
           "default": true,
+          "type": "boolean"
+        },
+        "docIntegerMatchInt": {
+          "description": "The `int` type can match the `doc_integer` type. applied to `alias`.",
+          "default": false,
           "type": "boolean"
         },
         "metaOverrideFileDefine": {
