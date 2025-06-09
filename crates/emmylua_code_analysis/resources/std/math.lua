@@ -51,7 +51,7 @@ function math.atan(y, x) end
 --- Returns the smallest integer larger than or equal to `x`.
 ---@param x number
 ---@return integer
-function math.ceil(x) return 0 end
+function math.ceil(x) end
 
 ---
 --- Returns the cosine of `x` (assumed to be in radians).
@@ -108,6 +108,7 @@ function math.log(x, base) end
 ---@return number
 function math.max(x, ...) end
 
+---@version >5.3
 ---
 --- An integer with the maximum value for an integer.
 ---@type integer
@@ -122,6 +123,7 @@ math.maxinteger = nil
 ---@return number
 function math.min(x, ...) end
 
+---@version >5.3
 ---
 --- An integer with the minimum value for an integer.
 ---@type integer
@@ -208,7 +210,7 @@ function math.type(x) end
 ---@return boolean
 function math.ult(m, n) end
 
----@version 5.1, JIT
+---@version 5.1, 5.2, JIT
 ---
 --- Returns the value of `x` raised to the power `y`. (x^y)
 ---@param x number The base
@@ -216,7 +218,7 @@ function math.ult(m, n) end
 ---@return number
 function math.pow(x, y) end
 
----@version 5.1, JIT
+---@version 5.1, 5.2, JIT
 ---
 --- Returns the arc tangent of `y/x` (in radians), but uses the signs of both
 --- parameters to find the quadrant of the result. (It also handles correctly
@@ -234,5 +236,42 @@ function math.atan2(y, x) end
 ---@param x number
 ---@return number
 function math.log10(x) end
+
+---@version 5.1, 5.2, JIT
+---
+--- Returns the hyperbolic cosine of `x`.
+---@param x number
+---@return number
+function math.cosh(x) end
+
+---@version 5.1, 5.2, JIT
+---
+--- Returns the hyperbolic sine of `x`.
+---@param x number
+---@return number
+function math.sinh(x) end
+
+---@version 5.1, 5.2, JIT
+---
+--- Returns the hyperbolic tangent of `x`.
+---@param x number
+---@return number
+function math.tanh(x) end
+
+---@version 5.1, 5.2, JIT
+---
+--- Returns `m` and `e` such that *x = m2^e*, `e` is an integer and the absolute
+--- value of `m` is in the range *[0.5, 1)* (or zero when `x` is zero).
+---@param x number
+---@return number, integer
+function math.frexp(x) end
+
+---@version 5.1, 5.2, JIT
+---
+--- Returns *m2e* (`e` should be an integer).
+---@param m number
+---@param e integer
+---@return number
+function math.ldexp(m, e) end
 
 return math
