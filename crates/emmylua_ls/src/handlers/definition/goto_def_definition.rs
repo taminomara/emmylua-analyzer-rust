@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{collections::HashSet, str::FromStr};
 
 use emmylua_code_analysis::{
     LuaDeclId, LuaMemberId, LuaMemberInfo, LuaMemberKey, LuaSemanticDeclId, LuaType, LuaTypeDeclId,
@@ -16,6 +16,7 @@ pub fn goto_def_definition(
     semantic_model: &SemanticModel,
     property_owner: LuaSemanticDeclId,
     trigger_token: &LuaSyntaxToken,
+    guard: &mut GotoDefGuard,
 ) -> Option<GotoDefinitionResponse> {
     if let Some(property) = semantic_model
         .get_db()
@@ -40,8 +41,16 @@ pub fn goto_def_definition(
             return Some(GotoDefinitionResponse::Scalar(location));
         }
         LuaSemanticDeclId::Member(member_id) => {
-            if let Some(property_owner) = find_member_origin_owner(semantic_model, member_id) {
-                return goto_def_definition(semantic_model, property_owner, trigger_token);
+            if let Some(origin_property_owner) = find_member_origin_owner(semantic_model, member_id)
+            {
+                if guard.check(&origin_property_owner) {
+                    return goto_def_definition(
+                        semantic_model,
+                        origin_property_owner,
+                        trigger_token,
+                        guard,
+                    );
+                }
             }
 
             let member_key = semantic_model
@@ -232,4 +241,25 @@ fn get_member_location(
 ) -> Option<Location> {
     let document = semantic_model.get_document_by_file_id(member_id.file_id)?;
     document.to_lsp_location(member_id.get_syntax_id().get_range())
+}
+
+#[derive(Debug, Clone)]
+pub struct GotoDefGuard {
+    ids: HashSet<LuaSemanticDeclId>,
+}
+
+impl GotoDefGuard {
+    pub fn new(first: LuaSemanticDeclId) -> Self {
+        Self {
+            ids: HashSet::from([first]),
+        }
+    }
+
+    pub fn check(&mut self, id: &LuaSemanticDeclId) -> bool {
+        if self.ids.contains(id) {
+            return false;
+        }
+        self.ids.insert(id.clone());
+        true
+    }
 }
