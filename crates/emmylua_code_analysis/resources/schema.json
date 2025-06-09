@@ -947,7 +947,7 @@
           "type": "boolean"
         },
         "docIntegerMatchInt": {
-          "description": "The `int` type can match the `doc_integer` type. applied to `alias`.",
+          "description": "`doc_integer` type can match `int` type.",
           "default": false,
           "type": "boolean"
         },
