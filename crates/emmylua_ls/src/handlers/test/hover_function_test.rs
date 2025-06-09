@@ -311,27 +311,4 @@ mod tests {
             },
         ));
     }
-
-    // #[test]
-    // fn test_origin_decl_1() {
-    //     let mut ws = ProviderVirtualWorkspace::new();
-    //     assert!(ws.check_hover(
-    //         r#"
-    //             ---@class T
-    //             ---@field func fun(a:string) 注释1
-    //             ---@field func fun(a:number) 注释2
-
-    //             ---@type T
-    //             local t = {
-    //                 func = function(a)
-    //                 end
-    //             }
-    //             local abc = t.func
-    //             a<??>bc(1)
-    //         "#,
-    //         VirtualHoverResult {
-    //             value: "\n```lua\n(field) T.func(a: number)\n```\n\n---\n\n注释2\n".to_string(),
-    //         },
-    //     ));
-    // }
 }

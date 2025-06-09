@@ -707,4 +707,26 @@ mod tests {
             CompletionTriggerKind::INVOKED,
         ));
     }
+
+    #[test]
+    fn test_issue_499() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@class T
+            ---@field func fun(a:string): string
+
+            ---@type T
+            local t = {
+                func = <??>
+            }
+            "#,
+            vec![VirtualCompletionItem {
+                label: "fun".to_string(),
+                kind: CompletionItemKind::SNIPPET,
+                label_detail: Some("(a)".to_string()),
+            },],
+            CompletionTriggerKind::INVOKED,
+        ));
+    }
 }

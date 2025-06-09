@@ -6,7 +6,7 @@ use lsp_types::{CompletionItem, InsertTextFormat, InsertTextMode};
 use rowan::NodeOrToken;
 
 use crate::handlers::completion::{
-    add_completions::{check_visibility, get_detail, is_deprecated, CallDisplay},
+    add_completions::{check_visibility, is_deprecated},
     completion_builder::CompletionBuilder,
     completion_data::CompletionData,
 };
@@ -232,7 +232,7 @@ fn add_field_value_completion(
 ) -> Option<()> {
     let real_type = get_real_type(&builder.semantic_model.get_db(), &member_info.typ)?;
     if real_type.is_function() {
-        let label_detail = get_detail(builder, real_type, CallDisplay::None);
+        let label_detail = get_function_detail(builder, real_type);
         let item = CompletionItem {
             label: "fun".to_string(),
             label_details: Some(lsp_types::CompletionItemLabelDetails {
@@ -253,4 +253,33 @@ fn add_field_value_completion(
     }
 
     None
+}
+
+fn get_function_detail(builder: &CompletionBuilder, typ: &LuaType) -> Option<String> {
+    match typ {
+        LuaType::Signature(signature_id) => {
+            let signature = builder
+                .semantic_model
+                .get_db()
+                .get_signature_index()
+                .get(&signature_id)?;
+
+            let params_str = signature
+                .get_type_params()
+                .iter()
+                .map(|param| param.0.clone())
+                .collect::<Vec<_>>();
+
+            Some(format!("({})", params_str.join(", ")))
+        }
+        LuaType::DocFunction(f) => {
+            let params_str = f
+                .get_params()
+                .iter()
+                .map(|param| param.0.clone())
+                .collect::<Vec<_>>();
+            Some(format!("({})", params_str.join(", ")))
+        }
+        _ => None,
+    }
 }
