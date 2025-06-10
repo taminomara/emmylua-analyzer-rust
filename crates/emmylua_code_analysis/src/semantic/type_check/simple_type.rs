@@ -131,7 +131,7 @@ pub fn check_simple_type_compact(
                 return Err(TypeCheckFailReason::TypeNotMatch);
             }
             LuaType::Integer => {
-                if db.get_emmyrc().strict.doc_integer_match_int {
+                if db.get_emmyrc().strict.doc_integer_const_match_int {
                     return Ok(());
                 }
                 return Err(TypeCheckFailReason::TypeNotMatch);

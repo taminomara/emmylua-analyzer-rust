@@ -24,9 +24,9 @@ pub struct EmmyrcStrict {
     /// meta define overrides file define
     #[serde(default = "default_true")]
     pub meta_override_file_define: bool,
-    /// `doc_integer` type can match `int` type.
+    /// `doc_integer_const` type can match `int` type.
     #[serde(default = "default_false")]
-    pub doc_integer_match_int: bool,
+    pub doc_integer_const_match_int: bool,
 }
 
 impl Default for EmmyrcStrict {
@@ -36,7 +36,7 @@ impl Default for EmmyrcStrict {
             type_call: false,
             array_index: true,
             meta_override_file_define: true,
-            doc_integer_match_int: true,
+            doc_integer_const_match_int: true,
         }
     }
 }
