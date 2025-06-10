@@ -59,6 +59,7 @@ fn check_doc_tag_type(
                     semantic_model,
                     doc_type.get_range(),
                     &extend_type,
+                    &param_type,
                     result,
                 );
             }
@@ -223,6 +224,7 @@ fn check_str_tpl_ref(
                             semantic_model,
                             range,
                             &extend_type,
+                            &ref_type,
                             result,
                         );
                     }
@@ -252,7 +254,14 @@ fn check_tpl_ref(
     let arg_info = arg_info?;
     let result = semantic_model.type_check(&extend_type, &arg_info.0);
     if !result.is_ok() {
-        add_type_check_diagnostic(context, semantic_model, arg_info.1, &extend_type, result);
+        add_type_check_diagnostic(
+            context,
+            semantic_model,
+            arg_info.1,
+            &extend_type,
+            &arg_info.0,
+            result,
+        );
     }
     Some(())
 }
@@ -262,6 +271,7 @@ fn add_type_check_diagnostic(
     semantic_model: &SemanticModel,
     range: TextRange,
     extend_type: &LuaType,
+    expr_type: &LuaType,
     result: TypeCheckResult,
 ) {
     let db = semantic_model.get_db();
@@ -279,8 +289,9 @@ fn add_type_check_diagnostic(
                 DiagnosticCode::GenericConstraintMismatch,
                 range,
                 t!(
-                    "the generic constraint must be a subclass of `%{source}`. %{reason}",
+                    "type `%{found}` does not satisfy the constraint `%{source}`. %{reason}",
                     source = humanize_type(db, &extend_type, RenderLevel::Simple),
+                    found = humanize_type(db, &expr_type, RenderLevel::Simple),
                     reason = reason_message
                 )
                 .to_string(),
