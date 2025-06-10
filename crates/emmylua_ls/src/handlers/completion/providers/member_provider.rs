@@ -34,7 +34,8 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         &index_expr,
         &prefix_type,
     )
-    .is_some() {
+    .is_some()
+    {
         return None;
     }
     let member_info_map = builder.semantic_model.get_member_info_map(&prefix_type)?;

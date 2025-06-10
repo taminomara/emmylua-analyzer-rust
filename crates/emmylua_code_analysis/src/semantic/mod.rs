@@ -14,6 +14,7 @@ use std::collections::HashMap;
 use std::{collections::HashSet, sync::Arc};
 
 pub use cache::{CacheEntry, CacheKey, CacheOptions, LuaAnalysisPhase, LuaInferCache};
+pub use decl::enum_variable_is_param;
 use emmylua_parser::{
     LuaCallExpr, LuaChunk, LuaExpr, LuaIndexKey, LuaParseError, LuaSyntaxNode, LuaSyntaxToken,
     LuaTableExpr,
@@ -34,7 +35,6 @@ use semantic_info::{
 pub(crate) use type_check::check_type_compact;
 use type_check::is_sub_type_of;
 use visibility::check_visibility;
-pub use decl::enum_variable_is_param;
 
 use crate::{db_index::LuaTypeDeclId, Emmyrc, LuaDocument, LuaSemanticDeclId};
 use crate::{
