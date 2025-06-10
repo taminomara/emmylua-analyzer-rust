@@ -1,4 +1,5 @@
 mod cache;
+mod decl;
 mod generic;
 mod infer;
 mod member;
@@ -33,6 +34,7 @@ use semantic_info::{
 pub(crate) use type_check::check_type_compact;
 use type_check::is_sub_type_of;
 use visibility::check_visibility;
+pub use decl::enum_variable_is_param;
 
 use crate::{db_index::LuaTypeDeclId, Emmyrc, LuaDocument, LuaSemanticDeclId};
 use crate::{

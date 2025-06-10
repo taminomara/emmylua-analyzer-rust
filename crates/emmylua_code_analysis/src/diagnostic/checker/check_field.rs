@@ -5,7 +5,9 @@ use emmylua_parser::{
     LuaIndexKey, LuaRepeatStat, LuaSyntaxKind, LuaVarExpr, LuaWhileStat,
 };
 
-use crate::{DiagnosticCode, InferFailReason, LuaMemberKey, LuaType, SemanticModel};
+use crate::{
+    enum_variable_is_param, DiagnosticCode, InferFailReason, LuaMemberKey, LuaType, SemanticModel,
+};
 
 use super::{humanize_lint_type, Checker, DiagnosticContext};
 
@@ -144,6 +146,18 @@ fn is_valid_member(
     index_key: &LuaIndexKey,
     code: DiagnosticCode,
 ) -> Option<()> {
+    // 如果类型是 Ref 的 enum, 那么需要检查变量是否为参数, 因为作为参数的 enum 本质上是 value 而不是 enum
+    if enum_variable_is_param(
+        semantic_model.get_db(),
+        &mut semantic_model.get_config().borrow_mut(),
+        index_expr,
+        prefix_typ,
+    )
+    .is_some()
+    {
+        return None;
+    }
+
     // 检查 member_info
     let need_add_diagnostic =
         match semantic_model.get_semantic_info(index_expr.syntax().clone().into()) {

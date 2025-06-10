@@ -612,4 +612,49 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_enum_field_1() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@enum Enum
+                local Enum = {
+                    a = 1,
+                }
+        "#,
+        );
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                ---@param p Enum
+                function func(p)
+                    local x1 = p.a
+                end
+        "#
+        ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                ---@param p Enum
+                function func(p)
+                    local x1 = p
+                    local x2 = x1.a
+                end
+        "#
+        ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                ---@param p Enum
+                function func(p)
+                    local x1 = p
+                    local x2 = x1
+                    local x3 = x2.a
+                end
+        "#
+        ));
+    }
 }

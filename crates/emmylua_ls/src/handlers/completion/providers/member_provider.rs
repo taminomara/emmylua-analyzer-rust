@@ -1,4 +1,6 @@
-use emmylua_code_analysis::{DbIndex, LuaMemberInfo, LuaSemanticDeclId, LuaType, LuaTypeDeclId};
+use emmylua_code_analysis::{
+    enum_variable_is_param, DbIndex, LuaMemberInfo, LuaSemanticDeclId, LuaType, LuaTypeDeclId,
+};
 use emmylua_parser::{LuaAstNode, LuaAstToken, LuaIndexExpr, LuaStringToken};
 
 use crate::handlers::completion::{
@@ -25,6 +27,16 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
 
     let prefix_expr = index_expr.get_prefix_expr()?;
     let prefix_type = builder.semantic_model.infer_expr(prefix_expr.into()).ok()?;
+    // 如果是枚举类型且为函数参数, 则不进行补全
+    if enum_variable_is_param(
+        builder.semantic_model.get_db(),
+        &mut builder.semantic_model.get_config().borrow_mut(),
+        &index_expr,
+        &prefix_type,
+    )
+    .is_some() {
+        return None;
+    }
     let member_info_map = builder.semantic_model.get_member_info_map(&prefix_type)?;
     for (_, member_infos) in member_info_map.iter() {
         add_resolve_member_infos(builder, &member_infos, completion_status);

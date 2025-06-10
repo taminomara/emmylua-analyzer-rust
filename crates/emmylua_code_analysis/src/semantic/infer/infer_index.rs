@@ -11,6 +11,7 @@ use crate::{
         DbIndex, LuaGenericType, LuaIntersectionType, LuaMemberKey, LuaObjectType,
         LuaOperatorMetaMethod, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType,
     },
+    enum_variable_is_param,
     semantic::{
         generic::{instantiate_type_generic, TypeSubstitutor},
         member::get_buildin_type_map_type_id,
@@ -211,15 +212,32 @@ fn infer_custom_type_member(
         .ok_or(InferFailReason::None)?;
     if type_decl.is_alias() {
         if let Some(origin_type) = type_decl.get_alias_origin(db, None) {
-            return infer_member_by_member_key(db, cache, &origin_type, index_expr, infer_guard);
+            return infer_member_by_member_key(
+                db,
+                cache,
+                &origin_type,
+                index_expr.clone(),
+                infer_guard,
+            );
         } else {
-            return Err(InferFailReason::None);
+            return Err(InferFailReason::FieldNotFound);
         }
+    }
+    match &index_expr {
+        LuaIndexMemberExpr::IndexExpr(index_expr) => {
+            if enum_variable_is_param(db, cache, index_expr, &LuaType::Ref(prefix_type_id.clone()))
+                .is_some()
+            {
+                return Err(InferFailReason::None);
+            }
+        }
+        _ => {}
     }
 
     let owner = LuaMemberOwner::Type(prefix_type_id.clone());
     let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
     let key = LuaMemberKey::from_index_key(db, cache, &index_key)?;
+
     if let Some(member_item) = db.get_member_index().get_member_item(&owner, &key) {
         return member_item.resolve_type(db);
     }
