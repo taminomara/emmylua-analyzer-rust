@@ -15,6 +15,7 @@ pub use type_decl::{
 pub use type_ops::TypeOps;
 pub use type_owner::{LuaTypeCache, LuaTypeOwner};
 pub use types::*;
+pub use type_ops::get_real_type;
 
 #[derive(Debug)]
 pub struct LuaTypeIndex {

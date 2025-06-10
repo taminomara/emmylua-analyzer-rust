@@ -19,7 +19,7 @@ use resolve::{
     try_resolve_module_ref, try_resolve_return_point, try_resolve_table_field,
 };
 use resolve_closure::{
-    try_resolve_closure_params, try_resolve_closure_parent_params, try_resolve_closure_return,
+    try_resolve_call_closure_params, try_resolve_closure_parent_params, try_resolve_closure_return,
 };
 
 use super::{infer_manager::InferCacheManager, lua::LuaReturnPoint, AnalyzeContext};
@@ -179,7 +179,7 @@ fn try_resolve(
                         try_resolve_return_point(db, cache, un_resolve_return)
                     }
                     UnResolve::ClosureParams(un_resolve_closure_params) => {
-                        try_resolve_closure_params(db, cache, un_resolve_closure_params)
+                        try_resolve_call_closure_params(db, cache, un_resolve_closure_params)
                     }
                     UnResolve::ClosureReturn(un_resolve_closure_return) => {
                         try_resolve_closure_return(db, cache, un_resolve_closure_return)

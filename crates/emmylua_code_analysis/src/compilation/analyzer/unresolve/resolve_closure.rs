@@ -3,9 +3,9 @@ use std::sync::Arc;
 use emmylua_parser::{LuaAstNode, LuaIndexMemberExpr, LuaTableExpr, LuaVarExpr};
 
 use crate::{
-    infer_call_expr_func, infer_expr, infer_table_should_be, DbIndex, InferFailReason, InferGuard,
-    LuaDocParamInfo, LuaDocReturnInfo, LuaFunctionType, LuaInferCache, LuaSignature, LuaType,
-    LuaUnionType, SignatureReturnStatus, TypeOps,
+    get_real_type, infer_call_expr_func, infer_expr, infer_table_should_be, DbIndex,
+    InferFailReason, InferGuard, LuaDocParamInfo, LuaDocReturnInfo, LuaFunctionType, LuaInferCache,
+    LuaSignature, LuaType, LuaUnionType, SignatureReturnStatus, TypeOps,
 };
 
 use super::{
@@ -14,7 +14,7 @@ use super::{
     UnResolveParentClosureParams, UnResolveReturn,
 };
 
-pub fn try_resolve_closure_params(
+pub fn try_resolve_call_closure_params(
     db: &mut DbIndex,
     cache: &mut LuaInferCache,
     closure_params: &mut UnResolveCallClosureParams,
@@ -50,21 +50,22 @@ pub fn try_resolve_closure_params(
         _ => {}
     }
 
-    let is_async;
-    let expr_closure_params = if let Some(param_type) = call_doc_func.get_params().get(param_idx) {
-        match &param_type.1 {
-            Some(LuaType::DocFunction(func)) => {
-                is_async = func.is_async();
-                func.get_params()
-            }
-            Some(LuaType::Union(union_types)) => {
+    let (is_async, params_to_insert) = if let Some(param_type) =
+        call_doc_func.get_params().get(param_idx)
+    {
+        let Some(param_type) = get_real_type(db, &param_type.1.as_ref().unwrap_or(&LuaType::Any))
+        else {
+            return Ok(());
+        };
+        match param_type {
+            LuaType::DocFunction(func) => (func.is_async(), func.get_params().to_vec()),
+            LuaType::Union(union_types) => {
                 if let Some(LuaType::DocFunction(func)) = union_types
                     .get_types()
                     .iter()
                     .find(|typ| matches!(typ, LuaType::DocFunction(_)))
                 {
-                    is_async = func.is_async();
-                    func.get_params()
+                    (func.is_async(), func.get_params().to_vec())
                 } else {
                     return Ok(());
                 }
@@ -81,7 +82,7 @@ pub fn try_resolve_closure_params(
         .ok_or(InferFailReason::None)?;
 
     let signature_params = &mut signature.param_docs;
-    for (idx, (name, type_ref)) in expr_closure_params.iter().enumerate() {
+    for (idx, (name, type_ref)) in params_to_insert.iter().enumerate() {
         if signature_params.contains_key(&idx) {
             continue;
         }
@@ -136,8 +137,12 @@ pub fn try_resolve_closure_return(
     }
 
     let ret_type = if let Some(param_type) = call_doc_func.get_params().get(param_idx) {
-        if let Some(LuaType::DocFunction(func)) = &param_type.1 {
-            func.get_ret()
+        let Some(param_type) = get_real_type(db, &param_type.1.as_ref().unwrap_or(&LuaType::Any))
+        else {
+            return Ok(());
+        };
+        if let LuaType::DocFunction(func) = param_type {
+            func.get_ret().clone()
         } else {
             return Ok(());
         }
