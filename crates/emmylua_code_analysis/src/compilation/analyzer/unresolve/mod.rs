@@ -50,7 +50,7 @@ pub fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
             infer_manager.set_force();
         }
 
-        resolve_all_reason(db, &mut reason_resolve);
+        resolve_all_reason(db, &mut reason_resolve, loop_count);
 
         if loop_count >= 5 {
             break;

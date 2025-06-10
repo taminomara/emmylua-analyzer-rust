@@ -21,15 +21,12 @@ pub fn check_reach_reason(
         | InferFailReason::RecursiveInfer => Some(true),
         InferFailReason::UnResolveDeclType(decl_id) => {
             let decl = db.get_decl_index().get_decl(decl_id)?;
-            if decl.is_param() {
+            let typ = db.get_type_index().get_type_cache(&decl_id.clone().into());
+            if typ.is_none() && decl.is_param() {
                 return Some(infer_param(db, decl).is_ok());
             }
 
-            Some(
-                db.get_type_index()
-                    .get_type_cache(&decl_id.clone().into())
-                    .is_some(),
-            )
+            Some(typ.is_some())
         }
         InferFailReason::UnResolveMemberType(member_id) => {
             let member = db.get_member_index().get_member(member_id)?;
@@ -52,13 +49,14 @@ pub fn check_reach_reason(
 pub fn resolve_all_reason(
     db: &mut DbIndex,
     reason_unresolves: &mut HashMap<InferFailReason, Vec<UnResolve>>,
+    loop_count: usize,
 ) {
     for (reason, _) in reason_unresolves.iter_mut() {
-        resolve_as_any(db, reason);
+        resolve_as_any(db, reason, loop_count);
     }
 }
 
-pub fn resolve_as_any(db: &mut DbIndex, reason: &InferFailReason) -> Option<()> {
+pub fn resolve_as_any(db: &mut DbIndex, reason: &InferFailReason, loop_count: usize) -> Option<()> {
     match reason {
         InferFailReason::None
         | InferFailReason::FieldNotFound
@@ -72,6 +70,10 @@ pub fn resolve_as_any(db: &mut DbIndex, reason: &InferFailReason) -> Option<()> 
             );
         }
         InferFailReason::UnResolveMemberType(member_id) => {
+            // 第一次循环不处理, 或许需要判断`unresolves`是否全为取值再跳过?
+            if loop_count == 0 {
+                return Some(());
+            }
             let member = db.get_member_index().get_member(member_id)?;
             let key = member.get_key();
             let owner = db.get_member_index().get_current_owner(&member_id)?;

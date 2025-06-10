@@ -137,4 +137,47 @@ mod tests {
             },
         ));
     }
+
+    #[test]
+    fn test_issue_535() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_hover(
+            r#"
+                ---@type table<string, number>
+                local t
+
+                ---@class T1
+                local a
+
+                function a:init(p)
+                    self._c<??>fg = t[p]
+                end
+            "#,
+            VirtualHoverResult {
+                value: "\n```lua\n(field) _cfg: number\n```\n".to_string(),
+            },
+        ));
+
+        assert!(ws.check_hover(
+            r#"
+                ---@type table<string, number>
+                local t = {
+                }
+                ---@class T2
+                local a = {}
+
+                function a:init(p)
+                    self._cfg = t[p]
+                end
+
+                ---@param p T2
+                function fun(p)
+                    local x = p._c<??>fg
+                end
+            "#,
+            VirtualHoverResult {
+                value: "\n```lua\n(field) _cfg: number\n```\n".to_string(),
+            },
+        ));
+    }
 }
