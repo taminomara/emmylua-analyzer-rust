@@ -1044,4 +1044,49 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_enum_value_matching() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@enum SlotType
+                local SlotType = {
+                    bag = 0,
+                    item = 1,
+                }
+
+                ---@enum ConstSlotType
+                local ConstSlotType = {
+                    ['NOT_IN_BAG'] = -1,
+                    ['PKG'] = 0,
+                    ['BAR'] = 1,
+                }
+
+                ---@param type ConstSlotType
+                local function get_item_by_slot(type)
+                end
+
+                ---@param field SlotType
+                local function bind_unit_slot(field)
+                    get_item_by_slot(field)
+                end"#
+        ));
+    }
+
+    #[test]
+    fn test_enum_value_matching_2() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@enum DamageType
+                local DamageType = {
+                    ['物理'] = "物理",
+                }
+                for _, damageType in pairs(DamageType) do end
+            "#
+        ));
+    }
 }
