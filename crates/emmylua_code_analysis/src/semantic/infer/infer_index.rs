@@ -714,7 +714,8 @@ fn infer_member_by_index_table(
                 let members = db
                     .get_member_index()
                     .get_members(&LuaMemberOwner::Element(table_range.clone()));
-                if let Some(members) = members {
+                if let Some(mut members) = members {
+                    members.sort_by(|a, b| a.get_key().cmp(&b.get_key()));
                     let mut result_type = LuaType::Unknown;
                     for member in members {
                         let member_key_type = match member.get_key() {

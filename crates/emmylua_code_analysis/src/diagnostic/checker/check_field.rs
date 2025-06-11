@@ -131,14 +131,6 @@ fn is_valid_prefix_type(typ: &LuaType) -> bool {
     }
 }
 
-#[allow(dead_code)]
-fn is_valid_index_key(index_key: &LuaIndexKey) -> bool {
-    match index_key {
-        LuaIndexKey::String(_) | LuaIndexKey::Name(_) | LuaIndexKey::Integer(_) => true,
-        _ => false,
-    }
-}
-
 fn is_valid_member(
     semantic_model: &SemanticModel,
     prefix_typ: &LuaType,
@@ -146,38 +138,45 @@ fn is_valid_member(
     index_key: &LuaIndexKey,
     code: DiagnosticCode,
 ) -> Option<()> {
-    // 如果类型是 Ref 的 enum, 那么需要检查变量是否为参数, 因为作为参数的 enum 本质上是 value 而不是 enum
-    if enum_variable_is_param(
-        semantic_model.get_db(),
-        &mut semantic_model.get_config().borrow_mut(),
-        index_expr,
-        prefix_typ,
-    )
-    .is_some()
-    {
-        return None;
-    }
-
-    // 检查 member_info
-    let need_add_diagnostic =
-        match semantic_model.get_semantic_info(index_expr.syntax().clone().into()) {
-            Some(info) => info.semantic_decl.is_none() && info.typ.is_unknown(),
-            None => true,
-        };
-
-    if !need_add_diagnostic {
-        return Some(());
-    }
-
     match prefix_typ {
-        LuaType::Global => return Some(()),
-        LuaType::Userdata => return Some(()),
+        LuaType::Global | LuaType::Userdata => return Some(()),
         LuaType::Array(typ) => {
             if typ.is_unknown() {
                 return Some(());
             }
         }
+        LuaType::Ref(_) => {
+            // 如果类型是 Ref 的 enum, 那么需要检查变量是否为参数, 因为作为参数的 enum 本质上是 value 而不是 enum
+            if check_enum_is_param(semantic_model, prefix_typ, index_expr).is_some() {
+                return None;
+            }
+        }
         _ => {}
+    }
+
+    // 检查 member_info
+    let need_add_diagnostic =
+        match semantic_model.get_semantic_info(index_expr.syntax().clone().into()) {
+            Some(info) => {
+                let need = info.semantic_decl.is_none() && info.typ.is_unknown();
+                // TODO: 元组类型的检查或许需要独立出来
+                if !need && matches!(code, DiagnosticCode::InjectField) {
+                    if let LuaType::Tuple(tuple) = prefix_typ {
+                        if tuple.is_infer_resolve() {
+                            return Some(());
+                        } else {
+                            // 元组类型禁止修改
+                            return None;
+                        }
+                    }
+                }
+                need
+            }
+            None => true,
+        };
+
+    if !need_add_diagnostic {
+        return Some(());
     }
 
     let key_type = if let LuaIndexKey::Expr(expr) = index_key {
@@ -235,8 +234,8 @@ fn is_valid_member(
             local field
             local a = Class[field]
     */
-    let key_type_set = get_key_types(&key_type);
-    if key_type_set.is_empty() {
+    let key_types = get_key_types(&key_type);
+    if key_types.is_empty() {
         return None;
     }
 
@@ -247,20 +246,20 @@ fn is_valid_member(
                 match &info.key {
                     LuaMemberKey::ExprType(typ) => {
                         if typ.is_string() {
-                            if key_type_set
+                            if key_types
                                 .iter()
                                 .any(|typ| typ.is_string() || typ.is_str_tpl_ref())
                             {
                                 return Some(());
                             }
                         } else if typ.is_integer() {
-                            if key_type_set.iter().any(|typ| typ.is_integer()) {
+                            if key_types.iter().any(|typ| typ.is_integer()) {
                                 return Some(());
                             }
                         }
                     }
                     LuaMemberKey::Name(_) => {
-                        if key_type_set
+                        if key_types
                             .iter()
                             .any(|typ| typ.is_string() || typ.is_str_tpl_ref())
                         {
@@ -268,7 +267,7 @@ fn is_valid_member(
                         }
                     }
                     LuaMemberKey::Integer(_) => {
-                        if key_type_set.iter().any(|typ| typ.is_integer()) {
+                        if key_types.iter().any(|typ| typ.is_integer()) {
                             return Some(());
                         }
                     }
@@ -281,7 +280,7 @@ fn is_valid_member(
                     if let Some(decl) = semantic_model.get_db().get_type_index().get_type_decl(&id)
                     {
                         if decl.is_enum() {
-                            if key_type_set.iter().any(|typ| match typ {
+                            if key_types.iter().any(|typ| match typ {
                                 LuaType::Ref(key_id) | LuaType::Def(key_id) => id == *key_id,
                                 _ => false,
                             }) {
@@ -432,4 +431,23 @@ fn is_in_conditional_statement<T: LuaAstNode>(node: &T) -> bool {
         }
     }
     false
+}
+
+fn check_enum_is_param(
+    semantic_model: &SemanticModel,
+    prefix_typ: &LuaType,
+    index_expr: &LuaIndexExpr,
+) -> Option<()> {
+    if enum_variable_is_param(
+        semantic_model.get_db(),
+        &mut semantic_model.get_config().borrow_mut(),
+        index_expr,
+        prefix_typ,
+    )
+    .is_some()
+    {
+        return Some(());
+    }
+
+    None
 }

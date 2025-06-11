@@ -41,6 +41,6 @@ mod tests {
             "#,
         );
         let ty = ws.expr_ty("A");
-        assert_eq!(ws.humanize_type(ty), "36|826");
+        assert_eq!(ws.humanize_type(ty), "(36|826)");
     }
 }
