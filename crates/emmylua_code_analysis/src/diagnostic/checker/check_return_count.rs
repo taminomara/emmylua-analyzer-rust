@@ -82,8 +82,6 @@ fn check_missing_return(
                     if let Some(ty) = variadic.get_type(i) {
                         if ty.is_optional() {
                             real_min_len -= 1;
-                        } else if ty.is_tpl() {
-                            real_min_len -= 1;
                         } else {
                             break;
                         }

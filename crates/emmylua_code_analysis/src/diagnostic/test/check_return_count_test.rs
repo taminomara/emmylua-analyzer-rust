@@ -508,4 +508,20 @@ mod tests {
         "#,
         ));
     }
+
+    #[test]
+    fn test_missing_return_1() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(!ws.check_code_for(
+            DiagnosticCode::MissingReturn,
+            r#"
+                ---@generic T
+                ---@param field T
+                ---@return T
+                ---@return T
+                local function test(field)
+                end
+        "#,
+        ));
+    }
 }

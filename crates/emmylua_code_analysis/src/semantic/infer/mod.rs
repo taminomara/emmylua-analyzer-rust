@@ -29,7 +29,7 @@ use smol_str::SmolStr;
 
 use crate::{
     db_index::{DbIndex, LuaOperator, LuaOperatorMetaMethod, LuaSignatureId, LuaType},
-    InFiled, LuaMemberKey, VariadicType,
+    InFiled, InferGuard, LuaMemberKey, VariadicType,
 };
 
 use super::{member::infer_raw_member_type, CacheEntry, CacheKey, LuaInferCache};
@@ -276,28 +276,31 @@ pub fn infer_bind_value_type(
             let is_colon_call = call_expr.is_colon_call();
 
             let expr_type = infer_expr(db, cache, call_expr.get_prefix_expr()?).ok()?;
-            match expr_type {
-                LuaType::Signature(signature_id) => {
-                    let signature = db.get_signature_index().get(&signature_id)?;
-                    match (signature.is_colon_define, is_colon_call) {
-                        (true, false) => {
-                            param_pos += 1;
-                        }
-                        (false, true) => {
-                            if param_pos == 0 {
-                                return None;
-                            }
-                            param_pos -= 1;
-                        }
-                        _ => {}
+            let func_type = infer_call_expr_func(
+                db,
+                cache,
+                call_expr,
+                expr_type.clone(),
+                &mut InferGuard::new(),
+                None,
+            )
+            .ok()?;
+
+            match (func_type.is_colon_define(), is_colon_call) {
+                (true, false) => {
+                    if param_pos == 0 {
+                        return None;
                     }
-                    let param_info = signature.get_param_info_by_id(param_pos)?;
-                    return Some(param_info.type_ref.clone());
+                    param_pos -= 1;
+                }
+                (false, true) => {
+                    param_pos += 1;
                 }
                 _ => {}
             }
 
-            return None;
+            let param_info = func_type.get_params().get(param_pos)?;
+            return param_info.1.clone();
         }
         _ => None,
     };
