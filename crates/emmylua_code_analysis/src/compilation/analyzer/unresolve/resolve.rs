@@ -100,7 +100,7 @@ pub fn try_resolve_table_field(
         LuaType::IntegerConst(i) => LuaMemberKey::Integer(i),
         _ => {
             if field_type.is_table() {
-                LuaMemberKey::Expr(field_type)
+                LuaMemberKey::ExprType(field_type)
             } else {
                 return Err(InferFailReason::None);
             }

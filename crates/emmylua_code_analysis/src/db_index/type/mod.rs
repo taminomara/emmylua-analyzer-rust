@@ -12,10 +12,10 @@ use std::collections::{HashMap, HashSet};
 pub use type_decl::{
     LuaDeclLocation, LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId,
 };
+pub use type_ops::get_real_type;
 pub use type_ops::TypeOps;
 pub use type_owner::{LuaTypeCache, LuaTypeOwner};
 pub use types::*;
-pub use type_ops::get_real_type;
 
 #[derive(Debug)]
 pub struct LuaTypeIndex {

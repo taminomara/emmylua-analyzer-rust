@@ -14,4 +14,33 @@ mod tests {
             "#
         ));
     }
+
+    #[test]
+    fn test_union_tuple() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+                local Pos = {
+                    [1] = {
+                        { 36,  777 },
+                    },
+                    [2] = {
+                        { 826, 244 },
+                    },
+                }
+                ---@type int
+                local cur
+                ---@type int
+                local index
+
+                local points = Pos[cur] 
+                ---@cast points -?
+                local point = points[index] ---@cast point -?
+                A = point[1]
+
+            "#,
+        );
+        let ty = ws.expr_ty("A");
+        assert_eq!(ws.humanize_type(ty), "36|826");
+    }
 }

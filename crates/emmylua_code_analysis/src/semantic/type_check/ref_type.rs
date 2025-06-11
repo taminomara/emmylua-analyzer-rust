@@ -333,7 +333,7 @@ fn get_object_field_type<'a>(
         return Some(field_type);
     }
     match key {
-        LuaMemberKey::Expr(t) => {
+        LuaMemberKey::ExprType(t) => {
             for (index_key, value) in object_type.get_index_access() {
                 if index_key == t {
                     return Some(value);

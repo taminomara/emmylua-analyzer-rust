@@ -245,7 +245,7 @@ fn is_valid_member(
         if let Some(members) = semantic_model.get_member_infos(&prefix_type) {
             for info in &members {
                 match &info.key {
-                    LuaMemberKey::Expr(typ) => {
+                    LuaMemberKey::ExprType(typ) => {
                         if typ.is_string() {
                             if key_type_set
                                 .iter()
