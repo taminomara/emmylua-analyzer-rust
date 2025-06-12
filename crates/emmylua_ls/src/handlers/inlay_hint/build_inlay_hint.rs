@@ -1,19 +1,21 @@
 use std::collections::HashMap;
 
 use emmylua_code_analysis::{
-    FileId, InferGuard, LuaFunctionType, LuaMemberId, LuaMemberKey, LuaSemanticDeclId,
-    LuaSignatureId, LuaType, RenderLevel, SemanticModel,
+    FileId, InferGuard, LuaFunctionType, LuaMemberId, LuaMemberKey, LuaSemanticDeclId, LuaType,
+    RenderLevel, SemanticModel,
 };
 use emmylua_parser::LuaTokenKind;
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaCallExpr, LuaClosureExpr, LuaExpr, LuaFuncStat, LuaIndexExpr,
-    LuaLocalName, LuaStat, LuaSyntaxId, LuaVarExpr,
+    LuaAst, LuaAstNode, LuaCallExpr, LuaExpr, LuaFuncStat, LuaIndexExpr, LuaLocalName, LuaStat,
+    LuaSyntaxId, LuaVarExpr,
 };
 use lsp_types::{InlayHint, InlayHintKind, InlayHintLabel, InlayHintLabelPart, Location};
 use rowan::NodeOrToken;
 
 use emmylua_code_analysis::humanize_type;
 use rowan::TokenAtOffset;
+
+use crate::handlers::inlay_hint::build_function_hint::build_closure_hint;
 
 pub fn build_inlay_hints(semantic_model: &SemanticModel) -> Option<Vec<InlayHint>> {
     let mut result = Vec::new();
@@ -38,66 +40,6 @@ pub fn build_inlay_hints(semantic_model: &SemanticModel) -> Option<Vec<InlayHint
     }
 
     Some(result)
-}
-
-fn build_closure_hint(
-    semantic_model: &SemanticModel,
-    result: &mut Vec<InlayHint>,
-    closure: LuaClosureExpr,
-) -> Option<()> {
-    if !semantic_model.get_emmyrc().hint.param_hint {
-        return Some(());
-    }
-    let file_id = semantic_model.get_file_id();
-    let signature_id = LuaSignatureId::from_closure(file_id, &closure);
-    let signature = semantic_model
-        .get_db()
-        .get_signature_index()
-        .get(&signature_id)?;
-
-    let lua_params = closure.get_params_list()?;
-    let signature_params = signature.get_type_params();
-    let mut lua_params_map = HashMap::new();
-    for param in lua_params.get_params() {
-        if let Some(name_token) = param.get_name_token() {
-            let name = name_token.get_name_text().to_string();
-            lua_params_map.insert(name, param);
-        } else if param.is_dots() {
-            lua_params_map.insert("...".to_string(), param);
-        }
-    }
-
-    let document = semantic_model.get_document();
-    let db = semantic_model.get_db();
-    for (signature_param_name, typ) in &signature_params {
-        if let Some(typ) = typ {
-            if typ.is_any() {
-                continue;
-            }
-
-            if let Some(lua_param) = lua_params_map.get(signature_param_name) {
-                let lsp_range = document.to_lsp_range(lua_param.get_range())?;
-                let typ_desc = format!(": {}", humanize_type(db, &typ, RenderLevel::Simple));
-                let hint = InlayHint {
-                    kind: Some(InlayHintKind::TYPE),
-                    label: InlayHintLabel::LabelParts(vec![InlayHintLabelPart {
-                        value: typ_desc,
-                        location: Some(Location::new(document.get_uri(), lsp_range)),
-                        ..Default::default()
-                    }]),
-                    position: lsp_range.end,
-                    text_edits: None,
-                    tooltip: None,
-                    padding_left: Some(true),
-                    padding_right: None,
-                    data: None,
-                };
-                result.push(hint);
-            }
-        }
-    }
-
-    Some(())
 }
 
 fn build_call_expr_param_hint(

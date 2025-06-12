@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 
+use itertools::Itertools;
+
 use crate::{
     DbIndex, GenericTpl, LuaAliasCallType, LuaFunctionType, LuaGenericType, LuaInstanceType,
     LuaIntersectionType, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaSignatureId,
@@ -404,9 +406,11 @@ fn humanize_object_type(db: &DbIndex, object: &LuaObjectType, level: RenderLevel
     } else {
         ""
     };
+
     let fields = object
         .get_fields()
         .iter()
+        .sorted_by(|a, b| a.0.cmp(&b.0))
         .take(num)
         .map(|field| {
             let name = field.0.clone();
@@ -419,7 +423,7 @@ fn humanize_object_type(db: &DbIndex, object: &LuaObjectType, level: RenderLevel
             }
         })
         .collect::<Vec<_>>()
-        .join(",");
+        .join(", ");
 
     let access = object
         .get_index_access()
