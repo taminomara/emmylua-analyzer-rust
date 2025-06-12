@@ -17,9 +17,7 @@ use lsp_types::{
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;
 
-use crate::{
-    context::ServerContextSnapshot, handlers::definition::goto_def_definition::GotoDefGuard,
-};
+use crate::context::ServerContextSnapshot;
 
 use super::RegisterCapabilities;
 
@@ -69,8 +67,7 @@ pub fn definition(
     if let Some(semantic_decl) =
         semantic_model.find_decl(token.clone().into(), SemanticDeclLevel::default())
     {
-        let mut guard = GotoDefGuard::new(semantic_decl.clone());
-        return goto_def_definition(&semantic_model, semantic_decl, &token, &mut guard);
+        return goto_def_definition(&semantic_model, semantic_decl, &token);
     } else if let Some(string_token) = LuaStringToken::cast(token.clone()) {
         if let Some(module_response) = goto_module_file(&semantic_model, string_token.clone()) {
             return Some(module_response);

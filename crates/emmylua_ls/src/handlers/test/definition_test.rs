@@ -7,7 +7,7 @@ mod tests {
         let mut ws = ProviderVirtualWorkspace::new();
         ws.check_definition(
             r#"
-                ---@generic T: string
+                ---@generic T
                 ---@param name `T`
                 ---@return T
                 local function new(name)
@@ -27,7 +27,7 @@ mod tests {
         ws.check_definition(
             r#"
                 ---@class T
-                ---@field func fun(self:string) 注释注释
+                ---@field func fun(self:string)
 
                 ---@type T
                 local t = {
@@ -54,6 +54,21 @@ mod tests {
                 }
 
                 t:func<??>()
+            "#,
+        );
+    }
+
+    #[test]
+    fn test_goto_field() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.check_definition(
+            r#"
+                local t = {}
+                function t:test(a)
+                    self.abc = a
+                end
+
+                print(t.abc<??>)
             "#,
         );
     }

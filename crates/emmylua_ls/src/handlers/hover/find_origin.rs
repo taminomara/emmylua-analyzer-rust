@@ -124,7 +124,7 @@ pub fn find_member_origin_owner(
     find_member_origin_owners(semantic_model, member_id).get_first()
 }
 
-fn find_all_same_named_members(
+pub fn find_all_same_named_members(
     semantic_model: &SemanticModel,
     final_owner: &Option<LuaSemanticDeclId>,
 ) -> Option<Vec<LuaSemanticDeclId>> {
