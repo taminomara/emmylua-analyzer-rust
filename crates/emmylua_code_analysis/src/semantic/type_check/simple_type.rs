@@ -143,6 +143,13 @@ pub fn check_simple_type_compact(
 
                 return Err(TypeCheckFailReason::TypeNotMatch);
             }
+            LuaType::Ref(_) => {
+                match check_base_type_for_ref_compact(db, source, compact_type, check_guard) {
+                    Ok(_) => return Ok(()),
+                    Err(err) if err.is_type_not_match() => {}
+                    Err(err) => return Err(err),
+                }
+            }
             _ => {}
         },
         LuaType::DocStringConst(s) => match compact_type {
@@ -160,6 +167,13 @@ pub fn check_simple_type_compact(
                 }
 
                 return Err(TypeCheckFailReason::TypeNotMatch);
+            }
+            LuaType::Ref(_) => {
+                match check_base_type_for_ref_compact(db, source, compact_type, check_guard) {
+                    Ok(_) => return Ok(()),
+                    Err(err) if err.is_type_not_match() => {}
+                    Err(err) => return Err(err),
+                }
             }
             _ => {}
         },
@@ -242,6 +256,7 @@ fn get_alias_real_type<'a>(
     Ok(compact_type)
 }
 
+/// 检查基础类型是否匹配自定义类型
 fn check_base_type_for_ref_compact(
     db: &DbIndex,
     source: &LuaType,

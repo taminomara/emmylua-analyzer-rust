@@ -1089,4 +1089,27 @@ mod test {
             "#
         ));
     }
+
+    #[test]
+    fn test_super_type_match() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class UnitKey: integer
+
+                ---@alias IdAlias
+                ---| 10101
+
+                ---@param key IdAlias
+                local function get(key)
+                end
+
+                ---@type UnitKey
+                local key
+
+                get(key)
+            "#
+        ));
+    }
 }
