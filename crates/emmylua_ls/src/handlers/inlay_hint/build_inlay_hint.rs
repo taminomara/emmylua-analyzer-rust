@@ -2,20 +2,19 @@ use std::collections::HashMap;
 
 use emmylua_code_analysis::{
     FileId, InferGuard, LuaFunctionType, LuaMemberId, LuaMemberKey, LuaSemanticDeclId, LuaType,
-    RenderLevel, SemanticModel,
+    SemanticModel,
 };
-use emmylua_parser::LuaTokenKind;
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaCallExpr, LuaExpr, LuaFuncStat, LuaIndexExpr, LuaLocalName, LuaStat,
-    LuaSyntaxId, LuaVarExpr,
+    LuaAst, LuaAstNode, LuaCallExpr, LuaExpr, LuaFuncStat, LuaIndexExpr, LuaLocalFuncStat,
+    LuaLocalName, LuaLocalStat, LuaStat, LuaSyntaxId, LuaVarExpr,
 };
+use emmylua_parser::{LuaAstToken, LuaTokenKind};
 use lsp_types::{InlayHint, InlayHintKind, InlayHintLabel, InlayHintLabelPart, Location};
 use rowan::NodeOrToken;
 
-use emmylua_code_analysis::humanize_type;
 use rowan::TokenAtOffset;
 
-use crate::handlers::inlay_hint::build_function_hint::build_closure_hint;
+use crate::handlers::inlay_hint::build_function_hint::{build_closure_hint, build_label_parts};
 
 pub fn build_inlay_hints(semantic_model: &SemanticModel) -> Option<Vec<InlayHint>> {
     let mut result = Vec::new();
@@ -300,21 +299,48 @@ fn build_local_name_hint(
     if !semantic_model.get_emmyrc().hint.local_hint {
         return Some(());
     }
+    // local function 不显示
+    if let Some(parent) = local_name.syntax().parent() {
+        if LuaLocalFuncStat::can_cast(parent.kind().into()) {
+            return Some(());
+        }
+        if LuaLocalStat::can_cast(parent.kind().into()) {
+            let local_stat = LuaLocalStat::cast(parent)?;
+            let local_names = local_stat.get_local_name_list();
+            for (i, ln) in local_names.enumerate() {
+                if local_name == ln {
+                    if let Some(value_expr) = local_stat.get_value_exprs().nth(i) {
+                        if let LuaExpr::ClosureExpr(_) = value_expr {
+                            return Some(());
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     let typ = semantic_model
-        .get_semantic_info(NodeOrToken::Node(local_name.syntax().clone()))?
-        .typ
-        .clone();
+        .get_semantic_info(NodeOrToken::Token(
+            local_name.get_name_token()?.syntax().clone(),
+        ))?
+        .typ;
+
+    // 目前没时间完善结合 ast 的类型过滤, 所以只允许一些类型显示
+    match typ {
+        LuaType::Def(_) | LuaType::Ref(_) => {}
+        _ => {
+            return Some(());
+        }
+    }
 
     let document = semantic_model.get_document();
-    let db = semantic_model.get_db();
     let range = local_name.get_range();
     let lsp_range = document.to_lsp_range(range)?;
 
-    let typ_desc = humanize_type(db, &typ, RenderLevel::Simple);
+    let label_parts = build_label_parts(semantic_model, &typ);
     let hint = InlayHint {
         kind: Some(InlayHintKind::TYPE),
-        label: InlayHintLabel::String(format!(": {}", typ_desc)),
+        label: InlayHintLabel::LabelParts(label_parts),
         position: lsp_range.end,
         text_edits: None,
         tooltip: None,

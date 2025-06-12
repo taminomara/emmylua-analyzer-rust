@@ -76,7 +76,7 @@ pub fn build_closure_hint(
     Some(())
 }
 
-fn build_label_parts(semantic_model: &SemanticModel, typ: &LuaType) -> Vec<InlayHintLabelPart> {
+pub fn build_label_parts(semantic_model: &SemanticModel, typ: &LuaType) -> Vec<InlayHintLabelPart> {
     let mut parts: Vec<InlayHintLabelPart> = Vec::new();
     match typ {
         LuaType::Union(union) => {
@@ -116,6 +116,10 @@ fn build_label_parts(semantic_model: &SemanticModel, typ: &LuaType) -> Vec<Inlay
         }
         result.push(part);
     }
+    // 如果只有一个`nil`标签, 那么将其改为": nil"
+    if result.len() == 1 && result[0].value == "?" {
+        result[0].value = ": nil".to_string();
+    }
     result
 }
 
@@ -153,9 +157,10 @@ fn get_type_location(semantic_model: &SemanticModel, typ: &LuaType) -> Option<Lo
             let lsp_range = document.to_lsp_range(location.range)?;
             Some(Location::new(document.get_uri(), lsp_range))
         }
+        LuaType::Array(base) => get_type_location(semantic_model, base),
         LuaType::Any => get_base_type_location(semantic_model, "any"),
         LuaType::Nil => get_base_type_location(semantic_model, "nil"),
-        LuaType::Unknown => get_base_type_location(semantic_model, "string"),
+        LuaType::Unknown => get_base_type_location(semantic_model, "unknown"),
         LuaType::Userdata => get_base_type_location(semantic_model, "userdata"),
         LuaType::Function => get_base_type_location(semantic_model, "function"),
         LuaType::Thread => get_base_type_location(semantic_model, "thread"),

@@ -689,22 +689,36 @@ fn humanize_signature_type(
         .collect::<Vec<_>>()
         .join(", ");
 
-    let rets = signature
-        .return_docs
-        .iter()
-        .map(|ret| humanize_type(db, &ret.type_ref, level.next_level()))
-        .collect::<Vec<_>>();
-
     let generic_str = if generics.is_empty() {
         "".to_string()
     } else {
         format!("<{}>", generics)
     };
 
-    let ret_str = if rets.is_empty() {
-        "".to_string()
-    } else {
-        format!(" -> {}", rets.join(","))
+    let ret_str = {
+        let ret_type = signature.get_return_type();
+        let return_nil = match ret_type {
+            LuaType::Variadic(variadic) => match variadic.get_type(0) {
+                Some(LuaType::Nil) => true,
+                _ => false,
+            },
+            _ => ret_type.is_nil(),
+        };
+
+        if return_nil {
+            "".to_string()
+        } else {
+            let rets = signature
+                .return_docs
+                .iter()
+                .map(|ret| humanize_type(db, &ret.type_ref, level.next_level()))
+                .collect::<Vec<_>>();
+            if rets.is_empty() {
+                "".to_string()
+            } else {
+                format!(" -> {}", rets.join(","))
+            }
+        }
     };
 
     format!("fun{}({}){}", generic_str, params, ret_str)

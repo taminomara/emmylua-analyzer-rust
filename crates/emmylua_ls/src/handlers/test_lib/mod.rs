@@ -315,7 +315,6 @@ impl ProviderVirtualWorkspace {
     pub fn check_inlay_hint(&mut self, block_str: &str) -> Option<Vec<InlayHint>> {
         let file_id = self.def(&block_str);
         let result = inlay_hint(&self.analysis, file_id);
-        dbg!(&result);
         return result;
     }
 }

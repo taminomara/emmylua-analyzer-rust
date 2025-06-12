@@ -215,7 +215,7 @@ impl LuaLocalStat {
         self.children()
     }
 
-    pub fn get_value_local_name(&self, value: LuaExpr) -> Option<LuaLocalName> {
+    pub fn get_local_name_by_value(&self, value: LuaExpr) -> Option<LuaLocalName> {
         let local_names = self.get_local_name_list();
         let value_exprs = self.get_value_exprs().collect::<Vec<_>>();
 

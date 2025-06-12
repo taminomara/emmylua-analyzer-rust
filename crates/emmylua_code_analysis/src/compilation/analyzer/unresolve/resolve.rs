@@ -150,7 +150,7 @@ fn merge_table_field_to_def(
     let file_id = cache.get_file_id();
     let local_name = table_expr
         .get_parent::<LuaLocalStat>()?
-        .get_value_local_name(LuaExpr::TableExpr(table_expr.clone()))?;
+        .get_local_name_by_value(LuaExpr::TableExpr(table_expr.clone()))?;
     let decl_id = LuaDeclId::new(file_id, local_name.get_position());
     let type_cache = db.get_type_index().get_type_cache(&decl_id.into())?;
     if let LuaType::Def(id) = type_cache.deref() {
