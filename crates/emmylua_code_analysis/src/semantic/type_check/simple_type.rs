@@ -131,7 +131,7 @@ pub fn check_simple_type_compact(
                 return Err(TypeCheckFailReason::TypeNotMatch);
             }
             LuaType::Integer => {
-                if db.get_emmyrc().strict.doc_integer_const_match_int {
+                if db.get_emmyrc().strict.doc_base_const_match_base_type {
                     return Ok(());
                 }
                 return Err(TypeCheckFailReason::TypeNotMatch);
@@ -144,10 +144,12 @@ pub fn check_simple_type_compact(
                 return Err(TypeCheckFailReason::TypeNotMatch);
             }
             LuaType::Ref(_) => {
-                match check_base_type_for_ref_compact(db, source, compact_type, check_guard) {
-                    Ok(_) => return Ok(()),
-                    Err(err) if err.is_type_not_match() => {}
-                    Err(err) => return Err(err),
+                if db.get_emmyrc().strict.doc_base_const_match_base_type {
+                    match check_base_type_for_ref_compact(db, source, compact_type, check_guard) {
+                        Ok(_) => return Ok(()),
+                        Err(err) if err.is_type_not_match() => {}
+                        Err(err) => return Err(err),
+                    }
                 }
             }
             _ => {}
@@ -169,10 +171,12 @@ pub fn check_simple_type_compact(
                 return Err(TypeCheckFailReason::TypeNotMatch);
             }
             LuaType::Ref(_) => {
-                match check_base_type_for_ref_compact(db, source, compact_type, check_guard) {
-                    Ok(_) => return Ok(()),
-                    Err(err) if err.is_type_not_match() => {}
-                    Err(err) => return Err(err),
+                if db.get_emmyrc().strict.doc_base_const_match_base_type {
+                    match check_base_type_for_ref_compact(db, source, compact_type, check_guard) {
+                        Ok(_) => return Ok(()),
+                        Err(err) if err.is_type_not_match() => {}
+                        Err(err) => return Err(err),
+                    }
                 }
             }
             _ => {}
