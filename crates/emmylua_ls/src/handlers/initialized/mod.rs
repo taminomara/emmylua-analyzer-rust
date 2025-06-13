@@ -92,6 +92,7 @@ pub async fn init_analysis(
     file_diagnostic: Arc<FileDiagnostic>,
 ) {
     let mut mut_analysis = analysis.write().await;
+    
     // update config
     mut_analysis.update_config(emmyrc.clone());
 
@@ -160,7 +161,7 @@ pub async fn init_analysis(
         .await;
 }
 
-fn get_workspace_folders(params: &InitializeParams) -> Vec<PathBuf> {
+pub fn get_workspace_folders(params: &InitializeParams) -> Vec<PathBuf> {
     let mut workspace_folders = Vec::new();
     if let Some(workspaces) = &params.workspace_folders {
         for workspace in workspaces {

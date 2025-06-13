@@ -159,4 +159,14 @@ impl Vfs {
             })
             .collect()
     }
+
+    pub fn clear(&mut self) {
+        self.file_id_map.clear();
+        self.file_path_map.clear();
+        self.file_data.clear();
+        self.line_index_map.clear();
+        self.tree_map.clear();
+        self.emmyrc = None;
+        self.node_cache = NodeCache::default();
+    }
 }
