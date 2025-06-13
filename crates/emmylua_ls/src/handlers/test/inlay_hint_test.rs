@@ -54,4 +54,41 @@ mod tests {
         let location = extract_first_label_part_location(first).unwrap();
         assert!(location.uri.path().as_str().ends_with("builtin.lua"));
     }
+
+    #[test]
+    fn test_local_hint_1() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        let result = ws
+            .check_inlay_hint(
+                r#"
+                local a = 1
+            "#,
+            )
+            .unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_local_hint_2() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        let result = ws
+            .check_inlay_hint(
+                r#"
+                local function test()
+                end
+            "#,
+            )
+            .unwrap();
+        assert!(result.is_empty());
+
+        let result = ws
+            .check_inlay_hint(
+                r#"
+                local test = function()
+                end
+            "#,
+            )
+            .unwrap();
+        assert!(result.is_empty());
+    }
 }
