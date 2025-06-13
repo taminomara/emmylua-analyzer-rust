@@ -1,6 +1,8 @@
 # CHANGELOG
 
-# 0.8.1 (unreleased)
+# 0.8.2 (unreleased)
+
+# 0.8.1
 
 `CHG` Generic constraint (StrTplRef) removes the protection for string: 
 ```lua
@@ -12,7 +14,7 @@ end
 
 ---@class A
 
-lcoal A = class("A") -- error
+local A = class("A") -- error
 ```
 
 `NEW` Explicitly declared `Tuple` are immutable.
@@ -71,6 +73,9 @@ A = M() -- `A` is `MyClass`
 
 `NEW` `inlay_hint` params hint can now jump to the actual type definition.
 
+`NEW` When closing files in the editor that are not in the workspace or library, their impact will be removed
+
+`NEW` Enhanced Ignore-related functionality. Files configured to be ignored will not be parsed even when opened, but due to technical constraints, files already open when starting the editor will still be parsed (to be fixed in a future update)
 
 # 0.8.0
 
