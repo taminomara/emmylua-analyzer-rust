@@ -2,6 +2,76 @@
 
 # 0.8.1 (unreleased)
 
+`CHG` Generic constraint (StrTplRef) removes the protection for string: 
+```lua
+---@generic T: string -- need to remove `: string`
+---@param a `T`
+---@return T
+local function class(a)
+end
+
+---@class A
+
+lcoal A = class("A") -- error
+```
+
+`NEW` Explicitly declared `Tuple` are immutable.
+```lua
+---@type [1, 2]
+local a = {1, 2}
+
+a[1] = 3 -- error
+```
+
+`FIX` Hover `function` now can show the corresponding doc comment.
+
+`NEW` Added the configuration item `classDefaultCall`, which is used to declare a method with the specified name as the default `__call` for a class. The effect is equivalent to `---@overload fun()`, but with a lower priority. If an explicitly declared `---@overload fun()` exists, `classDefaultCall` will have no effect on the class.
+
+```json
+{
+  "runtime": {
+    "classDefaultCall": {
+      "functionName": "__init",
+      "forceNonColon": true,
+      "forceReturnSelf": true
+    }
+  },
+}
+```
+
+```lua
+---@class MyClass
+local M = {}
+
+-- `functionName` is `__init`, so the call will be treated as `__init`
+function M:__init(a)
+    -- `forceReturnSelf` is `true`, so the call will return `self`. even if the method does not return `self` or returns some other value.
+end
+
+
+-- `forceNonColon` is `true`, so the call can be called without `:` and without passing `self`
+-- `forceReturnSelf` is `true`, so the call will return `self`
+A = M() -- `A` is `MyClass`
+```
+
+
+`NEW` Added `docBaseConstMatchBaseType` configuration item, default is `false`. Base constant types defined in doc can match base types, allowing int to match `---@alias id 1|2|3`, same for string.
+
+```json
+{
+  "strict": {
+    "docBaseConstMatchBaseType": true
+  },
+}
+```
+
+`FIX` When `enum` is used as a function parameter, it is treated as a value rather than the `enum` itself.
+
+`FIX` When the expected type of a table field is a function, function completion is available.
+
+`NEW` `inlay_hint` params hint can now jump to the actual type definition.
+
+
 # 0.8.0
 
 `NEW` Implement `std.Unpack` type for better type inference of the `unpack` function, and `std.Rawget` type for better type inference of the `rawget` function
