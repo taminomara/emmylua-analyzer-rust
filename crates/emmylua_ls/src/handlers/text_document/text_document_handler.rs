@@ -14,6 +14,14 @@ pub async fn on_did_open_text_document(
     let mut analysis = context.analysis.write().await;
     let uri = params.text_document.uri;
     let text = params.text_document.text;
+    let old_file_id = analysis.get_file_id(&uri);
+    // check is filter file
+    if old_file_id.is_none() {
+        let workspace_manager = context.workspace_manager.read().await;
+        if !workspace_manager.is_workspace_file(&uri) {
+            return None;
+        }
+    }
 
     let file_id = analysis.update_file_by_uri(&uri, Some(text));
     let emmyrc = analysis.get_emmyrc();
@@ -60,6 +68,15 @@ pub async fn on_did_change_text_document(
     let mut analysis = context.analysis.write().await;
     let uri = params.text_document.uri;
     let text = params.content_changes.first()?.text.clone();
+    let old_file_id = analysis.get_file_id(&uri);
+    // check is filter file
+    if old_file_id.is_none() {
+        let workspace_manager = context.workspace_manager.read().await;
+        if !workspace_manager.is_workspace_file(&uri) {
+            return None;
+        }
+    }
+
     let file_id = analysis.update_file_by_uri(&uri, Some(text));
     let emmyrc = analysis.get_emmyrc();
     let interval = emmyrc.diagnostics.diagnostic_interval.unwrap_or(500);

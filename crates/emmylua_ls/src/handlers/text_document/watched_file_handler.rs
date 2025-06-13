@@ -24,6 +24,10 @@ pub async fn on_did_change_watched_files(
                 }
 
                 if !workspace.current_open_files.contains(&file_event.uri) {
+                    if !workspace.is_workspace_file(&file_event.uri) {
+                        continue;
+                    }
+
                     collect_lua_files(
                         &mut watched_lua_files,
                         file_event.uri,

@@ -17,6 +17,7 @@ use std::{collections::HashMap, future::Future, sync::Arc};
 use tokio::sync::{Mutex, RwLock};
 use tokio_util::sync::CancellationToken;
 pub use workspace_manager::load_emmy_config;
+pub use workspace_manager::WorkspaceFileMatcher;
 pub use workspace_manager::WorkspaceManager;
 
 pub struct ServerContext {

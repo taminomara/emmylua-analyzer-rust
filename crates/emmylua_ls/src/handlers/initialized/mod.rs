@@ -9,9 +9,12 @@ use crate::{
     cmd_args::CmdArgs,
     context::{
         get_client_id, load_emmy_config, ClientId, ClientProxy, FileDiagnostic, ProgressTask,
-        ServerContextSnapshot, StatusBar,
+        ServerContextSnapshot, StatusBar, WorkspaceFileMatcher,
     },
-    handlers::text_document::register_files_watch,
+    handlers::{
+        initialized::collect_files::calculate_include_and_exclude,
+        text_document::register_files_watch,
+    },
     logger::init_logger,
 };
 pub use client_config::{get_client_config, ClientConfig};
@@ -59,6 +62,8 @@ pub async fn initialized_handler(
     let mut workspace_manager = context.workspace_manager.write().await;
     workspace_manager.workspace_folders = workspace_folders.clone();
     workspace_manager.client_config = client_config.clone();
+    let (include, exclude, exclude_dir) = calculate_include_and_exclude(&emmyrc);
+    workspace_manager.match_file_pattern = WorkspaceFileMatcher::new(include, exclude, exclude_dir);
     drop(workspace_manager);
     // let file_diagnostic = context.file_diagnostic.clone();
 

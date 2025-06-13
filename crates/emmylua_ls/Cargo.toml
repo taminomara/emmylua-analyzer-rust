@@ -34,3 +34,4 @@ serde_yml.workspace = true
 itertools.workspace = true
 dirs.workspace = true
 clap.workspace = true
+wax.workspace = true

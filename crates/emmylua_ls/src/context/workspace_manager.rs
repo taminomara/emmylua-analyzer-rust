@@ -1,15 +1,17 @@
 use std::collections::HashSet;
+use std::path::Path;
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use super::{ClientProxy, FileDiagnostic, StatusBar};
 use crate::handlers::{init_analysis, ClientConfig};
 use dirs;
-use emmylua_code_analysis::update_code_style;
 use emmylua_code_analysis::{load_configs, EmmyLuaAnalysis, Emmyrc};
+use emmylua_code_analysis::{update_code_style, uri_to_file_path};
 use log::{debug, info};
 use lsp_types::Uri;
 use tokio::sync::{Mutex, RwLock};
 use tokio_util::sync::CancellationToken;
+use wax::Pattern;
 
 pub struct WorkspaceManager {
     analysis: Arc<RwLock<EmmyLuaAnalysis>>,
@@ -21,6 +23,7 @@ pub struct WorkspaceManager {
     pub workspace_folders: Vec<PathBuf>,
     pub watcher: Option<notify::RecommendedWatcher>,
     pub current_open_files: HashSet<Uri>,
+    pub match_file_pattern: WorkspaceFileMatcher,
 }
 
 impl WorkspaceManager {
@@ -40,6 +43,7 @@ impl WorkspaceManager {
             file_diagnostic,
             watcher: None,
             current_open_files: HashSet::new(),
+            match_file_pattern: WorkspaceFileMatcher::default(),
         }
     }
 
@@ -162,6 +166,30 @@ impl WorkspaceManager {
         });
 
         Some(())
+    }
+
+    pub fn is_workspace_file(&self, uri: &Uri) -> bool {
+        if self.workspace_folders.is_empty() {
+            return true;
+        }
+
+        let Some(file_path) = uri_to_file_path(&uri) else {
+            return true;
+        };
+
+        let mut file_matched = true;
+        for workspace in &self.workspace_folders {
+            if let Ok(relative) = file_path.strip_prefix(workspace) {
+                file_matched = self.match_file_pattern.is_match(&file_path, relative);
+
+                if file_matched {
+                    // If the file matches the include pattern, we can stop checking further.
+                    break;
+                }
+            }
+        }
+
+        file_matched
     }
 }
 
@@ -302,5 +330,53 @@ impl ReindexToken {
         // 获取锁来安全地修改 need_re_sleep
         let mut need_re_sleep = self.need_re_sleep.lock().await;
         *need_re_sleep = true;
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct WorkspaceFileMatcher {
+    include: Vec<String>,
+    exclude: Vec<String>,
+    exclude_dir: Vec<PathBuf>,
+}
+
+impl WorkspaceFileMatcher {
+    pub fn new(include: Vec<String>, exclude: Vec<String>, exclude_dir: Vec<PathBuf>) -> Self {
+        Self {
+            include,
+            exclude,
+            exclude_dir,
+        }
+    }
+    pub fn is_match(&self, path: &Path, relative_path: &Path) -> bool {
+        if self.exclude_dir.iter().any(|dir| path.starts_with(dir)) {
+            return false;
+        }
+
+        // let path_str = path.to_string_lossy().to_string().replace("\\", "/");
+        let exclude_matcher = wax::any(self.exclude.iter().map(|s| s.as_str()));
+        if let Ok(exclude_set) = exclude_matcher {
+            if exclude_set.is_match(relative_path) {
+                return false;
+            }
+        } else {
+            log::error!("Invalid exclude pattern");
+        }
+
+        let include_matcher = wax::any(self.include.iter().map(|s| s.as_str()));
+        if let Ok(include_set) = include_matcher {
+            return include_set.is_match(relative_path);
+        } else {
+            log::error!("Invalid include pattern");
+        }
+
+        return true;
+    }
+}
+
+impl Default for WorkspaceFileMatcher {
+    fn default() -> Self {
+        let include_pattern = vec!["**/*.lua".to_string()];
+        Self::new(include_pattern, vec![], vec![])
     }
 }
