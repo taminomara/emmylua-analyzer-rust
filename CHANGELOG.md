@@ -27,6 +27,8 @@ a[1] = 3 -- error
 
 `FIX` Hover `function` now can show the corresponding doc comment.
 
+`FIX` Fix a crash when `go to definition` of member
+
 `NEW` Added the configuration item `classDefaultCall`, which is used to declare a method with the specified name as the default `__call` for a class. The effect is equivalent to `---@overload fun()`, but with a lower priority. If an explicitly declared `---@overload fun()` exists, `classDefaultCall` will have no effect on the class.
 
 ```json
