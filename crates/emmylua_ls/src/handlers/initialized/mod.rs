@@ -92,7 +92,7 @@ pub async fn init_analysis(
     file_diagnostic: Arc<FileDiagnostic>,
 ) {
     let mut mut_analysis = analysis.write().await;
-    
+
     // update config
     mut_analysis.update_config(emmyrc.clone());
 

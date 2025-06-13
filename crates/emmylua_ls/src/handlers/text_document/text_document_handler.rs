@@ -109,7 +109,11 @@ pub async fn on_did_close_document(
     let analysis = context.analysis.read().await;
     let uri = &params.text_document.uri;
     let file_id = analysis.get_file_id(uri)?;
-    let module_info = analysis.compilation.get_db().get_module_index().get_module(file_id);
+    let module_info = analysis
+        .compilation
+        .get_db()
+        .get_module_index()
+        .get_module(file_id);
     if module_info.is_none() {
         drop(analysis);
         let mut mut_analysis = context.analysis.write().await;

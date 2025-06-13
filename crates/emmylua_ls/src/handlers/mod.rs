@@ -31,7 +31,7 @@ mod test_lib;
 mod text_document;
 mod workspace_symbol;
 
-pub use initialized::{initialized_handler, ClientConfig, init_analysis};
+pub use initialized::{init_analysis, initialized_handler, ClientConfig};
 use lsp_types::{ClientCapabilities, ServerCapabilities};
 pub use notification_handler::on_notification_handler;
 pub use request_handler::on_req_handler;
