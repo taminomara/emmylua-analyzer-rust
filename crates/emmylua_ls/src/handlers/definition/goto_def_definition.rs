@@ -1,4 +1,4 @@
-use std::{collections::HashSet, str::FromStr};
+use std::str::FromStr;
 
 use emmylua_code_analysis::{
     LuaDeclId, LuaMemberId, LuaMemberInfo, LuaMemberKey, LuaSemanticDeclId, LuaType, LuaTypeDeclId,
@@ -6,17 +6,17 @@ use emmylua_code_analysis::{
 };
 use emmylua_parser::{
     LuaAstNode, LuaAstToken, LuaCallExpr, LuaExpr, LuaIndexExpr, LuaStringToken, LuaSyntaxToken,
-    LuaTableExpr,
+    LuaTableExpr, LuaTableField,
 };
+use itertools::Itertools;
 use lsp_types::{GotoDefinitionResponse, Location, Position, Range, Uri};
 
-use crate::handlers::hover::find_member_origin_owner;
+use crate::handlers::hover::find_all_same_named_members;
 
 pub fn goto_def_definition(
     semantic_model: &SemanticModel,
     property_owner: LuaSemanticDeclId,
     trigger_token: &LuaSyntaxToken,
-    guard: &mut GotoDefGuard,
 ) -> Option<GotoDefinitionResponse> {
     if let Some(property) = semantic_model
         .get_db()
@@ -41,40 +41,49 @@ pub fn goto_def_definition(
             return Some(GotoDefinitionResponse::Scalar(location));
         }
         LuaSemanticDeclId::Member(member_id) => {
-            if let Some(origin_property_owner) = find_member_origin_owner(semantic_model, member_id)
-            {
-                if guard.check(&origin_property_owner) {
-                    return goto_def_definition(
-                        semantic_model,
-                        origin_property_owner,
-                        trigger_token,
-                        guard,
-                    );
-                }
-            }
-
-            let member_key = semantic_model
-                .get_db()
-                .get_member_index()
-                .get_member(&member_id)?
-                .get_key();
+            let same_named_members = find_all_same_named_members(
+                semantic_model,
+                &Some(LuaSemanticDeclId::Member(member_id)),
+            )?;
 
             let mut locations: Vec<Location> = Vec::new();
 
             // 添加原始成员的位置
-            if let Some(location) = get_member_location(semantic_model, &member_id) {
-                locations.push(location);
+            for member in same_named_members {
+                match member {
+                    LuaSemanticDeclId::Member(member_id) => {
+                        if let Some(location) = get_member_location(semantic_model, &member_id) {
+                            locations.push(location);
+                        }
+                    }
+                    _ => {}
+                }
             }
 
-            // 查找实体的定义, 例如在 ---@field 时声明, obj = {} 时实际定义
-            if let Some(table_field_info) =
-                find_table_member_definition(semantic_model, trigger_token, member_key)
+            /* 对于实例的处理, 对于实例 obj
+            ```lua
+                ---@class T
+                ---@field func fun(a: int)
+                ---@field func fun(a: string)
+
+                ---@type T
+                local obj = {
+                    func = function() end  -- 点击`func`时需要寻找`T`的定义
+                }
+                obj:func(1) -- 点击`func`时, 不止需要寻找`T`的定义也需要寻找`obj`实例化时赋值的`func`
+            ```
+
+             */
+            if let Some(table_field_infos) =
+                find_table_member_definition(semantic_model, trigger_token, &member_id)
             {
-                if let Some(LuaSemanticDeclId::Member(table_member_id)) =
-                    table_field_info.property_owner_id
-                {
-                    if let Some(location) = get_member_location(semantic_model, &table_member_id) {
-                        if !locations.contains(&location) {
+                for table_field_info in table_field_infos {
+                    if let Some(LuaSemanticDeclId::Member(table_member_id)) =
+                        table_field_info.property_owner_id
+                    {
+                        if let Some(location) =
+                            get_member_location(semantic_model, &table_member_id)
+                        {
                             locations.push(location);
                         }
                     }
@@ -82,7 +91,9 @@ pub fn goto_def_definition(
             }
 
             if !locations.is_empty() {
-                return Some(GotoDefinitionResponse::Array(locations));
+                return Some(GotoDefinitionResponse::Array(
+                    locations.into_iter().unique().collect(),
+                ));
             }
         }
         LuaSemanticDeclId::TypeDecl(type_decl_id) => {
@@ -191,28 +202,53 @@ pub fn goto_str_tpl_ref_definition(
 pub fn find_table_member_definition(
     semantic_model: &SemanticModel,
     trigger_token: &LuaSyntaxToken,
-    member_key: &LuaMemberKey,
-) -> Option<LuaMemberInfo> {
-    let index_expr = trigger_token.parent().and_then(LuaIndexExpr::cast)?;
-    let prefix_expr = index_expr.get_prefix_expr()?;
+    member_id: &LuaMemberId,
+) -> Option<Vec<LuaMemberInfo>> {
+    let member_key = semantic_model
+        .get_db()
+        .get_member_index()
+        .get_member(&member_id)?
+        .get_key();
+    let parent = trigger_token.parent()?;
 
-    let decl = semantic_model.find_decl(
-        prefix_expr.syntax().clone().into(),
-        SemanticDeclLevel::default(),
-    );
+    match parent {
+        expr_node if LuaIndexExpr::can_cast(expr_node.kind().into()) => {
+            let index_expr = LuaIndexExpr::cast(expr_node)?;
+            let prefix_expr = index_expr.get_prefix_expr()?;
 
-    if let Some(LuaSemanticDeclId::LuaDecl(decl_id)) = decl {
-        return find_member_in_table_decl(semantic_model, &decl_id, member_key);
+            let decl = semantic_model.find_decl(
+                prefix_expr.syntax().clone().into(),
+                SemanticDeclLevel::default(),
+            );
+
+            if let Some(LuaSemanticDeclId::LuaDecl(decl_id)) = decl {
+                return find_member_in_table_const(semantic_model, &decl_id, member_key);
+            }
+        }
+        table_field_node if LuaTableField::can_cast(table_field_node.kind().into()) => {
+            let table_field = LuaTableField::cast(table_field_node)?;
+            let table_expr = table_field.get_parent::<LuaTableExpr>()?;
+            let typ = semantic_model.infer_table_should_be(table_expr)?;
+            let member_infos = semantic_model.get_member_infos(&typ)?;
+            return Some(
+                member_infos
+                    .iter()
+                    .filter(|m| m.key == *member_key)
+                    .cloned()
+                    .collect(),
+            );
+        }
+        _ => {}
     }
 
     None
 }
 
-fn find_member_in_table_decl(
+fn find_member_in_table_const(
     semantic_model: &SemanticModel,
     decl_id: &LuaDeclId,
     member_key: &LuaMemberKey,
-) -> Option<LuaMemberInfo> {
+) -> Option<Vec<LuaMemberInfo>> {
     let root = semantic_model
         .get_db()
         .get_vfs()
@@ -232,7 +268,13 @@ fn find_member_in_table_decl(
         .ok()?;
 
     let member_infos = semantic_model.get_member_infos(&typ)?;
-    member_infos.iter().find(|m| m.key == *member_key).cloned()
+    Some(
+        member_infos
+            .iter()
+            .filter(|m| m.key == *member_key)
+            .cloned()
+            .collect(),
+    )
 }
 
 fn get_member_location(
@@ -241,25 +283,4 @@ fn get_member_location(
 ) -> Option<Location> {
     let document = semantic_model.get_document_by_file_id(member_id.file_id)?;
     document.to_lsp_location(member_id.get_syntax_id().get_range())
-}
-
-#[derive(Debug, Clone)]
-pub struct GotoDefGuard {
-    ids: HashSet<LuaSemanticDeclId>,
-}
-
-impl GotoDefGuard {
-    pub fn new(first: LuaSemanticDeclId) -> Self {
-        Self {
-            ids: HashSet::from([first]),
-        }
-    }
-
-    pub fn check(&mut self, id: &LuaSemanticDeclId) -> bool {
-        if self.ids.contains(id) {
-            return false;
-        }
-        self.ids.insert(id.clone());
-        true
-    }
 }

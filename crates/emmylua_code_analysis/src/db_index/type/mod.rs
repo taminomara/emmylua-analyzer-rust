@@ -12,6 +12,7 @@ use std::collections::{HashMap, HashSet};
 pub use type_decl::{
     LuaDeclLocation, LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId,
 };
+pub use type_ops::get_real_type;
 pub use type_ops::TypeOps;
 pub use type_owner::{LuaTypeCache, LuaTypeOwner};
 pub use types::*;
@@ -187,6 +188,15 @@ impl LuaTypeIndex {
         } else {
             None
         }
+    }
+
+    pub fn get_super_types_iter(
+        &self,
+        decl_id: &LuaTypeDeclId,
+    ) -> Option<impl Iterator<Item = &LuaType> + '_> {
+        self.supers
+            .get(decl_id)
+            .map(|supers| supers.iter().map(|s| &s.value))
     }
 
     pub fn get_type_decl(&self, decl_id: &LuaTypeDeclId) -> Option<&LuaTypeDecl> {

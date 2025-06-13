@@ -38,15 +38,16 @@ fn check_closure_expr(
     semantic_model: &SemanticModel,
     closure_expr: &LuaClosureExpr,
 ) -> Option<()> {
-    let source_typ =
-        semantic_model.infer_left_value_type_from_right_value(closure_expr.clone().into())?;
-    let right_value = context
+    let current_signature = context
         .db
         .get_signature_index()
         .get(&LuaSignatureId::from_closure(
             semantic_model.get_file_id(),
             &closure_expr,
         ))?;
+
+    let source_typ = semantic_model.infer_bind_value_type(closure_expr.clone().into())?;
+
     let source_params_len = match &source_typ {
         LuaType::DocFunction(func_type) => {
             let params = func_type.get_params();
@@ -61,7 +62,7 @@ fn check_closure_expr(
     }?;
 
     // 只检查右值参数多于左值参数的情况, 右值参数少于左值参数的情况是能够接受的
-    if source_params_len > right_value.params.len() {
+    if source_params_len > current_signature.params.len() {
         return Some(());
     }
     let params = closure_expr
@@ -76,7 +77,7 @@ fn check_closure_expr(
             t!(
                 "expected %{num} parameters but found %{found_num}",
                 num = source_params_len,
-                found_num = right_value.params.len(),
+                found_num = current_signature.params.len(),
             )
             .to_string(),
             None,

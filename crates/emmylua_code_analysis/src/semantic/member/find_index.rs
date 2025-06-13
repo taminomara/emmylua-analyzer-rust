@@ -59,7 +59,7 @@ fn find_index_table(db: &DbIndex, table_range: &InFiled<TextRange>) -> FindMembe
                     if let Ok(return_type) = operator.get_result(db) {
                         members.push(LuaMemberInfo {
                             property_owner_id: None,
-                            key: LuaMemberKey::Expr(operand),
+                            key: LuaMemberKey::ExprType(operand),
                             typ: return_type,
                             feature: None,
                             overload_index: None,
@@ -87,7 +87,7 @@ fn find_index_table(db: &DbIndex, table_range: &InFiled<TextRange>) -> FindMembe
 
                 members.push(LuaMemberInfo {
                     property_owner_id: Some(LuaSemanticDeclId::Member(member.get_id())),
-                    key: LuaMemberKey::Expr(member_key_type),
+                    key: LuaMemberKey::ExprType(member_key_type),
                     typ: member_type,
                     feature: Some(member.get_feature()),
                     overload_index: None,
@@ -132,7 +132,7 @@ fn find_index_custom_type(
                 if let Ok(return_type) = operator.get_result(db) {
                     members.push(LuaMemberInfo {
                         property_owner_id: None,
-                        key: LuaMemberKey::Expr(operand),
+                        key: LuaMemberKey::ExprType(operand),
                         typ: return_type,
                         feature: None,
                         overload_index: None,
@@ -174,7 +174,7 @@ fn find_index_array(db: &DbIndex, base: &LuaType) -> FindMembersResult {
     // Array accepts integer indices
     members.push(LuaMemberInfo {
         property_owner_id: None,
-        key: LuaMemberKey::Expr(LuaType::Integer),
+        key: LuaMemberKey::ExprType(LuaType::Integer),
         typ: expression_type.clone(),
         feature: None,
         overload_index: None,
@@ -183,7 +183,7 @@ fn find_index_array(db: &DbIndex, base: &LuaType) -> FindMembersResult {
     // Array accepts number indices (for compatibility)
     members.push(LuaMemberInfo {
         property_owner_id: None,
-        key: LuaMemberKey::Expr(LuaType::Number),
+        key: LuaMemberKey::ExprType(LuaType::Number),
         typ: expression_type,
         feature: None,
         overload_index: None,
@@ -200,7 +200,7 @@ fn find_index_object(db: &DbIndex, object: &LuaObjectType) -> FindMembersResult 
     for (key, field) in access_member_type {
         members.push(LuaMemberInfo {
             property_owner_id: None,
-            key: LuaMemberKey::Expr(key.clone()),
+            key: LuaMemberKey::ExprType(key.clone()),
             typ: field.clone(),
             feature: None,
             overload_index: None,
@@ -319,7 +319,7 @@ fn find_index_generic(
 
                     members.push(LuaMemberInfo {
                         property_owner_id: None,
-                        key: LuaMemberKey::Expr(instantiated_operand),
+                        key: LuaMemberKey::ExprType(instantiated_operand),
                         typ: instantiated_return_type,
                         feature: None,
                         overload_index: None,
@@ -360,7 +360,7 @@ fn find_index_table_generic(db: &DbIndex, table_params: &Vec<LuaType>) -> FindMe
 
     members.push(LuaMemberInfo {
         property_owner_id: None,
-        key: LuaMemberKey::Expr(key_type.clone()),
+        key: LuaMemberKey::ExprType(key_type.clone()),
         typ: value_type.clone(),
         feature: None,
         overload_index: None,

@@ -169,8 +169,8 @@ Cannot use `...` outside a vararg function.:
   en: 'Cannot assign `%{value}` to `%{source}`. %{reason}'
   zh_CN: '不能将 `%{value}` 赋值给 `%{source}`。%{reason}'
   zh_HK: '不能將 `%{value}` 賦值給 `%{source}`。%{reason}'
-'The same file is duplicate requires.':
-  en: 'The same file is duplicate requires.'
+'The same file is required multiple times.':
+  en: 'The same file is required multiple times.'
   zh_CN: '同一个文件被重复 require。'
   zh_HK: '同一個文件被重複 require。'
 'Annotations specify that a return value is required here.':
@@ -241,10 +241,10 @@ Cannot use `...` outside a vararg function.:
   en: "Duplicate index `%{name}`."
   zh_CN: "重复定义的索引 `%{name}`."
   zh_HK: "重複定義的索引 `%{name}`."
-"the generic constraint must be a subclass of `%{source}`. %{reason}":
-  en: "the generic constraint must be a subclass of `%{source}`. %{reason}"
-  zh_CN: "泛型约束要求类型为 `%{source}` 子类。%{reason}"
-  zh_HK: "泛型約束要求類型為 `%{source}` 子類。%{reason}"
+"type `%{found}` does not satisfy the constraint `%{source}`. %{reason}":
+  en: "type `%{found}` does not satisfy the constraint `%{source}`. %{reason}"
+  zh_CN: "泛型约束要求为 `%{source}` 的子类, 但找到了 `%{found}`. %{reason}"
+  zh_HK: "泛型约束要求为 `%{source}` 的子类, 但找到了 `%{found}`. %{reason}"
 "the string template type does not match any type declaration":
   en: "the string template type does not match any type declaration"
   zh_CN: "字符串模板类型与任何类型声明不匹配"

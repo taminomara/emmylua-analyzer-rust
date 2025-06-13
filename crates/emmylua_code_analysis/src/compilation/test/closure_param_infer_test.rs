@@ -463,4 +463,27 @@ mod test {
         let expected = ws.ty("Trigger");
         assert_eq!(ws.humanize_type(ty), ws.humanize_type(expected));
     }
+
+    #[test]
+    fn test_param_function_is_alias() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+            ---@class LocalTimer
+            ---@alias LocalTimer.OnTimer fun(timer: LocalTimer, count: integer, ...: any)
+
+            ---@param on_timer LocalTimer.OnTimer
+            ---@return LocalTimer
+            function loop_count(on_timer)
+            end
+
+            loop_count(function(timer, count)
+                A = timer
+            end)
+            "#,
+        );
+        let ty = ws.expr_ty("A");
+        let expected = ws.ty("LocalTimer");
+        assert_eq!(ws.humanize_type(ty), ws.humanize_type(expected));
+    }
 }

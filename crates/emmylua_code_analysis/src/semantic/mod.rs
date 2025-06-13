@@ -1,4 +1,5 @@
 mod cache;
+mod decl;
 mod generic;
 mod infer;
 mod member;
@@ -13,16 +14,17 @@ use std::collections::HashMap;
 use std::{collections::HashSet, sync::Arc};
 
 pub use cache::{CacheEntry, CacheKey, CacheOptions, LuaAnalysisPhase, LuaInferCache};
+pub use decl::enum_variable_is_param;
 use emmylua_parser::{
     LuaCallExpr, LuaChunk, LuaExpr, LuaIndexKey, LuaParseError, LuaSyntaxNode, LuaSyntaxToken,
     LuaTableExpr,
 };
-use infer::{infer_left_value_type_from_right_value, infer_multi_value_adjusted_expression_types};
+use infer::{infer_bind_value_type, infer_multi_value_adjusted_expression_types};
 pub use infer::{infer_table_field_value_should_be, infer_table_should_be};
 use lsp_types::Uri;
-use member::find_members;
 pub use member::get_member_map;
 pub use member::LuaMemberInfo;
+use member::{find_member_origin_owner, find_members};
 use reference::is_reference_to;
 use rowan::{NodeOrToken, TextRange};
 pub(crate) use semantic_info::infer_node_semantic_decl;
@@ -39,7 +41,7 @@ use crate::{
     db_index::{DbIndex, LuaType},
     FileId,
 };
-use crate::{LuaFunctionType, LuaMemberKey, LuaTypeOwner};
+use crate::{LuaFunctionType, LuaMemberId, LuaMemberKey, LuaTypeOwner};
 pub use generic::*;
 pub use infer::infer_param;
 pub use infer::InferFailReason;
@@ -163,9 +165,9 @@ impl<'a> SemanticModel<'a> {
         )
     }
 
-    /// 从右值推断左值已绑定的类型
-    pub fn infer_left_value_type_from_right_value(&self, expr: LuaExpr) -> Option<LuaType> {
-        infer_left_value_type_from_right_value(self.db, &mut self.infer_cache.borrow_mut(), expr)
+    /// 推断值已经绑定的类型(不是推断值的类型). 例如从右值推断左值类型, 从调用参数推断函数参数类型
+    pub fn infer_bind_value_type(&self, expr: LuaExpr) -> Option<LuaType> {
+        infer_bind_value_type(self.db, &mut self.infer_cache.borrow_mut(), expr)
     }
 
     pub fn get_semantic_info(
@@ -276,6 +278,10 @@ impl<'a> SemanticModel<'a> {
         member_key: &LuaMemberKey,
     ) -> Result<LuaType, InferFailReason> {
         member::infer_raw_member_type(self.db, prefix_type, member_key)
+    }
+
+    pub fn get_member_origin_owner(&self, member_id: LuaMemberId) -> Option<LuaSemanticDeclId> {
+        find_member_origin_owner(self.db, &mut self.infer_cache.borrow_mut(), member_id)
     }
 }
 

@@ -1,7 +1,8 @@
 use emmylua_code_analysis::{EmmyLuaAnalysis, FileId, VirtualUrlGenerator};
 use lsp_types::{
     CompletionItemKind, CompletionResponse, CompletionTriggerKind, GotoDefinitionResponse, Hover,
-    HoverContents, MarkupContent, Position, SignatureHelpContext, SignatureHelpTriggerKind,
+    HoverContents, InlayHint, MarkupContent, Position, SignatureHelpContext,
+    SignatureHelpTriggerKind,
 };
 use tokio_util::sync::CancellationToken;
 
@@ -9,6 +10,7 @@ use crate::{
     context::ClientId,
     handlers::{
         completion::{completion, completion_resolve},
+        inlay_hint::inlay_hint,
         signature_helper::signature_help,
     },
 };
@@ -308,5 +310,12 @@ impl ProviderVirtualWorkspace {
             return false;
         }
         true
+    }
+
+    pub fn check_inlay_hint(&mut self, block_str: &str) -> Option<Vec<InlayHint>> {
+        let file_id = self.def(&block_str);
+        let result = inlay_hint(&self.analysis, file_id);
+        dbg!(&result);
+        return result;
     }
 }

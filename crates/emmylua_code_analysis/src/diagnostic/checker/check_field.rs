@@ -1,8 +1,13 @@
 use std::collections::HashSet;
 
-use emmylua_parser::{LuaAst, LuaAstNode, LuaIndexExpr, LuaIndexKey, LuaVarExpr};
+use emmylua_parser::{
+    LuaAst, LuaAstNode, LuaElseIfClauseStat, LuaForRangeStat, LuaForStat, LuaIfStat, LuaIndexExpr,
+    LuaIndexKey, LuaRepeatStat, LuaSyntaxKind, LuaVarExpr, LuaWhileStat,
+};
 
-use crate::{DiagnosticCode, InferFailReason, LuaMemberKey, LuaType, SemanticModel};
+use crate::{
+    enum_variable_is_param, DiagnosticCode, InferFailReason, LuaMemberKey, LuaType, SemanticModel,
+};
 
 use super::{humanize_lint_type, Checker, DiagnosticContext};
 
@@ -64,6 +69,17 @@ fn check_index_expr(
 
     let index_key = index_expr.get_index_key()?;
 
+    // 检查是否为判断语句
+    if matches!(code, DiagnosticCode::UndefinedField) {
+        if is_in_conditional_statement(index_expr) {
+            return Some(());
+        }
+    }
+
+    if is_in_conditional_statement(index_expr) {
+        return Some(());
+    }
+
     if is_valid_member(semantic_model, &prefix_typ, index_expr, &index_key, code).is_some() {
         return Some(());
     }
@@ -115,14 +131,6 @@ fn is_valid_prefix_type(typ: &LuaType) -> bool {
     }
 }
 
-#[allow(dead_code)]
-fn is_valid_index_key(index_key: &LuaIndexKey) -> bool {
-    match index_key {
-        LuaIndexKey::String(_) | LuaIndexKey::Name(_) | LuaIndexKey::Integer(_) => true,
-        _ => false,
-    }
-}
-
 fn is_valid_member(
     semantic_model: &SemanticModel,
     prefix_typ: &LuaType,
@@ -130,26 +138,45 @@ fn is_valid_member(
     index_key: &LuaIndexKey,
     code: DiagnosticCode,
 ) -> Option<()> {
-    // 检查 member_info
-    let need_add_diagnostic =
-        match semantic_model.get_semantic_info(index_expr.syntax().clone().into()) {
-            Some(info) => info.semantic_decl.is_none() && info.typ.is_unknown(),
-            None => true,
-        };
-
-    if !need_add_diagnostic {
-        return Some(());
-    }
-
     match prefix_typ {
-        LuaType::Global => return Some(()),
-        LuaType::Userdata => return Some(()),
+        LuaType::Global | LuaType::Userdata => return Some(()),
         LuaType::Array(typ) => {
             if typ.is_unknown() {
                 return Some(());
             }
         }
+        LuaType::Ref(_) => {
+            // 如果类型是 Ref 的 enum, 那么需要检查变量是否为参数, 因为作为参数的 enum 本质上是 value 而不是 enum
+            if check_enum_is_param(semantic_model, prefix_typ, index_expr).is_some() {
+                return None;
+            }
+        }
         _ => {}
+    }
+
+    // 检查 member_info
+    let need_add_diagnostic =
+        match semantic_model.get_semantic_info(index_expr.syntax().clone().into()) {
+            Some(info) => {
+                let need = info.semantic_decl.is_none() && info.typ.is_unknown();
+                // TODO: 元组类型的检查或许需要独立出来
+                if !need && matches!(code, DiagnosticCode::InjectField) {
+                    if let LuaType::Tuple(tuple) = prefix_typ {
+                        if tuple.is_infer_resolve() {
+                            return Some(());
+                        } else {
+                            // 元组类型禁止修改
+                            return None;
+                        }
+                    }
+                }
+                need
+            }
+            None => true,
+        };
+
+    if !need_add_diagnostic {
+        return Some(());
     }
 
     let key_type = if let LuaIndexKey::Expr(expr) = index_key {
@@ -176,9 +203,16 @@ fn is_valid_member(
         return None;
     };
 
-    // 允许特定类型组合通过
+    // 一些类型组合需要特殊处理
     match (prefix_typ, &key_type) {
-        (LuaType::Tuple(_), LuaType::Integer | LuaType::IntegerConst(_)) => return Some(()),
+        (LuaType::Tuple(tuple), LuaType::Integer | LuaType::IntegerConst(_)) => {
+            if tuple.is_infer_resolve() {
+                return Some(());
+            } else {
+                // 元组类型禁止修改
+                return None;
+            }
+        }
         (LuaType::Def(id), _) => {
             if let Some(decl) = semantic_model.get_db().get_type_index().get_type_decl(id) {
                 if decl.is_class() {
@@ -200,8 +234,8 @@ fn is_valid_member(
             local field
             local a = Class[field]
     */
-    let key_type_set = get_key_types(&key_type);
-    if key_type_set.is_empty() {
+    let key_types = get_key_types(&key_type);
+    if key_types.is_empty() {
         return None;
     }
 
@@ -210,22 +244,22 @@ fn is_valid_member(
         if let Some(members) = semantic_model.get_member_infos(&prefix_type) {
             for info in &members {
                 match &info.key {
-                    LuaMemberKey::Expr(typ) => {
+                    LuaMemberKey::ExprType(typ) => {
                         if typ.is_string() {
-                            if key_type_set
+                            if key_types
                                 .iter()
                                 .any(|typ| typ.is_string() || typ.is_str_tpl_ref())
                             {
                                 return Some(());
                             }
                         } else if typ.is_integer() {
-                            if key_type_set.iter().any(|typ| typ.is_integer()) {
+                            if key_types.iter().any(|typ| typ.is_integer()) {
                                 return Some(());
                             }
                         }
                     }
                     LuaMemberKey::Name(_) => {
-                        if key_type_set
+                        if key_types
                             .iter()
                             .any(|typ| typ.is_string() || typ.is_str_tpl_ref())
                         {
@@ -233,7 +267,7 @@ fn is_valid_member(
                         }
                     }
                     LuaMemberKey::Integer(_) => {
-                        if key_type_set.iter().any(|typ| typ.is_integer()) {
+                        if key_types.iter().any(|typ| typ.is_integer()) {
                             return Some(());
                         }
                     }
@@ -246,7 +280,7 @@ fn is_valid_member(
                     if let Some(decl) = semantic_model.get_db().get_type_index().get_type_decl(&id)
                     {
                         if decl.is_enum() {
-                            if key_type_set.iter().any(|typ| match typ {
+                            if key_types.iter().any(|typ| match typ {
                                 LuaType::Ref(key_id) | LuaType::Def(key_id) => id == *key_id,
                                 _ => false,
                             }) {
@@ -316,4 +350,104 @@ fn get_key_types(typ: &LuaType) -> HashSet<LuaType> {
         }
     }
     type_set
+}
+
+/// 判断给定的AST节点是否位于判断语句的条件表达式中
+///
+/// 该函数检查节点是否位于以下语句的条件部分：
+/// - if语句的条件表达式
+/// - while循环的条件表达式
+/// - for循环的迭代表达式
+/// - repeat循环的条件表达式
+/// - elseif子句的条件表达式
+///
+/// # 参数
+/// * `node` - 要检查的AST节点
+///
+/// # 返回值
+/// * `true` - 如果节点位于判断语句的条件表达式中
+/// * `false` - 如果节点不在判断语句的条件表达式中
+fn is_in_conditional_statement<T: LuaAstNode>(node: &T) -> bool {
+    let node_range = node.get_range();
+
+    // 遍历所有祖先节点，查找条件语句
+    for ancestor in node.syntax().ancestors() {
+        match ancestor.kind().into() {
+            LuaSyntaxKind::IfStat => {
+                if let Some(if_stat) = LuaIfStat::cast(ancestor) {
+                    if let Some(condition_expr) = if_stat.get_condition_expr() {
+                        if condition_expr.get_range().contains_range(node_range) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            LuaSyntaxKind::WhileStat => {
+                if let Some(while_stat) = LuaWhileStat::cast(ancestor) {
+                    if let Some(condition_expr) = while_stat.get_condition_expr() {
+                        if condition_expr.get_range().contains_range(node_range) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            LuaSyntaxKind::ForStat => {
+                if let Some(for_stat) = LuaForStat::cast(ancestor) {
+                    for iter_expr in for_stat.get_iter_expr() {
+                        if iter_expr.get_range().contains_range(node_range) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            LuaSyntaxKind::ForRangeStat => {
+                if let Some(for_range_stat) = LuaForRangeStat::cast(ancestor) {
+                    for expr in for_range_stat.get_expr_list() {
+                        if expr.get_range().contains_range(node_range) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            LuaSyntaxKind::RepeatStat => {
+                if let Some(repeat_stat) = LuaRepeatStat::cast(ancestor) {
+                    if let Some(condition_expr) = repeat_stat.get_condition_expr() {
+                        if condition_expr.get_range().contains_range(node_range) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            LuaSyntaxKind::ElseIfClauseStat => {
+                if let Some(elseif_clause) = LuaElseIfClauseStat::cast(ancestor) {
+                    if let Some(condition_expr) = elseif_clause.get_condition_expr() {
+                        if condition_expr.get_range().contains_range(node_range) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    false
+}
+
+fn check_enum_is_param(
+    semantic_model: &SemanticModel,
+    prefix_typ: &LuaType,
+    index_expr: &LuaIndexExpr,
+) -> Option<()> {
+    if enum_variable_is_param(
+        semantic_model.get_db(),
+        &mut semantic_model.get_config().borrow_mut(),
+        index_expr,
+        prefix_typ,
+    )
+    .is_some()
+    {
+        return Some(());
+    }
+
+    None
 }

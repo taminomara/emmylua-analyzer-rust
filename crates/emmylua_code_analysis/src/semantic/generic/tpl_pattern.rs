@@ -535,7 +535,7 @@ fn table_generic_tpl_pattern_member_owner_match(
                     return;
                 }
                 let key_type = match &m.key {
-                    LuaMemberKey::Expr(typ) => typ.clone(),
+                    LuaMemberKey::ExprType(typ) => typ.clone(),
                     _ => return,
                 };
                 if check_type_compact(db, &target_key_type, &key_type).is_ok() {

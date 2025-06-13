@@ -1004,4 +1004,116 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_int() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            ---@param count integer
+            local function loop_count(count)
+            end
+
+            loop_count(45 / 3)
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_int_to_alias() {
+        let mut ws = VirtualWorkspace::new();
+        let mut emmyrc = ws.analysis.get_emmyrc().deref().clone();
+        emmyrc.strict.doc_base_const_match_base_type = true;
+        ws.analysis.update_config(Arc::new(emmyrc));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@alias IdAlias
+                ---| 311000001 
+                ---| 311000002 
+
+                ---@param id IdAlias
+                local function f(id)
+                end
+
+                ---@type integer
+                local a
+                f(a)
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_enum_value_matching() {
+        let mut ws = VirtualWorkspace::new();
+        let mut emmyrc = ws.analysis.get_emmyrc().deref().clone();
+        emmyrc.strict.doc_base_const_match_base_type = true;
+        ws.analysis.update_config(Arc::new(emmyrc));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@enum SlotType
+                local SlotType = {
+                    bag = 0,
+                    item = 1,
+                }
+
+                ---@enum ConstSlotType
+                local ConstSlotType = {
+                    ['NOT_IN_BAG'] = -1,
+                    ['PKG'] = 0,
+                    ['BAR'] = 1,
+                }
+
+                ---@param type ConstSlotType
+                local function get_item_by_slot(type)
+                end
+
+                ---@param field SlotType
+                local function bind_unit_slot(field)
+                    get_item_by_slot(field)
+                end"#
+        ));
+    }
+
+    #[test]
+    fn test_enum_value_matching_2() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@enum DamageType
+                local DamageType = {
+                    ['物理'] = "物理",
+                }
+                for _, damageType in pairs(DamageType) do end
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_super_type_match() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class UnitKey: integer
+
+                ---@alias IdAlias
+                ---| 10101
+
+                ---@param key IdAlias
+                local function get(key)
+                end
+
+                ---@type UnitKey
+                local key
+
+                get(key)
+            "#
+        ));
+    }
 }

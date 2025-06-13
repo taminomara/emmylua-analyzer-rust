@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 
+use itertools::Itertools;
+
 use crate::{
     DbIndex, GenericTpl, LuaAliasCallType, LuaFunctionType, LuaGenericType, LuaInstanceType,
     LuaIntersectionType, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaSignatureId,
@@ -42,7 +44,15 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
         LuaType::Thread => "thread".to_string(),
         LuaType::Userdata => "userdata".to_string(),
         LuaType::IntegerConst(i) => i.to_string(),
-        LuaType::FloatConst(f) => f.to_string(),
+        LuaType::FloatConst(f) => {
+            let s = f.to_string();
+            // 如果字符串不包含小数点，添加 ".0"
+            if !s.contains('.') {
+                format!("{}.0", s)
+            } else {
+                s
+            }
+        }
         LuaType::TableConst(v) => {
             let member_owner = LuaMemberOwner::Element(v.clone());
             humanize_table_const_type(db, member_owner, level)
@@ -125,11 +135,13 @@ fn humanize_simple_type(
     if level != RenderLevel::Detailed {
         return Some(name.to_string());
     }
+    let max_display_count = 12;
 
     let member_owner = LuaMemberOwner::Type(id.clone());
     let member_index = db.get_member_index();
     let members = member_index.get_sorted_members(&member_owner)?;
     let mut member_vec = Vec::new();
+    let mut function_vec = Vec::new();
     for member in members {
         let member_key = member.get_key();
         let type_cache = db.get_type_index().get_type_cache(&member.get_id().into());
@@ -137,33 +149,53 @@ fn humanize_simple_type(
             Some(type_cache) => type_cache,
             None => &super::LuaTypeCache::InferType(LuaType::Any),
         };
-        if !type_cache.is_signature() {
-            member_vec.push((member_key, type_cache.as_type().clone()));
+        if type_cache.is_function() {
+            function_vec.push(member_key);
+        } else {
+            member_vec.push((member_key, type_cache.as_type()));
         }
     }
 
-    if member_vec.is_empty() {
+    if member_vec.is_empty() && function_vec.is_empty() {
         return Some(name.to_string());
     }
+    let all_count = member_vec.len() + function_vec.len();
 
     let mut member_strings = String::new();
     let mut count = 0;
     for (member_key, typ) in member_vec {
         let member_string = build_table_member_string(
             member_key,
-            &typ,
-            humanize_type(db, &typ, level.next_level()),
+            typ,
+            humanize_type(db, typ, level.next_level()),
             level,
         );
 
         member_strings.push_str(&format!("    {},\n", member_string));
         count += 1;
-        if count >= 12 {
-            member_strings.push_str("    ...\n");
+        if count >= max_display_count {
             break;
         }
     }
+    if count < all_count {
+        for function_key in function_vec {
+            let member_string = build_table_member_string(
+                function_key,
+                &LuaType::Function,
+                "function".to_string(),
+                level,
+            );
 
+            member_strings.push_str(&format!("    {},\n", member_string));
+            count += 1;
+            if count >= max_display_count {
+                break;
+            }
+        }
+    }
+    if count >= max_display_count {
+        member_strings.push_str(&format!("    ...(+{})\n", all_count - max_display_count));
+    }
     Some(format!("{} {{\n{}}}", name, member_strings))
 }
 
@@ -212,7 +244,7 @@ where
 
     if display_types.len() == 1 {
         if has_function && has_nil {
-            format!("({})?", type_str)
+            format!("{}?", type_str)
         } else {
             format!("{}{}", type_str, if has_nil { "?" } else { "" })
         }
@@ -374,9 +406,11 @@ fn humanize_object_type(db: &DbIndex, object: &LuaObjectType, level: RenderLevel
     } else {
         ""
     };
+
     let fields = object
         .get_fields()
         .iter()
+        .sorted_by(|a, b| a.0.cmp(&b.0))
         .take(num)
         .map(|field| {
             let name = field.0.clone();
@@ -385,11 +419,11 @@ fn humanize_object_type(db: &DbIndex, object: &LuaObjectType, level: RenderLevel
                 LuaMemberKey::Integer(i) => format!("[{}]: {}", i, ty_str),
                 LuaMemberKey::Name(s) => format!("{}: {}", s, ty_str),
                 LuaMemberKey::None => ty_str,
-                LuaMemberKey::Expr(_) => ty_str,
+                LuaMemberKey::ExprType(_) => ty_str,
             }
         })
         .collect::<Vec<_>>()
-        .join(",");
+        .join(", ");
 
     let access = object
         .get_index_access()
@@ -703,6 +737,6 @@ fn build_table_member_string(
         LuaMemberKey::Name(name) => format!("{name}{separator}{member_value}"),
         LuaMemberKey::Integer(i) => format!("[{i}]{separator}{member_value}"),
         LuaMemberKey::None => member_value,
-        LuaMemberKey::Expr(_) => member_value,
+        LuaMemberKey::ExprType(_) => member_value,
     }
 }

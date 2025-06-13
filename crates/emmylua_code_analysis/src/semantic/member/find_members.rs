@@ -60,7 +60,7 @@ fn find_table_generic_members(table_type: &Vec<LuaType>) -> FindMembersResult {
     let value_type = &table_type[1];
     members.push(LuaMemberInfo {
         property_owner_id: None,
-        key: LuaMemberKey::Expr(key_type.clone()),
+        key: LuaMemberKey::ExprType(key_type.clone()),
         typ: value_type.clone(),
         feature: None,
         overload_index: None,

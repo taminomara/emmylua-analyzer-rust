@@ -95,7 +95,7 @@ pub enum LuaMemberKey {
     None,
     Integer(i64),
     Name(SmolStr),
-    Expr(LuaType),
+    ExprType(LuaType),
 }
 
 impl LuaMemberKey {
@@ -116,7 +116,7 @@ impl LuaMemberKey {
                     LuaType::DocStringConst(s) => Ok(LuaMemberKey::Name(s.deref().clone())),
                     LuaType::IntegerConst(i) => Ok(LuaMemberKey::Integer(i)),
                     LuaType::DocIntegerConst(i) => Ok(LuaMemberKey::Integer(i)),
-                    _ => Ok(LuaMemberKey::Expr(expr_type)),
+                    _ => Ok(LuaMemberKey::ExprType(expr_type)),
                 }
             }
         }
@@ -135,7 +135,7 @@ impl LuaMemberKey {
     }
 
     pub fn is_expr(&self) -> bool {
-        matches!(self, LuaMemberKey::Expr(_))
+        matches!(self, LuaMemberKey::ExprType(_))
     }
 
     pub fn get_name(&self) -> Option<&str> {
@@ -159,7 +159,7 @@ impl LuaMemberKey {
                 format!("[{}]", i)
             }
             LuaMemberKey::None => "".to_string(),
-            LuaMemberKey::Expr(_) => "".to_string(),
+            LuaMemberKey::ExprType(_) => "".to_string(),
         }
     }
 }
@@ -183,7 +183,7 @@ impl Ord for LuaMemberKey {
             (Name(a), Name(b)) => a.cmp(b),
             (Name(_), _) => std::cmp::Ordering::Less,
             (_, Name(_)) => std::cmp::Ordering::Greater,
-            (Expr(_), Expr(_)) => std::cmp::Ordering::Equal,
+            (ExprType(_), ExprType(_)) => std::cmp::Ordering::Equal,
         }
     }
 }

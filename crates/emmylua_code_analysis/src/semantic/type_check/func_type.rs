@@ -198,7 +198,7 @@ fn check_doc_func_type_compact_for_custom_type(
                 .get_operator_index()
                 .get_operator(operator_id)
                 .ok_or(TypeCheckFailReason::TypeNotMatch)?;
-            let call_type = operator.get_operator_func();
+            let call_type = operator.get_operator_func(db);
             match call_type {
                 LuaType::DocFunction(doc_func) => {
                     match check_doc_func_type_compact_for_params(

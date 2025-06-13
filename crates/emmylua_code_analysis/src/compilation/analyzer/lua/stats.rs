@@ -9,7 +9,8 @@ use crate::{
         unresolve::{UnResolveDecl, UnResolveMember},
     },
     db_index::{LuaDeclId, LuaMemberId, LuaMemberOwner, LuaType},
-    InFiled, InferFailReason, LuaTypeCache, LuaTypeOwner,
+    InFiled, InferFailReason, LuaOperator, LuaOperatorMetaMethod, LuaOperatorOwner, LuaTypeCache,
+    LuaTypeOwner, OperatorFunction,
 };
 
 use super::LuaAnalyzer;
@@ -417,6 +418,8 @@ pub fn analyze_func_stat(analyzer: &mut LuaAnalyzer, func_stat: LuaFuncStat) -> 
         .get_type_index_mut()
         .bind_type(type_owner, LuaTypeCache::InferType(signature_type.clone()));
 
+    try_add_class_default_call(analyzer, func_name, signature_type);
+
     Some(())
 }
 
@@ -496,6 +499,59 @@ fn special_assign_pattern(
             assign_merge_type_owner_and_expr_type(analyzer, type_owner, &right_expr_type, 0);
         }
         Err(_) => return None,
+    }
+
+    Some(())
+}
+
+pub fn try_add_class_default_call(
+    analyzer: &mut LuaAnalyzer,
+    func_name: LuaVarExpr,
+    signature_type: LuaType,
+) -> Option<()> {
+    let LuaType::Signature(signature_id) = signature_type else {
+        return None;
+    };
+
+    let default_name = &analyzer
+        .get_emmyrc()
+        .runtime
+        .class_default_call
+        .function_name;
+
+    if default_name.is_empty() {
+        return None;
+    }
+    if let LuaVarExpr::IndexExpr(index_expr) = func_name {
+        let index_key = index_expr.get_index_key()?;
+        if index_key.get_path_part() == *default_name {
+            let prefix_expr = index_expr.get_prefix_expr()?;
+            match analyzer.infer_expr(&prefix_expr.into()) {
+                Ok(prefix_type) => match prefix_type {
+                    LuaType::Def(decl_id) => {
+                        // 如果已经存在, 则不添加
+                        let call = analyzer.db.get_operator_index().get_operators(
+                            &LuaOperatorOwner::Type(decl_id.clone()),
+                            LuaOperatorMetaMethod::Call,
+                        );
+                        if call.is_some() {
+                            return None;
+                        }
+
+                        let operator = LuaOperator::new(
+                            decl_id.into(),
+                            LuaOperatorMetaMethod::Call,
+                            analyzer.file_id,
+                            index_expr.get_range(),
+                            OperatorFunction::DefaultCall(signature_id),
+                        );
+                        analyzer.db.get_operator_index_mut().add_operator(operator);
+                    }
+                    _ => {}
+                },
+                Err(_) => {}
+            }
+        }
     }
 
     Some(())

@@ -1,6 +1,8 @@
+mod build_function_hint;
 mod build_inlay_hint;
 
 use build_inlay_hint::build_inlay_hints;
+use emmylua_code_analysis::{EmmyLuaAnalysis, FileId};
 use lsp_types::{
     ClientCapabilities, InlayHint, InlayHintOptions, InlayHintParams, InlayHintServerCapabilities,
     OneOf, ServerCapabilities,
@@ -18,7 +20,10 @@ pub async fn on_inlay_hint_handler(
 ) -> Option<Vec<InlayHint>> {
     let uri = params.text_document.uri;
     let analysis = context.analysis.read().await;
-    let file_id = analysis.get_file_id(&uri)?;
+    inlay_hint(&analysis, analysis.get_file_id(&uri)?)
+}
+
+pub fn inlay_hint(analysis: &EmmyLuaAnalysis, file_id: FileId) -> Option<Vec<InlayHint>> {
     let mut semantic_model = analysis.compilation.get_semantic_model(file_id)?;
     build_inlay_hints(&mut semantic_model)
 }

@@ -276,7 +276,7 @@ fn build_type_signature_help(
 
     for operator_id in operator_ids {
         let operator = db.get_operator_index().get_operator(operator_id)?;
-        let call_type = operator.get_operator_func();
+        let call_type = operator.get_operator_func(db);
         match call_type {
             LuaType::DocFunction(func_type) => {
                 return build_doc_function_signature_help(
@@ -336,7 +336,7 @@ fn build_table_call_signature_help(
         .get_operators(&operator_owner, LuaOperatorMetaMethod::Call)?
         .first()?;
     let operator = db.get_operator_index().get_operator(operator_ids)?;
-    let call_type = operator.get_operator_func();
+    let call_type = operator.get_operator_func(db);
     match call_type {
         LuaType::DocFunction(func_type) => {
             return build_doc_function_signature_help(builder, &func_type, colon_call, current_idx);

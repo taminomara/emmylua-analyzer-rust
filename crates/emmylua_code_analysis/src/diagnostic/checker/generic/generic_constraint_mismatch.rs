@@ -1,7 +1,8 @@
-use emmylua_parser::{LuaAst, LuaAstNode, LuaCallExpr, LuaDocTagType};
+use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaCallExpr, LuaDocTagType};
 use rowan::TextRange;
 
 use crate::diagnostic::checker::generic::infer_type::infer_type;
+use crate::diagnostic::checker::param_type_check::get_call_source_type;
 use crate::{
     humanize_type, DiagnosticCode, GenericTplId, LuaMemberOwner, LuaSemanticDeclId, LuaSignature,
     LuaStringTplType, LuaType, RenderLevel, SemanticDeclLevel, SemanticModel, TypeCheckFailReason,
@@ -58,6 +59,7 @@ fn check_doc_tag_type(
                     semantic_model,
                     doc_type.get_range(),
                     &extend_type,
+                    &param_type,
                     result,
                 );
             }
@@ -74,21 +76,31 @@ fn check_call_expr(
     let function = semantic_model
         .infer_expr(call_expr.get_prefix_expr()?.clone())
         .ok()?;
+
     if let LuaType::Signature(signature_id) = function {
         let signature = semantic_model
             .get_db()
             .get_signature_index()
             .get(&signature_id)?;
         let mut params = signature.get_type_params();
+
+        let arg_exprs = call_expr.get_args_list()?.get_args().collect::<Vec<_>>();
+        let mut arg_infos =
+            semantic_model.infer_multi_value_adjusted_expression_types(&arg_exprs, None);
         match (call_expr.is_colon_call(), signature.is_colon_define) {
             (true, true) | (false, false) => {}
             (false, true) => {
                 params.insert(0, ("self".into(), Some(LuaType::SelfInfer)));
             }
             (true, false) => {
-                if params.len() >= 1 {
-                    params.remove(0);
-                }
+                // 往调用参数插入插入调用者类型
+                arg_infos.insert(
+                    0,
+                    (
+                        get_call_source_type(semantic_model, &call_expr)?,
+                        call_expr.get_colon_token()?.get_range(),
+                    ),
+                );
             }
         }
 
@@ -123,7 +135,7 @@ fn check_call_expr(
                         tpl_ref.get_tpl_id(),
                         signature,
                     );
-                    check_tpl_ref(context, semantic_model, &call_expr, i, &extend_type);
+                    check_tpl_ref(context, semantic_model, &extend_type, arg_infos.get(i));
                 }
                 _ => {}
             }
@@ -202,25 +214,24 @@ fn check_str_tpl_ref(
             }
 
             if let Some(extend_type) = extend_type {
-                if !extend_type.is_string() {
-                    if let Some(type_decl) = founded_type_decl {
-                        let type_id = type_decl.get_id();
-                        let ref_type = LuaType::Ref(type_id);
-                        let result = semantic_model.type_check(&extend_type, &ref_type);
-                        if result.is_err() {
-                            add_type_check_diagnostic(
-                                context,
-                                semantic_model,
-                                range,
-                                &extend_type,
-                                result,
-                            );
-                        }
+                if let Some(type_decl) = founded_type_decl {
+                    let type_id = type_decl.get_id();
+                    let ref_type = LuaType::Ref(type_id);
+                    let result = semantic_model.type_check(&extend_type, &ref_type);
+                    if result.is_err() {
+                        add_type_check_diagnostic(
+                            context,
+                            semantic_model,
+                            range,
+                            &extend_type,
+                            &ref_type,
+                            result,
+                        );
                     }
                 }
             }
         }
-        LuaType::String | LuaType::Any | LuaType::Unknown => {}
+        LuaType::String | LuaType::Any | LuaType::Unknown | LuaType::StrTplRef(_) => {}
         _ => {
             context.add_diagnostic(
                 DiagnosticCode::GenericConstraintMismatch,
@@ -236,20 +247,19 @@ fn check_str_tpl_ref(
 fn check_tpl_ref(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
-    call_expr: &LuaCallExpr,
-    param_index: usize,
     extend_type: &Option<LuaType>,
+    arg_info: Option<&(LuaType, TextRange)>,
 ) -> Option<()> {
     let extend_type = extend_type.clone()?;
-    let arg_expr = call_expr.get_args_list()?.get_args().nth(param_index)?;
-    let arg_type = semantic_model.infer_expr(arg_expr.clone()).ok()?;
-    let result = semantic_model.type_check(&extend_type, &arg_type);
+    let arg_info = arg_info?;
+    let result = semantic_model.type_check(&extend_type, &arg_info.0);
     if !result.is_ok() {
         add_type_check_diagnostic(
             context,
             semantic_model,
-            arg_expr.get_range(),
+            arg_info.1,
             &extend_type,
+            &arg_info.0,
             result,
         );
     }
@@ -261,6 +271,7 @@ fn add_type_check_diagnostic(
     semantic_model: &SemanticModel,
     range: TextRange,
     extend_type: &LuaType,
+    expr_type: &LuaType,
     result: TypeCheckResult,
 ) {
     let db = semantic_model.get_db();
@@ -278,8 +289,9 @@ fn add_type_check_diagnostic(
                 DiagnosticCode::GenericConstraintMismatch,
                 range,
                 t!(
-                    "the generic constraint must be a subclass of `%{source}`. %{reason}",
+                    "type `%{found}` does not satisfy the constraint `%{source}`. %{reason}",
                     source = humanize_type(db, &extend_type, RenderLevel::Simple),
+                    found = humanize_type(db, &expr_type, RenderLevel::Simple),
                     reason = reason_message
                 )
                 .to_string(),

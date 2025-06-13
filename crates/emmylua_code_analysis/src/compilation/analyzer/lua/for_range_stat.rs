@@ -118,7 +118,7 @@ pub fn infer_for_range_iter_expr_func(
                     .iter()
                     .filter_map(|overload_id| {
                         let operator = operator_index.get_operator(overload_id)?;
-                        let func = operator.get_operator_func();
+                        let func = operator.get_operator_func(db);
                         match func {
                             LuaType::DocFunction(f) => Some(f.clone()),
                             _ => None,

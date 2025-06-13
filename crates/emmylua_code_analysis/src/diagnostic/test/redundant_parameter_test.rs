@@ -105,4 +105,24 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_function_param() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(!ws.check_code_for(
+            DiagnosticCode::RedundantParameter,
+            r#"
+                ---@class D30
+                local M = {}
+
+                ---@param callback fun()
+                local function with_local(callback)
+                end
+
+                function M:add_local_event()
+                    with_local(function(local_player) end)
+                end
+        "#
+        ));
+    }
 }
