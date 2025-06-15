@@ -2,6 +2,8 @@
 
 # 🚀 EmmyLua Language Server Features Guide
 
+[中文文档](./features_CN.md)
+
 *Comprehensive guide to the powerful features of EmmyLua Analyzer Rust*
 
 [![Back to Main](https://img.shields.io/badge/← Back%20to%20Main-blue?style=for-the-badge)](../../README.md)

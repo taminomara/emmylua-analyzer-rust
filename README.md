@@ -1,10 +1,6 @@
 <div align="center">
 
-![EmmyLua Analyzer Rust](https://user-images.githubusercontent.com/placeholder/hero-image.png)
-
 # 🌟 EmmyLua Analyzer Rust
-
-### *Next-Generation Lua Language Server & Analysis Toolkit*
 
 [![GitHub stars](https://img.shields.io/github/stars/CppCXY/emmylua-analyzer-rust?style=for-the-badge&logo=github&color=gold)](https://github.com/CppCXY/emmylua-analyzer-rust/stargazers)
 [![GitHub license](https://img.shields.io/github/license/CppCXY/emmylua-analyzer-rust?style=for-the-badge&logo=mit&color=blue)](https://github.com/CppCXY/emmylua-analyzer-rust/blob/main/LICENSE)

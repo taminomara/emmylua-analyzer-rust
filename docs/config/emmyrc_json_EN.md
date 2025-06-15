@@ -2,6 +2,8 @@
 
 # 🔧 EmmyLua Configuration Guide
 
+[中文文档](./emmyrc_json_CN.md)
+
 *Comprehensive guide to EmmyLua Analyzer Rust configuration options*
 
 [![Back to Main](https://img.shields.io/badge/← Back to Main-blue?style=for-the-badge)](../../README.md)
