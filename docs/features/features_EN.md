@@ -262,7 +262,7 @@ Safe and efficient code refactoring tools to help you optimize code structure wi
 
 | Feature | Description |
 |---------|-------------|
-| **🔍 Scope Analysis** | Precisely identify variable scope to avoid mis-renaming |
+| **🔍 Scope Analysis** | Precisely identify variable scope to avoid miss-renaming |
 | **📁 Cross-file Detection** | Detect renaming impact on module imports/exports |
 | **⚠️ Conflict Detection** | Proactively discover naming conflicts and provide suggestions |
 | **📋 Preview Feature** | Preview all affected locations before renaming |
