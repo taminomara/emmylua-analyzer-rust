@@ -62,67 +62,87 @@ Here's a complete configuration file example containing all configuration option
 
 ```json
 {
-  "$schema": "https://github.com/CppCXY/emmylua-analyzer-rust/blob/main/crates/emmylua_code_analysis/resources/schema.json",
-  "completion": {
-    "enable": true,
-    "autoRequire": true,
-    "autoRequireFunction": "require",
-    "autoRequireNamingConvention": "keep",
-    "callSnippet": false,
-    "postfix": "@"
-  },
-  "signature": {
-    "detailSignatureHelper": false
-  },
-  "diagnostics": {
-    "disable": [],
-    "globals": [],
-    "globalsRegex": [],
-    "severity": {},
-    "enables": []
-  },
-  "hint": {
-    "enable": true,
-    "paramHint": true,
-    "indexHint": true,
-    "localHint": true,
-    "overrideHint": true
-  },
-  "runtime": {
-    "version": "Lua5.4",
-    "requireLikeFunction": [],
-    "frameworkVersions": [],
-    "extensions": [],
-    "requirePattern": []
-  },
-  "workspace": {
-    "ignoreDir": [],
-    "ignoreGlobs": [],
-    "library": [],
-    "workspaceRoots": [],
-    "encoding": "",
-    "moduleMap": [],
-    "reindexDuration": 5000
-  },
-  "resource": {
-    "paths": []
-  },
-  "codeLens": {
-    "enable": true
-  },
-  "strict": {
-    "requirePath": false,
-    "typeCall": false,
-    "arrayIndex": false,
-    "metaOverrideFileDefine": true
-  },
-  "hover": {
-    "enable": true
-  },
-  "references": {
-    "enable": true,
-    "fuzzy_search": true
-  }
+    "codeAction": {
+        "insertSpace": false
+    },
+    "codeLens": {
+        "enable": true
+    },
+    "completion": {
+        "autoRequire": true,
+        "autoRequireFunction": "require",
+        "autoRequireNamingConvention": "keep",
+        "autoRequireSeparator": ".",
+        "callSnippet": false,
+        "enable": true,
+        "postfix": "@"
+    },
+    "diagnostics": {
+        "diagnosticInterval": 500,
+        "disable": [],
+        "enable": true,
+        "enables": [],
+        "globals": [],
+        "globalsRegex": [],
+        "severity": {}
+    },
+    "documentColor": {
+        "enable": true
+    },
+    "hint": {
+        "enable": true,
+        "indexHint": true,
+        "localHint": true,
+        "overrideHint": true,
+        "paramHint": true
+    },
+    "hover": {
+        "enable": true
+    },
+    "references": {
+        "enable": true,
+        "fuzzySearch": true,
+        "shortStringSearch": false
+    },
+    "resource": {
+        "paths": []
+    },
+    "runtime": {
+        "classDefaultCall": {
+            "forceNonColon": false,
+            "forceReturnSelf": false,
+            "functionName": ""
+        },
+        "extensions": [],
+        "frameworkVersions": [],
+        "requireLikeFunction": [],
+        "requirePattern": [],
+        "version": "LuaLatest"
+    },
+    "semanticTokens": {
+        "enable": true
+    },
+    "signature": {
+        "detailSignatureHelper": true
+    },
+    "strict": {
+        "arrayIndex": true,
+        "docBaseConstMatchBaseType": true,
+        "metaOverrideFileDefine": true,
+        "requirePath": false,
+        "typeCall": false
+    },
+    "workspace": {
+        "enableReindex": false,
+        "encoding": "utf-8",
+        "ignoreDir": [],
+        "ignoreGlobs": [],
+        "library": [],
+        "moduleMap": [],
+        "preloadFileSize": 0,
+        "reindexDuration": 5000,
+        "workspaceRoots": []
+    }
 }
 ```
 
@@ -251,6 +271,53 @@ Pascal case
   }
 }
 ```
+### Available Diagnostics List
+
+
+| Diagnostic Message | Description | Default Category |
+|-------------------|-------------|------------------|
+| **`syntax-error`** | Syntax error | 🔴 Error |
+| **`doc-syntax-error`** | Documentation syntax error | 🔴 Error |
+| **`type-not-found`** | Type not found | 🟡 Warning |
+| **`missing-return`** | Missing return statement | 🟡 Warning |
+| **`param-type-not-match`** | Parameter type mismatch | 🟡 Warning |
+| **`missing-parameter`** | Missing parameter | 🟡 Warning |
+| **`redundant-parameter`** | Redundant parameter | 🟡 Warning |
+| **`unreachable-code`** | Unreachable code | 💡 Hint |
+| **`unused`** | Unused variable/function | 💡 Hint |
+| **`undefined-global`** | Undefined global variable | 🔴 Error |
+| **`deprecated`** | Deprecated feature | 🔵 Information |
+| **`access-invisible`** | Accessing invisible member | 🟡 Warning |
+| **`discard-returns`** | Discarding return value | 🟡 Warning |
+| **`undefined-field`** | Undefined field | 🟡 Warning |
+| **`local-const-reassign`** | Local constant reassignment | 🔴 Error |
+| **`iter-variable-reassign`** | Iterator variable reassignment | 🟡 Warning |
+| **`duplicate-type`** | Duplicate type definition | 🟡 Warning |
+| **`redefined-local`** | Redefined local variable | 💡 Hint |
+| **`redefined-label`** | Redefined label | 🟡 Warning |
+| **`code-style-check`** | Code style check | 🟡 Warning |
+| **`need-check-nil`** | Need to check nil value | 🟡 Warning |
+| **`await-in-sync`** | Using await in synchronous code | 🟡 Warning |
+| **`annotation-usage-error`** | Annotation usage error | 🔴 Error |
+| **`return-type-mismatch`** | Return type mismatch | 🟡 Warning |
+| **`missing-return-value`** | Missing return value | 🟡 Warning |
+| **`redundant-return-value`** | Redundant return value | 🟡 Warning |
+| **`undefined-doc-param`** | Undefined parameter in documentation | 🟡 Warning |
+| **`duplicate-doc-field`** | Duplicate documentation field | 🟡 Warning |
+| **`missing-fields`** | Missing fields | 🟡 Warning |
+| **`inject-field`** | Injected field | 🟡 Warning |
+| **`circle-doc-class`** | Circular documentation class inheritance | 🟡 Warning |
+| **`incomplete-signature-doc`** | Incomplete signature documentation | 🟡 Warning |
+| **`missing-global-doc`** | Missing global variable documentation | 🟡 Warning |
+| **`assign-type-mismatch`** | Assignment type mismatch | 🟡 Warning |
+| **`duplicate-require`** | Duplicate require | 💡 Hint |
+| **`non-literal-expressions-in-assert`** | Non-literal expressions in assert | 🟡 Warning |
+| **`unbalanced-assignments`** | Unbalanced assignments | 🟡 Warning |
+| **`unnecessary-assert`** | Unnecessary assert | 🟡 Warning |
+| **`unnecessary-if`** | Unnecessary if statement | 🟡 Warning |
+| **`duplicate-set-field`** | Duplicate field setting | 🟡 Warning |
+| **`duplicate-index`** | Duplicate index | 🟡 Warning |
+| **`generic-constraint-mismatch`** | Generic constraint mismatch | 🟡 Warning |
 
 ---
 

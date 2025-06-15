@@ -498,18 +498,6 @@ Provide the same highlighting experience as VS Code for other editors, ensuring 
 
 <div align="center">
 
-## 🚀 Summary
-
-EmmyLua Analyzer Rust provides comprehensive Lua development support, from smart completion to visual enhancements. Every feature is carefully designed to improve your coding efficiency and code quality.
-
-### 🎯 Core Advantages
-
-- **⚡ High Performance**: Native Rust performance with fast response
-- **🧠 Intelligence**: Deep type analysis and inference
-- **🎨 Modern**: Rich visual effects and user experience
-- **🔧 Configurable**: Flexible configuration options for different needs
-
-
 [⬆ Back to Top](#-emmylua-language-server-features-guide)
 
 </div>

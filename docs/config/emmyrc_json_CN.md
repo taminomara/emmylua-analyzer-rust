@@ -60,67 +60,87 @@ EmmyLua 语言服务器支持灵活的配置系统，通过配置文件可以精
 
 ```json
 {
-  "$schema": "https://github.com/CppCXY/emmylua-analyzer-rust/blob/main/crates/emmylua_code_analysis/resources/schema.json",
-  "completion": {
-    "enable": true,
-    "autoRequire": true,
-    "autoRequireFunction": "require",
-    "autoRequireNamingConvention": "keep",
-    "callSnippet": false,
-    "postfix": "@"
-  },
-  "signature": {
-    "detailSignatureHelper": false
-  },
-  "diagnostics": {
-    "disable": [],
-    "globals": [],
-    "globalsRegex": [],
-    "severity": {},
-    "enables": []
-  },
-  "hint": {
-    "enable": true,
-    "paramHint": true,
-    "indexHint": true,
-    "localHint": true,
-    "overrideHint": true
-  },
-  "runtime": {
-    "version": "Lua5.4",
-    "requireLikeFunction": [],
-    "frameworkVersions": [],
-    "extensions": [],
-    "requirePattern": []
-  },
-  "workspace": {
-    "ignoreDir": [],
-    "ignoreGlobs": [],
-    "library": [],
-    "workspaceRoots": [],
-    "encoding": "",
-    "moduleMap": [],
-    "reindexDuration": 5000
-  },
-  "resource": {
-    "paths": []
-  },
-  "codeLens": {
-    "enable": true
-  },
-  "strict": {
-    "requirePath": false,
-    "typeCall": false,
-    "arrayIndex": false,
-    "metaOverrideFileDefine": true
-  },
-  "hover": {
-    "enable": true
-  },
-  "references": {
-    "enable": true,
-    "fuzzy_search": true
-  }
+    "codeAction": {
+        "insertSpace": false
+    },
+    "codeLens": {
+        "enable": true
+    },
+    "completion": {
+        "autoRequire": true,
+        "autoRequireFunction": "require",
+        "autoRequireNamingConvention": "keep",
+        "autoRequireSeparator": ".",
+        "callSnippet": false,
+        "enable": true,
+        "postfix": "@"
+    },
+    "diagnostics": {
+        "diagnosticInterval": 500,
+        "disable": [],
+        "enable": true,
+        "enables": [],
+        "globals": [],
+        "globalsRegex": [],
+        "severity": {}
+    },
+    "documentColor": {
+        "enable": true
+    },
+    "hint": {
+        "enable": true,
+        "indexHint": true,
+        "localHint": true,
+        "overrideHint": true,
+        "paramHint": true
+    },
+    "hover": {
+        "enable": true
+    },
+    "references": {
+        "enable": true,
+        "fuzzySearch": true,
+        "shortStringSearch": false
+    },
+    "resource": {
+        "paths": []
+    },
+    "runtime": {
+        "classDefaultCall": {
+            "forceNonColon": false,
+            "forceReturnSelf": false,
+            "functionName": ""
+        },
+        "extensions": [],
+        "frameworkVersions": [],
+        "requireLikeFunction": [],
+        "requirePattern": [],
+        "version": "LuaLatest"
+    },
+    "semanticTokens": {
+        "enable": true
+    },
+    "signature": {
+        "detailSignatureHelper": true
+    },
+    "strict": {
+        "arrayIndex": true,
+        "docBaseConstMatchBaseType": true,
+        "metaOverrideFileDefine": true,
+        "requirePath": false,
+        "typeCall": false
+    },
+    "workspace": {
+        "enableReindex": false,
+        "encoding": "utf-8",
+        "ignoreDir": [],
+        "ignoreGlobs": [],
+        "library": [],
+        "moduleMap": [],
+        "preloadFileSize": 0,
+        "reindexDuration": 5000,
+        "workspaceRoots": []
+    }
 }
 ```
 
@@ -243,12 +263,59 @@ EmmyLua 语言服务器支持灵活的配置系统，通过配置文件可以精
     "disable": ["undefined-global"],
     "severity": {
       "undefined-global": "warning",
-      "unused-local": "hint"
+      "unused": "hint"
     },
     "enables": ["undefined-field"]
   }
 }
 ```
+
+### 可用的诊断列表
+
+| 诊断消息 | 描述 | 默认分类 |
+|-----------|------|------|
+| **`syntax-error`** | 语法错误 | 🔴 错误 |
+| **`doc-syntax-error`** | 文档语法错误 | 🔴 错误 |
+| **`type-not-found`** | 类型未找到 | 🟡 警告 |
+| **`missing-return`** | 缺少返回语句 | 🟡 警告 |
+| **`param-type-not-match`** | 参数类型不匹配 | 🟡 警告 |
+| **`missing-parameter`** | 缺少参数 | 🟡 警告 |
+| **`redundant-parameter`** | 冗余参数 | 🟡 警告 |
+| **`unreachable-code`** | 不可达代码 | 💡 提示 |
+| **`unused`** | 未使用的变量/函数 | 💡 提示 |
+| **`undefined-global`** | 未定义的全局变量 | 🔴 错误 |
+| **`deprecated`** | 已弃用的功能 | 🔵 提示 |
+| **`access-invisible`** | 访问不可见成员 | 🟡 警告 |
+| **`discard-returns`** | 丢弃返回值 | 🟡 警告 |
+| **`undefined-field`** | 未定义的字段 | 🟡 警告 |
+| **`local-const-reassign`** | 局部常量重新赋值 | 🔴 错误 |
+| **`iter-variable-reassign`** | 迭代变量重新赋值 | 🟡 警告 |
+| **`duplicate-type`** | 重复类型定义 | 🟡 警告 |
+| **`redefined-local`** | 重新定义局部变量 | 💡 提示 |
+| **`redefined-label`** | 重新定义标签 | 🟡 警告 |
+| **`code-style-check`** | 代码风格检查 | 🟡 警告 |
+| **`need-check-nil`** | 需要检查 nil 值 | 🟡 警告 |
+| **`await-in-sync`** | 在同步代码中使用 await | 🟡 警告 |
+| **`annotation-usage-error`** | 注解使用错误 | 🔴 错误 |
+| **`return-type-mismatch`** | 返回类型不匹配 | 🟡 警告 |
+| **`missing-return-value`** | 缺少返回值 | 🟡 警告 |
+| **`redundant-return-value`** | 冗余返回值 | 🟡 警告 |
+| **`undefined-doc-param`** | 文档中未定义的参数 | 🟡 警告 |
+| **`duplicate-doc-field`** | 重复的文档字段 | 🟡 警告 |
+| **`missing-fields`** | 缺少字段 | 🟡 警告 |
+| **`inject-field`** | 注入字段 | 🟡 警告 |
+| **`circle-doc-class`** | 循环文档类继承 | 🟡 警告 |
+| **`incomplete-signature-doc`** | 不完整的签名文档 | 🟡 警告 |
+| **`missing-global-doc`** | 缺少全局变量文档 | 🟡 警告 |
+| **`assign-type-mismatch`** | 赋值类型不匹配 | 🟡 警告 |
+| **`duplicate-require`** | 重复 require | 💡 提示 |
+| **`non-literal-expressions-in-assert`** | assert 中使用非字面量表达式 | 🟡 警告 |
+| **`unbalanced-assignments`** | 不平衡的赋值 | 🟡 警告 |
+| **`unnecessary-assert`** | 不必要的 assert | 🟡 警告 |
+| **`unnecessary-if`** | 不必要的 if 判断 | 🟡 警告 |
+| **`duplicate-set-field`** | 重复设置字段 | 🟡 警告 |
+| **`duplicate-index`** | 重复索引 | 🟡 警告 |
+| **`generic-constraint-mismatch`** | 泛型约束不匹配 | 🟡 警告 |
 
 ---
 
@@ -265,7 +332,7 @@ EmmyLua 语言服务器支持灵活的配置系统，通过配置文件可以精
 | **`enable`** | `boolean` | `true` | 🔧 启用/禁用内联提示 |
 | **`paramHint`** | `boolean` | `true` | 🏷️ 显示函数参数提示 |
 | **`indexHint`** | `boolean` | `true` | 📊 显示跨行索引表达式提示 |
-| **`localHint`** | `boolean` | `true` | 📍 显示局部变量类型提示 |
+| **`localHint`** | `boolean` | `false` | 📍 显示局部变量类型提示 |
 | **`overrideHint`** | `boolean` | `true` | 🔄 显示方法重载提示 |
 
 ---
