@@ -1,97 +1,514 @@
-# Introduction to the features of the EmmyLua Language Server
+<div align="center">
 
-[中文介绍](./features_CN.md)
+# 🚀 EmmyLua Language Server Features Guide
 
-## Auto Completion
+*Comprehensive guide to the powerful features of EmmyLua Analyzer Rust*
 
-Supports standard code completion, including functions, variables, table fields, and modules. In addition, EmmyLua includes more advanced completion features:
-- `auto require` Shows Lua modules that have return values in the completion list. When pressing Tab, it automatically adds the require statement for that module at the top of the file after existing require statements.
-- `alias enum` Automatically completes corresponding alias or enum fields based on the parameter type in the current function.
-- `function` Suggests lambda expressions if the current function parameter is a function type.
-- `namespace` If the current variable is a namespace type, EmmyLua automatically completes sub-namespaces or class names. Declare a namespace type using `---@type namespace<"ClassName">`.
-- `module path` When typing within the argument of require, EmmyLua completes module paths, supporting both '.' and '/' as separators.
-- `file system path` In any string containing '/' or '\\', EmmyLua tries to complete file system paths based on relevant settings.
-- `postfix` When typing the '@' symbol after any variable, the corresponding postfix expressions are suggested. This symbol can also be replaced with '.'.
-- `snippet` Provides basic code snippet completions. Future releases may support custom templates via a file template system.
+[![Back to Main](https://img.shields.io/badge/← Back%20to%20Main-blue?style=for-the-badge)](../../README.md)
 
-## Code Hints
+</div>
 
-Displays traditional hover hints for variables, functions, table fields, and modules. EmmyLua also offers additional features for code hints:
-- `const` If the current variable is a constant type, hovering over it displays the variable’s value. For constant expressions, EmmyLua calculates and shows the expression result.
+---
 
-## Code Checks
+## 📋 Table of Contents
 
-EmmyLua leverages EmmyLua doc for comprehensive code checks. These checks can be disabled or enabled via configuration files, or controlled using annotations such as:
+- [🎯 Smart Completion](#-smart-completion)
+- [💡 Code Hints](#-code-hints)  
+- [🔍 Code Diagnostics](#-code-diagnostics)
+- [📊 Code Navigation](#-code-navigation)
+- [🔄 Refactoring](#-refactoring)
+- [🎨 Code Formatting](#-code-formatting)
+- [🔗 Link Features](#-link-features)
+- [✨ Visual Enhancements](#-visual-enhancements)
+
+---
+
+## 🎯 Smart Completion
+
+EmmyLua provides industry-leading intelligent code completion features, supporting not only basic function, variable, table field, and module completion, but also multiple innovative features.
+
+### 🔧 Core Completion Features
+
+<table>
+<tr>
+<td width="50%">
+
+#### 🚀 **Auto Require**
+- 🎯 Intelligently lists available Lua modules
+- ⚡ Automatically adds require statement on Tab press
+- 📍 Smart insertion at appropriate position in file header
+
+</td>
+<td width="50%">
+
+#### 🏷️ **Alias & Enum**
+- 🔍 Smart completion based on parameter types
+- 📝 Support for alias and enum fields
+- 🎯 Context-aware precise completion
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+#### ⚡ **Function Lambda**
+- 🔧 Detects function type parameters
+- 📋 Automatically generates lambda expressions
+- 🎨 Keeps code clean and elegant
+
+</td>
+<td width="50%">
+
+#### 🏗️ **Namespace**
+- 🗂️ Supports namespace completion
+- 🔍 Smart suggestions for sub-namespaces and class names
+- 📖 Use `---@type namespace<"ClassName">`
+
+</td>
+</tr>
+</table>
+
+### 🛣️ Path Completion System
+
+| Feature | Description | Example |
+|---------|-------------|---------|
+| **📁 Module Path** | Smart completion for require parameters, supports `.` and `/` separators | `require("utils.string")` |
+| **💾 File System** | Detects path strings, provides file system completion | `"./config/settings.lua"` |
+
+### 🎪 Advanced Completion Features
+
+- **🔧 Postfix**: Type `@` or `.` after variables to trigger expression completion
+- **📝 Snippet**: Built-in code snippets, future support for custom template system
+
+> **💡 Tip**: All completion features support fuzzy matching and smart sorting for a smoother coding experience.
+
+---
+
+## 💡 Code Hints
+
+Intelligent mouse hover hint system that provides rich contextual information and code insights.
+
+### ✨ Basic Hint Features
+
+- 🔍 **Variable Information**: Type, scope, definition location
+- ⚡ **Function Signatures**: Parameter types, return values, documentation comments
+- 📊 **Table Fields**: Field types, access permissions, inheritance relationships
+- 📦 **Module Information**: Export content, dependencies, version information
+
+### 🚀 Advanced Features
+
+<div align="center">
+
+#### 🔢 **Constant Calculation**
+
+When variables are constant types, hover hints will display:
+- ✅ **Constant Values**: Directly show the actual value of variables
+- 🧮 **Expression Calculation**: Automatically calculate constant expression results
+- 📊 **Type Inference**: Show precise types after calculation
+
+</div>
+
+```lua
+local PI = 3.14159  -- Hover displays: const PI: number = 3.14159
+local AREA = PI * 2 -- Hover displays: const AREA: number = 6.28318
+```
+
+> **💡 Pro Tip**: Constant calculation supports complex mathematical expressions and string operations, helping you better understand code logic.
+
+---
+
+## 🔍 Code Diagnostics
+
+Powerful static analysis system based on EmmyLua annotations, helping you discover potential issues during coding and maintain code quality.
+
+### ⚙️ Diagnostic Control
+
+#### 📝 Comment Control
+
+<table>
+<tr>
+<td width="50%">
+
+**File-level Disable**
 ```lua
 ---@diagnostic disable: undefined-global
+-- Disable undefined-global check in entire file
 ```
-This disables undefined-global checks in the current file.
 
+</td>
+<td width="50%">
+
+**Single-line Disable**
 ```lua
 ---@diagnostic disable-next-line: undefined-global
+-- Disable check only for next line
 ```
-This disables undefined-global checks for the following line.
 
-You can configure these checks in a config file, for example:
+</td>
+</tr>
+</table>
+
+#### ⚙️ Configuration File Control
+
+Fine-tune diagnostic behavior through configuration files:
+
 ```json
 {
   "diagnostics": {
-    "disable": ["undefined-global"]
+    "disable": ["undefined-global", "unused"],
+    "enable": [],
+    "severity": {
+      "undefined-global": "error",
+      "unused": "warning"
+    }
   }
 }
 ```
 
-## Document Symbols
 
-EmmyLua supports structured document symbols. In VSCode, these can be viewed in the OUTLINE panel on the left or by pressing Ctrl+Shift+O.
+## 📊 Code Navigation
 
-## Workspace Symbol Search
+Powerful code navigation system that allows you to quickly locate and browse code in large projects.
 
-EmmyLua supports workspace-wide symbol searches. In VSCode, press Ctrl+T, type '@', then the symbol name to search for the corresponding symbol.
+### 🗂️ Document Symbols
 
-## Refactoring
+<div align="center">
 
-EmmyLua supports variable and field rename refactoring. In VSCode, use the F2 shortcut for this operation.
+#### 📋 **Structured View**
 
-## Code Formatting
+Access through multiple ways in VS Code:
+- 📊 **OUTLINE Panel**: Structured view in left sidebar
+- ⌨️ **Shortcut**: `Ctrl+Shift+O` to quickly open symbol list
+- 🔍 **Real-time Filtering**: Type keywords to quickly locate symbols
 
-EmmyLua supports the "Format Document" and "Format Selection" features in VSCode, using [EmmyLuaCodeStyle](https://github.com/CppCXY/EmmyLuaCodeStyle). Refer to its documentation for related configurations.
+</div>
 
-## Code Folding
+### 🔍 Workspace Symbol Search
 
-EmmyLua supports standard code folding for functions, if-statements, for-loops, while-loops, etc. Additionally, it supports folding for comment blocks marked by `--region` and `--endregion`.
+<table>
+<tr>
+<td width="50%">
 
-## Go to Definition
+#### 🎯 **Global Search**
+- ⌨️ **Shortcut**: `Ctrl+T`
+- 🔍 **Symbol Prefix**: Type `@` + symbol name
+- ⚡ **Fuzzy Matching**: Supports partial matching and abbreviations
 
-In VSCode, EmmyLua supports "Go to Definition" and "Peek Definition." You can also Ctrl+click with the mouse to jump to definition.
+</td>
+<td width="50%">
 
-## Find References
+#### 🚀 **Smart Features**
+- 📊 **Result Sorting**: By relevance and usage frequency
+- 🎯 **Type Filtering**: Distinguish functions, variables, classes, etc.
+- 📍 **Location Preview**: Show definition location and context
 
-EmmyLua supports "Find All References" in VSCode. You can also Ctrl+click with the mouse to find references. Special cases include:
-- String reference search: If you select a string, you can use "Find All References" or Ctrl+click to find all references of that string.
-- Fuzzy references: If a selected variable has no definition, EmmyLua attempts a fuzzy reference search. This can be enabled or disabled via the configuration file.
+</td>
+</tr>
+</table>
 
-## Document Color
+### 🔗 Code Navigation
 
-EmmyLua attempts to detect sequences of six or eight hexadecimal digits in a string and interpret them as color values, displaying a color preview.
+#### 🎯 Go to Definition
 
-## Document Link
+| Method | Operation | Description |
+|--------|-----------|-------------|
+| **⌨️ Command** | `Go to Definition` | Standard LSP navigation |
+| **👁️ Preview** | `Peek Definition` | Popup preview definition |
+| **🖱️ Click** | `Ctrl + Left Click` | Quick navigation |
 
-EmmyLua tries to detect possible file paths in strings and displays clickable links to open those paths.
+### 🔎 Find References
 
-## Semantic Highlighting
+#### 📍 Standard Reference Finding
+- **🔍 Find All References**: `Find All References`
+- **🖱️ Quick Find**: `Ctrl + Left Click`
 
-EmmyLua supports `semanticHighlighting` as defined by the LSP, assigning appropriate highlighting based on token analysis.
+#### 🚀 Enhanced Reference Features
 
-## EmmyLua Annotator
+<div align="center">
 
-EmmyLua extends code rendering through a private protocol, for example, underlining mutable local variables.
+```mermaid
+graph LR
+    A[String References] --> B[Exact Matching]
+    C[Fuzzy References] --> D[Smart Inference]
+    E[Configuration Control] --> F[Optional Enable]
+```
 
-## Inlay Hints
+</div>
 
-EmmyLua can display additional hints, such as parameter types, variable types, and whether a function overrides a parent class method or is an await call. These hints can be enabled or disabled via configuration.
+- **📝 String References**: Find usage locations of string literals
+- **🎯 Fuzzy References**: Smart matching for undefined variables
+- **⚙️ Configuration Control**: Control enable status through configuration files
 
-## Document Highlight
+> **💡 Tip**: Reference finding supports cross-file analysis and can accurately identify dependencies between modules.
 
-Although VSCode’s built-in document highlight is sufficient, EmmyLua also provides its own highlight feature for variable references and related keywords. This is especially useful for editors that require language server-based highlighting.
+---
+
+## 🔄 Refactoring
+
+Safe and efficient code refactoring tools to help you optimize code structure without breaking code logic.
+
+### 🏷️ Rename Refactoring
+
+<div align="center">
+
+#### ⌨️ **Quick Operations**
+- **Rename Shortcut**: `F2`
+- **Smart Detection**: Automatically identify all related references
+- **Cross-file Support**: Support multi-file synchronous renaming
+
+</div>
+
+#### 🛡️ Safety Mechanisms
+
+| Feature | Description |
+|---------|-------------|
+| **🔍 Scope Analysis** | Precisely identify variable scope to avoid mis-renaming |
+| **📁 Cross-file Detection** | Detect renaming impact on module imports/exports |
+| **⚠️ Conflict Detection** | Proactively discover naming conflicts and provide suggestions |
+| **📋 Preview Feature** | Preview all affected locations before renaming |
+
+---
+
+## 🎨 Code Formatting
+
+Professional code formatting system based on [EmmyLuaCodeStyle](https://github.com/CppCXY/EmmyLuaCodeStyle).
+
+### ✨ Formatting Features
+
+<table>
+<tr>
+<td width="50%">
+
+#### 📄 **Document Formatting**
+- ⌨️ **Format Document**: Format entire file
+- 🔧 **Auto Fix**: Fix common formatting issues
+- ⚡ **Incremental Formatting**: Only format modified parts
+
+</td>
+<td width="50%">
+
+#### 🎯 **Selection Formatting**
+- ⌨️ **Format Selection**: Format selected region
+- 🎨 **Style Consistency**: Maintain consistent code style
+- 📏 **Smart Indentation**: Automatically adjust indentation levels
+
+</td>
+</tr>
+</table>
+
+### 📂 Code Folding
+
+#### 🏗️ **Standard Folding**
+- 🔧 **Function Folding**: `function ... end`
+- 🔀 **Control Flow Folding**: `if`, `for`, `while`, etc.
+- 📊 **Table Folding**: Large table structure folding
+
+#### 🎯 **Custom Folding**
+
+```lua
+--region Custom Folding Region
+-- Code to be folded here
+local config = {
+    -- Configuration items...
+}
+--endregion
+```
+
+> **💡 Configuration Tip**: For detailed formatting configuration options, please refer to [EmmyLuaCodeStyle Documentation](https://github.com/CppCXY/EmmyLuaCodeStyle/blob/master/README_EN.md).
+
+---
+
+## 🔗 Link Features
+
+Intelligently identify and handle various links in code to improve development efficiency.
+
+### 🎨 Color Preview
+
+<div align="center">
+
+#### 🌈 **Color Recognition**
+
+EmmyLua intelligently analyzes color values in strings and provides visual preview
+
+</div>
+
+<table>
+<tr>
+<td width="50%">
+
+#### 🔍 **Supported Formats**
+- **🎯 Hexadecimal**: `#FF0000`, `#RGBA`
+- **📊 6-digit Format**: `"FF0000"`
+- **🌟 8-digit Format**: `"FF0000FF"`
+- **⚡ Auto Detection**: Smart recognition of color strings
+
+</td>
+<td width="50%">
+
+#### ✨ **Visual Features**
+- **🟥 Color Blocks**: Display colors directly in code
+- **🖱️ Click to Edit**: Click color block to open color picker
+- **📋 Real-time Preview**: Update in real-time when modifying colors
+- **🎨 Format Conversion**: Support multiple color format conversions
+
+</td>
+</tr>
+</table>
+
+### 📁 Document Links
+
+#### 🔗 **Smart Path Recognition**
+
+```lua
+-- File paths automatically recognized as clickable links
+local config_path = "./config/settings.lua"
+local image_file = "./assets/images/logo.png"
+```
+
+#### 🚀 **Link Features**
+
+| Feature | Description | Example |
+|---------|-------------|---------|
+| **📂 File Opening** | Click path to directly open file | `"./utils/helper.lua"` |
+---
+
+## ✨ Visual Enhancements
+
+Multi-level visual enhancement features to make code clearer and more readable.
+
+### 🎨 Semantic Highlighting
+
+<div align="center">
+
+#### 🌈 **Smart Syntax Coloring**
+
+Advanced syntax highlighting system based on LSP `semanticHighlighting` standard
+
+</div>
+
+#### 🎯 **Highlighting Features**
+
+<table>
+<tr>
+<td width="50%">
+
+**🔍 Token Analysis**
+- **📝 Variable Types**: Distinguish local, global, parameter variables
+- **⚡ Function Recognition**: Highlight function definitions and calls
+- **📊 Keywords**: Smart recognition of Lua keywords
+- **🏷️ Comment Blocks**: Special handling of documentation comments
+
+</td>
+<td width="50%">
+
+**🎨 Visual Distinction**
+- **🔶 Type Identification**: Different types use different colors
+- **📈 Scope**: Distinguish scope through color depth
+- **⚠️ Error Marking**: Error code highlighted in red
+- **💡 Suggestion Marking**: Optimization suggestions in yellow
+
+</td>
+</tr>
+</table>
+
+### 🖊️ EmmyLua Enhanced Rendering
+
+#### 🎯 **Private Protocol Enhancement**
+
+Advanced code rendering features implemented through proprietary protocols:
+
+```lua
+local mutable_var = 10    -- Mutable variable: underlined
+local const_value = 42    -- Constant: normal display
+```
+
+#### ✨ **Enhancement Features**
+
+- **📏 Mutable Variable Underline**: Automatically underline mutable local variables
+- **🎨 Type Coloring**: Smart coloring based on type system
+- **⚡ Real-time Updates**: Real-time rendering updates when code is modified
+
+### 💡 Inlay Hints
+
+<div align="center">
+
+#### 📊 **Smart Hint System**
+
+Display useful type and status information in code without mouse hovering
+
+</div>
+
+#### 🔧 **Hint Types**
+
+| Hint Type | Description | Example |
+|-----------|-------------|---------|
+| **🏷️ Parameter Types** | Show function parameter type information | `function(name: string)` |
+| **📊 Variable Types** | Show inferred variable types | `local count: number` |
+| **🔄 Override Markers** | Mark overridden parent class methods | `override function()` |
+| **⚡ Async Calls** | Mark await async calls | `await coroutine()` |
+
+#### ⚙️ **Configuration Control**
+
+```json
+{
+  "inlayHints": {
+    "enable": true,
+    "paramHint": true,
+    "indexHint": true,
+    "localHint": false,
+    "overrideHint": true
+  }
+}
+```
+
+### 🎯 Document Highlighting
+
+#### 🔍 **Smart Highlighting Features**
+
+While editors provide basic highlighting, EmmyLua provides more precise highlighting support:
+
+<table>
+<tr>
+<td width="50%">
+
+**📍 Reference Highlighting**
+- **🎯 Variable References**: Highlight all uses of the same variable
+- **🔗 Scope**: Show effective scope of variables
+- **⚡ Real-time Tracking**: Real-time updates when cursor moves
+
+</td>
+<td width="50%">
+
+**🏷️ Keyword Groups**
+- **🔗 Paired Highlighting**: `if-then-end` paired display
+- **🔄 Loop Blocks**: `for-do-end` structure highlighting
+- **📊 Conditional Blocks**: `if-elseif-else-end` complete highlighting
+
+</td>
+</tr>
+</table>
+
+#### 🌐 **Cross-Editor Support**
+
+Provide the same highlighting experience as VS Code for other editors, ensuring consistent development experience.
+
+---
+
+<div align="center">
+
+## 🚀 Summary
+
+EmmyLua Analyzer Rust provides comprehensive Lua development support, from smart completion to visual enhancements. Every feature is carefully designed to improve your coding efficiency and code quality.
+
+### 🎯 Core Advantages
+
+- **⚡ High Performance**: Native Rust performance with fast response
+- **🧠 Intelligence**: Deep type analysis and inference
+- **🎨 Modern**: Rich visual effects and user experience
+- **🔧 Configurable**: Flexible configuration options for different needs
+
+
+[⬆ Back to Top](#-emmylua-language-server-features-guide)
+
+</div>
 
