@@ -438,16 +438,10 @@ fn check_enum_is_param(
     prefix_typ: &LuaType,
     index_expr: &LuaIndexExpr,
 ) -> Option<()> {
-    if enum_variable_is_param(
+    enum_variable_is_param(
         semantic_model.get_db(),
         &mut semantic_model.get_config().borrow_mut(),
         index_expr,
         prefix_typ,
     )
-    .is_some()
-    {
-        return Some(());
-    }
-
-    None
 }

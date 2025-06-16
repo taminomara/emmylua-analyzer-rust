@@ -5,6 +5,9 @@
 ---
 ## [0.8.2] - Unreleased
 
+### 🐛 Fixed
+- **Enum Variable Parameter Issue**: Fixed a crash issue when checking enum variable as parameter
+
 ## [0.8.1] - 2025-6-14
 
 ### 🔧 Changed
