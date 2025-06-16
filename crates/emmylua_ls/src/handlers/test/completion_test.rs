@@ -830,4 +830,61 @@ mod tests {
             CompletionTriggerKind::TRIGGER_CHARACTER,
         ));
     }
+
+    #[test]
+    fn test_class_function_3() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@class (partial) SkillMutator
+                ---@field on_add? fun(self: self, owner: string)
+
+                ---@class (partial) SkillMutator.A
+                ---@field on_add? fun(self: self, owner: string)
+        "#,
+        );
+        assert!(ws.check_completion_with_kind(
+            r#"
+                ---@class (partial) SkillMutator.A
+                local a
+                a.on_add = <??>
+            "#,
+            vec![VirtualCompletionItem {
+                label: "function(self, owner) end".to_string(),
+                kind: CompletionItemKind::FUNCTION,
+                ..Default::default()
+            },],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
+
+    #[test]
+    fn test_class_function_4() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@class (partial) SkillMutator
+                ---@field on_add? fun(self: self, owner: string)
+
+                ---@class (partial) SkillMutator.A
+                ---@field on_add? fun(self: self, owner: string)
+        "#,
+        );
+        assert!(ws.check_completion_with_kind(
+            r#"
+                ---@class (partial) SkillMutator.A
+                local a
+                function a:<??>()
+                    
+                end
+
+            "#,
+            vec![VirtualCompletionItem {
+                label: "on_add".to_string(),
+                kind: CompletionItemKind::FUNCTION,
+                label_detail: Some("(owner)".to_string()),
+            },],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
 }

@@ -14,6 +14,7 @@ mod table_field_provider;
 
 use emmylua_parser::LuaAstToken;
 use emmylua_parser::LuaStringToken;
+pub use function_provider::get_function_remove_nil;
 use rowan::TextRange;
 
 use super::completion_builder::CompletionBuilder;

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use emmylua_code_analysis::{
     get_real_type, DbIndex, InferGuard, LuaDeclLocation, LuaFunctionType, LuaMember, LuaMemberKey,
     LuaMemberOwner, LuaMultiLineUnion, LuaSemanticDeclId, LuaStringTplType, LuaType, LuaTypeCache,
@@ -68,9 +70,7 @@ fn get_token_should_type(builder: &mut CompletionBuilder) -> Option<Vec<LuaType>
             let var = vars.first()?;
             let var_type = builder.semantic_model.infer_expr(var.clone().into()).ok()?;
             let real_type = get_real_type(&builder.semantic_model.get_db(), &var_type)?;
-            if real_type.is_function() {
-                return Some(vec![real_type.clone()]);
-            }
+            return Some(vec![get_function_remove_nil(&real_type)?]);
         }
         _ => {}
     }
@@ -771,6 +771,37 @@ fn get_str_tpl_ref_extend_type(
                 }
             }
             None
+        }
+        _ => None,
+    }
+}
+
+/// 确保所有成员均为 function 或者 nil, 然后返回 function 的联合类型, 如果非 function 则返回 None
+pub fn get_function_remove_nil(typ: &LuaType) -> Option<LuaType> {
+    match typ {
+        LuaType::Union(union_typ) => {
+            let mut new_types = Vec::new();
+            for member in union_typ.get_types().iter() {
+                match member {
+                    _ if member.is_function() => {
+                        new_types.push(member.clone());
+                    }
+                    _ if member.is_nil() => {
+                        continue;
+                    }
+                    _ => {
+                        return None;
+                    }
+                }
+            }
+            match new_types.len() {
+                0 => None,
+                1 => Some(new_types[0].clone()),
+                _ => Some(LuaType::Union(Arc::new(LuaUnionType::new(new_types)))),
+            }
+        }
+        _ if typ.is_function() => {
+            return Some(typ.clone());
         }
         _ => None,
     }

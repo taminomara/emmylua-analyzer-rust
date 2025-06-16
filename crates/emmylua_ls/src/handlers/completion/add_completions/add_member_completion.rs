@@ -7,6 +7,7 @@ use lsp_types::CompletionItem;
 
 use crate::handlers::completion::{
     completion_builder::CompletionBuilder, completion_data::CompletionData,
+    providers::get_function_remove_nil,
 };
 
 use super::{
@@ -58,7 +59,8 @@ pub fn add_member_completion(
     };
 
     let typ = member_info.typ;
-    if status == CompletionTriggerStatus::Colon && !typ.is_function() {
+    let remove_nil_type = get_function_remove_nil(&typ).unwrap_or(typ);
+    if status == CompletionTriggerStatus::Colon && !remove_nil_type.is_function() {
         return None;
     }
 
@@ -82,12 +84,12 @@ pub fn add_member_completion(
         None
     };
 
-    let call_display =
-        get_call_show(builder.semantic_model.get_db(), &typ, status).unwrap_or(CallDisplay::None);
+    let call_display = get_call_show(builder.semantic_model.get_db(), &remove_nil_type, status)
+        .unwrap_or(CallDisplay::None);
     // 紧靠着 label 显示的描述
-    let detail = get_detail(builder, &typ, call_display);
+    let detail = get_detail(builder, &remove_nil_type, call_display);
     // 在`detail`更右侧, 且不紧靠着`detail`显示
-    let description = get_description(builder, &typ);
+    let description = get_description(builder, &remove_nil_type);
 
     let deprecated = if let Some(id) = &property_owner {
         Some(is_deprecated(builder, id.clone()))
@@ -97,7 +99,7 @@ pub fn add_member_completion(
 
     let mut completion_item = CompletionItem {
         label: label.clone(),
-        kind: Some(get_completion_kind(&typ)),
+        kind: Some(get_completion_kind(&remove_nil_type)),
         data: completion_data,
         label_details: Some(lsp_types::CompletionItemLabelDetails {
             detail,
@@ -126,7 +128,12 @@ pub fn add_member_completion(
     ) && (builder.trigger_token.kind() == LuaTokenKind::TkDot.into()
         || builder.trigger_token.kind() == LuaTokenKind::TkColon.into())
     {
-        resolve_function_params(builder, &mut completion_item, &typ, call_display);
+        resolve_function_params(
+            builder,
+            &mut completion_item,
+            &remove_nil_type,
+            call_display,
+        );
     }
 
     builder.add_completion_item(completion_item)?;
@@ -135,7 +142,7 @@ pub fn add_member_completion(
     add_signature_overloads(
         builder,
         property_owner,
-        &typ,
+        &remove_nil_type,
         call_display,
         deprecated,
         label,
@@ -223,7 +230,7 @@ fn get_call_show(
     }
 }
 
-/// 在定义函数时, 是否需要补全参数列表
+/// 在定义函数时, 是否需要补全参数列表, 只补全原类型为`docfunction`的函数
 /// ```lua
 /// ---@class A
 /// ---@field on_add fun(self: A, a: string, b: string)
@@ -242,6 +249,7 @@ fn resolve_function_params(
     if completion_item.insert_text.is_some() || completion_item.text_edit.is_some() {
         return None;
     }
+    let new_text = get_resolve_function_params_str(&typ, call_display)?;
     let index_expr = LuaIndexExpr::cast(builder.trigger_token.parent()?)?;
     let func_stat = index_expr.get_parent::<LuaFuncStat>()?;
     // 从 ast 解析
@@ -266,7 +274,6 @@ fn resolve_function_params(
     let mut lsp_add_range = document.to_lsp_range(add_range)?;
     // 必须要移动一位字符, 不能与 label 的插入位置重复
     lsp_add_range.start.character += 1;
-    let new_text = get_resolve_function_params_str(&typ, call_display)?;
     if new_text.is_empty() {
         return None;
     }
