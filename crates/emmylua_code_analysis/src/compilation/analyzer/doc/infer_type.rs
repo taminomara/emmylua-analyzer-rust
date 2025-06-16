@@ -588,7 +588,8 @@ fn infer_multi_line_union_type(
         };
 
         let description = if let Some(description) = field.get_description() {
-            let description_text = preprocess_description(&description.get_description_text());
+            let description_text =
+                preprocess_description(&description.get_description_text(), None);
             if !description_text.is_empty() {
                 Some(description_text)
             } else {

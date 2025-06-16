@@ -180,4 +180,19 @@ mod tests {
             },
         ));
     }
+
+    #[test]
+    fn test_signature_desc() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_hover(
+            r#"
+            -- # A
+            local function a<??>bc()
+            end
+            "#,
+            VirtualHoverResult {
+                value: "```lua\nlocal function abc()\n```\n\n---\n\n# A".to_string(),
+            },
+        ));
+    }
 }
