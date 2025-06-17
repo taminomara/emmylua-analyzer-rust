@@ -212,4 +212,19 @@ mod tests {
             },
         ));
     }
+
+    #[test]
+    fn test_alias_desc() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_hover(
+            r#"
+                ---@alias Tes<??>Alias
+                ---| 'A' # A1
+                ---| 'B' # A2
+            "#,
+            VirtualHoverResult {
+                value: "```lua\n(alias) TesAlias = (\"A\"|\"B\")\n    | \"A\" -- A1\n    | \"B\" -- A2\n\n```".to_string(),
+            },
+        ));
+    }
 }
