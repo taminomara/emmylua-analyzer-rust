@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::{LuaAstNode, LuaComment, LuaDocDescriptionOwner, LuaParser, ParserConfig};
+    use crate::{LuaAstNode, LuaComment, LuaParser, ParserConfig};
 
     #[allow(unused)]
     fn print_ast(lua_code: &str) {
@@ -65,5 +65,21 @@ mod test {
             "5 comment"
         );
         assert_eq!(comment_5.get_owner().unwrap().syntax().text(), "qi = 123");
+    }
+
+    #[test]
+    fn test_description() {
+        let code = r#"
+--- yeysysf
+---@class Test
+--- oooo
+---@class Test2
+---
+---hhhh
+---@field a string
+
+        "#;
+
+        print_ast(code);
     }
 }

@@ -1,4 +1,3 @@
-mod comment_trait;
 mod node;
 mod traits;
 mod tree;
@@ -11,7 +10,6 @@ use std::iter::successors;
 use rowan::{Language, TextRange, TextSize};
 
 use crate::kind::{LuaKind, LuaSyntaxKind, LuaTokenKind};
-pub use comment_trait::*;
 pub use node::*;
 pub use traits::*;
 pub use tree::{LuaSyntaxTree, LuaTreeBuilder};

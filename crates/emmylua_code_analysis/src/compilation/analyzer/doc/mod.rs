@@ -13,7 +13,7 @@ use crate::{
     profile::Profile,
     FileId,
 };
-use emmylua_parser::{LuaAstNode, LuaComment, LuaDocDescriptionOwner, LuaSyntaxNode};
+use emmylua_parser::{LuaAstNode, LuaComment, LuaSyntaxNode};
 use file_generic_index::FileGenericIndex;
 use tags::get_owner_id;
 

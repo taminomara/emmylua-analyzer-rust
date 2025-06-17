@@ -3,7 +3,7 @@ use crate::{
     LuaKind,
 };
 
-use super::{node::LuaComment, traits::LuaAstNode, LuaSyntaxNode};
+use super::{LuaAstNode, LuaComment, LuaSyntaxNode};
 
 #[allow(unused)]
 pub trait LuaCommentOwner: LuaAstNode {

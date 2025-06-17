@@ -45,8 +45,6 @@ impl LuaAstNode for LuaComment {
     }
 }
 
-impl LuaDocDescriptionOwner for LuaComment {}
-
 impl LuaComment {
     pub fn get_owner(&self) -> Option<LuaAst> {
         if let Some(inline_node) = find_inline_node(&self.syntax) {
@@ -60,6 +58,21 @@ impl LuaComment {
 
     pub fn get_doc_tags(&self) -> LuaAstChildren<LuaDocTag> {
         self.children()
+    }
+
+    pub fn get_description(&self) -> Option<LuaDocDescription> {
+        for child in self.syntax.children_with_tokens() {
+            match child.kind() {
+                LuaKind::Syntax(LuaSyntaxKind::DocDescription) => {
+                    return LuaDocDescription::cast(child.into_node().unwrap());
+                }
+                LuaKind::Token(LuaTokenKind::TkDocStart) => {
+                    return None;
+                }
+                _ => {}
+            }
+        }
+        None
     }
 }
 

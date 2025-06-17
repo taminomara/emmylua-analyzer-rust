@@ -1,3 +1,6 @@
+mod comment_trait;
+mod description_trait;
+
 use std::marker::PhantomData;
 
 use rowan::{TextRange, TextSize, WalkEvent};
@@ -8,6 +11,8 @@ use super::LuaSyntaxId;
 pub use super::{
     node::*, LuaSyntaxElementChildren, LuaSyntaxNode, LuaSyntaxNodeChildren, LuaSyntaxToken,
 };
+pub use comment_trait::*;
+pub use description_trait::*;
 
 pub trait LuaAstNode {
     fn syntax(&self) -> &LuaSyntaxNode;

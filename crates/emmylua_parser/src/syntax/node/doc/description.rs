@@ -1,13 +1,6 @@
 use crate::{LuaAstNode, LuaDocDetailToken, LuaSyntaxKind, LuaSyntaxNode, LuaTokenKind};
 
 #[allow(unused)]
-pub trait LuaDocDescriptionOwner: LuaAstNode {
-    fn get_description(&self) -> Option<LuaDocDescription> {
-        self.child()
-    }
-}
-
-#[allow(unused)]
 pub trait LuaDocDetailOwner: LuaAstNode {
     fn get_detail(&self) -> Option<LuaDocDetailToken> {
         self.token()

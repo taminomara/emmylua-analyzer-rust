@@ -5,6 +5,19 @@
 ---
 ## [0.8.2] - Unreleased
 
+### ✨ Added
+- **Support for Descriptions Above and After Tags**: You can now add descriptions both above a tag (as a preceding comment) and after a tag (inline). The description will be associated with the corresponding tag.
+  ```lua
+  ---@class A
+  --- Description below (applies to the @field a)
+  ---@field a integer inline-description
+  ---@field b integer # description after hash
+  --- Description above (applies to the @field b)
+  ---@field c integer inline-description
+  local a = {}
+  ```
+
+
 ### 🐛 Fixed
 - **Enum Variable Parameter Issue**: Fixed a crash issue when checking enum variable as parameter
 

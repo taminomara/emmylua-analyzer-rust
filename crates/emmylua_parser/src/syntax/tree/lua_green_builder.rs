@@ -84,6 +84,31 @@ impl LuaGreenNodeBuilder<'_> {
                     children,
                 }
             }
+            LuaSyntaxKind::Comment | LuaSyntaxKind::TypeMultiLineUnion => {
+                while child_start < child_count {
+                    if self.is_trivia_whitespace(self.children[child_start]) {
+                        child_start += 1;
+                    } else {
+                        break;
+                    }
+                }
+                while child_end > child_start {
+                    if self.is_trivia_whitespace(self.children[child_end]) {
+                        child_end -= 1;
+                    } else {
+                        break;
+                    }
+                }
+
+                let children = self
+                    .children
+                    .drain(child_start..=child_end)
+                    .collect::<Vec<_>>();
+                LuaGreenElement::Node {
+                    kind: parent_kind,
+                    children,
+                }
+            }
             _ => {
                 while child_start < child_count {
                     if self.is_trivia(self.children[child_start]) {
@@ -125,15 +150,32 @@ impl LuaGreenNodeBuilder<'_> {
         if let Some(element) = self.elements.get(pos) {
             match element {
                 LuaGreenElement::Token {
-                    kind: LuaTokenKind::TkWhitespace | LuaTokenKind::TkEndOfLine,
+                    kind:
+                        LuaTokenKind::TkWhitespace
+                        | LuaTokenKind::TkEndOfLine
+                        | LuaTokenKind::TkDocContinue,
                     ..
                 } => true,
                 LuaGreenElement::Node {
-                    kind: LuaSyntaxKind::Comment,
+                    kind: LuaSyntaxKind::Comment | LuaSyntaxKind::DocDescription,
                     ..
                 } => true,
                 _ => false,
             }
+        } else {
+            false
+        }
+    }
+
+    pub fn is_trivia_whitespace(&self, pos: usize) -> bool {
+        if let Some(element) = self.elements.get(pos) {
+            matches!(
+                element,
+                LuaGreenElement::Token {
+                    kind: LuaTokenKind::TkWhitespace | LuaTokenKind::TkEndOfLine,
+                    ..
+                }
+            )
         } else {
             false
         }

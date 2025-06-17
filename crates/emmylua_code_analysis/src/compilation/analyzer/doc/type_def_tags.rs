@@ -61,7 +61,7 @@ pub fn analyze_class(analyzer: &mut DocAnalyzer, tag: LuaDocTagClass) -> Option<
         }
     }
 
-    add_description_for_type_decl(analyzer, &class_decl_id, tag.get_description());
+    add_description_for_type_decl(analyzer, &class_decl_id, tag.get_descriptions());
 
     bind_def_type(analyzer, LuaType::Def(class_decl_id.clone()));
     Some(())
@@ -70,19 +70,11 @@ pub fn analyze_class(analyzer: &mut DocAnalyzer, tag: LuaDocTagClass) -> Option<
 fn add_description_for_type_decl(
     analyzer: &mut DocAnalyzer,
     type_decl_id: &LuaTypeDeclId,
-    description: Option<LuaDocDescription>,
+    descriptions: Vec<LuaDocDescription>,
 ) {
     let mut description_text = String::new();
 
-    let comment = analyzer.comment.clone();
-    if let Some(description) = comment.get_description() {
-        let description = preprocess_description(&description.get_description_text());
-        if !description.is_empty() {
-            description_text.push_str(&description);
-        }
-    }
-
-    if let Some(description) = description {
+    for description in descriptions {
         let description = preprocess_description(&description.get_description_text());
         if !description.is_empty() {
             if !description_text.is_empty() {
@@ -130,8 +122,7 @@ pub fn analyze_enum(analyzer: &mut DocAnalyzer, tag: LuaDocTagEnum) -> Option<()
         enum_decl.add_enum_base(base_type);
     }
 
-    let description = tag.get_description();
-    add_description_for_type_decl(analyzer, &enum_decl_id, description);
+    add_description_for_type_decl(analyzer, &enum_decl_id, tag.get_descriptions());
 
     bind_def_type(analyzer, LuaType::Def(enum_decl_id.clone()));
 
@@ -182,8 +173,7 @@ pub fn analyze_alias(analyzer: &mut DocAnalyzer, tag: LuaDocTagAlias) -> Option<
 
     alias.add_alias_origin(origin_type);
 
-    let description = tag.get_description();
-    add_description_for_type_decl(analyzer, &alias_decl_id, description);
+    add_description_for_type_decl(analyzer, &alias_decl_id, tag.get_descriptions());
 
     Some(())
 }

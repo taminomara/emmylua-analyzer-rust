@@ -1,9 +1,8 @@
 use crate::{
     kind::LuaSyntaxKind,
     syntax::{
-        comment_trait::LuaCommentOwner,
         node::{LuaBinaryOpToken, LuaNameToken, LuaUnaryOpToken},
-        traits::{LuaAstChildren, LuaAstNode},
+        traits::{LuaAstChildren, LuaAstNode, LuaCommentOwner},
     },
     LuaAstToken, LuaIndexToken, LuaLiteralToken, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind,
 };
