@@ -1,3 +1,4 @@
+mod code_actions_test;
 mod completion_resolve_test;
 mod completion_test;
 mod definition_test;

@@ -1,14 +1,15 @@
 use emmylua_code_analysis::{EmmyLuaAnalysis, FileId, VirtualUrlGenerator};
 use lsp_types::{
-    CompletionItemKind, CompletionResponse, CompletionTriggerKind, GotoDefinitionResponse, Hover,
-    HoverContents, InlayHint, MarkupContent, Position, SignatureHelpContext,
-    SignatureHelpTriggerKind,
+    CodeActionResponse, CompletionItemKind, CompletionResponse, CompletionTriggerKind,
+    GotoDefinitionResponse, Hover, HoverContents, InlayHint, MarkupContent, Position,
+    SignatureHelpContext, SignatureHelpTriggerKind,
 };
 use tokio_util::sync::CancellationToken;
 
 use crate::{
     context::ClientId,
     handlers::{
+        code_actions::code_action,
         completion::{completion, completion_resolve},
         inlay_hint::inlay_hint,
         signature_helper::signature_help,
@@ -312,5 +313,18 @@ impl ProviderVirtualWorkspace {
         let result = inlay_hint(&self.analysis, file_id);
         dbg!(&result);
         return result;
+    }
+
+    pub fn check_code_action(&mut self, block_str: &str) -> Option<CodeActionResponse> {
+        let file_id = self.def(block_str);
+        let result = self
+            .analysis
+            .diagnose_file(file_id, CancellationToken::new());
+        let Some(diagnostics) = result else {
+            return None;
+        };
+        let result = code_action(&self.analysis, file_id, diagnostics);
+        // dbg!(&result);
+        result
     }
 }
