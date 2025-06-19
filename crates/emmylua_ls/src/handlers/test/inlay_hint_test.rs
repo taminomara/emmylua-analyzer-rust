@@ -91,4 +91,21 @@ mod tests {
             .unwrap();
         assert!(result.is_empty());
     }
+
+    #[test]
+    fn test_meta_call_hint() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        let result = ws
+            .check_inlay_hint(
+                r#"
+                ---@class Hint1
+                ---@overload fun(a: string): Hint1
+                local Hint1
+
+                local a = Hint1("a")
+            "#,
+            )
+            .unwrap();
+        assert!(result.len() == 4);
+    }
 }

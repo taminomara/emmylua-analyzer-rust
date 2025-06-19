@@ -76,6 +76,7 @@
         "enable": true,
         "indexHint": true,
         "localHint": true,
+        "metaCallHint": true,
         "overrideHint": true,
         "paramHint": true
       },
@@ -738,6 +739,11 @@
         },
         "localHint": {
           "description": "Whether to enable local hints. Whether to enable override hints.",
+          "default": true,
+          "type": "boolean"
+        },
+        "metaCallHint": {
+          "description": "Whether to enable meta __call operator hints.",
           "default": true,
           "type": "boolean"
         },

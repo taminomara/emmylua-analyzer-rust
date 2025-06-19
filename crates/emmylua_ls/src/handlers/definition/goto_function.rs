@@ -96,7 +96,7 @@ fn get_signature_functions(signature: &LuaSignature) -> Vec<Arc<LuaFunctionType>
 }
 
 /// 比较函数类型是否匹配, 会处理泛型情况
-fn compare_function_types(
+pub fn compare_function_types(
     semantic_model: &SemanticModel,
     call_function: &LuaFunctionType,
     func: &Arc<LuaFunctionType>,
