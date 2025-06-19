@@ -421,7 +421,7 @@ fn parse_tag_cast(p: &mut LuaDocParser) -> ParseResult {
     p.set_state(LuaDocLexerState::Normal);
     let m = p.mark(LuaSyntaxKind::DocTagCast);
     p.bump();
-    expect_token(p, LuaTokenKind::TkName)?;
+    if_token_bump(p, LuaTokenKind::TkName);
 
     parse_op_type(p)?;
     while p.current_token() == LuaTokenKind::TkComma {
