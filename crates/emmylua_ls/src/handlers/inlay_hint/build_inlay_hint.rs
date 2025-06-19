@@ -347,7 +347,7 @@ fn build_local_name_hint(
         position: lsp_range.end,
         text_edits: None,
         tooltip: None,
-        padding_left: Some(true),
+        padding_left: None,
         padding_right: None,
         data: None,
     };

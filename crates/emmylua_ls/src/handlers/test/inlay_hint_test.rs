@@ -108,4 +108,19 @@ mod tests {
             .unwrap();
         assert!(result.len() == 4);
     }
+
+    #[test]
+    fn test_class_def_var_hint() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        let result = ws
+            .check_inlay_hint(
+                r#"
+                ---@class Hint.1
+                ---@overload fun(a: integer): Hint.1
+                local Hint1
+            "#,
+            )
+            .unwrap();
+        assert!(result.len() == 1);
+    }
 }
