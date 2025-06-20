@@ -286,7 +286,7 @@ fn build_cast_flow(
     file_id: FileId,
     tag_cast: LuaDocTagCast,
 ) -> Option<()> {
-    match tag_cast.get_target_expr() {
+    match tag_cast.get_key_expr() {
         Some(target_expr) => {
             let text = match &target_expr {
                 LuaExpr::NameExpr(name_expr) => name_expr.get_name_text()?,

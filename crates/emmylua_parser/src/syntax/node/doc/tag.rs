@@ -994,7 +994,7 @@ impl LuaDocTagCast {
         self.children()
     }
 
-    pub fn get_target_expr(&self) -> Option<LuaExpr> {
+    pub fn get_key_expr(&self) -> Option<LuaExpr> {
         self.child()
     }
 }

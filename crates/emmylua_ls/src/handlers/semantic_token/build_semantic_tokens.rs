@@ -283,7 +283,7 @@ fn build_node_semantic_token(
             //     }
             // }
 
-            if let Some(target_expr) = doc_cast.get_target_expr() {
+            if let Some(target_expr) = doc_cast.get_key_expr() {
                 match target_expr {
                     LuaExpr::NameExpr(name_expr) => {
                         builder.push(
