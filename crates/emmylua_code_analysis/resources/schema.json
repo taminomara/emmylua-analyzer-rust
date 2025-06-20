@@ -35,6 +35,7 @@
         "autoRequireFunction": "require",
         "autoRequireNamingConvention": "keep",
         "autoRequireSeparator": ".",
+        "baseFunctionIncludesName": true,
         "callSnippet": false,
         "enable": true,
         "postfix": "@"
@@ -594,6 +595,11 @@
           "description": "A separator used in auto-require paths.",
           "default": ".",
           "type": "string"
+        },
+        "baseFunctionIncludesName": {
+          "description": "Whether to include the name in the base function completion. effect: `function () end` -> `function name() end`.",
+          "default": true,
+          "type": "boolean"
         },
         "callSnippet": {
           "description": "Whether to use call snippets in completions.",
