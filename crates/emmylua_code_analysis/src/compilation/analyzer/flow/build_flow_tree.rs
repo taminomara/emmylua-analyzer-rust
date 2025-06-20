@@ -286,11 +286,18 @@ fn build_cast_flow(
     file_id: FileId,
     tag_cast: LuaDocTagCast,
 ) -> Option<()> {
-    match tag_cast.get_name_token() {
-        Some(name_token) => {
+    match tag_cast.get_target_expr() {
+        Some(target_expr) => {
+            let text = match &target_expr {
+                LuaExpr::NameExpr(name_expr) => name_expr.get_name_text()?,
+                LuaExpr::IndexExpr(index_expr) => index_expr.get_access_path()?,
+                _ => {
+                    return None;
+                }
+            };
+
             let decl_tree = db.get_decl_index().get_decl_tree(&file_id)?;
-            let text = name_token.get_name_text();
-            if let Some(decl) = decl_tree.find_local_decl(text, name_token.get_position()) {
+            if let Some(decl) = decl_tree.find_local_decl(&text, target_expr.get_position()) {
                 let decl_id = decl.get_id();
                 builder.add_flow_node(
                     LuaVarRefId::DeclId(decl_id),
@@ -300,7 +307,7 @@ fn build_cast_flow(
                 let ref_id = LuaVarRefId::Name(SmolStr::new(text));
                 if db
                     .get_decl_index()
-                    .get_decl(&LuaDeclId::new(file_id, name_token.get_position()))
+                    .get_decl(&LuaDeclId::new(file_id, target_expr.get_position()))
                     .is_none()
                 {
                     builder.add_flow_node(ref_id, LuaVarRefNode::CastRef(tag_cast.clone()));

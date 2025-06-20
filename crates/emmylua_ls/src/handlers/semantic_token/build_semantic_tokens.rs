@@ -283,8 +283,26 @@ fn build_node_semantic_token(
             //     }
             // }
 
-            if let Some(name) = doc_cast.get_name_token() {
-                builder.push(name.syntax(), SemanticTokenType::VARIABLE);
+            if let Some(target_expr) = doc_cast.get_target_expr() {
+                match target_expr {
+                    LuaExpr::NameExpr(name_expr) => {
+                        builder.push(
+                            name_expr.get_name_token()?.syntax(),
+                            SemanticTokenType::VARIABLE,
+                        );
+                    }
+                    LuaExpr::IndexExpr(index_expr) => {
+                        let position = index_expr.syntax().text_range().start();
+                        let len = index_expr.syntax().text_range().len();
+                        builder.push_at_position(
+                            position.into(),
+                            len.into(),
+                            SemanticTokenType::VARIABLE,
+                            None,
+                        );
+                    }
+                    _ => {}
+                }
             }
             if let Some(NodeOrToken::Token(token)) = doc_cast.syntax().prev_sibling_or_token() {
                 if token.kind() == LuaKind::Token(LuaTokenKind::TkDocLongStart) {
