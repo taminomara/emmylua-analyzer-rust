@@ -432,7 +432,6 @@ fn parse_tag_cast(p: &mut LuaDocParser) -> ParseResult {
     }
 
     // 切换回正常状态
-    p.set_state(LuaDocLexerState::Normal);
     parse_op_type(p)?;
     while p.current_token() == LuaTokenKind::TkComma {
         p.bump();
