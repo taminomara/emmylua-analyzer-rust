@@ -2,7 +2,7 @@ use emmylua_code_analysis::{EmmyLuaAnalysis, FileId, VirtualUrlGenerator};
 use lsp_types::{
     CodeActionResponse, CompletionItemKind, CompletionResponse, CompletionTriggerKind,
     GotoDefinitionResponse, Hover, HoverContents, InlayHint, MarkupContent, Position,
-    SignatureHelpContext, SignatureHelpTriggerKind,
+    SemanticTokensResult, SignatureHelpContext, SignatureHelpTriggerKind,
 };
 use tokio_util::sync::CancellationToken;
 
@@ -12,6 +12,7 @@ use crate::{
         code_actions::code_action,
         completion::{completion, completion_resolve},
         inlay_hint::inlay_hint,
+        semantic_token::semantic_token,
         signature_helper::signature_help,
     },
 };
@@ -326,5 +327,17 @@ impl ProviderVirtualWorkspace {
         let result = code_action(&self.analysis, file_id, diagnostics);
         // dbg!(&result);
         result
+    }
+
+    pub fn check_semantic_token(&mut self, block_str: &str) -> Option<SemanticTokensResult> {
+        let file_id = self.def(block_str);
+        let result = semantic_token(&self.analysis, file_id, ClientId::VSCode);
+        let Some(result) = result else {
+            return None;
+        };
+
+        let data = serde_json::to_string(&result).unwrap();
+        dbg!(&data);
+        Some(result)
     }
 }
