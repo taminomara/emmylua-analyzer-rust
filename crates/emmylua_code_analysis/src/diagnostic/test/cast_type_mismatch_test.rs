@@ -161,4 +161,76 @@ mod tests {
             "#
         ));
     }
+
+    #[test]
+    fn test_cast_alias_1() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::CastTypeMismatch,
+            r#"
+                ---@alias KV.SupportType
+                ---| boolean
+                ---| integer
+                ---| number
+                ---| string
+
+
+                ---@param value KV.SupportType
+                ---@return any
+                ---@return string
+                local function get_py_value_and_type(value)
+                    local tp = type(value)
+                    if tp == 'number' then
+                        ---@cast value number
+                        return value, math.type(value)
+                    end
+                    return value, tp
+                end 
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_cast_alias_2() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::CastTypeMismatch,
+            r#"
+                ---@alias KeyAlias
+                ---| "a" # 2010001
+                ---| "b" # 2010002
+
+                ---@type string
+                local key
+
+                ---@cast key KeyAlias
+            "#
+        ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::CastTypeMismatch,
+            r#"
+                ---@alias IdAlias
+                ---| 2010001
+                ---| 2010002
+
+                ---@type string
+                local key
+
+                ---@cast key IdAlias
+            "#
+        ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::CastTypeMismatch,
+            r#"
+                ---@alias IdAndKeyAlias IdAlias|KeyAlias
+
+                ---@type string
+                local key
+
+                ---@cast key IdAndKeyAlias
+            "#
+        ));
+    }
 }

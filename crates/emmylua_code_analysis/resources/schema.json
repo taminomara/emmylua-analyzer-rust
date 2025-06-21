@@ -513,6 +513,13 @@
           "enum": [
             "generic-constraint-mismatch"
           ]
+        },
+        {
+          "description": "cast-type-mismatch",
+          "type": "string",
+          "enum": [
+            "cast-type-mismatch"
+          ]
         }
       ]
     },

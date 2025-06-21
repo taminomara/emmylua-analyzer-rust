@@ -257,3 +257,7 @@ Cannot use `...` outside a vararg function.:
   en: "Cannot cast `%{original}` to `%{target}`. %{reason}"
   zh_CN: "不能将 `%{original}` 转换为 `%{target}`。%{reason}"
   zh_HK: "不能將 `%{original}` 轉換為 `%{target}`。%{reason}"
+"type recursion":
+  en: "type recursion"
+  zh_CN: "类型递归"
+  zh_HK: "類型遞歸"
