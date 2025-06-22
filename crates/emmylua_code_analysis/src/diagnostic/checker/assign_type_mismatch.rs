@@ -5,8 +5,8 @@ use emmylua_parser::{
 use rowan::TextRange;
 
 use crate::{
-    DiagnosticCode, LuaDeclExtra, LuaDeclId, LuaMemberKey, LuaSemanticDeclId, LuaType,
-    LuaTypeCache, SemanticDeclLevel, SemanticModel, TypeCheckFailReason, TypeCheckResult,
+    infer_index_expr, DiagnosticCode, LuaDeclExtra, LuaDeclId, LuaMemberKey, LuaSemanticDeclId,
+    LuaType, SemanticDeclLevel, SemanticModel, TypeCheckFailReason, TypeCheckResult,
 };
 
 use super::{humanize_lint_type, Checker, DiagnosticContext};
@@ -129,30 +129,13 @@ fn check_index_expr(
     expr: Option<LuaExpr>,
     value_type: LuaType,
 ) -> Option<()> {
-    let semantic_info =
-        semantic_model.get_semantic_info(rowan::NodeOrToken::Node(index_expr.syntax().clone()))?;
-    let mut source_type = None;
-    match semantic_info.semantic_decl {
-        // 如果是已显示定义的成员, 我们不能获取其经过类型缩窄后的类型
-        Some(LuaSemanticDeclId::Member(member_id)) => {
-            let type_cache = semantic_model
-                .get_db()
-                .get_type_index()
-                .get_type_cache(&member_id.into());
-            if let Some(type_cache) = type_cache {
-                match type_cache {
-                    LuaTypeCache::DocType(ty) => {
-                        source_type = Some(ty.clone());
-                    }
-                    _ => {}
-                }
-            }
-        }
-        _ => {}
-    }
-    if source_type.is_none() {
-        source_type = Some(semantic_info.typ);
-    }
+    let source_type = infer_index_expr(
+        semantic_model.get_db(),
+        &mut semantic_model.get_config().borrow_mut(),
+        index_expr.clone(),
+        false,
+    )
+    .ok();
 
     check_assign_type_mismatch(
         context,

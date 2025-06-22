@@ -17,7 +17,7 @@ use infer_binary::infer_binary_expr;
 use infer_call::infer_call_expr;
 pub use infer_call::infer_call_expr_func;
 pub use infer_fail_reason::InferFailReason;
-use infer_index::infer_index_expr;
+pub use infer_index::infer_index_expr;
 use infer_name::infer_name_expr;
 pub use infer_name::{find_self_decl_or_member_id, infer_param};
 use infer_table::infer_table_expr;
@@ -76,7 +76,7 @@ pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> Inf
             paren_expr.get_expr().ok_or(InferFailReason::None)?,
         ),
         LuaExpr::NameExpr(name_expr) => infer_name_expr(db, cache, name_expr),
-        LuaExpr::IndexExpr(index_expr) => infer_index_expr(db, cache, index_expr),
+        LuaExpr::IndexExpr(index_expr) => infer_index_expr(db, cache, index_expr, true),
     };
 
     match &result_type {

@@ -905,4 +905,21 @@ return t
         "#
         ));
     }
+
+    #[test]
+    fn test_issue_525() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+                ---@type table<integer,true|string>
+                local lines
+                for lnum = 1, #lines do
+                    if lines[lnum] == true then
+                        lines[lnum] = ''
+                    end
+                end
+        "#
+        ));
+    }
 }

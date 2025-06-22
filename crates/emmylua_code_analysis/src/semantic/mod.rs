@@ -19,6 +19,7 @@ use emmylua_parser::{
     LuaCallExpr, LuaChunk, LuaExpr, LuaIndexKey, LuaParseError, LuaSyntaxNode, LuaSyntaxToken,
     LuaTableExpr,
 };
+pub use infer::infer_index_expr;
 use infer::{infer_bind_value_type, infer_expr_list_types};
 pub use infer::{infer_table_field_value_should_be, infer_table_should_be};
 use lsp_types::Uri;
