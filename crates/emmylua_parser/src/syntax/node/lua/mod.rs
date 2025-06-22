@@ -249,10 +249,12 @@ impl LuaAstNode for LuaTableField {
 impl LuaCommentOwner for LuaTableField {}
 
 impl LuaTableField {
+    /// TableFieldAssign: { a = "a" }
     pub fn is_assign_field(&self) -> bool {
         self.syntax().kind() == LuaSyntaxKind::TableFieldAssign.into()
     }
 
+    /// TableFieldValue: { "a" }
     pub fn is_value_field(&self) -> bool {
         self.syntax().kind() == LuaSyntaxKind::TableFieldValue.into()
     }

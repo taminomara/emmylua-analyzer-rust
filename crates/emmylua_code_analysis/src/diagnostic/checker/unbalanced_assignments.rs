@@ -59,8 +59,7 @@ fn check_unbalanced_assignment(
         return Some(());
     }
 
-    let value_types =
-        semantic_model.infer_multi_value_adjusted_expression_types(value_exprs, Some(vars.len()));
+    let value_types = semantic_model.infer_expr_list_types(value_exprs, Some(vars.len()));
     if let Some(last_type) = value_types.last() {
         if check_last(&last_type.0) {
             return Some(());

@@ -170,7 +170,7 @@ fn get_custom_type_operator(
     }
 }
 
-pub fn infer_multi_value_adjusted_expression_types(
+pub fn infer_expr_list_types(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     exprs: &[LuaExpr],

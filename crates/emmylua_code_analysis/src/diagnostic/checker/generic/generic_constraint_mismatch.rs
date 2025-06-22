@@ -85,8 +85,7 @@ fn check_call_expr(
         let mut params = signature.get_type_params();
 
         let arg_exprs = call_expr.get_args_list()?.get_args().collect::<Vec<_>>();
-        let mut arg_infos =
-            semantic_model.infer_multi_value_adjusted_expression_types(&arg_exprs, None);
+        let mut arg_infos = semantic_model.infer_expr_list_types(&arg_exprs, None);
         match (call_expr.is_colon_call(), signature.is_colon_define) {
             (true, true) | (false, false) => {}
             (false, true) => {

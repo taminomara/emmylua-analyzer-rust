@@ -934,6 +934,7 @@ impl VariadicType {
         }
     }
 
+    /// 获取可变参数的最小长度, 如果可变参数是无限长度, 则返回 None
     pub fn get_min_len(&self) -> Option<usize> {
         match self {
             VariadicType::Base(_) => None,
@@ -955,6 +956,7 @@ impl VariadicType {
         }
     }
 
+    /// 获取可变参数的最大长度, 如果可变参数是无限长度, 则返回 None
     pub fn get_max_len(&self) -> Option<usize> {
         match self {
             VariadicType::Base(_) => None,

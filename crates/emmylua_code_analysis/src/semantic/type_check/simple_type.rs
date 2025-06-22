@@ -334,27 +334,33 @@ fn check_variadic_type_compact(
     check_guard: TypeCheckGuard,
 ) -> TypeCheckResult {
     match &source_type {
-        VariadicType::Base(source_base) => {
-            if let LuaType::Variadic(compact_variadic) = compact_type {
-                match compact_variadic.deref() {
-                    VariadicType::Base(compact_base) => {
-                        if source_base == compact_base {
-                            return Ok(());
-                        }
-                    }
-                    VariadicType::Multi(compact_multi) => {
-                        for compact_type in compact_multi {
-                            check_simple_type_compact(
-                                db,
-                                source_base,
-                                compact_type,
-                                check_guard.next_level()?,
-                            )?;
-                        }
+        VariadicType::Base(source_base) => match compact_type {
+            LuaType::Variadic(compact_variadic) => match compact_variadic.deref() {
+                VariadicType::Base(compact_base) => {
+                    if source_base == compact_base {
+                        return Ok(());
                     }
                 }
+                VariadicType::Multi(compact_multi) => {
+                    for compact_type in compact_multi {
+                        check_simple_type_compact(
+                            db,
+                            source_base,
+                            compact_type,
+                            check_guard.next_level()?,
+                        )?;
+                    }
+                }
+            },
+            _ => {
+                check_simple_type_compact(
+                    db,
+                    source_base,
+                    compact_type,
+                    check_guard.next_level()?,
+                )?;
             }
-        }
+        },
         VariadicType::Multi(_) => {}
     }
 

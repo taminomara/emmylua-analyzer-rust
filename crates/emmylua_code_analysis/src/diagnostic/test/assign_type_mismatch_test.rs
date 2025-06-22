@@ -858,4 +858,51 @@ return t
         "#
         ));
     }
+
+    #[test]
+    fn test_nesting_table_field_1() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+            ---@class T1
+            ---@field x T2
+
+            ---@class T2
+            ---@field xx number
+        "#,
+        );
+        assert!(!ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            ---@type T1
+            local t = {
+                x = {
+                    xx = "",
+                }
+            }
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_nesting_table_field_2() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+            ---@class T1
+            ---@field x number
+        "#,
+        );
+        assert!(!ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            ---@type T1
+            local t = {
+                x = {
+                    xx = "",
+                }
+            }
+        "#
+        ));
+    }
 }
