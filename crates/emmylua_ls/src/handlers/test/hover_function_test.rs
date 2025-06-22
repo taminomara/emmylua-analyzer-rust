@@ -310,4 +310,25 @@ mod tests {
             },
         ));
     }
+
+    #[test]
+    fn test_first_generic() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_hover(
+            r#"
+                ---@class Reactive
+                local M
+
+                ---@generic T: table
+                ---@param target T
+                ---@return T
+                function M.reac<??>tive(target)
+                end
+
+            "#,
+            VirtualHoverResult {
+                value: "```lua\nfunction Reactive.reactive(target: T)\n  -> T\n\n```".to_string(),
+            },
+        ));
+    }
 }

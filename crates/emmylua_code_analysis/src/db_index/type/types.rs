@@ -561,7 +561,19 @@ impl LuaFunctionType {
                         return true;
                     }
                     match owner_type {
-                        Some(owner_type) => semantic_model.type_check(owner_type, t).is_ok(),
+                        Some(owner_type) => {
+                            // 一些类型不应该被视为 method
+                            match (owner_type, t) {
+                                (LuaType::Ref(_) | LuaType::Def(_), _) => {
+                                    if t.is_any() || t.is_table() || t.is_class_tpl() {
+                                        return false;
+                                    }
+                                }
+                                _ => {}
+                            }
+
+                            semantic_model.type_check(owner_type, t).is_ok()
+                        }
                         None => name == "self",
                     }
                 }

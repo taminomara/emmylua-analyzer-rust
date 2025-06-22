@@ -123,13 +123,29 @@ impl LuaSignature {
         }
 
         if let Some(param_info) = self.get_param_info_by_id(0) {
-            if param_info.type_ref.is_self_infer() {
+            let param_type = &param_info.type_ref;
+            if param_type.is_self_infer() {
                 return true;
             }
             match owner_type {
-                Some(owner_type) => semantic_model
-                    .type_check(owner_type, &param_info.type_ref)
-                    .is_ok(),
+                Some(owner_type) => {
+                    // 一些类型不应该被视为 method
+                    match (owner_type, param_type) {
+                        (LuaType::Ref(_) | LuaType::Def(_), _) => {
+                            if param_type.is_any()
+                                || param_type.is_table()
+                                || param_type.is_class_tpl()
+                            {
+                                return false;
+                            }
+                        }
+                        _ => {}
+                    }
+
+                    semantic_model
+                        .type_check(owner_type, &param_info.type_ref)
+                        .is_ok()
+                }
                 None => param_info.name == "self",
             }
         } else {
