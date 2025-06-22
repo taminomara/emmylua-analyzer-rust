@@ -97,6 +97,16 @@
         }
       ]
     },
+    "inlineValues": {
+      "default": {
+        "enable": true
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/EmmyrcInlineValues"
+        }
+      ]
+    },
     "references": {
       "default": {
         "enable": true,
@@ -767,6 +777,16 @@
         },
         "paramHint": {
           "description": "Whether to enable parameter hints.",
+          "default": true,
+          "type": "boolean"
+        }
+      }
+    },
+    "EmmyrcInlineValues": {
+      "type": "object",
+      "properties": {
+        "enable": {
+          "description": "Whether to enable inline values.",
           "default": true,
           "type": "boolean"
         }

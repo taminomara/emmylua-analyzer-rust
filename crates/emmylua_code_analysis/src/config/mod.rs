@@ -13,8 +13,8 @@ pub use configs::EmmyrcLuaVersion;
 use configs::{EmmyrcCodeAction, EmmyrcDocumentColor};
 use configs::{
     EmmyrcCodeLen, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcHover, EmmyrcInlayHint,
-    EmmyrcReference, EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken, EmmyrcSignature,
-    EmmyrcStrict, EmmyrcWorkspace,
+    EmmyrcInlineValues, EmmyrcReference, EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken,
+    EmmyrcSignature, EmmyrcStrict, EmmyrcWorkspace,
 };
 use emmylua_parser::{LuaLanguageLevel, ParserConfig, SpecialFunction};
 use regex::Regex;
@@ -56,6 +56,8 @@ pub struct Emmyrc {
     pub document_color: EmmyrcDocumentColor,
     #[serde(default)]
     pub code_action: EmmyrcCodeAction,
+    #[serde(default)]
+    pub inline_values: EmmyrcInlineValues,
 }
 
 impl Emmyrc {
