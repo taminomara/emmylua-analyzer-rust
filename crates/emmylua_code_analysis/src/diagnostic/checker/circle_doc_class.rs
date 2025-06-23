@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use emmylua_parser::{LuaAstNode, LuaAstToken, LuaDocTagClass};
 use rowan::TextRange;
 
@@ -37,9 +39,14 @@ fn check_doc_tag_class(
     let name = class_decl.get_full_name();
 
     let mut queue = Vec::new();
+    let mut visited = HashSet::new();
 
     queue.push(class_decl.get_id());
     while let Some(current_id) = queue.pop() {
+        if !visited.insert(current_id.clone()) {
+            continue;
+        }
+
         let super_types = type_index.get_super_types(&current_id);
         if let Some(super_types) = super_types {
             for super_type in super_types {
@@ -54,7 +61,10 @@ fn check_doc_tag_class(
                             );
                             return Some(());
                         }
-                        queue.push(super_type_id.clone());
+
+                        if !visited.contains(super_type_id) {
+                            queue.push(super_type_id.clone());
+                        }
                     }
                     _ => {}
                 }

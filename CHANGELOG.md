@@ -20,6 +20,7 @@
 
 ### 🐛 Fixed
 - **Enum Variable Parameter Issue**: Fixed a crash issue when checking enum variable as parameter
+- **Circle Doc Class Issue**: Fixed a bug that caused the language server to hang when
 
 ## [0.8.1] - 2025-6-14
 
