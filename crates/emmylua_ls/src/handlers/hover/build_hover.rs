@@ -11,8 +11,8 @@ use emmylua_code_analysis::humanize_type;
 
 use crate::handlers::hover::{
     find_origin::replace_semantic_type,
-    function_humanize::is_function,
-    hover_humanize::{hover_function_type, hover_humanize_type},
+    function_humanize::{hover_function_type, is_function},
+    hover_humanize::hover_humanize_type,
 };
 
 use super::{
