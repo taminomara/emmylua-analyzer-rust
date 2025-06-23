@@ -118,6 +118,12 @@ pub async fn on_did_close_document(
         drop(analysis);
         let mut mut_analysis = context.analysis.write().await;
         mut_analysis.remove_file_by_uri(uri);
+        drop(mut_analysis);
+        // 发送空诊断消息以清除客户端显示的诊断
+        context
+            .file_diagnostic
+            .clear_file_diagnostics(uri.clone())
+            .await;
     }
 
     Some(())

@@ -84,6 +84,16 @@ impl FileDiagnostic {
         }
     }
 
+    /// 清除指定文件的诊断信息
+    pub async fn clear_file_diagnostics(&self, uri: lsp_types::Uri) {
+        let diagnostic_param = lsp_types::PublishDiagnosticsParams {
+            uri,
+            diagnostics: vec![],
+            version: None,
+        };
+        self.client.publish_diagnostics(diagnostic_param);
+    }
+
     pub async fn add_workspace_diagnostic_task(
         &self,
         client_id: ClientId,
