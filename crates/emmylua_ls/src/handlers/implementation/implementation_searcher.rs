@@ -215,9 +215,23 @@ pub fn search_decl_implementations(
 
     if decl.is_local() {
         let document = semantic_model.get_document();
+        let decl_refs = semantic_model
+            .get_db()
+            .get_reference_index()
+            .get_decl_references(&decl_id.file_id, &decl_id)?;
+
         let range = decl.get_range();
         let location = document.to_lsp_location(range)?;
         result.push(location);
+
+        for decl_ref in decl_refs {
+            if decl_ref.is_write {
+                if let Some(location) = document.to_lsp_location(decl_ref.range) {
+                    result.push(location);
+                }
+            }
+        }
+
         return Some(());
     } else {
         let name = decl.get_name();
