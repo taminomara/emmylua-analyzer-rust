@@ -625,6 +625,7 @@ fn handle_name_node(
                         is_meta.then_some(SemanticTokenModifier::DEFAULT_LIBRARY),
                     )
                 }
+                LuaType::DocFunction(_) => (SemanticTokenType::FUNCTION, None),
                 _ => {
                     let decl = semantic_model
                         .get_db()
