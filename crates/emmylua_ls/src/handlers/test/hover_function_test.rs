@@ -331,4 +331,20 @@ mod tests {
             },
         ));
     }
+
+    #[test]
+    fn test_table_field_function() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_hover(
+            r#"
+                local export = {}
+                ---@type fun()
+                export.NO<??>OP = function() end
+
+            "#,
+            VirtualHoverResult {
+                value: "```lua\nfunction export.NOOP()\n```".to_string(),
+            },
+        ));
+    }
 }

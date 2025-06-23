@@ -4,13 +4,16 @@ use crate::handlers::hover::function_humanize::try_extract_signature_id_from_fie
 
 use super::std_hover::{hover_std_description, is_std};
 use emmylua_code_analysis::{
-    format_union_type, DbIndex, LuaDocReturnInfo, LuaFunctionType, LuaMember, LuaMemberKey,
-    LuaMemberOwner, LuaMultiLineUnion, LuaSemanticDeclId, LuaSignature, LuaSignatureId, LuaType,
-    LuaUnionType, RenderLevel, SemanticDeclLevel, SemanticModel,
+    format_union_type, DbIndex, InFiled, LuaDocReturnInfo, LuaFunctionType, LuaMember,
+    LuaMemberKey, LuaMemberOwner, LuaMultiLineUnion, LuaSemanticDeclId, LuaSignature,
+    LuaSignatureId, LuaType, LuaUnionType, RenderLevel, SemanticDeclLevel, SemanticModel,
 };
 
 use emmylua_code_analysis::humanize_type;
-use emmylua_parser::{LuaAstNode, LuaIndexExpr, LuaSyntaxKind};
+use emmylua_parser::{
+    LuaAstNode, LuaExpr, LuaIndexExpr, LuaStat, LuaSyntaxId, LuaSyntaxKind,
+};
+use rowan::TextRange;
 
 use super::hover_builder::HoverBuilder;
 
@@ -208,20 +211,32 @@ fn hover_doc_function_type(
         let parent_owner = db
             .get_member_index()
             .get_current_owner(&owner_member.get_id());
-        if let Some(LuaMemberOwner::Type(type_decl_id)) = parent_owner {
-            // 如果是全局定义, 则使用定义时的名称
-            if let Some(global_name) = global_name {
-                name.push_str(global_name);
-            } else {
-                name.push_str(type_decl_id.get_simple_name());
+        if let Some(parent_owner) = parent_owner {
+            match parent_owner {
+                LuaMemberOwner::Type(type_decl_id) => {
+                    // 如果是全局定义, 则使用定义时的名称
+                    if let Some(global_name) = global_name {
+                        name.push_str(global_name);
+                    } else {
+                        name.push_str(type_decl_id.get_simple_name());
+                    }
+                    if owner_member.is_field() {
+                        type_label = "(field) ";
+                    }
+                    is_method = lua_func.is_method(
+                        builder.semantic_model,
+                        Some(&LuaType::Ref(type_decl_id.clone())),
+                    );
+                }
+                LuaMemberOwner::Element(element_id) => {
+                    if let Some(owner_name) =
+                        extract_owner_name_from_element(builder.semantic_model, element_id)
+                    {
+                        name.push_str(&owner_name);
+                    }
+                }
+                _ => {}
             }
-            if owner_member.is_field() {
-                type_label = "(field) ";
-            }
-            is_method = lua_func.is_method(
-                builder.semantic_model,
-                Some(&LuaType::Ref(type_decl_id.clone())),
-            );
         }
 
         if is_method {
@@ -287,7 +302,6 @@ fn hover_signature_type(
 
     let mut is_method = signature.is_colon_define;
     let mut self_real_type = LuaType::SelfInfer;
-
     let mut type_label = "function ";
     // 有可能来源于类. 例如: `local add = class.add`, `add()`应被视为类定义的内容
     let full_name = if let Some(owner_member) = owner_member {
@@ -296,25 +310,36 @@ fn hover_signature_type(
         let parent_owner = db
             .get_member_index()
             .get_current_owner(&owner_member.get_id());
-        if let Some(LuaMemberOwner::Type(type_decl_id)) = parent_owner {
-            self_real_type = LuaType::Ref(type_decl_id.clone());
-            // 如果是全局定义, 则使用定义时的名称
-            if let Some(global_name) = global_name {
-                name.push_str(global_name);
-            } else {
-                name.push_str(type_decl_id.get_simple_name());
+        match parent_owner {
+            Some(LuaMemberOwner::Type(type_decl_id)) => {
+                self_real_type = LuaType::Ref(type_decl_id.clone());
+                // 如果是全局定义, 则使用定义时的名称
+                if let Some(global_name) = global_name {
+                    name.push_str(global_name);
+                } else {
+                    name.push_str(type_decl_id.get_simple_name());
+                }
+                if owner_member.is_field() {
+                    type_label = "(field) ";
+                }
+                // `field`定义的function也被视为`signature`, 因此这里需要额外处理
+                is_method = signature.is_method(builder.semantic_model, Some(&self_real_type));
+                if is_method {
+                    type_label = "(method) ";
+                    name.push_str(":");
+                } else {
+                    name.push_str(".");
+                }
             }
-            if owner_member.is_field() {
-                type_label = "(field) ";
+            Some(LuaMemberOwner::Element(element_id)) => {
+                if let Some(owner_name) =
+                    extract_owner_name_from_element(builder.semantic_model, element_id)
+                {
+                    name.push_str(&owner_name);
+                    name.push_str(".");
+                }
             }
-            // `field`定义的function也被视为`signature`, 因此这里需要额外处理
-            is_method = signature.is_method(builder.semantic_model, Some(&self_real_type));
-            if is_method {
-                type_label = "(method) ";
-                name.push_str(":");
-            } else {
-                name.push_str(".");
-            }
+            _ => {}
         }
         if let LuaMemberKey::Name(n) = owner_member.get_key() {
             name.push_str(n.as_str());
@@ -739,4 +764,32 @@ pub fn extract_description_from_property_owner(
     } else {
         Some(result)
     }
+}
+
+/// 从 element_id 中提取所有者名称
+fn extract_owner_name_from_element(
+    semantic_model: &SemanticModel,
+    element_id: &InFiled<TextRange>,
+) -> Option<String> {
+    let root = semantic_model
+        .get_db()
+        .get_vfs()
+        .get_syntax_tree(&element_id.file_id)?
+        .get_red_root();
+
+    // 通过 TextRange 找到对应的 AST 节点
+    let node = LuaSyntaxId::to_node_at_range(&root, element_id.value)?;
+    let stat = LuaStat::cast(node.clone().parent()?)?;
+    match stat {
+        LuaStat::LocalStat(local_stat) => {
+            let value = LuaExpr::cast(node)?;
+            let local_name = local_stat.get_local_name_by_value(value);
+            if let Some(local_name) = local_name {
+                return Some(local_name.get_name_token()?.get_name_text().to_string());
+            }
+        }
+        _ => {}
+    }
+
+    None
 }
