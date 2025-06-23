@@ -10,9 +10,7 @@ use emmylua_code_analysis::{
 };
 
 use emmylua_code_analysis::humanize_type;
-use emmylua_parser::{
-    LuaAstNode, LuaExpr, LuaIndexExpr, LuaStat, LuaSyntaxId, LuaSyntaxKind,
-};
+use emmylua_parser::{LuaAstNode, LuaExpr, LuaIndexExpr, LuaStat, LuaSyntaxId, LuaSyntaxKind};
 use rowan::TextRange;
 
 use super::hover_builder::HoverBuilder;
