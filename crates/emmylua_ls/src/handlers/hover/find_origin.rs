@@ -1,7 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use emmylua_code_analysis::{
-    FileId, LuaCompilation, LuaDeclId, LuaMemberId, LuaSemanticDeclId, LuaType, SemanticDeclLevel,
+    LuaCompilation, LuaDeclId, LuaMemberId, LuaSemanticDeclId, LuaType, SemanticDeclLevel,
     SemanticModel,
 };
 use emmylua_parser::{LuaAssignStat, LuaAstNode, LuaSyntaxKind, LuaTableExpr, LuaTableField};
@@ -83,10 +83,9 @@ pub fn find_member_origin_owners<'a>(
     member_id: LuaMemberId,
 ) -> DeclOriginResult {
     const MAX_ITERATIONS: usize = 50;
-    let mut semantic_cache = HashMap::new();
     let mut visited_members = HashSet::new();
 
-    let mut current_owner = resolve_member_owner(compilation, &mut semantic_cache, &member_id);
+    let mut current_owner = resolve_member_owner(compilation, semantic_model, &member_id);
     let mut final_owner = current_owner.clone();
     let mut iteration_count = 0;
 
@@ -98,7 +97,7 @@ pub fn find_member_origin_owners<'a>(
         visited_members.insert(current_member_id.clone());
         iteration_count += 1;
 
-        match resolve_member_owner(compilation, &mut semantic_cache, current_member_id) {
+        match resolve_member_owner(compilation, semantic_model, current_member_id) {
             Some(next_owner) => {
                 final_owner = Some(next_owner.clone());
                 current_owner = Some(next_owner);
@@ -167,18 +166,18 @@ pub fn find_all_same_named_members(
     }
 }
 
-fn resolve_member_owner<'a>(
-    compilation: &'a LuaCompilation,
-    semantic_cache: &mut HashMap<FileId, SemanticModel<'a>>,
+fn resolve_member_owner(
+    compilation: &LuaCompilation,
+    semantic_model: &SemanticModel,
     member_id: &LuaMemberId,
 ) -> Option<LuaSemanticDeclId> {
-    let semantic_model = if let Some(semantic_model) = semantic_cache.get(&member_id.file_id) {
+    // 通常来说, 即使需要跨文件也一般只会跨一个文件, 所有不需要缓存
+    let semantic_model = if member_id.file_id == semantic_model.get_file_id() {
         semantic_model
     } else {
-        let semantic_model = compilation.get_semantic_model(member_id.file_id)?;
-        semantic_cache.insert(member_id.file_id, semantic_model);
-        semantic_cache.get(&member_id.file_id)?
+        &compilation.get_semantic_model(member_id.file_id)?
     };
+
     let root = semantic_model.get_root().syntax();
     let current_node = member_id.get_syntax_id().to_node_from_root(&root)?;
     match member_id.get_syntax_id().get_kind() {
