@@ -359,10 +359,11 @@ mod tests {
                 local function signal(initialValue)
                 end
 
+                ---测试
                 local cou<??>nt = signal(1)
             "#,
             VirtualHoverResult {
-                value: "```lua\nfunction count(value: 1)\n```\n\n---\n\n---\n\n```lua\nfunction count() -> 1\n```".to_string(),
+                value: "```lua\nfunction count(value: 1)\n```\n\n---\n\n测试\n\n---\n\n```lua\nfunction count() -> 1\n```".to_string(),
             },
         ));
     }

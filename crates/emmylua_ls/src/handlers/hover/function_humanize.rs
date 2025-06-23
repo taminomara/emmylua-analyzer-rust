@@ -124,9 +124,13 @@ pub fn hover_function_type(
             }
             ProcessFunctionTypeResult::Multiple(infos) => {
                 // 对于 Union 类型，将每个子类型的结果都添加到 type_descs 中
-                for mut info in infos {
-                    // 合并描述信息
-                    if function_info.description.is_some() && info.description.is_none() {
+                let infos_len = infos.len();
+                for (index, mut info) in infos.into_iter().enumerate() {
+                    // 合并描述信息，只有最后一个才设置描述
+                    if function_info.description.is_some()
+                        && info.description.is_none()
+                        && index == infos_len - 1
+                    {
                         info.description = function_info.description.clone();
                     }
                     if info.is_call_function {
