@@ -64,6 +64,9 @@ pub fn hover_function_type(
     // 已处理过的 semantic_decl_id, 用于解决`test_issue_499_3`
     let mut handled_semantic_decl_ids = HashSet::new();
     let mut type_descs: Vec<HoverFunctionInfo> = Vec::with_capacity(semantic_decls.len());
+    // 记录已处理过的类型，用于在 Union 中跳过重复类型.
+    // 这是为了解决最后一个类型可能是前面所有类型的联合类型的情况
+    let mut processed_types = HashSet::new();
 
     for (semantic_decl_id, typ) in semantic_decls {
         let is_new = handled_semantic_decl_ids.insert(semantic_decl_id);
@@ -97,48 +100,63 @@ pub fn hover_function_type(
             _ => None,
         };
 
-        match typ {
-            LuaType::Function => {
-                function_info.type_description = format!("function {}()", name);
-            }
-            LuaType::DocFunction(lua_func) => {
-                function_info.type_description =
-                    hover_doc_function_type(builder, db, &lua_func, function_member, &name);
-                if let Some(call_function) = &call_function {
-                    if call_function.get_params() == lua_func.get_params() {
-                        function_info.is_call_function = true;
-                    }
-                }
-            }
-            LuaType::Signature(signature_id) => {
-                let signature_result = hover_signature_type(
+        // 如果当前类型是 Union，传入已处理的类型集合
+        let result = match typ {
+            LuaType::Union(_) => process_single_function_type_with_exclusions(
+                builder,
+                db,
+                typ,
+                function_member,
+                &name,
+                is_local,
+                call_function.as_ref(),
+                &processed_types,
+            ),
+            _ => {
+                // 记录非 Union 类型
+                processed_types.insert(typ.clone());
+                process_single_function_type(
                     builder,
                     db,
-                    signature_id.clone(),
+                    typ,
                     function_member,
                     &name,
                     is_local,
                     call_function.as_ref(),
                 )
-                .unwrap_or_else(|| HoverSignatureResult {
-                    type_description: format!("function {}", name),
-                    overloads: None,
-                    call_function: None,
-                });
-                function_info.type_description = signature_result.type_description;
-                function_info.overloads = signature_result.overloads;
-
-                if let Some(_) = signature_result.call_function {
-                    function_info.is_call_function = true;
-                }
-            }
-            LuaType::Union(_) => {
-                continue;
-            }
-            _ => {
-                function_info.type_description = format!("function {}", name);
             }
         };
+
+        match result {
+            ProcessFunctionTypeResult::Single(mut info) => {
+                // 合并描述信息
+                if function_info.description.is_some() && info.description.is_none() {
+                    info.description = function_info.description;
+                }
+                function_info = info;
+            }
+            ProcessFunctionTypeResult::Multiple(infos) => {
+                // 对于 Union 类型，将每个子类型的结果都添加到 type_descs 中
+                for mut info in infos {
+                    // 合并描述信息
+                    if function_info.description.is_some() && info.description.is_none() {
+                        info.description = function_info.description.clone();
+                    }
+                    if info.is_call_function {
+                        type_descs.clear();
+                        type_descs.push(info);
+                        break;
+                    } else {
+                        type_descs.push(info);
+                    }
+                }
+                continue;
+            }
+            ProcessFunctionTypeResult::Skip => {
+                continue;
+            }
+        }
+
         if function_info.is_call_function {
             type_descs.clear();
             type_descs.push(function_info);
@@ -790,4 +808,165 @@ fn extract_owner_name_from_element(
     }
 
     None
+}
+
+#[derive(Debug, Clone)]
+enum ProcessFunctionTypeResult {
+    Single(HoverFunctionInfo),
+    Multiple(Vec<HoverFunctionInfo>),
+    Skip,
+}
+
+fn process_single_function_type(
+    builder: &mut HoverBuilder,
+    db: &DbIndex,
+    typ: &LuaType,
+    function_member: Option<&LuaMember>,
+    name: &str,
+    is_local: bool,
+    call_function: Option<&LuaFunctionType>,
+) -> ProcessFunctionTypeResult {
+    match typ {
+        LuaType::Function => ProcessFunctionTypeResult::Single(HoverFunctionInfo {
+            type_description: format!("function {}()", name),
+            overloads: None,
+            description: None,
+            is_call_function: false,
+        }),
+        LuaType::DocFunction(lua_func) => {
+            let type_description =
+                hover_doc_function_type(builder, db, &lua_func, function_member, &name);
+            let is_call_function = if let Some(call_function) = call_function {
+                call_function.get_params() == lua_func.get_params()
+            } else {
+                false
+            };
+
+            ProcessFunctionTypeResult::Single(HoverFunctionInfo {
+                type_description,
+                overloads: None,
+                description: None,
+                is_call_function,
+            })
+        }
+        LuaType::Signature(signature_id) => {
+            let signature_result = hover_signature_type(
+                builder,
+                db,
+                signature_id.clone(),
+                function_member,
+                name,
+                is_local,
+                call_function,
+            )
+            .unwrap_or_else(|| HoverSignatureResult {
+                type_description: format!("function {}", name),
+                overloads: None,
+                call_function: None,
+            });
+
+            let is_call_function = signature_result.call_function.is_some();
+
+            ProcessFunctionTypeResult::Single(HoverFunctionInfo {
+                type_description: signature_result.type_description,
+                overloads: signature_result.overloads,
+                description: None,
+                is_call_function,
+            })
+        }
+        LuaType::Union(union) => {
+            let mut results = Vec::new();
+            for union_type in union.get_types() {
+                match process_single_function_type(
+                    builder,
+                    db,
+                    union_type,
+                    function_member,
+                    name,
+                    is_local,
+                    call_function,
+                ) {
+                    ProcessFunctionTypeResult::Single(info) => {
+                        results.push(info);
+                    }
+                    ProcessFunctionTypeResult::Multiple(infos) => {
+                        results.extend(infos);
+                    }
+                    ProcessFunctionTypeResult::Skip => {}
+                }
+            }
+
+            if results.is_empty() {
+                ProcessFunctionTypeResult::Skip
+            } else {
+                ProcessFunctionTypeResult::Multiple(results)
+            }
+        }
+        _ => ProcessFunctionTypeResult::Single(HoverFunctionInfo {
+            type_description: format!("function {}", name),
+            overloads: None,
+            description: None,
+            is_call_function: false,
+        }),
+    }
+}
+
+fn process_single_function_type_with_exclusions(
+    builder: &mut HoverBuilder,
+    db: &DbIndex,
+    typ: &LuaType,
+    function_member: Option<&LuaMember>,
+    name: &str,
+    is_local: bool,
+    call_function: Option<&LuaFunctionType>,
+    processed_types: &HashSet<LuaType>,
+) -> ProcessFunctionTypeResult {
+    match typ {
+        LuaType::Union(union) => {
+            let mut results = Vec::new();
+            for union_type in union.get_types() {
+                // 跳过已经处理过的类型
+                if processed_types.contains(union_type) {
+                    continue;
+                }
+
+                match process_single_function_type_with_exclusions(
+                    builder,
+                    db,
+                    union_type,
+                    function_member,
+                    name,
+                    is_local,
+                    call_function,
+                    processed_types,
+                ) {
+                    ProcessFunctionTypeResult::Single(info) => {
+                        results.push(info);
+                    }
+                    ProcessFunctionTypeResult::Multiple(infos) => {
+                        results.extend(infos);
+                    }
+                    ProcessFunctionTypeResult::Skip => {}
+                }
+            }
+
+            if results.is_empty() {
+                ProcessFunctionTypeResult::Skip
+            } else {
+                ProcessFunctionTypeResult::Multiple(results)
+            }
+        }
+        _ => {
+            // 对于非 Union 类型，直接调用原函数
+            process_single_function_type(
+                builder,
+                db,
+                typ,
+                function_member,
+                name,
+                is_local,
+                call_function,
+            )
+        }
+    }
 }
