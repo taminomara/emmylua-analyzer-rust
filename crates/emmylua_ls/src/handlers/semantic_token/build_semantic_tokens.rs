@@ -614,6 +614,11 @@ fn handle_name_node(
 
         LuaSemanticDeclId::LuaDecl(decl_id) => {
             let decl_type = semantic_model.get_type(decl_id.into());
+            let decl = semantic_model
+                .get_db()
+                .get_decl_index()
+                .get_decl(&decl_id)?;
+
             let (token_type, modifier) = match decl_type {
                 LuaType::Signature(signature) => {
                     let is_meta = semantic_model
@@ -626,11 +631,18 @@ fn handle_name_node(
                     )
                 }
                 LuaType::DocFunction(_) => (SemanticTokenType::FUNCTION, None),
+                LuaType::Union(union) => {
+                    if union.get_types().iter().any(|typ| typ.is_function()) {
+                        (SemanticTokenType::FUNCTION, None)
+                    } else {
+                        if decl.is_param() {
+                            (SemanticTokenType::PARAMETER, None)
+                        } else {
+                            (SemanticTokenType::VARIABLE, None)
+                        }
+                    }
+                }
                 _ => {
-                    let decl = semantic_model
-                        .get_db()
-                        .get_decl_index()
-                        .get_decl(&decl_id)?;
                     if decl.is_param() {
                         (SemanticTokenType::PARAMETER, None)
                     } else {
