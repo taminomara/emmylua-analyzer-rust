@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
 use emmylua_code_analysis::{
-    DbIndex, LuaDeclId, LuaDocument, LuaMemberId, LuaMemberKey, LuaSemanticDeclId, LuaSignatureId,
-    LuaType, LuaTypeDeclId, RenderLevel, SemanticInfo, SemanticModel,
+    DbIndex, LuaCompilation, LuaDeclId, LuaDocument, LuaMemberId, LuaMemberKey, LuaSemanticDeclId,
+    LuaSignatureId, LuaType, LuaTypeDeclId, RenderLevel, SemanticInfo, SemanticModel,
 };
 use emmylua_parser::{LuaAssignStat, LuaAstNode, LuaExpr, LuaSyntaxToken};
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
@@ -22,6 +22,7 @@ use super::{
 };
 
 pub fn build_semantic_info_hover(
+    compilation: &LuaCompilation,
     semantic_model: &SemanticModel,
     db: &DbIndex,
     document: &LuaDocument,
@@ -33,6 +34,7 @@ pub fn build_semantic_info_hover(
         return build_hover_without_property(db, document, token, typ);
     }
     let hover_builder = build_hover_content(
+        compilation,
         semantic_model,
         db,
         Some(typ),
@@ -64,6 +66,7 @@ fn build_hover_without_property(
 }
 
 pub fn build_hover_content_for_completion<'a>(
+    compilation: &'a LuaCompilation,
     semantic_model: &'a SemanticModel,
     db: &DbIndex,
     property_id: LuaSemanticDeclId,
@@ -77,10 +80,19 @@ pub fn build_hover_content_for_completion<'a>(
         }
         _ => None,
     };
-    build_hover_content(semantic_model, db, typ, property_id, true, None)
+    build_hover_content(
+        compilation,
+        semantic_model,
+        db,
+        typ,
+        property_id,
+        true,
+        None,
+    )
 }
 
 fn build_hover_content<'a>(
+    compilation: &'a LuaCompilation,
     semantic_model: &'a SemanticModel,
     db: &DbIndex,
     typ: Option<LuaType>,
@@ -88,7 +100,7 @@ fn build_hover_content<'a>(
     is_completion: bool,
     token: Option<LuaSyntaxToken>,
 ) -> Option<HoverBuilder<'a>> {
-    let mut builder = HoverBuilder::new(semantic_model, token, is_completion);
+    let mut builder = HoverBuilder::new(compilation, semantic_model, token, is_completion);
     match property_id {
         LuaSemanticDeclId::LuaDecl(decl_id) => {
             let typ = typ?;
@@ -114,8 +126,9 @@ fn build_decl_hover(
 ) -> Option<()> {
     let decl = db.get_decl_index().get_decl(&decl_id)?;
 
-    let mut semantic_decls = find_decl_origin_owners(&builder.semantic_model, decl_id)
-        .get_types(&builder.semantic_model);
+    let mut semantic_decls =
+        find_decl_origin_owners(builder.compilation, &builder.semantic_model, decl_id)
+            .get_types(&builder.semantic_model);
     replace_semantic_type(&mut semantic_decls, &typ);
     // 处理类型签名
     if is_function(&typ) {
@@ -195,8 +208,9 @@ fn build_member_hover(
     member_id: LuaMemberId,
 ) -> Option<()> {
     let member = db.get_member_index().get_member(&member_id)?;
-    let mut semantic_decls = find_member_origin_owners(&builder.semantic_model, member_id)
-        .get_types(&builder.semantic_model);
+    let mut semantic_decls =
+        find_member_origin_owners(builder.compilation, &builder.semantic_model, member_id)
+            .get_types(&builder.semantic_model);
     replace_semantic_type(&mut semantic_decls, &typ);
     let member_name = match member.get_key() {
         LuaMemberKey::Name(name) => name.to_string(),

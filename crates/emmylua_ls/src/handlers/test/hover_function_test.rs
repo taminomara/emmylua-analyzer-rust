@@ -367,4 +367,31 @@ mod tests {
             },
         ));
     }
+
+    #[test]
+    fn test_require_function() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def_file(
+            "test.lua",
+            r#"
+
+            ---测试
+            local function signal()
+            end
+
+            return {
+                signal = signal
+            }
+            "#,
+        );
+        assert!(ws.check_hover(
+            r#"
+                local test = require("test")
+                local si<??>gnal = test.signal
+            "#,
+            VirtualHoverResult {
+                value: "```lua\nlocal function signal()\n```\n\n---\n\n测试".to_string(),
+            },
+        ));
+    }
 }
