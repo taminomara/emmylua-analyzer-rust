@@ -76,6 +76,8 @@ pub enum EmmyrcFilenameConvention {
     PascalCase,
     /// Convert the filename to camelCase.
     CamelCase,
+    /// When returning class definition, use class name, otherwise keep original name.
+    KeepClass,
 }
 
 impl Default for EmmyrcFilenameConvention {

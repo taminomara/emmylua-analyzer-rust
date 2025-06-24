@@ -32,7 +32,7 @@ impl CommandSpec for AutoRequireCommand {
         let require_like_func = &emmyrc.runtime.require_like_function;
         let auto_require_func = emmyrc.completion.auto_require_function.clone();
         let file_conversion = emmyrc.completion.auto_require_naming_convention;
-        let local_name = module_name_convert(&module_info.name, file_conversion);
+        let local_name = module_name_convert(&module_info, file_conversion);
         let require_separator = emmyrc.completion.auto_require_separator.clone();
         let full_module_path = match require_separator.as_str() {
             "." | "" => module_info.full_module_name.clone(),

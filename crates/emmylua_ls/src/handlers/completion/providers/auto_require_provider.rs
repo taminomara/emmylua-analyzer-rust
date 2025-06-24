@@ -68,7 +68,7 @@ fn add_module_completion_item(
     position: Position,
     completions: &mut Vec<CompletionItem>,
 ) -> Option<()> {
-    let completion_name = module_name_convert(&module_info.name, file_conversion);
+    let completion_name = module_name_convert(module_info, file_conversion);
     if !completion_name.to_lowercase().starts_with(prefix) {
         return None;
     }

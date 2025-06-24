@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
 
+    use std::{ops::Deref, sync::Arc};
+
+    use emmylua_code_analysis::EmmyrcFilenameConvention;
     use lsp_types::{CompletionItemKind, CompletionTriggerKind};
 
     use crate::handlers::test_lib::{ProviderVirtualWorkspace, VirtualCompletionItem};
@@ -885,6 +888,33 @@ mod tests {
                 label_detail: Some("(owner)".to_string()),
             },],
             CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
+
+    #[test]
+    fn test_auto_require() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        let mut emmyrc = ws.analysis.emmyrc.deref().clone();
+        emmyrc.completion.auto_require_naming_convention = EmmyrcFilenameConvention::KeepClass;
+        ws.analysis.update_config(Arc::new(emmyrc));
+        ws.def_file(
+            "map.lua",
+            r#"
+                ---@class Map
+                local Map = {}
+
+                return Map
+            "#,
+        );
+        assert!(ws.check_completion(
+            r#"
+                ma<??>
+            "#,
+            vec![VirtualCompletionItem {
+                label: "Map".to_string(),
+                kind: CompletionItemKind::MODULE,
+                label_detail: Some("    (in map)".to_string()),
+            },],
         ));
     }
 }
