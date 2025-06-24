@@ -54,6 +54,10 @@ pub fn search_decl_references(
             .get_reference_index()
             .get_decl_references(&decl_id.file_id, &decl_id)?;
         let document = semantic_model.get_document();
+        // 加入自己
+        if let Some(location) = document.to_lsp_location(decl.get_range()) {
+            result.push(location);
+        }
         for decl_ref in decl_refs {
             let location = document.to_lsp_location(decl_ref.range.clone())?;
             result.push(location);
