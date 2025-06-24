@@ -138,4 +138,39 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_goto_return_field() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def_file(
+            "test.lua",
+            r#"
+            local function test()
+
+            end
+
+            return {
+                test = test,
+            }
+            "#,
+        );
+        let result = ws
+            .check_definition(
+                r#"
+            local t = require("test")
+            local test = t.test
+            te<??>st()
+            "#,
+            )
+            .unwrap();
+        match result {
+            GotoDefinitionResponse::Array(locations) => {
+                assert_eq!(locations.len(), 1);
+                assert_eq!(locations[0].range.start.line, 1);
+            }
+            _ => {
+                panic!("expect scalar");
+            }
+        }
+    }
 }

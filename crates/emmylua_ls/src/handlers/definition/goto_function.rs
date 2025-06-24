@@ -5,7 +5,7 @@ use emmylua_code_analysis::{
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxToken};
 use std::sync::Arc;
 
-pub fn find_match_function(
+pub fn find_call_match_function(
     semantic_model: &SemanticModel,
     trigger_token: &LuaSyntaxToken,
     semantic_decls: &Vec<LuaSemanticDeclId>,

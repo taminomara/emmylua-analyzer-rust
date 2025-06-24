@@ -208,9 +208,13 @@ fn build_member_hover(
     member_id: LuaMemberId,
 ) -> Option<()> {
     let member = db.get_member_index().get_member(&member_id)?;
-    let mut semantic_decls =
-        find_member_origin_owners(builder.compilation, &builder.semantic_model, member_id)
-            .get_types(&builder.semantic_model);
+    let mut semantic_decls = find_member_origin_owners(
+        builder.compilation,
+        &builder.semantic_model,
+        member_id,
+        true,
+    )
+    .get_types(&builder.semantic_model);
     replace_semantic_type(&mut semantic_decls, &typ);
     let member_name = match member.get_key() {
         LuaMemberKey::Name(name) => name.to_string(),

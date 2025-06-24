@@ -65,7 +65,7 @@ pub fn find_decl_origin_owners(
         let semantic_decl = semantic_model.find_decl(node.into(), SemanticDeclLevel::default());
         match semantic_decl {
             Some(LuaSemanticDeclId::Member(member_id)) => {
-                find_member_origin_owners(compilation, semantic_model, member_id)
+                find_member_origin_owners(compilation, semantic_model, member_id, true)
             }
             Some(LuaSemanticDeclId::LuaDecl(decl_id)) => {
                 DeclOriginResult::Single(LuaSemanticDeclId::LuaDecl(decl_id))
@@ -81,6 +81,7 @@ pub fn find_member_origin_owners<'a>(
     compilation: &'a LuaCompilation,
     semantic_model: &SemanticModel,
     member_id: LuaMemberId,
+    find_all: bool,
 ) -> DeclOriginResult {
     const MAX_ITERATIONS: usize = 50;
     let mut visited_members = HashSet::new();
@@ -110,6 +111,12 @@ pub fn find_member_origin_owners<'a>(
         final_owner = Some(LuaSemanticDeclId::Member(member_id));
     }
 
+    if !find_all {
+        return DeclOriginResult::Single(
+            final_owner.unwrap_or_else(|| LuaSemanticDeclId::Member(member_id)),
+        );
+    }
+
     // 如果存在多个同名成员, 则返回多个成员
     if let Some(same_named_members) = find_all_same_named_members(semantic_model, &final_owner) {
         if same_named_members.len() > 1 {
@@ -125,7 +132,7 @@ pub fn find_member_origin_owner(
     semantic_model: &SemanticModel,
     member_id: LuaMemberId,
 ) -> Option<LuaSemanticDeclId> {
-    find_member_origin_owners(compilation, semantic_model, member_id).get_first()
+    find_member_origin_owners(compilation, semantic_model, member_id, false).get_first()
 }
 
 pub fn find_all_same_named_members(

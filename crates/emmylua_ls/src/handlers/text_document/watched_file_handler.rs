@@ -21,7 +21,10 @@ pub async fn on_did_change_watched_files(
                 if file_event.typ == FileChangeType::DELETED {
                     analysis.remove_file_by_uri(&file_event.uri);
                     // 发送空诊断消息以清除客户端显示的诊断
-                    context.file_diagnostic.clear_file_diagnostics(file_event.uri).await;
+                    context
+                        .file_diagnostic
+                        .clear_file_diagnostics(file_event.uri)
+                        .await;
                     continue;
                 }
 
