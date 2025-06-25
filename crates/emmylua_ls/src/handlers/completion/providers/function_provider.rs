@@ -70,7 +70,10 @@ fn get_token_should_type(builder: &mut CompletionBuilder) -> Option<Vec<LuaType>
             let var = vars.first()?;
             let var_type = builder.semantic_model.infer_expr(var.clone().into()).ok()?;
             let real_type = get_real_type(&builder.semantic_model.get_db(), &var_type)?;
-            return Some(vec![get_function_remove_nil(&real_type)?]);
+            return Some(vec![get_function_remove_nil(
+                &builder.semantic_model.get_db(),
+                &real_type,
+            )?]);
         }
         _ => {}
     }
@@ -777,7 +780,7 @@ fn get_str_tpl_ref_extend_type(
 }
 
 /// 确保所有成员均为 function 或者 nil, 然后返回 function 的联合类型, 如果非 function 则返回 None
-pub fn get_function_remove_nil(typ: &LuaType) -> Option<LuaType> {
+pub fn get_function_remove_nil(db: &DbIndex, typ: &LuaType) -> Option<LuaType> {
     match typ {
         LuaType::Union(union_typ) => {
             let mut new_types = Vec::new();
@@ -785,6 +788,12 @@ pub fn get_function_remove_nil(typ: &LuaType) -> Option<LuaType> {
                 match member {
                     _ if member.is_function() => {
                         new_types.push(member.clone());
+                    }
+                    _ if member.is_custom_type() => {
+                        let real_type = get_real_type(db, member)?;
+                        if real_type.is_function() {
+                            new_types.push(real_type.clone());
+                        }
                     }
                     _ if member.is_nil() => {
                         continue;

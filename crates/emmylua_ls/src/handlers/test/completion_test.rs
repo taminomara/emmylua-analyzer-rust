@@ -949,4 +949,32 @@ mod tests {
             },],
         ));
     }
+
+    #[test]
+    fn test_field_is_alias_function() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@alias ProxyHandler.Setter fun(raw: any)
+
+                ---@class ProxyHandler
+                ---@field set? ProxyHandler.Setter
+            "#,
+        );
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@class MHandler: ProxyHandler
+            local MHandler
+
+            MHandler.set = <??>
+
+            "#,
+            vec![VirtualCompletionItem {
+                label: "function(raw) end".to_string(),
+                kind: CompletionItemKind::FUNCTION,
+                ..Default::default()
+            },],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
 }

@@ -59,7 +59,8 @@ pub fn add_member_completion(
     };
 
     let typ = member_info.typ;
-    let remove_nil_type = get_function_remove_nil(&typ).unwrap_or(typ);
+    let remove_nil_type =
+        get_function_remove_nil(&builder.semantic_model.get_db(), &typ).unwrap_or(typ);
     if status == CompletionTriggerStatus::Colon && !remove_nil_type.is_function() {
         return None;
     }
