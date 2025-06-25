@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaElseIfClauseStat, LuaForRangeStat, LuaForStat, LuaIfStat, LuaIndexExpr,
-    LuaIndexKey, LuaRepeatStat, LuaSyntaxKind, LuaVarExpr, LuaWhileStat,
+    LuaIndexKey, LuaRepeatStat, LuaSyntaxKind, LuaTokenKind, LuaVarExpr, LuaWhileStat,
 };
 
 use crate::{
@@ -68,17 +68,6 @@ fn check_index_expr(
     }
 
     let index_key = index_expr.get_index_key()?;
-
-    // 检查是否为判断语句
-    if matches!(code, DiagnosticCode::UndefinedField) {
-        if is_in_conditional_statement(index_expr) {
-            return Some(());
-        }
-    }
-
-    if is_in_conditional_statement(index_expr) {
-        return Some(());
-    }
 
     if is_valid_member(semantic_model, &prefix_typ, index_expr, &index_key, code).is_some() {
         return Some(());
@@ -152,6 +141,30 @@ fn is_valid_member(
             }
         }
         _ => {}
+    }
+
+    // 如果位于检查语句中, 则可以做一些宽泛的检查
+    if matches!(code, DiagnosticCode::UndefinedField) && in_conditional_statement(index_expr) {
+        for child in index_expr.syntax().children_with_tokens() {
+            if child.kind() == LuaTokenKind::TkLeftBracket.into() {
+                // 此时为 [] 访问, 大部分类型都可以直接通行
+                match prefix_typ {
+                    LuaType::Ref(id) | LuaType::Def(id) => {
+                        if let Some(decl) =
+                            semantic_model.get_db().get_type_index().get_type_decl(&id)
+                        {
+                            // enum 仍然需要检查
+                            if decl.is_enum() {
+                                break;
+                            } else {
+                                return Some(());
+                            }
+                        }
+                    }
+                    _ => return Some(()),
+                }
+            }
+        }
     }
 
     // 检查 member_info
@@ -365,9 +378,9 @@ fn get_key_types(typ: &LuaType) -> HashSet<LuaType> {
 /// * `node` - 要检查的AST节点
 ///
 /// # 返回值
-/// * `true` - 如果节点位于判断语句的条件表达式中
-/// * `false` - 如果节点不在判断语句的条件表达式中
-fn is_in_conditional_statement<T: LuaAstNode>(node: &T) -> bool {
+/// * `true` - 节点位于判断语句的条件表达式中
+/// * `false` - 节点不在判断语句的条件表达式中
+fn in_conditional_statement<T: LuaAstNode>(node: &T) -> bool {
     let node_range = node.get_range();
 
     // 遍历所有祖先节点，查找条件语句

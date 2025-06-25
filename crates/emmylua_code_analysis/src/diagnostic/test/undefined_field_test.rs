@@ -657,4 +657,82 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_if_custom_type_1() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@enum Flags
+                Flags = {
+                    b = 1
+                }
+            "#,
+        );
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+
+                if Flags.a then
+                end
+        "#
+        ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+
+                if Flags['a'] then
+                end
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_if_custom_type_2() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@class Flags
+                ---@field a number
+                Flags = {}
+            "#,
+        );
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                if Flags.b then
+                end
+        "#
+        ));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                if Flags["b"] then
+                end
+        "#
+        ));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                ---@type string
+                local a
+                if Flags[a] then
+                end
+        "#
+        ));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+                ---@type string
+                local c
+                if Flags[c] then
+                end
+        "#
+        ));
+    }
 }
