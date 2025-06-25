@@ -488,6 +488,10 @@ fn build_node_semantic_token(
                         builder.push(name.syntax(), SemanticTokenType::FUNCTION);
                         return Some(());
                     }
+                    if decl_type.is_def() {
+                        builder.push(name.syntax(), SemanticTokenType::CLASS);
+                        return Some(());
+                    }
 
                     let owner_id = semantic_model
                         .get_db()
