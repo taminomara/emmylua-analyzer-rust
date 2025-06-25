@@ -233,6 +233,28 @@ impl EmmyLuaAnalysis {
         self.compilation.update_index(lib_file_ids);
         self.compilation.update_index(main_file_ids);
     }
+
+    /// 清理文件系统中不再存在的文件
+    pub fn cleanup_nonexistent_files(&mut self) {
+        let mut files_to_remove = Vec::new();
+
+        // 获取所有当前在VFS中的文件
+        let vfs = self.compilation.get_db().get_vfs();
+        for file_id in vfs.get_all_file_ids() {
+            if let Some(path) = vfs.get_file_path(&file_id) {
+                if !path.exists() {
+                    if let Some(uri) = file_path_to_uri(path) {
+                        files_to_remove.push(uri);
+                    }
+                }
+            }
+        }
+
+        // 移除不存在的文件
+        for uri in files_to_remove {
+            self.remove_file_by_uri(&uri);
+        }
+    }
 }
 
 unsafe impl Send for EmmyLuaAnalysis {}

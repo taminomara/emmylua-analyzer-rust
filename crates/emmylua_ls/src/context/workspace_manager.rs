@@ -159,6 +159,10 @@ impl WorkspaceManager {
             }
 
             let mut analysis = analysis.write().await;
+
+            // 在重新索引之前清理不存在的文件
+            analysis.cleanup_nonexistent_files();
+
             analysis.reindex();
             file_diagnostic
                 .add_workspace_diagnostic_task(client_id, 500, true)
