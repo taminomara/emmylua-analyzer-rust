@@ -29,6 +29,32 @@ pub fn module_name_convert(
     module_name
 }
 
+pub fn key_name_convert(
+    key: &str,
+    typ: &LuaType,
+    file_conversion: EmmyrcFilenameConvention,
+) -> String {
+    let mut key_name = key.to_string();
+    match file_conversion {
+        EmmyrcFilenameConvention::SnakeCase => {
+            key_name = to_snake_case(&key_name);
+        }
+        EmmyrcFilenameConvention::CamelCase => {
+            key_name = to_camel_case(&key_name);
+        }
+        EmmyrcFilenameConvention::PascalCase => {
+            key_name = to_pascal_case(&key_name);
+        }
+        EmmyrcFilenameConvention::Keep => {}
+        EmmyrcFilenameConvention::KeepClass => {
+            if let LuaType::Def(id) = typ {
+                key_name = id.get_simple_name().to_string();
+            }
+        }
+    }
+    key_name
+}
+
 fn to_snake_case(s: &str) -> String {
     let mut result = String::new();
     for (i, ch) in s.chars().enumerate() {

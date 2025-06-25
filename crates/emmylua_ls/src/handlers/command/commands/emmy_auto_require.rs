@@ -21,6 +21,7 @@ impl CommandSpec for AutoRequireCommand {
         let add_to: FileId = serde_json::from_value(args.get(0)?.clone()).ok()?;
         let need_require_file_id: FileId = serde_json::from_value(args.get(1)?.clone()).ok()?;
         let position: Position = serde_json::from_value(args.get(2)?.clone()).ok()?;
+        let member_name: String = serde_json::from_value(args.get(3)?.clone()).ok()?;
 
         let analysis = context.analysis.read().await;
         let semantic_model = analysis.compilation.get_semantic_model(add_to)?;
@@ -42,8 +43,19 @@ impl CommandSpec for AutoRequireCommand {
         };
 
         let require_str = format!(
-            "local {} = {}(\"{}\")",
-            local_name, auto_require_func, full_module_path
+            "local {} = {}(\"{}\"){}",
+            if member_name.is_empty() {
+                local_name
+            } else {
+                member_name.clone()
+            },
+            auto_require_func,
+            full_module_path,
+            if !member_name.is_empty() {
+                format!(".{}", member_name)
+            } else {
+                "".to_string()
+            }
         );
         let document = semantic_model.get_document();
         let offset = document.get_offset(position.line as usize, position.character as usize)?;
@@ -157,11 +169,13 @@ pub fn make_auto_require(
     add_to: FileId,
     need_require_file_id: FileId,
     position: Position,
+    member_name: Option<String>,
 ) -> Command {
     let args = vec![
         serde_json::to_value(add_to).unwrap(),
         serde_json::to_value(need_require_file_id).unwrap(),
         serde_json::to_value(position).unwrap(),
+        serde_json::to_value(member_name.unwrap_or_default()).unwrap(),
     ];
 
     Command {
