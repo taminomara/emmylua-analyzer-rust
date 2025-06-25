@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use emmylua_code_analysis::{humanize_type, LuaSignatureId, LuaType, RenderLevel, SemanticModel};
+use emmylua_code_analysis::{
+    format_union_type, humanize_type, LuaSignatureId, LuaType, LuaUnionType, RenderLevel,
+    SemanticModel,
+};
 use emmylua_parser::{LuaAstNode, LuaClosureExpr};
 use itertools::Itertools;
 use lsp_types::{InlayHint, InlayHintKind, InlayHintLabel, InlayHintLabelPart, Location};
@@ -45,10 +48,7 @@ pub fn build_closure_hint(
                 let mut label_parts = build_label_parts(semantic_model, &typ);
                 // 为空时添加默认值
                 if label_parts.is_empty() {
-                    let typ_desc = format!(
-                        ": {}",
-                        humanize_type(semantic_model.get_db(), &typ, RenderLevel::Simple)
-                    );
+                    let typ_desc = format!(": {}", hint_humanize_type(semantic_model, &typ));
                     label_parts.push(InlayHintLabelPart {
                         value: typ_desc,
                         location: Some(
@@ -134,7 +134,7 @@ fn get_part(semantic_model: &SemanticModel, typ: &LuaType) -> Option<InlayHintLa
             });
         }
         _ => {
-            let value = humanize_type(semantic_model.get_db(), typ, RenderLevel::Simple);
+            let value = hint_humanize_type(semantic_model, typ);
             let location = get_type_location(semantic_model, typ);
             return Some(InlayHintLabelPart {
                 value,
@@ -182,4 +182,35 @@ fn get_base_type_location(semantic_model: &SemanticModel, name: &str) -> Option<
     let document = semantic_model.get_document_by_file_id(location.file_id)?;
     let lsp_range = document.to_lsp_range(location.range)?;
     Some(Location::new(document.get_uri(), lsp_range))
+}
+
+fn hint_humanize_type(semantic_model: &SemanticModel, typ: &LuaType) -> String {
+    match typ {
+        LuaType::Ref(id) | LuaType::Def(id) => {
+            let namespace = semantic_model
+                .get_db()
+                .get_type_index()
+                .get_file_namespace(&semantic_model.get_file_id());
+            if let Some(namespace) = namespace {
+                // 如果 id 最前面是 namespace, 那么移除
+                let id_name = id.get_name();
+                let namespace_prefix = format!("{}.", namespace);
+                if id_name.starts_with(&namespace_prefix) {
+                    id_name[namespace_prefix.len()..].to_string()
+                } else {
+                    id_name.to_string()
+                }
+            } else {
+                id.get_name().to_string()
+            }
+        }
+        LuaType::Union(union) => hint_humanize_union_type(semantic_model, union),
+        _ => humanize_type(semantic_model.get_db(), typ, RenderLevel::Simple),
+    }
+}
+
+fn hint_humanize_union_type(semantic_model: &SemanticModel, union: &LuaUnionType) -> String {
+    format_union_type(union, RenderLevel::Simple, |ty, _| {
+        hint_humanize_type(semantic_model, ty)
+    })
 }
