@@ -1,10 +1,11 @@
 use emmylua_code_analysis::{
-    LuaMemberId, LuaMemberOwner, LuaSemanticDeclId, LuaType, SemanticDeclLevel, SemanticModel,
+    LuaDecl, LuaMemberId, LuaMemberOwner, LuaSemanticDeclId, LuaType, LuaTypeDeclId,
+    SemanticDeclLevel, SemanticModel,
 };
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr,
-    LuaGeneralToken, LuaKind, LuaLiteralToken, LuaNameToken, LuaSyntaxNode, LuaSyntaxToken,
-    LuaTokenKind, LuaVarExpr,
+    LuaAst, LuaAstNode, LuaAstToken, LuaCallExpr, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr,
+    LuaGeneralToken, LuaKind, LuaLiteralToken, LuaNameToken, LuaSyntaxKind, LuaSyntaxNode,
+    LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
 };
 use lsp_types::{SemanticToken, SemanticTokenModifier, SemanticTokenType};
 use rowan::NodeOrToken;
@@ -257,32 +258,6 @@ fn build_node_semantic_token(
             }
         }
         LuaAst::LuaDocTagCast(doc_cast) => {
-            // 在 call 后追加移除`nil`且同一行仍具有后续代码, 使之不显眼
-            // if let Some(parent) = doc_cast.syntax().parent()?.parent() {
-            //     if LuaExpr::can_cast(parent.kind().into()) {
-            //         let expr = LuaExpr::cast(parent)?;
-            //         match expr {
-            //             LuaExpr::IndexExpr(index_expr) => {
-            //                 let prefix_expr = index_expr.get_prefix_expr()?;
-            //                 if let LuaExpr::CallExpr(_) = prefix_expr {
-            //                     if doc_cast.get_op_types().any(|op_type| op_type.is_nullable()) {
-            //                         let position = doc_cast.syntax().text_range().start();
-            //                         let len = doc_cast.syntax().text_range().len();
-            //                         builder.push_at_position(
-            //                             position.into(),
-            //                             len.into(),
-            //                             SemanticTokenType::COMMENT,
-            //                             None,
-            //                         );
-            //                         return Some(());
-            //                     }
-            //                 }
-            //             }
-            //             _ => {}
-            //         }
-            //     }
-            // }
-
             if let Some(target_expr) = doc_cast.get_key_expr() {
                 match target_expr {
                     LuaExpr::NameExpr(name_expr) => {
@@ -571,19 +546,6 @@ fn build_node_semantic_token(
     Some(())
 }
 
-fn is_class_def(semantic_model: &SemanticModel, node: LuaSyntaxNode) -> Option<()> {
-    let semantic_decl = semantic_model.find_decl(node.into(), SemanticDeclLevel::default())?;
-    if let LuaSemanticDeclId::LuaDecl(decl_id) = semantic_decl {
-        let decl_type = semantic_model.get_type(decl_id.into());
-        match decl_type {
-            LuaType::Def(_) => Some(()),
-            _ => None,
-        }
-    } else {
-        None
-    }
-}
-
 // 处理`local a = class``local a = class.method/field`
 fn handle_name_node(
     semantic_model: &SemanticModel,
@@ -599,13 +561,9 @@ fn handle_name_node(
         );
         return Some(());
     }
-    if is_class_def(semantic_model, node.clone()).is_some() {
-        builder.push(name_token.syntax(), SemanticTokenType::CLASS);
-        return Some(());
-    }
 
     let semantic_decl =
-        semantic_model.find_decl(node.clone().into(), SemanticDeclLevel::Trace(50))?;
+        semantic_model.find_decl(node.clone().into(), SemanticDeclLevel::default())?;
 
     match semantic_decl {
         LuaSemanticDeclId::Member(member_id) => {
@@ -617,13 +575,30 @@ fn handle_name_node(
         }
 
         LuaSemanticDeclId::LuaDecl(decl_id) => {
-            let decl_type = semantic_model.get_type(decl_id.into());
             let decl = semantic_model
                 .get_db()
                 .get_decl_index()
                 .get_decl(&decl_id)?;
+            let decl_type = semantic_model.get_type(decl_id.into());
 
             let (token_type, modifier) = match decl_type {
+                LuaType::Def(_) => (SemanticTokenType::CLASS, None),
+                LuaType::Ref(ref_id) => {
+                    if let Some(is_require) =
+                        check_ref_is_require_def(semantic_model, &decl, &ref_id)
+                    {
+                        if is_require {
+                            (
+                                SemanticTokenType::CLASS,
+                                Some(SemanticTokenModifier::READONLY),
+                            )
+                        } else {
+                            (SemanticTokenType::VARIABLE, None)
+                        }
+                    } else {
+                        (SemanticTokenType::VARIABLE, None)
+                    }
+                }
                 LuaType::Signature(signature) => {
                     let is_meta = semantic_model
                         .get_db()
@@ -688,4 +663,50 @@ fn render_doc_at(builder: &mut SemanticBuilder, token: &LuaSyntaxToken) {
         SemanticTokenType::KEYWORD,
         Some(SemanticTokenModifier::DOCUMENTATION),
     );
+}
+
+// 检查导入语句是否是类定义
+fn check_ref_is_require_def(
+    semantic_model: &SemanticModel,
+    decl: &LuaDecl,
+    ref_id: &LuaTypeDeclId,
+) -> Option<bool> {
+    let value_syntax_id = decl.get_value_syntax_id()?;
+    if value_syntax_id.get_kind() != LuaSyntaxKind::RequireCallExpr {
+        return None;
+    }
+    let node = semantic_model
+        .get_db()
+        .get_vfs()
+        .get_syntax_tree(&decl.get_file_id())
+        .and_then(|tree| {
+            let root = tree.get_red_root();
+            semantic_model
+                .get_db()
+                .get_decl_index()
+                .get_decl(&decl.get_id())
+                .and_then(|decl| decl.get_value_syntax_id())
+                .and_then(|syntax_id| syntax_id.to_node_from_root(&root))
+        })?;
+    let call_expr = LuaCallExpr::cast(node)?;
+    let arg_list = call_expr.get_args_list()?;
+    let first_arg = arg_list.get_args().next()?;
+    let require_path_type = semantic_model.infer_expr(first_arg.clone()).ok()?;
+    let module_path: String = match &require_path_type {
+        LuaType::StringConst(module_path) => module_path.as_ref().to_string(),
+        _ => {
+            return None;
+        }
+    };
+    let module_info = semantic_model
+        .get_db()
+        .get_module_index()
+        .find_module(&module_path)?;
+    match &module_info.export_type {
+        Some(ty) => match ty {
+            LuaType::Def(id) => Some(id == ref_id),
+            _ => Some(false),
+        },
+        None => None,
+    }
 }
