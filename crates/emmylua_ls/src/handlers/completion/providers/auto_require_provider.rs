@@ -145,6 +145,13 @@ fn try_add_member_completion_items(
                         }
 
                         let data = if let Some(property_owner_id) = &member_info.property_owner_id {
+                            let is_visible = builder.semantic_model.is_semantic_visible(
+                                builder.trigger_token.clone(),
+                                property_owner_id.clone(),
+                            );
+                            if !is_visible {
+                                continue;
+                            }
                             CompletionData::from_property_owner_id(
                                 builder,
                                 property_owner_id.clone(),
