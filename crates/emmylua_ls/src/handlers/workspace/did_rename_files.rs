@@ -5,8 +5,8 @@ use std::{
 };
 
 use emmylua_code_analysis::{
-    file_path_to_uri, uri_to_file_path, FileId, LuaCompilation, LuaModuleIndex, LuaType,
-    SemanticModel, WorkspaceId,
+    file_path_to_uri, read_file_with_encoding, uri_to_file_path, FileId, LuaCompilation,
+    LuaModuleIndex, LuaType, SemanticModel, WorkspaceId,
 };
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaIndexExpr};
 use lsp_types::{
@@ -52,6 +52,21 @@ pub async fn on_did_rename_files_handler(
 
     // 如果有重命名的文件, 弹窗询问用户是否要修改require路径
     if !all_renames.is_empty() {
+        drop(analysis);
+        // 更新
+        let mut analysis = context.analysis.write().await;
+        let encoding = &analysis.get_emmyrc().workspace.encoding;
+        for rename in all_renames.iter() {
+            analysis.remove_file_by_uri(&rename.old_uri);
+            if let Some(new_path) = uri_to_file_path(&rename.new_uri) {
+                if let Some(text) = read_file_with_encoding(&new_path, encoding) {
+                    analysis.update_file_by_uri(&rename.new_uri, Some(text));
+                }
+            }
+        }
+        drop(analysis);
+
+        let analysis = context.analysis.read().await;
         if let Some(changes) = try_modify_require_path(&analysis.compilation, &all_renames) {
             drop(analysis);
             let client = context.client.clone();
