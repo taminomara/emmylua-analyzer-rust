@@ -1,10 +1,9 @@
-use std::time::Duration;
-
 use emmylua_code_analysis::uri_to_file_path;
 use lsp_types::{
     DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams,
     DidSaveTextDocumentParams,
 };
+use std::time::Duration;
 
 use crate::context::ServerContextSnapshot;
 
@@ -109,15 +108,13 @@ pub async fn on_did_close_document(
         .remove(&params.text_document.uri);
     drop(workspace);
 
-    // 检查文件是否实际存在于文件系统中
+    // 如果关闭后文件不存在, 则移除
     if let Some(file_path) = uri_to_file_path(uri) {
         if !file_path.exists() {
-            // 文件不存在，直接从分析中移除
             let mut mut_analysis = context.analysis.write().await;
             mut_analysis.remove_file_by_uri(uri);
             drop(mut_analysis);
 
-            // 发送空诊断消息以清除客户端显示的诊断
             context
                 .file_diagnostic
                 .clear_file_diagnostics(uri.clone())
