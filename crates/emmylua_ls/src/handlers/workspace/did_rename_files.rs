@@ -69,6 +69,10 @@ pub async fn on_did_rename_files_handler(
         let analysis = context.analysis.read().await;
         if let Some(changes) = try_modify_require_path(&analysis.compilation, &all_renames) {
             drop(analysis);
+            if changes.is_empty() {
+                return Some(());
+            }
+
             let client = context.client.clone();
 
             let show_message_params = ShowMessageRequestParams {
