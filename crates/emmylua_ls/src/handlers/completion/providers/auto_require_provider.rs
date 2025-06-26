@@ -131,8 +131,12 @@ fn try_add_member_completion_items(
                         &member_info.typ,
                         file_conversion,
                     );
-                    if !member_info.typ.is_def() {
-                        continue;
+                    match member_info.typ {
+                        LuaType::Ref(_) | LuaType::Def(_) => {}
+                        LuaType::Signature(_) => {}
+                        _ => {
+                            continue;
+                        }
                     }
 
                     if key_name.to_lowercase().starts_with(prefix) {
