@@ -1,5 +1,5 @@
 use emmylua_parser::{
-    BinaryOperator, LuaAssignStat, LuaAstNode, LuaExpr, LuaFuncStat, LuaIndexExpr,
+    BinaryOperator, LuaAssignStat, LuaAstNode, LuaAstToken, LuaExpr, LuaFuncStat, LuaIndexExpr,
     LuaLocalFuncStat, LuaLocalStat, LuaTableField, LuaVarExpr, PathTrait,
 };
 
@@ -542,7 +542,8 @@ pub fn try_add_class_default_call(
                             decl_id.into(),
                             LuaOperatorMetaMethod::Call,
                             analyzer.file_id,
-                            index_expr.get_range(),
+                            // 必须指向名称, 使用 index_expr 的完整范围不会跳转到函数上
+                            index_expr.get_name_token()?.syntax().text_range(),
                             OperatorFunction::DefaultCall(signature_id),
                         );
                         analyzer.db.get_operator_index_mut().add_operator(operator);
