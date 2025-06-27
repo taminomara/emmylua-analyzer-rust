@@ -172,17 +172,6 @@ fn is_valid_member(
         match semantic_model.get_semantic_info(index_expr.syntax().clone().into()) {
             Some(info) => {
                 let need = info.semantic_decl.is_none() && info.typ.is_unknown();
-                // TODO: 元组类型的检查或许需要独立出来
-                if !need && matches!(code, DiagnosticCode::InjectField) {
-                    if let LuaType::Tuple(tuple) = prefix_typ {
-                        if tuple.is_infer_resolve() {
-                            return Some(());
-                        } else {
-                            // 元组类型禁止修改
-                            return None;
-                        }
-                    }
-                }
                 need
             }
             None => true,
@@ -218,14 +207,6 @@ fn is_valid_member(
 
     // 一些类型组合需要特殊处理
     match (prefix_typ, &key_type) {
-        (LuaType::Tuple(tuple), LuaType::Integer | LuaType::IntegerConst(_)) => {
-            if tuple.is_infer_resolve() {
-                return Some(());
-            } else {
-                // 元组类型禁止修改
-                return None;
-            }
-        }
         (LuaType::Def(id), _) => {
             if let Some(decl) = semantic_model.get_db().get_type_index().get_type_decl(id) {
                 if decl.is_class() {

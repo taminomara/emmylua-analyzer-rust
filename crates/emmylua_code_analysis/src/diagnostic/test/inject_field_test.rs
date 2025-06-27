@@ -130,24 +130,24 @@ mod test {
         ));
     }
 
-    #[test]
-    fn test_tuple() {
-        let mut ws = VirtualWorkspace::new();
-        assert!(ws.check_code_for(
-            DiagnosticCode::InjectField,
-            r#"
-                local a = { 'a' }
-                a[#a + 1] = 'b'
-        "#
-        ));
+    // #[test]
+    // fn test_tuple() {
+    //     let mut ws = VirtualWorkspace::new();
+    //     assert!(ws.check_code_for(
+    //         DiagnosticCode::InjectField,
+    //         r#"
+    //             local a = { 'a' }
+    //             a[#a + 1] = 'b'
+    //     "#
+    //     ));
 
-        assert!(!ws.check_code_for(
-            DiagnosticCode::InjectField,
-            r#"
-                ---@type [ 'a' ] 
-                local a = { 'a' } 
-                a[#a + 1] = 'b'
-        "#
-        ));
-    }
+    //     // assert!(!ws.check_code_for(
+    //     //     DiagnosticCode::InjectField,
+    //     //     r#"
+    //     //         ---@type [ 'a' ]
+    //     //         local a = { 'a' }
+    //     //         a[#a + 1] = 'b'
+    //     // "#
+    //     // ));
+    // }
 }
