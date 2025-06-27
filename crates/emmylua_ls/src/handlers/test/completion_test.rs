@@ -977,4 +977,62 @@ mod tests {
             CompletionTriggerKind::TRIGGER_CHARACTER,
         ));
     }
+
+    #[test]
+    fn test_namespace_base() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@namespace Reactive
+            "#,
+        );
+        ws.def(
+            r#"
+                ---@namespace AlienSignals
+            "#,
+        );
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@namespace <??>
+
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "AlienSignals".to_string(),
+                    kind: CompletionItemKind::MODULE,
+                    ..Default::default()
+                },
+                VirtualCompletionItem {
+                    label: "Reactive".to_string(),
+                    kind: CompletionItemKind::MODULE,
+                    ..Default::default()
+                },
+            ],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@namespace Reactive
+            ---@namespace <??>
+
+            "#,
+            vec![],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@namespace Reactive
+            ---@using <??>
+
+            "#,
+            vec![VirtualCompletionItem {
+                label: "using AlienSignals".to_string(),
+                kind: CompletionItemKind::MODULE,
+                ..Default::default()
+            },],
+            CompletionTriggerKind::INVOKED,
+        ));
+    }
 }

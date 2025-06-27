@@ -1,7 +1,9 @@
 use std::collections::HashSet;
 
 use emmylua_code_analysis::{LuaFlowId, LuaSignatureId, LuaType, LuaVarRefId};
-use emmylua_parser::{LuaAst, LuaAstNode, LuaCallArgList, LuaClosureExpr, LuaParamList};
+use emmylua_parser::{
+    LuaAst, LuaAstNode, LuaCallArgList, LuaClosureExpr, LuaParamList, LuaTokenKind,
+};
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionTriggerKind};
 
 use crate::handlers::completion::{
@@ -56,6 +58,10 @@ fn check_can_add_completion(builder: &CompletionBuilder) -> Option<()> {
         }
     } else if builder.trigger_kind == CompletionTriggerKind::INVOKED {
         let parent = builder.trigger_token.parent()?;
+        let prev_token = builder.trigger_token.prev_token()?;
+        if prev_token.kind() == LuaTokenKind::TkTagUsing.into() {
+            return None;
+        }
         // 即时是主动触发, 也不允许在函数定义的参数列表中添加
         if trigger_text == "(" {
             if LuaParamList::can_cast(parent.kind().into()) {

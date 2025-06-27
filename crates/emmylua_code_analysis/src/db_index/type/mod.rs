@@ -207,6 +207,15 @@ impl LuaTypeIndex {
         self.full_name_type_map.values().collect()
     }
 
+    pub fn get_file_namespaces(&self) -> Vec<String> {
+        self.file_namespace
+            .values()
+            .cloned()
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect()
+    }
+
     pub fn get_type_decl_mut(&mut self, decl_id: &LuaTypeDeclId) -> Option<&mut LuaTypeDecl> {
         self.full_name_type_map.get_mut(decl_id)
     }
