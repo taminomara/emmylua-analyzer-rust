@@ -70,14 +70,14 @@ fn add_module_completion_item(
 ) -> Option<()> {
     let completion_name = module_name_convert(module_info, file_conversion);
     if !completion_name.to_lowercase().starts_with(prefix) {
-        try_add_member_completion_items(
-            builder,
-            prefix,
-            module_info,
-            file_conversion,
-            position,
-            completions,
-        );
+        // try_add_member_completion_items(
+        //     builder,
+        //     prefix,
+        //     module_info,
+        //     file_conversion,
+        //     position,
+        //     completions,
+        // );
         return None;
     }
 
@@ -113,6 +113,7 @@ fn add_module_completion_item(
     Some(())
 }
 
+#[allow(unused)]
 fn try_add_member_completion_items(
     builder: &CompletionBuilder,
     prefix: &str,
