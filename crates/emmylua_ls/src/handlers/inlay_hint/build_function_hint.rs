@@ -48,7 +48,10 @@ pub fn build_closure_hint(
                 let mut label_parts = build_label_parts(semantic_model, &typ);
                 // 为空时添加默认值
                 if label_parts.is_empty() {
-                    let typ_desc = format!(": {}", hint_humanize_type(semantic_model, &typ));
+                    let typ_desc = format!(
+                        ": {}",
+                        hint_humanize_type(semantic_model, &typ, RenderLevel::Simple)
+                    );
                     label_parts.push(InlayHintLabelPart {
                         value: typ_desc,
                         location: Some(
@@ -134,7 +137,7 @@ fn get_part(semantic_model: &SemanticModel, typ: &LuaType) -> Option<InlayHintLa
             });
         }
         _ => {
-            let value = hint_humanize_type(semantic_model, typ);
+            let value = hint_humanize_type(semantic_model, typ, RenderLevel::Simple);
             let location = get_type_location(semantic_model, typ);
             return Some(InlayHintLabelPart {
                 value,
@@ -184,7 +187,7 @@ fn get_base_type_location(semantic_model: &SemanticModel, name: &str) -> Option<
     Some(Location::new(document.get_uri(), lsp_range))
 }
 
-fn hint_humanize_type(semantic_model: &SemanticModel, typ: &LuaType) -> String {
+fn hint_humanize_type(semantic_model: &SemanticModel, typ: &LuaType, level: RenderLevel) -> String {
     match typ {
         LuaType::Ref(id) | LuaType::Def(id) => {
             let namespace = semantic_model
@@ -204,13 +207,17 @@ fn hint_humanize_type(semantic_model: &SemanticModel, typ: &LuaType) -> String {
                 id.get_name().to_string()
             }
         }
-        LuaType::Union(union) => hint_humanize_union_type(semantic_model, union),
-        _ => humanize_type(semantic_model.get_db(), typ, RenderLevel::Simple),
+        LuaType::Union(union) => hint_humanize_union_type(semantic_model, union, level),
+        _ => humanize_type(semantic_model.get_db(), typ, level),
     }
 }
 
-fn hint_humanize_union_type(semantic_model: &SemanticModel, union: &LuaUnionType) -> String {
-    format_union_type(union, RenderLevel::Simple, |ty, _| {
-        hint_humanize_type(semantic_model, ty)
+fn hint_humanize_union_type(
+    semantic_model: &SemanticModel,
+    union: &LuaUnionType,
+    level: RenderLevel,
+) -> String {
+    format_union_type(union, level, |ty, _| {
+        hint_humanize_type(semantic_model, ty, level)
     })
 }
