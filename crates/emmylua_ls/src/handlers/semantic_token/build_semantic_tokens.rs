@@ -1,5 +1,5 @@
 use emmylua_code_analysis::{
-    LuaDecl, LuaMemberId, LuaMemberOwner, LuaSemanticDeclId, LuaType, LuaTypeDeclId,
+    LuaDecl, LuaDeclExtra, LuaMemberId, LuaMemberOwner, LuaSemanticDeclId, LuaType, LuaTypeDeclId,
     SemanticDeclLevel, SemanticModel,
 };
 use emmylua_parser::{
@@ -564,7 +564,6 @@ fn handle_name_node(
 
     let semantic_decl =
         semantic_model.find_decl(node.clone().into(), SemanticDeclLevel::default())?;
-
     match semantic_decl {
         LuaSemanticDeclId::Member(member_id) => {
             let decl_type = semantic_model.get_type(member_id.into());
@@ -621,13 +620,26 @@ fn handle_name_node(
                         }
                     }
                 }
-                _ => {
-                    if decl.is_param() {
-                        (SemanticTokenType::PARAMETER, None)
-                    } else {
-                        (SemanticTokenType::VARIABLE, None)
+                _ => match &decl.extra {
+                    LuaDeclExtra::Param {
+                        idx, signature_id, ..
+                    } => {
+                        let signature = semantic_model
+                            .get_db()
+                            .get_signature_index()
+                            .get(&signature_id)?;
+                        if let Some(param_info) = signature.get_param_info_by_id(*idx) {
+                            if param_info.type_ref.is_function() {
+                                (SemanticTokenType::FUNCTION, None)
+                            } else {
+                                (SemanticTokenType::PARAMETER, None)
+                            }
+                        } else {
+                            (SemanticTokenType::VARIABLE, None)
+                        }
                     }
-                }
+                    _ => (SemanticTokenType::VARIABLE, None),
+                },
             };
 
             if let Some(modifier) = modifier {
