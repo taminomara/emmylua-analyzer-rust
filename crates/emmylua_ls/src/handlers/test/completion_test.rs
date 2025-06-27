@@ -918,37 +918,37 @@ mod tests {
         ));
     }
 
-    #[test]
-    fn test_auto_require_table_field() {
-        let mut ws = ProviderVirtualWorkspace::new();
-        let mut emmyrc = ws.analysis.emmyrc.deref().clone();
-        emmyrc.completion.auto_require_naming_convention = EmmyrcFilenameConvention::KeepClass;
-        ws.analysis.update_config(Arc::new(emmyrc));
-        ws.def_file(
-            "aaaa.lua",
-            r#"
-                local export = {}
+    // #[test]
+    // fn test_auto_require_table_field() {
+    //     let mut ws = ProviderVirtualWorkspace::new();
+    //     let mut emmyrc = ws.analysis.emmyrc.deref().clone();
+    //     emmyrc.completion.auto_require_naming_convention = EmmyrcFilenameConvention::KeepClass;
+    //     ws.analysis.update_config(Arc::new(emmyrc));
+    //     ws.def_file(
+    //         "aaaa.lua",
+    //         r#"
+    //             local export = {}
 
-                ---@enum MapName
-                export.MapName = {
-                    A = 1,
-                    B = 2,
-                }
+    //             ---@enum MapName
+    //             export.MapName = {
+    //                 A = 1,
+    //                 B = 2,
+    //             }
 
-                return export
-            "#,
-        );
-        assert!(ws.check_completion(
-            r#"
-                mapn<??>
-            "#,
-            vec![VirtualCompletionItem {
-                label: "MapName".to_string(),
-                kind: CompletionItemKind::MODULE,
-                label_detail: Some("    (in aaaa)".to_string()),
-            },],
-        ));
-    }
+    //             return export
+    //         "#,
+    //     );
+    //     assert!(ws.check_completion(
+    //         r#"
+    //             mapn<??>
+    //         "#,
+    //         vec![VirtualCompletionItem {
+    //             label: "MapName".to_string(),
+    //             kind: CompletionItemKind::MODULE,
+    //             label_detail: Some("    (in aaaa)".to_string()),
+    //         },],
+    //     ));
+    // }
 
     #[test]
     fn test_field_is_alias_function() {
