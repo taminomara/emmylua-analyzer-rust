@@ -1,20 +1,24 @@
 use std::str::FromStr;
 
 use emmylua_code_analysis::{
-    LuaDeclId, LuaMemberId, LuaMemberInfo, LuaMemberKey, LuaSemanticDeclId, LuaType, LuaTypeDeclId,
-    SemanticDeclLevel, SemanticModel,
+    LuaCompilation, LuaDeclId, LuaMemberId, LuaMemberInfo, LuaMemberKey, LuaSemanticDeclId,
+    LuaType, LuaTypeDeclId, SemanticDeclLevel, SemanticModel,
 };
 use emmylua_parser::{
-    LuaAstNode, LuaAstToken, LuaCallExpr, LuaExpr, LuaIndexExpr, LuaStringToken, LuaSyntaxToken,
-    LuaTableExpr, LuaTableField,
+    LuaAstNode, LuaAstToken, LuaCallExpr, LuaExpr, LuaIndexExpr, LuaReturnStat, LuaStringToken,
+    LuaSyntaxToken, LuaTableExpr, LuaTableField,
 };
 use itertools::Itertools;
 use lsp_types::{GotoDefinitionResponse, Location, Position, Range, Uri};
 
-use crate::handlers::hover::find_all_same_named_members;
+use crate::handlers::{
+    definition::goto_function::find_call_match_function,
+    hover::{find_all_same_named_members, find_member_origin_owner},
+};
 
 pub fn goto_def_definition(
     semantic_model: &SemanticModel,
+    compilation: &LuaCompilation,
     property_owner: LuaSemanticDeclId,
     trigger_token: &LuaSyntaxToken,
 ) -> Option<GotoDefinitionResponse> {
@@ -29,15 +33,9 @@ pub fn goto_def_definition(
             }
         }
     }
-
     match property_owner {
         LuaSemanticDeclId::LuaDecl(decl_id) => {
-            let decl = semantic_model
-                .get_db()
-                .get_decl_index()
-                .get_decl(&decl_id)?;
-            let document = semantic_model.get_document_by_file_id(decl_id.file_id)?;
-            let location = document.to_lsp_location(decl.get_range())?;
+            let location = get_decl_location(semantic_model, &decl_id)?;
             return Some(GotoDefinitionResponse::Scalar(location));
         }
         LuaSemanticDeclId::Member(member_id) => {
@@ -47,6 +45,43 @@ pub fn goto_def_definition(
             )?;
 
             let mut locations: Vec<Location> = Vec::new();
+            // 如果是函数调用, 则尝试寻找最匹配的定义
+            if let Some(match_members) =
+                find_call_match_function(semantic_model, trigger_token, &same_named_members)
+            {
+                for member in match_members {
+                    if let LuaSemanticDeclId::Member(member_id) = member {
+                        if let Some(true) = should_trace_member(semantic_model, &member_id) {
+                            // 尝试搜索这个成员最原始的定义
+                            match find_member_origin_owner(compilation, semantic_model, member_id) {
+                                Some(LuaSemanticDeclId::Member(member_id)) => {
+                                    if let Some(location) =
+                                        get_member_location(semantic_model, &member_id)
+                                    {
+                                        locations.push(location);
+                                        continue;
+                                    }
+                                }
+                                Some(LuaSemanticDeclId::LuaDecl(decl_id)) => {
+                                    if let Some(location) =
+                                        get_decl_location(semantic_model, &decl_id)
+                                    {
+                                        locations.push(location);
+                                        continue;
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                        if let Some(location) = get_member_location(semantic_model, &member_id) {
+                            locations.push(location);
+                        }
+                    }
+                }
+                if !locations.is_empty() {
+                    return Some(GotoDefinitionResponse::Array(locations));
+                }
+            }
 
             // 添加原始成员的位置
             for member in same_named_members {
@@ -75,7 +110,7 @@ pub fn goto_def_definition(
 
              */
             if let Some(table_field_infos) =
-                find_table_member_definition(semantic_model, trigger_token, &member_id)
+                find_instance_table_member(semantic_model, trigger_token, &member_id)
             {
                 for table_field_info in table_field_infos {
                     if let Some(LuaSemanticDeclId::Member(table_member_id)) =
@@ -199,7 +234,7 @@ pub fn goto_str_tpl_ref_definition(
     None
 }
 
-pub fn find_table_member_definition(
+pub fn find_instance_table_member(
     semantic_model: &SemanticModel,
     trigger_token: &LuaSyntaxToken,
     member_id: &LuaMemberId,
@@ -277,10 +312,36 @@ fn find_member_in_table_const(
     )
 }
 
+/// 是否对 member 启动追踪
+fn should_trace_member(semantic_model: &SemanticModel, member_id: &LuaMemberId) -> Option<bool> {
+    let root = semantic_model
+        .get_db()
+        .get_vfs()
+        .get_syntax_tree(&member_id.file_id)?
+        .get_red_root();
+    let node = member_id.get_syntax_id().to_node_from_root(&root)?;
+    let parent = node.parent()?.parent()?;
+    // 如果成员在返回语句中, 则需要追踪
+    if LuaReturnStat::can_cast(parent.kind().into()) {
+        return Some(true);
+    }
+    None
+}
+
 fn get_member_location(
     semantic_model: &SemanticModel,
     member_id: &LuaMemberId,
 ) -> Option<Location> {
     let document = semantic_model.get_document_by_file_id(member_id.file_id)?;
     document.to_lsp_location(member_id.get_syntax_id().get_range())
+}
+
+fn get_decl_location(semantic_model: &SemanticModel, decl_id: &LuaDeclId) -> Option<Location> {
+    let decl = semantic_model
+        .get_db()
+        .get_decl_index()
+        .get_decl(&decl_id)?;
+    let document = semantic_model.get_document_by_file_id(decl_id.file_id)?;
+    let location = document.to_lsp_location(decl.get_range())?;
+    Some(location)
 }

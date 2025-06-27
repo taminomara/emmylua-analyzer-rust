@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
 
+    use std::{ops::Deref, sync::Arc};
+
+    use emmylua_code_analysis::EmmyrcFilenameConvention;
     use lsp_types::{CompletionItemKind, CompletionTriggerKind};
 
     use crate::handlers::test_lib::{ProviderVirtualWorkspace, VirtualCompletionItem};
@@ -750,6 +753,286 @@ mod tests {
             "#,
             vec![],
             CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
+
+    #[test]
+    fn test_issue_502() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@param a { foo: { bar: number } }
+                function buz(a) end
+        "#,
+        );
+        assert!(ws.check_completion_with_kind(
+            r#"
+                buz({
+                    foo = {
+                        b<??>
+                    }
+                })
+            "#,
+            vec![VirtualCompletionItem {
+                label: "bar = ".to_string(),
+                kind: CompletionItemKind::PROPERTY,
+                ..Default::default()
+            },],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
+
+    #[test]
+    fn test_class_function_1() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@class C1
+                ---@field on_add fun(a: string, b: string)
+        "#,
+        );
+        assert!(ws.check_completion_with_kind(
+            r#"
+                ---@type C1
+                local c1
+
+                c1.on_add = <??>
+            "#,
+            vec![VirtualCompletionItem {
+                label: "function(a, b) end".to_string(),
+                kind: CompletionItemKind::FUNCTION,
+                ..Default::default()
+            },],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
+
+    #[test]
+    fn test_class_function_2() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@class C1
+                ---@field on_add fun(self: C1, a: string, b: string)
+        "#,
+        );
+        assert!(ws.check_completion_with_kind(
+            r#"
+                ---@type C1
+                local c1
+
+                function c1:<??>()
+
+                end
+            "#,
+            vec![VirtualCompletionItem {
+                label: "on_add".to_string(),
+                kind: CompletionItemKind::FUNCTION,
+                label_detail: Some("(a, b)".to_string()),
+            },],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
+
+    #[test]
+    fn test_class_function_3() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@class (partial) SkillMutator
+                ---@field on_add? fun(self: self, owner: string)
+
+                ---@class (partial) SkillMutator.A
+                ---@field on_add? fun(self: self, owner: string)
+        "#,
+        );
+        assert!(ws.check_completion_with_kind(
+            r#"
+                ---@class (partial) SkillMutator.A
+                local a
+                a.on_add = <??>
+            "#,
+            vec![VirtualCompletionItem {
+                label: "function(self, owner) end".to_string(),
+                kind: CompletionItemKind::FUNCTION,
+                ..Default::default()
+            },],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
+
+    #[test]
+    fn test_class_function_4() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@class (partial) SkillMutator
+                ---@field on_add? fun(self: self, owner: string)
+
+                ---@class (partial) SkillMutator.A
+                ---@field on_add? fun(self: self, owner: string)
+        "#,
+        );
+        assert!(ws.check_completion_with_kind(
+            r#"
+                ---@class (partial) SkillMutator.A
+                local a
+                function a:<??>()
+                    
+                end
+
+            "#,
+            vec![VirtualCompletionItem {
+                label: "on_add".to_string(),
+                kind: CompletionItemKind::FUNCTION,
+                label_detail: Some("(owner)".to_string()),
+            },],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
+
+    #[test]
+    fn test_auto_require() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        let mut emmyrc = ws.analysis.emmyrc.deref().clone();
+        emmyrc.completion.auto_require_naming_convention = EmmyrcFilenameConvention::KeepClass;
+        ws.analysis.update_config(Arc::new(emmyrc));
+        ws.def_file(
+            "map.lua",
+            r#"
+                ---@class Map
+                local Map = {}
+
+                return Map
+            "#,
+        );
+        assert!(ws.check_completion(
+            r#"
+                ma<??>
+            "#,
+            vec![VirtualCompletionItem {
+                label: "Map".to_string(),
+                kind: CompletionItemKind::MODULE,
+                label_detail: Some("    (in map)".to_string()),
+            },],
+        ));
+    }
+
+    #[test]
+    fn test_auto_require_table_field() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        let mut emmyrc = ws.analysis.emmyrc.deref().clone();
+        emmyrc.completion.auto_require_naming_convention = EmmyrcFilenameConvention::KeepClass;
+        ws.analysis.update_config(Arc::new(emmyrc));
+        ws.def_file(
+            "aaaa.lua",
+            r#"
+                local export = {}
+
+                ---@enum MapName
+                export.MapName = {
+                    A = 1,
+                    B = 2,
+                }
+
+                return export
+            "#,
+        );
+        assert!(ws.check_completion(
+            r#"
+                mapn<??>
+            "#,
+            vec![VirtualCompletionItem {
+                label: "MapName".to_string(),
+                kind: CompletionItemKind::MODULE,
+                label_detail: Some("    (in aaaa)".to_string()),
+            },],
+        ));
+    }
+
+    #[test]
+    fn test_field_is_alias_function() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@alias ProxyHandler.Setter fun(raw: any)
+
+                ---@class ProxyHandler
+                ---@field set? ProxyHandler.Setter
+            "#,
+        );
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@class MHandler: ProxyHandler
+            local MHandler
+
+            MHandler.set = <??>
+
+            "#,
+            vec![VirtualCompletionItem {
+                label: "function(raw) end".to_string(),
+                kind: CompletionItemKind::FUNCTION,
+                ..Default::default()
+            },],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
+
+    #[test]
+    fn test_namespace_base() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@namespace Reactive
+            "#,
+        );
+        ws.def(
+            r#"
+                ---@namespace AlienSignals
+            "#,
+        );
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@namespace <??>
+
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "AlienSignals".to_string(),
+                    kind: CompletionItemKind::MODULE,
+                    ..Default::default()
+                },
+                VirtualCompletionItem {
+                    label: "Reactive".to_string(),
+                    kind: CompletionItemKind::MODULE,
+                    ..Default::default()
+                },
+            ],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@namespace Reactive
+            ---@namespace <??>
+
+            "#,
+            vec![],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@namespace Reactive
+            ---@using <??>
+
+            "#,
+            vec![VirtualCompletionItem {
+                label: "using AlienSignals".to_string(),
+                kind: CompletionItemKind::MODULE,
+                ..Default::default()
+            },],
+            CompletionTriggerKind::INVOKED,
         ));
     }
 }

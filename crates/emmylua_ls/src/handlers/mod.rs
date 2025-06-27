@@ -29,6 +29,7 @@ mod signature_helper;
 mod test;
 mod test_lib;
 mod text_document;
+mod workspace;
 mod workspace_symbol;
 
 pub use initialized::{init_analysis, initialized_handler, ClientConfig};
@@ -127,6 +128,7 @@ pub fn server_capabilities(client_capabilities: &ClientCapabilities) -> ServerCa
         &mut server_capabilities,
         client_capabilities,
     );
+    register::<workspace::WorkspaceCapabilities>(&mut server_capabilities, client_capabilities);
     // register::<document_type_formatting::DocumentTypeFormatting>(
     //     &mut server_capabilities,
     //     client_capabilities,

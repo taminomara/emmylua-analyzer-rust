@@ -36,7 +36,7 @@ fn check_call_expr(
     let mut params = func.get_params().to_vec();
     let arg_exprs = call_expr.get_args_list()?.get_args().collect::<Vec<_>>();
     let (mut arg_types, mut arg_ranges): (Vec<LuaType>, Vec<TextRange>) = semantic_model
-        .infer_multi_value_adjusted_expression_types(&arg_exprs, None)
+        .infer_expr_list_types(&arg_exprs, None)
         .into_iter()
         .unzip();
 

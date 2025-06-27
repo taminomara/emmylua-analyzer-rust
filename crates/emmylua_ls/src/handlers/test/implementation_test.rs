@@ -128,4 +128,24 @@ mod tests {
             2,
         ));
     }
+
+    #[test]
+    fn test_separation_of_define_and_impl() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_implementation(
+            r#"
+                local a<??>bc
+
+                abc = function()
+                end
+
+                local _a = abc
+                local _b = abc()
+
+                abc = function()
+                end
+            "#,
+            3,
+        ));
+    }
 }

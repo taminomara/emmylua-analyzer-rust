@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 
 use emmylua_code_analysis::{
-    LuaDeclId, LuaMemberId, LuaSemanticDeclId, LuaType, SemanticDeclLevel, SemanticModel,
+    LuaCompilation, LuaDeclId, LuaMemberId, LuaSemanticDeclId, LuaType, SemanticDeclLevel,
+    SemanticModel,
 };
 use emmylua_parser::{LuaAssignStat, LuaAstNode, LuaSyntaxKind, LuaTableExpr, LuaTableField};
 
@@ -42,6 +43,7 @@ impl DeclOriginResult {
 }
 
 pub fn find_decl_origin_owners(
+    compilation: &LuaCompilation,
     semantic_model: &SemanticModel,
     decl_id: LuaDeclId,
 ) -> DeclOriginResult {
@@ -63,7 +65,7 @@ pub fn find_decl_origin_owners(
         let semantic_decl = semantic_model.find_decl(node.into(), SemanticDeclLevel::default());
         match semantic_decl {
             Some(LuaSemanticDeclId::Member(member_id)) => {
-                find_member_origin_owners(semantic_model, member_id)
+                find_member_origin_owners(compilation, semantic_model, member_id, true)
             }
             Some(LuaSemanticDeclId::LuaDecl(decl_id)) => {
                 DeclOriginResult::Single(LuaSemanticDeclId::LuaDecl(decl_id))
@@ -75,14 +77,16 @@ pub fn find_decl_origin_owners(
     }
 }
 
-pub fn find_member_origin_owners(
+pub fn find_member_origin_owners<'a>(
+    compilation: &'a LuaCompilation,
     semantic_model: &SemanticModel,
     member_id: LuaMemberId,
+    find_all: bool,
 ) -> DeclOriginResult {
     const MAX_ITERATIONS: usize = 50;
     let mut visited_members = HashSet::new();
 
-    let mut current_owner = resolve_member_owner(semantic_model, &member_id);
+    let mut current_owner = resolve_member_owner(compilation, semantic_model, &member_id);
     let mut final_owner = current_owner.clone();
     let mut iteration_count = 0;
 
@@ -94,7 +98,7 @@ pub fn find_member_origin_owners(
         visited_members.insert(current_member_id.clone());
         iteration_count += 1;
 
-        match resolve_member_owner(semantic_model, current_member_id) {
+        match resolve_member_owner(compilation, semantic_model, current_member_id) {
             Some(next_owner) => {
                 final_owner = Some(next_owner.clone());
                 current_owner = Some(next_owner);
@@ -105,6 +109,12 @@ pub fn find_member_origin_owners(
 
     if final_owner.is_none() {
         final_owner = Some(LuaSemanticDeclId::Member(member_id));
+    }
+
+    if !find_all {
+        return DeclOriginResult::Single(
+            final_owner.unwrap_or_else(|| LuaSemanticDeclId::Member(member_id)),
+        );
     }
 
     // 如果存在多个同名成员, 则返回多个成员
@@ -118,10 +128,11 @@ pub fn find_member_origin_owners(
 }
 
 pub fn find_member_origin_owner(
+    compilation: &LuaCompilation,
     semantic_model: &SemanticModel,
     member_id: LuaMemberId,
 ) -> Option<LuaSemanticDeclId> {
-    find_member_origin_owners(semantic_model, member_id).get_first()
+    find_member_origin_owners(compilation, semantic_model, member_id, false).get_first()
 }
 
 pub fn find_all_same_named_members(
@@ -163,14 +174,18 @@ pub fn find_all_same_named_members(
 }
 
 fn resolve_member_owner(
+    compilation: &LuaCompilation,
     semantic_model: &SemanticModel,
     member_id: &LuaMemberId,
 ) -> Option<LuaSemanticDeclId> {
-    let root = semantic_model
-        .get_db()
-        .get_vfs()
-        .get_syntax_tree(&member_id.file_id)?
-        .get_red_root();
+    // 通常来说, 即使需要跨文件也一般只会跨一个文件, 所有不需要缓存
+    let semantic_model = if member_id.file_id == semantic_model.get_file_id() {
+        semantic_model
+    } else {
+        &compilation.get_semantic_model(member_id.file_id)?
+    };
+
+    let root = semantic_model.get_root().syntax();
     let current_node = member_id.get_syntax_id().to_node_from_root(&root)?;
     match member_id.get_syntax_id().get_kind() {
         LuaSyntaxKind::TableFieldAssign => {
@@ -178,7 +193,7 @@ fn resolve_member_owner(
                 let table_field = LuaTableField::cast(current_node.clone())?;
                 // 如果表是类, 那么通过类型推断获取 owner
                 if let Some(owner_id) =
-                    resolve_table_field_through_type_inference(semantic_model, &table_field)
+                    resolve_table_field_through_type_inference(&semantic_model, &table_field)
                 {
                     return Some(owner_id);
                 }
@@ -262,10 +277,16 @@ pub fn replace_semantic_type(
     }
 
     // 判断是否存在泛型, 如果有任意类型不匹配我们就认为存在泛型
+    let mut has_generic = false;
+    let type_set: HashSet<_> = type_vec.iter().collect();
     for (_, typ) in semantic_decls.iter() {
-        if !type_vec.iter().any(|t| *t == typ) {
+        if !type_set.contains(&typ) {
+            has_generic = true;
             break;
         }
+    }
+    if !has_generic {
+        return;
     }
 
     // 替换`semantic_decls`中的类型

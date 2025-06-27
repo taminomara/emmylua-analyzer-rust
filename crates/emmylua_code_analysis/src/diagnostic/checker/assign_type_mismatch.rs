@@ -5,8 +5,8 @@ use emmylua_parser::{
 use rowan::TextRange;
 
 use crate::{
-    DiagnosticCode, LuaDeclExtra, LuaDeclId, LuaSemanticDeclId, LuaType, LuaTypeCache,
-    SemanticDeclLevel, SemanticModel, TypeCheckFailReason, TypeCheckResult,
+    infer_index_expr, DiagnosticCode, LuaDeclExtra, LuaDeclId, LuaMemberKey, LuaSemanticDeclId,
+    LuaType, SemanticDeclLevel, SemanticModel, TypeCheckFailReason, TypeCheckResult,
 };
 
 use super::{humanize_lint_type, Checker, DiagnosticContext};
@@ -37,8 +37,7 @@ fn check_assign_stat(
     assign: &LuaAssignStat,
 ) -> Option<()> {
     let (vars, exprs) = assign.get_var_and_expr_list();
-    let value_types =
-        semantic_model.infer_multi_value_adjusted_expression_types(&exprs, Some(vars.len()));
+    let value_types = semantic_model.infer_expr_list_types(&exprs, Some(vars.len()));
 
     for (idx, var) in vars.iter().enumerate() {
         match var {
@@ -76,7 +75,7 @@ fn check_name_expr(
         rowan::NodeOrToken::Node(name_expr.syntax().clone()),
         SemanticDeclLevel::default(),
     )?;
-    let origin_type = match semantic_decl {
+    let source_type = match semantic_decl {
         LuaSemanticDeclId::LuaDecl(decl_id) => {
             let decl = semantic_model
                 .get_db()
@@ -106,12 +105,18 @@ fn check_name_expr(
         context,
         semantic_model,
         name_expr.get_range(),
-        origin_type.clone(),
-        value_type,
+        source_type.as_ref(),
+        &value_type,
         false,
     );
     if let Some(expr) = expr {
-        handle_value_is_table_expr(context, semantic_model, origin_type, &expr);
+        check_table_expr(
+            context,
+            semantic_model,
+            source_type.as_ref(),
+            Some(&value_type),
+            &expr,
+        );
     }
 
     Some(())
@@ -124,41 +129,30 @@ fn check_index_expr(
     expr: Option<LuaExpr>,
     value_type: LuaType,
 ) -> Option<()> {
-    let semantic_info =
-        semantic_model.get_semantic_info(rowan::NodeOrToken::Node(index_expr.syntax().clone()))?;
-    let mut typ = None;
-    match semantic_info.semantic_decl {
-        // 如果是已显示定义的成员, 我们不能获取其经过类型缩窄后的类型
-        Some(LuaSemanticDeclId::Member(member_id)) => {
-            let type_cache = semantic_model
-                .get_db()
-                .get_type_index()
-                .get_type_cache(&member_id.into());
-            if let Some(type_cache) = type_cache {
-                match type_cache {
-                    LuaTypeCache::DocType(ty) => {
-                        typ = Some(ty.clone());
-                    }
-                    _ => {}
-                }
-            }
-        }
-        _ => {}
-    }
-    if typ.is_none() {
-        typ = Some(semantic_info.typ);
-    }
+    let source_type = infer_index_expr(
+        semantic_model.get_db(),
+        &mut semantic_model.get_config().borrow_mut(),
+        index_expr.clone(),
+        false,
+    )
+    .ok();
 
     check_assign_type_mismatch(
         context,
         semantic_model,
         index_expr.get_range(),
-        typ.clone(),
-        value_type,
+        source_type.as_ref(),
+        &value_type,
         true,
     );
     if let Some(expr) = expr {
-        handle_value_is_table_expr(context, semantic_model, typ, &expr);
+        check_table_expr(
+            context,
+            semantic_model,
+            source_type.as_ref(),
+            Some(&value_type),
+            &expr,
+        );
     }
     Some(())
 }
@@ -170,8 +164,7 @@ fn check_local_stat(
 ) -> Option<()> {
     let vars = local.get_local_name_list().collect::<Vec<_>>();
     let value_exprs = local.get_value_exprs().collect::<Vec<_>>();
-    let value_types =
-        semantic_model.infer_multi_value_adjusted_expression_types(&value_exprs, Some(vars.len()));
+    let value_types = semantic_model.infer_expr_list_types(&value_exprs, Some(vars.len()));
 
     for (idx, var) in vars.iter().enumerate() {
         let name_token = var.get_name_token()?;
@@ -181,78 +174,169 @@ fn check_local_stat(
             .get_decl_index()
             .get_decl(&decl_id)?
             .get_range();
-        let name_type = semantic_model
+        let var_type = semantic_model
             .get_db()
             .get_type_index()
             .get_type_cache(&decl_id.into())
             .map(|cache| cache.as_type().clone())?;
+        let value_type = value_types.get(idx)?.0.clone();
         check_assign_type_mismatch(
             context,
             semantic_model,
             range,
-            Some(name_type.clone()),
-            value_types.get(idx)?.0.clone(),
+            Some(&var_type),
+            &value_type,
             false,
         );
         if let Some(expr) = value_exprs.get(idx).map(|expr| expr) {
-            handle_value_is_table_expr(context, semantic_model, Some(name_type), &expr);
+            check_table_expr(
+                context,
+                semantic_model,
+                Some(&var_type),
+                Some(&value_type),
+                &expr,
+            );
         }
     }
     Some(())
 }
 
-// 处理 value_expr 是 TableExpr 的情况, 但不会处理 `local a = { x = 1 }, local v = a`
-fn handle_value_is_table_expr(
+fn check_table_expr(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
-    table_type: Option<LuaType>,
-    value_expr: &LuaExpr,
+    table_type: Option<&LuaType>, // 记录的类型
+    expr_type: Option<&LuaType>,  // 实际表达式推导出的类型
+    table_expr: &LuaExpr,
 ) -> Option<()> {
-    let table_type = table_type?;
-    let fields = LuaTableExpr::cast(value_expr.syntax().clone())?
-        .get_fields()
-        .collect::<Vec<_>>();
-    if fields.len() > 50 {
-        // 如果字段过多, 则不进行类型检查
+    // 需要进行一些过滤
+    if table_type == expr_type {
         return Some(());
     }
+    let table_type = table_type?;
+    match table_type {
+        LuaType::Def(_) => return Some(()),
+        _ => {}
+    }
+    if let Some(table_expr) = LuaTableExpr::cast(table_expr.syntax().clone()) {
+        check_table_expr_content(context, semantic_model, table_type, &table_expr);
+    }
+    Some(())
+}
 
-    for field in fields {
-        if field.is_value_field() {
-            continue;
+// 处理 value_expr 是 TableExpr 的情况, 但不会处理 `local a = { x = 1 }, local v = a`
+fn check_table_expr_content(
+    context: &mut DiagnosticContext,
+    semantic_model: &SemanticModel,
+    table_type: &LuaType,
+    table_expr: &LuaTableExpr,
+) -> Option<()> {
+    const MAX_CHECK_COUNT: usize = 250;
+    let mut check_count = 0;
+
+    let fields = table_expr.get_fields().collect::<Vec<_>>();
+
+    for (idx, field) in fields.iter().enumerate() {
+        check_count += 1;
+        if check_count > MAX_CHECK_COUNT {
+            return Some(());
         }
+        let Some(value_expr) = field.get_value_expr() else {
+            continue;
+        };
 
-        let field_key = field.get_field_key();
-        if let Some(field_key) = field_key {
-            let member_key = semantic_model.get_member_key(&field_key)?;
-            let source_type = match semantic_model.infer_member_type(&table_type, &member_key) {
-                Ok(typ) => Some(typ),
-                Err(_) => {
+        let expr_type = semantic_model
+            .infer_expr(value_expr.clone())
+            .unwrap_or(LuaType::Any);
+
+        // 位于的最后的 TableFieldValue 允许接受函数调用返回的多值, 而且返回的值必然会从下标 1 开始覆盖掉所有索引字段.
+        if field.is_value_field() && idx == fields.len() - 1 {
+            match &expr_type {
+                LuaType::Variadic(_) => {
+                    // 解开可变参数
+                    let expr_types =
+                        semantic_model.infer_expr_list_types(&vec![value_expr.clone()], None);
+                    check_table_last_variadic_type(
+                        context,
+                        semantic_model,
+                        table_type,
+                        &expr_types,
+                    );
                     continue;
                 }
-            };
-
-            let expr = field.get_value_expr();
-            if let Some(expr) = expr {
-                let expr_type = semantic_model.infer_expr(expr).unwrap_or(LuaType::Any);
-
-                let allow_nil = match table_type {
-                    LuaType::Array(_) => true,
-                    _ => false,
-                };
-
-                check_assign_type_mismatch(
-                    context,
-                    semantic_model,
-                    field.get_range(),
-                    source_type,
-                    expr_type,
-                    allow_nil,
-                );
+                _ => {}
             }
         }
+
+        let Some(field_key) = field.get_field_key() else {
+            continue;
+        };
+        let Some(member_key) = semantic_model.get_member_key(&field_key) else {
+            continue;
+        };
+        let source_type = match semantic_model.infer_member_type(&table_type, &member_key) {
+            Ok(typ) => typ,
+            Err(_) => {
+                continue;
+            }
+        };
+
+        if source_type.is_table() || source_type.is_custom_type() {
+            if let Some(table_expr) = LuaTableExpr::cast(value_expr.syntax().clone()) {
+                // 检查子表
+                check_table_expr_content(context, semantic_model, &source_type, &table_expr);
+                continue;
+            }
+        }
+
+        let allow_nil = match table_type {
+            LuaType::Array(_) => true,
+            _ => false,
+        };
+
+        check_assign_type_mismatch(
+            context,
+            semantic_model,
+            field.get_range(),
+            Some(&source_type),
+            &expr_type,
+            allow_nil,
+        );
     }
 
+    Some(())
+}
+
+fn check_table_last_variadic_type(
+    context: &mut DiagnosticContext,
+    semantic_model: &SemanticModel,
+    table_type: &LuaType,
+    expr_types: &[(LuaType, TextRange)],
+) -> Option<()> {
+    for (idx, (expr_type, range)) in expr_types.iter().enumerate() {
+        // 此时的值必然是从下标 1 开始递增的
+        let member_key = LuaMemberKey::Integer(idx as i64 + 1);
+        let source_type = semantic_model
+            .infer_member_type(&table_type, &member_key)
+            .ok()?;
+
+        let expr_type = if let LuaType::Variadic(variadic) = expr_type {
+            let Some(typ) = variadic.get_type(idx) else {
+                continue;
+            };
+            typ.clone()
+        } else {
+            expr_type.clone()
+        };
+
+        check_assign_type_mismatch(
+            context,
+            semantic_model,
+            *range,
+            Some(&source_type),
+            &expr_type,
+            false,
+        );
+    }
     Some(())
 }
 
@@ -260,11 +344,11 @@ fn check_assign_type_mismatch(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
     range: TextRange,
-    source_type: Option<LuaType>,
-    value_type: LuaType,
+    source_type: Option<&LuaType>,
+    value_type: &LuaType,
     allow_nil: bool,
 ) -> Option<()> {
-    let source_type = source_type.unwrap_or(LuaType::Any);
+    let source_type = source_type.unwrap_or(&LuaType::Any);
     // 如果一致, 则不进行类型检查
     if source_type == value_type {
         return Some(());
@@ -281,9 +365,7 @@ fn check_assign_type_mismatch(
         (LuaType::Def(_), _) => return Some(()),
         // 此时检查交给 table_field
         (LuaType::Ref(_) | LuaType::Tuple(_), LuaType::TableConst(_)) => return Some(()),
-        // 如果源类型是nil, 则不进行类型检查
         (LuaType::Nil, _) => return Some(()),
-        // // fix issue #196
         (LuaType::Ref(_), LuaType::Instance(instance)) => {
             if instance.get_base().is_table() {
                 return Some(());
@@ -317,35 +399,25 @@ fn add_type_check_diagnostic(
     let db = semantic_model.get_db();
     match result {
         Ok(_) => return,
-        Err(reason) => match reason {
-            TypeCheckFailReason::TypeNotMatchWithReason(reason) => {
-                context.add_diagnostic(
-                    DiagnosticCode::AssignTypeMismatch,
-                    range,
-                    t!(
-                        "Cannot assign `%{value}` to `%{source}`. %{reason}",
-                        value = humanize_lint_type(db, &value_type),
-                        source = humanize_lint_type(db, &source_type),
-                        reason = reason
-                    )
-                    .to_string(),
-                    None,
-                );
-            }
-            _ => {
-                context.add_diagnostic(
-                    DiagnosticCode::AssignTypeMismatch,
-                    range,
-                    t!(
-                        "Cannot assign `%{value}` to `%{source}`. %{reason}",
-                        value = humanize_lint_type(db, &value_type),
-                        source = humanize_lint_type(db, &source_type),
-                        reason = ""
-                    )
-                    .to_string(),
-                    None,
-                );
-            }
-        },
+        Err(reason) => {
+            let reason_message = match reason {
+                TypeCheckFailReason::TypeNotMatchWithReason(reason) => reason,
+                TypeCheckFailReason::TypeRecursion => t!("type recursion").to_string(),
+                _ => "".to_string(),
+            };
+
+            context.add_diagnostic(
+                DiagnosticCode::AssignTypeMismatch,
+                range,
+                t!(
+                    "Cannot assign `%{value}` to `%{source}`. %{reason}",
+                    value = humanize_lint_type(db, &value_type),
+                    source = humanize_lint_type(db, &source_type),
+                    reason = reason_message
+                )
+                .to_string(),
+                None,
+            );
+        }
     }
 }

@@ -134,11 +134,16 @@ pub fn build_local_func_stat_symbol(
     let decl = builder.get_decl(&decl_id)?;
     let typ = builder.get_type(decl_id.into());
     let desc = builder.get_symbol_kind_and_detail(Some(&typ));
-    let symbol = LuaSymbol::new(
+
+    let full_range = local_func.get_range();
+    let name_range = decl.get_range();
+
+    let symbol = LuaSymbol::with_selection_range(
         decl.get_name().to_string(),
         desc.1,
         desc.0,
-        decl.get_range(),
+        full_range,
+        name_range,
     );
 
     builder.add_node_symbol(local_func.syntax().clone(), symbol);
@@ -156,7 +161,11 @@ pub fn build_func_stat_symbol(
     let signature_id = LuaSignatureId::from_closure(file_id, &closure);
     let func_ty = LuaType::Signature(signature_id);
     let desc = builder.get_symbol_kind_and_detail(Some(&func_ty));
-    let symbol = LuaSymbol::new(name, desc.1, desc.0, func.get_range());
+
+    let full_range = func.get_range();
+    let name_range = func_name.get_range();
+
+    let symbol = LuaSymbol::with_selection_range(name, desc.1, desc.0, full_range, name_range);
 
     builder.add_node_symbol(func.syntax().clone(), symbol);
     Some(())

@@ -2,6 +2,7 @@ mod access_invisible;
 mod analyze_error;
 mod assign_type_mismatch;
 mod await_in_sync;
+mod cast_type_mismatch;
 mod check_field;
 mod check_param_count;
 mod check_return_count;
@@ -96,6 +97,7 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
         context,
         semantic_model,
     );
+    run_check::<cast_type_mismatch::CastTypeMismatchChecker>(context, semantic_model);
 
     run_check::<code_style::non_literal_expressions_in_assert::NonLiteralExpressionsInAssertChecker>(
         context,
@@ -275,11 +277,12 @@ pub fn get_return_stats(closure_expr: &LuaClosureExpr) -> impl Iterator<Item = L
 
 pub fn humanize_lint_type(db: &DbIndex, typ: &LuaType) -> String {
     match typ {
-        LuaType::Ref(type_decl_id) => type_decl_id.get_simple_name().to_string(),
-        LuaType::Generic(generic_type) => generic_type
-            .get_base_type_id()
-            .get_simple_name()
-            .to_string(),
+        // TODO: 应该仅去掉命名空间
+        // LuaType::Ref(type_decl_id) => type_decl_id.get_simple_name().to_string(),
+        // LuaType::Generic(generic_type) => generic_type
+        //     .get_base_type_id()
+        //     .get_simple_name()
+        //     .to_string(),
         LuaType::IntegerConst(_) => "integer".to_string(),
         LuaType::FloatConst(_) => "number".to_string(),
         LuaType::BooleanConst(_) => "boolean".to_string(),

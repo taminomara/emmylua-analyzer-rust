@@ -18,6 +18,12 @@ pub fn goto_module_file(
     let file_id = founded_module.file_id;
     let document = semantic_model.get_document_by_file_id(file_id)?;
     let uri = document.get_uri();
+    // 确保目标文件存在
+    let file_path = document.get_file_path();
+    if !file_path.try_exists().unwrap_or(false) {
+        return None;
+    }
+
     let lsp_range = document.get_document_lsp_range();
 
     Some(GotoDefinitionResponse::Scalar(Location {

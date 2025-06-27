@@ -28,6 +28,7 @@ pub fn infer_index_expr(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     index_expr: LuaIndexExpr,
+    pass_flow: bool,
 ) -> InferResult {
     let prefix_expr = index_expr.get_prefix_expr().ok_or(InferFailReason::None)?;
     let prefix_type = infer_expr(db, cache, prefix_expr)?;
@@ -41,7 +42,16 @@ pub fn infer_index_expr(
         &mut InferGuard::new(),
     ) {
         Ok(member_type) => {
-            return infer_member_type_pass_flow(db, cache, index_expr, &prefix_type, member_type);
+            if pass_flow {
+                return infer_member_type_pass_flow(
+                    db,
+                    cache,
+                    index_expr,
+                    &prefix_type,
+                    member_type,
+                );
+            }
+            return Ok(member_type);
         }
         Err(InferFailReason::FieldNotFound) => InferFailReason::FieldNotFound,
         Err(err) => return Err(err),
@@ -55,7 +65,16 @@ pub fn infer_index_expr(
         &mut InferGuard::new(),
     ) {
         Ok(member_type) => {
-            return infer_member_type_pass_flow(db, cache, index_expr, &prefix_type, member_type)
+            if pass_flow {
+                return infer_member_type_pass_flow(
+                    db,
+                    cache,
+                    index_expr,
+                    &prefix_type,
+                    member_type,
+                );
+            }
+            return Ok(member_type);
         }
         Err(InferFailReason::FieldNotFound) => {}
         Err(err) => return Err(err),

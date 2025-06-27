@@ -1,5 +1,6 @@
 use emmylua_code_analysis::{
-    LuaFunctionType, LuaMember, LuaMemberOwner, LuaSemanticDeclId, LuaType, SemanticModel,
+    LuaCompilation, LuaFunctionType, LuaMember, LuaMemberOwner, LuaSemanticDeclId, LuaType,
+    SemanticModel,
 };
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxToken};
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
@@ -23,22 +24,25 @@ pub struct HoverBuilder<'a> {
     /// Type expansion, often used for alias types
     pub type_expansion: Option<Vec<String>>,
     /// see
-    pub see_content: Option<String>,
+    see_content: Option<String>,
     /// other
-    pub other_content: Option<String>,
+    other_content: Option<String>,
 
     pub is_completion: bool,
     trigger_token: Option<LuaSyntaxToken>,
     pub semantic_model: &'a SemanticModel<'a>,
+    pub compilation: &'a LuaCompilation,
 }
 
 impl<'a> HoverBuilder<'a> {
     pub fn new(
+        compilation: &'a LuaCompilation,
         semantic_model: &'a SemanticModel,
         token: Option<LuaSyntaxToken>,
         is_completion: bool,
     ) -> Self {
         Self {
+            compilation,
             semantic_model,
             type_description: MarkedString::String("".to_string()),
             location_path: None,
@@ -283,6 +287,9 @@ impl<'a> HoverBuilder<'a> {
         }
         result.push_str(&description_content);
         result.push_str(&expansion);
+
+        // 清除空白字符
+        result = result.trim().to_string();
 
         Some(Hover {
             contents: HoverContents::Markup(MarkupContent {

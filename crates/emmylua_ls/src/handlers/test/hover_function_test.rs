@@ -18,7 +18,7 @@ mod tests {
                 local <??>delete4 = delete3
             "#,
             VirtualHoverResult {
-                value: "\n```lua\nlocal function delete(a: number)\n  -> a: number\n\n```\n\n---\n\n@*param* `a` — 参数a\n\n\n\n@*return* `a`  — 返回值a\n\n\n".to_string(),
+                value: "```lua\nlocal function delete(a: number)\n  -> a: number\n\n```\n\n---\n\n@*param* `a` — 参数a\n\n\n\n@*return* `a`  — 返回值a".to_string(),
             },
         ));
 
@@ -38,7 +38,7 @@ mod tests {
                 }
             "#,
             VirtualHoverResult {
-                value: "\n```lua\nlocal function delete(a: number)\n  -> a: number\n\n```\n\n---\n\n删除\n\n@*param* `a` — 参数a\n\n\n\n@*return* `a`  — 返回值a\n\n\n".to_string(),
+                value: "```lua\nlocal function delete(a: number)\n  -> a: number\n\n```\n\n---\n\n删除\n\n@*param* `a` — 参数a\n\n\n\n@*return* `a`  — 返回值a".to_string(),
             },
         ));
 
@@ -61,7 +61,7 @@ mod tests {
                 }
             "#,
             VirtualHoverResult {
-                value: "\n```lua\nlocal function delete(a: number)\n  -> a: number\n\n```\n\n---\n\n@*param* `a` — 参数a\n\n\n\n@*return* `a`  — 返回值a\n\n\n".to_string(),
+                value: "```lua\nlocal function delete(a: number)\n  -> a: number\n\n```\n\n---\n\n@*param* `a` — 参数a\n\n\n\n@*return* `a`  — 返回值a".to_string(),
             },
         ));
     }
@@ -97,7 +97,7 @@ mod tests {
             local <??>local_b = local_a
             "#,
             VirtualHoverResult {
-                value: "\n```lua\n(method) Game:add(key: string, value: string)\n  -> ret: number\n\n```\n\n---\n\n说明\n\n@*param* `key` — 参数key\n\n@*param* `value` — 参数value\n\n\n\n@*return* `ret`  — 返回值\n\n\n" .to_string(),
+                value: "```lua\n(method) Game:add(key: string, value: string)\n  -> ret: number\n\n```\n\n---\n\n说明\n\n@*param* `key` — 参数key\n\n@*param* `value` — 参数value\n\n\n\n@*return* `ret`  — 返回值".to_string(),
             },
         ));
     }
@@ -122,7 +122,7 @@ mod tests {
                 local <??>event = test3.event
             "#,
             VirtualHoverResult {
-                value: "\n```lua\n(method) Test3:event(event: \"B\", key: string)\n```\n\n&nbsp;&nbsp;in class `Hover.Test3`\n\n---\n\n---\n\n```lua\n(method) Test3:event(event: \"A\", key: string)\n```\n".to_string(),
+                value: "```lua\n(method) Test3:event(event: \"B\", key: string)\n```\n\n&nbsp;&nbsp;in class `Hover.Test3`\n\n---\n\n---\n\n```lua\n(method) Test3:event(event: \"A\", key: string)\n```".to_string(),
             },
         ));
     }
@@ -160,7 +160,7 @@ mod tests {
                 ---@field event fun(self: self, event: "游戏-http返回"): Trigger
             "#,
             VirtualHoverResult {
-                value: "\n```lua\n(method) GameA:event(event_type: EventTypeA, ...: any)\n  -> Trigger\n\n```\n\n---\n\n注册引擎事件\n\n---\n\n```lua\n(method) GameA:event(event: \"游戏-初始化\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-追帧完成\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-逻辑不同步\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-地形预设加载完成\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-结束\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-暂停\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-恢复\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-昼夜变化\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"区域-进入\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"区域-离开\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-http返回\") -> Trigger\n```\n".to_string(),
+                value: "```lua\n(method) GameA:event(event_type: EventTypeA, ...: any)\n  -> Trigger\n\n```\n\n---\n\n注册引擎事件\n\n---\n\n```lua\n(method) GameA:event(event: \"游戏-初始化\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-追帧完成\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-逻辑不同步\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-地形预设加载完成\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-结束\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-暂停\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-恢复\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-昼夜变化\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"区域-进入\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"区域-离开\") -> Trigger\n```\n\n```lua\n(method) GameA:event(event: \"游戏-http返回\") -> Trigger\n```".to_string(),
             },
         ));
     }
@@ -179,7 +179,7 @@ mod tests {
                 end
             "#,
             VirtualHoverResult {
-                value: "\n```lua\nfunction ClosureTest.e(a: string, b: number)\n```\n\n---\n\n---\n\n```lua\n(field) ClosureTest.e(a: string, b: number)\n```\n".to_string(),
+                value: "```lua\nfunction ClosureTest.e(a: string, b: number)\n```\n\n---\n\n---\n\n```lua\n(field) ClosureTest.e(a: string, b: number)\n```".to_string(),
             },
         ));
     }
@@ -200,7 +200,7 @@ mod tests {
                 }
             "#,
             VirtualHoverResult {
-                value: "\n```lua\n(method) T:func()\n```\n\n---\n\n注释注释\n".to_string(),
+                value: "```lua\n(method) T:func()\n```\n\n---\n\n注释注释".to_string(),
             },
         ));
     }
@@ -219,7 +219,7 @@ mod tests {
                 }
             "#,
             VirtualHoverResult {
-                value: "\n```lua\n(field) a: string = \"a\"\n```\n\n---\n\n注释注释a\n".to_string(),
+                value: "```lua\n(field) a: string = \"a\"\n```\n\n---\n\n注释注释a".to_string(),
             },
         ));
     }
@@ -239,8 +239,7 @@ mod tests {
                 }
             "#,
             VirtualHoverResult {
-                value: "\n```lua\n(field) T.func(self: string)\n```\n\n---\n\n注释注释\n"
-                    .to_string(),
+                value: "```lua\n(field) T.func(self: string)\n```\n\n---\n\n注释注释".to_string(),
             },
         ));
     }
@@ -261,7 +260,7 @@ mod tests {
                 }
             "#,
             VirtualHoverResult {
-                value: "\n```lua\n(field) T.func(a: (string|number))\n```\n\n---\n\n注释1\n\n注释2\n\n---\n\n```lua\n(field) T.func(a: string)\n```\n\n```lua\n(field) T.func(a: number)\n```\n"
+                value: "```lua\n(field) T.func(a: (string|number))\n```\n\n---\n\n注释1\n\n注释2\n\n---\n\n```lua\n(field) T.func(a: string)\n```\n\n```lua\n(field) T.func(a: number)\n```"
                     .to_string(),
             },
         ));
@@ -285,7 +284,7 @@ mod tests {
                 t.fu<??>nc(1)
             "#,
             VirtualHoverResult {
-                value: "\n```lua\n(field) T.func(a: number)\n```\n\n---\n\n注释2\n".to_string(),
+                value: "```lua\n(field) T.func(a: number)\n```\n\n---\n\n注释2".to_string(),
             },
         ));
     }
@@ -307,7 +306,91 @@ mod tests {
                 local ab<??>c = t.func
             "#,
             VirtualHoverResult {
-                value: "\n```lua\n(field) T.func(a: number)\n```\n\n---\n\n注释2\n\n注释1\n\n---\n\n```lua\n(field) T.func(a: string)\n```\n".to_string(),
+                value: "```lua\n(field) T.func(a: number)\n```\n\n---\n\n注释2\n\n注释1\n\n---\n\n```lua\n(field) T.func(a: string)\n```".to_string(),
+            },
+        ));
+    }
+
+    #[test]
+    fn test_first_generic() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_hover(
+            r#"
+                ---@class Reactive
+                local M
+
+                ---@generic T: table
+                ---@param target T
+                ---@return T
+                function M.reac<??>tive(target)
+                end
+
+            "#,
+            VirtualHoverResult {
+                value: "```lua\nfunction Reactive.reactive(target: T)\n  -> T\n\n```".to_string(),
+            },
+        ));
+    }
+
+    #[test]
+    fn test_table_field_function() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_hover(
+            r#"
+                local export = {}
+                ---@type fun()
+                export.NO<??>OP = function() end
+
+            "#,
+            VirtualHoverResult {
+                value: "```lua\nfunction export.NOOP()\n```".to_string(),
+            },
+        ));
+    }
+
+    #[test]
+    fn test_return_union_function() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_hover(
+            r#"
+                ---@generic T
+                ---@param initialValue? T
+                ---@return (fun(): T) | (fun(value: T))
+                local function signal(initialValue)
+                end
+
+                ---测试
+                local cou<??>nt = signal(1)
+            "#,
+            VirtualHoverResult {
+                value: "```lua\nfunction count(value: 1)\n```\n\n---\n\n测试\n\n---\n\n```lua\nfunction count() -> 1\n```".to_string(),
+            },
+        ));
+    }
+
+    #[test]
+    fn test_require_function() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def_file(
+            "test.lua",
+            r#"
+
+            ---测试
+            local function signal()
+            end
+
+            return {
+                signal = signal
+            }
+            "#,
+        );
+        assert!(ws.check_hover(
+            r#"
+                local test = require("test")
+                local si<??>gnal = test.signal
+            "#,
+            VirtualHoverResult {
+                value: "```lua\nlocal function signal()\n```\n\n---\n\n测试".to_string(),
             },
         ));
     }

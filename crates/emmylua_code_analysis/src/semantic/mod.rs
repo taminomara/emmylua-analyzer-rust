@@ -19,9 +19,11 @@ use emmylua_parser::{
     LuaCallExpr, LuaChunk, LuaExpr, LuaIndexKey, LuaParseError, LuaSyntaxNode, LuaSyntaxToken,
     LuaTableExpr,
 };
-use infer::{infer_bind_value_type, infer_multi_value_adjusted_expression_types};
+pub use infer::infer_index_expr;
+use infer::{infer_bind_value_type, infer_expr_list_types};
 pub use infer::{infer_table_field_value_should_be, infer_table_should_be};
 use lsp_types::Uri;
+pub use member::find_index_operations;
 pub use member::get_member_map;
 pub use member::LuaMemberInfo;
 use member::{find_member_origin_owner, find_members};
@@ -151,13 +153,13 @@ impl<'a> SemanticModel<'a> {
         .ok()
     }
 
-    /// 获取赋值时所有右值类型或调用时所有参数类型或返回时所有返回值类型
-    pub fn infer_multi_value_adjusted_expression_types(
+    /// 推断表达式列表类型, 位于最后的表达式会触发多值推断
+    pub fn infer_expr_list_types(
         &self,
         exprs: &[LuaExpr],
         var_count: Option<usize>,
     ) -> Vec<(LuaType, TextRange)> {
-        infer_multi_value_adjusted_expression_types(
+        infer_expr_list_types(
             self.db,
             &mut self.infer_cache.borrow_mut(),
             exprs,

@@ -305,7 +305,7 @@ impl LuaModuleIndex {
         self.file_module_map.values().collect()
     }
 
-    fn extract_module_path(&self, path: &str) -> Option<(String, WorkspaceId)> {
+    pub fn extract_module_path(&self, path: &str) -> Option<(String, WorkspaceId)> {
         let path = Path::new(path);
         let mut matched_module_path: Option<(String, WorkspaceId)> = None;
         for workspace in &self.workspaces {
@@ -339,7 +339,7 @@ impl LuaModuleIndex {
         module_path.to_string()
     }
 
-    fn match_pattern(&self, path: &str) -> Option<String> {
+    pub fn match_pattern(&self, path: &str) -> Option<String> {
         for pattern in &self.module_patterns {
             if let Some(captures) = pattern.captures(path) {
                 if let Some(matched) = captures.get(1) {

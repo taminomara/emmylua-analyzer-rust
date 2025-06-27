@@ -82,12 +82,17 @@ impl<'a> DocumentSymbolBuilder<'a> {
         let id = root.get_syntax_id();
         let lua_symbol = self.document_symbols.get(&id).unwrap();
         let lsp_range = self.document.to_lsp_range(lua_symbol.range).unwrap();
+        let lsp_selection_range = lua_symbol
+            .selection_range
+            .and_then(|range| self.document.to_lsp_range(range))
+            .unwrap_or_else(|| lsp_range.clone());
+
         let mut document_symbol = DocumentSymbol {
             name: lua_symbol.name.clone(),
             detail: lua_symbol.detail.clone(),
             kind: lua_symbol.kind,
-            range: lsp_range.clone(),
-            selection_range: lsp_range,
+            range: lsp_range,
+            selection_range: lsp_selection_range,
             children: None,
             tags: None,
             deprecated: None,
@@ -107,6 +112,11 @@ impl<'a> DocumentSymbolBuilder<'a> {
         for child in &symbol.children {
             let child_symbol = self.document_symbols.get(child)?;
             let lsp_range = self.document.to_lsp_range(child_symbol.range)?;
+            let lsp_selection_range = child_symbol
+                .selection_range
+                .and_then(|range| self.document.to_lsp_range(range))
+                .unwrap_or_else(|| lsp_range.clone());
+
             let child_symbol_name = if child_symbol.name.is_empty() {
                 "(empty)".to_string()
             } else {
@@ -117,8 +127,8 @@ impl<'a> DocumentSymbolBuilder<'a> {
                 name: child_symbol_name,
                 detail: child_symbol.detail.clone(),
                 kind: child_symbol.kind,
-                range: lsp_range.clone(),
-                selection_range: lsp_range,
+                range: lsp_range,
+                selection_range: lsp_selection_range,
                 children: None,
                 tags: None,
                 deprecated: None,
@@ -196,6 +206,7 @@ pub struct LuaSymbol {
     detail: Option<String>,
     kind: SymbolKind,
     range: TextRange,
+    selection_range: Option<TextRange>,
     children: Vec<LuaSyntaxId>,
 }
 
@@ -206,6 +217,24 @@ impl LuaSymbol {
             detail,
             kind,
             range,
+            selection_range: None,
+            children: Vec::new(),
+        }
+    }
+
+    pub fn with_selection_range(
+        name: String,
+        detail: Option<String>,
+        kind: SymbolKind,
+        range: TextRange,
+        selection_range: TextRange,
+    ) -> Self {
+        Self {
+            name,
+            detail,
+            kind,
+            range,
+            selection_range: Some(selection_range),
             children: Vec::new(),
         }
     }

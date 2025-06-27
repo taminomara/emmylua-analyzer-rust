@@ -5,14 +5,17 @@ use lsp_server::Notification;
 use lsp_types::{
     notification::{
         Cancel, DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles,
-        DidCloseTextDocument, DidOpenTextDocument, DidSaveTextDocument,
+        DidCloseTextDocument, DidOpenTextDocument, DidRenameFiles, DidSaveTextDocument,
         Notification as lsp_notification, SetTrace,
     },
     CancelParams, NumberOrString,
 };
 use serde::de::DeserializeOwned;
 
-use crate::context::{ServerContext, ServerContextSnapshot};
+use crate::{
+    context::{ServerContext, ServerContextSnapshot},
+    handlers::workspace::on_did_rename_files_handler,
+};
 
 use super::{
     configuration::on_did_change_configuration,
@@ -37,6 +40,7 @@ pub async fn on_notification_handler(
         .on_parallel::<DidChangeWatchedFiles, _, _>(on_did_change_watched_files)
         .on_parallel::<SetTrace, _, _>(on_set_trace)
         .on_parallel::<DidChangeConfiguration, _, _>(on_did_change_configuration)
+        .on_parallel::<DidRenameFiles, _, _>(on_did_rename_files_handler)
         .finish();
 
     Ok(())

@@ -1,4 +1,4 @@
-use emmylua_code_analysis::{DbIndex, SemanticModel};
+use emmylua_code_analysis::{DbIndex, LuaCompilation, SemanticModel};
 use lsp_types::{CompletionItem, Documentation, MarkedString, MarkupContent};
 
 use crate::{
@@ -9,6 +9,7 @@ use crate::{
 use super::completion_data::{CompletionData, CompletionDataType};
 
 pub fn resolve_completion(
+    compilation: &LuaCompilation,
     semantic_model: &SemanticModel,
     db: &DbIndex,
     completion_item: &mut CompletionItem,
@@ -18,7 +19,8 @@ pub fn resolve_completion(
     // todo: resolve completion
     match completion_data.typ {
         CompletionDataType::PropertyOwnerId(property_id) => {
-            let hover_builder = build_hover_content_for_completion(semantic_model, db, property_id);
+            let hover_builder =
+                build_hover_content_for_completion(compilation, semantic_model, db, property_id);
             if let Some(mut hover_builder) = hover_builder {
                 update_function_signature_info(
                     &mut hover_builder,
@@ -32,7 +34,8 @@ pub fn resolve_completion(
             }
         }
         CompletionDataType::Overload((property_id, index)) => {
-            let hover_builder = build_hover_content_for_completion(semantic_model, db, property_id);
+            let hover_builder =
+                build_hover_content_for_completion(compilation, semantic_model, db, property_id);
             if let Some(mut hover_builder) = hover_builder {
                 update_function_signature_info(
                     &mut hover_builder,

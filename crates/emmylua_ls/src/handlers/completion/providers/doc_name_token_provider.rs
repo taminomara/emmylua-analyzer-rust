@@ -32,6 +32,12 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
         DocCompletionExpected::ClassAttr => {
             add_tag_class_attr_completion(builder);
         }
+        DocCompletionExpected::Namespace => {
+            add_tag_namespace_completion(builder);
+        }
+        DocCompletionExpected::Using => {
+            add_tag_using_completion(builder);
+        }
     }
 
     builder.stop_here();
@@ -66,6 +72,8 @@ fn get_doc_completion_expected(trigger_token: &LuaSyntaxToken) -> Option<DocComp
                         _ => None,
                     }
                 }
+                LuaTokenKind::TkTagNamespace => Some(DocCompletionExpected::Namespace),
+                LuaTokenKind::TkTagUsing => Some(DocCompletionExpected::Using),
                 LuaTokenKind::TkComma => {
                     let parent = left_token.parent()?;
                     match parent.kind().into() {
@@ -112,6 +120,8 @@ enum DocCompletionExpected {
     DiagnosticAction,
     DiagnosticCode,
     ClassAttr,
+    Namespace,
+    Using,
 }
 
 fn add_tag_param_name_completion(builder: &mut CompletionBuilder) -> Option<()> {
@@ -248,6 +258,49 @@ fn add_tag_class_attr_completion(builder: &mut CompletionBuilder) {
         let completion_item = CompletionItem {
             label: name.to_string(),
             kind: Some(lsp_types::CompletionItemKind::ENUM_MEMBER),
+            ..Default::default()
+        };
+        builder.add_completion_item(completion_item);
+    }
+}
+
+fn add_tag_namespace_completion(builder: &mut CompletionBuilder) {
+    let type_index = builder.semantic_model.get_db().get_type_index();
+    let file_id = builder.semantic_model.get_file_id();
+    if type_index.get_file_namespace(&file_id).is_some() {
+        return;
+    }
+    let mut namespaces = type_index.get_file_namespaces();
+
+    namespaces.sort();
+
+    for (sorted_index, namespace) in namespaces.iter().enumerate() {
+        let completion_item = CompletionItem {
+            label: namespace.clone(),
+            kind: Some(lsp_types::CompletionItemKind::MODULE),
+            sort_text: Some(format!("{:03}", sorted_index)),
+            ..Default::default()
+        };
+        builder.add_completion_item(completion_item);
+    }
+}
+
+fn add_tag_using_completion(builder: &mut CompletionBuilder) {
+    let type_index = builder.semantic_model.get_db().get_type_index();
+    let file_id = builder.semantic_model.get_file_id();
+    let current_namespace = type_index.get_file_namespace(&file_id);
+    let mut namespaces = type_index.get_file_namespaces();
+    if let Some(current_namespace) = current_namespace {
+        namespaces.retain(|namespace| namespace != current_namespace);
+    }
+    namespaces.sort();
+
+    for (sorted_index, namespace) in namespaces.iter().enumerate() {
+        let completion_item = CompletionItem {
+            label: format!("using {}", namespace),
+            kind: Some(lsp_types::CompletionItemKind::MODULE),
+            sort_text: Some(format!("{:03}", sorted_index)),
+            insert_text: Some(format!("{}", namespace)),
             ..Default::default()
         };
         builder.add_completion_item(completion_item);

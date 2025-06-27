@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use std::{ops::Deref, sync::Arc};
+
     use lsp_types::{InlayHint, InlayHintLabel, Location, Position, Range};
 
     use crate::handlers::test_lib::ProviderVirtualWorkspace;
@@ -90,5 +92,71 @@ mod tests {
             )
             .unwrap();
         assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_meta_call_hint() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        let result = ws
+            .check_inlay_hint(
+                r#"
+                ---@class Hint1
+                ---@overload fun(a: string): Hint1
+                local Hint1
+
+                local a = Hint1("a")
+            "#,
+            )
+            .unwrap();
+        assert!(result.len() == 4);
+    }
+
+    #[test]
+    fn test_class_def_var_hint() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        let result = ws
+            .check_inlay_hint(
+                r#"
+                ---@class Hint.1
+                ---@overload fun(a: integer): Hint.1
+                local Hint1
+            "#,
+            )
+            .unwrap();
+        assert!(result.len() == 1);
+    }
+
+    #[test]
+    fn test_class_call_hint() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        let mut emmyrc = ws.analysis.get_emmyrc().deref().clone();
+        emmyrc.runtime.class_default_call.function_name = "__init".to_string();
+        emmyrc.runtime.class_default_call.force_non_colon = true;
+        emmyrc.runtime.class_default_call.force_return_self = true;
+        ws.analysis.update_config(Arc::new(emmyrc));
+
+        let result = ws
+            .check_inlay_hint(
+                r#"
+                ---@class MyClass
+                local A
+
+                function A:__init(a)
+                end
+
+                A()
+            "#,
+            )
+            .unwrap();
+        assert!(result.len() == 2);
+
+        let location = match &result.get(1).unwrap().label {
+            InlayHintLabel::LabelParts(parts) => parts.first().unwrap().location.as_ref().unwrap(),
+            InlayHintLabel::String(_) => panic!(),
+        };
+        assert_eq!(
+            location.range,
+            Range::new(Position::new(4, 27), Position::new(4, 33))
+        );
     }
 }

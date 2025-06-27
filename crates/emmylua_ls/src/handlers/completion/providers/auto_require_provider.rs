@@ -1,4 +1,4 @@
-use emmylua_code_analysis::{EmmyrcFilenameConvention, ModuleInfo};
+use emmylua_code_analysis::{EmmyrcFilenameConvention, LuaType, ModuleInfo};
 use emmylua_parser::{LuaAstNode, LuaNameExpr};
 use lsp_types::{CompletionItem, Position};
 
@@ -7,7 +7,7 @@ use crate::{
         command::make_auto_require,
         completion::{completion_builder::CompletionBuilder, completion_data::CompletionData},
     },
-    util::module_name_convert,
+    util::{key_name_convert, module_name_convert},
 };
 
 pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
@@ -68,8 +68,16 @@ fn add_module_completion_item(
     position: Position,
     completions: &mut Vec<CompletionItem>,
 ) -> Option<()> {
-    let completion_name = module_name_convert(&module_info.name, file_conversion);
+    let completion_name = module_name_convert(module_info, file_conversion);
     if !completion_name.to_lowercase().starts_with(prefix) {
+        try_add_member_completion_items(
+            builder,
+            prefix,
+            module_info,
+            file_conversion,
+            position,
+            completions,
+        );
         return None;
     }
 
@@ -94,6 +102,7 @@ fn add_module_completion_item(
             builder.semantic_model.get_file_id(),
             module_info.file_id,
             position,
+            None,
         )),
         data,
         ..Default::default()
@@ -101,5 +110,81 @@ fn add_module_completion_item(
 
     completions.push(completion_item);
 
+    Some(())
+}
+
+fn try_add_member_completion_items(
+    builder: &CompletionBuilder,
+    prefix: &str,
+    module_info: &ModuleInfo,
+    file_conversion: EmmyrcFilenameConvention,
+    position: Position,
+    completions: &mut Vec<CompletionItem>,
+) -> Option<()> {
+    if let Some(export_type) = &module_info.export_type {
+        match export_type {
+            LuaType::TableConst(_) | LuaType::Def(_) => {
+                let member_infos = builder.semantic_model.get_member_infos(export_type)?;
+                for member_info in member_infos {
+                    let key_name = key_name_convert(
+                        &member_info.key.to_path(),
+                        &member_info.typ,
+                        file_conversion,
+                    );
+                    match member_info.typ {
+                        LuaType::Ref(_) | LuaType::Def(_) => {}
+                        LuaType::Signature(_) => {}
+                        _ => {
+                            continue;
+                        }
+                    }
+
+                    if key_name.to_lowercase().starts_with(prefix) {
+                        if builder.env_duplicate_name.contains(&key_name) {
+                            continue;
+                        }
+
+                        let data = if let Some(property_owner_id) = &member_info.property_owner_id {
+                            let is_visible = builder.semantic_model.is_semantic_visible(
+                                builder.trigger_token.clone(),
+                                property_owner_id.clone(),
+                            );
+                            if !is_visible {
+                                continue;
+                            }
+                            CompletionData::from_property_owner_id(
+                                builder,
+                                property_owner_id.clone(),
+                                None,
+                            )
+                        } else {
+                            None
+                        };
+
+                        let completion_item = CompletionItem {
+                            label: key_name,
+                            kind: Some(lsp_types::CompletionItemKind::MODULE),
+                            label_details: Some(lsp_types::CompletionItemLabelDetails {
+                                detail: Some(format!("    (in {})", module_info.full_module_name)),
+                                ..Default::default()
+                            }),
+                            command: Some(make_auto_require(
+                                "",
+                                builder.semantic_model.get_file_id(),
+                                module_info.file_id,
+                                position,
+                                Some(member_info.key.to_path().to_string()),
+                            )),
+                            data,
+                            ..Default::default()
+                        };
+
+                        completions.push(completion_item);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
     Some(())
 }
