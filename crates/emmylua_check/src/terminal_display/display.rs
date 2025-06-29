@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use emmylua_code_analysis::{DbIndex, FileId};
+use emmylua_code_analysis::{DbIndex, FileId, LuaDocument};
 use lsp_types::{Diagnostic, DiagnosticSeverity};
 
 #[derive(Debug)]
@@ -32,6 +32,7 @@ impl TerminalDisplay {
         let file_path = self.get_relative_path(db, file_id);
         let document = db.get_vfs().get_document(&file_id).unwrap();
         let text = document.get_text();
+        let text_lines = text.lines().collect::<Vec<&str>>();
 
         // Group statistics by severity level
         let mut error_count = 0;
@@ -60,7 +61,7 @@ impl TerminalDisplay {
 
         // Display each diagnostic individually
         for diagnostic in diagnostics {
-            self.display_single_diagnostic(&file_path, text, diagnostic, db, file_id);
+            self.display_single_diagnostic(&file_path, &document, &text_lines, diagnostic);
         }
 
         println!(); // Add blank line separator
@@ -162,18 +163,11 @@ impl TerminalDisplay {
     fn display_single_diagnostic(
         &mut self,
         file_path: &str,
-        text: &str,
+        document: &LuaDocument,
+        lines: &[&str],
         diagnostic: Diagnostic,
-        document: &emmylua_code_analysis::DbIndex,
-        file_id: FileId,
     ) {
         let range = diagnostic.range;
-        let doc = document.get_vfs().get_document(&file_id).unwrap();
-        let _span = match doc.get_range_span(range) {
-            Some(span) => span,
-            None => return,
-        };
-
         // Get severity level colors and symbols
         let (level_color, level_symbol, _level_name) = match diagnostic.severity {
             Some(DiagnosticSeverity::ERROR) => ("\x1b[1;31m", "error", "error"),
@@ -194,12 +188,17 @@ impl TerminalDisplay {
 
         // Calculate line and column numbers
         let start_line = range.start.line as usize;
-        let start_col = range.start.character as usize;
+        let start_character = range.start.character as usize;
+        let Some(start_col) = document.get_col_offset_at_line(start_line, start_character) else {
+            return;
+        };
+        let start_col = u32::from(start_col) as usize;
         let end_line = range.end.line as usize;
-        let end_col = range.end.character as usize;
-
-        // Split text into lines
-        let lines: Vec<&str> = text.lines().collect();
+        let end_character = range.end.character as usize;
+        let Some(end_col) = document.get_col_offset_at_line(end_line, end_character) else {
+            return;
+        };
+        let end_col = u32::from(end_col) as usize;
 
         if start_line >= lines.len() {
             return;
@@ -226,10 +225,15 @@ impl TerminalDisplay {
                 "  \x1b[90m-->\x1b[0m {}:{}:{}",
                 file_path,
                 start_line + 1,
-                start_col + 1
+                start_character + 1
             );
         } else {
-            println!("  --> {}:{}:{}", file_path, start_line + 1, start_col + 1);
+            println!(
+                "  --> {}:{}:{}",
+                file_path,
+                start_line + 1,
+                start_character + 1
+            );
         }
 
         // Calculate context range to display (one line before and after for context)

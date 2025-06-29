@@ -73,6 +73,10 @@ impl<'a> LuaDocument<'a> {
         self.line_index.get_offset(line, col, self.text)
     }
 
+    pub fn get_col_offset_at_line(&self, line: usize, col: usize) -> Option<TextSize> {
+        self.line_index.get_col_offset_at_line(line, col, self.text)
+    }
+
     pub fn get_line_range(&self, line: usize) -> Option<TextRange> {
         let start = self.line_index.get_line_offset(line)?;
         if let Some(end) = self.line_index.get_line_offset(line + 1) {
@@ -135,30 +139,13 @@ impl<'a> LuaDocument<'a> {
             },
         }
     }
-
-    pub fn get_range_span(&self, range: lsp_types::Range) -> Option<(usize, usize)> {
-        let text = self.get_text();
-        let start = self.get_offset(range.start.line as usize, range.start.character as usize)?;
-        let end = self.get_offset(range.end.line as usize, range.end.character as usize)?;
-        // char count
-        let start = text
-            .get(..start.into())
-            .map(|s| s.chars().count())
-            .unwrap_or(0);
-        let end = text
-            .get(..end.into())
-            .map(|s| s.chars().count())
-            .unwrap_or(0);
-
-        Some((start.into(), end.into()))
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{Emmyrc, Vfs, VirtualUrlGenerator};
-    use lsp_types::{Position, Range};
+    use lsp_types::Position;
 
     fn create_vfs() -> Vfs {
         let mut vfs = Vfs::new();
@@ -238,30 +225,6 @@ mod tests {
         let rowan_range = document.to_rowan_range(lsp_range).unwrap();
         assert_eq!(rowan_range.start(), TextSize::from(6));
         assert_eq!(rowan_range.end(), TextSize::from(11));
-    }
-
-    #[test]
-    fn test_range_span() {
-        let code = "abcde";
-        let mut vfs = create_vfs();
-        let vg = VirtualUrlGenerator::new();
-        let uri = vg.new_uri("span.lua");
-        let id = vfs.set_file_content(&uri, Some(code.to_string()));
-        let document = vfs.get_document(&id).unwrap();
-
-        let lsp_range = Range {
-            start: Position {
-                line: 0,
-                character: 1,
-            },
-            end: Position {
-                line: 0,
-                character: 4,
-            },
-        };
-        let span = document.get_range_span(lsp_range).unwrap();
-        // Expecting span (1, 4) which corresponds to substring "bcd".
-        assert_eq!(span, (1, 4));
     }
 
     #[test]
