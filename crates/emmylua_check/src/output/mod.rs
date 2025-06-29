@@ -9,6 +9,8 @@ use tokio::sync::mpsc::Receiver;
 
 use crate::cmd_args::{OutputDestination, OutputFormat};
 
+use crate::terminal_display::TerminalDisplay;
+
 pub async fn output_result(
     total_count: usize,
     db: &DbIndex,
@@ -20,9 +22,12 @@ pub async fn output_result(
 ) -> i32 {
     let mut writer: Box<dyn OutputWriter> = match output_format {
         OutputFormat::Json => Box::new(json_output_writer::JsonOutputWriter::new(output)),
-        OutputFormat::Text => Box::new(text_output_writer::TextOutputWriter::new(workspace)),
+        OutputFormat::Text => {
+            Box::new(text_output_writer::TextOutputWriter::new(workspace.clone()))
+        }
     };
 
+    let terminal_display = TerminalDisplay::new(workspace);
     let mut has_error = false;
     let mut count = 0;
     let mut error_count = 0;
@@ -64,19 +69,9 @@ pub async fn output_result(
 
     writer.finish();
 
+    // 只在 Text 格式时显示汇总
     if output_format == OutputFormat::Text {
-        if error_count > 0 {
-            println!("Errors: {}", error_count);
-        }
-        if warning_count > 0 {
-            println!("Warnings: {}", warning_count);
-        }
-        if info_count > 0 {
-            println!("Information: {}", info_count);
-        }
-        if hint_count > 0 {
-            println!("Hints: {}", hint_count);
-        }
+        terminal_display.print_summary(error_count, warning_count, info_count, hint_count);
     }
 
     if has_error {

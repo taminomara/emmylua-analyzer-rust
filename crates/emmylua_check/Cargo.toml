@@ -25,5 +25,5 @@ rowan.workspace = true
 walkdir.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true
-ariadne.workspace = true
 clap.workspace = true
+atty.workspace = true

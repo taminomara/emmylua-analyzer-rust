@@ -1,6 +1,7 @@
 mod cmd_args;
 mod init;
 mod output;
+mod terminal_display;
 
 use clap::Parser;
 use cmd_args::CmdArgs;
