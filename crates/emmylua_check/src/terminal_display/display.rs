@@ -286,22 +286,6 @@ impl TerminalDisplay {
                         print!("{}", error_part);
                     }
                     println!("{}", suffix);
-
-                    // Print indicator
-                    print!("  {:width$} │ ", "", width = line_num_width);
-                    for _ in 0..start_col {
-                        print!(" ");
-                    }
-                    if self.supports_color {
-                        print!("{}", level_color);
-                    }
-                    for _ in start_col..std::cmp::max(start_col + 1, end_col) {
-                        print!("^");
-                    }
-                    if self.supports_color {
-                        print!("\x1b[0m");
-                    }
-                    println!();
                 } else {
                     // Start or end line of multi-line error
                     if self.supports_color {
