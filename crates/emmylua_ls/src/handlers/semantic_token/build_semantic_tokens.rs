@@ -177,7 +177,7 @@ fn build_tokens_semantic_token(
             builder.push(token, SemanticTokenType::STRING);
         }
         LuaTokenKind::TkDocRegion | LuaTokenKind::TkDocEndRegion => {
-            builder.push(token, SemanticTokenType::KEYWORD);
+            builder.push(token, SemanticTokenType::COMMENT);
         }
         LuaTokenKind::TkDocStart => {
             render_doc_at(builder, &token);
