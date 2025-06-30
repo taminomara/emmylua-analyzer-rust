@@ -1116,4 +1116,22 @@ mod test {
             "#
         ));
     }
+
+    #[test]
+    fn test_self() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class test
+                local A
+
+                function A:stop()
+                end
+
+                local stop = A.stop
+                stop(A)
+            "#
+        ));
+    }
 }

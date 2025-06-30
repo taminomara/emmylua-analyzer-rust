@@ -221,16 +221,48 @@ pub fn get_call_source_type(
     semantic_model: &SemanticModel,
     call_expr: &LuaCallExpr,
 ) -> Option<LuaType> {
-    if let Some(LuaExpr::IndexExpr(index_expr)) = call_expr.get_prefix_expr() {
-        let decl = semantic_model.find_decl(
-            index_expr.syntax().clone().into(),
-            SemanticDeclLevel::default(),
-        )?;
+    match call_expr.get_prefix_expr()? {
+        LuaExpr::IndexExpr(index_expr) => {
+            let decl = semantic_model.find_decl(
+                index_expr.syntax().clone().into(),
+                SemanticDeclLevel::default(),
+            )?;
 
-        if let LuaSemanticDeclId::Member(member_id) = decl {
-            if let Some(LuaSemanticDeclId::Member(member_id)) =
-                semantic_model.get_member_origin_owner(member_id)
-            {
+            if let LuaSemanticDeclId::Member(member_id) = decl {
+                if let Some(LuaSemanticDeclId::Member(member_id)) =
+                    semantic_model.get_member_origin_owner(member_id)
+                {
+                    let root = semantic_model
+                        .get_db()
+                        .get_vfs()
+                        .get_syntax_tree(&member_id.file_id)?
+                        .get_red_root();
+                    let cur_node = member_id.get_syntax_id().to_node_from_root(&root)?;
+                    let index_expr = LuaIndexExpr::cast(cur_node)?;
+
+                    return index_expr.get_prefix_expr().map(|prefix_expr| {
+                        semantic_model
+                            .infer_expr(prefix_expr.clone())
+                            .unwrap_or(LuaType::SelfInfer)
+                    });
+                }
+            }
+
+            return if let Some(prefix_expr) = index_expr.get_prefix_expr() {
+                let expr_type = semantic_model
+                    .infer_expr(prefix_expr.clone())
+                    .unwrap_or(LuaType::SelfInfer);
+                Some(expr_type)
+            } else {
+                None
+            };
+        }
+        LuaExpr::NameExpr(name_expr) => {
+            let decl = semantic_model.find_decl(
+                name_expr.syntax().clone().into(),
+                SemanticDeclLevel::default(),
+            )?;
+            if let LuaSemanticDeclId::Member(member_id) = decl {
                 let root = semantic_model
                     .get_db()
                     .get_vfs()
@@ -245,16 +277,11 @@ pub fn get_call_source_type(
                         .unwrap_or(LuaType::SelfInfer)
                 });
             }
-        }
 
-        return if let Some(prefix_expr) = index_expr.get_prefix_expr() {
-            let expr_type = semantic_model
-                .infer_expr(prefix_expr.clone())
-                .unwrap_or(LuaType::SelfInfer);
-            Some(expr_type)
-        } else {
-            None
-        };
+            return None;
+        }
+        _ => {}
     }
+
     None
 }
