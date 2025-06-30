@@ -16,10 +16,25 @@ fn main() {
     let mut files: Vec<String> = Vec::new();
     for path in &input {
         if path.is_relative() {
-            let abs_path = current_path.join(path).to_str().unwrap().to_string();
-            files.push(abs_path);
+            match current_path.join(path).to_str() {
+                Some(p) => {
+                    files.push(p.to_string());
+                }
+                None => {
+                    eprintln!("Error: {} is not a valid path.", path.to_str().unwrap());
+                    exit(1);
+                }
+            }
         } else {
-            files.push(path.to_str().unwrap().to_string());
+            match path.to_str() {
+                Some(p) => {
+                    files.push(p.to_string());
+                }
+                None => {
+                    eprintln!("Error: {} is not a valid path.", path.to_str().unwrap());
+                    exit(1);
+                }
+            }
         }
     }
 
