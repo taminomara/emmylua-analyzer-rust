@@ -755,5 +755,12 @@ mod test {
             a.func()
             "#,
         ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::UndefinedField,
+            r#"
+            local a = require("a").ABC
+            "#,
+        ));
     }
 }

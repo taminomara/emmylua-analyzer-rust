@@ -1,8 +1,9 @@
 use std::collections::HashSet;
 
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaElseIfClauseStat, LuaForRangeStat, LuaForStat, LuaIfStat, LuaIndexExpr,
-    LuaIndexKey, LuaRepeatStat, LuaSyntaxKind, LuaTokenKind, LuaVarExpr, LuaWhileStat,
+    LuaAst, LuaAstNode, LuaCallExpr, LuaElseIfClauseStat, LuaForRangeStat, LuaForStat, LuaIfStat,
+    LuaIndexExpr, LuaIndexKey, LuaRepeatStat, LuaSyntaxKind, LuaTokenKind, LuaVarExpr,
+    LuaWhileStat,
 };
 
 use crate::{
@@ -509,6 +510,13 @@ fn check_require_table_const_with_export<'a>(
 ) -> Option<&'a ModuleInfo> {
     // 获取前缀表达式的语义信息
     let prefix_expr = index_expr.get_prefix_expr()?;
+    if let Some(call_expr) = LuaCallExpr::cast(prefix_expr.syntax().clone()) {
+        let module_info = parse_require_expr_module_info(semantic_model, &call_expr)?;
+        if module_info.is_export(semantic_model.get_db()) {
+            return Some(module_info);
+        }
+    }
+
     let semantic_info = semantic_model.get_semantic_info(prefix_expr.syntax().clone().into())?;
 
     // 检查是否是声明引用
@@ -528,4 +536,24 @@ fn check_require_table_const_with_export<'a>(
         return Some(module_info);
     }
     None
+}
+
+pub fn parse_require_expr_module_info<'a>(
+    semantic_model: &'a SemanticModel,
+    call_expr: &LuaCallExpr,
+) -> Option<&'a ModuleInfo> {
+    let arg_list = call_expr.get_args_list()?;
+    let first_arg = arg_list.get_args().next()?;
+    let require_path_type = semantic_model.infer_expr(first_arg.clone()).ok()?;
+    let module_path: String = match &require_path_type {
+        LuaType::StringConst(module_path) => module_path.as_ref().to_string(),
+        _ => {
+            return None;
+        }
+    };
+
+    semantic_model
+        .get_db()
+        .get_module_index()
+        .find_module(&module_path)
 }
