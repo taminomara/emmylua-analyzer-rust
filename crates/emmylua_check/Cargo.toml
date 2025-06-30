@@ -26,4 +26,3 @@ walkdir.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true
 clap.workspace = true
-atty.workspace = true

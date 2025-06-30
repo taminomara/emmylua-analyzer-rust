@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::io::IsTerminal;
 
 use emmylua_code_analysis::{DbIndex, FileId, LuaDocument};
 use lsp_types::{Diagnostic, DiagnosticSeverity};
@@ -11,7 +12,7 @@ pub struct TerminalDisplay {
 
 impl TerminalDisplay {
     pub fn new(workspace: PathBuf) -> Self {
-        let supports_color = atty::is(atty::Stream::Stdout);
+        let supports_color = std::io::stdout().is_terminal();
 
         Self {
             workspace,
