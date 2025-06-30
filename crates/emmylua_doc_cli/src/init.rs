@@ -4,15 +4,10 @@ use emmylua_code_analysis::{
     load_configs, load_workspace_files, EmmyLuaAnalysis, Emmyrc, LuaFileInfo,
 };
 
-#[allow(unused)]
-pub fn load_workspace(workspace_folders: Vec<String>) -> Option<EmmyLuaAnalysis> {
+pub fn load_workspace(mut workspace_folders: Vec<PathBuf>) -> Option<EmmyLuaAnalysis> {
     let mut analysis = EmmyLuaAnalysis::new();
     analysis.init_std_lib(None);
 
-    let mut workspace_folders = workspace_folders
-        .iter()
-        .map(PathBuf::from)
-        .collect::<Vec<_>>();
     for path in &workspace_folders {
         analysis.add_main_workspace(path.clone());
     }

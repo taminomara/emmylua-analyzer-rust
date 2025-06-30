@@ -1,7 +1,8 @@
+use std::path::PathBuf;
+
 use crate::cmd_args::Format;
 use clap::Parser;
 use cmd_args::CmdArgs;
-use std::process::exit;
 
 mod cmd_args;
 mod common;
@@ -9,53 +10,31 @@ mod init;
 mod json_generator;
 mod markdown_generator;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = CmdArgs::parse();
-    let current_path = std::env::current_dir().ok().unwrap();
+    let current_path = std::env::current_dir()?;
     let input = args.input;
-    let mut files: Vec<String> = Vec::new();
-    for path in &input {
+    let mut files: Vec<PathBuf> = Vec::new();
+    for path in input {
         if path.is_relative() {
-            match current_path.join(path).to_str() {
-                Some(p) => {
-                    files.push(p.to_string());
-                }
-                None => {
-                    eprintln!("Error: {} is not a valid path.", path.to_str().unwrap());
-                    exit(1);
-                }
-            }
+            files.push(current_path.join(path));
         } else {
-            match path.to_str() {
-                Some(p) => {
-                    files.push(p.to_string());
-                }
-                None => {
-                    eprintln!("Error: {} is not a valid path.", path.to_str().unwrap());
-                    exit(1);
-                }
-            }
+            files.push(path);
         }
     }
 
-    let analysis = init::load_workspace(files);
-    if let Some(mut analysis) = analysis {
-        let res = match args.format {
-            Format::Markdown => markdown_generator::generate_markdown(
-                &mut analysis,
-                args.output,
-                args.override_template,
-                args.mixin,
-            ),
-            Format::Json => json_generator::generate_json(&mut analysis, args.output),
-        };
+    let mut analysis = match init::load_workspace(files) {
+        Some(a) => a,
+        None => return Err("failed to load workspace".into()),
+    };
 
-        if let Err(err) = res {
-            eprintln!("Error: {}", err);
-            exit(1);
-        }
-    } else {
-        eprintln!("Analysis failed.");
-        exit(1);
+    match args.format {
+        Format::Markdown => markdown_generator::generate_markdown(
+            &mut analysis,
+            args.output,
+            args.override_template,
+            args.mixin,
+        ),
+        Format::Json => json_generator::generate_json(&mut analysis, args.output),
     }
 }
