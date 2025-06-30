@@ -51,11 +51,22 @@ fn get_decl_set(semantic_model: &SemanticModel) -> Option<HashSet<DeclInfo>> {
             LuaDeclExtra::Local { .. } | LuaDeclExtra::Global { .. }
         ) {
             let decl_type = semantic_model.get_type((*decl_id).into());
-            if let LuaType::Def(id) = decl_type {
-                type_decl_id_set.insert(DeclInfo {
-                    id,
-                    is_require: is_require_decl(&decl),
-                });
+            match decl_type {
+                LuaType::Def(id) => {
+                    type_decl_id_set.insert(DeclInfo {
+                        id,
+                        is_require: is_require_decl(&decl),
+                    });
+                }
+                LuaType::Ref(id) => {
+                    if is_require_decl(&decl) {
+                        type_decl_id_set.insert(DeclInfo {
+                            id,
+                            is_require: true,
+                        });
+                    }
+                }
+                _ => {}
             }
         }
     }
@@ -189,12 +200,16 @@ fn check_decl_duplicate_field(
     Some(())
 }
 
+/// 特殊处理: require("a").fun = function() end
 fn check_one_member(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
     member: &LuaMember,
     is_require: bool,
 ) -> Option<()> {
+    if !is_require {
+        return None;
+    }
     let key = member.get_key();
     let member_id = member.get_id();
     let typ = semantic_model.get_type(member.get_id().into());
@@ -244,7 +259,7 @@ fn check_one_member(
     Some(())
 }
 
-/// 检查是否是 .member = newValue
+/// 检查是否是 require("a").member = newValue
 fn check_function_member_is_set(
     semantic_model: &SemanticModel,
     node: &LuaSyntaxNode,
@@ -257,7 +272,7 @@ fn check_function_member_is_set(
                 .infer_expr(expr.get_prefix_expr()?.into())
                 .ok()?;
             match prefix_type {
-                LuaType::Ref(_) => {
+                LuaType::Def(_) => {
                     return None;
                 }
                 _ => {}
