@@ -1,6 +1,7 @@
-use std::path::PathBuf;
 use std::io::IsTerminal;
+use std::path::PathBuf;
 
+use ansi_term::{Color, Style};
 use emmylua_code_analysis::{DbIndex, FileId, LuaDocument};
 use lsp_types::{Diagnostic, DiagnosticSeverity};
 
@@ -8,16 +9,23 @@ use lsp_types::{Diagnostic, DiagnosticSeverity};
 pub struct TerminalDisplay {
     workspace: PathBuf,
     supports_color: bool,
+    supports_underline: bool,
 }
 
 impl TerminalDisplay {
     pub fn new(workspace: PathBuf) -> Self {
         let supports_color = std::io::stdout().is_terminal();
+        let supports_underline = supports_color && Self::check_underline_support();
 
         Self {
             workspace,
             supports_color,
+            supports_underline,
         }
+    }
+
+    fn check_underline_support() -> bool {
+        std::env::var("TERM").is_ok() || std::env::var("WT_SESSION").is_ok()
     }
 
     pub fn display_diagnostics(
@@ -85,69 +93,56 @@ impl TerminalDisplay {
         hint_count: usize,
     ) {
         if self.supports_color {
-            print!("\x1b[1;36m"); // Bright cyan, bold
+            print!("{}", Color::Cyan.bold().paint("--- "));
+            print!("{}", Color::White.bold().paint(file_path));
+            print!("{}", Color::Cyan.bold().paint(" "));
+        } else {
+            print!("--- {} ", file_path);
         }
-        print!("--- ");
-        if self.supports_color {
-            print!("\x1b[1;37m"); // Bright white, bold
-        }
-        print!("{}", file_path);
-        if self.supports_color {
-            print!("\x1b[1;36m"); // Bright cyan, bold
-        }
-        print!(" ");
 
         let mut parts = Vec::new();
         if error_count > 0 {
+            let text = format!(
+                "{} error{}",
+                error_count,
+                if error_count > 1 { "s" } else { "" }
+            );
             if self.supports_color {
-                parts.push(format!(
-                    "\x1b[1;31m{} error{}\x1b[0m",
-                    error_count,
-                    if error_count > 1 { "s" } else { "" }
-                ));
+                parts.push(Color::Red.bold().paint(text).to_string());
             } else {
-                parts.push(format!(
-                    "{} error{}",
-                    error_count,
-                    if error_count > 1 { "s" } else { "" }
-                ));
+                parts.push(text);
             }
         }
         if warning_count > 0 {
+            let text = format!(
+                "{} warning{}",
+                warning_count,
+                if warning_count > 1 { "s" } else { "" }
+            );
             if self.supports_color {
-                parts.push(format!(
-                    "\x1b[1;33m{} warning{}\x1b[0m",
-                    warning_count,
-                    if warning_count > 1 { "s" } else { "" }
-                ));
+                parts.push(Color::Yellow.bold().paint(text).to_string());
             } else {
-                parts.push(format!(
-                    "{} warning{}",
-                    warning_count,
-                    if warning_count > 1 { "s" } else { "" }
-                ));
+                parts.push(text);
             }
         }
         if info_count > 0 {
+            let text = format!("{} info", info_count);
             if self.supports_color {
-                parts.push(format!("\x1b[1;34m{} info\x1b[0m", info_count));
+                parts.push(Color::Purple.bold().paint(text).to_string());
             } else {
-                parts.push(format!("{} info", info_count));
+                parts.push(text);
             }
         }
         if hint_count > 0 {
+            let text = format!(
+                "{} hint{}",
+                hint_count,
+                if hint_count > 1 { "s" } else { "" }
+            );
             if self.supports_color {
-                parts.push(format!(
-                    "\x1b[1;35m{} hint{}\x1b[0m",
-                    hint_count,
-                    if hint_count > 1 { "s" } else { "" }
-                ));
+                parts.push(Color::Cyan.bold().paint(text).to_string());
             } else {
-                parts.push(format!(
-                    "{} hint{}",
-                    hint_count,
-                    if hint_count > 1 { "s" } else { "" }
-                ));
+                parts.push(text);
             }
         }
 
@@ -155,9 +150,6 @@ impl TerminalDisplay {
             print!("[{}]", parts.join(", "));
         }
 
-        if self.supports_color {
-            print!("\x1b[0m"); // Reset colors
-        }
         println!();
     }
 
@@ -171,11 +163,11 @@ impl TerminalDisplay {
         let range = diagnostic.range;
         // Get severity level colors and symbols
         let (level_color, level_symbol, _level_name) = match diagnostic.severity {
-            Some(DiagnosticSeverity::ERROR) => ("\x1b[1;31m", "error", "error"),
-            Some(DiagnosticSeverity::WARNING) => ("\x1b[1;33m", "warning", "warning"),
-            Some(DiagnosticSeverity::INFORMATION) => ("\x1b[1;34m", "info", "info"),
-            Some(DiagnosticSeverity::HINT) => ("\x1b[1;35m", "hint", "hint"),
-            _ => ("\x1b[1;31m", "error", "error"),
+            Some(DiagnosticSeverity::ERROR) => (Color::Red, "error", "error"),
+            Some(DiagnosticSeverity::WARNING) => (Color::Yellow, "warning", "warning"),
+            Some(DiagnosticSeverity::INFORMATION) => (Color::Purple, "info", "info"),
+            Some(DiagnosticSeverity::HINT) => (Color::Cyan, "hint", "hint"),
+            _ => (Color::Red, "error", "error"),
         };
 
         // Get diagnostic code
@@ -207,10 +199,10 @@ impl TerminalDisplay {
 
         // Print diagnostic header
         if self.supports_color {
-            print!("{}{}:\x1b[0m ", level_color, level_symbol);
-            print!("\x1b[1m{}\x1b[0m", diagnostic.message);
+            print!("{}: ", level_color.bold().paint(level_symbol));
+            print!("{}", Style::new().bold().paint(&diagnostic.message));
             if !code.is_empty() {
-                print!(" \x1b[90m{}\x1b[0m", code);
+                print!(" {}", Color::Fixed(8).paint(&code)); // Dark gray
             }
         } else {
             print!("{}: {}", level_symbol, diagnostic.message);
@@ -223,7 +215,8 @@ impl TerminalDisplay {
         // Print location information
         if self.supports_color {
             println!(
-                "  \x1b[90m-->\x1b[0m {}:{}:{}",
+                "  {}: {}:{}:{}",
+                Color::Fixed(8).paint("-->"), // Dark gray
                 file_path,
                 start_line + 1,
                 start_character + 1
@@ -258,9 +251,8 @@ impl TerminalDisplay {
 
             if self.supports_color {
                 print!(
-                    "  \x1b[94m{:width$}\x1b[0m │ ",
-                    line_num,
-                    width = line_num_width
+                    "  {} │ ",
+                    Color::Cyan.paint(format!("{:width$}", line_num, width = line_num_width))
                 );
             } else {
                 print!("  {:width$} | ", line_num, width = line_num_width);
@@ -286,7 +278,11 @@ impl TerminalDisplay {
 
                     print!("{}", prefix);
                     if self.supports_color && !error_part.is_empty() {
-                        print!("{}{}\x1b[0m", level_color, error_part);
+                        let mut style = level_color.bold();
+                        if self.supports_underline {
+                            style = style.underline();
+                        }
+                        print!("{}", style.paint(error_part));
                     } else {
                         print!("{}", error_part);
                     }
@@ -294,7 +290,11 @@ impl TerminalDisplay {
                 } else {
                     // Start or end line of multi-line error
                     if self.supports_color {
-                        println!("{}{}\x1b[0m", level_color, line_text);
+                        let mut style = level_color.bold();
+                        if self.supports_underline {
+                            style = style.underline();
+                        }
+                        println!("{}", style.paint(*line_text));
                     } else {
                         println!("{}", line_text);
                     }
@@ -317,7 +317,7 @@ impl TerminalDisplay {
     ) {
         if total_errors == 0 && total_warnings == 0 && total_info == 0 && total_hints == 0 {
             if self.supports_color {
-                println!("\x1b[1;32mNo issues found\x1b[0m");
+                println!("{}", Color::Green.bold().paint("No issues found"));
             } else {
                 println!("No issues found");
             }
@@ -326,86 +326,78 @@ impl TerminalDisplay {
 
         println!();
         if self.supports_color {
-            print!("\x1b[1;36m"); // Bright cyan, bold
+            println!("{}", Color::Cyan.bold().paint("Summary"));
+        } else {
+            println!("Summary");
         }
-        print!("Summary");
-        if self.supports_color {
-            print!("\x1b[0m"); // Reset colors
-        }
-        println!();
 
         if total_errors > 0 {
+            let text = format!(
+                "  {} error{}",
+                total_errors,
+                if total_errors > 1 { "s" } else { "" }
+            );
             if self.supports_color {
-                println!(
-                    "  \x1b[1;31m{} error{}\x1b[0m",
-                    total_errors,
-                    if total_errors > 1 { "s" } else { "" }
-                );
+                println!("{}", Color::Red.bold().paint(text));
             } else {
-                println!(
-                    "  {} error{}",
-                    total_errors,
-                    if total_errors > 1 { "s" } else { "" }
-                );
+                println!("{}", text);
             }
         }
 
         if total_warnings > 0 {
+            let text = format!(
+                "  {} warning{}",
+                total_warnings,
+                if total_warnings > 1 { "s" } else { "" }
+            );
             if self.supports_color {
-                println!(
-                    "  \x1b[1;33m{} warning{}\x1b[0m",
-                    total_warnings,
-                    if total_warnings > 1 { "s" } else { "" }
-                );
+                println!("{}", Color::Yellow.bold().paint(text));
             } else {
-                println!(
-                    "  {} warning{}",
-                    total_warnings,
-                    if total_warnings > 1 { "s" } else { "" }
-                );
+                println!("{}", text);
             }
         }
 
         if total_info > 0 {
+            let text = format!("  {} info", total_info);
             if self.supports_color {
-                println!("  \x1b[1;34m{} info\x1b[0m", total_info);
+                println!("{}", Color::Purple.bold().paint(text));
             } else {
-                println!("  {} info", total_info);
+                println!("{}", text);
             }
         }
 
         if total_hints > 0 {
+            let text = format!(
+                "  {} hint{}",
+                total_hints,
+                if total_hints > 1 { "s" } else { "" }
+            );
             if self.supports_color {
-                println!(
-                    "  \x1b[1;35m{} hint{}\x1b[0m",
-                    total_hints,
-                    if total_hints > 1 { "s" } else { "" }
-                );
+                println!("{}", Color::Cyan.bold().paint(text));
             } else {
-                println!(
-                    "  {} hint{}",
-                    total_hints,
-                    if total_hints > 1 { "s" } else { "" }
-                );
+                println!("{}", text);
             }
         }
 
         // Final status
         if total_errors > 0 {
             if self.supports_color {
-                println!("\n\x1b[1;31mCheck failed\x1b[0m");
+                println!("\n{}", Color::Red.bold().paint("Check failed"));
             } else {
                 println!("\nCheck failed");
             }
         } else if total_warnings > 0 {
             if self.supports_color {
-                println!("\n\x1b[1;33mCheck completed with warnings\x1b[0m");
+                println!(
+                    "\n{}",
+                    Color::Yellow.bold().paint("Check completed with warnings")
+                );
             } else {
                 println!("\nCheck completed with warnings");
             }
         } else {
             if self.supports_color {
-                println!("\n\x1b[1;32mCheck successful\x1b[0m");
+                println!("\n{}", Color::Green.bold().paint("Check successful"));
             } else {
                 println!("\nCheck successful");
             }

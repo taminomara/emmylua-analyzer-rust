@@ -26,3 +26,4 @@ walkdir.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true
 clap.workspace = true
+ansi_term.workspace = true
