@@ -242,7 +242,12 @@ fn expand_type_recursive(
         LuaType::Union(union_type) => {
             // 递归展开 union 中的每个类型
             let mut expanded_types = Vec::new();
+            let mut has_nil = false;
             for inner_type in union_type.get_types() {
+                if inner_type.is_nil() {
+                    has_nil = true;
+                    continue;
+                }
                 if let Some(expanded) = expand_type_recursive(db, inner_type, visited) {
                     match expanded {
                         LuaType::Union(inner_union) => {
@@ -260,7 +265,13 @@ fn expand_type_recursive(
 
             let expanded_types = expanded_types.into_iter().unique().collect::<Vec<_>>();
             return match expanded_types.len() {
-                0 => Some(LuaType::Unknown),
+                0 => {
+                    if has_nil {
+                        Some(LuaType::Nil)
+                    } else {
+                        Some(LuaType::Unknown)
+                    }
+                }
                 1 => Some(expanded_types[0].clone().into()),
                 _ => Some(LuaType::Union(LuaUnionType::new(expanded_types).into())),
             };
