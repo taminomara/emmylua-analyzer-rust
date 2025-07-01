@@ -20,7 +20,7 @@ use crate::{
     },
 };
 
-use super::{hover::hover, implementation::implementation};
+use super::{hover::hover, implementation::implementation, references::references};
 
 /// A virtual workspace for testing.
 #[allow(unused)]
@@ -374,5 +374,17 @@ impl ProviderVirtualWorkspace {
         }
 
         true
+    }
+
+    pub fn check_references(&mut self, block_str: &str) -> Option<Vec<lsp_types::Location>> {
+        let content = Self::handle_file_content(block_str);
+        let Some((content, position)) = content else {
+            return None;
+        };
+        let file_id = self.def(&content);
+        let result = references(&self.analysis, file_id, position);
+        // dbg!(&result);
+        dbg!(&result.as_ref().unwrap().len());
+        result
     }
 }

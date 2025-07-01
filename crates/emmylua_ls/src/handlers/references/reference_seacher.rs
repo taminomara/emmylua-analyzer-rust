@@ -1,11 +1,12 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use emmylua_code_analysis::{
-    LuaCompilation, LuaDeclId, LuaMemberId, LuaMemberKey, LuaSemanticDeclId, LuaTypeDeclId,
-    SemanticDeclLevel, SemanticModel,
+    DeclReference, LuaCompilation, LuaDeclId, LuaMemberId, LuaMemberKey, LuaSemanticDeclId,
+    LuaTypeDeclId, SemanticDeclLevel, SemanticModel,
 };
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaNameToken, LuaStringToken, LuaSyntaxNode, LuaSyntaxToken,
+    LuaAssignStat, LuaAst, LuaAstNode, LuaAstToken, LuaNameToken, LuaStringToken, LuaSyntaxNode,
+    LuaSyntaxToken,
 };
 use lsp_types::Location;
 
@@ -20,7 +21,7 @@ pub fn search_references(
     {
         match semantic_decl {
             LuaSemanticDeclId::LuaDecl(decl_id) => {
-                search_decl_references(semantic_model, decl_id, &mut result);
+                search_decl_references(semantic_model, compilation, decl_id, &mut result);
             }
             LuaSemanticDeclId::Member(member_id) => {
                 search_member_references(semantic_model, compilation, member_id, &mut result);
@@ -36,11 +37,16 @@ pub fn search_references(
         fuzzy_search_references(compilation, token, &mut result);
     }
 
+    // 简单过滤, 同行的多个引用只保留一个
+    // let filtered_result = filter_duplicate_and_covered_locations(result);
+    // Some(filtered_result)
+
     Some(result)
 }
 
 pub fn search_decl_references(
     semantic_model: &SemanticModel,
+    compilation: &LuaCompilation,
     decl_id: LuaDeclId,
     result: &mut Vec<Location>,
 ) -> Option<()> {
@@ -58,9 +64,15 @@ pub fn search_decl_references(
         if let Some(location) = document.to_lsp_location(decl.get_range()) {
             result.push(location);
         }
+        let typ = semantic_model.get_type(decl.get_id().into());
+        let is_signature = typ.is_signature();
+
         for decl_ref in decl_refs {
             let location = document.to_lsp_location(decl_ref.range.clone())?;
             result.push(location);
+            if is_signature {
+                get_signature_decl_member_references(semantic_model, compilation, result, decl_ref);
+            }
         }
 
         return Some(());
@@ -119,7 +131,7 @@ pub fn search_member_references(
             let range = in_filed_syntax_id.value.get_range();
             let location = document.to_lsp_location(range)?;
             result.push(location);
-            search_member_secondary_references(semantic_model, node, result);
+            search_member_secondary_references(semantic_model, compilation, node, result);
         }
     }
 
@@ -128,6 +140,7 @@ pub fn search_member_references(
 
 fn search_member_secondary_references(
     semantic_model: &SemanticModel,
+    compilation: &LuaCompilation,
     node: LuaSyntaxNode,
     result: &mut Vec<Location>,
 ) -> Option<()> {
@@ -141,7 +154,7 @@ fn search_member_secondary_references(
                 .position(|value| value.get_position() == position)?;
             let var = vars.get(idx)?;
             let decl_id = LuaDeclId::new(semantic_model.get_file_id(), var.get_position());
-            search_decl_references(semantic_model, decl_id, result);
+            search_decl_references(semantic_model, compilation, decl_id, result);
             let document = semantic_model.get_document();
             let range = document.to_lsp_location(var.get_range())?;
             result.push(range);
@@ -152,7 +165,7 @@ fn search_member_secondary_references(
             let idx = values.position(|value| value.get_position() == position)?;
             let name = local_names.get(idx)?;
             let decl_id = LuaDeclId::new(semantic_model.get_file_id(), name.get_position());
-            search_decl_references(semantic_model, decl_id, result);
+            search_decl_references(semantic_model, compilation, decl_id, result);
             let document = semantic_model.get_document();
             let range = document.to_lsp_location(name.get_range())?;
             result.push(range);
@@ -240,4 +253,81 @@ fn search_type_decl_references(
     }
 
     Some(())
+}
+
+fn get_signature_decl_member_references(
+    semantic_model: &SemanticModel,
+    compilation: &LuaCompilation,
+    result: &mut Vec<Location>,
+    decl_ref: &DeclReference,
+) -> Option<Vec<Location>> {
+    let root = semantic_model.get_root();
+    let position = decl_ref.range.start();
+    let token = root.syntax().token_at_offset(position).right_biased()?;
+    let parent = token.parent()?;
+
+    match parent.parent()? {
+        assign_stat_node if LuaAssignStat::can_cast(assign_stat_node.kind().into()) => {
+            let assign_stat = LuaAssignStat::cast(assign_stat_node)?;
+            let (vars, values) = assign_stat.get_var_and_expr_list();
+            let idx = values
+                .iter()
+                .position(|value| value.get_position() == position)?;
+            let var = vars.get(idx)?;
+            let decl_id = semantic_model
+                .find_decl(var.syntax().clone().into(), SemanticDeclLevel::default())?;
+            if let LuaSemanticDeclId::Member(member_id) = decl_id {
+                search_member_references(semantic_model, compilation, member_id, result);
+            }
+        }
+
+        _ => {}
+    }
+    None
+}
+
+#[allow(unused)]
+fn filter_duplicate_and_covered_locations(locations: Vec<Location>) -> Vec<Location> {
+    if locations.is_empty() {
+        return locations;
+    }
+    let mut sorted_locations = locations;
+    sorted_locations.sort_by(|a, b| {
+        a.uri
+            .to_string()
+            .cmp(&b.uri.to_string())
+            .then_with(|| a.range.start.line.cmp(&b.range.start.line))
+            .then_with(|| b.range.end.line.cmp(&a.range.end.line))
+    });
+
+    let mut result = Vec::new();
+    let mut seen_lines_by_uri: HashMap<String, HashSet<u32>> = HashMap::new();
+
+    for location in sorted_locations {
+        let uri_str = location.uri.to_string();
+        let seen_lines = seen_lines_by_uri.entry(uri_str).or_default();
+
+        let start_line = location.range.start.line;
+        let end_line = location.range.end.line;
+
+        let is_covered = (start_line..=end_line).any(|line| seen_lines.contains(&line));
+
+        if !is_covered {
+            for line in start_line..=end_line {
+                seen_lines.insert(line);
+            }
+            result.push(location);
+        }
+    }
+
+    // 最终按位置排序
+    result.sort_by(|a, b| {
+        a.uri
+            .to_string()
+            .cmp(&b.uri.to_string())
+            .then_with(|| a.range.start.line.cmp(&b.range.start.line))
+            .then_with(|| a.range.start.character.cmp(&b.range.start.character))
+    });
+
+    result
 }
