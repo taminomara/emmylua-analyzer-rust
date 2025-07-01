@@ -36,6 +36,8 @@ fn parse_docs(p: &mut LuaDocParser) {
                 p.set_state(LuaDocLexerState::NormalDescription);
                 p.bump();
 
+                if_token_bump(p, LuaTokenKind::TkWhitespace);
+
                 if matches!(
                     p.current_token(),
                     LuaTokenKind::TkDocRegion | LuaTokenKind::TkDocEndRegion

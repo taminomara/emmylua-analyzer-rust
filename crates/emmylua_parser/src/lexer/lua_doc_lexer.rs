@@ -484,12 +484,16 @@ impl LuaDocLexer<'_> {
                 reader.eat_while(is_doc_whitespace);
                 LuaTokenKind::TkWhitespace
             }
-            ch if ch.is_ascii_alphabetic() => {
+            ch if ch.is_ascii_alphabetic() || ch == '#' => {
+                if reader.current_char() == '#' {
+                    reader.bump();
+                }
+
                 reader.eat_while(|c| c.is_ascii_alphabetic());
                 let text = reader.current_saved_text();
                 match text {
-                    "region" => LuaTokenKind::TkDocRegion,
-                    "endregion" => LuaTokenKind::TkDocEndRegion,
+                    "region" | "#region" => LuaTokenKind::TkDocRegion,
+                    "endregion" | "#endregion" => LuaTokenKind::TkDocEndRegion,
                     _ => {
                         reader.eat_while(|_| true);
                         LuaTokenKind::TkDocDetail
