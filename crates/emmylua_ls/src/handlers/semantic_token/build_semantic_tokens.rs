@@ -397,9 +397,14 @@ fn build_node_semantic_token(
                                     return Some(());
                                 }
                             }
-                            _ => {}
+                            _ => {
+                                if !prefix_type.is_function() {
+                                    return Some(());
+                                }
+                            }
                         }
                     }
+
                     builder.push(name.syntax(), SemanticTokenType::FUNCTION);
                 }
                 LuaExpr::IndexExpr(index_expr) => {
