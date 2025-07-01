@@ -310,6 +310,11 @@ fn should_trace_member(semantic_model: &SemanticModel, member_id: &LuaMemberId) 
     // 如果成员在返回语句中, 则需要追踪
     if LuaReturnStat::can_cast(parent.kind().into()) {
         return Some(true);
+    } else {
+        let typ = semantic_model.get_type(member_id.clone().into());
+        if typ.is_signature() {
+            return Some(true);
+        }
     }
     None
 }
