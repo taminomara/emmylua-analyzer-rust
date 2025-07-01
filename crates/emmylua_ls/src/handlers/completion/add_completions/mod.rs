@@ -30,7 +30,7 @@ pub fn check_visibility(builder: &mut CompletionBuilder, id: LuaSemanticDeclId) 
     Some(())
 }
 
-fn get_completion_kind(typ: &LuaType) -> CompletionItemKind {
+pub fn get_completion_kind(typ: &LuaType) -> CompletionItemKind {
     if typ.is_function() {
         return CompletionItemKind::FUNCTION;
     } else if typ.is_const() {

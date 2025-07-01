@@ -6,7 +6,7 @@ use emmylua_code_analysis::{
 };
 use emmylua_parser::{
     LuaAssignStat, LuaAst, LuaAstNode, LuaAstToken, LuaNameToken, LuaStringToken, LuaSyntaxNode,
-    LuaSyntaxToken,
+    LuaSyntaxToken, LuaTableField,
 };
 use lsp_types::Location;
 
@@ -280,7 +280,16 @@ fn get_signature_decl_member_references(
                 search_member_references(semantic_model, compilation, member_id, result);
             }
         }
-
+        table_field_node if LuaTableField::can_cast(table_field_node.kind().into()) => {
+            let table_field = LuaTableField::cast(table_field_node)?;
+            let decl_id = semantic_model.find_decl(
+                table_field.syntax().clone().into(),
+                SemanticDeclLevel::default(),
+            )?;
+            if let LuaSemanticDeclId::Member(member_id) = decl_id {
+                search_member_references(semantic_model, compilation, member_id, result);
+            }
+        }
         _ => {}
     }
     None

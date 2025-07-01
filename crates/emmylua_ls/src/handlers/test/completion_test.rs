@@ -928,7 +928,7 @@ mod tests {
             "#,
             vec![VirtualCompletionItem {
                 label: "MapName".to_string(),
-                kind: CompletionItemKind::MODULE,
+                kind: CompletionItemKind::CLASS,
                 label_detail: Some("    (in aaaa)".to_string()),
             },],
         ));
