@@ -33,6 +33,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &mut analysis,
             args.output,
             args.override_template,
+            args.site_name,
             args.mixin,
         ),
         Format::Json => json_generator::generate_json(&mut analysis, args.output),
