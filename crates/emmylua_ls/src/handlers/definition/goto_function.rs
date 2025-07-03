@@ -70,11 +70,20 @@ fn get_call_function(
     if let Some(func) = func {
         let call_expr_args_count = call_expr.get_args_count();
         if let Some(mut call_expr_args_count) = call_expr_args_count {
-            let func_params_count = func.get_params().len();
+            let mut func_params_count = func.get_params().len();
             if !func.is_colon_define() && call_expr.is_colon_call() {
                 // 不是冒号定义的函数, 但是是冒号调用
                 call_expr_args_count += 1;
             }
+            // 如果参数有可空参数, 则需要减去
+            for (_, param_type) in func.get_params().iter() {
+                if let Some(param_type) = param_type {
+                    if param_type.is_optional() {
+                        func_params_count -= 1;
+                    }
+                }
+            }
+
             if call_expr_args_count == func_params_count {
                 return Some(func);
             }

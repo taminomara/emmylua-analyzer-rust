@@ -98,7 +98,7 @@ fn add_field_key_completion(
     };
     let typ = member_info.typ;
 
-    let (label, insert_text) = {
+    let (label, insert_text, insert_text_format) = {
         let is_nullable = if typ.is_nullable() { "?" } else { "" };
         if in_env(builder, &name, &typ).is_some() {
             (
@@ -107,7 +107,8 @@ fn add_field_key_completion(
                     name = name,
                     nullable = is_nullable,
                 ),
-                format!("{name} = {name},", name = name,),
+                format!("{name} = ${{1:{name}}},", name = name),
+                Some(InsertTextFormat::SNIPPET),
             )
         } else {
             // 函数类型不补空格, 留空格让用户触发字符补全
@@ -120,6 +121,7 @@ fn add_field_key_completion(
                     space = space
                 ),
                 format!("{name} ={space}", name = name, space = space),
+                None,
             )
         }
     };
@@ -146,6 +148,7 @@ fn add_field_key_completion(
         data,
         deprecated,
         insert_text: Some(insert_text),
+        insert_text_format,
         ..Default::default()
     };
 

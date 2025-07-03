@@ -173,4 +173,43 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_goto_return_field_2() {
+        let mut ws = ProviderVirtualWorkspace::new_with_init_std_lib();
+        ws.def_file(
+            "test.lua",
+            r#"
+            ---@export
+            ---@class Export
+            local export = {}
+            ---@generic T
+            ---@param name `T`|T
+            ---@param tbl? table
+            ---@return T
+            local function new(name, tbl)
+            end
+
+            export.new = new
+            return export
+            "#,
+        );
+        let result = ws
+            .check_definition(
+                r#"
+            local new = require("test").new
+            new<??>("A")
+            "#,
+            )
+            .unwrap();
+        match result {
+            GotoDefinitionResponse::Array(locations) => {
+                assert_eq!(locations.len(), 1);
+                assert_eq!(locations[0].range.start.line, 8);
+            }
+            _ => {
+                panic!("expect scalar");
+            }
+        }
+    }
 }

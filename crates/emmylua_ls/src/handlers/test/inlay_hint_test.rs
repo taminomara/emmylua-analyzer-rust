@@ -108,7 +108,7 @@ mod tests {
             "#,
             )
             .unwrap();
-        assert!(result.len() == 4);
+        assert!(result.len() == 3);
     }
 
     #[test]
@@ -123,7 +123,7 @@ mod tests {
             "#,
             )
             .unwrap();
-        assert!(result.len() == 1);
+        assert!(result.len() == 0);
     }
 
     #[test]
@@ -148,9 +148,9 @@ mod tests {
             "#,
             )
             .unwrap();
-        assert!(result.len() == 2);
+        assert!(result.len() == 1);
 
-        let location = match &result.get(1).unwrap().label {
+        let location = match &result.get(0).unwrap().label {
             InlayHintLabel::LabelParts(parts) => parts.first().unwrap().location.as_ref().unwrap(),
             InlayHintLabel::String(_) => panic!(),
         };
