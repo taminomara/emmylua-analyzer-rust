@@ -4,8 +4,8 @@ use emmylua_parser::{
 use rowan::{NodeOrToken, TextRange};
 
 use crate::{
-    diagnostic::checker::assign_type_mismatch::check_table_expr, humanize_type, DiagnosticCode,
-    LuaSemanticDeclId, LuaSignatureId, LuaType, RenderLevel, SemanticDeclLevel, SemanticModel,
+    diagnostic::checker::{assign_type_mismatch::check_table_expr, humanize_lint_type},
+    DiagnosticCode, LuaSemanticDeclId, LuaSignatureId, LuaType, SemanticDeclLevel, SemanticModel,
     SignatureReturnStatus, TypeCheckFailReason, TypeCheckResult,
 };
 
@@ -127,6 +127,8 @@ fn check_return_stat(
             let return_expr_type = &return_expr_types[0];
             let return_expr_range = return_expr_ranges[0];
             let result = semantic_model.type_check(check_type, &return_expr_type);
+            dbg!(&check_type);
+            dbg!(&return_expr_type);
             if !result.is_ok() {
                 if return_expr_type.is_table() {
                     if let Some(return_expr) = return_exprs.get(0) {
@@ -160,34 +162,6 @@ fn check_return_stat(
     Some(())
 }
 
-// fn check_variadic_return_type_match(
-//     context: &mut DiagnosticContext,
-//     semantic_model: &SemanticModel,
-//     start_idx: usize,
-//     variadic_type: &LuaType,
-//     return_expr_types: &[LuaType],
-//     return_expr_ranges: &[TextRange],
-// ) {
-//     let mut idx = start_idx;
-//     for (return_expr_type, return_expr_range) in
-//         return_expr_types.iter().zip(return_expr_ranges.iter())
-//     {
-//         let result = semantic_model.type_check(variadic_type, return_expr_type);
-//         if !result.is_ok() {
-//             add_type_check_diagnostic(
-//                 context,
-//                 semantic_model,
-//                 start_idx + idx,
-//                 *return_expr_range,
-//                 variadic_type,
-//                 return_expr_type,
-//                 result,
-//             );
-//         }
-//         idx += 1;
-//     }
-// }
-
 fn add_type_check_diagnostic(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
@@ -200,47 +174,28 @@ fn add_type_check_diagnostic(
     let db = semantic_model.get_db();
     match result {
         Ok(_) => return,
-        Err(reason) => match reason {
-            TypeCheckFailReason::TypeNotMatchWithReason(reason) => {
-                context.add_diagnostic(
-                    DiagnosticCode::ReturnTypeMismatch,
-                    range,
-                    t!(
-                        "Annotations specify that return value %{index} has a type of `%{source}`, returning value of type `%{found}` here instead. %{reason}",
-                        index = index + 1,
-                        source = humanize_type(db, &param_type, RenderLevel::Simple),
-                        found = humanize_type(db, &expr_type, RenderLevel::Simple),
-                        reason = reason
-                    )
-                    .to_string(),
-                    None,
-                );
-            }
-            TypeCheckFailReason::TypeNotMatch => {
-                context.add_diagnostic(
-                    DiagnosticCode::ReturnTypeMismatch,
-                    range,
-                    t!(
-                        "Annotations specify that return value %{index} has a type of `%{source}`, returning value of type `%{found}` here instead. %{reason}",
-                        index = index + 1,
-                        source = humanize_type(db, &param_type, RenderLevel::Simple),
-                        found = humanize_type(db, &expr_type, RenderLevel::Simple),
-                        reason = ""
-                    )
-                    .to_string(),
-                    None,
-                );
-            }
-            TypeCheckFailReason::TypeRecursion => {
-                context.add_diagnostic(
-                    DiagnosticCode::ReturnTypeMismatch,
-                    range,
-                    "type recursion".into(),
-                    None,
-                );
-            }
-            TypeCheckFailReason::DonotCheck => {}
-        },
+        Err(reason) => {
+            let reason_message = match reason {
+                TypeCheckFailReason::TypeNotMatchWithReason(reason) => reason,
+                TypeCheckFailReason::TypeNotMatch | TypeCheckFailReason::DonotCheck => {
+                    "".to_string()
+                }
+                TypeCheckFailReason::TypeRecursion => "type recursion".to_string(),
+            };
+            context.add_diagnostic(
+                DiagnosticCode::ReturnTypeMismatch,
+                range,
+                t!(
+                    "Annotations specify that return value %{index} has a type of `%{source}`, returning value of type `%{found}` here instead. %{reason}",
+                    index = index + 1,
+                    source = humanize_lint_type(db, &param_type),
+                    found = humanize_lint_type(db, &expr_type),
+                    reason = reason_message
+                )
+                .to_string(),
+                None,
+            );
+        }
     }
 }
 

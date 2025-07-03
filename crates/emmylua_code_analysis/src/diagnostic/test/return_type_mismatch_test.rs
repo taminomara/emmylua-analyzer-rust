@@ -423,4 +423,27 @@ mod tests {
             "#
         ));
     }
+
+    #[test]
+    fn test_super_alias() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+                ---@namespace Test
+
+                ---@alias A fun()
+
+                ---@class B<T>: A
+
+                ---@return A
+                local function subscribe()
+                    ---@type B<string>
+                    local a
+
+                    return a
+                end
+            "#
+        ));
+    }
 }

@@ -27,12 +27,16 @@ pub fn check_ref_type_compact(
 
     if type_decl.is_alias() {
         if let Some(origin_type) = type_decl.get_alias_origin(db, None) {
-            return check_general_type_compact(
+            let result = check_general_type_compact(
                 db,
                 &origin_type,
                 compact_type,
                 check_guard.next_level()?,
             );
+            if result.is_err() && origin_type.is_function() {
+                return check_ref_class(db, source_id, compact_type, check_guard);
+            }
+            return result;
         }
 
         return Err(TypeCheckFailReason::TypeNotMatch);
@@ -175,6 +179,17 @@ fn check_ref_class(
         }
         LuaType::Tuple(tuple_type) => {
             check_ref_type_compact_tuple(db, tuple_type, source_id, check_guard.next_level()?)
+        }
+        LuaType::Generic(generic) => {
+            let base_type_id = generic.get_base_type_id();
+            if source_id == &base_type_id
+                || is_sub_type_of(db, &base_type_id, source_id)
+                || is_sub_type_of(db, source_id, &base_type_id)
+            {
+                Ok(())
+            } else {
+                Err(TypeCheckFailReason::TypeNotMatch)
+            }
         }
         _ => {
             if let Some(base_type_id) = get_base_type_id(compact_type) {
