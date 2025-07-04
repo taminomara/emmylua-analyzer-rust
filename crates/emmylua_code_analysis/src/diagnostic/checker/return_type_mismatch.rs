@@ -127,8 +127,6 @@ fn check_return_stat(
             let return_expr_type = &return_expr_types[0];
             let return_expr_range = return_expr_ranges[0];
             let result = semantic_model.type_check(check_type, &return_expr_type);
-            dbg!(&check_type);
-            dbg!(&return_expr_type);
             if !result.is_ok() {
                 if return_expr_type.is_table() {
                     if let Some(return_expr) = return_exprs.get(0) {

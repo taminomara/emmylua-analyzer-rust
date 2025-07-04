@@ -110,37 +110,86 @@ fn check_call_expr(
                 continue;
             };
 
-            match param_type {
-                LuaType::StrTplRef(str_tpl_ref) => {
-                    let extend_type = get_extend_type(
-                        semantic_model,
-                        &call_expr,
-                        str_tpl_ref.get_tpl_id(),
-                        signature,
-                    );
-                    check_str_tpl_ref(
-                        context,
-                        semantic_model,
-                        &call_expr,
-                        i,
-                        str_tpl_ref,
-                        extend_type,
-                    );
-                }
-                LuaType::TplRef(tpl_ref) => {
-                    let extend_type = get_extend_type(
-                        semantic_model,
-                        &call_expr,
-                        tpl_ref.get_tpl_id(),
-                        signature,
-                    );
-                    check_tpl_ref(context, semantic_model, &extend_type, arg_infos.get(i));
-                }
-                _ => {}
-            }
+            check_param_type(
+                context,
+                semantic_model,
+                &call_expr,
+                i,
+                param_type,
+                signature,
+                &arg_infos,
+                false,
+            );
         }
     }
 
+    Some(())
+}
+
+fn check_param_type(
+    context: &mut DiagnosticContext,
+    semantic_model: &SemanticModel,
+    call_expr: &LuaCallExpr,
+    param_index: usize,
+    param_type: &LuaType,
+    signature: &LuaSignature,
+    arg_infos: &[(LuaType, TextRange)],
+    from_union: bool,
+) -> Option<()> {
+    // 应该先通过泛型体操约束到唯一类型再进行检查
+    match param_type {
+        LuaType::StrTplRef(str_tpl_ref) => {
+            let extend_type = get_extend_type(
+                semantic_model,
+                &call_expr,
+                str_tpl_ref.get_tpl_id(),
+                signature,
+            );
+            let arg_expr = call_expr.get_args_list()?.get_args().nth(param_index)?;
+            let arg_type = semantic_model.infer_expr(arg_expr.clone()).ok()?;
+
+            if from_union && !arg_type.is_string() {
+                return None;
+            }
+
+            check_str_tpl_ref(
+                context,
+                semantic_model,
+                str_tpl_ref,
+                &arg_type,
+                arg_expr.get_range(),
+                extend_type,
+            );
+        }
+        LuaType::TplRef(tpl_ref) => {
+            let extend_type =
+                get_extend_type(semantic_model, &call_expr, tpl_ref.get_tpl_id(), signature);
+            check_tpl_ref(
+                context,
+                semantic_model,
+                &extend_type,
+                arg_infos.get(param_index),
+            );
+        }
+        LuaType::Union(union_type) => {
+            // 如果不是来自 union, 才展开 union 中的每个类型进行检查
+            if !from_union {
+                for union_member_type in union_type.get_types() {
+                    check_param_type(
+                        context,
+                        semantic_model,
+                        call_expr,
+                        param_index,
+                        union_member_type,
+                        signature,
+                        arg_infos,
+                        true,
+                    );
+                }
+            }
+        }
+        _ => {}
+    }
     Some(())
 }
 
@@ -182,15 +231,11 @@ fn get_extend_type(
 fn check_str_tpl_ref(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
-    call_expr: &LuaCallExpr,
-    param_index: usize,
     str_tpl_ref: &LuaStringTplType,
+    arg_type: &LuaType,
+    range: TextRange,
     extend_type: Option<LuaType>,
 ) -> Option<()> {
-    let arg_expr = call_expr.get_args_list()?.get_args().nth(param_index)?;
-    let arg_type = semantic_model.infer_expr(arg_expr.clone()).ok()?;
-    let range = arg_expr.get_range();
-
     match arg_type {
         LuaType::StringConst(str) | LuaType::DocStringConst(str) => {
             let full_type_name = format!(
