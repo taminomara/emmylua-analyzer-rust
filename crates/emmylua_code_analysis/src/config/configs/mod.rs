@@ -13,6 +13,7 @@ mod semantictoken;
 mod signature;
 mod strict;
 mod workspace;
+mod doc;
 
 pub use code_action::EmmyrcCodeAction;
 pub use codelen::EmmyrcCodeLen;
@@ -29,3 +30,4 @@ pub use semantictoken::EmmyrcSemanticToken;
 pub use signature::EmmyrcSignature;
 pub use strict::EmmyrcStrict;
 pub use workspace::EmmyrcWorkspace;
+pub use doc::EmmyrcDoc;

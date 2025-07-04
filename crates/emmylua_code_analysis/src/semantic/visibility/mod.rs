@@ -59,6 +59,36 @@ pub fn check_visibility(
         }
     }
 
+    if let LuaSemanticDeclId::Member(member_id) = property_owner {
+        if let Some(member) = db.get_member_index().get_member(&member_id) {
+            if let Some(name) = member.get_key().get_name() {
+                let config = emmyrc;
+                for pattern in &config.doc.private_name {
+                    let is_match = if let Some(prefix) = pattern.strip_suffix('*') {
+                        name.starts_with(prefix)
+                    } else if let Some(suffix) = pattern.strip_prefix('*') {
+                        name.ends_with(suffix)
+                    } else {
+                        name == pattern
+                    };
+                    if is_match {
+                        return Some(
+                            check_visibility_by_visibility(
+                                db,
+                                infer_config,
+                                file_id,
+                                property_owner,
+                                token,
+                                VisibilityKind::Private,
+                            )
+                            .unwrap_or(false),
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     Some(true)
 }
 
