@@ -46,4 +46,26 @@ mod tests {
         );
         assert!(result);
     }
+
+    #[test]
+    fn test_rename_class_field() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        let result = ws.check_rename(
+            r#"
+                ---@class AnonymousObserver
+                local AnonymousObserver
+
+                function AnonymousObserver:__init(next)
+                    self.ne<??>xt = next
+                end
+
+                function AnonymousObserver:onNextCore(value)
+                    self.next(value)
+                end
+            "#,
+            "_next".to_string(),
+            2,
+        );
+        assert!(result);
+    }
 }

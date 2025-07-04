@@ -187,7 +187,7 @@ fn resolve_member_owner(
 
     let root = semantic_model.get_root().syntax();
     let current_node = member_id.get_syntax_id().to_node_from_root(&root)?;
-    match member_id.get_syntax_id().get_kind() {
+    let result = match member_id.get_syntax_id().get_kind() {
         LuaSyntaxKind::TableFieldAssign => {
             if LuaTableField::can_cast(current_node.kind().into()) {
                 let table_field = LuaTableField::cast(current_node.clone())?;
@@ -213,18 +213,35 @@ fn resolve_member_owner(
             let assign_stat = LuaAssignStat::cast(assign_node)?;
             let (vars, exprs) = assign_stat.get_var_and_expr_list();
 
+            let mut result = None;
             for (var, expr) in vars.iter().zip(exprs.iter()) {
                 if var.syntax().text_range() == current_node.text_range() {
                     let expr_node = expr.get_syntax_id().to_node_from_root(&root)?;
-                    return semantic_model.find_decl(
+                    result = semantic_model.find_decl(
                         expr_node.into(),
                         emmylua_code_analysis::SemanticDeclLevel::default(),
                     );
+                    break;
                 }
             }
-            None
+            result
         }
         _ => None,
+    };
+
+    // 禁止追溯到参数
+    match result {
+        Some(LuaSemanticDeclId::LuaDecl(decl_id)) => {
+            let decl = semantic_model
+                .get_db()
+                .get_decl_index()
+                .get_decl(&decl_id)?;
+            if decl.is_param() {
+                return None;
+            }
+            result
+        }
+        _ => result,
     }
 }
 
