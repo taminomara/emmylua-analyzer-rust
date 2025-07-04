@@ -1095,4 +1095,40 @@ mod tests {
             },],
         ));
     }
+
+    #[test]
+    fn test_issue_572() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_completion(
+            r#"
+                ---@class A
+                ---@field optional_num number?
+                local a = {}
+
+                function a:set()
+                end
+
+                --- @class B : A
+                local b = {}
+
+                function b:set()
+                    self.optional_num = 2
+                end
+                b.<??>
+
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "optional_num".to_string(),
+                    kind: CompletionItemKind::VARIABLE,
+                    ..Default::default()
+                },
+                VirtualCompletionItem {
+                    label: "set".to_string(),
+                    kind: CompletionItemKind::FUNCTION,
+                    label_detail: Some("(self) -> nil".to_string()),
+                },
+            ],
+        ));
+    }
 }
