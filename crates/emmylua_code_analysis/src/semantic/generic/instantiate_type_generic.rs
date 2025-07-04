@@ -141,7 +141,10 @@ pub fn instantiate_doc_function(
         }
     }
 
-    let inst_ret_type = instantiate_type_generic(db, &tpl_ret, substitutor);
+    // 将 substitutor 中存储的类型的 def 转为 ref
+    let mut modified_substitutor = substitutor.clone();
+    modified_substitutor.convert_def_to_ref();
+    let inst_ret_type = instantiate_type_generic(db, &tpl_ret, &modified_substitutor);
     LuaType::DocFunction(
         LuaFunctionType::new(is_async, colon_define, new_params, inst_ret_type).into(),
     )

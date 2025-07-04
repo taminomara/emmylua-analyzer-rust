@@ -111,6 +111,31 @@ impl TypeSubstitutor {
     pub fn get_self_type(&self) -> Option<&LuaType> {
         self.self_type.as_ref()
     }
+
+    pub fn convert_def_to_ref(&mut self) {
+        for (_, value) in self.tpl_replace_map.iter_mut() {
+            match value {
+                SubstitutorValue::Type(ty) => {
+                    *ty = convert_type_def_to_ref(ty);
+                }
+                SubstitutorValue::Params(params) => {
+                    for (_, param_ty) in params.iter_mut() {
+                        if let Some(ty) = param_ty {
+                            *ty = convert_type_def_to_ref(ty);
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+fn convert_type_def_to_ref(ty: &LuaType) -> LuaType {
+    match ty {
+        LuaType::Def(type_decl_id) => LuaType::Ref(type_decl_id.clone()),
+        _ => ty.clone(),
+    }
 }
 
 #[derive(Debug, Clone)]

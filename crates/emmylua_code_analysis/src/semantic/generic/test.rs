@@ -93,4 +93,31 @@ mod test {
         assert_eq!(b, expected_b);
         assert_eq!(c, expected_c);
     }
+
+    #[test]
+    fn test_return() {
+        let mut ws = crate::VirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@class ab
+                ---@field a number
+                local A
+
+                ---@generic T
+                ---@param a T
+                ---@return T
+                local function name(a)
+                    return a
+                end
+
+                local a = name(A)
+                a.b = 1
+                R = A.b
+        "#,
+        );
+
+        let a = ws.expr_ty("R");
+        let expected = ws.ty("any");
+        assert_eq!(a, expected);
+    }
 }
