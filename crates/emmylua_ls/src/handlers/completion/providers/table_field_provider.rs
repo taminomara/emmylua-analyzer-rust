@@ -156,6 +156,7 @@ fn add_field_key_completion(
     Some(())
 }
 
+/// 是否在当前文件的 env 中, 将会排除掉`std`
 fn in_env(builder: &mut CompletionBuilder, target_name: &str, target_type: &LuaType) -> Option<()> {
     let file_id = builder.semantic_model.get_file_id();
     let decl_tree = builder
@@ -168,7 +169,16 @@ fn in_env(builder: &mut CompletionBuilder, target_name: &str, target_type: &LuaT
         .semantic_model
         .get_db()
         .get_global_index()
-        .get_all_global_decl_ids();
+        .get_all_global_decl_ids()
+        .into_iter()
+        .filter(|id| {
+            !builder
+                .semantic_model
+                .get_db()
+                .get_module_index()
+                .is_std(&id.file_id)
+        })
+        .collect();
     let all_env = [local_env, global_env].concat();
 
     for decl_id in all_env.iter() {
