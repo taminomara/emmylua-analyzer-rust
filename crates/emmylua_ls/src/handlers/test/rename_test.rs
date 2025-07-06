@@ -68,4 +68,19 @@ mod tests {
         );
         assert!(result);
     }
+
+    #[test]
+    fn test_rename_generic_type() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        let result = ws.check_rename(
+            r#"
+            ---@class Params<T>
+
+            ---@type Para<??>ms<number>
+            "#,
+            "Params1".to_string(),
+            2,
+        );
+        assert!(result);
+    }
 }
