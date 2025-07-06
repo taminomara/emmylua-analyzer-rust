@@ -446,4 +446,28 @@ mod tests {
             "#
         ));
     }
+
+    #[test]
+    fn test_generic_type_extends() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+                ---@class AnonymousObserver<T>: Observer<T>
+
+                ---@class Observer<T>: IDisposable
+
+                ---@class IDisposable
+
+                ---@generic T
+                ---@return IDisposable
+                local function createAnonymousObserver()
+                    ---@type AnonymousObserver<T>
+                    local observer = {}
+
+                    return observer
+                end
+            "#
+        ));
+    }
 }
