@@ -213,22 +213,24 @@ pub fn goto_str_tpl_ref_definition(
         }
         _ => params.get(string_token_idx),
     }?;
-    if let Some(LuaType::StrTplRef(str_tpl)) = target_param.1.clone() {
-        let prefix = str_tpl.get_prefix();
-        let suffix = str_tpl.get_suffix();
-        let type_decl_id = LuaTypeDeclId::new(format!("{}{}{}", prefix, name, suffix).as_str());
-        let type_decl = semantic_model
-            .get_db()
-            .get_type_index()
-            .get_type_decl(&type_decl_id)?;
-        let mut locations = Vec::new();
-        for lua_location in type_decl.get_locations() {
-            let document = semantic_model.get_document_by_file_id(lua_location.file_id)?;
-            let location = document.to_lsp_location(lua_location.range)?;
-            locations.push(location);
-        }
-
+    // 首先尝试直接匹配StrTplRef类型
+    if let Some(locations) =
+        try_extract_str_tpl_ref_locations(semantic_model, &target_param.1, &name)
+    {
         return Some(GotoDefinitionResponse::Array(locations));
+    }
+
+    // 如果参数类型是union，尝试从中提取StrTplRef类型
+    if let Some(LuaType::Union(union_type)) = target_param.1.clone() {
+        for union_member in union_type.get_types() {
+            if let Some(locations) = try_extract_str_tpl_ref_locations(
+                semantic_model,
+                &Some(union_member.clone()),
+                &name,
+            ) {
+                return Some(GotoDefinitionResponse::Array(locations));
+            }
+        }
     }
 
     None
@@ -335,4 +337,28 @@ fn get_decl_location(semantic_model: &SemanticModel, decl_id: &LuaDeclId) -> Opt
     let document = semantic_model.get_document_by_file_id(decl_id.file_id)?;
     let location = document.to_lsp_location(decl.get_range())?;
     Some(location)
+}
+
+fn try_extract_str_tpl_ref_locations(
+    semantic_model: &SemanticModel,
+    param_type: &Option<LuaType>,
+    name: &str,
+) -> Option<Vec<Location>> {
+    if let Some(LuaType::StrTplRef(str_tpl)) = param_type {
+        let prefix = str_tpl.get_prefix();
+        let suffix = str_tpl.get_suffix();
+        let type_decl_id = LuaTypeDeclId::new(format!("{}{}{}", prefix, name, suffix).as_str());
+        let type_decl = semantic_model
+            .get_db()
+            .get_type_index()
+            .get_type_decl(&type_decl_id)?;
+        let mut locations = Vec::new();
+        for lua_location in type_decl.get_locations() {
+            let document = semantic_model.get_document_by_file_id(lua_location.file_id)?;
+            let location = document.to_lsp_location(lua_location.range)?;
+            locations.push(location);
+        }
+        return Some(locations);
+    }
+    None
 }
