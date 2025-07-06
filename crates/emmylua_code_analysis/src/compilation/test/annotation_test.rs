@@ -112,4 +112,16 @@ mod test {
         let expected = ws.ty("string");
         assert_eq!(ty, expected);
     }
+
+    #[test]
+    fn test_generic_type_inference() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::TypeNotFound,
+            r#"
+            ---@class AnonymousObserver<T>: Observer<T>
+        "#,
+        ));
+    }
 }
