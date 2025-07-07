@@ -1188,4 +1188,28 @@ mod test {
             "#
         ));
     }
+
+    #[test]
+    fn test_issue_574() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+                --- @param x { y: integer } & { z: string }
+                function foo(x) end
+            "#,
+        );
+        assert!(!ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+               foo({y = "", z = ""})
+            "#
+        ));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+               foo({y = 1, z = ""})
+            "#
+        ));
+    }
 }
