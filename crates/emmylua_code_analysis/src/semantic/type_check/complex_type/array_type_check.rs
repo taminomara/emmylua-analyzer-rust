@@ -1,4 +1,5 @@
 use crate::{
+    find_index_operations,
     semantic::type_check::{check_general_type_compact, type_check_guard::TypeCheckGuard},
     DbIndex, LuaMemberKey, LuaMemberOwner, LuaType, TypeCheckFailReason, TypeCheckResult, TypeOps,
 };
@@ -63,10 +64,45 @@ pub fn check_array_type_compact(
             }
         }
         LuaType::Any => return Ok(()),
+        LuaType::Ref(_) | LuaType::Def(_) => {
+            return check_array_type_compact_ref_def(
+                db,
+                &source_base,
+                compact_type,
+                check_guard.next_level()?,
+            );
+        }
         _ => {}
     }
 
     Err(TypeCheckFailReason::DonotCheck)
+}
+
+fn check_array_type_compact_ref_def(
+    db: &DbIndex,
+    source_base: &LuaType,
+    compact_type: &LuaType,
+    check_guard: TypeCheckGuard,
+) -> TypeCheckResult {
+    let Some(members) = find_index_operations(db, compact_type) else {
+        return Err(TypeCheckFailReason::TypeNotMatch);
+    };
+
+    for member in &members {
+        match &member.key {
+            LuaMemberKey::ExprType(key_type) => {
+                if key_type.is_integer() {
+                    match check_general_type_compact(db, source_base, &member.typ, check_guard) {
+                        Ok(()) => return Ok(()),
+                        _ => {}
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    Err(TypeCheckFailReason::TypeNotMatch)
 }
 
 fn check_array_type_compact_table(

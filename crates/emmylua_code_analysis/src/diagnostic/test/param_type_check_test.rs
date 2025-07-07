@@ -1167,4 +1167,25 @@ mod test {
             "#
         ));
     }
+
+    #[test]
+    fn test_issue_573() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+                --- @class A
+                --- @field [integer] string
+                --- @field data any
+
+                --- @param a string[]
+                function takesArray(a) end
+            "#,
+        );
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                takesArray({} --[[@as A]]) 
+            "#
+        ));
+    }
 }
