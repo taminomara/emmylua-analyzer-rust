@@ -869,4 +869,26 @@ end
             "#,
         );
     }
+
+    #[test]
+    fn test_issue_584() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            local function foo()
+                for _ in ipairs({}) do
+                    break
+                end
+
+                local a
+                if a == nil then
+                    a = 1
+                    local _ = a --- @type integer
+                end
+            end
+            "#,
+        );
+    }
 }

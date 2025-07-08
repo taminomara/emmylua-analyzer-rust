@@ -248,7 +248,7 @@ pub fn bind_while_stat(
         );
     }
 
-    finish_flow_label(binder, post_while_label, current)
+    current
 }
 
 pub fn bind_repeat_stat(
@@ -369,7 +369,7 @@ pub fn bind_for_range_stat(
         );
     }
 
-    finish_flow_label(binder, post_for_range_label, current)
+    current
 }
 
 pub fn bind_for_stat(binder: &mut FlowBinder, for_stat: LuaForStat, current: FlowId) -> FlowId {
@@ -389,5 +389,5 @@ pub fn bind_for_stat(binder: &mut FlowBinder, for_stat: LuaForStat, current: Flo
         bind_iter_block(binder, iter_block, for_node, pre_for_label, post_for_label);
     }
 
-    finish_flow_label(binder, post_for_label, current)
+    current
 }
