@@ -3,7 +3,6 @@ mod init;
 mod output;
 mod terminal_display;
 
-use clap::Parser;
 use cmd_args::CmdArgs;
 use fern::Dispatch;
 use log::LevelFilter;
@@ -13,9 +12,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::init::get_need_check_ids;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
-    let cmd_args = CmdArgs::parse();
+#[allow(unused)]
+async fn run_check(cmd_args: CmdArgs) -> Result<(), Box<dyn Error + Sync + Send>> {
     let mut workspace = cmd_args.workspace;
     if !workspace.is_absolute() {
         workspace = std::env::current_dir()?.join(workspace);
@@ -55,7 +53,6 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     let analysis = match init::load_workspace(workspace.clone(), cmd_args.config, cmd_args.ignore) {
         Some(analysis) => analysis,
         None => {
-            eprintln!("Failed to load workspace");
             return Err("Failed to load workspace".into());
         }
     };
@@ -95,4 +92,3 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     eprintln!("Check finished");
     Ok(())
 }
-
