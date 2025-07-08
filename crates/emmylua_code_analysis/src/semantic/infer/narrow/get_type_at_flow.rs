@@ -1,4 +1,4 @@
-use emmylua_parser::{LuaAssignStat, LuaAstNode, LuaCallExpr, LuaChunk, LuaVarExpr};
+use emmylua_parser::{LuaAssignStat, LuaAstNode, LuaChunk, LuaVarExpr};
 
 use crate::{
     infer_expr,
@@ -8,7 +8,7 @@ use crate::{
             get_multi_antecedents, get_single_antecedent,
             get_type_at_cast_flow::get_type_at_cast_flow,
             get_var_ref_type,
-            narrow_type::{narrow_down_type, remove_false_or_nil},
+            narrow_type::narrow_down_type,
             var_ref_id::get_var_expr_var_ref_id,
             ResultTypeOrContinue,
         },
@@ -138,25 +138,6 @@ pub fn get_type_at_flow(
                     antecedent_flow_id = get_single_antecedent(tree, flow_node)?;
                 }
             }
-            FlowNodeKind::AssertCall(lua_ast_ptr) => {
-                let assert_call = lua_ast_ptr.to_node(root).ok_or(InferFailReason::None)?;
-                let result_or_continue = get_type_at_assert_call(
-                    db,
-                    tree,
-                    cache,
-                    root,
-                    var_ref_id,
-                    flow_node,
-                    assert_call,
-                )?;
-
-                if let ResultTypeOrContinue::Result(assert_type) = result_or_continue {
-                    result_type = assert_type;
-                    break;
-                } else {
-                    antecedent_flow_id = get_single_antecedent(tree, flow_node)?;
-                }
-            }
         }
     }
 
@@ -252,36 +233,6 @@ fn get_type_at_assign_stat(
         return Ok(ResultTypeOrContinue::Result(
             narrow_down_type(db, antecedent_type, expr_type.clone()).unwrap_or(expr_type),
         ));
-    }
-
-    Ok(ResultTypeOrContinue::Continue)
-}
-
-fn get_type_at_assert_call(
-    db: &DbIndex,
-    tree: &FlowTree,
-    cache: &mut LuaInferCache,
-    root: &LuaChunk,
-    var_ref_id: &VarRefId,
-    flow_node: &FlowNode,
-    assert_call: LuaCallExpr,
-) -> Result<ResultTypeOrContinue, InferFailReason> {
-    let call_arg_list = match assert_call.get_args_list() {
-        Some(args) => args,
-        None => return Ok(ResultTypeOrContinue::Continue),
-    };
-
-    for arg in call_arg_list.get_args() {
-        if let Some(ref_decl_id) = get_var_expr_var_ref_id(db, cache, arg.clone()) {
-            if ref_decl_id == *var_ref_id {
-                let antecedent_flow_id = get_single_antecedent(tree, flow_node)?;
-                let antecedent_type =
-                    get_type_at_flow(db, tree, cache, root, var_ref_id, antecedent_flow_id)?;
-                let result_type = remove_false_or_nil(antecedent_type);
-
-                return Ok(ResultTypeOrContinue::Result(result_type));
-            }
-        }
     }
 
     Ok(ResultTypeOrContinue::Continue)

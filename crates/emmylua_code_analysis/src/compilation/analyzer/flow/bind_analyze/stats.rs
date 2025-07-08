@@ -1,7 +1,7 @@
 use emmylua_parser::{
-    LuaAssignStat, LuaAst, LuaAstNode, LuaBlock, LuaBreakStat, LuaCallExprStat, LuaDoStat,
-    LuaForRangeStat, LuaForStat, LuaFuncStat, LuaGotoStat, LuaIfStat, LuaLabelStat, LuaLocalStat,
-    LuaRepeatStat, LuaReturnStat, LuaWhileStat,
+    LuaAssignStat, LuaAst, LuaAstNode, LuaBlock, LuaBreakStat, LuaCallArgList, LuaCallExprStat,
+    LuaDoStat, LuaForRangeStat, LuaForStat, LuaFuncStat, LuaGotoStat, LuaIfStat, LuaLabelStat,
+    LuaLocalStat, LuaRepeatStat, LuaReturnStat, LuaWhileStat,
 };
 
 use crate::{
@@ -78,21 +78,35 @@ pub fn bind_call_expr_stat(
         None => return current, // If there's no call expression, just return the current flow
     };
 
-    if let Some(ast) = LuaAst::cast(call_expr.syntax().clone()) {
-        bind_each_child(binder, ast, current);
-    }
-
     if call_expr.is_assert() {
-        let assert_flow_id = binder.create_node(FlowNodeKind::AssertCall(call_expr.to_ptr()));
-        binder.add_antecedent(assert_flow_id, current);
-        assert_flow_id
+        let Some(arg_list) = call_expr.get_args_list() else {
+            return current; // If there's no argument list, just return the current flow
+        };
+
+        bind_assert_stat(binder, arg_list, current)
     } else if call_expr.is_error() {
         let return_flow_id = binder.create_return();
         binder.add_antecedent(return_flow_id, current);
         return_flow_id
     } else {
+        if let Some(ast) = LuaAst::cast(call_expr.syntax().clone()) {
+            bind_each_child(binder, ast, current);
+        }
         current
     }
+}
+
+fn bind_assert_stat(binder: &mut FlowBinder, arg_list: LuaCallArgList, current: FlowId) -> FlowId {
+    let false_target = binder.unreachable;
+
+    let mut pre_arg = current;
+    for arg in arg_list.get_args() {
+        let pre_next_arg = binder.create_branch_label();
+        bind_condition_expr(binder, arg, pre_arg, pre_next_arg, false_target);
+        pre_arg = finish_flow_label(binder, pre_next_arg, pre_arg);
+    }
+
+    pre_arg
 }
 
 pub fn bind_label_stat(

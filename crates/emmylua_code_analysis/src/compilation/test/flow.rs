@@ -850,4 +850,23 @@ end
         let b_expected = ws.ty("B");
         assert_eq!(b, b_expected);
     }
+
+    #[test]
+    fn test_issue_583() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            --- @param sha string
+            local function get_hash_color(sha)
+            local r, g, b = sha:match('(%x)%x(%x)%x(%x)')
+            assert(r and g and b, 'Invalid hash color')
+            local _ = r --- @type string
+            local _ = g --- @type string
+            local _ = b --- @type string
+            end
+            "#,
+        );
+    }
 }
