@@ -7,6 +7,8 @@ pub fn union_type(source: LuaType, target: LuaType) -> LuaType {
         // ANY | T = ANY
         (LuaType::Any, _) => LuaType::Any,
         (_, LuaType::Any) => LuaType::Any,
+        (LuaType::Never, _) => target,
+        (_, LuaType::Never) => source,
         (LuaType::Unknown, _) => target,
         (_, LuaType::Unknown) => source,
         // int | int const
