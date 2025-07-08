@@ -1,10 +1,12 @@
 use emmylua_parser::{
-    BinaryOperator, LuaBinaryExpr, LuaCallExpr, LuaChunk, LuaExpr, LuaLiteralToken,
+    BinaryOperator, LuaBinaryExpr, LuaCallExpr, LuaChunk, LuaExpr, LuaIndexMemberExpr,
+    LuaLiteralToken,
 };
 
 use crate::{
     infer_expr,
     semantic::infer::{
+        infer_index::infer_member_by_member_key,
         narrow::{
             condition_flow::{call_flow::get_type_at_call_expr, InferConditionFlow},
             get_single_antecedent,
@@ -15,7 +17,8 @@ use crate::{
         },
         VarRefId,
     },
-    DbIndex, FlowNode, FlowTree, InferFailReason, LuaInferCache, LuaType, TypeOps,
+    DbIndex, FlowNode, FlowTree, InferFailReason, InferGuard, LuaInferCache, LuaType, LuaUnionType,
+    TypeOps,
 };
 
 pub fn get_type_at_binary_expr(
@@ -36,73 +39,56 @@ pub fn get_type_at_binary_expr(
         return Ok(ResultTypeOrContinue::Continue);
     };
 
-    match op_token.get_op() {
-        BinaryOperator::OpLt
-        | BinaryOperator::OpLe
-        | BinaryOperator::OpGt
-        | BinaryOperator::OpGe => {
-            // todo check number range
+    let condition_flow = match op_token.get_op() {
+        BinaryOperator::OpEq => condition_flow,
+        BinaryOperator::OpNe => condition_flow.get_negated(),
+        _ => {
+            return Ok(ResultTypeOrContinue::Continue);
         }
-        BinaryOperator::OpEq => {
-            let result_type = maybe_type_guard_binary(
-                db,
-                tree,
-                cache,
-                root,
-                var_ref_id,
-                flow_node,
-                left_expr.clone(),
-                right_expr.clone(),
-                condition_flow,
-            )?;
-            if let ResultTypeOrContinue::Result(result_type) = result_type {
-                return Ok(ResultTypeOrContinue::Result(result_type));
-            }
+    };
 
-            return maybe_var_eq_narrow(
-                db,
-                tree,
-                cache,
-                root,
-                var_ref_id,
-                flow_node,
-                left_expr,
-                right_expr,
-                condition_flow,
-            );
-        }
-        BinaryOperator::OpNe => {
-            let result_type = maybe_type_guard_binary(
-                db,
-                tree,
-                cache,
-                root,
-                var_ref_id,
-                flow_node,
-                left_expr.clone(),
-                right_expr.clone(),
-                condition_flow.get_negated(),
-            )?;
-            if let ResultTypeOrContinue::Result(result_type) = result_type {
-                return Ok(ResultTypeOrContinue::Result(result_type));
-            }
-
-            return maybe_var_eq_narrow(
-                db,
-                tree,
-                cache,
-                root,
-                var_ref_id,
-                flow_node,
-                left_expr,
-                right_expr,
-                condition_flow.get_negated(),
-            );
-        }
-        _ => {}
+    let mut result_type = maybe_type_guard_binary(
+        db,
+        tree,
+        cache,
+        root,
+        var_ref_id,
+        flow_node,
+        left_expr.clone(),
+        right_expr.clone(),
+        condition_flow,
+    )?;
+    if let ResultTypeOrContinue::Result(result_type) = result_type {
+        return Ok(ResultTypeOrContinue::Result(result_type));
     }
 
-    Ok(ResultTypeOrContinue::Continue)
+    result_type = maybe_field_literal_eq_narrow(
+        db,
+        tree,
+        cache,
+        root,
+        var_ref_id,
+        flow_node,
+        left_expr.clone(),
+        right_expr.clone(),
+        condition_flow,
+    )?;
+
+    if let ResultTypeOrContinue::Result(result_type) = result_type {
+        return Ok(ResultTypeOrContinue::Result(result_type));
+    }
+
+    return maybe_var_eq_narrow(
+        db,
+        tree,
+        cache,
+        root,
+        var_ref_id,
+        flow_node,
+        left_expr,
+        right_expr,
+        condition_flow,
+    );
 }
 
 fn maybe_type_guard_binary(
@@ -294,5 +280,109 @@ fn maybe_var_eq_narrow(
             // If the left expression is not a name or call expression, we cannot narrow it
             Ok(ResultTypeOrContinue::Continue)
         }
+    }
+}
+
+fn maybe_field_literal_eq_narrow(
+    db: &DbIndex,
+    tree: &FlowTree,
+    cache: &mut LuaInferCache,
+    root: &LuaChunk,
+    var_ref_id: &VarRefId,
+    flow_node: &FlowNode,
+    left_expr: LuaExpr,
+    right_expr: LuaExpr,
+    condition_flow: InferConditionFlow,
+) -> Result<ResultTypeOrContinue, InferFailReason> {
+    // only check left as need narrow
+    let (index_expr, literal_expr) = match (left_expr, right_expr) {
+        (LuaExpr::IndexExpr(index_expr), LuaExpr::LiteralExpr(literal_expr)) => {
+            (index_expr, literal_expr)
+        }
+        (LuaExpr::LiteralExpr(literal_expr), LuaExpr::IndexExpr(index_expr)) => {
+            (index_expr, literal_expr)
+        }
+        _ => return Ok(ResultTypeOrContinue::Continue),
+    };
+
+    let Some(prefix_expr) = index_expr.get_prefix_expr() else {
+        return Ok(ResultTypeOrContinue::Continue);
+    };
+
+    let Some(maybe_var_ref_id) = get_var_expr_var_ref_id(db, cache, prefix_expr.clone()) else {
+        // If we cannot find a reference declaration ID, we cannot narrow it
+        return Ok(ResultTypeOrContinue::Continue);
+    };
+
+    if maybe_var_ref_id != *var_ref_id {
+        return Ok(ResultTypeOrContinue::Continue);
+    }
+
+    let antecedent_flow_id = get_single_antecedent(tree, flow_node)?;
+    let left_type = get_type_at_flow(db, tree, cache, root, &var_ref_id, antecedent_flow_id)?;
+    let LuaType::Union(union_type) = left_type else {
+        return Ok(ResultTypeOrContinue::Continue);
+    };
+
+    let right_type = infer_expr(db, cache, LuaExpr::LiteralExpr(literal_expr))?;
+    let mut guard = InferGuard::new();
+    let index = LuaIndexMemberExpr::IndexExpr(index_expr);
+    let mut opt_result = None;
+    let mut union_types = union_type.get_types();
+    for (i, sub_type) in union_types.iter().enumerate() {
+        let member_type =
+            match infer_member_by_member_key(db, cache, &sub_type, index.clone(), &mut guard) {
+                Ok(member_type) => member_type,
+                Err(_) => continue, // If we cannot infer the member type, skip this type
+            };
+        if const_type_eq(&member_type, &right_type) {
+            // If the right type matches the member type, we can narrow it
+            opt_result = Some(i);
+        }
+    }
+
+    match condition_flow {
+        InferConditionFlow::TrueCondition => {
+            if let Some(i) = opt_result {
+                return Ok(ResultTypeOrContinue::Result(union_types[i].clone()));
+            }
+        }
+        InferConditionFlow::FalseCondition => {
+            if let Some(i) = opt_result {
+                union_types.remove(i);
+                match union_types.len() {
+                    0 => return Ok(ResultTypeOrContinue::Result(LuaType::Unknown)),
+                    1 => return Ok(ResultTypeOrContinue::Result(union_types[0].clone())),
+                    _ => {
+                        let union_type = LuaUnionType::new(union_types);
+                        return Ok(ResultTypeOrContinue::Result(LuaType::Union(
+                            union_type.into(),
+                        )));
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(ResultTypeOrContinue::Continue)
+}
+
+fn const_type_eq(left_type: &LuaType, right_type: &LuaType) -> bool {
+    if left_type == right_type {
+        return true;
+    }
+
+    match (left_type, right_type) {
+        (
+            LuaType::StringConst(l) | LuaType::DocStringConst(l),
+            LuaType::StringConst(r) | LuaType::DocStringConst(r),
+        ) => l == r,
+        (LuaType::FloatConst(l), LuaType::FloatConst(r)) => l == r,
+        (LuaType::BooleanConst(l), LuaType::BooleanConst(r)) => l == r,
+        (
+            LuaType::IntegerConst(l) | LuaType::DocIntegerConst(l),
+            LuaType::IntegerConst(r) | LuaType::DocIntegerConst(r),
+        ) => l == r,
+        _ => false,
     }
 }

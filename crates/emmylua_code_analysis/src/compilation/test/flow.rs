@@ -822,4 +822,32 @@ end
             "#,
         );
     }
+
+    #[test]
+    fn test_issue_526() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+            --- @alias A { kind: 'A'}
+            --- @alias B { kind: 'B'}
+
+            local x --- @type A|B
+
+            if x.kind == 'A' then
+                a = x
+                return
+            end
+
+            b = x
+            "#,
+        );
+
+        let a = ws.expr_ty("a");
+        let a_expected = ws.ty("A");
+        assert_eq!(a, a_expected);
+        let b = ws.expr_ty("b");
+        let b_expected = ws.ty("B");
+        assert_eq!(b, b_expected);
+    }
 }
