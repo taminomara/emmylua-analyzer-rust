@@ -1,7 +1,8 @@
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
 use emmylua_code_analysis::{
-    load_configs, load_workspace_files, update_code_style, DbIndex, EmmyLuaAnalysis, Emmyrc, FileId, LuaFileInfo
+    load_configs, load_workspace_files, update_code_style, DbIndex, EmmyLuaAnalysis, Emmyrc,
+    FileId, LuaFileInfo,
 };
 
 fn root_from_configs(config_paths: &Vec<PathBuf>, fallback: &PathBuf) -> PathBuf {

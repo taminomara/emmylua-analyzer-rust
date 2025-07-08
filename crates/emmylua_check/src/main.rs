@@ -95,4 +95,3 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     eprintln!("Check finished");
     Ok(())
 }
-
