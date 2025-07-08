@@ -4,7 +4,7 @@ mod output;
 mod terminal_display;
 
 pub use clap::Parser;
-pub use cmd_args::CmdArgs;
+pub use cmd_args::*;
 use fern::Dispatch;
 use log::LevelFilter;
 use output::output_result;
