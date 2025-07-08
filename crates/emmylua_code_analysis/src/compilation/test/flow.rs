@@ -461,7 +461,7 @@ end
         );
 
         let b = ws.expr_ty("b");
-        let b_expected = ws.ty("unknown");
+        let b_expected = ws.ty("nil");
         assert_eq!(b, b_expected);
     }
 

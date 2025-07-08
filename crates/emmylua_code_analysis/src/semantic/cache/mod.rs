@@ -4,26 +4,24 @@ pub use cache_options::{CacheOptions, LuaAnalysisPhase};
 use emmylua_parser::LuaSyntaxId;
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{db_index::LuaType, FileId, LuaFunctionType};
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum CacheKey {
-    Expr(LuaSyntaxId),
-    Call(LuaSyntaxId, Option<usize>, LuaType),
-}
+use crate::{db_index::LuaType, semantic::infer::VarRefId, FileId, FlowId, LuaFunctionType};
 
 #[derive(Debug)]
-pub enum CacheEntry {
-    ReadyCache,
-    ExprCache(LuaType),
-    CallCache(Arc<LuaFunctionType>),
+pub enum CacheEntry<T> {
+    Ready,
+    Cache(T),
 }
 
 #[derive(Debug)]
 pub struct LuaInferCache {
     file_id: FileId,
     config: CacheOptions,
-    cache: HashMap<CacheKey, CacheEntry>,
+    pub expr_cache: HashMap<LuaSyntaxId, CacheEntry<LuaType>>,
+    pub call_cache:
+        HashMap<(LuaSyntaxId, Option<usize>, LuaType), CacheEntry<Arc<LuaFunctionType>>>,
+    pub flow_node_cache: HashMap<(VarRefId, FlowId), CacheEntry<LuaType>>,
+    pub index_ref_origin_type_cache: HashMap<VarRefId, CacheEntry<LuaType>>,
+    pub expr_var_ref_id_cache: HashMap<LuaSyntaxId, VarRefId>,
 }
 
 impl LuaInferCache {
@@ -31,7 +29,11 @@ impl LuaInferCache {
         Self {
             file_id,
             config,
-            cache: HashMap::new(),
+            expr_cache: HashMap::new(),
+            call_cache: HashMap::new(),
+            flow_node_cache: HashMap::new(),
+            index_ref_origin_type_cache: HashMap::new(),
+            expr_var_ref_id_cache: HashMap::new(),
         }
     }
 
@@ -43,28 +45,15 @@ impl LuaInferCache {
         self.file_id
     }
 
-    // 表达式缓存相关方法
-    pub fn ready_cache(&mut self, key: &CacheKey) {
-        self.cache.insert(key.clone(), CacheEntry::ReadyCache);
-    }
-
-    pub fn add_cache(&mut self, key: &CacheKey, value: CacheEntry) {
-        self.cache.insert(key.clone(), value);
-    }
-
-    pub fn get(&self, key: &CacheKey) -> Option<&CacheEntry> {
-        self.cache.get(key)
-    }
-
-    pub fn remove(&mut self, key: &CacheKey) {
-        self.cache.remove(key);
-    }
-
     pub fn set_phase(&mut self, phase: LuaAnalysisPhase) {
         self.config.analysis_phase = phase;
     }
 
     pub fn clear(&mut self) {
-        self.cache.clear();
+        self.expr_cache.clear();
+        self.call_cache.clear();
+        self.flow_node_cache.clear();
+        self.index_ref_origin_type_cache.clear();
+        self.expr_var_ref_id_cache.clear();
     }
 }

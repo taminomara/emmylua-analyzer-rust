@@ -138,7 +138,7 @@ fn check_ref_class(
                             check_general_type_compact(
                                 db,
                                 &source,
-                                field,
+                                &field,
                                 check_guard.next_level()?,
                             )?;
                         }
@@ -164,7 +164,7 @@ fn check_ref_class(
                 check_general_type_compact(
                     db,
                     &LuaType::Ref(source_id.clone()),
-                    typ,
+                    &typ,
                     check_guard.next_level()?,
                 )?;
             }

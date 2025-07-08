@@ -327,7 +327,7 @@ fn infer_union_member_semantic_info(
         if let Some(property_owner_id) = infer_member_semantic_decl_by_member_key(
             db,
             cache,
-            typ,
+            &typ,
             member_key,
             semantic_guard.next_level()?,
         ) {

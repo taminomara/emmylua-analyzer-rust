@@ -359,7 +359,7 @@ fn build_table_call_signature_help(
 
 fn build_union_type_signature_help(
     builder: &SignatureHelperBuilder,
-    union_types: &[LuaType],
+    union_types: Vec<LuaType>,
     colon_call: bool,
     current_idx: usize,
 ) -> Option<SignatureHelp> {
@@ -378,7 +378,7 @@ fn build_union_type_signature_help(
             LuaType::Signature(signature_id) => {
                 let sig = build_sig_id_signature_help(
                     builder,
-                    *signature_id,
+                    signature_id,
                     colon_call,
                     current_idx,
                     false,

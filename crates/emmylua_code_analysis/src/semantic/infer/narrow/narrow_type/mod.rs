@@ -1,6 +1,9 @@
-use crate::{DbIndex, LuaType, LuaUnionType};
+mod false_or_nil_type;
 
-use super::get_real_type;
+use crate::{
+    get_real_type, semantic::type_check::is_sub_type_of, DbIndex, LuaType, LuaUnionType, TypeOps,
+};
+pub use false_or_nil_type::{narrow_false_or_nil, remove_false_or_nil};
 
 // need to be optimized
 pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Option<LuaType> {
@@ -9,7 +12,6 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
     }
 
     let real_source_ref = get_real_type(db, &source).unwrap_or(&source);
-
     match &target {
         LuaType::Number => {
             if real_source_ref.is_number() {
@@ -86,7 +88,7 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
                 return Some(source);
             }
         }
-        LuaType::Any => {
+        LuaType::Any | LuaType::Unknown => {
             return Some(source);
         }
         LuaType::FloatConst(f) => {
@@ -139,7 +141,6 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
             _ => {}
         },
         LuaType::Instance(base) => return narrow_down_type(db, source, base.get_base().clone()),
-        LuaType::Unknown => return Some(source),
         LuaType::BooleanConst(_) => {
             if real_source_ref.is_boolean() {
                 return Some(LuaType::Boolean);
@@ -147,21 +148,37 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
                 return Some(LuaType::BooleanConst(true));
             }
         }
-        _ => {
-            if target.is_unknown() {
-                return Some(source);
+        LuaType::Union(target_u) => {
+            let source_types = target_u
+                .get_types()
+                .into_iter()
+                .filter_map(|t| narrow_down_type(db, real_source_ref.clone(), t))
+                .collect::<Vec<_>>();
+            let mut result_type = LuaType::Unknown;
+            for source_type in source_types {
+                result_type = TypeOps::Union.apply(db, &result_type, &source_type);
             }
-
-            return Some(target);
+            return Some(result_type);
         }
+        LuaType::Variadic(_) => return Some(source),
+        LuaType::Def(type_id) | LuaType::Ref(type_id) => match real_source_ref {
+            LuaType::Def(ref_id) | LuaType::Ref(ref_id) => {
+                if is_sub_type_of(db, ref_id, type_id) || is_sub_type_of(db, type_id, ref_id) {
+                    return Some(source);
+                }
+            }
+            _ => {}
+        },
+
+        _ => {}
     }
 
     match real_source_ref {
         LuaType::Union(union) => {
             let mut union_types = union
                 .get_types()
-                .iter()
-                .filter_map(|t| narrow_down_type(db, t.clone(), target.clone()))
+                .into_iter()
+                .filter_map(|t| narrow_down_type(db, t, target.clone()))
                 .collect::<Vec<_>>();
 
             union_types.dedup();

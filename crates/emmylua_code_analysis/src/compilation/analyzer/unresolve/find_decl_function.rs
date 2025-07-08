@@ -330,7 +330,7 @@ fn find_union_function_member(
         let result = find_function_type_by_member_key(
             db,
             cache,
-            sub_type,
+            &sub_type,
             index_expr.clone(),
             &mut InferGuard::new(),
             deep_guard,
@@ -692,7 +692,7 @@ fn find_member_by_index_union(
         let result = find_function_type_by_operator(
             db,
             cache,
-            member,
+            &member,
             index_expr.clone(),
             &mut InferGuard::new(),
             deep_guard,

@@ -10,9 +10,9 @@ use emmylua_parser::{
     LuaAstNode, LuaAstToken, LuaDocNameType, LuaDocTag, LuaExpr, LuaLocalName, LuaSyntaxKind,
     LuaSyntaxNode, LuaSyntaxToken, LuaTableField,
 };
-use infer_expr_semantic_decl::infer_expr_semantic_decl;
+pub use infer_expr_semantic_decl::infer_expr_semantic_decl;
 pub use semantic_decl_level::SemanticDeclLevel;
-use semantic_guard::SemanticDeclGuard;
+pub use semantic_guard::SemanticDeclGuard;
 
 use super::{infer_expr, LuaInferCache};
 

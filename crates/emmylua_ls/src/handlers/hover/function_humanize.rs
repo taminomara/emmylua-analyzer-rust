@@ -643,7 +643,7 @@ fn process_single_function_type(
                 match process_single_function_type(
                     builder,
                     db,
-                    union_type,
+                    &union_type,
                     function_member,
                     name,
                     is_local,
@@ -689,14 +689,14 @@ fn process_single_function_type_with_exclusions(
             let mut results = Vec::new();
             for union_type in union.get_types() {
                 // 跳过已经处理过的类型
-                if processed_types.contains(union_type) {
+                if processed_types.contains(&union_type) {
                     continue;
                 }
 
                 match process_single_function_type_with_exclusions(
                     builder,
                     db,
-                    union_type,
+                    &union_type,
                     function_member,
                     name,
                     is_local,

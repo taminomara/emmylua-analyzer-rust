@@ -314,12 +314,12 @@ fn resolve_closure_member_type(
                         multi_function_type.push(func.clone());
                     }
                     LuaType::Ref(ref_id) => {
-                        if infer_guard.check(ref_id).is_err() {
+                        if infer_guard.check(&ref_id).is_err() {
                             continue;
                         }
                         let type_decl = db
                             .get_type_index()
-                            .get_type_decl(ref_id)
+                            .get_type_decl(&ref_id)
                             .ok_or(InferFailReason::None)?;
 
                         if let Some(origin) = type_decl.get_alias_origin(&db, None) {
@@ -492,17 +492,18 @@ fn resolve_doc_function(
     Ok(())
 }
 
-fn filter_signature_type(typ: &LuaType) -> Option<Vec<&Arc<LuaFunctionType>>> {
-    let mut result: Vec<&Arc<LuaFunctionType>> = Vec::new();
+fn filter_signature_type(typ: &LuaType) -> Option<Vec<Arc<LuaFunctionType>>> {
+    let mut result: Vec<Arc<LuaFunctionType>> = Vec::new();
     let mut stack = Vec::new();
-    stack.push(typ);
+    stack.push(typ.clone());
     while let Some(typ) = stack.pop() {
         match typ {
             LuaType::DocFunction(func) => {
-                result.push(func);
+                result.push(func.clone());
             }
             LuaType::Union(union) => {
-                for typ in union.get_types().iter().rev() {
+                let types = union.get_types();
+                for typ in types.into_iter().rev() {
                     stack.push(typ);
                 }
             }

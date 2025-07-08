@@ -1,13 +1,13 @@
-use crate::{DbIndex, LuaType, LuaUnionType};
-
-use super::TypeOps;
+use crate::{
+    semantic::infer::narrow::narrow_type::narrow_down_type, DbIndex, LuaType, LuaUnionType,
+};
 
 pub fn narrow_false_or_nil(db: &DbIndex, t: LuaType) -> LuaType {
     if t.is_boolean() {
         return LuaType::BooleanConst(false);
     }
 
-    return TypeOps::Narrow.apply(db, &t, &LuaType::Nil);
+    return narrow_down_type(db, t.clone(), LuaType::Nil).unwrap_or(t);
 }
 
 pub fn remove_false_or_nil(t: LuaType) -> LuaType {

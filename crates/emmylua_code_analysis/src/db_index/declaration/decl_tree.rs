@@ -376,8 +376,31 @@ impl LuaDeclarationTree {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LuaDeclOrMemberId {
     Decl(LuaDeclId),
     Member(LuaMemberId),
+}
+
+impl LuaDeclOrMemberId {
+    pub fn as_decl_id(&self) -> Option<LuaDeclId> {
+        match self {
+            LuaDeclOrMemberId::Decl(decl_id) => Some(*decl_id),
+            LuaDeclOrMemberId::Member(_) => None,
+        }
+    }
+
+    pub fn as_member_id(&self) -> Option<LuaMemberId> {
+        match self {
+            LuaDeclOrMemberId::Decl(_) => None,
+            LuaDeclOrMemberId::Member(member_id) => Some(*member_id),
+        }
+    }
+
+    pub fn get_position(&self) -> TextSize {
+        match self {
+            LuaDeclOrMemberId::Decl(decl_id) => decl_id.position,
+            LuaDeclOrMemberId::Member(member_id) => member_id.get_position(),
+        }
+    }
 }
