@@ -1,4 +1,9 @@
+{% if site_name %}
+site_name: {{ site_name }}
+{% else %}
 site_name: Docs
+{% endif %}
+
 theme:
   name: material
   font:

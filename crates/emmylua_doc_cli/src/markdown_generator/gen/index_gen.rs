@@ -12,6 +12,9 @@ pub fn generate_index(
     mkdocs.modules.sort_by(|a, b| a.name.cmp(&b.name));
     mkdocs.globals.sort_by(|a, b| a.name.cmp(&b.name));
 
+    if !mkdocs.site_name.is_empty() {
+        context.insert("site_name", &mkdocs.site_name);
+    }
     if !mkdocs.types.is_empty() {
         context.insert("types", &mkdocs.types);
     }

@@ -16,6 +16,7 @@ pub fn generate_markdown(
     analysis: &mut EmmyLuaAnalysis,
     output: PathBuf,
     override_template: Option<PathBuf>,
+    site_name: Option<String>,
     mixin: Option<PathBuf>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let docs_dir = output.join("docs");
@@ -51,6 +52,10 @@ pub fn generate_markdown(
 
     let tl = init_tl::init_tl(override_template).ok_or("Failed to initialize TL")?;
     let mut mkdocs_index = MkdocsIndex::default();
+    if let Some(site_name) = site_name {
+        mkdocs_index.site_name = site_name;
+    }
+
     let db = analysis.compilation.get_db();
     let type_index = db.get_type_index();
     let types = type_index.get_all_types();

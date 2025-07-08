@@ -28,6 +28,7 @@ pub struct Property {
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct MkdocsIndex {
+    pub site_name: String,
     pub types: Vec<IndexStruct>,
     pub modules: Vec<IndexStruct>,
     pub globals: Vec<IndexStruct>,
