@@ -307,6 +307,8 @@ pub fn bind_if_stat(binder: &mut FlowBinder, if_stat: LuaIfStat, current: FlowId
             let block_id = bind_block(binder, else_block, else_label);
             binder.add_antecedent(post_if_label, block_id);
         }
+    } else {
+        binder.add_antecedent(post_if_label, else_label);
     }
 
     finish_flow_label(binder, post_if_label, else_label)

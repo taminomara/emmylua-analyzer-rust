@@ -156,13 +156,7 @@ fn maybe_type_guard_binary(
         return Ok(ResultTypeOrContinue::Continue);
     };
 
-    let LuaExpr::NameExpr(name_expr) = arg else {
-        return Ok(ResultTypeOrContinue::Continue);
-    };
-
-    let Some(maybe_var_ref_id) =
-        get_var_expr_var_ref_id(db, cache, LuaExpr::NameExpr(name_expr.clone()))
-    else {
+    let Some(maybe_var_ref_id) = get_var_expr_var_ref_id(db, cache, arg) else {
         // If we cannot find a reference declaration ID, we cannot narrow it
         return Ok(ResultTypeOrContinue::Continue);
     };

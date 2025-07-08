@@ -802,4 +802,24 @@ end
         let res_desc = ws.humanize_type(res);
         assert_eq!(res_desc, "(string[]|string)");
     }
+
+    #[test]
+    fn test_issue_480() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.check_code_for(
+            DiagnosticCode::UnnecessaryAssert,
+            r#"
+            --- @param a integer?
+            --- @param c boolean
+            function foo(a, c)
+                if c then
+                    a = 1
+                end
+
+                assert(a)
+            end
+            "#,
+        );
+    }
 }
