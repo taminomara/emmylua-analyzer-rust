@@ -33,6 +33,16 @@
           // {
             default = self.packages.${system}.emmylua_ls;
           };
+
+        devShells.default = pkgs.mkShell {
+          buildInputs = (with pkgs; [
+            rust-analyzer
+            clippy
+            rustfmt
+          ])
+          ++ self.packages.${system}.default.buildInputs
+          ++ self.packages.${system}.default.nativeBuildInputs;
+        };
       }
     );
 }
