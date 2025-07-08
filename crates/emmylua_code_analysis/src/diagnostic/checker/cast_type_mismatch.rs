@@ -80,7 +80,7 @@ fn check_cast_compatibility(
                 if member_type.is_nil() {
                     continue;
                 }
-                if cast_type_check(semantic_model, member_type, target_type, 0).is_ok() {
+                if cast_type_check(semantic_model, &member_type, target_type, 0).is_ok() {
                     return Some(());
                 }
             }
@@ -169,7 +169,7 @@ fn cast_type_check(
                 match cast_type_check(
                     semantic_model,
                     origin_type,
-                    member_type,
+                    &member_type,
                     recursion_depth + 1,
                 ) {
                     Ok(_) => {}
@@ -243,7 +243,7 @@ fn expand_type_recursive(
             // 递归展开 union 中的每个类型
             let mut expanded_types = Vec::new();
             for inner_type in union_type.get_types() {
-                if let Some(expanded) = expand_type_recursive(db, inner_type, visited) {
+                if let Some(expanded) = expand_type_recursive(db, &inner_type, visited) {
                     match expanded {
                         LuaType::Union(inner_union) => {
                             // 如果展开后还是 union，则将其成员类型添加到结果中

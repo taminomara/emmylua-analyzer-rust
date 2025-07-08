@@ -1,6 +1,4 @@
-use crate::{DbIndex, LuaType, LuaUnionType};
-
-use super::get_real_type;
+use crate::{get_real_type, DbIndex, LuaType, LuaUnionType};
 
 pub fn remove_type(db: &DbIndex, source: LuaType, removed_type: LuaType) -> Option<LuaType> {
     if source == removed_type {

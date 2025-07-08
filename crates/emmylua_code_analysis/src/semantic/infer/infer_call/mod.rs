@@ -11,9 +11,11 @@ use super::{
     InferFailReason, InferResult,
 };
 use crate::semantic::infer_expr;
-use crate::{semantic::generic::instantiate_doc_function, LuaVarRefId};
+use crate::semantic::{
+    generic::instantiate_doc_function, infer::narrow::get_type_at_call_expr_inline_cast,
+};
 use crate::{
-    CacheEntry, CacheKey, DbIndex, InFiled, LuaFunctionType, LuaGenericType, LuaInstanceType,
+    CacheEntry, DbIndex, InFiled, LuaFunctionType, LuaGenericType, LuaInstanceType,
     LuaOperatorMetaMethod, LuaOperatorOwner, LuaSignatureId, LuaType, LuaTypeDeclId, LuaUnionType,
 };
 use infer_require::infer_require_call;
@@ -33,16 +35,16 @@ pub fn infer_call_expr_func(
     args_count: Option<usize>,
 ) -> InferCallFuncResult {
     let syntax_id = call_expr.get_syntax_id();
-    let key = CacheKey::Call(syntax_id, args_count, call_expr_type.clone());
-    match cache.get(&key) {
+    let key = (syntax_id, args_count, call_expr_type.clone());
+    match cache.call_cache.get(&key) {
         Some(cache) => match cache {
-            CacheEntry::CallCache(ty) => return Ok(ty.clone()),
+            CacheEntry::Cache(ty) => return Ok(ty.clone()),
             _ => return Err(InferFailReason::RecursiveInfer),
         },
         None => {}
     }
 
-    cache.ready_cache(&key);
+    cache.call_cache.insert(key.clone(), CacheEntry::Ready);
     let result = match &call_expr_type {
         LuaType::DocFunction(func) => {
             infer_doc_function(db, cache, &func, call_expr.clone(), args_count)
@@ -120,10 +122,12 @@ pub fn infer_call_expr_func(
 
     match &result {
         Ok(func_ty) => {
-            cache.add_cache(&key, CacheEntry::CallCache(func_ty.clone()));
+            cache
+                .call_cache
+                .insert(key, CacheEntry::Cache(func_ty.clone()));
         }
         Err(r) if r.is_need_resolve() => {
-            cache.remove(&key);
+            cache.call_cache.remove(&key);
         }
         _ => {}
     }
@@ -440,7 +444,7 @@ fn infer_union(
     for ty in union.get_types() {
         match ty {
             LuaType::Signature(signature_id) => {
-                if let Some(signature) = db.get_signature_index().get(signature_id) {
+                if let Some(signature) = db.get_signature_index().get(&signature_id) {
                     // 处理 overloads
                     let overloads = if signature.is_generic() {
                         signature
@@ -483,7 +487,7 @@ fn infer_union(
                     Arc::new(instantiate_func_generic(
                         db,
                         cache,
-                        func,
+                        &func,
                         call_expr.clone(),
                     )?)
                 } else {
@@ -625,7 +629,7 @@ pub fn infer_call_expr(
 
     let prefix_expr = call_expr.get_prefix_expr().ok_or(InferFailReason::None)?;
     let prefix_type = infer_expr(db, cache, prefix_expr)?;
-    let mut ret_type = infer_call_expr_func(
+    let ret_type = infer_call_expr_func(
         db,
         cache,
         call_expr.clone(),
@@ -636,13 +640,18 @@ pub fn infer_call_expr(
     .get_ret()
     .clone();
 
-    let file_id = cache.get_file_id();
-    let var_ref_id = LuaVarRefId::SyntaxId(InFiled::new(file_id, call_expr.get_syntax_id()));
-    let flow_chain = db.get_flow_index().get_flow_chain(file_id, var_ref_id);
-    if let Some(flow_chain) = flow_chain {
-        let root = call_expr.get_root();
-        for type_assert in flow_chain.get_all_type_asserts() {
-            ret_type = type_assert.tighten_type(db, cache, &root, ret_type)?;
+    if let Some(tree) = db.get_flow_index().get_flow_tree(&cache.get_file_id()) {
+        if let Some(flow_id) = tree.get_flow_id(call_expr.get_syntax_id()) {
+            if let Some(flow_ret_type) = get_type_at_call_expr_inline_cast(
+                db,
+                cache,
+                tree,
+                call_expr,
+                flow_id,
+                ret_type.clone(),
+            ) {
+                return Ok(flow_ret_type);
+            }
         }
     }
 

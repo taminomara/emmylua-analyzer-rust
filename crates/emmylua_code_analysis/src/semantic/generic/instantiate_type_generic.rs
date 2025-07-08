@@ -175,7 +175,7 @@ fn instantiate_union(db: &DbIndex, union: &LuaUnionType, substitutor: &TypeSubst
     let types = union.get_types();
     let mut new_types = Vec::new();
     for t in types {
-        let t = instantiate_type_generic(db, t, substitutor);
+        let t = instantiate_type_generic(db, &t, substitutor);
         new_types.push(t);
     }
 

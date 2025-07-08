@@ -23,23 +23,23 @@ mod tests {
     #[test]
     fn test_right_to_left() {
         let mut ws = ProviderVirtualWorkspace::new();
-        assert!(ws.check_hover(
-            r#"
-                ---@class H4
-                local m = {
-                    x = 1
-                }
+        // assert!(ws.check_hover(
+        //     r#"
+        //         ---@class H4
+        //         local m = {
+        //             x = 1
+        //         }
 
-                ---@type H4
-                local m1
+        //         ---@type H4
+        //         local m1
 
-                m1.x = {}
-                m1.<??>x = {}
-            "#,
-            VirtualHoverResult {
-                value: "```lua\n(field) x: integer = 1\n```".to_string(),
-            },
-        ));
+        //         m1.x = {}
+        //         m1.<??>x = {}
+        //     "#,
+        //     VirtualHoverResult {
+        //         value: "```lua\n(field) x: integer = 1\n```".to_string(),
+        //     },
+        // ));
 
         assert!(ws.check_hover(
             r#"

@@ -232,21 +232,21 @@ fn get_params_len(params: &[(String, Option<LuaType>)]) -> Option<usize> {
 }
 
 fn is_nullable(db: &DbIndex, typ: &LuaType) -> bool {
-    let mut stack: Vec<&LuaType> = Vec::new();
-    stack.push(typ);
+    let mut stack: Vec<LuaType> = Vec::new();
+    stack.push(typ.clone());
     let mut visited = HashSet::new();
     while let Some(typ) = stack.pop() {
-        if visited.contains(typ) {
+        if visited.contains(&typ) {
             continue;
         }
-        visited.insert(typ);
+        visited.insert(typ.clone());
         match typ {
             LuaType::Any | LuaType::Unknown | LuaType::Nil => return true,
             LuaType::Ref(decl_id) => {
-                if let Some(decl) = db.get_type_index().get_type_decl(decl_id) {
+                if let Some(decl) = db.get_type_index().get_type_decl(&decl_id) {
                     if decl.is_alias() {
                         if let Some(alias_origin) = decl.get_alias_ref() {
-                            stack.push(alias_origin);
+                            stack.push(alias_origin.clone());
                         }
                     }
                 }
@@ -258,7 +258,7 @@ fn is_nullable(db: &DbIndex, typ: &LuaType) -> bool {
             }
             LuaType::MultiLineUnion(m) => {
                 for (t, _) in m.get_unions() {
-                    stack.push(t);
+                    stack.push(t.clone());
                 }
             }
             _ => {}

@@ -5,6 +5,7 @@ mod infer_index;
 mod infer_name;
 mod infer_table;
 mod infer_unary;
+mod narrow;
 mod test;
 
 use std::ops::Deref;
@@ -23,6 +24,7 @@ pub use infer_name::{find_self_decl_or_member_id, infer_param};
 use infer_table::infer_table_expr;
 pub use infer_table::{infer_table_field_value_should_be, infer_table_should_be};
 use infer_unary::infer_unary_expr;
+pub use narrow::VarRefId;
 
 use rowan::TextRange;
 use smol_str::SmolStr;
@@ -32,17 +34,17 @@ use crate::{
     InFiled, InferGuard, LuaMemberKey, VariadicType,
 };
 
-use super::{member::infer_raw_member_type, CacheEntry, CacheKey, LuaInferCache};
+use super::{member::infer_raw_member_type, CacheEntry, LuaInferCache};
 
 pub type InferResult = Result<LuaType, InferFailReason>;
 pub use infer_call::InferCallFuncResult;
 
 pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> InferResult {
     let syntax_id = expr.get_syntax_id();
-    let key = CacheKey::Expr(syntax_id);
-    match cache.get(&key) {
+    let key = syntax_id;
+    match cache.expr_cache.get(&key) {
         Some(cache) => match cache {
-            CacheEntry::ExprCache(ty) => return Ok(ty.clone()),
+            CacheEntry::Cache(ty) => return Ok(ty.clone()),
             _ => return Err(InferFailReason::RecursiveInfer),
         },
         None => {}
@@ -55,14 +57,13 @@ pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> Inf
         .get_type_index()
         .get_type_cache(&in_filed_syntax_id.into())
     {
-        cache.add_cache(
-            &key,
-            CacheEntry::ExprCache(bind_type_cache.as_type().clone()),
-        );
+        cache
+            .expr_cache
+            .insert(key, CacheEntry::Cache(bind_type_cache.as_type().clone()));
         return Ok(bind_type_cache.as_type().clone());
     }
 
-    cache.ready_cache(&key);
+    cache.expr_cache.insert(key, CacheEntry::Ready);
     let result_type = match expr {
         LuaExpr::CallExpr(call_expr) => infer_call_expr(db, cache, call_expr),
         LuaExpr::TableExpr(table_expr) => infer_table_expr(db, cache, table_expr),
@@ -80,21 +81,29 @@ pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> Inf
     };
 
     match &result_type {
-        Ok(result_type) => cache.add_cache(&key, CacheEntry::ExprCache(result_type.clone())),
+        Ok(result_type) => {
+            cache
+                .expr_cache
+                .insert(key, CacheEntry::Cache(result_type.clone()));
+        }
         Err(InferFailReason::None) | Err(InferFailReason::RecursiveInfer) => {
-            cache.add_cache(&key, CacheEntry::ExprCache(LuaType::Unknown));
+            cache
+                .expr_cache
+                .insert(key, CacheEntry::Cache(LuaType::Unknown));
             return Ok(LuaType::Unknown);
         }
         Err(InferFailReason::FieldNotFound) => {
             if cache.get_config().analysis_phase.is_force() {
-                cache.add_cache(&key, CacheEntry::ExprCache(LuaType::Nil));
+                cache
+                    .expr_cache
+                    .insert(key, CacheEntry::Cache(LuaType::Nil));
                 return Ok(LuaType::Nil);
             } else {
-                cache.ready_cache(&key);
+                cache.expr_cache.insert(key, CacheEntry::Ready);
             }
         }
         _ => {
-            cache.remove(&key);
+            cache.expr_cache.remove(&key);
         }
     }
 

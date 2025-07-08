@@ -222,7 +222,7 @@ fn find_index_union(
     let mut members = Vec::new();
 
     for member in union.get_types() {
-        if let Some(sub_members) = find_index_operations_guard(db, member, infer_guard) {
+        if let Some(sub_members) = find_index_operations_guard(db, &member, infer_guard) {
             members.extend(sub_members);
         }
     }

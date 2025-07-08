@@ -76,7 +76,7 @@ pub fn check_table_generic_type_compact(
                 check_table_generic_type_compact(
                     db,
                     source_generic_param,
-                    union_type,
+                    &union_type,
                     check_guard,
                 )?;
             }

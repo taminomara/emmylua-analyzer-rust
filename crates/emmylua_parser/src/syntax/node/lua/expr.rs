@@ -129,6 +129,15 @@ impl LuaAstNode for LuaVarExpr {
     }
 }
 
+impl LuaVarExpr {
+    pub fn to_expr(&self) -> LuaExpr {
+        match self {
+            LuaVarExpr::NameExpr(node) => LuaExpr::NameExpr(node.clone()),
+            LuaVarExpr::IndexExpr(node) => LuaExpr::IndexExpr(node.clone()),
+        }
+    }
+}
+
 impl From<LuaVarExpr> for LuaExpr {
     fn from(expr: LuaVarExpr) -> Self {
         match expr {

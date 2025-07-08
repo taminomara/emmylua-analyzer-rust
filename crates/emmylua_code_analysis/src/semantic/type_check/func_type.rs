@@ -31,7 +31,7 @@ pub fn check_doc_func_type_compact(
                 check_doc_func_type_compact(
                     db,
                     source_func,
-                    union_type,
+                    &union_type,
                     check_guard.next_level()?,
                 )?;
             }

@@ -84,7 +84,7 @@ pub fn build_label_parts(semantic_model: &SemanticModel, typ: &LuaType) -> Vec<I
     match typ {
         LuaType::Union(union) => {
             for typ in union.get_types() {
-                if let Some(part) = get_part(semantic_model, typ) {
+                if let Some(part) = get_part(semantic_model, &typ) {
                     parts.push(part);
                 }
             }

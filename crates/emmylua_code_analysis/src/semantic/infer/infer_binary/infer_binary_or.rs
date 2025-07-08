@@ -1,6 +1,10 @@
 use emmylua_parser::LuaExpr;
 
-use crate::{check_type_compact, semantic::infer::InferResult, DbIndex, LuaType, TypeOps};
+use crate::{
+    check_type_compact,
+    semantic::infer::{narrow::remove_false_or_nil, InferResult},
+    DbIndex, LuaType, TypeOps,
+};
 
 pub fn special_or_rule(
     db: &DbIndex,
@@ -13,13 +17,13 @@ pub fn special_or_rule(
         // workaround for x or error('')
         LuaExpr::CallExpr(call_expr) => {
             if call_expr.is_error() {
-                return Some(TypeOps::RemoveNilOrFalse.apply_source(db, &left_type));
+                return Some(remove_false_or_nil(left_type.clone()));
             }
         }
         LuaExpr::TableExpr(table_expr) => {
             if table_expr.is_empty() && check_type_compact(db, &left_type, &LuaType::Table).is_ok()
             {
-                return Some(TypeOps::RemoveNilOrFalse.apply_source(db, &left_type));
+                return Some(remove_false_or_nil(left_type.clone()));
             }
         }
         LuaExpr::LiteralExpr(_) => {
@@ -33,7 +37,7 @@ pub fn special_or_rule(
             }
 
             if check_type_compact(db, &left_type, &right_type).is_ok() {
-                return Some(TypeOps::RemoveNilOrFalse.apply_source(db, &left_type));
+                return Some(remove_false_or_nil(left_type.clone()));
             }
         }
 
@@ -50,9 +54,5 @@ pub fn infer_binary_expr_or(db: &DbIndex, left: LuaType, right: LuaType) -> Infe
         return Ok(right);
     }
 
-    Ok(TypeOps::Union.apply(
-        db,
-        &TypeOps::RemoveNilOrFalse.apply_source(db, &left),
-        &right,
-    ))
+    Ok(TypeOps::Union.apply(db, &remove_false_or_nil(left), &right))
 }

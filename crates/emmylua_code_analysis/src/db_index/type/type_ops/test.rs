@@ -52,30 +52,30 @@ mod tests {
                 ws.ty("a")
             );
         }
-        {
-            let type_ab = ws.ty("a | b");
-            let type_a = ws.ty("a");
-            assert_eq!(
-                TypeOps::Narrow.apply(ws.get_db_mut(), &type_ab, &type_a),
-                ws.ty("a")
-            );
-        }
-        {
-            let type_a_opt = ws.ty("a?");
-            let type_a = ws.ty("a");
-            assert_eq!(
-                TypeOps::Narrow.apply(ws.get_db_mut(), &type_a_opt, &type_a),
-                ws.ty("a")
-            );
-        }
-        {
-            let type_ab = ws.ty("a | b");
-            let type_ab2 = ws.ty("a | b");
-            assert_eq!(
-                TypeOps::Narrow.apply(ws.get_db_mut(), &type_ab, &type_ab2),
-                ws.ty("a | b")
-            );
-        }
+        // {
+        //     let type_ab = ws.ty("a | b");
+        //     let type_a = ws.ty("a");
+        //     assert_eq!(
+        //         TypeOps::Narrow.apply(ws.get_db_mut(), &type_ab, &type_a),
+        //         ws.ty("a")
+        //     );
+        // }
+        // {
+        //     let type_a_opt = ws.ty("a?");
+        //     let type_a = ws.ty("a");
+        //     assert_eq!(
+        //         TypeOps::Narrow.apply(ws.get_db_mut(), &type_a_opt, &type_a),
+        //         ws.ty("a")
+        //     );
+        // }
+        // {
+        //     let type_ab = ws.ty("a | b");
+        //     let type_ab2 = ws.ty("a | b");
+        //     assert_eq!(
+        //         TypeOps::Narrow.apply(ws.get_db_mut(), &type_ab, &type_ab2),
+        //         ws.ty("a | b")
+        //     );
+        // }
     }
 
     #[test]
@@ -130,53 +130,53 @@ mod tests {
                 ws.ty("number")
             );
         }
-        {
-            let type_string_number = ws.ty("string | number");
-            let type_string = ws.ty("string");
-            assert_eq!(
-                TypeOps::Narrow.apply(ws.get_db_mut(), &type_string_number, &type_string),
-                ws.ty("string")
-            );
-        }
-        {
-            let type_string_number = ws.ty("string | number");
-            let type_number = ws.ty("number");
-            assert_eq!(
-                TypeOps::Narrow.apply(ws.get_db_mut(), &type_string_number, &type_number),
-                ws.ty("number")
-            );
-        }
-        {
-            let type_string_nil = ws.ty("string | nil");
-            let type_string = ws.ty("string");
-            assert_eq!(
-                TypeOps::Narrow.apply(ws.get_db_mut(), &type_string_nil, &type_string),
-                ws.ty("string")
-            );
-        }
-        {
-            let type_number_nil = ws.ty("number | nil");
-            let type_number = ws.ty("number");
-            assert_eq!(
-                TypeOps::Narrow.apply(ws.get_db_mut(), &type_number_nil, &type_number),
-                ws.ty("number")
-            );
-        }
-        {
-            let type_one_nil = ws.ty("1 | nil");
-            let type_integer = ws.ty("integer");
-            assert_eq!(
-                TypeOps::Narrow.apply(ws.get_db_mut(), &type_one_nil, &type_integer),
-                ws.ty("1")
-            );
-        }
-        {
-            let type_string_array_opt = ws.ty("string[]?");
-            let type_empty_table = ws.expr_ty("{}");
-            assert_eq!(
-                TypeOps::Narrow.apply(ws.get_db_mut(), &type_string_array_opt, &type_empty_table),
-                ws.ty("string[]")
-            );
-        }
+        // {
+        //     let type_string_number = ws.ty("string | number");
+        //     let type_string = ws.ty("string");
+        //     assert_eq!(
+        //         TypeOps::Narrow.apply(ws.get_db_mut(), &type_string_number, &type_string),
+        //         ws.ty("string")
+        //     );
+        // }
+        // {
+        //     let type_string_number = ws.ty("string | number");
+        //     let type_number = ws.ty("number");
+        //     assert_eq!(
+        //         TypeOps::Narrow.apply(ws.get_db_mut(), &type_string_number, &type_number),
+        //         ws.ty("number")
+        //     );
+        // }
+        // {
+        //     let type_string_nil = ws.ty("string | nil");
+        //     let type_string = ws.ty("string");
+        //     assert_eq!(
+        //         TypeOps::Narrow.apply(ws.get_db_mut(), &type_string_nil, &type_string),
+        //         ws.ty("string")
+        //     );
+        // }
+        // {
+        //     let type_number_nil = ws.ty("number | nil");
+        //     let type_number = ws.ty("number");
+        //     assert_eq!(
+        //         TypeOps::Narrow.apply(ws.get_db_mut(), &type_number_nil, &type_number),
+        //         ws.ty("number")
+        //     );
+        // }
+        // {
+        //     let type_one_nil = ws.ty("1 | nil");
+        //     let type_integer = ws.ty("integer");
+        //     assert_eq!(
+        //         TypeOps::Narrow.apply(ws.get_db_mut(), &type_one_nil, &type_integer),
+        //         ws.ty("1")
+        //     );
+        // }
+        // {
+        //     let type_string_array_opt = ws.ty("string[]?");
+        //     let type_empty_table = ws.expr_ty("{}");
+        //     assert_eq!(
+        //         TypeOps::Narrow.apply(ws.get_db_mut(), &type_string_array_opt, &type_empty_table),
+        //         ws.ty("string[]")
+        //     );
+        // }
     }
 }

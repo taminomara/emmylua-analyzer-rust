@@ -7,6 +7,7 @@ use smol_str::SmolStr;
 use crate::{
     check_type_compact,
     db_index::{DbIndex, LuaOperatorMetaMethod, LuaType},
+    semantic::infer::narrow::narrow_false_or_nil,
     LuaInferCache, TypeOps,
 };
 
@@ -238,7 +239,11 @@ fn infer_binary_expr_div(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
         return match (&left, &right) {
             (LuaType::IntegerConst(int1), LuaType::IntegerConst(int2)) => {
                 if *int2 != 0 {
-                    return Ok(LuaType::FloatConst((*int1 as f64 / *int2 as f64).into()));
+                    if int1 % int2 != 0 {
+                        return Ok(LuaType::FloatConst((*int1 as f64 / *int2 as f64).into()));
+                    } else {
+                        return Ok(LuaType::IntegerConst(int1 / int2));
+                    }
                 }
                 Ok(LuaType::Number)
             }
@@ -416,11 +421,7 @@ fn infer_binary_expr_and(db: &DbIndex, left: LuaType, right: LuaType) -> InferRe
         return Ok(right);
     }
 
-    Ok(TypeOps::Union.apply(
-        db,
-        &TypeOps::NarrowFalseOrNil.apply_source(db, &left),
-        &right,
-    ))
+    Ok(TypeOps::Union.apply(db, &narrow_false_or_nil(db, left), &right))
 }
 
 fn infer_cmp_expr(_: &DbIndex, left: LuaType, right: LuaType, op: BinaryOperator) -> InferResult {

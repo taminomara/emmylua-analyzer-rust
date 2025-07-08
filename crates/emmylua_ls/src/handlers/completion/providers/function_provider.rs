@@ -182,7 +182,7 @@ fn add_union_member_completion(
 ) -> Option<()> {
     for union_sub_typ in union_typ.get_types() {
         let name = match union_sub_typ {
-            LuaType::DocStringConst(s) => to_enum_label(builder, s),
+            LuaType::DocStringConst(s) => to_enum_label(builder, s.as_str()),
             LuaType::DocIntegerConst(i) => i.to_string(),
             _ => {
                 dispatch_type(builder, union_sub_typ.clone(), infer_guard);

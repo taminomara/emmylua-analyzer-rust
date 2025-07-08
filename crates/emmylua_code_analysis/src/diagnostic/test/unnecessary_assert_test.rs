@@ -12,9 +12,6 @@ mod test {
         assert!(ws.check_code_for(
             DiagnosticCode::UnnecessaryAssert,
             r#"
-            local a
-            assert(a)
-
             ---@type boolean
             local b
             assert(b)

@@ -613,7 +613,7 @@ fn union_tpl_pattern_match(
     substitutor: &mut TypeSubstitutor,
 ) -> TplPatternMatchResult {
     for u in union.get_types() {
-        tpl_pattern_match(db, cache, root, u, target, substitutor)?;
+        tpl_pattern_match(db, cache, root, &u, target, substitutor)?;
     }
 
     Ok(())

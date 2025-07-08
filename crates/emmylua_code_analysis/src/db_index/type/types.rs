@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    hash::{Hash, Hasher},
+    hash::{DefaultHasher, Hash, Hasher},
     ops::Deref,
     sync::Arc,
 };
@@ -272,7 +272,7 @@ impl LuaType {
     pub fn is_nullable(&self) -> bool {
         match self {
             LuaType::Nil => true,
-            LuaType::Union(u) => u.types.iter().any(|t| t.is_nullable()),
+            LuaType::Union(u) => u.is_nullable(),
             _ => false,
         }
     }
@@ -280,7 +280,7 @@ impl LuaType {
     pub fn is_optional(&self) -> bool {
         match self {
             LuaType::Nil | LuaType::Any | LuaType::Unknown => true,
-            LuaType::Union(u) => u.types.iter().any(|t| t.is_optional()),
+            LuaType::Union(u) => u.is_optional(),
             LuaType::Variadic(_) => true,
             _ => false,
         }
@@ -290,7 +290,7 @@ impl LuaType {
         match self {
             LuaType::Nil | LuaType::Boolean | LuaType::Any | LuaType::Unknown => false,
             LuaType::BooleanConst(boolean) | LuaType::DocBooleanConst(boolean) => boolean.clone(),
-            LuaType::Union(u) => u.types.iter().all(|t| t.is_always_truthy()),
+            LuaType::Union(u) => u.is_always_truthy(),
             _ => true,
         }
     }
@@ -298,7 +298,7 @@ impl LuaType {
     pub fn is_always_falsy(&self) -> bool {
         match self {
             LuaType::Nil | LuaType::BooleanConst(false) | LuaType::DocBooleanConst(false) => true,
-            LuaType::Union(u) => u.types.iter().all(|t| t.is_always_falsy()),
+            LuaType::Union(u) => u.is_always_falsy(),
             _ => false,
         }
     }
@@ -709,46 +709,92 @@ impl From<LuaObjectType> for LuaType {
     }
 }
 #[derive(Debug, Clone)]
-pub struct LuaUnionType {
-    types: Vec<LuaType>,
+pub enum LuaUnionType {
+    Nullable(LuaType),
+    Multi(Vec<LuaType>),
 }
 
 impl LuaUnionType {
     pub fn new(types: Vec<LuaType>) -> Self {
-        Self { types }
+        LuaUnionType::Multi(types)
     }
 
-    pub fn get_types(&self) -> &[LuaType] {
-        &self.types
+    pub fn new_nullable(ty: LuaType) -> Self {
+        LuaUnionType::Nullable(ty)
+    }
+
+    pub fn get_types(&self) -> Vec<LuaType> {
+        match self {
+            LuaUnionType::Nullable(ty) => vec![ty.clone(), LuaType::Nil],
+            LuaUnionType::Multi(types) => types.clone(),
+        }
     }
 
     pub(crate) fn into_types(&self) -> Vec<LuaType> {
-        self.types.clone()
+        match self {
+            LuaUnionType::Nullable(ty) => vec![ty.clone(), LuaType::Nil],
+            LuaUnionType::Multi(types) => types.clone(),
+        }
     }
 
     pub fn contain_tpl(&self) -> bool {
-        self.types.iter().any(|t| t.contain_tpl())
+        match self {
+            LuaUnionType::Nullable(ty) => ty.contain_tpl(),
+            LuaUnionType::Multi(types) => types.iter().any(|t| t.contain_tpl()),
+        }
+    }
+
+    pub fn is_nullable(&self) -> bool {
+        match self {
+            LuaUnionType::Nullable(_) => true,
+            LuaUnionType::Multi(types) => types.iter().any(|t| t.is_nullable()),
+        }
+    }
+
+    pub fn is_optional(&self) -> bool {
+        match self {
+            LuaUnionType::Nullable(_) => true,
+            LuaUnionType::Multi(types) => types.iter().any(|t| t.is_optional()),
+        }
+    }
+
+    pub fn is_always_truthy(&self) -> bool {
+        match self {
+            LuaUnionType::Nullable(_) => false,
+            LuaUnionType::Multi(types) => types.iter().all(|t| t.is_always_truthy()),
+        }
+    }
+
+    pub fn is_always_falsy(&self) -> bool {
+        match self {
+            LuaUnionType::Nullable(f) => f.is_always_falsy(),
+            LuaUnionType::Multi(types) => types.iter().all(|t| t.is_always_falsy()),
+        }
     }
 }
 
 impl PartialEq for LuaUnionType {
     fn eq(&self, other: &Self) -> bool {
-        if self.types.len() != other.types.len() {
-            return false;
-        }
-        let mut counts = HashMap::new();
-        // Count occurrences in self.types
-        for t in &self.types {
-            *counts.entry(t).or_insert(0) += 1;
-        }
-        // Decrease counts for other.types
-        for t in &other.types {
-            match counts.get_mut(t) {
-                Some(count) if *count > 0 => *count -= 1,
-                _ => return false,
+        match (self, other) {
+            (LuaUnionType::Nullable(a), LuaUnionType::Nullable(b)) => a == b,
+            (LuaUnionType::Multi(a), LuaUnionType::Multi(b)) => {
+                if a.len() != b.len() {
+                    return false;
+                }
+                let mut counts = HashMap::new();
+                for t in a {
+                    *counts.entry(t).or_insert(0) += 1;
+                }
+                for t in b {
+                    match counts.get_mut(t) {
+                        Some(count) if *count > 0 => *count -= 1,
+                        _ => return false,
+                    }
+                }
+                true
             }
+            _ => false,
         }
-        true
     }
 }
 
@@ -760,18 +806,26 @@ impl std::hash::Hash for LuaUnionType {
         // - the number of elements
         // - the sum and product of the hashes of individual elements.
         // This is a simple and fast commutative hash.
-        let mut sum: u64 = 0;
-        let mut prod: u64 = 1;
-        for t in &self.types {
-            let mut hasher = std::collections::hash_map::DefaultHasher::new();
-            t.hash(&mut hasher);
-            let h = hasher.finish();
-            sum = sum.wrapping_add(h);
-            prod = prod.wrapping_mul(h.wrapping_add(1));
+        match self {
+            LuaUnionType::Nullable(ty) => {
+                0.hash(state);
+                ty.hash(state);
+            }
+            LuaUnionType::Multi(types) => {
+                types.len().hash(state);
+                let mut sum = 0;
+                let mut product = 1;
+                for t in types {
+                    let mut hasher = DefaultHasher::new();
+                    t.hash(&mut hasher);
+                    let hash = hasher.finish();
+                    sum += hash;
+                    product *= hash;
+                }
+                sum.hash(state);
+                product.hash(state);
+            }
         }
-        self.types.len().hash(state);
-        sum.hash(state);
-        prod.hash(state);
     }
 }
 

@@ -52,9 +52,10 @@ mod test {
         );
 
         let a_ty = ws.expr_ty("a");
+        println!("{:?}", a_ty);
         assert_eq!(
             format!("{:?}", a_ty).to_string(),
-            "Union(LuaUnionType { types: [IntegerConst(2), Nil] })"
+            "Union(Multi([IntegerConst(2), Nil]))"
         );
     }
 

@@ -269,7 +269,7 @@ pub fn replace_semantic_type(
             }
         }
         _ => {
-            type_vec.push(origin_type);
+            type_vec.push(origin_type.clone());
         }
     }
     if type_vec.len() != semantic_decls.len() {
