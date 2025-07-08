@@ -3,7 +3,8 @@ mod init;
 mod output;
 mod terminal_display;
 
-use cmd_args::CmdArgs;
+pub use cmd_args::CmdArgs;
+pub use clap::Parser;
 use fern::Dispatch;
 use log::LevelFilter;
 use output::output_result;
@@ -13,7 +14,7 @@ use tokio_util::sync::CancellationToken;
 use crate::init::get_need_check_ids;
 
 #[allow(unused)]
-async fn run_check(cmd_args: CmdArgs) -> Result<(), Box<dyn Error + Sync + Send>> {
+pub async fn run_check(cmd_args: CmdArgs) -> Result<(), Box<dyn Error + Sync + Send>> {
     let mut workspace = cmd_args.workspace;
     if !workspace.is_absolute() {
         workspace = std::env::current_dir()?.join(workspace);
