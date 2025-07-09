@@ -443,7 +443,21 @@ impl LuaTupleType {
     }
 
     pub fn get_type(&self, idx: usize) -> Option<&LuaType> {
-        self.types.get(idx)
+        if let Some(ty) = self.types.get(idx) {
+            return Some(ty);
+        };
+
+        if self.types.is_empty() {
+            return None;
+        }
+
+        let last_id = self.types.len() - 1;
+        let last_type = self.types.get(last_id)?;
+        if let LuaType::Variadic(variadic) = last_type {
+            return variadic.get_type(idx - last_id);
+        }
+
+        None
     }
 
     pub fn len(&self) -> usize {
