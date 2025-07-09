@@ -176,16 +176,19 @@ fn instantiate_object(
 
 fn instantiate_union(db: &DbIndex, union: &LuaUnionType, substitutor: &TypeSubstitutor) -> LuaType {
     let types = union.into_vec();
-    let mut new_types = HashSet::new();
+    let mut new_type_set = HashSet::new();
+    let mut old_sorted_types = Vec::new();
     for t in types {
         let t = instantiate_type_generic(db, &t, substitutor);
-        new_types.insert(t);
+        if new_type_set.insert(t.clone()) {
+            old_sorted_types.push(t);
+        }
     }
 
-    match new_types.len() {
+    match old_sorted_types.len() {
         0 => LuaType::Unknown,
-        1 => new_types.iter().next().unwrap().clone(),
-        _ => LuaType::Union(LuaUnionType::from_set(new_types).into()),
+        1 => old_sorted_types[0].clone(),
+        _ => LuaType::Union(LuaUnionType::from_vec(old_sorted_types).into()),
     }
 }
 
