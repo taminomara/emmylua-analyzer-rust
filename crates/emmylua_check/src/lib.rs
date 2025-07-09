@@ -1,9 +1,8 @@
-mod cmd_args;
+pub mod cmd_args;
 mod init;
 mod output;
 mod terminal_display;
 
-pub use clap::Parser;
 pub use cmd_args::*;
 use fern::Dispatch;
 use log::LevelFilter;
@@ -13,7 +12,6 @@ use tokio_util::sync::CancellationToken;
 
 use crate::init::get_need_check_ids;
 
-#[allow(unused)]
 pub async fn run_check(cmd_args: CmdArgs) -> Result<(), Box<dyn Error + Sync + Send>> {
     let mut workspace = cmd_args.workspace;
     if !workspace.is_absolute() {
