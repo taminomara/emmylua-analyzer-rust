@@ -451,12 +451,12 @@ fn infer_tuple_member(
                 };
             }
             LuaType::Integer => {
-                let mut result = Vec::new();
+                let mut result = LuaType::Unknown;
                 for typ in tuple_type.get_types() {
-                    result.push(typ.clone());
+                    result = TypeOps::Union.apply(db, &result, typ);
                 }
-                result.push(LuaType::Nil);
-                return Ok(LuaType::Union(LuaUnionType::from_vec(result).into()));
+                result = TypeOps::Union.apply(db, &result, &LuaType::Nil);
+                return Ok(result);
             }
             _ => {}
         },

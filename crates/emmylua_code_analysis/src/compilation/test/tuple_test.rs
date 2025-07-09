@@ -47,4 +47,20 @@ mod tests {
         );
         assert_eq!(ty, expected_ty);
     }
+
+    #[test]
+    fn test_issue_595() {
+        let mut ws = VirtualWorkspace::new();
+        ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+                local ret           --- @type [integer?]
+                local h = ret[#ret] -- type is integer??
+                if h then
+                    --- @type integer
+                    local _ = h
+                end
+            "#,
+        );
+    }
 }
