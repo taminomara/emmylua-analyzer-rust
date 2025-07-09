@@ -2,7 +2,7 @@ use crate::common::{render_const, render_typ};
 use crate::json_generator::json_types::*;
 use emmylua_code_analysis::{
     DbIndex, FileId, LuaDeprecated, LuaMemberKey, LuaMemberOwner, LuaNoDiscard, LuaSemanticDeclId,
-    LuaSignature, LuaType, LuaTypeCache, LuaTypeDecl, Vfs,
+    LuaSignature, LuaType, LuaTypeCache, LuaTypeDecl, LuaTypeDeclId, Vfs,
 };
 use rowan::TextRange;
 
@@ -11,6 +11,7 @@ pub fn export(db: &DbIndex) -> Index {
         modules: export_modules(db),
         types: export_types(db),
         globals: export_globals(db),
+        config: db.get_emmyrc().clone(),
     }
 }
 
@@ -135,16 +136,7 @@ fn export_class(db: &DbIndex, type_decl: &LuaTypeDecl) -> Class {
             .iter()
             .map(|typ| render_typ(db, typ))
             .collect(),
-        generics: type_index
-            .get_generic_params(&type_decl_id)
-            .map(|v| v.as_slice())
-            .unwrap_or_default()
-            .iter()
-            .map(|(name, typ)| TypeVar {
-                name: name.clone(),
-                base: typ.as_ref().map(|typ| render_typ(db, typ)),
-            })
-            .collect(),
+        generics: export_generics(db, &type_decl_id),
         members: export_members(db, member_owner),
     }
 }
@@ -152,13 +144,14 @@ fn export_class(db: &DbIndex, type_decl: &LuaTypeDecl) -> Class {
 fn export_alias(db: &DbIndex, type_decl: &LuaTypeDecl) -> Alias {
     let type_decl_id = type_decl.get_id();
     let property = export_property(db, &LuaSemanticDeclId::TypeDecl(type_decl.get_id().clone()));
-    let member_owner = LuaMemberOwner::Type(type_decl_id);
+    let member_owner = LuaMemberOwner::Type(type_decl_id.clone());
 
     Alias {
         name: type_decl.get_full_name().to_string(),
         property,
         loc: export_loc_for_type(db, type_decl),
         typ: type_decl.get_alias_ref().map(|typ| render_typ(db, typ)),
+        generics: export_generics(db, &type_decl_id),
         members: export_members(db, member_owner),
     }
 }
@@ -166,7 +159,7 @@ fn export_alias(db: &DbIndex, type_decl: &LuaTypeDecl) -> Alias {
 fn export_enum(db: &DbIndex, type_decl: &LuaTypeDecl) -> Enum {
     let type_decl_id = type_decl.get_id();
     let property = export_property(db, &LuaSemanticDeclId::TypeDecl(type_decl.get_id().clone()));
-    let member_owner = LuaMemberOwner::Type(type_decl_id);
+    let member_owner = LuaMemberOwner::Type(type_decl_id.clone());
 
     Enum {
         name: type_decl.get_full_name().to_string(),
@@ -175,8 +168,24 @@ fn export_enum(db: &DbIndex, type_decl: &LuaTypeDecl) -> Enum {
         typ: type_decl
             .get_enum_field_type(db)
             .map(|typ| render_typ(db, &typ)),
+        generics: export_generics(db, &type_decl_id),
         members: export_members(db, member_owner),
     }
+}
+
+fn export_generics(db: &DbIndex, type_decl_id: &LuaTypeDeclId) -> Vec<TypeVar> {
+    let type_index = db.get_type_index();
+
+    type_index
+        .get_generic_params(&type_decl_id)
+        .map(|v| v.as_slice())
+        .unwrap_or_default()
+        .iter()
+        .map(|(name, typ)| TypeVar {
+            name: name.clone(),
+            base: typ.as_ref().map(|typ| render_typ(db, typ)),
+        })
+        .collect()
 }
 
 fn export_members(db: &DbIndex, member_owner: LuaMemberOwner) -> Vec<Member> {

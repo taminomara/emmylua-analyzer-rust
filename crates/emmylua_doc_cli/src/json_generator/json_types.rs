@@ -1,3 +1,4 @@
+use emmylua_code_analysis::Emmyrc;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -6,6 +7,7 @@ pub struct Index {
     pub modules: Vec<Module>,
     pub types: Vec<Type>,
     pub globals: Vec<Global>,
+    pub config: Emmyrc,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -69,6 +71,7 @@ pub struct Enum {
     pub property: Property,
     pub loc: Vec<Loc>,
     pub typ: Option<String>,
+    pub generics: Vec<TypeVar>,
     pub members: Vec<Member>,
 }
 
@@ -79,6 +82,7 @@ pub struct Alias {
     pub property: Property,
     pub loc: Vec<Loc>,
     pub typ: Option<String>,
+    pub generics: Vec<TypeVar>,
     pub members: Vec<Member>,
 }
 
