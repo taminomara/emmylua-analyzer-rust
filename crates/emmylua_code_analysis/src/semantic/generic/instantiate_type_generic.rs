@@ -1,4 +1,7 @@
-use std::{collections::HashMap, ops::Deref};
+use std::{
+    collections::{HashMap, HashSet},
+    ops::Deref,
+};
 
 use crate::{
     db_index::{
@@ -175,18 +178,20 @@ fn instantiate_object(
 }
 
 fn instantiate_union(db: &DbIndex, union: &LuaUnionType, substitutor: &TypeSubstitutor) -> LuaType {
-    let types = union.get_types();
-    let mut new_types = Vec::new();
+    let types = union.into_vec();
+    let mut new_type_set = HashSet::new();
+    let mut old_sorted_types = Vec::new();
     for t in types {
-        let t = instantiate_type_generic(db, t, substitutor);
-        new_types.push(t);
+        let t = instantiate_type_generic(db, &t, substitutor);
+        if new_type_set.insert(t.clone()) {
+            old_sorted_types.push(t);
+        }
     }
 
-    new_types.dedup();
-    match new_types.len() {
+    match old_sorted_types.len() {
         0 => LuaType::Unknown,
-        1 => new_types[0].clone(),
-        _ => LuaType::Union(LuaUnionType::new(new_types).into()),
+        1 => old_sorted_types[0].clone(),
+        _ => LuaType::Union(LuaUnionType::from_vec(old_sorted_types).into()),
     }
 }
 
@@ -297,7 +302,7 @@ fn instantiate_signature(
                 ));
             }
             result.push(origin_type); // 我们需要将原始类型放到最后
-            return LuaType::Union(LuaUnionType::new(result).into());
+            return LuaType::Union(LuaUnionType::from_vec(result).into());
         }
     }
 

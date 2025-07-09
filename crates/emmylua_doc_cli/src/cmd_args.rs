@@ -19,6 +19,9 @@ pub struct CmdArgs {
     #[arg(long)]
     pub override_template: Option<PathBuf>,
 
+    #[arg(long, default_value = "Docs")]
+    pub site_name: Option<String>,
+
     /// The path of the mixin md file
     #[arg(long)]
     pub mixin: Option<PathBuf>,

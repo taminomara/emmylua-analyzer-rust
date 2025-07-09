@@ -1,7 +1,8 @@
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
 use emmylua_code_analysis::{
-    load_configs, load_workspace_files, update_code_style, EmmyLuaAnalysis, Emmyrc, LuaFileInfo,
+    load_configs, load_workspace_files, update_code_style, DbIndex, EmmyLuaAnalysis, Emmyrc,
+    FileId, LuaFileInfo,
 };
 
 fn root_from_configs(config_paths: &Vec<PathBuf>, fallback: &PathBuf) -> PathBuf {
@@ -173,4 +174,16 @@ pub fn calculate_include_and_exclude(
     exclude.dedup();
 
     (include, exclude, exclude_dirs)
+}
+
+pub fn get_need_check_ids(db: &DbIndex, files: Vec<FileId>, workspace: &PathBuf) -> Vec<FileId> {
+    let mut need_check_files = Vec::new();
+    for file_id in files {
+        let file_path = db.get_vfs().get_file_path(&file_id).unwrap();
+        if file_path.starts_with(workspace) {
+            need_check_files.push(file_id);
+        }
+    }
+
+    need_check_files
 }

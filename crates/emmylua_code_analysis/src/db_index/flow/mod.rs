@@ -1,81 +1,69 @@
-mod flow_chain;
-mod flow_var_ref_id;
-mod type_assert;
+mod flow_node;
+mod flow_tree;
+mod signature_cast;
 
 use std::collections::HashMap;
 
-pub use flow_chain::{LuaFlowChain, LuaFlowChainInfo, LuaFlowId};
-pub use flow_var_ref_id::{LuaVarRefId, LuaVarRefNode};
-pub use type_assert::TypeAssertion;
+use crate::{FileId, LuaSignatureId};
+use emmylua_parser::{LuaAstPtr, LuaDocOpType};
+pub use flow_node::*;
+pub use flow_tree::FlowTree;
+pub use signature_cast::LuaSignatureCast;
 
-use crate::FileId;
-
-use super::{traits::LuaIndex, LuaSignatureId};
+use super::traits::LuaIndex;
 
 #[derive(Debug)]
 pub struct LuaFlowIndex {
-    chains_map: HashMap<FileId, HashMap<LuaVarRefId, LuaFlowChain>>,
-    call_cast: HashMap<FileId, HashMap<LuaSignatureId, HashMap<String, TypeAssertion>>>,
+    file_flow_tree: HashMap<FileId, FlowTree>,
+    signature_cast_cache: HashMap<FileId, HashMap<LuaSignatureId, LuaSignatureCast>>,
 }
 
 impl LuaFlowIndex {
     pub fn new() -> Self {
         Self {
-            chains_map: HashMap::new(),
-            call_cast: HashMap::new(),
+            file_flow_tree: HashMap::new(),
+            signature_cast_cache: HashMap::new(),
         }
     }
 
-    pub fn add_flow_chain(&mut self, file_id: FileId, chain: LuaFlowChain) {
-        self.chains_map
-            .entry(file_id)
-            .or_insert_with(HashMap::new)
-            .insert(chain.get_var_ref_id(), chain);
+    pub fn add_flow_tree(&mut self, file_id: FileId, flow_tree: FlowTree) {
+        self.file_flow_tree.insert(file_id, flow_tree);
     }
 
-    pub fn get_flow_chain(
+    pub fn get_flow_tree(&self, file_id: &FileId) -> Option<&FlowTree> {
+        self.file_flow_tree.get(file_id)
+    }
+
+    pub fn get_signature_cast(
         &self,
-        file_id: FileId,
-        var_ref_id: LuaVarRefId,
-    ) -> Option<&LuaFlowChain> {
-        self.chains_map
-            .get(&file_id)
-            .and_then(|map| map.get(&var_ref_id))
+        file_id: &FileId,
+        signature_id: &LuaSignatureId,
+    ) -> Option<&LuaSignatureCast> {
+        self.signature_cast_cache.get(file_id)?.get(signature_id)
     }
 
-    pub fn add_call_cast(
+    pub fn add_signature_cast(
         &mut self,
+        file_id: FileId,
         signature_id: LuaSignatureId,
-        name: &str,
-        assertion: TypeAssertion,
+        name: String,
+        cast: LuaAstPtr<LuaDocOpType>,
     ) {
-        let file_id = signature_id.get_file_id();
-        self.call_cast
+        self.signature_cast_cache
             .entry(file_id)
             .or_insert_with(HashMap::new)
-            .entry(signature_id)
-            .or_insert_with(HashMap::new)
-            .insert(name.to_string(), assertion);
-    }
-
-    pub fn get_call_cast(
-        &self,
-        signature_id: LuaSignatureId,
-    ) -> Option<&HashMap<String, TypeAssertion>> {
-        let file_id = signature_id.get_file_id();
-        self.call_cast
-            .get(&file_id)
-            .and_then(|map| map.get(&signature_id))
+            .insert(signature_id, LuaSignatureCast { name, cast });
     }
 }
 
 impl LuaIndex for LuaFlowIndex {
-    fn remove(&mut self, file_id: crate::FileId) {
-        self.chains_map.remove(&file_id);
-        self.call_cast.remove(&file_id);
+    fn remove(&mut self, file_id: FileId) {
+        self.file_flow_tree.remove(&file_id);
+        self.signature_cast_cache.remove(&file_id);
     }
 
     fn clear(&mut self) {
-        self.chains_map.clear();
+        self.file_flow_tree.clear();
+        self.signature_cast_cache.clear();
     }
 }

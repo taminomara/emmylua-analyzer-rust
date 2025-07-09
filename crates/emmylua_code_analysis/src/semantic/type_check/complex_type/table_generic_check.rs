@@ -72,11 +72,11 @@ pub fn check_table_generic_type_compact(
         // need check later
         LuaType::Ref(_) | LuaType::Def(_) | LuaType::Userdata => return Ok(()),
         LuaType::Union(union) => {
-            for union_type in union.get_types() {
+            for union_type in union.into_vec() {
                 check_table_generic_type_compact(
                     db,
                     source_generic_param,
-                    union_type,
+                    &union_type,
                     check_guard,
                 )?;
             }

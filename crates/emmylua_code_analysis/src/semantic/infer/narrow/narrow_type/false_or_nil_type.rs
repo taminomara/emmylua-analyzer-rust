@@ -1,13 +1,13 @@
-use crate::{DbIndex, LuaType, LuaUnionType};
-
-use super::TypeOps;
+use crate::{
+    semantic::infer::narrow::narrow_type::narrow_down_type, DbIndex, LuaType, LuaUnionType,
+};
 
 pub fn narrow_false_or_nil(db: &DbIndex, t: LuaType) -> LuaType {
     if t.is_boolean() {
         return LuaType::BooleanConst(false);
     }
 
-    return TypeOps::Narrow.apply(db, &t, &LuaType::Nil);
+    return narrow_down_type(db, t.clone(), LuaType::Nil).unwrap_or(t);
 }
 
 pub fn remove_false_or_nil(t: LuaType) -> LuaType {
@@ -17,15 +17,19 @@ pub fn remove_false_or_nil(t: LuaType) -> LuaType {
         LuaType::DocBooleanConst(false) => LuaType::Unknown,
         LuaType::Boolean => LuaType::BooleanConst(true),
         LuaType::Union(u) => {
-            let types = u.get_types();
-            let mut new_types = vec![];
+            let types = u.into_vec();
+            let mut new_types = Vec::new();
             for it in types.iter() {
                 match it {
                     LuaType::Nil => {}
                     LuaType::BooleanConst(false) => {}
                     LuaType::DocBooleanConst(false) => {}
-                    LuaType::Boolean => new_types.push(LuaType::BooleanConst(true)),
-                    _ => new_types.push(it.clone()),
+                    LuaType::Boolean => {
+                        new_types.push(LuaType::BooleanConst(true));
+                    }
+                    _ => {
+                        new_types.push(it.clone());
+                    }
                 }
             }
 
@@ -34,7 +38,7 @@ pub fn remove_false_or_nil(t: LuaType) -> LuaType {
             } else if new_types.len() == 1 {
                 return new_types[0].clone();
             } else {
-                return LuaType::Union(LuaUnionType::new(new_types).into());
+                return LuaType::Union(LuaUnionType::from_vec(new_types).into());
             }
         }
         _ => t,

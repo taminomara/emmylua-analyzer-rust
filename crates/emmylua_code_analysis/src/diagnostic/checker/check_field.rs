@@ -365,7 +365,7 @@ fn get_prefix_types(prefix_typ: &LuaType) -> HashSet<LuaType> {
         visited.insert(current_type.clone());
         match &current_type {
             LuaType::Union(union_typ) => {
-                for t in union_typ.get_types() {
+                for t in union_typ.into_vec() {
                     stack.push(t.clone());
                 }
             }
@@ -396,7 +396,7 @@ fn get_key_types(typ: &LuaType) -> HashSet<LuaType> {
                 type_set.insert(current_type);
             }
             LuaType::Union(union_typ) => {
-                for t in union_typ.get_types() {
+                for t in union_typ.into_vec() {
                     stack.push(t.clone());
                 }
             }

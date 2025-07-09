@@ -279,12 +279,12 @@ pub fn replace_semantic_type(
     let mut type_vec = Vec::new();
     match origin_type {
         LuaType::Union(union) => {
-            for typ in union.get_types() {
+            for typ in union.into_vec() {
                 type_vec.push(typ);
             }
         }
         _ => {
-            type_vec.push(origin_type);
+            type_vec.push(origin_type.clone());
         }
     }
     if type_vec.len() != semantic_decls.len() {

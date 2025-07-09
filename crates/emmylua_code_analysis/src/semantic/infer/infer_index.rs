@@ -1,8 +1,7 @@
 use std::collections::HashSet;
 
-use emmylua_parser::{
-    LuaAstNode, LuaExpr, LuaIndexExpr, LuaIndexKey, LuaIndexMemberExpr, PathTrait,
-};
+use emmylua_parser::{LuaExpr, LuaIndexExpr, LuaIndexKey, LuaIndexMemberExpr, PathTrait};
+use internment::ArcIntern;
 use rowan::TextRange;
 use smol_str::SmolStr;
 
@@ -14,12 +13,13 @@ use crate::{
     enum_variable_is_param,
     semantic::{
         generic::{instantiate_type_generic, TypeSubstitutor},
+        infer::{infer_name::get_name_expr_var_ref_id, narrow::infer_expr_narrow_type, VarRefId},
         member::get_buildin_type_map_type_id,
         type_check::{self, check_type_compact},
         InferGuard,
     },
-    InFiled, LuaFlowId, LuaInferCache, LuaInstanceType, LuaMemberOwner, LuaOperatorOwner,
-    LuaVarRefId, TypeOps,
+    CacheEntry, InFiled, LuaDeclOrMemberId, LuaInferCache, LuaInstanceType, LuaMemberOwner,
+    LuaOperatorOwner, TypeOps,
 };
 
 use super::{infer_expr, infer_name::infer_global_type, InferFailReason, InferResult};
@@ -88,53 +88,57 @@ fn infer_member_type_pass_flow(
     cache: &mut LuaInferCache,
     index_expr: LuaIndexExpr,
     prefix_type: &LuaType,
-    mut member_type: LuaType,
+    member_type: LuaType,
 ) -> InferResult {
-    let mut allow_reassign = true;
     match &prefix_type {
         // TODO: flow analysis should not generate corresponding `flow_chain` if the prefix type is an array
         LuaType::Array(_) => {
             return Ok(member_type.clone());
         }
-        LuaType::Ref(decl_id) => {
-            let index_key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
-            let key = LuaMemberKey::from_index_key(db, cache, &index_key)?;
-            let member_index = db.get_member_index();
-            if member_index
-                .get_member_item(&LuaMemberOwner::Type(decl_id.clone()), &key)
-                .is_some()
-            {
-                allow_reassign = false;
-            }
-        }
         _ => {}
     }
 
-    let access_path = match index_expr.get_access_path() {
-        Some(path) => path,
-        None => return Ok(member_type.clone()),
+    let Some(var_ref_id) = get_index_expr_var_ref_id(db, cache, &index_expr) else {
+        return Ok(member_type.clone());
     };
-    let var_ref_id = LuaVarRefId::Name(SmolStr::new(&access_path));
-    let flow_id = LuaFlowId::from_node(index_expr.syntax());
-    let flow_chain = db
-        .get_flow_index()
-        .get_flow_chain(cache.get_file_id(), var_ref_id);
-    if let Some(flow_chain) = flow_chain {
-        let root = index_expr.get_root();
-        for type_assert in flow_chain.get_type_asserts(index_expr.get_position(), flow_id) {
-            let new_type = type_assert.tighten_type(db, cache, &root, member_type.clone())?;
-            if type_assert.is_reassign() && !allow_reassign {
-                // 允许仅去除 nil
-                if member_type.is_nullable() && !new_type.is_nullable() {
-                    member_type = new_type;
-                }
-                continue;
-            }
-            member_type = new_type;
-        }
+
+    cache
+        .index_ref_origin_type_cache
+        .insert(var_ref_id.clone(), CacheEntry::Cache(member_type.clone()));
+    let result = infer_expr_narrow_type(db, cache, LuaExpr::IndexExpr(index_expr), var_ref_id);
+    match &result {
+        Err(InferFailReason::None) => Ok(member_type.clone()),
+        _ => result,
+    }
+}
+
+pub fn get_index_expr_var_ref_id(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
+    index_expr: &LuaIndexExpr,
+) -> Option<VarRefId> {
+    let access_path = match index_expr.get_access_path() {
+        Some(path) => ArcIntern::new(SmolStr::new(&path)),
+        None => return None,
+    };
+
+    let mut prefix_expr = index_expr.get_prefix_expr()?;
+    while let LuaExpr::IndexExpr(index_expr) = prefix_expr {
+        prefix_expr = index_expr.get_prefix_expr()?;
     }
 
-    Ok(member_type)
+    if let LuaExpr::NameExpr(name_expr) = prefix_expr {
+        let decl_or_member_id = match get_name_expr_var_ref_id(db, cache, &name_expr) {
+            Some(VarRefId::SelfRef(decl_or_id)) => decl_or_id,
+            Some(VarRefId::VarRef(decl_id)) => LuaDeclOrMemberId::Decl(decl_id),
+            _ => return None,
+        };
+
+        let var_ref_id = VarRefId::IndexRef(decl_or_member_id, access_path);
+        return Some(var_ref_id);
+    }
+
+    None
 }
 
 pub fn infer_member_by_member_key(
@@ -182,7 +186,10 @@ fn infer_array_member(
 ) -> Result<LuaType, InferFailReason> {
     let key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
     let expression_type = if db.get_emmyrc().strict.array_index {
-        TypeOps::Union.apply(db, array_type, &LuaType::Nil)
+        match &array_type {
+            LuaType::Any | LuaType::Unknown => array_type.clone(),
+            _ => TypeOps::Union.apply(db, array_type, &LuaType::Nil),
+        }
     } else {
         array_type.clone()
     };
@@ -286,28 +293,24 @@ fn infer_custom_type_member(
     // 解决`key`为表达式的情况
     if let LuaIndexKey::Expr(expr) = index_key {
         if let Some(keys) = expr_to_member_key(db, cache, &expr) {
-            let mut result_type = Vec::new();
+            let mut result_types = HashSet::new();
             for key in keys {
                 // 解决 enum[enum] | class[class] 的情况
                 if let Some(member_type) = get_expr_key_members(db, &key, &owner) {
-                    if !result_type.contains(&member_type) {
-                        result_type.push(member_type);
-                    }
+                    result_types.insert(member_type);
                     continue;
                 }
 
                 if let Some(member_item) = db.get_member_index().get_member_item(&owner, &key) {
                     if let Ok(member_type) = member_item.resolve_type(db) {
-                        if !result_type.contains(&member_type) {
-                            result_type.push(member_type);
-                        }
+                        result_types.insert(member_type);
                     }
                 }
             }
-            match result_type.len() {
+            match result_types.len() {
                 0 => {}
-                1 => return Ok(result_type[0].clone()),
-                _ => return Ok(LuaType::Union(LuaUnionType::new(result_type).into())),
+                1 => return Ok(result_types.iter().next().cloned().unwrap()),
+                _ => return Ok(LuaType::Union(LuaUnionType::from_set(result_types).into())),
             }
         }
     }
@@ -336,9 +339,7 @@ fn get_expr_key_members(
         for key in member_keys {
             if let Some(member_item) = db.get_member_index().get_member_item(&owner, &key) {
                 if let Ok(member_type) = member_item.resolve_type(db) {
-                    if !result.contains(&member_type) {
-                        result.push(member_type);
-                    }
+                    result.push(member_type);
                 }
             }
         }
@@ -347,17 +348,17 @@ fn get_expr_key_members(
     return match result.len() {
         0 => None,
         1 => Some(result[0].clone()),
-        _ => Some(LuaType::Union(LuaUnionType::new(result).into())),
+        _ => Some(LuaType::Union(LuaUnionType::from_vec(result).into())),
     };
 }
 
 fn get_all_member_key(db: &DbIndex, origin_type: &LuaType) -> Option<Vec<LuaMemberKey>> {
     let mut result = Vec::new();
-    let mut stack = vec![origin_type]; // 堆栈用于迭代处理
+    let mut stack = vec![origin_type.clone()]; // 堆栈用于迭代处理
     let mut visited = HashSet::new();
 
     while let Some(current_type) = stack.pop() {
-        if visited.contains(current_type) {
+        if visited.contains(&current_type) {
             continue;
         }
         visited.insert(current_type.clone());
@@ -372,21 +373,21 @@ fn get_all_member_key(db: &DbIndex, origin_type: &LuaType) -> Option<Vec<LuaMemb
                             result.push((*i).into());
                         }
                         LuaType::Ref(_) => {
-                            stack.push(typ); // 将 Ref 类型推入堆栈进一步处理
+                            stack.push(typ.clone()); // 将 Ref 类型推入堆栈进一步处理
                         }
                         _ => {}
                     }
                 }
             }
             LuaType::Union(union_type) => {
-                for typ in union_type.get_types() {
+                for typ in union_type.into_vec() {
                     if let LuaType::Ref(_) = typ {
-                        stack.push(typ); // 推入堆栈
+                        stack.push(typ.clone()); // 推入堆栈
                     }
                 }
             }
             LuaType::Ref(id) => {
-                if let Some(type_decl) = db.get_type_index().get_type_decl(id) {
+                if let Some(type_decl) = db.get_type_index().get_type_decl(&id) {
                     if type_decl.is_enum() {
                         let owner = LuaMemberOwner::Type(id.clone());
                         if let Some(members) = db.get_member_index().get_members(&owner) {
@@ -450,12 +451,12 @@ fn infer_tuple_member(
                 };
             }
             LuaType::Integer => {
-                let mut result = Vec::new();
+                let mut result = LuaType::Unknown;
                 for typ in tuple_type.get_types() {
-                    result.push(typ.clone());
+                    result = TypeOps::Union.apply(db, &result, typ);
                 }
-                result.push(LuaType::Nil);
-                return Ok(LuaType::Union(LuaUnionType::new(result).into()));
+                result = TypeOps::Union.apply(db, &result, &LuaType::Nil);
+                return Ok(result);
             }
             _ => {}
         },
@@ -524,11 +525,11 @@ fn infer_union_member(
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
     let mut member_types = Vec::new();
-    for sub_type in union_type.get_types() {
+    for sub_type in union_type.into_vec() {
         let result = infer_member_by_member_key(
             db,
             cache,
-            sub_type,
+            &sub_type,
             index_expr.clone(),
             &mut InferGuard::new(),
         );
@@ -542,11 +543,10 @@ fn infer_union_member(
         }
     }
 
-    member_types.dedup();
     match member_types.len() {
         0 => Ok(LuaType::Nil),
         1 => Ok(member_types[0].clone()),
-        _ => Ok(LuaType::Union(LuaUnionType::new(member_types).into())),
+        _ => Ok(LuaType::Union(LuaUnionType::from_vec(member_types).into())),
     }
 }
 
@@ -887,11 +887,11 @@ fn infer_member_by_index_union(
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
     let mut member_type = LuaType::Unknown;
-    for member in union.get_types() {
+    for member in union.into_vec() {
         let result = infer_member_by_operator(
             db,
             cache,
-            member,
+            &member,
             index_expr.clone(),
             &mut InferGuard::new(),
         );
@@ -1096,7 +1096,7 @@ fn expr_to_member_key(
                 keys.insert((*i).into());
             }
             LuaType::Union(union_typ) => {
-                for t in union_typ.get_types() {
+                for t in union_typ.into_vec() {
                     stack.push(t.clone());
                 }
             }

@@ -229,12 +229,13 @@ mod test {
         // 必须要这样写, 无法直接`A = a`拿到`a`的实际类型, `A`的推断目前是独立的且在`Test.e`推断之前缓存
         let ty = ws.expr_ty("A");
         let expected_a = ws.ty("string|number");
-        let expected_a_str = ws.humanize_type(expected_a);
+        // let expected_a_str = ws.humanize_type(expected_a);
 
         match ty {
             LuaType::Union(union) => {
-                let signature = union
-                    .get_types()
+                let types = union.into_vec();
+                let signature = types
+                    .iter()
                     .last()
                     .and_then(|t| match t {
                         LuaType::Signature(id) => {
@@ -249,7 +250,7 @@ mod test {
                     .map(|p| p.type_ref.clone())
                     .expect("Parameter 'a' not found");
 
-                assert_eq!(ws.humanize_type(param_type), expected_a_str);
+                assert_eq!(param_type, expected_a);
             }
             _ => panic!("Expected a union type"),
         }
@@ -276,13 +277,13 @@ mod test {
         {
             let ty = ws.expr_ty("A");
             let expected = ws.ty("string|number");
-            assert_eq!(ws.humanize_type(ty), ws.humanize_type(expected));
+            assert_eq!(ty, expected);
         }
 
         {
             let ty = ws.expr_ty("B");
             let expected = ws.ty("number");
-            assert_eq!(ws.humanize_type(ty), ws.humanize_type(expected));
+            assert_eq!(ty, expected);
         }
     }
 

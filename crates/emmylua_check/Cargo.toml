@@ -23,7 +23,18 @@ log.workspace = true
 fern.workspace = true
 rowan.workspace = true
 walkdir.workspace = true
-tokio.workspace = true
 tokio-util.workspace = true
-clap.workspace = true
 ansi_term.workspace = true
+tokio.workspace = true
+
+[dependencies.clap]
+workspace = true
+optional = true
+
+[[bin]]
+name = "emmylua_check"
+required-features = ["cli"]
+
+[features]
+default = ["cli"]
+cli = ["dep:clap"]

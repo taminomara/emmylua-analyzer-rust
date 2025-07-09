@@ -1,6 +1,6 @@
 use std::{
-    collections::HashMap,
-    hash::{Hash, Hasher},
+    collections::{HashMap, HashSet},
+    hash::Hash,
     ops::Deref,
     sync::Arc,
 };
@@ -272,7 +272,7 @@ impl LuaType {
     pub fn is_nullable(&self) -> bool {
         match self {
             LuaType::Nil => true,
-            LuaType::Union(u) => u.types.iter().any(|t| t.is_nullable()),
+            LuaType::Union(u) => u.is_nullable(),
             _ => false,
         }
     }
@@ -280,7 +280,7 @@ impl LuaType {
     pub fn is_optional(&self) -> bool {
         match self {
             LuaType::Nil | LuaType::Any | LuaType::Unknown => true,
-            LuaType::Union(u) => u.types.iter().any(|t| t.is_optional()),
+            LuaType::Union(u) => u.is_optional(),
             LuaType::Variadic(_) => true,
             _ => false,
         }
@@ -290,7 +290,7 @@ impl LuaType {
         match self {
             LuaType::Nil | LuaType::Boolean | LuaType::Any | LuaType::Unknown => false,
             LuaType::BooleanConst(boolean) | LuaType::DocBooleanConst(boolean) => boolean.clone(),
-            LuaType::Union(u) => u.types.iter().all(|t| t.is_always_truthy()),
+            LuaType::Union(u) => u.is_always_truthy(),
             _ => true,
         }
     }
@@ -298,7 +298,7 @@ impl LuaType {
     pub fn is_always_falsy(&self) -> bool {
         match self {
             LuaType::Nil | LuaType::BooleanConst(false) | LuaType::DocBooleanConst(false) => true,
-            LuaType::Union(u) => u.types.iter().all(|t| t.is_always_falsy()),
+            LuaType::Union(u) => u.is_always_falsy(),
             _ => false,
         }
     }
@@ -443,7 +443,21 @@ impl LuaTupleType {
     }
 
     pub fn get_type(&self, idx: usize) -> Option<&LuaType> {
-        self.types.get(idx)
+        if let Some(ty) = self.types.get(idx) {
+            return Some(ty);
+        };
+
+        if self.types.is_empty() {
+            return None;
+        }
+
+        let last_id = self.types.len() - 1;
+        let last_type = self.types.get(last_id)?;
+        if let LuaType::Variadic(variadic) = last_type {
+            return variadic.get_type(idx - last_id);
+        }
+
+        None
     }
 
     pub fn len(&self) -> usize {
@@ -708,76 +722,108 @@ impl From<LuaObjectType> for LuaType {
         LuaType::Object(t.into())
     }
 }
-#[derive(Debug, Clone)]
-pub struct LuaUnionType {
-    types: Vec<LuaType>,
+#[derive(Debug, Clone, Eq)]
+pub enum LuaUnionType {
+    Nullable(LuaType),
+    Multi(Vec<LuaType>),
 }
 
 impl LuaUnionType {
-    pub fn new(types: Vec<LuaType>) -> Self {
-        Self { types }
+    pub fn from_set(mut set: HashSet<LuaType>) -> Self {
+        if set.len() == 2 && set.contains(&LuaType::Nil) {
+            set.remove(&LuaType::Nil);
+            if let Some(first) = set.iter().next() {
+                return Self::Nullable(first.clone());
+            }
+            Self::Nullable(LuaType::Unknown)
+        } else {
+            Self::Multi(set.into_iter().collect())
+        }
     }
 
-    pub fn get_types(&self) -> &[LuaType] {
-        &self.types
+    pub fn from_vec(types: Vec<LuaType>) -> Self {
+        Self::Multi(types)
     }
 
-    pub(crate) fn into_types(&self) -> Vec<LuaType> {
-        self.types.clone()
+    pub fn into_vec(&self) -> Vec<LuaType> {
+        match self {
+            LuaUnionType::Nullable(ty) => vec![ty.clone(), LuaType::Nil],
+            LuaUnionType::Multi(types) => types.clone(),
+        }
+    }
+
+    pub(crate) fn into_set(&self) -> HashSet<LuaType> {
+        match self {
+            LuaUnionType::Nullable(ty) => {
+                let mut set = HashSet::new();
+                set.insert(ty.clone());
+                set.insert(LuaType::Nil);
+                set
+            }
+            LuaUnionType::Multi(types) => types.clone().into_iter().collect(),
+        }
     }
 
     pub fn contain_tpl(&self) -> bool {
-        self.types.iter().any(|t| t.contain_tpl())
+        match self {
+            LuaUnionType::Nullable(ty) => ty.contain_tpl(),
+            LuaUnionType::Multi(types) => types.iter().any(|t| t.contain_tpl()),
+        }
     }
-}
 
-impl PartialEq for LuaUnionType {
-    fn eq(&self, other: &Self) -> bool {
-        if self.types.len() != other.types.len() {
-            return false;
+    pub fn is_nullable(&self) -> bool {
+        match self {
+            LuaUnionType::Nullable(_) => true,
+            LuaUnionType::Multi(types) => types.iter().any(|t| t.is_nullable()),
         }
-        let mut counts = HashMap::new();
-        // Count occurrences in self.types
-        for t in &self.types {
-            *counts.entry(t).or_insert(0) += 1;
-        }
-        // Decrease counts for other.types
-        for t in &other.types {
-            match counts.get_mut(t) {
-                Some(count) if *count > 0 => *count -= 1,
-                _ => return false,
-            }
-        }
-        true
     }
-}
 
-impl Eq for LuaUnionType {}
-
-impl std::hash::Hash for LuaUnionType {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        // To get an order-insensitive hash, combine:
-        // - the number of elements
-        // - the sum and product of the hashes of individual elements.
-        // This is a simple and fast commutative hash.
-        let mut sum: u64 = 0;
-        let mut prod: u64 = 1;
-        for t in &self.types {
-            let mut hasher = std::collections::hash_map::DefaultHasher::new();
-            t.hash(&mut hasher);
-            let h = hasher.finish();
-            sum = sum.wrapping_add(h);
-            prod = prod.wrapping_mul(h.wrapping_add(1));
+    pub fn is_optional(&self) -> bool {
+        match self {
+            LuaUnionType::Nullable(_) => true,
+            LuaUnionType::Multi(types) => types.iter().any(|t| t.is_optional()),
         }
-        self.types.len().hash(state);
-        sum.hash(state);
-        prod.hash(state);
+    }
+
+    pub fn is_always_truthy(&self) -> bool {
+        match self {
+            LuaUnionType::Nullable(_) => false,
+            LuaUnionType::Multi(types) => types.iter().all(|t| t.is_always_truthy()),
+        }
+    }
+
+    pub fn is_always_falsy(&self) -> bool {
+        match self {
+            LuaUnionType::Nullable(f) => f.is_always_falsy(),
+            LuaUnionType::Multi(types) => types.iter().all(|t| t.is_always_falsy()),
+        }
     }
 }
 
 impl From<LuaUnionType> for LuaType {
     fn from(t: LuaUnionType) -> Self {
         LuaType::Union(t.into())
+    }
+}
+
+impl PartialEq for LuaUnionType {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (LuaUnionType::Nullable(a), LuaUnionType::Nullable(b)) => a == b,
+            (LuaUnionType::Multi(a), LuaUnionType::Multi(b)) => {
+                if a.len() != b.len() {
+                    return false;
+                }
+                let mut a_set: HashSet<_> = a.iter().collect();
+                for item in b {
+                    if !a_set.remove(item) {
+                        return false;
+                    }
+                }
+                a_set.is_empty()
+            }
+            _ => false,
+        }
     }
 }
 
@@ -1131,7 +1177,7 @@ impl LuaMultiLineUnion {
             types.push(t.clone());
         }
 
-        LuaType::Union(Arc::new(LuaUnionType::new(types)))
+        LuaType::Union(Arc::new(LuaUnionType::from_vec(types)))
     }
 
     pub fn contain_tpl(&self) -> bool {

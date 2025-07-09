@@ -1,5 +1,4 @@
 use emmylua_parser::{LuaAst, LuaAstNode, LuaDocTagCast};
-use itertools::Itertools;
 use rowan::TextRange;
 use std::collections::HashSet;
 
@@ -17,7 +16,6 @@ impl Checker for CastTypeMismatchChecker {
     const CODES: &[DiagnosticCode] = &[DiagnosticCode::CastTypeMismatch];
 
     fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
-        // dbg!(&semantic_model.get_root());
         for node in semantic_model.get_root().descendants::<LuaAst>() {
             if let LuaAst::LuaDocTagCast(cast_tag) = node {
                 check_cast_tag(context, semantic_model, &cast_tag);
@@ -75,12 +73,12 @@ fn check_cast_compatibility(
     // 检查是否可以从原始类型转换为目标类型
     let result = match origin_type {
         LuaType::Union(union_type) => {
-            for member_type in union_type.get_types() {
+            for member_type in union_type.into_vec() {
                 // 不检查 nil 类型
                 if member_type.is_nil() {
                     continue;
                 }
-                if cast_type_check(semantic_model, member_type, target_type, 0).is_ok() {
+                if cast_type_check(semantic_model, &member_type, target_type, 0).is_ok() {
                     return Some(());
                 }
             }
@@ -165,11 +163,11 @@ fn cast_type_check(
         }
         (_, LuaType::Union(union)) => {
             // 通常来说这个的原始类型为 alias / enum-field 的集合
-            for member_type in union.get_types() {
+            for member_type in union.into_vec() {
                 match cast_type_check(
                     semantic_model,
                     origin_type,
-                    member_type,
+                    &member_type,
                     recursion_depth + 1,
                 ) {
                     Ok(_) => {}
@@ -241,29 +239,28 @@ fn expand_type_recursive(
         }
         LuaType::Union(union_type) => {
             // 递归展开 union 中的每个类型
-            let mut expanded_types = Vec::new();
+            let mut expanded_types = HashSet::new();
             let mut has_nil = false;
-            for inner_type in union_type.get_types() {
+            for inner_type in union_type.into_vec() {
                 if inner_type.is_nil() {
                     has_nil = true;
                     continue;
                 }
-                if let Some(expanded) = expand_type_recursive(db, inner_type, visited) {
+                if let Some(expanded) = expand_type_recursive(db, &inner_type, visited) {
                     match expanded {
                         LuaType::Union(inner_union) => {
                             // 如果展开后还是 union，则将其成员类型添加到结果中
-                            expanded_types.extend(inner_union.get_types().iter().cloned());
+                            expanded_types.extend(inner_union.into_vec().iter().cloned());
                         }
                         _ => {
-                            expanded_types.push(expanded);
+                            expanded_types.insert(expanded);
                         }
                     }
                 } else {
-                    expanded_types.push(inner_type.clone());
+                    expanded_types.insert(inner_type.clone());
                 }
             }
 
-            let expanded_types = expanded_types.into_iter().unique().collect::<Vec<_>>();
             return match expanded_types.len() {
                 0 => {
                     if has_nil {
@@ -272,8 +269,10 @@ fn expand_type_recursive(
                         Some(LuaType::Unknown)
                     }
                 }
-                1 => Some(expanded_types[0].clone().into()),
-                _ => Some(LuaType::Union(LuaUnionType::new(expanded_types).into())),
+                1 => Some(expanded_types.iter().cloned().next().unwrap().into()),
+                _ => Some(LuaType::Union(
+                    LuaUnionType::from_set(expanded_types).into(),
+                )),
             };
         }
         LuaType::TypeGuard(_) => return Some(LuaType::Boolean),

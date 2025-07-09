@@ -19,8 +19,8 @@ pub fn get_member_map(
         let typ = &member.typ;
         // 通常是泛型实例化推断结果
         if let LuaType::Union(u) = typ {
-            if u.get_types().iter().all(|f| f.is_function()) {
-                for (index, f) in u.get_types().iter().enumerate() {
+            if u.into_vec().iter().all(|f| f.is_function()) {
+                for (index, f) in u.into_vec().iter().enumerate() {
                     let new_member = LuaMemberInfo {
                         key: key.clone(),
                         typ: f.clone(),

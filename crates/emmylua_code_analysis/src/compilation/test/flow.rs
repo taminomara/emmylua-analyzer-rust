@@ -461,7 +461,7 @@ end
         );
 
         let b = ws.expr_ty("b");
-        let b_expected = ws.ty("unknown");
+        let b_expected = ws.ty("nil");
         assert_eq!(b, b_expected);
     }
 
@@ -799,7 +799,96 @@ end
         );
 
         let res = ws.expr_ty("res");
-        let res_desc = ws.humanize_type(res);
-        assert_eq!(res_desc, "(string[]|string)");
+        let expected_ty = ws.ty("string|string[]");
+        assert_eq!(res, expected_ty);
+    }
+
+    #[test]
+    fn test_issue_480() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.check_code_for(
+            DiagnosticCode::UnnecessaryAssert,
+            r#"
+            --- @param a integer?
+            --- @param c boolean
+            function foo(a, c)
+                if c then
+                    a = 1
+                end
+
+                assert(a)
+            end
+            "#,
+        );
+    }
+
+    #[test]
+    fn test_issue_526() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+            --- @alias A { kind: 'A'}
+            --- @alias B { kind: 'B'}
+
+            local x --- @type A|B
+
+            if x.kind == 'A' then
+                a = x
+                return
+            end
+
+            b = x
+            "#,
+        );
+
+        let a = ws.expr_ty("a");
+        let a_expected = ws.ty("A");
+        assert_eq!(a, a_expected);
+        let b = ws.expr_ty("b");
+        let b_expected = ws.ty("B");
+        assert_eq!(b, b_expected);
+    }
+
+    #[test]
+    fn test_issue_583() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            --- @param sha string
+            local function get_hash_color(sha)
+            local r, g, b = sha:match('(%x)%x(%x)%x(%x)')
+            assert(r and g and b, 'Invalid hash color')
+            local _ = r --- @type string
+            local _ = g --- @type string
+            local _ = b --- @type string
+            end
+            "#,
+        );
+    }
+
+    #[test]
+    fn test_issue_584() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            local function foo()
+                for _ in ipairs({}) do
+                    break
+                end
+
+                local a
+                if a == nil then
+                    a = 1
+                    local _ = a --- @type integer
+                end
+            end
+            "#,
+        );
     }
 }

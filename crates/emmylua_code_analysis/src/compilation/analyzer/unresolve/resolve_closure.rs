@@ -61,7 +61,7 @@ pub fn try_resolve_call_closure_params(
             LuaType::DocFunction(func) => (func.is_async(), func.get_params().to_vec()),
             LuaType::Union(union_types) => {
                 if let Some(LuaType::DocFunction(func)) = union_types
-                    .get_types()
+                    .into_vec()
                     .iter()
                     .find(|typ| matches!(typ, LuaType::DocFunction(_)))
                 {
@@ -308,18 +308,18 @@ fn resolve_closure_member_type(
             let mut final_ret = LuaType::Unknown;
 
             let mut multi_function_type = Vec::new();
-            for typ in union_types.get_types() {
+            for typ in union_types.into_vec() {
                 match typ {
                     LuaType::DocFunction(func) => {
                         multi_function_type.push(func.clone());
                     }
                     LuaType::Ref(ref_id) => {
-                        if infer_guard.check(ref_id).is_err() {
+                        if infer_guard.check(&ref_id).is_err() {
                             continue;
                         }
                         let type_decl = db
                             .get_type_index()
-                            .get_type_decl(ref_id)
+                            .get_type_decl(&ref_id)
                             .ok_or(InferFailReason::None)?;
 
                         if let Some(origin) = type_decl.get_alias_origin(&db, None) {
@@ -492,17 +492,18 @@ fn resolve_doc_function(
     Ok(())
 }
 
-fn filter_signature_type(typ: &LuaType) -> Option<Vec<&Arc<LuaFunctionType>>> {
-    let mut result: Vec<&Arc<LuaFunctionType>> = Vec::new();
+fn filter_signature_type(typ: &LuaType) -> Option<Vec<Arc<LuaFunctionType>>> {
+    let mut result: Vec<Arc<LuaFunctionType>> = Vec::new();
     let mut stack = Vec::new();
-    stack.push(typ);
+    stack.push(typ.clone());
     while let Some(typ) = stack.pop() {
         match typ {
             LuaType::DocFunction(func) => {
-                result.push(func);
+                result.push(func.clone());
             }
             LuaType::Union(union) => {
-                for typ in union.get_types().iter().rev() {
+                let types = union.into_vec();
+                for typ in types.into_iter().rev() {
                     stack.push(typ);
                 }
             }
@@ -533,7 +534,7 @@ fn find_best_function_type(
                         0 => {}
                         1 => return Some(LuaType::DocFunction(filtered_types[0].clone())),
                         _ => {
-                            return Some(LuaType::Union(Arc::new(LuaUnionType::new(
+                            return Some(LuaType::Union(Arc::new(LuaUnionType::from_vec(
                                 filtered_types
                                     .into_iter()
                                     .map(|func| LuaType::DocFunction(func.clone()))
@@ -560,7 +561,7 @@ fn find_best_function_type(
                 .map(LuaType::DocFunction);
         }
         _ => {
-            return Some(LuaType::Union(Arc::new(LuaUnionType::new(
+            return Some(LuaType::Union(Arc::new(LuaUnionType::from_vec(
                 origin_signature
                     .overloads
                     .clone()

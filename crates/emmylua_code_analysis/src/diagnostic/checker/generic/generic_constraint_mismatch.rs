@@ -174,7 +174,7 @@ fn check_param_type(
         LuaType::Union(union_type) => {
             // 如果不是来自 union, 才展开 union 中的每个类型进行检查
             if !from_union {
-                for union_member_type in union_type.get_types() {
+                for union_member_type in union_type.into_vec().iter() {
                     check_param_type(
                         context,
                         semantic_model,

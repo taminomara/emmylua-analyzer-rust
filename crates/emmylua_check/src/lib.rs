@@ -1,20 +1,18 @@
-mod cmd_args;
+pub mod cmd_args;
 mod init;
 mod output;
 mod terminal_display;
 
-use clap::Parser;
-use cmd_args::CmdArgs;
-use emmylua_code_analysis::{DbIndex, FileId};
+pub use cmd_args::*;
 use fern::Dispatch;
 use log::LevelFilter;
 use output::output_result;
-use std::{error::Error, path::PathBuf, sync::Arc};
+use std::{error::Error, sync::Arc};
 use tokio_util::sync::CancellationToken;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
-    let cmd_args = CmdArgs::parse();
+use crate::init::get_need_check_ids;
+
+pub async fn run_check(cmd_args: CmdArgs) -> Result<(), Box<dyn Error + Sync + Send>> {
     let mut workspace = cmd_args.workspace;
     if !workspace.is_absolute() {
         workspace = std::env::current_dir()?.join(workspace);
@@ -54,7 +52,6 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     let analysis = match init::load_workspace(workspace.clone(), cmd_args.config, cmd_args.ignore) {
         Some(analysis) => analysis,
         None => {
-            eprintln!("Failed to load workspace");
             return Err("Failed to load workspace".into());
         }
     };
@@ -93,16 +90,4 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
 
     eprintln!("Check finished");
     Ok(())
-}
-
-fn get_need_check_ids(db: &DbIndex, files: Vec<FileId>, workspace: &PathBuf) -> Vec<FileId> {
-    let mut need_check_files = Vec::new();
-    for file_id in files {
-        let file_path = db.get_vfs().get_file_path(&file_id).unwrap();
-        if file_path.starts_with(workspace) {
-            need_check_files.push(file_id);
-        }
-    }
-
-    need_check_files
 }

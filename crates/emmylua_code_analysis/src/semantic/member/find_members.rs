@@ -285,7 +285,7 @@ fn find_union_members(
     filter: &FindMemberFilter,
 ) -> FindMembersResult {
     let mut members = Vec::new();
-    for typ in union_type.get_types().iter() {
+    for typ in union_type.into_vec().iter() {
         let sub_members = find_members_guard(db, typ, infer_guard, filter);
         if let Some(sub_members) = sub_members {
             members.extend(sub_members);

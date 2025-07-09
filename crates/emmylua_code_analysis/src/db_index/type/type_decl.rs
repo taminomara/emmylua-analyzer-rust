@@ -214,7 +214,7 @@ impl LuaTypeDecl {
             }
         }
 
-        return Some(LuaType::Union(LuaUnionType::new(union_types).into()));
+        return Some(LuaType::Union(LuaUnionType::from_vec(union_types).into()));
     }
 }
 

@@ -52,10 +52,9 @@ mod test {
         );
 
         let a_ty = ws.expr_ty("a");
-        assert_eq!(
-            format!("{:?}", a_ty).to_string(),
-            "Union(LuaUnionType { types: [IntegerConst(2), Nil] })"
-        );
+        let a_humanize = ws.humanize_type(a_ty);
+        let a_expected = "2?";
+        assert_eq!(a_humanize, a_expected);
     }
 
     #[test]

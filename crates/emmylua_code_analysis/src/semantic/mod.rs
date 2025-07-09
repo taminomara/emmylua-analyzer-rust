@@ -13,7 +13,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::{collections::HashSet, sync::Arc};
 
-pub use cache::{CacheEntry, CacheKey, CacheOptions, LuaAnalysisPhase, LuaInferCache};
+pub use cache::{CacheEntry, CacheOptions, LuaAnalysisPhase, LuaInferCache};
 pub use decl::{enum_variable_is_param, parse_require_module_info};
 use emmylua_parser::{
     LuaCallExpr, LuaChunk, LuaExpr, LuaIndexKey, LuaParseError, LuaSyntaxNode, LuaSyntaxToken,

@@ -6,13 +6,12 @@ mod type_owner;
 mod types;
 
 use super::traits::LuaIndex;
-use crate::{FileId, InFiled};
+use crate::{DbIndex, FileId, InFiled};
 pub use humanize_type::{format_union_type, humanize_type, RenderLevel};
 use std::collections::{HashMap, HashSet};
 pub use type_decl::{
     LuaDeclLocation, LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId,
 };
-pub use type_ops::get_real_type;
 pub use type_ops::TypeOps;
 pub use type_owner::{LuaTypeCache, LuaTypeOwner};
 pub use types::*;
@@ -281,5 +280,32 @@ impl LuaIndex for LuaTypeIndex {
         self.supers.clear();
         self.types.clear();
         self.in_filed_type_owner.clear();
+    }
+}
+
+pub fn get_real_type<'a>(db: &'a DbIndex, typ: &'a LuaType) -> Option<&'a LuaType> {
+    get_real_type_with_depth(db, typ, 0)
+}
+
+fn get_real_type_with_depth<'a>(
+    db: &'a DbIndex,
+    typ: &'a LuaType,
+    depth: u32,
+) -> Option<&'a LuaType> {
+    const MAX_RECURSION_DEPTH: u32 = 10;
+
+    if depth >= MAX_RECURSION_DEPTH {
+        return Some(typ);
+    }
+
+    match typ {
+        LuaType::Ref(type_decl_id) => {
+            let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
+            if type_decl.is_alias() {
+                return get_real_type_with_depth(db, type_decl.get_alias_ref()?, depth + 1);
+            }
+            Some(typ)
+        }
+        _ => Some(typ),
     }
 }

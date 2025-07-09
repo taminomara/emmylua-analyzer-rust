@@ -326,11 +326,11 @@ fn find_union_function_member(
     deep_guard: &mut DeepGuard,
 ) -> FunctionTypeResult {
     let mut member_types = Vec::new();
-    for sub_type in union_type.get_types() {
+    for sub_type in union_type.into_vec() {
         let result = find_function_type_by_member_key(
             db,
             cache,
-            sub_type,
+            &sub_type,
             index_expr.clone(),
             &mut InferGuard::new(),
             deep_guard,
@@ -345,11 +345,10 @@ fn find_union_function_member(
         }
     }
 
-    member_types.dedup();
     match member_types.len() {
         0 => Ok(LuaType::Nil),
         1 => Ok(member_types[0].clone()),
-        _ => Ok(LuaType::Union(LuaUnionType::new(member_types).into())),
+        _ => Ok(LuaType::Union(LuaUnionType::from_vec(member_types).into())),
     }
 }
 
@@ -688,11 +687,11 @@ fn find_member_by_index_union(
     deep_guard: &mut DeepGuard,
 ) -> FunctionTypeResult {
     let mut member_type = LuaType::Unknown;
-    for member in union.get_types() {
+    for member in union.into_vec() {
         let result = find_function_type_by_operator(
             db,
             cache,
-            member,
+            &member,
             index_expr.clone(),
             &mut InferGuard::new(),
             deep_guard,

@@ -158,6 +158,10 @@ impl ProviderVirtualWorkspace {
         };
         // dbg!(&value);
         if value != expect.value {
+            eprintln!(
+                "Hover content does not match expected value left: {value},\nright: {}",
+                expect.value
+            );
             return false;
         }
 
