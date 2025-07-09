@@ -337,12 +337,11 @@ fn build_node_semantic_token(
             );
         }
         LuaAst::LuaNameExpr(name_expr) => {
-            handle_name_node(
-                semantic_model,
-                builder,
-                name_expr.syntax(),
-                &name_expr.get_name_token()?,
-            );
+            let name_token = name_expr.get_name_token()?;
+            handle_name_node(semantic_model, builder, name_expr.syntax(), &name_token)
+                .unwrap_or_else(|| {
+                    builder.push(name_token.syntax(), SemanticTokenType::VARIABLE);
+                });
         }
         LuaAst::LuaForRangeStat(for_range_stat) => {
             for name in for_range_stat.get_var_name_list() {
