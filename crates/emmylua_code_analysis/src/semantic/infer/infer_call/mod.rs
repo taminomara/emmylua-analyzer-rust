@@ -94,7 +94,7 @@ pub fn infer_call_expr_func(
         LuaType::Union(union) => {
             // 此时我们将其视为泛型实例化联合体
             if union
-                .get_types()
+                .into_vec()
                 .iter()
                 .all(|t| matches!(t, LuaType::DocFunction(_)))
             {
@@ -158,7 +158,7 @@ fn infer_generic_doc_function_union(
     args_count: Option<usize>,
 ) -> InferCallFuncResult {
     let overloads = union
-        .get_types()
+        .into_vec()
         .iter()
         .filter_map(|typ| match typ {
             LuaType::DocFunction(f) => Some(f.clone()),
@@ -441,7 +441,7 @@ fn infer_union(
     let mut all_overloads = Vec::new();
     let mut base_signatures = Vec::new();
 
-    for ty in union.get_types() {
+    for ty in union.into_vec() {
         match ty {
             LuaType::Signature(signature_id) => {
                 if let Some(signature) = db.get_signature_index().get(&signature_id) {

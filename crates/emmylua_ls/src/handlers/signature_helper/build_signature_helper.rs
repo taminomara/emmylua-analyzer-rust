@@ -45,7 +45,7 @@ pub fn build_signature_helper(
         }
         LuaType::Union(union_types) => build_union_type_signature_help(
             &builder,
-            union_types.get_types(),
+            union_types.into_vec(),
             colon_call,
             current_idx,
         ),

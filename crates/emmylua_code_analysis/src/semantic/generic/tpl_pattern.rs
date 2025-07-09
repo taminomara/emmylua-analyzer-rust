@@ -257,7 +257,7 @@ fn object_tpl_pattern_match_member_owner_match(
                 for m in &v {
                     types.push(m.typ.clone());
                 }
-                LuaType::Union(LuaUnionType::new(types).into())
+                LuaType::Union(LuaUnionType::from_vec(types).into())
             }
         };
 
@@ -359,7 +359,7 @@ fn table_generic_tpl_pattern_match(
                 keys.push(LuaType::IntegerConst((i as i64) + 1));
             }
 
-            let key_type = LuaType::Union(LuaUnionType::new(keys).into());
+            let key_type = LuaType::Union(LuaUnionType::from_vec(keys).into());
             let target_base = target_tuple.cast_down_array_base(db);
             tpl_pattern_match(
                 db,
@@ -412,12 +412,16 @@ fn table_generic_tpl_pattern_match(
             )?;
         }
         LuaType::Object(obj) => {
-            let mut keys = vec![];
-            let mut values = vec![];
+            let mut keys = Vec::new();
+            let mut values = Vec::new();
             for (k, v) in obj.get_fields() {
                 match k {
-                    LuaMemberKey::Integer(i) => keys.push(LuaType::IntegerConst(i.clone())),
-                    LuaMemberKey::Name(s) => keys.push(LuaType::StringConst(s.clone().into())),
+                    LuaMemberKey::Integer(i) => {
+                        keys.push(LuaType::IntegerConst(i.clone()));
+                    }
+                    LuaMemberKey::Name(s) => {
+                        keys.push(LuaType::StringConst(s.clone().into()));
+                    }
                     _ => {}
                 };
                 values.push(v.clone());
@@ -427,8 +431,8 @@ fn table_generic_tpl_pattern_match(
                 values.push(v.clone());
             }
 
-            let key_type = LuaType::Union(LuaUnionType::new(keys).into());
-            let value_type = LuaType::Union(LuaUnionType::new(values).into());
+            let key_type = LuaType::Union(LuaUnionType::from_vec(keys).into());
+            let value_type = LuaType::Union(LuaUnionType::from_vec(values).into());
             tpl_pattern_match(
                 db,
                 cache,
@@ -519,7 +523,7 @@ fn table_generic_tpl_pattern_member_owner_match(
                 for m in v {
                     types.push(m.typ.clone());
                 }
-                LuaType::Union(LuaUnionType::new(types).into())
+                LuaType::Union(LuaUnionType::from_vec(types).into())
             }
         };
 
@@ -547,12 +551,12 @@ fn table_generic_tpl_pattern_member_owner_match(
 
     let key_type = match keys.len() {
         0 => return Err(InferFailReason::None),
-        1 => keys[0].clone(),
-        _ => LuaType::Union(LuaUnionType::new(keys).into()),
+        1 => keys.iter().next().cloned().unwrap(),
+        _ => LuaType::Union(LuaUnionType::from_vec(keys).into()),
     };
     let value_type = match values.len() {
-        1 => values[0].clone(),
-        _ => LuaType::Union(LuaUnionType::new(values).into()),
+        1 => values.iter().next().cloned().unwrap(),
+        _ => LuaType::Union(LuaUnionType::from_vec(values).into()),
     };
 
     tpl_pattern_match(
@@ -612,7 +616,7 @@ fn union_tpl_pattern_match(
     target: &LuaType,
     substitutor: &mut TypeSubstitutor,
 ) -> TplPatternMatchResult {
-    for u in union.get_types() {
+    for u in union.into_vec() {
         tpl_pattern_match(db, cache, root, &u, target, substitutor)?;
     }
 

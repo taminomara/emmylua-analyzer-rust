@@ -799,8 +799,8 @@ end
         );
 
         let res = ws.expr_ty("res");
-        let res_desc = ws.humanize_type(res);
-        assert_eq!(res_desc, "(string[]|string)");
+        let expected_ty = ws.ty("string|string[]");
+        assert_eq!(res, expected_ty);
     }
 
     #[test]

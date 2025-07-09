@@ -252,7 +252,7 @@ fn is_nullable(db: &DbIndex, typ: &LuaType) -> bool {
                 }
             }
             LuaType::Union(u) => {
-                for t in u.get_types() {
+                for t in u.into_vec() {
                     stack.push(t);
                 }
             }

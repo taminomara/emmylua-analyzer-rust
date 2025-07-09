@@ -144,10 +144,10 @@ mod test {
 
         assert_eq!(
             ws.expr_ty("d"),
-            LuaType::Union(Arc::new(LuaUnionType::new(vec![
+            LuaType::Union(Arc::new(LuaUnionType::from_vec(vec![
                 LuaType::String,
-                LuaType::Number,
-            ])))
+                LuaType::Number
+            ]))),
         );
     }
 }

@@ -316,23 +316,23 @@ fn infer_binary_type(analyzer: &mut DocAnalyzer, binary_type: &LuaDocBinaryType)
             match op.get_op() {
                 LuaTypeBinaryOperator::Union => match (left_type, right_type) {
                     (LuaType::Union(left_type_union), LuaType::Union(right_type_union)) => {
-                        let mut left_types = left_type_union.into_types();
-                        let right_types = right_type_union.into_types();
-                        left_types.extend(right_types);
-                        return LuaType::Union(LuaUnionType::new(left_types).into());
+                        let mut left_type_set = left_type_union.into_vec();
+                        let right_types = right_type_union.into_vec();
+                        left_type_set.extend(right_types);
+                        return LuaType::Union(LuaUnionType::from_vec(left_type_set).into());
                     }
                     (LuaType::Union(left_type_union), right) => {
-                        let mut left_types = (*left_type_union).into_types();
+                        let mut left_types = (*left_type_union).into_vec();
                         left_types.push(right);
-                        return LuaType::Union(LuaUnionType::new(left_types).into());
+                        return LuaType::Union(LuaUnionType::from_vec(left_types).into());
                     }
                     (left, LuaType::Union(right_type_union)) => {
-                        let mut right_types = (*right_type_union).into_types();
+                        let mut right_types = (*right_type_union).into_vec();
                         right_types.push(left);
-                        return LuaType::Union(LuaUnionType::new(right_types).into());
+                        return LuaType::Union(LuaUnionType::from_vec(right_types).into());
                     }
                     (left, right) => {
-                        return LuaType::Union(LuaUnionType::new(vec![left, right]).into());
+                        return LuaType::Union(LuaUnionType::from_vec(vec![left, right]).into());
                     }
                 },
                 LuaTypeBinaryOperator::Intersection => match (left_type, right_type) {

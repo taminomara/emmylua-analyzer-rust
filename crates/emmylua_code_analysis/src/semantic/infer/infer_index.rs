@@ -293,28 +293,24 @@ fn infer_custom_type_member(
     // 解决`key`为表达式的情况
     if let LuaIndexKey::Expr(expr) = index_key {
         if let Some(keys) = expr_to_member_key(db, cache, &expr) {
-            let mut result_type = Vec::new();
+            let mut result_types = HashSet::new();
             for key in keys {
                 // 解决 enum[enum] | class[class] 的情况
                 if let Some(member_type) = get_expr_key_members(db, &key, &owner) {
-                    if !result_type.contains(&member_type) {
-                        result_type.push(member_type);
-                    }
+                    result_types.insert(member_type);
                     continue;
                 }
 
                 if let Some(member_item) = db.get_member_index().get_member_item(&owner, &key) {
                     if let Ok(member_type) = member_item.resolve_type(db) {
-                        if !result_type.contains(&member_type) {
-                            result_type.push(member_type);
-                        }
+                        result_types.insert(member_type);
                     }
                 }
             }
-            match result_type.len() {
+            match result_types.len() {
                 0 => {}
-                1 => return Ok(result_type[0].clone()),
-                _ => return Ok(LuaType::Union(LuaUnionType::new(result_type).into())),
+                1 => return Ok(result_types.iter().next().cloned().unwrap()),
+                _ => return Ok(LuaType::Union(LuaUnionType::from_set(result_types).into())),
             }
         }
     }
@@ -343,9 +339,7 @@ fn get_expr_key_members(
         for key in member_keys {
             if let Some(member_item) = db.get_member_index().get_member_item(&owner, &key) {
                 if let Ok(member_type) = member_item.resolve_type(db) {
-                    if !result.contains(&member_type) {
-                        result.push(member_type);
-                    }
+                    result.push(member_type);
                 }
             }
         }
@@ -354,7 +348,7 @@ fn get_expr_key_members(
     return match result.len() {
         0 => None,
         1 => Some(result[0].clone()),
-        _ => Some(LuaType::Union(LuaUnionType::new(result).into())),
+        _ => Some(LuaType::Union(LuaUnionType::from_vec(result).into())),
     };
 }
 
@@ -386,7 +380,7 @@ fn get_all_member_key(db: &DbIndex, origin_type: &LuaType) -> Option<Vec<LuaMemb
                 }
             }
             LuaType::Union(union_type) => {
-                for typ in union_type.get_types() {
+                for typ in union_type.into_vec() {
                     if let LuaType::Ref(_) = typ {
                         stack.push(typ.clone()); // 推入堆栈
                     }
@@ -462,7 +456,7 @@ fn infer_tuple_member(
                     result.push(typ.clone());
                 }
                 result.push(LuaType::Nil);
-                return Ok(LuaType::Union(LuaUnionType::new(result).into()));
+                return Ok(LuaType::Union(LuaUnionType::from_vec(result).into()));
             }
             _ => {}
         },
@@ -531,7 +525,7 @@ fn infer_union_member(
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
     let mut member_types = Vec::new();
-    for sub_type in union_type.get_types() {
+    for sub_type in union_type.into_vec() {
         let result = infer_member_by_member_key(
             db,
             cache,
@@ -549,11 +543,10 @@ fn infer_union_member(
         }
     }
 
-    member_types.dedup();
     match member_types.len() {
         0 => Ok(LuaType::Nil),
         1 => Ok(member_types[0].clone()),
-        _ => Ok(LuaType::Union(LuaUnionType::new(member_types).into())),
+        _ => Ok(LuaType::Union(LuaUnionType::from_vec(member_types).into())),
     }
 }
 
@@ -894,7 +887,7 @@ fn infer_member_by_index_union(
     index_expr: LuaIndexMemberExpr,
 ) -> InferResult {
     let mut member_type = LuaType::Unknown;
-    for member in union.get_types() {
+    for member in union.into_vec() {
         let result = infer_member_by_operator(
             db,
             cache,
@@ -1103,7 +1096,7 @@ fn expr_to_member_key(
                 keys.insert((*i).into());
             }
             LuaType::Union(union_typ) => {
-                for t in union_typ.get_types() {
+                for t in union_typ.into_vec() {
                     stack.push(t.clone());
                 }
             }

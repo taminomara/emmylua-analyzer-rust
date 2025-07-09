@@ -328,7 +328,7 @@ fn maybe_field_literal_eq_narrow(
     let mut guard = InferGuard::new();
     let index = LuaIndexMemberExpr::IndexExpr(index_expr);
     let mut opt_result = None;
-    let mut union_types = union_type.get_types();
+    let mut union_types = union_type.into_vec();
     for (i, sub_type) in union_types.iter().enumerate() {
         let member_type =
             match infer_member_by_member_key(db, cache, &sub_type, index.clone(), &mut guard) {
@@ -354,7 +354,7 @@ fn maybe_field_literal_eq_narrow(
                     0 => return Ok(ResultTypeOrContinue::Result(LuaType::Unknown)),
                     1 => return Ok(ResultTypeOrContinue::Result(union_types[0].clone())),
                     _ => {
-                        let union_type = LuaUnionType::new(union_types);
+                        let union_type = LuaUnionType::from_vec(union_types);
                         return Ok(ResultTypeOrContinue::Result(LuaType::Union(
                             union_type.into(),
                         )));

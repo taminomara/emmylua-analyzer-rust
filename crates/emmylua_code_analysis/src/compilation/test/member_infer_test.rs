@@ -24,7 +24,7 @@ mod test {
         let c_ty = ws.expr_ty("c");
 
         let union_type = LuaType::Union(
-            LuaUnionType::new(vec![
+            LuaUnionType::from_vec(vec![
                 LuaType::StringConst(SmolStr::new("a").into()),
                 LuaType::StringConst(SmolStr::new("b").into()),
                 LuaType::StringConst(SmolStr::new("c").into()),

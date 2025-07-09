@@ -64,7 +64,7 @@ pub fn check_complex_type_compact(
                 }
                 _ => {}
             }
-            for sub_type in union_type.get_types() {
+            for sub_type in union_type.into_vec() {
                 match check_general_type_compact(
                     db,
                     &sub_type,
@@ -99,7 +99,7 @@ pub fn check_complex_type_compact(
     }
     // Do I need to check union types?
     if let LuaType::Union(union) = compact_type {
-        for sub_compact in union.get_types() {
+        for sub_compact in union.into_vec() {
             match check_complex_type_compact(db, source, &sub_compact, check_guard.next_level()?) {
                 Ok(_) => {}
                 Err(e) => return Err(e),
@@ -119,7 +119,7 @@ fn check_union_type_compact_union(
     compact_union: &LuaUnionType,
     check_guard: TypeCheckGuard,
 ) -> TypeCheckResult {
-    let compact_types = compact_union.get_types();
+    let compact_types = compact_union.into_vec();
     for compact_sub_type in compact_types {
         check_general_type_compact(db, source, &compact_sub_type, check_guard.next_level()?)?;
     }

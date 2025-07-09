@@ -51,7 +51,7 @@ fn infer_union_binary_expr(
     };
 
     let mut result = LuaType::Unknown;
-    let types = u.get_types();
+    let types = u.into_vec();
     for ty in types.iter() {
         if let Ok(ty) = if is_left_union {
             infer_binary_expr_type(db, ty.clone(), other.clone(), op)

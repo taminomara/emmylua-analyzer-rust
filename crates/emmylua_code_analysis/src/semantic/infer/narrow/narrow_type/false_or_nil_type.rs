@@ -17,15 +17,19 @@ pub fn remove_false_or_nil(t: LuaType) -> LuaType {
         LuaType::DocBooleanConst(false) => LuaType::Unknown,
         LuaType::Boolean => LuaType::BooleanConst(true),
         LuaType::Union(u) => {
-            let types = u.get_types();
-            let mut new_types = vec![];
+            let types = u.into_vec();
+            let mut new_types = Vec::new();
             for it in types.iter() {
                 match it {
                     LuaType::Nil => {}
                     LuaType::BooleanConst(false) => {}
                     LuaType::DocBooleanConst(false) => {}
-                    LuaType::Boolean => new_types.push(LuaType::BooleanConst(true)),
-                    _ => new_types.push(it.clone()),
+                    LuaType::Boolean => {
+                        new_types.push(LuaType::BooleanConst(true));
+                    }
+                    _ => {
+                        new_types.push(it.clone());
+                    }
                 }
             }
 
@@ -34,7 +38,7 @@ pub fn remove_false_or_nil(t: LuaType) -> LuaType {
             } else if new_types.len() == 1 {
                 return new_types[0].clone();
             } else {
-                return LuaType::Union(LuaUnionType::new(new_types).into());
+                return LuaType::Union(LuaUnionType::from_vec(new_types).into());
             }
         }
         _ => t,

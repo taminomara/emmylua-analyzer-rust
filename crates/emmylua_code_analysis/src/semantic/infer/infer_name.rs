@@ -308,7 +308,7 @@ fn find_param_type_from_union(
         }
         LuaType::Union(union_types) => {
             let mut final_type = None;
-            for ty in union_types.get_types() {
+            for ty in union_types.into_vec() {
                 if let Some(ty) = find_param_type_from_union(
                     db,
                     ty.clone(),

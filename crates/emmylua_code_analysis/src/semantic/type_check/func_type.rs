@@ -27,7 +27,7 @@ pub fn check_doc_func_type_compact(
             check_doc_func_type_compact_for_custom_type(db, source_func, type_id, check_guard)
         }
         LuaType::Union(union) => {
-            for union_type in union.get_types() {
+            for union_type in union.into_vec() {
                 check_doc_func_type_compact(
                     db,
                     source_func,

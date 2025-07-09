@@ -639,7 +639,7 @@ fn process_single_function_type(
         }
         LuaType::Union(union) => {
             let mut results = Vec::new();
-            for union_type in union.get_types() {
+            for union_type in union.into_vec() {
                 match process_single_function_type(
                     builder,
                     db,
@@ -687,7 +687,7 @@ fn process_single_function_type_with_exclusions(
     match typ {
         LuaType::Union(union) => {
             let mut results = Vec::new();
-            for union_type in union.get_types() {
+            for union_type in union.into_vec() {
                 // 跳过已经处理过的类型
                 if processed_types.contains(&union_type) {
                     continue;
@@ -738,7 +738,7 @@ pub fn is_function(typ: &LuaType) -> bool {
     typ.is_function()
         || match &typ {
             LuaType::Union(union) => union
-                .get_types()
+                .into_vec()
                 .iter()
                 .all(|t| matches!(t, LuaType::DocFunction(_) | LuaType::Signature(_))),
             _ => false,

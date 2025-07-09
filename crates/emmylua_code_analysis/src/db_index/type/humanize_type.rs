@@ -213,7 +213,7 @@ pub fn format_union_type<F>(
 where
     F: FnMut(&LuaType, RenderLevel) -> String,
 {
-    let types = union.get_types();
+    let types = union.into_vec();
     let num = match level {
         RenderLevel::Detailed => 8,
         RenderLevel::Simple => 6,

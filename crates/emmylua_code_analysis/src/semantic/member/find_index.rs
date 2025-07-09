@@ -7,7 +7,7 @@ use crate::{
     },
     DbIndex, InFiled, LuaGenericType, LuaIntersectionType, LuaMemberKey, LuaMemberOwner,
     LuaObjectType, LuaOperatorMetaMethod, LuaOperatorOwner, LuaSemanticDeclId, LuaType,
-    LuaTypeDeclId, LuaUnionType,
+    LuaTypeDeclId, LuaUnionType, TypeOps,
 };
 
 use super::{FindMembersResult, LuaMemberInfo};
@@ -166,7 +166,7 @@ fn find_index_array(db: &DbIndex, base: &LuaType) -> FindMembersResult {
     let mut members = Vec::new();
 
     let expression_type = if db.get_emmyrc().strict.array_index {
-        LuaType::Union(crate::LuaUnionType::new(vec![base.clone(), LuaType::Nil]).into())
+        TypeOps::Union.apply(db, base, &LuaType::Nil)
     } else {
         base.clone()
     };
@@ -221,7 +221,7 @@ fn find_index_union(
 ) -> FindMembersResult {
     let mut members = Vec::new();
 
-    for member in union.get_types() {
+    for member in union.into_vec() {
         if let Some(sub_members) = find_index_operations_guard(db, &member, infer_guard) {
             members.extend(sub_members);
         }

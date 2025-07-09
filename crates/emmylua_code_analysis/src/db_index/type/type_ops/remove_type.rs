@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::{get_real_type, DbIndex, LuaType, LuaUnionType};
 
 pub fn remove_type(db: &DbIndex, source: LuaType, removed_type: LuaType) -> Option<LuaType> {
@@ -145,28 +147,26 @@ pub fn remove_type(db: &DbIndex, source: LuaType, removed_type: LuaType) -> Opti
     }
 
     if let LuaType::Union(u) = &source {
-        let mut types = u
-            .get_types()
+        let types = u
+            .into_vec()
             .iter()
             .filter_map(|t| remove_type(db, t.clone(), removed_type.clone()))
-            .collect::<Vec<_>>();
-        types.dedup();
+            .collect::<HashSet<_>>();
         match types.len() {
             0 => return Some(LuaType::Nil),
-            1 => return types.pop(),
-            _ => return Some(LuaType::Union(LuaUnionType::new(types).into())),
+            1 => return types.into_iter().next(),
+            _ => return Some(LuaType::Union(LuaUnionType::from_set(types).into())),
         }
     } else if let LuaType::Union(u) = &removed_type {
-        let mut types = u
-            .get_types()
+        let types = u
+            .into_vec()
             .iter()
             .filter_map(|t| remove_type(db, source.clone(), t.clone()))
-            .collect::<Vec<_>>();
-        types.dedup();
+            .collect::<HashSet<_>>();
         return match types.len() {
             0 => None,
-            1 => Some(types[0].clone()),
-            _ => Some(LuaType::Union(LuaUnionType::new(types).into())),
+            1 => types.into_iter().next(),
+            _ => Some(LuaType::Union(LuaUnionType::from_set(types).into())),
         };
     }
 

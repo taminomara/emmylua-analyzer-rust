@@ -53,7 +53,7 @@ pub fn instantiate_alias_call(
                 })
                 .collect::<Vec<_>>();
 
-            return LuaType::Union(LuaUnionType::new(member_key_types).into());
+            return LuaType::Union(LuaUnionType::from_vec(member_key_types).into());
         }
         LuaAliasCallKind::Extends => {
             if operands.len() != 2 {

@@ -610,7 +610,7 @@ fn handle_name_node(
                 }
                 LuaType::DocFunction(_) => (SemanticTokenType::FUNCTION, None),
                 LuaType::Union(union) => {
-                    if union.get_types().iter().any(|typ| typ.is_function()) {
+                    if union.into_vec().iter().any(|typ| typ.is_function()) {
                         (SemanticTokenType::FUNCTION, None)
                     } else {
                         if decl.is_param() {

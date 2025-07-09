@@ -65,14 +65,14 @@ fn check_ref_enum(
     let compact_type = match compact_type {
         LuaType::Union(union_types) => {
             let new_types: Vec<_> = union_types
-                .get_types()
+                .into_vec()
                 .iter()
                 .filter(
                     |typ| !matches!(typ, LuaType::Def(id) | LuaType::Ref(id) if id == source_id),
                 )
                 .cloned()
                 .collect();
-            LuaType::Union(Arc::new(LuaUnionType::new(new_types)))
+            LuaType::Union(Arc::new(LuaUnionType::from_vec(new_types)))
         }
         LuaType::Ref(compact_id) => {
             if let Some(compact_decl) = db.get_type_index().get_type_decl(compact_id) {
@@ -95,7 +95,7 @@ fn check_ref_enum(
     // 当 enum 的值全为整数常量时, 可能会用于位运算, 此时右值推断为整数
     if let LuaType::Union(union_types) = &enum_fields {
         if union_types
-            .get_types()
+            .into_vec()
             .iter()
             .all(|t| matches!(t, LuaType::DocIntegerConst(_)))
             && matches!(compact_type, LuaType::Integer)
@@ -134,7 +134,7 @@ fn check_ref_class(
                     if let Some(LuaType::Union(enum_fields)) = compact_decl.get_enum_field_type(db)
                     {
                         let source = LuaType::Ref(source_id.clone());
-                        for field in enum_fields.get_types() {
+                        for field in enum_fields.into_vec() {
                             check_general_type_compact(
                                 db,
                                 &source,
@@ -160,7 +160,7 @@ fn check_ref_class(
         }
         LuaType::Table => Ok(()),
         LuaType::Union(union_type) => {
-            for typ in union_type.get_types() {
+            for typ in union_type.into_vec() {
                 check_general_type_compact(
                     db,
                     &LuaType::Ref(source_id.clone()),

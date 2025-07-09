@@ -1,6 +1,6 @@
 use std::{
-    collections::HashMap,
-    hash::{DefaultHasher, Hash, Hasher},
+    collections::{HashMap, HashSet},
+    hash::Hash,
     ops::Deref,
     sync::Arc,
 };
@@ -708,32 +708,45 @@ impl From<LuaObjectType> for LuaType {
         LuaType::Object(t.into())
     }
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq)]
 pub enum LuaUnionType {
     Nullable(LuaType),
     Multi(Vec<LuaType>),
 }
 
 impl LuaUnionType {
-    pub fn new(types: Vec<LuaType>) -> Self {
-        LuaUnionType::Multi(types)
+    pub fn from_set(mut set: HashSet<LuaType>) -> Self {
+        if set.len() == 2 && set.contains(&LuaType::Nil) {
+            set.remove(&LuaType::Nil);
+            if let Some(first) = set.iter().next() {
+                return Self::Nullable(first.clone());
+            }
+            Self::Nullable(LuaType::Unknown)
+        } else {
+            Self::Multi(set.into_iter().collect())
+        }
     }
 
-    pub fn new_nullable(ty: LuaType) -> Self {
-        LuaUnionType::Nullable(ty)
+    pub fn from_vec(types: Vec<LuaType>) -> Self {
+        Self::Multi(types)
     }
 
-    pub fn get_types(&self) -> Vec<LuaType> {
+    pub fn into_vec(&self) -> Vec<LuaType> {
         match self {
             LuaUnionType::Nullable(ty) => vec![ty.clone(), LuaType::Nil],
             LuaUnionType::Multi(types) => types.clone(),
         }
     }
 
-    pub(crate) fn into_types(&self) -> Vec<LuaType> {
+    pub(crate) fn into_set(&self) -> HashSet<LuaType> {
         match self {
-            LuaUnionType::Nullable(ty) => vec![ty.clone(), LuaType::Nil],
-            LuaUnionType::Multi(types) => types.clone(),
+            LuaUnionType::Nullable(ty) => {
+                let mut set = HashSet::new();
+                set.insert(ty.clone());
+                set.insert(LuaType::Nil);
+                set
+            }
+            LuaUnionType::Multi(types) => types.clone().into_iter().collect(),
         }
     }
 
@@ -773,6 +786,12 @@ impl LuaUnionType {
     }
 }
 
+impl From<LuaUnionType> for LuaType {
+    fn from(t: LuaUnionType) -> Self {
+        LuaType::Union(t.into())
+    }
+}
+
 impl PartialEq for LuaUnionType {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -781,57 +800,16 @@ impl PartialEq for LuaUnionType {
                 if a.len() != b.len() {
                     return false;
                 }
-                let mut counts = HashMap::new();
-                for t in a {
-                    *counts.entry(t).or_insert(0) += 1;
-                }
-                for t in b {
-                    match counts.get_mut(t) {
-                        Some(count) if *count > 0 => *count -= 1,
-                        _ => return false,
+                let mut a_set: HashSet<_> = a.iter().collect();
+                for item in b {
+                    if !a_set.remove(item) {
+                        return false;
                     }
                 }
-                true
+                a_set.is_empty()
             }
             _ => false,
         }
-    }
-}
-
-impl Eq for LuaUnionType {}
-
-impl std::hash::Hash for LuaUnionType {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        // To get an order-insensitive hash, combine:
-        // - the number of elements
-        // - the sum and product of the hashes of individual elements.
-        // This is a simple and fast commutative hash.
-        match self {
-            LuaUnionType::Nullable(ty) => {
-                0.hash(state);
-                ty.hash(state);
-            }
-            LuaUnionType::Multi(types) => {
-                types.len().hash(state);
-                let mut sum = 0;
-                let mut product = 1;
-                for t in types {
-                    let mut hasher = DefaultHasher::new();
-                    t.hash(&mut hasher);
-                    let hash = hasher.finish();
-                    sum += hash;
-                    product *= hash;
-                }
-                sum.hash(state);
-                product.hash(state);
-            }
-        }
-    }
-}
-
-impl From<LuaUnionType> for LuaType {
-    fn from(t: LuaUnionType) -> Self {
-        LuaType::Union(t.into())
     }
 }
 
@@ -1181,7 +1159,7 @@ impl LuaMultiLineUnion {
             types.push(t.clone());
         }
 
-        LuaType::Union(Arc::new(LuaUnionType::new(types)))
+        LuaType::Union(Arc::new(LuaUnionType::from_vec(types)))
     }
 
     pub fn contain_tpl(&self) -> bool {

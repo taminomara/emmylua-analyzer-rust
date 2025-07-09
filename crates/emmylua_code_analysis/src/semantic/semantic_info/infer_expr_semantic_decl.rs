@@ -323,7 +323,7 @@ fn infer_union_member_semantic_info(
     member_key: &LuaMemberKey,
     semantic_guard: SemanticDeclGuard,
 ) -> Option<LuaSemanticDeclId> {
-    for typ in union_type.get_types() {
+    for typ in union_type.into_vec() {
         if let Some(property_owner_id) = infer_member_semantic_decl_by_member_key(
             db,
             cache,

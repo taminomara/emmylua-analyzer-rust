@@ -150,7 +150,7 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
         }
         LuaType::Union(target_u) => {
             let source_types = target_u
-                .get_types()
+                .into_vec()
                 .into_iter()
                 .filter_map(|t| narrow_down_type(db, real_source_ref.clone(), t))
                 .collect::<Vec<_>>();
@@ -175,17 +175,16 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
 
     match real_source_ref {
         LuaType::Union(union) => {
-            let mut union_types = union
-                .get_types()
+            let union_types = union
+                .into_vec()
                 .into_iter()
                 .filter_map(|t| narrow_down_type(db, t, target.clone()))
                 .collect::<Vec<_>>();
 
-            union_types.dedup();
             return match union_types.len() {
                 0 => Some(target),
-                1 => Some(union_types[0].clone()),
-                _ => Some(LuaType::Union(LuaUnionType::new(union_types).into())),
+                1 => Some(union_types.iter().cloned().next().unwrap()),
+                _ => Some(LuaType::Union(LuaUnionType::from_vec(union_types).into())),
             };
         }
         _ => {}

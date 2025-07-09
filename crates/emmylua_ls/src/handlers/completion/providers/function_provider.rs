@@ -180,7 +180,7 @@ fn add_union_member_completion(
     union_typ: &LuaUnionType,
     infer_guard: &mut InferGuard,
 ) -> Option<()> {
-    for union_sub_typ in union_typ.get_types() {
+    for union_sub_typ in union_typ.into_vec() {
         let name = match union_sub_typ {
             LuaType::DocStringConst(s) => to_enum_label(builder, s.as_str()),
             LuaType::DocIntegerConst(i) => i.to_string(),
@@ -784,7 +784,7 @@ pub fn get_function_remove_nil(db: &DbIndex, typ: &LuaType) -> Option<LuaType> {
     match typ {
         LuaType::Union(union_typ) => {
             let mut new_types = Vec::new();
-            for member in union_typ.get_types().iter() {
+            for member in union_typ.into_vec().iter() {
                 match member {
                     _ if member.is_function() => {
                         new_types.push(member.clone());
@@ -806,7 +806,7 @@ pub fn get_function_remove_nil(db: &DbIndex, typ: &LuaType) -> Option<LuaType> {
             match new_types.len() {
                 0 => None,
                 1 => Some(new_types[0].clone()),
-                _ => Some(LuaType::Union(Arc::new(LuaUnionType::new(new_types)))),
+                _ => Some(LuaType::Union(Arc::new(LuaUnionType::from_vec(new_types)))),
             }
         }
         _ if typ.is_function() => {

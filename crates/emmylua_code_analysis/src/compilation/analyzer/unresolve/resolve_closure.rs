@@ -61,7 +61,7 @@ pub fn try_resolve_call_closure_params(
             LuaType::DocFunction(func) => (func.is_async(), func.get_params().to_vec()),
             LuaType::Union(union_types) => {
                 if let Some(LuaType::DocFunction(func)) = union_types
-                    .get_types()
+                    .into_vec()
                     .iter()
                     .find(|typ| matches!(typ, LuaType::DocFunction(_)))
                 {
@@ -308,7 +308,7 @@ fn resolve_closure_member_type(
             let mut final_ret = LuaType::Unknown;
 
             let mut multi_function_type = Vec::new();
-            for typ in union_types.get_types() {
+            for typ in union_types.into_vec() {
                 match typ {
                     LuaType::DocFunction(func) => {
                         multi_function_type.push(func.clone());
@@ -502,7 +502,7 @@ fn filter_signature_type(typ: &LuaType) -> Option<Vec<Arc<LuaFunctionType>>> {
                 result.push(func.clone());
             }
             LuaType::Union(union) => {
-                let types = union.get_types();
+                let types = union.into_vec();
                 for typ in types.into_iter().rev() {
                     stack.push(typ);
                 }
@@ -534,7 +534,7 @@ fn find_best_function_type(
                         0 => {}
                         1 => return Some(LuaType::DocFunction(filtered_types[0].clone())),
                         _ => {
-                            return Some(LuaType::Union(Arc::new(LuaUnionType::new(
+                            return Some(LuaType::Union(Arc::new(LuaUnionType::from_vec(
                                 filtered_types
                                     .into_iter()
                                     .map(|func| LuaType::DocFunction(func.clone()))
@@ -561,7 +561,7 @@ fn find_best_function_type(
                 .map(LuaType::DocFunction);
         }
         _ => {
-            return Some(LuaType::Union(Arc::new(LuaUnionType::new(
+            return Some(LuaType::Union(Arc::new(LuaUnionType::from_vec(
                 origin_signature
                     .overloads
                     .clone()
