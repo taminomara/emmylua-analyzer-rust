@@ -417,7 +417,7 @@ mod tests {
         );
         assert!(ws.check_hover(
             r#"
-                    source:sel<??>ect(function(value)
+                    source:<??>select(function(value)
                         return value
                     end)
             "#,
