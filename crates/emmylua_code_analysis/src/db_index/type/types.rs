@@ -291,6 +291,7 @@ impl LuaType {
             LuaType::Nil | LuaType::Boolean | LuaType::Any | LuaType::Unknown => false,
             LuaType::BooleanConst(boolean) | LuaType::DocBooleanConst(boolean) => boolean.clone(),
             LuaType::Union(u) => u.is_always_truthy(),
+            LuaType::TypeGuard(_) => false,
             _ => true,
         }
     }
@@ -299,6 +300,7 @@ impl LuaType {
         match self {
             LuaType::Nil | LuaType::BooleanConst(false) | LuaType::DocBooleanConst(false) => true,
             LuaType::Union(u) => u.is_always_falsy(),
+            LuaType::TypeGuard(_) => false,
             _ => false,
         }
     }
@@ -400,6 +402,7 @@ impl LuaType {
             LuaType::StrTplRef(_) => true,
             LuaType::SelfInfer => true,
             LuaType::MultiLineUnion(inner) => inner.contain_tpl(),
+            LuaType::TypeGuard(inner) => inner.contain_tpl(),
             _ => false,
         }
     }

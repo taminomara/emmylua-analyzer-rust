@@ -919,4 +919,30 @@ end
         let b_expected = ws.ty("string");
         assert_eq!(b, b_expected);
     }
+
+    #[test]
+    fn test_feature_generic_type_guard() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+            ---@generic T
+            ---@param type `T`
+            ---@return TypeGuard<T>
+            local function instanceOf(inst, type)
+                return true
+            end
+            
+            local ret --- @type string | nil
+            
+            if instanceOf(ret, "string") then
+                a = ret
+            end
+            "#,
+        );
+
+        let a = ws.expr_ty("a");
+        let a_expected = ws.ty("string");
+        assert_eq!(a, a_expected);
+    }
 }
