@@ -470,4 +470,30 @@ mod tests {
             "#
         ));
     }
+
+    #[test]
+    fn test_generic_type_1() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+            ---@class Range: Observable<integer>
+            ---@class Observable<T>
+
+            ---@return Range
+            function newRange()
+            end
+            "#,
+        );
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+
+            ---@return Observable<integer>
+            function range()
+                return newRange()
+            end
+
+            "#
+        ));
+    }
 }

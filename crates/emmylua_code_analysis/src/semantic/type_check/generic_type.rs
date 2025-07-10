@@ -6,8 +6,8 @@ use crate::{
 };
 
 use super::{
-    check_general_type_compact, type_check_fail_reason::TypeCheckFailReason,
-    type_check_guard::TypeCheckGuard, TypeCheckResult,
+    check_general_type_compact, check_ref_type_compact,
+    type_check_fail_reason::TypeCheckFailReason, type_check_guard::TypeCheckGuard, TypeCheckResult,
 };
 
 pub fn check_generic_type_compact(
@@ -51,6 +51,12 @@ pub fn check_generic_type_compact(
             db,
             source_generic,
             LuaMemberOwner::Element(range.clone()),
+            check_guard.next_level()?,
+        ),
+        LuaType::Ref(_) | LuaType::Def(_) => check_ref_type_compact(
+            db,
+            &source_generic.get_base_type_id(),
+            compact_type,
             check_guard.next_level()?,
         ),
         _ => Err(TypeCheckFailReason::TypeNotMatch),

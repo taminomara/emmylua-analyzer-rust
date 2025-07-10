@@ -395,4 +395,35 @@ mod tests {
             },
         ));
     }
+
+    #[test]
+    fn test_generic_function() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def_file(
+            "test.lua",
+            r#"
+                    ---@class Observable<T>
+                    local Observable
+
+                    ---@generic R
+                    ---@param selector fun(value: T, index?: integer): R
+                    function Observable:select(selector)
+                    end
+
+                    ---@type Observable<integer>
+                    source = {}
+
+            "#,
+        );
+        assert!(ws.check_hover(
+            r#"
+                    source:sel<??>ect(function(value)
+                        return value
+                    end)
+            "#,
+            VirtualHoverResult {
+                value: "```lua\n(method) Observable:select(selector: fun(value: integer, index: integer?) -> R)\n```".to_string(),
+            },
+        ));
+    }
 }
