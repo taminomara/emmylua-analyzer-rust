@@ -1,5 +1,5 @@
 use emmylua_parser::{
-    BinaryOperator, LuaBinaryExpr, LuaCallExpr, LuaChunk, LuaExpr, LuaIndexMemberExpr,
+    BinaryOperator, LuaAstNode, LuaBinaryExpr, LuaCallExpr, LuaChunk, LuaExpr, LuaIndexMemberExpr,
     LuaLiteralToken,
 };
 
@@ -126,6 +126,38 @@ fn maybe_type_guard_binary(
                     }
                     _ => return Ok(ResultTypeOrContinue::Continue),
                 }
+            }
+        }
+        // may ref a type value
+    } else if let LuaExpr::NameExpr(name_expr) = left_expr {
+        if let LuaExpr::LiteralExpr(literal_expr) = right_expr {
+            let Some(decl_id) = db
+                .get_reference_index()
+                .get_var_reference_decl(&cache.get_file_id(), name_expr.get_range())
+            else {
+                return Ok(ResultTypeOrContinue::Continue);
+            };
+
+            let Some(expr_ptr) = tree.get_decl_ref_expr(&decl_id) else {
+                return Ok(ResultTypeOrContinue::Continue);
+            };
+
+            let Some(expr) = expr_ptr.to_node(root) else {
+                return Ok(ResultTypeOrContinue::Continue);
+            };
+
+            if let LuaExpr::CallExpr(call_expr) = expr {
+                if call_expr.is_type() {
+                    type_guard_expr = Some(call_expr);
+                    match literal_expr.get_literal() {
+                        Some(LuaLiteralToken::String(s)) => {
+                            literal_string = s.get_value();
+                        }
+                        _ => return Ok(ResultTypeOrContinue::Continue),
+                    }
+                }
+            } else {
+                return Ok(ResultTypeOrContinue::Continue);
             }
         }
     }

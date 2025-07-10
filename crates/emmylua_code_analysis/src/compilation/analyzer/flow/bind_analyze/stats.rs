@@ -1,7 +1,7 @@
 use emmylua_parser::{
-    LuaAssignStat, LuaAst, LuaAstNode, LuaBlock, LuaBreakStat, LuaCallArgList, LuaCallExprStat,
-    LuaDoStat, LuaForRangeStat, LuaForStat, LuaFuncStat, LuaGotoStat, LuaIfStat, LuaLabelStat,
-    LuaLocalStat, LuaRepeatStat, LuaReturnStat, LuaWhileStat,
+    BinaryOperator, LuaAssignStat, LuaAst, LuaAstNode, LuaBlock, LuaBreakStat, LuaCallArgList,
+    LuaCallExprStat, LuaDoStat, LuaExpr, LuaForRangeStat, LuaForStat, LuaFuncStat, LuaGotoStat,
+    LuaIfStat, LuaLabelStat, LuaLocalStat, LuaRepeatStat, LuaReturnStat, LuaWhileStat,
 };
 
 use crate::{
@@ -28,8 +28,9 @@ pub fn bind_local_stat(
         let name = &local_names[i];
         let value = &values[i];
         let decl_id = LuaDeclId::new(binder.file_id, name.get_position());
-        let flow_id = bind_expr(binder, value.clone(), current);
-        binder.decl_bind_flow_ref.insert(decl_id, flow_id);
+        if check_local_immutable(binder, decl_id) && check_value_expr_is_check_expr(value.clone()) {
+            binder.decl_bind_expr_ref.insert(decl_id, value.to_ptr());
+        }
     }
 
     for value in values {
@@ -40,6 +41,41 @@ pub fn bind_local_stat(
     let local_flow_id = binder.create_decl(local_stat.get_position());
     binder.add_antecedent(local_flow_id, current);
     local_flow_id
+}
+
+fn check_local_immutable(binder: &mut FlowBinder, decl_id: LuaDeclId) -> bool {
+    let Some(refs) = binder
+        .db
+        .get_reference_index()
+        .get_decl_references(&binder.file_id, &decl_id)
+    else {
+        return true;
+    };
+
+    for r in refs {
+        if r.is_write {
+            return false;
+        }
+    }
+
+    true
+}
+
+fn check_value_expr_is_check_expr(value_expr: LuaExpr) -> bool {
+    match value_expr {
+        LuaExpr::BinaryExpr(binary_expr) => {
+            let Some(op) = binary_expr.get_op_token() else {
+                return false;
+            };
+
+            match op.get_op() {
+                BinaryOperator::OpEq | BinaryOperator::OpNe => true,
+                _ => false,
+            }
+        }
+        LuaExpr::CallExpr(_) => true,
+        _ => false, // Other expressions can be checked
+    }
 }
 
 pub fn bind_assign_stat(

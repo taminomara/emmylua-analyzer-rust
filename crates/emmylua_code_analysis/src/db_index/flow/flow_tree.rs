@@ -1,13 +1,12 @@
 use std::collections::HashMap;
 
-use emmylua_parser::LuaSyntaxId;
+use emmylua_parser::{LuaAstPtr, LuaExpr, LuaSyntaxId};
 
 use crate::{FlowId, FlowNode, LuaDeclId};
 
 #[derive(Debug)]
 pub struct FlowTree {
-    #[allow(unused)]
-    decl_bind_flow_ref: HashMap<LuaDeclId, FlowId>,
+    decl_bind_expr_ref: HashMap<LuaDeclId, LuaAstPtr<LuaExpr>>,
     flow_nodes: Vec<FlowNode>,
     multiple_antecedents: Vec<Vec<FlowId>>,
     // labels: HashMap<LuaClosureId, HashMap<SmolStr, FlowId>>,
@@ -16,17 +15,16 @@ pub struct FlowTree {
 
 impl FlowTree {
     pub fn new(
-        decl_bind_flow_ref: HashMap<LuaDeclId, FlowId>,
+        decl_bind_expr_ref: HashMap<LuaDeclId, LuaAstPtr<LuaExpr>>,
         flow_nodes: Vec<FlowNode>,
         multiple_antecedents: Vec<Vec<FlowId>>,
         // labels: HashMap<LuaClosureId, HashMap<SmolStr, FlowId>>,
         bindings: HashMap<LuaSyntaxId, FlowId>,
     ) -> Self {
         Self {
-            decl_bind_flow_ref,
+            decl_bind_expr_ref,
             flow_nodes,
             multiple_antecedents,
-            // labels,
             bindings,
         }
     }
@@ -43,5 +41,9 @@ impl FlowTree {
         self.multiple_antecedents
             .get(id as usize)
             .map(|v| v.as_slice())
+    }
+
+    pub fn get_decl_ref_expr(&self, decl_id: &LuaDeclId) -> Option<LuaAstPtr<LuaExpr>> {
+        self.decl_bind_expr_ref.get(decl_id).cloned()
     }
 }

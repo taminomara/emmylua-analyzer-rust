@@ -891,4 +891,32 @@ end
             "#,
         );
     }
+
+    #[test]
+    fn test_feature_inherit_flow_from_const_local() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.def(
+            r#"
+            local ret --- @type string | nil
+
+            local h = type(ret) == "string"
+            if h then
+                a = ret
+            end
+
+            local e = type(ret)
+            if e == "string" then
+                b = ret
+            end
+            "#,
+        );
+
+        let a = ws.expr_ty("a");
+        let a_expected = ws.ty("string");
+        assert_eq!(a, a_expected);
+        let b = ws.expr_ty("b");
+        let b_expected = ws.ty("string");
+        assert_eq!(b, b_expected);
+    }
 }
