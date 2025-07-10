@@ -1,9 +1,9 @@
-use std::ops::Deref;
+use std::{ops::Deref, sync::Arc};
 
 use emmylua_parser::{LuaCallExpr, LuaChunk, LuaExpr};
 
 use crate::{
-    infer_expr,
+    infer_call_expr_func, infer_expr,
     semantic::infer::{
         narrow::{
             condition_flow::InferConditionFlow, get_single_antecedent,
@@ -12,8 +12,8 @@ use crate::{
         },
         VarRefId,
     },
-    DbIndex, FlowNode, FlowTree, InferFailReason, LuaInferCache, LuaSignatureCast, LuaSignatureId,
-    LuaType, TypeOps,
+    DbIndex, FlowNode, FlowTree, InferFailReason, InferGuard, LuaFunctionType, LuaInferCache,
+    LuaSignatureCast, LuaSignatureId, LuaType, TypeOps,
 };
 
 pub fn get_type_at_call_expr(
@@ -35,7 +35,7 @@ pub fn get_type_at_call_expr(
         LuaType::DocFunction(f) => {
             let return_type = f.get_ret();
             match return_type {
-                LuaType::TypeGuard(guard_type) => get_type_at_call_expr_by_type_guard(
+                LuaType::TypeGuard(_) => get_type_at_call_expr_by_type_guard(
                     db,
                     tree,
                     cache,
@@ -43,7 +43,7 @@ pub fn get_type_at_call_expr(
                     var_ref_id,
                     flow_node,
                     call_expr,
-                    guard_type.deref().clone(),
+                    f,
                     condition_flow,
                 ),
                 _ => {
@@ -53,6 +53,25 @@ pub fn get_type_at_call_expr(
             }
         }
         LuaType::Signature(signature_id) => {
+            let Some(signature) = db.get_signature_index().get(&signature_id) else {
+                return Ok(ResultTypeOrContinue::Continue);
+            };
+
+            let ret = signature.get_return_type();
+            if let LuaType::TypeGuard(_) = ret {
+                return get_type_at_call_expr_by_type_guard(
+                    db,
+                    tree,
+                    cache,
+                    root,
+                    var_ref_id,
+                    flow_node,
+                    call_expr,
+                    signature.to_doc_func_type(),
+                    condition_flow,
+                );
+            }
+
             let Some(signature_cast) = db
                 .get_flow_index()
                 .get_signature_cast(&cache.get_file_id(), &signature_id)
@@ -102,7 +121,7 @@ fn get_type_at_call_expr_by_type_guard(
     var_ref_id: &VarRefId,
     flow_node: &FlowNode,
     call_expr: LuaCallExpr,
-    guard_type: LuaType,
+    func_type: Arc<LuaFunctionType>,
     condition_flow: InferConditionFlow,
 ) -> Result<ResultTypeOrContinue, InferFailReason> {
     let Some(arg_list) = call_expr.get_args_list() else {
@@ -120,6 +139,26 @@ fn get_type_at_call_expr_by_type_guard(
     if maybe_ref_id != *var_ref_id {
         return Ok(ResultTypeOrContinue::Continue);
     }
+
+    let mut return_type = func_type.get_ret().clone();
+    if return_type.contain_tpl() {
+        let call_expr_type = LuaType::DocFunction(func_type);
+        let inst_func = infer_call_expr_func(
+            db,
+            cache,
+            call_expr,
+            call_expr_type,
+            &mut InferGuard::new(),
+            None,
+        )?;
+
+        return_type = inst_func.get_ret().clone();
+    }
+
+    let guard_type = match return_type {
+        LuaType::TypeGuard(guard) => guard.deref().clone(),
+        _ => return Ok(ResultTypeOrContinue::Continue),
+    };
 
     match condition_flow {
         InferConditionFlow::TrueCondition => Ok(ResultTypeOrContinue::Result(guard_type)),

@@ -2,7 +2,7 @@ mod binary_flow;
 mod call_flow;
 mod index_flow;
 
-use emmylua_parser::{LuaChunk, LuaExpr, LuaNameExpr, LuaUnaryExpr, UnaryOperator};
+use emmylua_parser::{LuaAstNode, LuaChunk, LuaExpr, LuaNameExpr, LuaUnaryExpr, UnaryOperator};
 
 use crate::{
     semantic::infer::{
@@ -146,7 +146,16 @@ fn get_type_at_name_expr(
     };
 
     if name_var_ref_id != *var_ref_id {
-        return Ok(ResultTypeOrContinue::Continue);
+        return get_type_at_name_ref(
+            db,
+            tree,
+            cache,
+            root,
+            var_ref_id,
+            flow_node,
+            name_expr,
+            condition_flow,
+        );
     }
 
     let antecedent_flow_id = get_single_antecedent(tree, flow_node)?;
@@ -158,6 +167,43 @@ fn get_type_at_name_expr(
     };
 
     Ok(ResultTypeOrContinue::Result(result_type))
+}
+
+fn get_type_at_name_ref(
+    db: &DbIndex,
+    tree: &FlowTree,
+    cache: &mut LuaInferCache,
+    root: &LuaChunk,
+    var_ref_id: &VarRefId,
+    flow_node: &FlowNode,
+    name_expr: LuaNameExpr,
+    condition_flow: InferConditionFlow,
+) -> Result<ResultTypeOrContinue, InferFailReason> {
+    let Some(decl_id) = db
+        .get_reference_index()
+        .get_var_reference_decl(&cache.get_file_id(), name_expr.get_range())
+    else {
+        return Ok(ResultTypeOrContinue::Continue);
+    };
+
+    let Some(expr_ptr) = tree.get_decl_ref_expr(&decl_id) else {
+        return Ok(ResultTypeOrContinue::Continue);
+    };
+
+    let Some(expr) = expr_ptr.to_node(root) else {
+        return Ok(ResultTypeOrContinue::Continue);
+    };
+
+    get_type_at_condition_flow(
+        db,
+        tree,
+        cache,
+        root,
+        var_ref_id,
+        flow_node,
+        expr,
+        condition_flow,
+    )
 }
 
 fn get_type_at_unary_flow(

@@ -107,15 +107,19 @@ pub fn infer_call_expr_func(
     };
 
     let result = if let Ok(func_ty) = result {
-        unwrapp_return_type(db, cache, func_ty.get_ret().clone(), call_expr).map(|new_ret| {
-            LuaFunctionType::new(
-                func_ty.is_async(),
-                func_ty.is_colon_define(),
-                func_ty.get_params().to_vec(),
-                new_ret,
-            )
-            .into()
-        })
+        let func_ret = func_ty.get_ret();
+        match func_ret {
+            LuaType::TypeGuard(_) => Ok(func_ty),
+            _ => unwrapp_return_type(db, cache, func_ret.clone(), call_expr).map(|new_ret| {
+                LuaFunctionType::new(
+                    func_ty.is_async(),
+                    func_ty.is_colon_define(),
+                    func_ty.get_params().to_vec(),
+                    new_ret,
+                )
+                .into()
+            }),
+        }
     } else {
         result
     };

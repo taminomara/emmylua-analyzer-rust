@@ -1,6 +1,9 @@
 use emmylua_parser::{LuaAstNode, LuaComment, LuaDocTag};
 
-use crate::{compilation::analyzer::flow::binder::FlowBinder, FlowId, FlowNodeKind};
+use crate::{
+    compilation::analyzer::flow::{bind_analyze::exprs::bind_expr, binder::FlowBinder},
+    FlowId, FlowNodeKind,
+};
 
 pub fn bind_comment(binder: &mut FlowBinder, lua_comment: LuaComment, current: FlowId) -> FlowId {
     let cast_tags = lua_comment.get_doc_tags().filter_map(|it| match it {
@@ -11,7 +14,9 @@ pub fn bind_comment(binder: &mut FlowBinder, lua_comment: LuaComment, current: F
     let mut parent = current;
     for cast in cast_tags {
         let expr = cast.get_key_expr();
-        if expr.is_some() {
+        if let Some(expr) = expr {
+            bind_expr(binder, expr, current);
+
             let flow_id = binder.create_node(FlowNodeKind::TagCast(cast.to_ptr()));
             binder.add_antecedent(flow_id, parent);
             parent = flow_id;

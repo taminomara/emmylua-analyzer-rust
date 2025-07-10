@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use emmylua_parser::LuaSyntaxId;
+use emmylua_parser::{LuaAstPtr, LuaExpr, LuaSyntaxId};
 use internment::ArcIntern;
 use rowan::TextSize;
 use smol_str::SmolStr;
@@ -14,7 +14,7 @@ use crate::{
 pub struct FlowBinder<'a> {
     pub db: &'a mut DbIndex,
     pub file_id: FileId,
-    pub decl_bind_flow_ref: HashMap<LuaDeclId, FlowId>,
+    pub decl_bind_expr_ref: HashMap<LuaDeclId, LuaAstPtr<LuaExpr>>,
     pub start: FlowId,
     pub unreachable: FlowId,
     pub loop_label: FlowId,
@@ -35,7 +35,7 @@ impl<'a> FlowBinder<'a> {
             file_id,
             flow_nodes: Vec::new(),
             multiple_antecedents: Vec::new(),
-            decl_bind_flow_ref: HashMap::new(),
+            decl_bind_expr_ref: HashMap::new(),
             labels: HashMap::new(),
             start: FlowId::default(),
             unreachable: FlowId::default(),
@@ -171,7 +171,7 @@ impl<'a> FlowBinder<'a> {
 
     pub fn finish(self) -> FlowTree {
         FlowTree::new(
-            self.decl_bind_flow_ref,
+            self.decl_bind_expr_ref,
             self.flow_nodes,
             self.multiple_antecedents,
             // self.labels,

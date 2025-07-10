@@ -45,6 +45,10 @@ pub fn instantiate_type_generic(
                 LuaType::SelfInfer
             }
         }
+        LuaType::TypeGuard(guard) => {
+            let inner = instantiate_type_generic(db, guard.deref(), substitutor);
+            LuaType::TypeGuard(inner.into())
+        }
         _ => ty.clone(),
     }
 }

@@ -891,4 +891,58 @@ end
             "#,
         );
     }
+
+    #[test]
+    fn test_feature_inherit_flow_from_const_local() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        ws.def(
+            r#"
+            local ret --- @type string | nil
+
+            local h = type(ret) == "string"
+            if h then
+                a = ret
+            end
+
+            local e = type(ret)
+            if e == "string" then
+                b = ret
+            end
+            "#,
+        );
+
+        let a = ws.expr_ty("a");
+        let a_expected = ws.ty("string");
+        assert_eq!(a, a_expected);
+        let b = ws.expr_ty("b");
+        let b_expected = ws.ty("string");
+        assert_eq!(b, b_expected);
+    }
+
+    #[test]
+    fn test_feature_generic_type_guard() {
+        let mut ws = VirtualWorkspace::new();
+
+        ws.def(
+            r#"
+            ---@generic T
+            ---@param type `T`
+            ---@return TypeGuard<T>
+            local function instanceOf(inst, type)
+                return true
+            end
+            
+            local ret --- @type string | nil
+            
+            if instanceOf(ret, "string") then
+                a = ret
+            end
+            "#,
+        );
+
+        let a = ws.expr_ty("a");
+        let a_expected = ws.ty("string");
+        assert_eq!(a, a_expected);
+    }
 }
