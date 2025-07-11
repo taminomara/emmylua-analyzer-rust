@@ -1,6 +1,6 @@
 use emmylua_parser::{
     BinaryOperator, LuaAstNode, LuaBinaryExpr, LuaCallExpr, LuaChunk, LuaExpr, LuaIndexMemberExpr,
-    LuaLiteralToken,
+    LuaLiteralToken, UnaryOperator,
 };
 
 use crate::{
@@ -17,8 +17,8 @@ use crate::{
         },
         VarRefId,
     },
-    DbIndex, FlowNode, FlowTree, InferFailReason, InferGuard, LuaInferCache, LuaType, LuaUnionType,
-    TypeOps,
+    DbIndex, FlowNode, FlowTree, InferFailReason, InferGuard, LuaArrayLen, LuaArrayType,
+    LuaInferCache, LuaType, LuaUnionType, TypeOps,
 };
 
 pub fn get_type_at_binary_expr(
@@ -307,6 +307,51 @@ fn maybe_var_eq_narrow(
                 }
             };
             Ok(ResultTypeOrContinue::Result(result_type))
+        }
+        LuaExpr::UnaryExpr(unary_expr) => {
+            let Some(op) = unary_expr.get_op_token() else {
+                return Ok(ResultTypeOrContinue::Continue);
+            };
+
+            match op.get_op() {
+                UnaryOperator::OpLen => {}
+                _ => return Ok(ResultTypeOrContinue::Continue),
+            };
+
+            let Some(expr) = unary_expr.get_expr() else {
+                return Ok(ResultTypeOrContinue::Continue);
+            };
+
+            let Some(maybe_ref_id) = get_var_expr_var_ref_id(db, cache, expr) else {
+                return Ok(ResultTypeOrContinue::Continue);
+            };
+
+            if maybe_ref_id != *var_ref_id {
+                // If the reference declaration ID does not match, we cannot narrow it
+                return Ok(ResultTypeOrContinue::Continue);
+            }
+
+            let right_expr_type = infer_expr(db, cache, right_expr)?;
+            let antecedent_flow_id = get_single_antecedent(tree, flow_node)?;
+            let antecedent_type =
+                get_type_at_flow(db, tree, cache, root, &var_ref_id, antecedent_flow_id)?;
+            match (&antecedent_type, &right_expr_type) {
+                (
+                    LuaType::Array(array_type),
+                    LuaType::IntegerConst(i) | LuaType::DocIntegerConst(i),
+                ) => {
+                    if condition_flow.is_true() {
+                        let new_array_type =
+                            LuaArrayType::new(array_type.get_base().clone(), LuaArrayLen::Max(*i));
+                        return Ok(ResultTypeOrContinue::Result(LuaType::Array(
+                            new_array_type.into(),
+                        )));
+                    }
+                }
+                _ => return Ok(ResultTypeOrContinue::Continue),
+            }
+
+            Ok(ResultTypeOrContinue::Continue)
         }
         _ => {
             // If the left expression is not a name or call expression, we cannot narrow it

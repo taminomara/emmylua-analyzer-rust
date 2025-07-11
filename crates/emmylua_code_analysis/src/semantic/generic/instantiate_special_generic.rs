@@ -201,8 +201,9 @@ fn instantiate_unpack_call(db: &DbIndex, operands: &[LuaType]) -> LuaType {
 
             LuaType::Variadic(VariadicType::Multi(types).into())
         }
-        LuaType::Array(base) => LuaType::Variadic(
-            VariadicType::Base(TypeOps::Union.apply(db, base, &LuaType::Nil)).into(),
+        LuaType::Array(array_type) => LuaType::Variadic(
+            VariadicType::Base(TypeOps::Union.apply(db, array_type.get_base(), &LuaType::Nil))
+                .into(),
         ),
         LuaType::TableGeneric(table) => {
             if table.len() != 2 {

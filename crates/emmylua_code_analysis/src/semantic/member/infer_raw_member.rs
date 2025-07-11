@@ -44,7 +44,9 @@ fn infer_raw_member_type_guard(
         }
         LuaType::Tuple(tuple) => infer_tuple_raw_member_type(tuple, member_key),
         LuaType::Object(object) => infer_object_raw_member_type(object, member_key),
-        LuaType::Array(array_type) => infer_array_raw_member_type(db, array_type, member_key),
+        LuaType::Array(array_type) => {
+            infer_array_raw_member_type(db, array_type.get_base(), member_key)
+        }
         LuaType::TableGeneric(table_generic) => {
             infer_table_generic_raw_member_type(db, table_generic, member_key)
         }

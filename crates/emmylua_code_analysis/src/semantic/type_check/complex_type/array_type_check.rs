@@ -13,11 +13,11 @@ pub fn check_array_type_compact(
     let source_base = TypeOps::Union.apply(db, source_base, &LuaType::Nil);
 
     match compact_type {
-        LuaType::Array(compact_base) => {
+        LuaType::Array(compact_array_type) => {
             return check_general_type_compact(
                 db,
                 &source_base,
-                compact_base,
+                compact_array_type.get_base(),
                 check_guard.next_level()?,
             );
         }

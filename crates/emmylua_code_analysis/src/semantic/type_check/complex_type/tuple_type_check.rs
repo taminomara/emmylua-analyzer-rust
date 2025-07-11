@@ -22,9 +22,14 @@ pub fn check_tuple_type_compact(
                 check_guard.next_level()?,
             );
         }
-        LuaType::Array(array_base) => {
+        LuaType::Array(array_type) => {
             for source_type in tuple.get_types() {
-                check_general_type_compact(db, array_base, source_type, check_guard.next_level()?)?;
+                check_general_type_compact(
+                    db,
+                    array_type.get_base(),
+                    source_type,
+                    check_guard.next_level()?,
+                )?;
             }
 
             return Ok(());

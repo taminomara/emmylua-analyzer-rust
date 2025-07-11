@@ -7,8 +7,8 @@ use emmylua_parser::{
 
 use crate::{
     db_index::{DbIndex, LuaType},
-    infer_call_expr_func, infer_expr, InferGuard, LuaDeclId, LuaInferCache, LuaMemberId,
-    LuaTupleStatus, LuaTupleType, VariadicType,
+    infer_call_expr_func, infer_expr, InferGuard, LuaArrayType, LuaDeclId, LuaInferCache,
+    LuaMemberId, LuaTupleStatus, LuaTupleType, VariadicType,
 };
 
 use super::{
@@ -43,7 +43,9 @@ fn infer_table_tuple_or_array(
             cache,
             fields[0].get_value_expr().ok_or(InferFailReason::None)?,
         )?;
-        return Ok(LuaType::Array(first_type.into()));
+        return Ok(LuaType::Array(
+            LuaArrayType::from_base_type(first_type).into(),
+        ));
     }
 
     if let Some(first_field) = fields.first() {
@@ -54,7 +56,9 @@ fn infer_table_tuple_or_array(
             match &first_expr_type {
                 LuaType::Variadic(multi) => match &multi.deref() {
                     VariadicType::Base(base) => {
-                        return Ok(LuaType::Array(base.clone().into()));
+                        return Ok(LuaType::Array(
+                            LuaArrayType::from_base_type(base.clone()).into(),
+                        ));
                     }
                     VariadicType::Multi(tuple) => {
                         return Ok(LuaType::Tuple(
@@ -63,7 +67,9 @@ fn infer_table_tuple_or_array(
                     }
                 },
                 _ => {
-                    return Ok(LuaType::Array(first_expr_type.into()));
+                    return Ok(LuaType::Array(
+                        LuaArrayType::from_base_type(first_expr_type).into(),
+                    ));
                 }
             };
         }

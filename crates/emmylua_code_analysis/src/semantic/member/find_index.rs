@@ -26,7 +26,7 @@ pub fn find_index_operations_guard(
         LuaType::TableConst(in_filed) => find_index_table(db, in_filed),
         LuaType::Ref(decl_id) => find_index_custom_type(db, decl_id, infer_guard),
         LuaType::Def(decl_id) => find_index_custom_type(db, decl_id, infer_guard),
-        LuaType::Array(base) => find_index_array(db, base),
+        LuaType::Array(array_type) => find_index_array(db, array_type.get_base()),
         LuaType::Object(object) => find_index_object(db, object),
         LuaType::Union(union) => find_index_union(db, union, infer_guard),
         LuaType::Intersection(intersection) => {

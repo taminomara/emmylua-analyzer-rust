@@ -8,7 +8,7 @@ use crate::{
         LuaFunctionType, LuaGenericType, LuaIntersectionType, LuaObjectType, LuaTupleType, LuaType,
         LuaUnionType, VariadicType,
     },
-    DbIndex, GenericTpl, LuaSignatureId,
+    DbIndex, GenericTpl, LuaArrayType, LuaSignatureId,
 };
 
 use super::{
@@ -22,7 +22,7 @@ pub fn instantiate_type_generic(
     substitutor: &TypeSubstitutor,
 ) -> LuaType {
     match ty {
-        LuaType::Array(base) => instantiate_array(db, base, substitutor),
+        LuaType::Array(array_type) => instantiate_array(db, array_type.get_base(), substitutor),
         LuaType::Tuple(tuple) => instantiate_tuple(db, tuple, substitutor),
         LuaType::DocFunction(doc_func) => instantiate_doc_function(db, doc_func, substitutor),
         LuaType::Object(object) => instantiate_object(db, object, substitutor),
@@ -55,7 +55,7 @@ pub fn instantiate_type_generic(
 
 fn instantiate_array(db: &DbIndex, base: &LuaType, substitutor: &TypeSubstitutor) -> LuaType {
     let base = instantiate_type_generic(db, base, substitutor);
-    LuaType::Array(base.into())
+    LuaType::Array(LuaArrayType::from_base_type(base).into())
 }
 
 fn instantiate_tuple(db: &DbIndex, tuple: &LuaTupleType, substitutor: &TypeSubstitutor) -> LuaType {

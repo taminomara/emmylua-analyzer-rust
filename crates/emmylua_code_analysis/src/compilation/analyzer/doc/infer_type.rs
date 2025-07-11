@@ -14,8 +14,8 @@ use crate::{
         AnalyzeError, LuaAliasCallType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey,
         LuaIntersectionType, LuaObjectType, LuaStringTplType, LuaTupleType, LuaType, LuaUnionType,
     },
-    DiagnosticCode, GenericTpl, InFiled, LuaAliasCallKind, LuaMultiLineUnion, LuaTupleStatus,
-    LuaTypeDeclId, TypeOps, VariadicType,
+    DiagnosticCode, GenericTpl, InFiled, LuaAliasCallKind, LuaArrayLen, LuaArrayType,
+    LuaMultiLineUnion, LuaTupleStatus, LuaTypeDeclId, TypeOps, VariadicType,
 };
 
 use super::{preprocess_description, DocAnalyzer};
@@ -47,7 +47,7 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
                 if t.is_unknown() {
                     return LuaType::Unknown;
                 }
-                return LuaType::Array(t.into());
+                return LuaType::Array(LuaArrayType::new(t, LuaArrayLen::None).into());
             }
         }
         LuaDocType::Literal(literal) => {

@@ -145,8 +145,8 @@ fn tpl_pattern_match(
             }
             _ => {}
         },
-        LuaType::Array(base) => {
-            array_tpl_pattern_match(db, cache, root, base, &target, substitutor)?;
+        LuaType::Array(array_type) => {
+            array_tpl_pattern_match(db, cache, root, array_type.get_base(), &target, substitutor)?;
         }
         LuaType::TableGeneric(table_generic_params) => {
             table_generic_tpl_pattern_match(
@@ -287,8 +287,15 @@ fn array_tpl_pattern_match(
     substitutor: &mut TypeSubstitutor,
 ) -> TplPatternMatchResult {
     match target {
-        LuaType::Array(target_base) => {
-            tpl_pattern_match(db, cache, root, base, target_base, substitutor)?;
+        LuaType::Array(target_array_type) => {
+            tpl_pattern_match(
+                db,
+                cache,
+                root,
+                base,
+                target_array_type.get_base(),
+                substitutor,
+            )?;
         }
         LuaType::Tuple(target_tuple) => {
             let target_base = target_tuple.cast_down_array_base(db);
@@ -348,7 +355,7 @@ fn table_generic_tpl_pattern_match(
                 cache,
                 root,
                 &table_generic_params[1],
-                target_array_base,
+                target_array_base.get_base(),
                 substitutor,
             )?;
         }
@@ -949,7 +956,7 @@ fn tuple_tpl_pattern_match(
                         if let LuaType::TplRef(tpl_ref) = base {
                             let tpl_id = tpl_ref.get_tpl_id();
                             substitutor
-                                .insert_multi_base(tpl_id, target_array_base.deref().clone());
+                                .insert_multi_base(tpl_id, target_array_base.get_base().clone());
                         }
                     }
                     VariadicType::Multi(_) => {}

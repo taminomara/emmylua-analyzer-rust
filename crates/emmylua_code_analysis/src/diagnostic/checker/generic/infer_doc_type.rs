@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use emmylua_parser::{
     LuaAstNode, LuaDocBinaryType, LuaDocDescriptionOwner, LuaDocFuncType, LuaDocGenericType,
     LuaDocMultiLineUnionType, LuaDocObjectFieldKey, LuaDocObjectType, LuaDocStrTplType, LuaDocType,
@@ -8,10 +10,10 @@ use rowan::TextRange;
 use smol_str::SmolStr;
 
 use crate::{
-    InFiled, LuaAliasCallKind, LuaAliasCallType, LuaFunctionType, LuaGenericType,
-    LuaIndexAccessKey, LuaIntersectionType, LuaMultiLineUnion, LuaObjectType, LuaStringTplType,
-    LuaTupleStatus, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType, SemanticModel, TypeOps,
-    VariadicType,
+    InFiled, LuaAliasCallKind, LuaAliasCallType, LuaArrayLen, LuaArrayType, LuaFunctionType,
+    LuaGenericType, LuaIndexAccessKey, LuaIntersectionType, LuaMultiLineUnion, LuaObjectType,
+    LuaStringTplType, LuaTupleStatus, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType,
+    SemanticModel, TypeOps, VariadicType,
 };
 
 pub fn infer_doc_type(semantic_model: &SemanticModel, node: &LuaDocType) -> LuaType {
@@ -46,7 +48,7 @@ pub fn infer_doc_type(semantic_model: &SemanticModel, node: &LuaDocType) -> LuaT
                 if t.is_unknown() {
                     return LuaType::Unknown;
                 }
-                return LuaType::Array(t.into());
+                return LuaType::Array(Arc::new(LuaArrayType::new(t.into(), LuaArrayLen::None)));
             }
         }
         LuaDocType::Literal(literal) => {

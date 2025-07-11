@@ -46,11 +46,11 @@ pub fn check_object_type_compact(
                 check_guard.next_level()?,
             );
         }
-        LuaType::Array(array) => {
+        LuaType::Array(array_type) => {
             return check_object_type_compact_array(
                 db,
                 source_object,
-                array,
+                array_type.get_base(),
                 check_guard.next_level()?,
             );
         }

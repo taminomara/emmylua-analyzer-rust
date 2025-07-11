@@ -40,7 +40,7 @@ pub enum LuaType {
     TableConst(InFiled<TextRange>),
     Ref(LuaTypeDeclId),
     Def(LuaTypeDeclId),
-    Array(Arc<LuaType>),
+    Array(Arc<LuaArrayType>),
     Tuple(Arc<LuaTupleType>),
     DocFunction(Arc<LuaFunctionType>),
     Object(Arc<LuaObjectType>),
@@ -1185,5 +1185,42 @@ impl LuaMultiLineUnion {
 
     pub fn contain_tpl(&self) -> bool {
         self.unions.iter().any(|(t, _)| t.contain_tpl())
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct LuaArrayType {
+    base: LuaType,
+    len: LuaArrayLen,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub enum LuaArrayLen {
+    None,
+    Max(i64),
+}
+
+impl LuaArrayType {
+    pub fn new(base: LuaType, len: LuaArrayLen) -> Self {
+        Self { base, len }
+    }
+
+    pub fn from_base_type(base: LuaType) -> Self {
+        Self {
+            base,
+            len: LuaArrayLen::None,
+        }
+    }
+
+    pub fn get_base(&self) -> &LuaType {
+        &self.base
+    }
+
+    pub fn get_len(&self) -> &LuaArrayLen {
+        &self.len
+    }
+
+    pub fn contain_tpl(&self) -> bool {
+        self.base.contain_tpl()
     }
 }

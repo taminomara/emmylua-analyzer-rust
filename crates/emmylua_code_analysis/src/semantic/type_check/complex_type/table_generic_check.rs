@@ -39,12 +39,12 @@ pub fn check_table_generic_type_compact(
                 check_guard.next_level()?,
             );
         }
-        LuaType::Array(base) => {
+        LuaType::Array(array_type) => {
             if source_generic_param.len() == 2 {
                 let key = &source_generic_param[0];
                 let value = &source_generic_param[1];
                 if key.is_any() || key.is_integer() {
-                    return check_type_compact(db, value, base);
+                    return check_type_compact(db, value, array_type.get_base());
                 }
             }
         }

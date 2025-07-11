@@ -18,8 +18,8 @@ use crate::{
         type_check::{self, check_type_compact},
         InferGuard,
     },
-    CacheEntry, InFiled, LuaDeclOrMemberId, LuaInferCache, LuaInstanceType, LuaMemberOwner,
-    LuaOperatorOwner, TypeOps,
+    CacheEntry, InFiled, LuaArrayLen, LuaArrayType, LuaDeclOrMemberId, LuaInferCache,
+    LuaInstanceType, LuaMemberOwner, LuaOperatorOwner, TypeOps,
 };
 
 use super::{infer_expr, infer_name::infer_global_type, InferFailReason, InferResult};
@@ -181,24 +181,56 @@ pub fn infer_member_by_member_key(
 fn infer_array_member(
     db: &DbIndex,
     cache: &mut LuaInferCache,
-    array_type: &LuaType,
+    array_type: &LuaArrayType,
     index_expr: LuaIndexMemberExpr,
 ) -> Result<LuaType, InferFailReason> {
     let key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
-    let expression_type = if db.get_emmyrc().strict.array_index {
-        match &array_type {
-            LuaType::Any | LuaType::Unknown => array_type.clone(),
-            _ => TypeOps::Union.apply(db, array_type, &LuaType::Nil),
-        }
-    } else {
-        array_type.clone()
-    };
     match key {
-        LuaIndexKey::Integer(_) => Ok(expression_type),
+        LuaIndexKey::Integer(i) => {
+            if !db.get_emmyrc().strict.array_index {
+                return Ok(array_type.get_base().clone());
+            }
+
+            let base_type = array_type.get_base();
+            match array_type.get_len() {
+                LuaArrayLen::None => {}
+                LuaArrayLen::Max(max_len) => {
+                    let index_value = i.get_int_value();
+                    if index_value > 0 && index_value <= *max_len {
+                        return Ok(base_type.clone());
+                    }
+                }
+            }
+
+            let result_type = match &base_type {
+                LuaType::Any | LuaType::Unknown => base_type.clone(),
+                _ => TypeOps::Union.apply(db, base_type, &LuaType::Nil),
+            };
+
+            Ok(result_type)
+        }
         LuaIndexKey::Expr(expr) => {
             let expr_type = infer_expr(db, cache, expr.clone())?;
             if expr_type.is_integer() {
-                Ok(expression_type)
+                let base_type = array_type.get_base();
+                match (array_type.get_len(), expr_type) {
+                    (
+                        LuaArrayLen::Max(max_len),
+                        LuaType::IntegerConst(index_value) | LuaType::DocIntegerConst(index_value),
+                    ) => {
+                        if index_value > 0 && index_value <= *max_len {
+                            return Ok(base_type.clone());
+                        }
+                    }
+                    _ => {}
+                }
+
+                let result_type = match &base_type {
+                    LuaType::Any | LuaType::Unknown => base_type.clone(),
+                    _ => TypeOps::Union.apply(db, base_type, &LuaType::Nil),
+                };
+
+                Ok(result_type)
             } else {
                 Err(InferFailReason::FieldNotFound)
             }
@@ -680,7 +712,9 @@ pub fn infer_member_by_operator(
             infer_member_by_index_custom_type(db, cache, decl_id, index_expr, infer_guard)
         }
         // LuaType::Module(arc) => todo!(),
-        LuaType::Array(base) => infer_member_by_index_array(db, cache, base, index_expr),
+        LuaType::Array(array_type) => {
+            infer_member_by_index_array(db, cache, array_type.get_base(), index_expr)
+        }
         LuaType::Object(object) => infer_member_by_index_object(db, cache, object, index_expr),
         LuaType::Union(union) => infer_member_by_index_union(db, cache, union, index_expr),
         LuaType::Intersection(intersection) => {

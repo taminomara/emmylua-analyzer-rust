@@ -25,8 +25,13 @@ pub fn check_complex_type_compact(
     check_guard: TypeCheckGuard,
 ) -> TypeCheckResult {
     match source {
-        LuaType::Array(source_base) => {
-            match check_array_type_compact(db, source_base, compact_type, check_guard) {
+        LuaType::Array(source_array_type) => {
+            match check_array_type_compact(
+                db,
+                source_array_type.get_base(),
+                compact_type,
+                check_guard,
+            ) {
                 Err(TypeCheckFailReason::DonotCheck) => {}
                 result => return result,
             }

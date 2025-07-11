@@ -145,7 +145,9 @@ fn find_function_type_by_member_key(
             find_instance_member_decl_type(db, cache, inst, index_expr, infer_guard, deep_guard)
         }
         LuaType::Namespace(ns) => infer_namespace_member_decl_type(db, cache, ns, index_expr),
-        LuaType::Array(array_type) => find_array_function(db, cache, array_type, index_expr),
+        LuaType::Array(array_type) => {
+            find_array_function(db, cache, array_type.get_base(), index_expr)
+        }
         _ => Err(InferFailReason::FieldNotFound),
     }
 }
@@ -471,7 +473,9 @@ fn find_function_type_by_operator(
             deep_guard,
         ),
         // LuaType::Module(arc) => todo!(),
-        LuaType::Array(base) => infer_member_by_index_array(db, cache, base, index_expr),
+        LuaType::Array(array_type) => {
+            infer_member_by_index_array(db, cache, array_type.get_base(), index_expr)
+        }
         LuaType::Object(object) => infer_member_by_index_object(db, cache, object, index_expr),
         LuaType::Union(union) => {
             find_member_by_index_union(db, cache, union, index_expr, deep_guard)

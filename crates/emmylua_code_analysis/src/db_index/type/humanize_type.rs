@@ -78,7 +78,7 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
                 id.get_name().to_string()
             }
         }
-        LuaType::Array(arr_inner) => humanize_array_type(db, arr_inner, level),
+        LuaType::Array(arr_inner) => humanize_array_type(db, arr_inner.get_base(), level),
         LuaType::Call(alias_call) => humanize_call_type(db, alias_call, level),
         LuaType::DocFunction(lua_func) => humanize_doc_function_type(db, lua_func, level),
         LuaType::Object(object) => humanize_object_type(db, object, level),

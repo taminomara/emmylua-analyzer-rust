@@ -151,7 +151,7 @@ fn is_valid_member(
     match prefix_typ {
         LuaType::Global | LuaType::Userdata => return Some(()),
         LuaType::Array(typ) => {
-            if typ.is_unknown() {
+            if typ.get_base().is_unknown() {
                 return Some(());
             }
         }

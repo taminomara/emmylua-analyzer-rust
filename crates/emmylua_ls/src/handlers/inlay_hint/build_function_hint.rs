@@ -164,7 +164,7 @@ fn get_type_location(semantic_model: &SemanticModel, typ: &LuaType) -> Option<Lo
             let base_type_id = generic.get_base_type_id();
             get_type_location(semantic_model, &LuaType::Ref(base_type_id))
         }
-        LuaType::Array(base) => get_type_location(semantic_model, base),
+        LuaType::Array(array_type) => get_type_location(semantic_model, array_type.get_base()),
         LuaType::Any => get_base_type_location(semantic_model, "any"),
         LuaType::Nil => get_base_type_location(semantic_model, "nil"),
         LuaType::Unknown => get_base_type_location(semantic_model, "unknown"),
