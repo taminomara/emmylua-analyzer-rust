@@ -139,6 +139,7 @@ pub fn instantiate_func_generic(
         }
     }
 
+    substitutor.set_call_expr(call_expr.clone());
     if contain_self {
         infer_self_type(db, cache, &call_expr, &mut substitutor)?;
     }
