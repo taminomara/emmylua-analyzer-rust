@@ -19,10 +19,6 @@ fn collect_property(db: &DbIndex, semantic_decl: LuaSemanticDeclId) -> Property 
             doc_property.description = Some(description.to_string());
         }
 
-        if let Some(see) = property.see_content.clone() {
-            doc_property.see = Some(see.to_string());
-        }
-
         if let Some(deprecated) = &property.deprecated {
             match deprecated {
                 LuaDeprecated::Deprecated => {
@@ -33,8 +29,26 @@ fn collect_property(db: &DbIndex, semantic_decl: LuaSemanticDeclId) -> Property 
                 }
             }
         }
-        if let Some(other) = property.other_content.clone() {
-            doc_property.other = Some(other.to_string());
+
+        if let Some(tag_content) = &property.tag_content {
+            for (tag_name, content) in tag_content.get_all_tags() {
+                match tag_name.as_str() {
+                    "see" => {
+                        let see_content = doc_property.see.get_or_insert_with(String::new);
+                        if !see_content.is_empty() {
+                            see_content.push_str("\n");
+                        }
+                        see_content.push_str(content);
+                    }
+                    _ => {
+                        let other_content = doc_property.other.get_or_insert_with(String::new);
+                        if !other_content.is_empty() {
+                            other_content.push_str("\n");
+                        }
+                        other_content.push_str(&format!("@{} {}", tag_name, content));
+                    }
+                }
+            }
         }
     }
 

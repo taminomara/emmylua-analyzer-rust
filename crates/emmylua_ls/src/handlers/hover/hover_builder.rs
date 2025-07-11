@@ -24,9 +24,7 @@ pub struct HoverBuilder<'a> {
     /// Type expansion, often used for alias types
     pub type_expansion: Option<Vec<String>>,
     /// see
-    see_content: Option<String>,
-    /// other
-    other_content: Option<String>,
+    tag_content: Option<Vec<(String, String)>>,
 
     pub is_completion: bool,
     trigger_token: Option<LuaSyntaxToken>,
@@ -51,8 +49,7 @@ impl<'a> HoverBuilder<'a> {
             is_completion,
             trigger_token: token,
             type_expansion: None,
-            see_content: None,
-            other_content: None,
+            tag_content: None,
         }
     }
 
@@ -146,11 +143,8 @@ impl<'a> HoverBuilder<'a> {
                 self.add_annotation_description(description);
             }
 
-            if let Some(see) = desc_info.see_content {
-                self.see_content = Some(see);
-            }
-            if let Some(other) = desc_info.other_content {
-                self.other_content = Some(other);
+            if let Some(tag_content) = desc_info.tag_content {
+                self.tag_content = Some(tag_content);
             }
 
             Some(())
@@ -244,14 +238,12 @@ impl<'a> HoverBuilder<'a> {
                 }
             }
 
-            if let Some(see_content) = &self.see_content {
-                content.push_str(&format!("\n@*see* {}\n", see_content));
+            if let Some(tag_content) = &self.tag_content {
+                for (tag_name, description) in tag_content {
+                    content.push_str(&format!("\n@*{}* {}\n", tag_name, description));
+                }
             }
 
-            if let Some(other) = &self.other_content {
-                content.push_str("\n\n");
-                content.push_str(other);
-            }
             content
         };
 

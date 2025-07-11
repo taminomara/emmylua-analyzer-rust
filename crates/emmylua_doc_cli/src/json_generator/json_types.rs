@@ -130,10 +130,15 @@ pub struct Field {
 pub struct Property {
     pub description: Option<String>,
     pub visibility: Option<String>,
-    pub see: Option<String>,
     pub deprecated: bool,
     pub deprecation_reason: Option<String>,
-    pub other: Option<String>,
+    pub tag_content: Option<Vec<TagNameContent>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct TagNameContent {
+    pub tag_name: String,
+    pub content: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]

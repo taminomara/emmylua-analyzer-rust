@@ -8,8 +8,7 @@ pub struct LuaCommonProperty {
     pub source: Option<Box<String>>,
     pub deprecated: Option<LuaDeprecated>,
     pub version_conds: Option<Box<Vec<LuaVersionCondition>>>,
-    pub see_content: Option<Box<String>>,
-    pub other_content: Option<Box<String>>,
+    pub tag_content: Option<Box<LuaTagContent>>,
     pub export: Option<LuaExport>,
 }
 
@@ -26,6 +25,25 @@ pub enum LuaExportScope {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LuaTagContent {
+    pub tags: Vec<(String, String)>,
+}
+
+impl LuaTagContent {
+    pub fn new() -> Self {
+        Self { tags: Vec::new() }
+    }
+
+    pub fn add_tag(&mut self, tag: String, content: String) {
+        self.tags.push((tag, content));
+    }
+
+    pub fn get_all_tags(&self) -> &[(String, String)] {
+        &self.tags
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LuaExport {
     pub scope: LuaExportScope,
 }
@@ -39,8 +57,7 @@ impl LuaCommonProperty {
             source: None,
             deprecated: None,
             version_conds: None,
-            see_content: None,
-            other_content: None,
+            tag_content: None,
             export: None,
         }
     }

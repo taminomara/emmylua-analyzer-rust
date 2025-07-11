@@ -314,13 +314,21 @@ fn export_property(db: &DbIndex, semantic_decl: &LuaSemanticDeclId) -> Property 
                 .as_ref()
                 .and_then(|s| s.to_str())
                 .map(|s| s.to_string()),
-            see: property.see_content.as_ref().map(|s| s.to_string()),
             deprecated: property.deprecated.is_some(),
             deprecation_reason: property.deprecated.as_ref().and_then(|s| match s {
                 LuaDeprecated::Deprecated => None,
                 LuaDeprecated::DeprecatedWithMessage(msg) => Some(msg.to_string()),
             }),
-            other: property.other_content.as_ref().map(|s| s.to_string()),
+            tag_content: property.tag_content.as_ref().map(|tag_content| {
+                tag_content
+                    .get_all_tags()
+                    .iter()
+                    .map(|(name, content)| TagNameContent {
+                        tag_name: name.clone(),
+                        content: content.clone(),
+                    })
+                    .collect()
+            }),
         },
         None => Default::default(),
     }

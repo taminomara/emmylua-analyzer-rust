@@ -6,7 +6,7 @@ use emmylua_parser::{LuaVersionCondition, VisibilityKind};
 use property::LuaCommonProperty;
 pub use property::{LuaDeprecated, LuaExport, LuaExportScope, LuaPropertyId};
 
-use crate::FileId;
+use crate::{db_index::property::property::LuaTagContent, FileId};
 
 use super::{traits::LuaIndex, LuaSemanticDeclId};
 
@@ -161,7 +161,11 @@ impl LuaPropertyIndex {
         see_content: String,
     ) -> Option<()> {
         let property = self.get_or_create_property(owner_id.clone())?;
-        property.see_content = Some(Box::new(see_content));
+        let tag_content = property
+            .tag_content
+            .get_or_insert_with(|| Box::new(LuaTagContent::new()));
+
+        tag_content.add_tag("see".into(), see_content);
 
         self.in_filed_owner
             .entry(file_id)
@@ -175,17 +179,14 @@ impl LuaPropertyIndex {
         &mut self,
         file_id: FileId,
         owner_id: LuaSemanticDeclId,
+        tag_name: String,
         other_content: String,
     ) -> Option<()> {
         let property = self.get_or_create_property(owner_id.clone())?;
-        if let Some(content) = &property.other_content {
-            let mut content = content.clone();
-            content.push_str("\n\n");
-            content.push_str(&other_content);
-            property.other_content = Some(content);
-        } else {
-            property.other_content = Some(other_content.into());
-        }
+        let tag_content = property
+            .tag_content
+            .get_or_insert_with(|| Box::new(LuaTagContent::new()));
+        tag_content.add_tag(tag_name, other_content);
 
         self.in_filed_owner
             .entry(file_id)

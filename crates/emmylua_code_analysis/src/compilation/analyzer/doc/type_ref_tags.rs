@@ -389,15 +389,15 @@ pub fn analyze_other(analyzer: &mut DocAnalyzer, other: LuaDocTagOther) -> Optio
     let tag_name = other.get_tag_name()?;
     let description = if let Some(des) = other.get_description() {
         let description = preprocess_description(&des.get_description_text(), None);
-        format!("@*{}* {}", tag_name, description)
+        description
     } else {
-        format!("@*{}*", tag_name)
+        "".to_string()
     };
 
     analyzer
         .db
         .get_property_index_mut()
-        .add_other(analyzer.file_id, owner, description);
+        .add_other(analyzer.file_id, owner, tag_name, description);
 
     Some(())
 }

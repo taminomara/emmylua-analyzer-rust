@@ -142,21 +142,19 @@ pub fn infer_prefix_global_name<'a>(
 #[derive(Debug, Clone)]
 pub struct DescriptionInfo {
     pub description: Option<String>,
-    pub see_content: Option<String>,
-    pub other_content: Option<String>,
+    pub tag_content: Option<Vec<(String, String)>>,
 }
 
 impl DescriptionInfo {
     pub fn new() -> Self {
         Self {
             description: None,
-            see_content: None,
-            other_content: None,
+            tag_content: None,
         }
     }
 
     pub fn is_empty(&self) -> bool {
-        self.description.is_none() && self.see_content.is_none() && self.other_content.is_none()
+        self.description.is_none() && self.tag_content.is_none()
     }
 }
 
@@ -209,11 +207,15 @@ pub fn extract_description_from_property_owner(
         result.description = Some(description);
     }
 
-    if let Some(see) = &property.see_content {
-        result.see_content = Some(see.to_string());
-    }
-    if let Some(other) = &property.other_content {
-        result.other_content = Some(other.to_string());
+    if let Some(tag_content) = &property.tag_content {
+        for (tag_name, description) in tag_content.get_all_tags() {
+            if result.tag_content.is_none() {
+                result.tag_content = Some(Vec::new());
+            }
+            if let Some(tag_content) = &mut result.tag_content {
+                tag_content.push((tag_name.clone(), description.clone()));
+            }
+        }
     }
 
     if result.is_empty() {
