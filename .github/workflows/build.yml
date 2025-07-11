@@ -103,7 +103,7 @@ jobs:
           chmod +x emmylua_ls-darwin-x64/emmylua_ls
           chmod +x emmylua_ls-darwin-arm64/emmylua_ls
           chmod +x emmylua_check-linux-x64/emmylua_check
-          chmod +x emmylua_doc_cli-linux-x64-glibc.2.17/emmylua_doc_cli
+          chmod +x emmylua_doc_cli-linux-x64/emmylua_doc_cli
 
           tar -zcvf emmylua_ls-linux-x64.tar.gz -C emmylua_ls-linux-x64 emmylua_ls
           tar -zcvf emmylua_ls-linux-x64-glibc.2.17.tar.gz -C emmylua_ls-linux-x64-glibc.2.17 emmylua_ls
