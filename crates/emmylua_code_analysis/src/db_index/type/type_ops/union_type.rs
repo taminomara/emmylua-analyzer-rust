@@ -74,7 +74,11 @@ pub fn union_type(source: LuaType, target: LuaType) -> LuaType {
             let mut left = left.into_set();
             let right = right.into_set();
             left.extend(right);
-            LuaType::Union(LuaUnionType::from_set(left).into())
+            match left.len() {
+                0 => LuaType::Never,
+                1 => left.into_iter().next().unwrap(),
+                _ => LuaType::Union(LuaUnionType::from_set(left).into()),
+            }
         }
 
         // same type

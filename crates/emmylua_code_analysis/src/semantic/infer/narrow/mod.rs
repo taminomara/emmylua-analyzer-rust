@@ -16,7 +16,7 @@ use crate::{
 use emmylua_parser::{LuaAstNode, LuaChunk, LuaExpr};
 pub use get_type_at_cast_flow::get_type_at_call_expr_inline_cast;
 pub use narrow_type::{narrow_down_type, narrow_false_or_nil, remove_false_or_nil};
-pub use var_ref_id::VarRefId;
+pub use var_ref_id::{get_var_expr_var_ref_id, VarRefId};
 
 pub fn infer_expr_narrow_type(
     db: &DbIndex,

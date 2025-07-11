@@ -1,6 +1,9 @@
 use std::collections::HashSet;
 
-use emmylua_parser::{LuaExpr, LuaIndexExpr, LuaIndexKey, LuaIndexMemberExpr, PathTrait};
+use emmylua_parser::{
+    LuaAstNode, LuaExpr, LuaForStat, LuaIndexExpr, LuaIndexKey, LuaIndexMemberExpr, PathTrait,
+    UnaryOperator,
+};
 use internment::ArcIntern;
 use rowan::TextRange;
 use smol_str::SmolStr;
@@ -13,7 +16,11 @@ use crate::{
     enum_variable_is_param,
     semantic::{
         generic::{instantiate_type_generic, TypeSubstitutor},
-        infer::{infer_name::get_name_expr_var_ref_id, narrow::infer_expr_narrow_type, VarRefId},
+        infer::{
+            infer_name::get_name_expr_var_ref_id,
+            narrow::{get_var_expr_var_ref_id, infer_expr_narrow_type},
+            VarRefId,
+        },
         member::get_buildin_type_map_type_id,
         type_check::{self, check_type_compact},
         InferGuard,
@@ -182,9 +189,20 @@ fn infer_array_member(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     array_type: &LuaArrayType,
-    index_expr: LuaIndexMemberExpr,
+    index_member_expr: LuaIndexMemberExpr,
 ) -> Result<LuaType, InferFailReason> {
-    let key = index_expr.get_index_key().ok_or(InferFailReason::None)?;
+    let key = index_member_expr
+        .get_index_key()
+        .ok_or(InferFailReason::None)?;
+    let index_prefix_expr = match index_member_expr {
+        LuaIndexMemberExpr::TableField(_) => {
+            return Ok(array_type.get_base().clone());
+        }
+        _ => index_member_expr
+            .get_prefix_expr()
+            .ok_or(InferFailReason::None)?,
+    };
+
     match key {
         LuaIndexKey::Integer(i) => {
             if !db.get_emmyrc().strict.array_index {
@@ -222,7 +240,13 @@ fn infer_array_member(
                             return Ok(base_type.clone());
                         }
                     }
-                    _ => {}
+                    _ => {
+                        if check_iter_var_range(db, cache, &expr, index_prefix_expr)
+                            .unwrap_or(false)
+                        {
+                            return Ok(base_type.clone());
+                        }
+                    }
                 }
 
                 let result_type = match &base_type {
@@ -237,6 +261,48 @@ fn infer_array_member(
         }
         _ => Err(InferFailReason::FieldNotFound),
     }
+}
+
+fn check_iter_var_range(
+    db: &DbIndex,
+    cache: &mut LuaInferCache,
+    may_iter_var: &LuaExpr,
+    prefix_expr: LuaExpr,
+) -> Option<bool> {
+    let LuaExpr::NameExpr(name_expr) = may_iter_var else {
+        return None;
+    };
+
+    let decl_id = db
+        .get_reference_index()
+        .get_var_reference_decl(&cache.get_file_id(), name_expr.get_range())?;
+
+    let decl = db.get_decl_index().get_decl(&decl_id)?;
+    let decl_syntax_id = decl.get_syntax_id();
+    if !decl_syntax_id.is_token() {
+        return None;
+    }
+
+    let root = prefix_expr.get_root();
+    let token = decl_syntax_id.to_token_from_root(&root)?;
+    let parent_node = token.parent()?;
+    let for_stat = LuaForStat::cast(parent_node)?;
+    // get second expr
+    let test_len_expr = for_stat.get_iter_expr().skip(1).next()?;
+    let LuaExpr::UnaryExpr(unary_expr) = test_len_expr else {
+        return None;
+    };
+
+    let op = unary_expr.get_op_token()?;
+    if op.get_op() != UnaryOperator::OpLen {
+        return None;
+    }
+
+    let len_expr = unary_expr.get_expr()?;
+    let len_expr_var_ref_id = get_var_expr_var_ref_id(db, cache, len_expr)?;
+    let prefix_expr_var_ref_id = get_var_expr_var_ref_id(db, cache, prefix_expr)?;
+
+    Some(len_expr_var_ref_id == prefix_expr_var_ref_id)
 }
 
 fn infer_table_member(

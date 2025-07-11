@@ -1001,4 +1001,38 @@ end
             "#,
         ));
     }
+
+    #[test]
+    fn test_issue_524() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+            ---@type string[]
+            local d = {}
+
+            if #d == 2 then
+                a = d[1]
+                b = d[2]
+                c = d[3]
+            end
+
+            for i = 1, #d do
+                e = d[i]
+            end
+            "#,
+        );
+
+        let a = ws.expr_ty("a");
+        let a_expected = ws.ty("string");
+        assert_eq!(a, a_expected);
+        let b = ws.expr_ty("b");
+        let b_expected = ws.ty("string");
+        assert_eq!(b, b_expected);
+        let c = ws.expr_ty("c");
+        let c_expected = ws.ty("string?");
+        assert_eq!(c, c_expected);
+        let e = ws.expr_ty("e");
+        let e_expected = ws.ty("string");
+        assert_eq!(e, e_expected);
+    }
 }
