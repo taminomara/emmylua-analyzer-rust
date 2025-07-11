@@ -12,7 +12,7 @@ pub use configs::EmmyrcFilenameConvention;
 pub use configs::EmmyrcLuaVersion;
 use configs::{EmmyrcCodeAction, EmmyrcDocumentColor};
 use configs::{
-    EmmyrcCodeLen, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcHover, EmmyrcInlayHint,
+    EmmyrcCodeLen, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcDoc, EmmyrcHover, EmmyrcInlayHint,
     EmmyrcInlineValues, EmmyrcReference, EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken,
     EmmyrcSignature, EmmyrcStrict, EmmyrcWorkspace,
 };
@@ -58,6 +58,8 @@ pub struct Emmyrc {
     pub code_action: EmmyrcCodeAction,
     #[serde(default)]
     pub inline_values: EmmyrcInlineValues,
+    #[serde(default)]
+    pub doc: EmmyrcDoc,
 }
 
 impl Emmyrc {

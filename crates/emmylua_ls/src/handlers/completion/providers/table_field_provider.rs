@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use emmylua_code_analysis::{get_real_type, LuaMemberInfo, LuaMemberKey, LuaType};
+use emmylua_code_analysis::{get_real_type, InferGuard, LuaMemberInfo, LuaMemberKey, LuaType};
 use emmylua_parser::{LuaAst, LuaAstNode, LuaKind, LuaTableExpr, LuaTableField, LuaTokenKind};
 use lsp_types::{CompletionItem, InsertTextFormat, InsertTextMode};
 use rowan::NodeOrToken;
@@ -9,6 +9,7 @@ use crate::handlers::completion::{
     add_completions::{check_visibility, is_deprecated},
     completion_builder::CompletionBuilder,
     completion_data::CompletionData,
+    providers::function_provider::dispatch_type,
 };
 
 pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
@@ -97,7 +98,7 @@ fn add_field_key_completion(
     };
     let typ = member_info.typ;
 
-    let (label, insert_text) = {
+    let (label, insert_text, insert_text_format) = {
         let is_nullable = if typ.is_nullable() { "?" } else { "" };
         if in_env(builder, &name, &typ).is_some() {
             (
@@ -106,7 +107,8 @@ fn add_field_key_completion(
                     name = name,
                     nullable = is_nullable,
                 ),
-                format!("{name} = {name},", name = name,),
+                format!("{name} = ${{1:{name}}},", name = name),
+                Some(InsertTextFormat::SNIPPET),
             )
         } else {
             // 函数类型不补空格, 留空格让用户触发字符补全
@@ -119,6 +121,7 @@ fn add_field_key_completion(
                     space = space
                 ),
                 format!("{name} ={space}", name = name, space = space),
+                None,
             )
         }
     };
@@ -145,6 +148,7 @@ fn add_field_key_completion(
         data,
         deprecated,
         insert_text: Some(insert_text),
+        insert_text_format,
         ..Default::default()
     };
 
@@ -152,6 +156,7 @@ fn add_field_key_completion(
     Some(())
 }
 
+/// 是否在当前文件的 env 中, 将会排除掉`std`
 fn in_env(builder: &mut CompletionBuilder, target_name: &str, target_type: &LuaType) -> Option<()> {
     let file_id = builder.semantic_model.get_file_id();
     let decl_tree = builder
@@ -164,7 +169,16 @@ fn in_env(builder: &mut CompletionBuilder, target_name: &str, target_type: &LuaT
         .semantic_model
         .get_db()
         .get_global_index()
-        .get_all_global_decl_ids();
+        .get_all_global_decl_ids()
+        .into_iter()
+        .filter(|id| {
+            !builder
+                .semantic_model
+                .get_db()
+                .get_module_index()
+                .is_std(&id.file_id)
+        })
+        .collect();
     let all_env = [local_env, global_env].concat();
 
     for decl_id in all_env.iter() {
@@ -252,6 +266,8 @@ fn add_field_value_completion(
         };
 
         return builder.add_completion_item(item);
+    } else {
+        dispatch_type(builder, real_type.clone(), &mut InferGuard::new())?;
     }
 
     None

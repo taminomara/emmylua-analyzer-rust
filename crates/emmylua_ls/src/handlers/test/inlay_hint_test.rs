@@ -108,7 +108,7 @@ mod tests {
             "#,
             )
             .unwrap();
-        assert!(result.len() == 4);
+        assert!(result.len() == 3);
     }
 
     #[test]
@@ -123,7 +123,7 @@ mod tests {
             "#,
             )
             .unwrap();
-        assert!(result.len() == 1);
+        assert!(result.len() == 0);
     }
 
     #[test]
@@ -148,9 +148,9 @@ mod tests {
             "#,
             )
             .unwrap();
-        assert!(result.len() == 2);
+        assert!(result.len() == 1);
 
-        let location = match &result.get(1).unwrap().label {
+        let location = match &result.get(0).unwrap().label {
             InlayHintLabel::LabelParts(parts) => parts.first().unwrap().location.as_ref().unwrap(),
             InlayHintLabel::String(_) => panic!(),
         };
@@ -158,5 +158,21 @@ mod tests {
             location.range,
             Range::new(Position::new(4, 27), Position::new(4, 33))
         );
+    }
+
+    #[test]
+    fn test_index_key_alias_hint() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        let result = ws
+            .check_inlay_hint(
+                r#"
+                local export = {
+                    [1] = 1, -- [nameX]
+                }
+                print(export[1])
+            "#,
+            )
+            .unwrap();
+        assert!(result.len() == 1);
     }
 }

@@ -2,8 +2,9 @@ use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaCallExpr, LuaExpr, LuaI
 use rowan::TextRange;
 
 use crate::{
-    humanize_type, DiagnosticCode, LuaSemanticDeclId, LuaType, RenderLevel, SemanticDeclLevel,
-    SemanticModel, TypeCheckFailReason, TypeCheckResult,
+    diagnostic::checker::assign_type_mismatch::check_table_expr, humanize_type, DiagnosticCode,
+    LuaSemanticDeclId, LuaType, RenderLevel, SemanticDeclLevel, SemanticModel, TypeCheckFailReason,
+    TypeCheckResult,
 };
 
 use super::{Checker, DiagnosticContext};
@@ -11,7 +12,10 @@ use super::{Checker, DiagnosticContext};
 pub struct ParamTypeCheckChecker;
 
 impl Checker for ParamTypeCheckChecker {
-    const CODES: &[DiagnosticCode] = &[DiagnosticCode::ParamTypeNotMatch];
+    const CODES: &[DiagnosticCode] = &[
+        DiagnosticCode::ParamTypeNotMatch,
+        DiagnosticCode::AssignTypeMismatch,
+    ];
 
     /// a simple implementation of param type check, later we will do better
     fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
@@ -85,6 +89,35 @@ fn check_call_expr(
             }
             let result = semantic_model.type_check(&check_type, arg_type);
             if !result.is_ok() {
+                // 这里执行了`AssignTypeMismatch`的检查
+                if arg_type.is_table() {
+                    let arg_expr_idx = match (colon_call, colon_define) {
+                        (true, false) => {
+                            if idx == 0 {
+                                continue;
+                            } else {
+                                idx - 1
+                            }
+                        }
+                        _ => idx,
+                    };
+
+                    if let Some(arg_expr) = arg_exprs.get(arg_expr_idx) {
+                        // 表字段已经报错了, 则不添加参数不匹配的诊断避免干扰
+                        if let Some(add_diagnostic) = check_table_expr(
+                            context,
+                            semantic_model,
+                            arg_expr,
+                            Some(&param_type),
+                            Some(arg_type),
+                        ) {
+                            if add_diagnostic {
+                                continue;
+                            }
+                        }
+                    }
+                }
+
                 try_add_diagnostic(
                     context,
                     semantic_model,
@@ -188,16 +221,48 @@ pub fn get_call_source_type(
     semantic_model: &SemanticModel,
     call_expr: &LuaCallExpr,
 ) -> Option<LuaType> {
-    if let Some(LuaExpr::IndexExpr(index_expr)) = call_expr.get_prefix_expr() {
-        let decl = semantic_model.find_decl(
-            index_expr.syntax().clone().into(),
-            SemanticDeclLevel::default(),
-        )?;
+    match call_expr.get_prefix_expr()? {
+        LuaExpr::IndexExpr(index_expr) => {
+            let decl = semantic_model.find_decl(
+                index_expr.syntax().clone().into(),
+                SemanticDeclLevel::default(),
+            )?;
 
-        if let LuaSemanticDeclId::Member(member_id) = decl {
-            if let Some(LuaSemanticDeclId::Member(member_id)) =
-                semantic_model.get_member_origin_owner(member_id)
-            {
+            if let LuaSemanticDeclId::Member(member_id) = decl {
+                if let Some(LuaSemanticDeclId::Member(member_id)) =
+                    semantic_model.get_member_origin_owner(member_id)
+                {
+                    let root = semantic_model
+                        .get_db()
+                        .get_vfs()
+                        .get_syntax_tree(&member_id.file_id)?
+                        .get_red_root();
+                    let cur_node = member_id.get_syntax_id().to_node_from_root(&root)?;
+                    let index_expr = LuaIndexExpr::cast(cur_node)?;
+
+                    return index_expr.get_prefix_expr().map(|prefix_expr| {
+                        semantic_model
+                            .infer_expr(prefix_expr.clone())
+                            .unwrap_or(LuaType::SelfInfer)
+                    });
+                }
+            }
+
+            return if let Some(prefix_expr) = index_expr.get_prefix_expr() {
+                let expr_type = semantic_model
+                    .infer_expr(prefix_expr.clone())
+                    .unwrap_or(LuaType::SelfInfer);
+                Some(expr_type)
+            } else {
+                None
+            };
+        }
+        LuaExpr::NameExpr(name_expr) => {
+            let decl = semantic_model.find_decl(
+                name_expr.syntax().clone().into(),
+                SemanticDeclLevel::default(),
+            )?;
+            if let LuaSemanticDeclId::Member(member_id) = decl {
                 let root = semantic_model
                     .get_db()
                     .get_vfs()
@@ -212,16 +277,11 @@ pub fn get_call_source_type(
                         .unwrap_or(LuaType::SelfInfer)
                 });
             }
-        }
 
-        return if let Some(prefix_expr) = index_expr.get_prefix_expr() {
-            let expr_type = semantic_model
-                .infer_expr(prefix_expr.clone())
-                .unwrap_or(LuaType::SelfInfer);
-            Some(expr_type)
-        } else {
-            None
-        };
+            return None;
+        }
+        _ => {}
     }
+
     None
 }

@@ -16,7 +16,6 @@ impl Checker for CastTypeMismatchChecker {
     const CODES: &[DiagnosticCode] = &[DiagnosticCode::CastTypeMismatch];
 
     fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
-        // dbg!(&semantic_model.get_root());
         for node in semantic_model.get_root().descendants::<LuaAst>() {
             if let LuaAst::LuaDocTagCast(cast_tag) = node {
                 check_cast_tag(context, semantic_model, &cast_tag);
@@ -241,7 +240,12 @@ fn expand_type_recursive(
         LuaType::Union(union_type) => {
             // 递归展开 union 中的每个类型
             let mut expanded_types = HashSet::new();
+            let mut has_nil = false;
             for inner_type in union_type.into_vec() {
+                if inner_type.is_nil() {
+                    has_nil = true;
+                    continue;
+                }
                 if let Some(expanded) = expand_type_recursive(db, &inner_type, visited) {
                     match expanded {
                         LuaType::Union(inner_union) => {
@@ -258,7 +262,13 @@ fn expand_type_recursive(
             }
 
             return match expanded_types.len() {
-                0 => Some(LuaType::Unknown),
+                0 => {
+                    if has_nil {
+                        Some(LuaType::Nil)
+                    } else {
+                        Some(LuaType::Unknown)
+                    }
+                }
                 1 => Some(expanded_types.iter().cloned().next().unwrap().into()),
                 _ => Some(LuaType::Union(
                     LuaUnionType::from_set(expanded_types).into(),

@@ -1,4 +1,6 @@
-use emmylua_code_analysis::{EmmyLuaAnalysis, FileId, VirtualUrlGenerator};
+use std::{ops::Deref, sync::Arc};
+
+use emmylua_code_analysis::{EmmyLuaAnalysis, Emmyrc, FileId, VirtualUrlGenerator};
 use lsp_types::{
     CodeActionResponse, CompletionItemKind, CompletionResponse, CompletionTriggerKind,
     GotoDefinitionResponse, Hover, HoverContents, InlayHint, MarkupContent, Position,
@@ -12,12 +14,13 @@ use crate::{
         code_actions::code_action,
         completion::{completion, completion_resolve},
         inlay_hint::inlay_hint,
+        rename::rename,
         semantic_token::semantic_token,
         signature_helper::signature_help,
     },
 };
 
-use super::{hover::hover, implementation::implementation};
+use super::{hover::hover, implementation::implementation, references::references};
 
 /// A virtual workspace for testing.
 #[allow(unused)]
@@ -102,6 +105,14 @@ impl ProviderVirtualWorkspace {
             .update_file_by_uri(&uri, Some(content.to_string()))
             .unwrap();
         file_id
+    }
+
+    pub fn get_emmyrc(&self) -> Emmyrc {
+        self.analysis.emmyrc.deref().clone()
+    }
+
+    pub fn update_emmyrc(&mut self, emmyrc: Emmyrc) {
+        self.analysis.update_config(Arc::new(emmyrc));
     }
 
     /// 处理文件内容
@@ -343,5 +354,41 @@ impl ProviderVirtualWorkspace {
         let data = serde_json::to_string(&result).unwrap();
         dbg!(&data);
         Some(result)
+    }
+
+    pub fn check_rename(&mut self, block_str: &str, new_name: String, len: usize) -> bool {
+        let content = Self::handle_file_content(block_str);
+        let Some((content, position)) = content else {
+            return false;
+        };
+        let file_id = self.def(&content);
+        let result = rename(&self.analysis, file_id, position, new_name.clone());
+        let Some(result) = result else {
+            return false;
+        };
+        // dbg!(&result);
+        if let Some(changes) = result.changes {
+            let mut count = 0;
+            for (_, edits) in changes {
+                count += edits.len();
+            }
+            if count != len {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    pub fn check_references(&mut self, block_str: &str) -> Option<Vec<lsp_types::Location>> {
+        let content = Self::handle_file_content(block_str);
+        let Some((content, position)) = content else {
+            return None;
+        };
+        let file_id = self.def(&content);
+        let result = references(&self.analysis, file_id, position);
+        // dbg!(&result);
+        dbg!(&result.as_ref().unwrap().len());
+        result
     }
 }

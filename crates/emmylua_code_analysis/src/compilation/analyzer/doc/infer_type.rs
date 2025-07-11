@@ -215,6 +215,14 @@ fn infer_generic_type(analyzer: &mut DocAnalyzer, generic_type: &LuaDocGenericTy
             {
                 name_type_decl.get_id()
             } else {
+                analyzer.db.get_diagnostic_index_mut().add_diagnostic(
+                    analyzer.file_id,
+                    AnalyzeError::new(
+                        DiagnosticCode::TypeNotFound,
+                        &t!("Type '%{name}' not found", name = name),
+                        generic_type.get_range(),
+                    ),
+                );
                 return LuaType::Unknown;
             };
 
@@ -227,6 +235,13 @@ fn infer_generic_type(analyzer: &mut DocAnalyzer, generic_type: &LuaDocGenericTy
                     }
                     generic_params.push(param_type);
                 }
+            }
+            if let Some(name_type) = generic_type.get_name_type() {
+                analyzer.db.get_reference_index_mut().add_type_reference(
+                    analyzer.file_id,
+                    id.clone(),
+                    name_type.get_range(),
+                );
             }
 
             return LuaType::Generic(LuaGenericType::new(id, generic_params).into());

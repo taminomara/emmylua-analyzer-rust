@@ -160,6 +160,10 @@ fn get_type_location(semantic_model: &SemanticModel, typ: &LuaType) -> Option<Lo
             let lsp_range = document.to_lsp_range(location.range)?;
             Some(Location::new(document.get_uri(), lsp_range))
         }
+        LuaType::Generic(generic) => {
+            let base_type_id = generic.get_base_type_id();
+            get_type_location(semantic_model, &LuaType::Ref(base_type_id))
+        }
         LuaType::Array(base) => get_type_location(semantic_model, base),
         LuaType::Any => get_base_type_location(semantic_model, "any"),
         LuaType::Nil => get_base_type_location(semantic_model, "nil"),
@@ -206,6 +210,20 @@ fn hint_humanize_type(semantic_model: &SemanticModel, typ: &LuaType, level: Rend
             } else {
                 id.get_name().to_string()
             }
+        }
+        LuaType::Generic(generic) => {
+            let base_type_id = generic.get_base_type_id();
+            let base_type_name =
+                hint_humanize_type(semantic_model, &LuaType::Ref(base_type_id), level);
+
+            let generic_params = generic
+                .get_params()
+                .iter()
+                .map(|ty| hint_humanize_type(semantic_model, ty, level.next_level()))
+                .collect::<Vec<_>>()
+                .join(",");
+
+            format!("{}<{}>", base_type_name, generic_params)
         }
         LuaType::Union(union) => hint_humanize_union_type(semantic_model, union, level),
         _ => humanize_type(semantic_model.get_db(), typ, level),

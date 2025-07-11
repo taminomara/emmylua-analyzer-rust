@@ -8,7 +8,7 @@ use emmylua_code_analysis::{
     file_path_to_uri, read_file_with_encoding, uri_to_file_path, FileId, LuaCompilation,
     LuaModuleIndex, LuaType, SemanticModel, WorkspaceId,
 };
-use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaIndexExpr};
+use emmylua_parser::{LuaAstNode, LuaCallExpr};
 use lsp_types::{
     ApplyWorkspaceEditParams, FileRename, MessageActionItem, MessageType, RenameFilesParams,
     ShowMessageRequestParams, TextEdit, Uri, WorkspaceEdit,
@@ -237,9 +237,9 @@ fn try_convert(
     changes: &mut HashMap<Uri, Vec<TextEdit>>,
     current_file_id: FileId, // 当前文件id
 ) -> Option<()> {
-    if let Some(_) = call_expr.get_parent::<LuaIndexExpr>() {
-        return None;
-    }
+    // if let Some(_) = call_expr.get_parent::<LuaIndexExpr>() {
+    //     return None;
+    // }
 
     let args_list = call_expr.get_args_list()?;
     let arg_expr = args_list.get_args().next()?;

@@ -23,6 +23,12 @@ use super::{
 };
 
 pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()> {
+    let description = if let Some(des) = tag.get_description() {
+        Some(preprocess_description(&des.get_description_text(), None))
+    } else {
+        None
+    };
+
     let mut type_list = Vec::new();
     for lua_doc_type in tag.get_type_list() {
         let type_ref = infer_type(analyzer, lua_doc_type);
@@ -48,6 +54,17 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                             .db
                             .get_type_index_mut()
                             .bind_type(decl_id.into(), LuaTypeCache::DocType(type_ref.clone()));
+
+                        // bind description
+                        if let Some(ref desc) = description {
+                            if !desc.is_empty() {
+                                analyzer.db.get_property_index_mut().add_description(
+                                    analyzer.file_id,
+                                    LuaSemanticDeclId::LuaDecl(decl_id),
+                                    desc.clone(),
+                                );
+                            }
+                        }
                     }
                     LuaVarExpr::IndexExpr(index_expr) => {
                         let member_id =
@@ -56,6 +73,17 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                             .db
                             .get_type_index_mut()
                             .bind_type(member_id.into(), LuaTypeCache::DocType(type_ref.clone()));
+
+                        // bind description
+                        if let Some(ref desc) = description {
+                            if !desc.is_empty() {
+                                analyzer.db.get_property_index_mut().add_description(
+                                    analyzer.file_id,
+                                    LuaSemanticDeclId::Member(member_id),
+                                    desc.clone(),
+                                );
+                            }
+                        }
                     }
                 }
             }
@@ -75,6 +103,17 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                     .db
                     .get_type_index_mut()
                     .bind_type(decl_id.into(), LuaTypeCache::DocType(type_ref.clone()));
+
+                // bind description
+                if let Some(ref desc) = description {
+                    if !desc.is_empty() {
+                        analyzer.db.get_property_index_mut().add_description(
+                            analyzer.file_id,
+                            LuaSemanticDeclId::LuaDecl(decl_id),
+                            desc.clone(),
+                        );
+                    }
+                }
             }
         }
         LuaAst::LuaTableField(table_field) => {
@@ -85,6 +124,17 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                     .db
                     .get_type_index_mut()
                     .bind_type(member_id.into(), LuaTypeCache::DocType(first_type.clone()));
+
+                // bind description
+                if let Some(ref desc) = description {
+                    if !desc.is_empty() {
+                        analyzer.db.get_property_index_mut().add_description(
+                            analyzer.file_id,
+                            LuaSemanticDeclId::Member(member_id),
+                            desc.clone(),
+                        );
+                    }
+                }
             }
         }
         _ => {}

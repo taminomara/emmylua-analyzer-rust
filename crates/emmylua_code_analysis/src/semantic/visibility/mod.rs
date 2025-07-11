@@ -1,3 +1,5 @@
+mod export;
+
 use emmylua_parser::{
     LuaAstNode, LuaAstToken, LuaBlock, LuaClosureExpr, LuaFuncStat, LuaGeneralToken, LuaIndexExpr,
     LuaSyntaxToken, LuaVarExpr, VisibilityKind,
@@ -6,6 +8,8 @@ use emmylua_parser::{
 use crate::{DbIndex, Emmyrc, FileId, LuaMemberOwner, LuaSemanticDeclId, LuaType};
 
 use super::{infer_expr, type_check::is_sub_type_of, LuaInferCache};
+
+pub use export::check_export_visibility;
 
 pub fn check_visibility(
     db: &DbIndex,
@@ -50,6 +54,36 @@ pub fn check_visibility(
                 let current_workspace_id = db.get_module_index().get_workspace_id(file_id)?;
                 if current_workspace_id != property_workspace_id {
                     return Some(false);
+                }
+            }
+        }
+    }
+
+    if let LuaSemanticDeclId::Member(member_id) = property_owner {
+        if let Some(member) = db.get_member_index().get_member(&member_id) {
+            if let Some(name) = member.get_key().get_name() {
+                let config = emmyrc;
+                for pattern in &config.doc.private_name {
+                    let is_match = if let Some(prefix) = pattern.strip_suffix('*') {
+                        name.starts_with(prefix)
+                    } else if let Some(suffix) = pattern.strip_prefix('*') {
+                        name.ends_with(suffix)
+                    } else {
+                        name == pattern
+                    };
+                    if is_match {
+                        return Some(
+                            check_visibility_by_visibility(
+                                db,
+                                infer_config,
+                                file_id,
+                                property_owner,
+                                token,
+                                VisibilityKind::Private,
+                            )
+                            .unwrap_or(false),
+                        );
+                    }
                 }
             }
         }

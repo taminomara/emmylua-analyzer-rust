@@ -200,4 +200,43 @@ mod test {
         "#
         ));
     }
+
+    #[test]
+    fn test_union() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+            ---@class ab
+
+            ---@generic T
+            ---@param a `T`|T
+            ---@return T
+            function name(a)
+                return a
+            end
+        "#,
+        );
+        assert!(ws.check_code_for(
+            DiagnosticCode::GenericConstraintMismatch,
+            r#"
+            ---@type ab
+            local a
+
+            name(a)
+        "#
+        ));
+        assert!(ws.check_code_for(
+            DiagnosticCode::GenericConstraintMismatch,
+            r#"
+            name("ab")
+        "#
+        ));
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::GenericConstraintMismatch,
+            r#"
+            name("a")
+        "#
+        ));
+    }
 }

@@ -46,6 +46,12 @@
         "severity": {}
       }
     },
+    "doc": {
+      "$ref": "#/$defs/EmmyrcDoc",
+      "default": {
+        "privateName": []
+      }
+    },
     "documentColor": {
       "$ref": "#/$defs/EmmyrcDocumentColor",
       "default": {
@@ -384,6 +390,11 @@
           "description": "cast-type-mismatch",
           "type": "string",
           "const": "cast-type-mismatch"
+        },
+        {
+          "description": "require-module-not-visible",
+          "type": "string",
+          "const": "require-module-not-visible"
         }
       ]
     },
@@ -534,6 +545,19 @@
             "$ref": "#/$defs/DiagnosticSeveritySetting"
           },
           "default": {}
+        }
+      }
+    },
+    "EmmyrcDoc": {
+      "type": "object",
+      "properties": {
+        "privateName": {
+          "description": "Treat specific field names as private, e.g. `m_*` means `XXX.m_id` and `XXX.m_type` are private, witch can only be accessed in the class where the definition is located.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

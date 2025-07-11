@@ -45,6 +45,16 @@ fn check_sub_type_of_iterative(
                         stack.push(super_id);
                     }
                 }
+                // TODO: 应该检查泛型参数是否匹配
+                LuaType::Generic(generic) => {
+                    let base_type_id = generic.get_base_type_id_ref();
+                    if base_type_id == super_type_ref_id {
+                        return Some(true);
+                    }
+                    if !visited.contains(&base_type_id) {
+                        stack.push(base_type_id);
+                    }
+                }
                 _ => {
                     if let Some(base_id) = get_base_type_id(super_type) {
                         if base_id == *super_type_ref_id {

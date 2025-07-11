@@ -476,7 +476,7 @@ fn humanize_generic_type(db: &DbIndex, generic: &LuaGenericType, level: RenderLe
         None => return base_id.get_name().to_string(),
     };
 
-    let simple_name = type_decl.get_name();
+    let full_name = type_decl.get_full_name();
     match level {
         RenderLevel::Brief => {
             if type_decl.is_alias() {
@@ -501,7 +501,7 @@ fn humanize_generic_type(db: &DbIndex, generic: &LuaGenericType, level: RenderLe
         .collect::<Vec<_>>()
         .join(",");
 
-    format!("{}<{}>", simple_name, generic_params)
+    format!("{}<{}>", full_name, generic_params)
 }
 
 fn humanize_table_const_type_detail_and_simple(

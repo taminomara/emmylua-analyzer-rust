@@ -1116,4 +1116,100 @@ mod test {
             "#
         ));
     }
+
+    #[test]
+    fn test_self() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@class test
+                local A
+
+                function A:stop()
+                end
+
+                local stop = A.stop
+                stop(A)
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_generic_type() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@class ObserverParams<T>
+                ---@field next fun( value: T)
+                ---@field errorResume? fun(error: any)
+
+
+                ---@class Observer<T>
+                local Observer = {}
+
+                ---@param observer ObserverParams<T>
+                function Observer:subscribe(observer)
+                end
+        "#,
+        );
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            ---@type Observer<number>
+            local observer
+
+            observer:subscribe({
+                next = function(value)
+                    print(value)
+                end
+            })
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_issue_573() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+                --- @class A
+                --- @field [integer] string
+                --- @field data any
+
+                --- @param a string[]
+                function takesArray(a) end
+            "#,
+        );
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                takesArray({} --[[@as A]]) 
+            "#
+        ));
+    }
+
+    #[test]
+    fn test_issue_574() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+                --- @param x { y: integer } & { z: string }
+                function foo(x) end
+            "#,
+        );
+        assert!(!ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+               foo({y = "", z = ""})
+            "#
+        ));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+               foo({y = 1, z = ""})
+            "#
+        ));
+    }
 }

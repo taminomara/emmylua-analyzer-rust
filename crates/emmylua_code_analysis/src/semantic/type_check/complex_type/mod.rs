@@ -1,9 +1,11 @@
 mod array_type_check;
+mod intersection_type_check;
 mod object_type_check;
 mod table_generic_check;
 mod tuple_type_check;
 
 use array_type_check::check_array_type_compact;
+use intersection_type_check::check_intersection_type_compact;
 use object_type_check::check_object_type_compact;
 use table_generic_check::check_table_generic_type_compact;
 use tuple_type_check::check_tuple_type_compact;
@@ -52,6 +54,17 @@ pub fn check_complex_type_compact(
                 result => return result,
             }
         }
+        LuaType::Intersection(source_intersection) => {
+            match check_intersection_type_compact(
+                db,
+                source_intersection,
+                compact_type,
+                check_guard,
+            ) {
+                Err(TypeCheckFailReason::DonotCheck) => {}
+                result => return result,
+            }
+        }
         LuaType::Union(union_type) => {
             match compact_type {
                 LuaType::Union(compact_union) => {
@@ -92,9 +105,6 @@ pub fn check_complex_type_compact(
                 check_guard.next_level()?,
             );
         }
-
-        // check later
-        LuaType::Intersection(_) => return Ok(()),
         _ => {}
     }
     // Do I need to check union types?

@@ -270,11 +270,12 @@ fn check_return_count(
     };
 
     // 计算实际返回的表达式数量并记录多余的范围
-    let expr_list = return_stat.get_expr_list();
+    let expr_list = return_stat.get_expr_list().collect::<Vec<_>>();
     let mut total_return_count = 0;
+    let mut tail_return_nil = false;
     let mut redundant_ranges = Vec::new();
 
-    for expr in expr_list {
+    for (index, expr) in expr_list.iter().enumerate() {
         let expr_type = semantic_model
             .infer_expr(expr.clone())
             .unwrap_or(LuaType::Unknown);
@@ -282,10 +283,19 @@ fn check_return_count(
             LuaType::Variadic(variadic) => {
                 total_return_count += variadic.get_max_len()?;
             }
+            LuaType::Nil => {
+                if index == expr_list.len() - 1 {
+                    tail_return_nil = true;
+                }
+                total_return_count += 1;
+            }
             _ => total_return_count += 1,
         };
 
         if max_expected_return_count.is_some() && total_return_count > max_expected_return_count? {
+            if tail_return_nil && total_return_count - 1 == max_expected_return_count? {
+                continue;
+            }
             redundant_ranges.push(expr.get_range());
         }
     }

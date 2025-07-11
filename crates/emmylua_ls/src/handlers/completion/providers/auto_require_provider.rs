@@ -1,11 +1,16 @@
-use emmylua_code_analysis::{EmmyrcFilenameConvention, LuaType, ModuleInfo};
+use emmylua_code_analysis::{
+    check_export_visibility, EmmyrcFilenameConvention, LuaType, ModuleInfo,
+};
 use emmylua_parser::{LuaAstNode, LuaNameExpr};
 use lsp_types::{CompletionItem, Position};
 
 use crate::{
     handlers::{
         command::make_auto_require,
-        completion::{completion_builder::CompletionBuilder, completion_data::CompletionData},
+        completion::{
+            add_completions::get_completion_kind, completion_builder::CompletionBuilder,
+            completion_data::CompletionData,
+        },
     },
     util::{key_name_convert, module_name_convert},
 };
@@ -68,16 +73,20 @@ fn add_module_completion_item(
     position: Position,
     completions: &mut Vec<CompletionItem>,
 ) -> Option<()> {
+    if !check_export_visibility(&builder.semantic_model, &module_info).unwrap_or(false) {
+        return None;
+    }
+
     let completion_name = module_name_convert(module_info, file_conversion);
     if !completion_name.to_lowercase().starts_with(prefix) {
-        // try_add_member_completion_items(
-        //     builder,
-        //     prefix,
-        //     module_info,
-        //     file_conversion,
-        //     position,
-        //     completions,
-        // );
+        try_add_member_completion_items(
+            builder,
+            prefix,
+            module_info,
+            file_conversion,
+            position,
+            completions,
+        );
         return None;
     }
 
@@ -113,7 +122,6 @@ fn add_module_completion_item(
     Some(())
 }
 
-#[allow(unused)]
 fn try_add_member_completion_items(
     builder: &CompletionBuilder,
     prefix: &str,
@@ -122,6 +130,14 @@ fn try_add_member_completion_items(
     position: Position,
     completions: &mut Vec<CompletionItem>,
 ) -> Option<()> {
+    // 模块必须要有 export 标记
+    if module_info
+        .get_export(builder.semantic_model.get_db())
+        .is_none()
+    {
+        return None;
+    };
+
     if let Some(export_type) = &module_info.export_type {
         match export_type {
             LuaType::TableConst(_) | LuaType::Def(_) => {
@@ -133,7 +149,7 @@ fn try_add_member_completion_items(
                         file_conversion,
                     );
                     match member_info.typ {
-                        LuaType::Ref(_) | LuaType::Def(_) => {}
+                        LuaType::Def(_) => {}
                         LuaType::Signature(_) => {}
                         _ => {
                             continue;
@@ -164,7 +180,7 @@ fn try_add_member_completion_items(
 
                         let completion_item = CompletionItem {
                             label: key_name,
-                            kind: Some(lsp_types::CompletionItemKind::MODULE),
+                            kind: Some(get_completion_kind(&member_info.typ)),
                             label_details: Some(lsp_types::CompletionItemLabelDetails {
                                 detail: Some(format!("    (in {})", module_info.full_module_name)),
                                 ..Default::default()
