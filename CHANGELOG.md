@@ -3,6 +3,23 @@
 *All notable changes to the EmmyLua Analyzer Rust project will be documented in this file.*
 
 ---
+
+## [0.9.0] - 2025-7-11
+### 🔧 Changed
+
+- **Flow Inference Refactor**: Refactored flow analysis algorithm, now uses a TypeScript-like flow analysis approach for better handling of complex scenarios.
+- **Doc CLI**: Changed export format, now supports multiple `@see` and other tag flags.
+
+### ✨ Added
+
+- **TypeGuard Now Supports Generics**: You can now use generic parameters in TypeGuard, e.g. `TypeGuard<T>`.
+- **Type Narrowing by Constant Fields**: Supports type narrowing using constant fields.
+- **Basic Range Checking**: Array type indexing is now less frequently nullable.
+
+### 🐛 Fixed
+
+- **Bug Fixes**: Fixed various bugs.
+
 ## [0.8.2] - 2025-6-27
 ### ✨ Added
 - **Support for Descriptions Above and After Tags**: You can now add descriptions both above a tag (as a preceding comment) and after a tag (inline). The description will be associated with the corresponding tag.
