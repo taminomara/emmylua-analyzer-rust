@@ -9,6 +9,7 @@ pub struct EmmyrcDoc {
     pub private_name: Vec<String>,
 
     /// List of known documentation tags.
+    #[serde(default)]
     pub known_tags: Vec<String>,
 }
 
