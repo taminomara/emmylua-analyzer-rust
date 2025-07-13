@@ -16,6 +16,7 @@ pub fn export(db: &DbIndex) -> Index {
 }
 
 fn export_modules(db: &DbIndex) -> Vec<Module> {
+    let type_index = db.get_type_index();
     let module_index = db.get_module_index();
     let modules = module_index.get_module_infos();
     let vfs = db.get_vfs();
@@ -24,20 +25,16 @@ fn export_modules(db: &DbIndex) -> Vec<Module> {
         .into_iter()
         .filter(|module| module_index.is_main(&module.file_id))
         .filter_map(|module| {
-            let members = match module.export_type.as_ref()? {
-                LuaType::Def(type_id) => {
-                    let member_owner = LuaMemberOwner::Type(type_id.clone());
-                    export_members(db, member_owner)
-                }
+            let (members, typ) = match module.export_type.as_ref()? {
                 LuaType::TableConst(t) => {
                     let member_owner = LuaMemberOwner::Element(t.clone());
-                    export_members(db, member_owner)
+                    (export_members(db, member_owner), None)
                 }
                 LuaType::Instance(i) => {
                     let member_owner = LuaMemberOwner::Element(i.get_range().clone());
-                    export_members(db, member_owner)
+                    (export_members(db, member_owner), None)
                 }
-                _ => return None,
+                typ => (Vec::new(), Some(render_typ(db, typ))),
             };
 
             let property = module
@@ -46,11 +43,20 @@ fn export_modules(db: &DbIndex) -> Vec<Module> {
                 .map(|decl_id| export_property(db, decl_id))
                 .unwrap_or_default();
 
+            let namespace = type_index.get_file_namespace(&module.file_id).cloned();
+            let using = type_index
+                .get_file_using_namespace(&module.file_id)
+                .cloned()
+                .unwrap_or_default();
+
             Some(Module {
                 name: module.full_module_name.clone(),
                 property,
                 file: vfs.get_file_path(&module.file_id).cloned(),
+                typ,
                 members,
+                namespace,
+                using,
             })
         })
         .collect()
@@ -205,6 +211,8 @@ fn export_members(db: &DbIndex, member_owner: LuaMemberOwner) -> Vec<Member> {
                 let member_key = member.get_key();
                 let name = match member_key {
                     LuaMemberKey::Name(name) => name.to_string(),
+                    LuaMemberKey::Integer(i) => format!("[{i}]"),
+                    LuaMemberKey::ExprType(typ) => format!("[{}]", render_typ(db, typ)),
                     _ => return None,
                 };
 
