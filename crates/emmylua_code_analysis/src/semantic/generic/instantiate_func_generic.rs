@@ -1,6 +1,8 @@
 use std::{collections::HashSet, ops::Deref};
 
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr};
+use internment::ArcIntern;
+use smol_str::SmolStr;
 
 use crate::{
     db_index::{DbIndex, LuaType},
@@ -155,20 +157,20 @@ fn infer_self_type(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     call_expr: &LuaCallExpr,
-    substitutor: &mut TypeSubstitutor,
-) -> Result<(), InferFailReason> {
+) -> Option<LuaType> {
     let prefix_expr = call_expr.get_prefix_expr();
     if let Some(prefix_expr) = prefix_expr {
         if let LuaExpr::IndexExpr(index) = prefix_expr {
             let self_expr = index.get_prefix_expr();
             if let Some(self_expr) = self_expr {
-                let self_type = infer_expr(db, cache, self_expr.into())?;
-                substitutor.add_self_type(self_type);
+                let self_type = infer_expr(db, cache, self_expr.into()).ok()?;
+                let self_type = build_self_type(db, &self_type);
+                return Some(self_type);
             }
         }
     }
 
-    Ok(())
+    None
 }
 
 fn check_expr_can_later_infer(
