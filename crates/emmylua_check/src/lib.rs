@@ -8,7 +8,7 @@ use output::output_result;
 use std::{error::Error, sync::Arc};
 use tokio_util::sync::CancellationToken;
 
-use crate::init::{get_need_check_ids, setup_logger};
+use crate::init::setup_logger;
 
 pub async fn run_check(cmd_args: CmdArgs) -> Result<(), Box<dyn Error + Sync + Send>> {
     setup_logger(cmd_args.verbose);
@@ -42,9 +42,8 @@ pub async fn run_check(cmd_args: CmdArgs) -> Result<(), Box<dyn Error + Sync + S
         }
     };
 
-    let files = analysis.compilation.get_db().get_vfs().get_all_file_ids();
     let db = analysis.compilation.get_db();
-    let need_check_files = get_need_check_ids(db, files, &workspaces);
+    let need_check_files = db.get_module_index().get_main_workspace_file_ids();
 
     let (sender, receiver) = tokio::sync::mpsc::channel(100);
     let analysis = Arc::new(analysis);

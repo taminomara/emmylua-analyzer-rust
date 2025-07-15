@@ -33,10 +33,21 @@ glob.workspace = true
 serde_yml.workspace = true
 itertools.workspace = true
 dirs.workspace = true
-clap.workspace = true
 wax.workspace = true
-mimalloc = { workspace = true, optional = true }
+
+[dependencies.clap]
+workspace = true
+optional = true
+
+[dependencies.mimalloc]
+workspace = true
+optional = true
+
+
+[[bin]]
+name = "emmylua_ls"
+required-features = ["cli"]
 
 [features]
 default = ["cli"]
-cli = ["dep:mimalloc"]
+cli = ["dep:clap", "dep:mimalloc"]

@@ -1,6 +1,5 @@
 use emmylua_code_analysis::{
-    load_configs, load_workspace_files, update_code_style, DbIndex, EmmyLuaAnalysis, Emmyrc,
-    FileId, LuaFileInfo,
+    load_configs, load_workspace_files, update_code_style, EmmyLuaAnalysis, Emmyrc, LuaFileInfo,
 };
 use fern::Dispatch;
 use log::LevelFilter;
@@ -206,16 +205,4 @@ pub fn calculate_include_and_exclude(
     exclude.dedup();
 
     (include, exclude, exclude_dirs)
-}
-
-pub fn get_need_check_ids(db: &DbIndex, files: Vec<FileId>, workspace: &[PathBuf]) -> Vec<FileId> {
-    let mut need_check_files = Vec::new();
-    for file_id in files {
-        let file_path = db.get_vfs().get_file_path(&file_id).unwrap();
-        if workspace.iter().any(|ws| file_path.starts_with(ws)) {
-            need_check_files.push(file_id);
-        }
-    }
-
-    need_check_files
 }

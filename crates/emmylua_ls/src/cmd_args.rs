@@ -1,40 +1,43 @@
+#[cfg(feature = "cli")]
 use clap::{Parser, ValueEnum};
 
 #[allow(unused)]
-#[derive(Debug, Parser, Clone)]
-#[command(version)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "cli", derive(Parser))]
+#[cfg_attr(feature = "cli", command(version))]
 pub struct CmdArgs {
     /// Communication method
-    #[structopt(long, short, default_value = "stdio")]
+    #[cfg_attr(feature = "cli", structopt(long, short, default_value = "stdio"))]
     pub communication: Communication,
 
     /// IP address to listen on (only valid when using TCP)
-    #[structopt(long, default_value = "127.0.0.1")]
+    #[cfg_attr(feature = "cli", structopt(long, default_value = "127.0.0.1"))]
     pub ip: String,
 
     /// Port number to listen on (only valid when using TCP)
-    #[structopt(long, default_value = "5007")]
+    #[cfg_attr(feature = "cli", structopt(long, default_value = "5007"))]
     pub port: u16,
 
     /// Logging level
-    #[structopt(long, default_value = "info")]
+    #[cfg_attr(feature = "cli", structopt(long, default_value = "info"))]
     pub log_level: LogLevel,
 
     /// Path to the log file. Use 'none' to disable log file output.
-    #[structopt(long, default_value = "")]
+    #[cfg_attr(feature = "cli", structopt(long, default_value = "none"))]
     pub log_path: NoneableString,
 
     /// Path to the resources and logs directory. Use 'none' to indicate that assets should not be output to the file system.
-    #[structopt(long, default_value = "")]
+    #[cfg_attr(feature = "cli", structopt(long, default_value = "none"))]
     pub resources_path: NoneableString,
 
     /// Whether to load the standard library.
-    #[structopt(long, default_value = "true")]
+    #[cfg_attr(feature = "cli", structopt(long, default_value = "true"))]
     pub load_stdlib: CmdBool,
 }
 
 /// Logging level enum
-#[derive(Debug, Clone, Copy, ValueEnum)]
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "cli", derive(ValueEnum))]
 pub enum LogLevel {
     /// Error level
     Error,
@@ -63,7 +66,8 @@ impl std::str::FromStr for LogLevel {
     }
 }
 
-#[derive(Debug, ValueEnum, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "cli", derive(ValueEnum))]
 pub enum Communication {
     Stdio,
     Tcp,
