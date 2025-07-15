@@ -75,6 +75,10 @@ pub fn build_disable_next_line_changes(
     let document = semantic_model.get_document();
     let offset = document.get_offset(start.line as usize, start.character as usize)?;
     let root = semantic_model.get_root();
+    if offset >= root.get_range().end() {
+        return None;
+    }
+
     let token = match root.syntax().token_at_offset(offset.into()) {
         TokenAtOffset::Single(token) => token,
         TokenAtOffset::Between(_, token) => token,
