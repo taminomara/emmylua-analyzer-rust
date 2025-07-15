@@ -298,6 +298,10 @@ impl LuaDeclarationTree {
                     if let Some(scope) = self.scopes.get(scope_id.id as usize) {
                         if scope.get_kind() == LuaScopeKind::MethodStat {
                             let range = scope.get_range();
+                            if !range.contains(position) {
+                                return false;
+                            }
+
                             let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::FuncStat.into(), range);
                             let id = self.find_self_decl_id(&db, cache, &root, syntax_id);
                             if id.is_some() {
