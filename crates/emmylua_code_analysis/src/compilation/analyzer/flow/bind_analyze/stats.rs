@@ -325,6 +325,10 @@ pub fn bind_if_stat(binder: &mut FlowBinder, if_stat: LuaIfStat, current: FlowId
         let then_label = finish_flow_label(binder, then_label, current);
         let block_id = bind_block(binder, then_block, then_label);
         binder.add_antecedent(post_if_label, block_id);
+    } else {
+        let then_label = finish_flow_label(binder, then_label, current);
+        // If there's no then block, we still need to add the antecedent
+        binder.add_antecedent(post_if_label, then_label);
     }
 
     for elseif_clause in if_stat.get_else_if_clause_list() {
@@ -345,6 +349,9 @@ pub fn bind_if_stat(binder: &mut FlowBinder, if_stat: LuaIfStat, current: FlowId
             let current = finish_flow_label(binder, elseif_then_label, current);
             let block_id = bind_block(binder, elseif_block, current);
             binder.add_antecedent(post_if_label, block_id);
+        } else {
+            let current = finish_flow_label(binder, elseif_then_label, current);
+            binder.add_antecedent(post_if_label, current);
         }
     }
 
