@@ -42,7 +42,10 @@ pub struct Module {
     #[serde(flatten)]
     pub property: Property,
     pub file: Option<PathBuf>,
+    pub typ: Option<String>,
     pub members: Vec<Member>,
+    pub namespace: Option<String>,
+    pub using: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
