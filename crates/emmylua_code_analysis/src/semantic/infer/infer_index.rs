@@ -54,7 +54,7 @@ pub fn infer_index_expr(
                     db,
                     cache,
                     index_expr,
-                    &prefix_type,
+                    // &prefix_type,
                     member_type,
                 );
             }
@@ -77,7 +77,7 @@ pub fn infer_index_expr(
                     db,
                     cache,
                     index_expr,
-                    &prefix_type,
+                    // &prefix_type,
                     member_type,
                 );
             }
@@ -94,17 +94,9 @@ fn infer_member_type_pass_flow(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     index_expr: LuaIndexExpr,
-    prefix_type: &LuaType,
+    // prefix_type: &LuaType,
     member_type: LuaType,
 ) -> InferResult {
-    match &prefix_type {
-        // TODO: flow analysis should not generate corresponding `flow_chain` if the prefix type is an array
-        LuaType::Array(_) => {
-            return Ok(member_type.clone());
-        }
-        _ => {}
-    }
-
     let Some(var_ref_id) = get_index_expr_var_ref_id(db, cache, &index_expr) else {
         return Ok(member_type.clone());
     };

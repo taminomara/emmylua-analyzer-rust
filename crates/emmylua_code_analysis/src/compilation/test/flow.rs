@@ -1035,4 +1035,21 @@ end
         let e_expected = ws.ty("string");
         assert_eq!(e, e_expected);
     }
+
+    #[test]
+    fn test_issue_600() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::NeedCheckNil,
+            r#"
+            ---@class Test2
+            ---@field test string[]
+            ---@field test2? string
+            local a = {}
+            if a.test[1] and a.test[1].char(123) then
+
+            end
+            "#,
+        ));
+    }
 }
