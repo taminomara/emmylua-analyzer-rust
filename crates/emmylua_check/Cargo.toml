@@ -31,10 +31,14 @@ tokio.workspace = true
 workspace = true
 optional = true
 
+[dependencies.mimalloc]
+workspace = true
+optional = true
+
 [[bin]]
 name = "emmylua_check"
 required-features = ["cli"]
 
 [features]
 default = ["cli"]
-cli = ["dep:clap"]
+cli = ["dep:clap", "dep:mimalloc"]

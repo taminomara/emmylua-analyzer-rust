@@ -537,6 +537,7 @@ dependencies = [
  "fern",
  "log",
  "lsp-types",
+ "mimalloc",
  "rowan",
  "serde",
  "serde_json",
