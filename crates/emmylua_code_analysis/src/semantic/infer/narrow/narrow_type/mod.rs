@@ -187,6 +187,19 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
                 _ => Some(LuaType::Union(LuaUnionType::from_vec(union_types).into())),
             };
         }
+        LuaType::MultiLineUnion(multi_line_union) => {
+            let union_types = multi_line_union
+                .get_unions()
+                .into_iter()
+                .filter_map(|(ty, _)| narrow_down_type(db, ty.clone(), target.clone()))
+                .collect::<Vec<_>>();
+
+            return match union_types.len() {
+                0 => Some(target),
+                1 => Some(union_types.iter().cloned().next().unwrap()),
+                _ => Some(LuaType::Union(LuaUnionType::from_vec(union_types).into())),
+            };
+        }
         _ => {}
     }
 

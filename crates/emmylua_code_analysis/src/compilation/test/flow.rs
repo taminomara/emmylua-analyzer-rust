@@ -1052,4 +1052,19 @@ end
             "#,
         ));
     }
+
+    #[test]
+    fn test_issue_585() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            local a --- @type type?
+
+            if type(a) == 'string' then
+                local _ = a --- @type type
+            end
+            "#,
+        ));
+    }
 }
