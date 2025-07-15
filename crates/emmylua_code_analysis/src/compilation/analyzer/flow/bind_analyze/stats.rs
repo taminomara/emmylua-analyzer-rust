@@ -73,7 +73,7 @@ fn check_value_expr_is_check_expr(value_expr: LuaExpr) -> bool {
                 _ => false,
             }
         }
-        LuaExpr::CallExpr(_) => true,
+        LuaExpr::CallExpr(call) => call.is_type(),
         _ => false, // Other expressions can be checked
     }
 }
