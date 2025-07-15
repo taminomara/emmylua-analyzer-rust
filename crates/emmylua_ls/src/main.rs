@@ -2,16 +2,14 @@ mod cmd_args;
 mod context;
 mod handlers;
 mod logger;
+mod main_loop;
 mod meta_text;
 mod util;
 
 use clap::Parser;
 use cmd_args::CmdArgs;
-use handlers::{
-    initialized_handler, on_notification_handler, on_req_handler, on_response_handler,
-    server_capabilities,
-};
-use lsp_server::{Connection, Message};
+use handlers::server_capabilities;
+use lsp_server::Connection;
 use lsp_types::InitializeParams;
 use std::{env, error::Error};
 
@@ -48,47 +46,9 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
 
     connection.initialize_finish(id, initialize_data)?;
 
-    main_loop(connection, initialization_params, cmd_args).await?;
+    main_loop::main_loop(connection, initialization_params, cmd_args).await?;
     threads.join()?;
 
     eprintln!("Server shutting down.");
-    Ok(())
-}
-
-async fn main_loop(
-    connection: Connection,
-    params: InitializeParams,
-    cmd_args: CmdArgs,
-) -> Result<(), Box<dyn Error + Sync + Send>> {
-    let mut server_context = context::ServerContext::new(Connection {
-        sender: connection.sender.clone(),
-        receiver: connection.receiver.clone(),
-    });
-
-    let server_context_snapshot = server_context.snapshot();
-    tokio::spawn(async move {
-        initialized_handler(server_context_snapshot, params, cmd_args).await;
-    });
-
-    for msg in &connection.receiver {
-        match msg {
-            Message::Request(req) => {
-                if connection.handle_shutdown(&req)? {
-                    server_context.close().await;
-                    return Ok(());
-                }
-
-                on_req_handler(req, &mut server_context).await?;
-            }
-            Message::Notification(notify) => {
-                on_notification_handler(notify, &mut server_context).await?;
-            }
-            Message::Response(response) => {
-                on_response_handler(response, &mut server_context).await?;
-            }
-        }
-    }
-
-    server_context.close().await;
     Ok(())
 }

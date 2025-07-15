@@ -57,14 +57,11 @@ pub fn load_workspace_files(
 
     for entry in WalkDir::new(root)
         .into_iter()
+        .filter_entry(|e| !exclude_dir.iter().any(|dir| e.path().starts_with(dir)))
         .filter_map(|e| e.ok())
         .filter(|e| e.file_type().is_file())
     {
         let path = entry.path();
-        if exclude_dir.iter().any(|dir| path.starts_with(dir)) {
-            continue;
-        }
-
         let relative_path = path.strip_prefix(root).unwrap();
         if exclude_set.is_match(relative_path) {
             continue;
