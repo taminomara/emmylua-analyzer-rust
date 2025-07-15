@@ -35,3 +35,8 @@ itertools.workspace = true
 dirs.workspace = true
 clap.workspace = true
 wax.workspace = true
+mimalloc = { workspace = true, optional = true }
+
+[features]
+default = ["cli"]
+cli = ["dep:mimalloc"]

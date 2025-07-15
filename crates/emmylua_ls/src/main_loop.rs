@@ -37,7 +37,7 @@ pub async fn main_loop(
                 on_notification_handler(notify, &mut server_context).await?;
             }
             Message::Response(response) => {
-                on_response_handler(response, &mut server_context).await?;
+                on_response_handler(response, &server_context).await?;
             }
         }
     }

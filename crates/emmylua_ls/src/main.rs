@@ -11,7 +11,11 @@ use cmd_args::CmdArgs;
 use handlers::server_capabilities;
 use lsp_server::Connection;
 use lsp_types::InitializeParams;
+use mimalloc::MiMalloc;
 use std::{env, error::Error};
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 #[macro_use]
 extern crate rust_i18n;
