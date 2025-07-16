@@ -394,7 +394,7 @@ fn maybe_field_literal_eq_narrow(
 
     if maybe_var_ref_id != *var_ref_id {
         if cache
-            .narrow_by_literal_stop_postion_cache
+            .narrow_by_literal_stop_position_cache
             .contains(&syntax_id)
         {
             if var_ref_id.start_with(&maybe_var_ref_id) {
@@ -415,7 +415,9 @@ fn maybe_field_literal_eq_narrow(
         return Ok(ResultTypeOrContinue::Continue);
     };
 
-    cache.narrow_by_literal_stop_postion_cache.insert(syntax_id);
+    cache
+        .narrow_by_literal_stop_position_cache
+        .insert(syntax_id);
 
     let right_type = infer_expr(db, cache, LuaExpr::LiteralExpr(literal_expr))?;
     let mut guard = InferGuard::new();
