@@ -1,8 +1,6 @@
 mod false_or_nil_type;
 
-use crate::{
-    get_real_type, semantic::type_check::is_sub_type_of, DbIndex, LuaType, LuaUnionType, TypeOps,
-};
+use crate::{get_real_type, semantic::type_check::is_sub_type_of, DbIndex, LuaType, TypeOps};
 pub use false_or_nil_type::{narrow_false_or_nil, remove_false_or_nil};
 
 // need to be optimized
@@ -181,11 +179,7 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
                 .filter_map(|t| narrow_down_type(db, t, target.clone()))
                 .collect::<Vec<_>>();
 
-            return match union_types.len() {
-                0 => Some(target),
-                1 => Some(union_types.iter().cloned().next().unwrap()),
-                _ => Some(LuaType::Union(LuaUnionType::from_vec(union_types).into())),
-            };
+            return Some(LuaType::from_vec(union_types));
         }
         LuaType::MultiLineUnion(multi_line_union) => {
             let union_types = multi_line_union
@@ -194,11 +188,7 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
                 .filter_map(|(ty, _)| narrow_down_type(db, ty.clone(), target.clone()))
                 .collect::<Vec<_>>();
 
-            return match union_types.len() {
-                0 => Some(target),
-                1 => Some(union_types.iter().cloned().next().unwrap()),
-                _ => Some(LuaType::Union(LuaUnionType::from_vec(union_types).into())),
-            };
+            return Some(LuaType::from_vec(union_types));
         }
         _ => {}
     }

@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    ops::Deref,
-};
+use std::{collections::HashMap, ops::Deref};
 
 use crate::{
     db_index::{
@@ -183,20 +180,13 @@ fn instantiate_object(
 
 fn instantiate_union(db: &DbIndex, union: &LuaUnionType, substitutor: &TypeSubstitutor) -> LuaType {
     let types = union.into_vec();
-    let mut new_type_set = HashSet::new();
-    let mut old_sorted_types = Vec::new();
+    let mut result_types = Vec::new();
     for t in types {
         let t = instantiate_type_generic(db, &t, substitutor);
-        if new_type_set.insert(t.clone()) {
-            old_sorted_types.push(t);
-        }
+        result_types.push(t);
     }
 
-    match old_sorted_types.len() {
-        0 => LuaType::Unknown,
-        1 => old_sorted_types[0].clone(),
-        _ => LuaType::Union(LuaUnionType::from_vec(old_sorted_types).into()),
-    }
+    LuaType::from_vec(result_types)
 }
 
 fn instantiate_intersection(
@@ -306,7 +296,7 @@ fn instantiate_signature(
                 ));
             }
             result.push(origin_type); // 我们需要将原始类型放到最后
-            return LuaType::Union(LuaUnionType::from_vec(result).into());
+            return LuaType::from_vec(result);
         }
     }
 

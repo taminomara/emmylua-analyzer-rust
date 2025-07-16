@@ -18,7 +18,7 @@ use crate::{
         VarRefId,
     },
     DbIndex, FlowNode, FlowTree, InferFailReason, InferGuard, LuaArrayLen, LuaArrayType,
-    LuaInferCache, LuaType, LuaUnionType, TypeOps,
+    LuaInferCache, LuaType, TypeOps,
 };
 
 pub fn get_type_at_binary_expr(
@@ -427,16 +427,7 @@ fn maybe_field_literal_eq_narrow(
         InferConditionFlow::FalseCondition => {
             if let Some(i) = opt_result {
                 union_types.remove(i);
-                match union_types.len() {
-                    0 => return Ok(ResultTypeOrContinue::Result(LuaType::Unknown)),
-                    1 => return Ok(ResultTypeOrContinue::Result(union_types[0].clone())),
-                    _ => {
-                        let union_type = LuaUnionType::from_vec(union_types);
-                        return Ok(ResultTypeOrContinue::Result(LuaType::Union(
-                            union_type.into(),
-                        )));
-                    }
-                }
+                return Ok(ResultTypeOrContinue::Result(LuaType::from_vec(union_types)));
             }
         }
     }

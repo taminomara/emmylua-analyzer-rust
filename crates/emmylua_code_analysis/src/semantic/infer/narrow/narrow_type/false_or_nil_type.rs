@@ -1,6 +1,4 @@
-use crate::{
-    semantic::infer::narrow::narrow_type::narrow_down_type, DbIndex, LuaType, LuaUnionType,
-};
+use crate::{semantic::infer::narrow::narrow_type::narrow_down_type, DbIndex, LuaType};
 
 pub fn narrow_false_or_nil(db: &DbIndex, t: LuaType) -> LuaType {
     if t.is_boolean() {
@@ -33,13 +31,7 @@ pub fn remove_false_or_nil(t: LuaType) -> LuaType {
                 }
             }
 
-            if new_types.is_empty() {
-                return LuaType::Unknown;
-            } else if new_types.len() == 1 {
-                return new_types[0].clone();
-            } else {
-                return LuaType::Union(LuaUnionType::from_vec(new_types).into());
-            }
+            LuaType::from_vec(new_types)
         }
         _ => t,
     }

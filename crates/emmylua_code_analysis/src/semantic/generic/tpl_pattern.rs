@@ -257,7 +257,7 @@ fn object_tpl_pattern_match_member_owner_match(
                 for m in &v {
                     types.push(m.typ.clone());
                 }
-                LuaType::Union(LuaUnionType::from_vec(types).into())
+                LuaType::from_vec(types)
             }
         };
 
@@ -530,7 +530,7 @@ fn table_generic_tpl_pattern_member_owner_match(
                 for m in v {
                     types.push(m.typ.clone());
                 }
-                LuaType::Union(LuaUnionType::from_vec(types).into())
+                LuaType::from_vec(types)
             }
         };
 

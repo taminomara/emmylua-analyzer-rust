@@ -12,8 +12,8 @@ use smol_str::SmolStr;
 use crate::{
     InFiled, LuaAliasCallKind, LuaAliasCallType, LuaArrayLen, LuaArrayType, LuaFunctionType,
     LuaGenericType, LuaIndexAccessKey, LuaIntersectionType, LuaMultiLineUnion, LuaObjectType,
-    LuaStringTplType, LuaTupleStatus, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType,
-    SemanticModel, TypeOps, VariadicType,
+    LuaStringTplType, LuaTupleStatus, LuaTupleType, LuaType, LuaTypeDeclId, SemanticModel, TypeOps,
+    VariadicType,
 };
 
 pub fn infer_doc_type(semantic_model: &SemanticModel, node: &LuaDocType) -> LuaType {
@@ -299,20 +299,20 @@ fn infer_binary_type(semantic_model: &SemanticModel, binary_type: &LuaDocBinaryT
                         let mut left_types = left_type_union.into_vec();
                         let right_types = right_type_union.into_vec();
                         left_types.extend(right_types);
-                        return LuaType::Union(LuaUnionType::from_vec(left_types).into());
+                        return LuaType::from_vec(left_types);
                     }
                     (LuaType::Union(left_type_union), right) => {
                         let mut left_types = left_type_union.into_vec();
                         left_types.push(right);
-                        return LuaType::Union(LuaUnionType::from_vec(left_types).into());
+                        return LuaType::from_vec(left_types);
                     }
                     (left, LuaType::Union(right_type_union)) => {
                         let mut right_types = right_type_union.into_vec();
                         right_types.push(left);
-                        return LuaType::Union(LuaUnionType::from_vec(right_types).into());
+                        return LuaType::from_vec(right_types);
                     }
                     (left, right) => {
-                        return LuaType::Union(LuaUnionType::from_vec(vec![left, right]).into());
+                        return LuaType::from_vec(vec![left, right]);
                     }
                 },
                 LuaTypeBinaryOperator::Intersection => match (left_type, right_type) {

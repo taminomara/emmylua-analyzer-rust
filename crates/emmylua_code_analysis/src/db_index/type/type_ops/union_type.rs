@@ -45,7 +45,7 @@ pub fn union_type(source: LuaType, target: LuaType) -> LuaType {
             if id1 == id2 {
                 source.clone()
             } else {
-                LuaType::Union(LuaUnionType::from_vec(vec![source.clone(), target.clone()]).into())
+                LuaType::from_vec(vec![source.clone(), target.clone()])
             }
         }
         // union
@@ -71,18 +71,15 @@ pub fn union_type(source: LuaType, target: LuaType) -> LuaType {
         }
         // two union
         (LuaType::Union(left), LuaType::Union(right)) => {
-            let mut left = left.into_set();
-            let right = right.into_set();
+            let mut left = left.into_vec();
+            let right = right.into_vec();
             left.extend(right);
-            match left.len() {
-                0 => LuaType::Never,
-                1 => left.into_iter().next().unwrap(),
-                _ => LuaType::Union(LuaUnionType::from_set(left).into()),
-            }
+
+            LuaType::from_vec(left)
         }
 
         // same type
         (left, right) if left == right => source.clone(),
-        _ => LuaType::Union(LuaUnionType::from_vec(vec![source, target]).into()),
+        _ => LuaType::from_vec(vec![source, target]),
     }
 }

@@ -5,7 +5,7 @@ use emmylua_parser::{LuaAstNode, LuaIndexMemberExpr, LuaTableExpr, LuaVarExpr};
 use crate::{
     get_real_type, infer_call_expr_func, infer_expr, infer_table_should_be, DbIndex,
     InferFailReason, InferGuard, LuaDocParamInfo, LuaDocReturnInfo, LuaFunctionType, LuaInferCache,
-    LuaSignature, LuaType, LuaUnionType, SignatureReturnStatus, TypeOps,
+    LuaSignature, LuaType, SignatureReturnStatus, TypeOps,
 };
 
 use super::{
@@ -534,12 +534,12 @@ fn find_best_function_type(
                         0 => {}
                         1 => return Some(LuaType::DocFunction(filtered_types[0].clone())),
                         _ => {
-                            return Some(LuaType::Union(Arc::new(LuaUnionType::from_vec(
+                            return Some(LuaType::from_vec(
                                 filtered_types
                                     .into_iter()
                                     .map(|func| LuaType::DocFunction(func.clone()))
                                     .collect(),
-                            ))));
+                            ));
                         }
                     }
                 }
@@ -561,14 +561,14 @@ fn find_best_function_type(
                 .map(LuaType::DocFunction);
         }
         _ => {
-            return Some(LuaType::Union(Arc::new(LuaUnionType::from_vec(
+            return Some(LuaType::from_vec(
                 origin_signature
                     .overloads
                     .clone()
                     .into_iter()
                     .map(LuaType::DocFunction)
                     .collect(),
-            ))));
+            ));
         }
     }
 }

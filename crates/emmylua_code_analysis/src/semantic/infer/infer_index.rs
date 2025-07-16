@@ -438,7 +438,7 @@ fn get_expr_key_members(
     return match result.len() {
         0 => None,
         1 => Some(result[0].clone()),
-        _ => Some(LuaType::Union(LuaUnionType::from_vec(result).into())),
+        _ => Some(LuaType::from_vec(result)),
     };
 }
 
@@ -633,11 +633,7 @@ fn infer_union_member(
         }
     }
 
-    match member_types.len() {
-        0 => Ok(LuaType::Nil),
-        1 => Ok(member_types[0].clone()),
-        _ => Ok(LuaType::Union(LuaUnionType::from_vec(member_types).into())),
-    }
+    Ok(LuaType::from_vec(member_types))
 }
 
 fn infer_intersection_member(

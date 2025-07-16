@@ -422,6 +422,28 @@ impl LuaType {
     pub fn is_type_guard(&self) -> bool {
         matches!(self, LuaType::TypeGuard(_))
     }
+
+    pub fn from_vec(types: Vec<LuaType>) -> Self {
+        return match types.len() {
+            0 => LuaType::Nil,
+            1 => types[0].clone(),
+            _ => {
+                let mut result_types = Vec::new();
+                let mut hash_set = HashSet::new();
+                for typ in types {
+                    if hash_set.insert(typ.clone()) {
+                        result_types.push(typ);
+                    }
+                }
+
+                match result_types.len() {
+                    0 => LuaType::Nil,
+                    1 => result_types[0].clone(),
+                    _ => LuaType::Union(LuaUnionType::from_vec(result_types).into()),
+                }
+            }
+        };
+    }
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -745,6 +767,16 @@ impl LuaUnionType {
     }
 
     pub fn from_vec(types: Vec<LuaType>) -> Self {
+        if types.len() == 2 {
+            if types.contains(&LuaType::Nil) {
+                let non_nil_type = types.iter().filter(|t| !matches!(t, LuaType::Nil)).next();
+                if let Some(ty) = non_nil_type {
+                    return Self::Nullable(ty.clone());
+                }
+            } else {
+                return Self::Multi(types);
+            }
+        }
         Self::Multi(types)
     }
 
@@ -755,6 +787,7 @@ impl LuaUnionType {
         }
     }
 
+    #[allow(unused)]
     pub(crate) fn into_set(&self) -> HashSet<LuaType> {
         match self {
             LuaUnionType::Nullable(ty) => {

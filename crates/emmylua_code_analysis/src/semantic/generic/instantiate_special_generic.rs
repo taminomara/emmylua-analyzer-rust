@@ -6,8 +6,7 @@ use crate::{
         member::{find_members, infer_raw_member_type},
         type_check,
     },
-    DbIndex, LuaAliasCallKind, LuaAliasCallType, LuaMemberKey, LuaType, LuaUnionType, TypeOps,
-    VariadicType,
+    DbIndex, LuaAliasCallKind, LuaAliasCallType, LuaMemberKey, LuaType, TypeOps, VariadicType,
 };
 
 use super::{instantiate_type_generic, TypeSubstitutor};
@@ -53,7 +52,7 @@ pub fn instantiate_alias_call(
                 })
                 .collect::<Vec<_>>();
 
-            return LuaType::Union(LuaUnionType::from_vec(member_key_types).into());
+            return LuaType::from_vec(member_key_types);
         }
         LuaAliasCallKind::Extends => {
             if operands.len() != 2 {

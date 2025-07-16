@@ -347,11 +347,7 @@ fn find_union_function_member(
         }
     }
 
-    match member_types.len() {
-        0 => Ok(LuaType::Nil),
-        1 => Ok(member_types[0].clone()),
-        _ => Ok(LuaType::Union(LuaUnionType::from_vec(member_types).into())),
-    }
+    Ok(LuaType::from_vec(member_types))
 }
 
 fn index_generic_members_from_super_generics(

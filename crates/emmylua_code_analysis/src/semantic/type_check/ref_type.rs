@@ -1,9 +1,8 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use crate::{
     humanize_type, semantic::member::find_members, DbIndex, LuaMemberKey, LuaMemberOwner,
-    LuaObjectType, LuaTupleType, LuaType, LuaTypeCache, LuaTypeDecl, LuaTypeDeclId, LuaUnionType,
-    RenderLevel,
+    LuaObjectType, LuaTupleType, LuaType, LuaTypeCache, LuaTypeDecl, LuaTypeDeclId, RenderLevel,
 };
 
 use super::{
@@ -76,7 +75,7 @@ fn check_ref_enum(
                 )
                 .cloned()
                 .collect();
-            LuaType::Union(Arc::new(LuaUnionType::from_vec(new_types)))
+            LuaType::from_vec(new_types)
         }
         LuaType::Ref(compact_id) => {
             if let Some(compact_decl) = db.get_type_index().get_type_decl(compact_id) {

@@ -12,7 +12,7 @@ use smol_str::SmolStr;
 use crate::{
     db_index::{
         AnalyzeError, LuaAliasCallType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey,
-        LuaIntersectionType, LuaObjectType, LuaStringTplType, LuaTupleType, LuaType, LuaUnionType,
+        LuaIntersectionType, LuaObjectType, LuaStringTplType, LuaTupleType, LuaType,
     },
     DiagnosticCode, GenericTpl, InFiled, LuaAliasCallKind, LuaArrayLen, LuaArrayType,
     LuaMultiLineUnion, LuaTupleStatus, LuaTypeDeclId, TypeOps, VariadicType,
@@ -334,20 +334,20 @@ fn infer_binary_type(analyzer: &mut DocAnalyzer, binary_type: &LuaDocBinaryType)
                         let mut left_type_set = left_type_union.into_vec();
                         let right_types = right_type_union.into_vec();
                         left_type_set.extend(right_types);
-                        return LuaType::Union(LuaUnionType::from_vec(left_type_set).into());
+                        return LuaType::from_vec(left_type_set);
                     }
                     (LuaType::Union(left_type_union), right) => {
                         let mut left_types = (*left_type_union).into_vec();
                         left_types.push(right);
-                        return LuaType::Union(LuaUnionType::from_vec(left_types).into());
+                        return LuaType::from_vec(left_types);
                     }
                     (left, LuaType::Union(right_type_union)) => {
                         let mut right_types = (*right_type_union).into_vec();
                         right_types.push(left);
-                        return LuaType::Union(LuaUnionType::from_vec(right_types).into());
+                        return LuaType::from_vec(right_types);
                     }
                     (left, right) => {
-                        return LuaType::Union(LuaUnionType::from_vec(vec![left, right]).into());
+                        return LuaType::from_vec(vec![left, right]);
                     }
                 },
                 LuaTypeBinaryOperator::Intersection => match (left_type, right_type) {

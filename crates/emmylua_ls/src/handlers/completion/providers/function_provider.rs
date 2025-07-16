@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use emmylua_code_analysis::{
     get_real_type, DbIndex, InferGuard, LuaDeclLocation, LuaFunctionType, LuaMember, LuaMemberKey,
     LuaMemberOwner, LuaMultiLineUnion, LuaSemanticDeclId, LuaStringTplType, LuaType, LuaTypeCache,
@@ -803,10 +801,11 @@ pub fn get_function_remove_nil(db: &DbIndex, typ: &LuaType) -> Option<LuaType> {
                     }
                 }
             }
-            match new_types.len() {
-                0 => None,
-                1 => Some(new_types[0].clone()),
-                _ => Some(LuaType::Union(Arc::new(LuaUnionType::from_vec(new_types)))),
+
+            let new_type = LuaType::from_vec(new_types);
+            match &new_type {
+                LuaType::Nil => None,
+                _ => Some(new_type),
             }
         }
         _ if typ.is_function() => {
