@@ -1205,4 +1205,26 @@ end
         let c = ws.expr_ty("C");
         assert_eq!(ws.humanize_type(c), "A");
     }
+
+    #[test]
+    fn test_error_function() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_code_for(
+            DiagnosticCode::NeedCheckNil,
+            r#"
+                ---@class Result
+                ---@field value string?
+                Result = {}
+
+                function getValue()
+                    ---@type Result?
+                    local result
+
+                    if result then
+                        error(result.value)
+                    end
+                end
+            "#,
+        ));
+    }
 }
