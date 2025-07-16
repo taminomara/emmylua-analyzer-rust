@@ -1177,4 +1177,32 @@ end
         let a = ws.expr_ty("A");
         assert_eq!(ws.humanize_type(a), "T");
     }
+
+    #[test]
+    fn test_issue_630() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        ws.def(
+            r#"
+            ---@class A
+            ---@field Abc string?
+            A = {}
+            "#,
+        );
+        ws.def(
+            r#"
+            function A:test()
+                if not rawget(self, 'Abc') then
+                    self.Abc = "a"
+                end
+
+                B = self.Abc
+                C = self
+            end
+            "#,
+        );
+        let a = ws.expr_ty("B");
+        assert_eq!(ws.humanize_type(a), "string");
+        let c = ws.expr_ty("C");
+        assert_eq!(ws.humanize_type(c), "A");
+    }
 }

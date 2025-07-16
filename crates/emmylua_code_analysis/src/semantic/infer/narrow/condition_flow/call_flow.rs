@@ -8,12 +8,13 @@ use crate::{
         narrow::{
             condition_flow::InferConditionFlow, get_single_antecedent,
             get_type_at_cast_flow::cast_type, get_type_at_flow::get_type_at_flow,
-            var_ref_id::get_var_expr_var_ref_id, ResultTypeOrContinue,
+            narrow_false_or_nil, remove_false_or_nil, var_ref_id::get_var_expr_var_ref_id,
+            ResultTypeOrContinue,
         },
         VarRefId,
     },
-    DbIndex, FlowNode, FlowTree, InferFailReason, InferGuard, LuaFunctionType, LuaInferCache,
-    LuaSignatureCast, LuaSignatureId, LuaType, TypeOps,
+    DbIndex, FlowNode, FlowTree, InferFailReason, InferGuard, LuaAliasCallKind, LuaAliasCallType,
+    LuaFunctionType, LuaInferCache, LuaSignatureCast, LuaSignatureId, LuaType, TypeOps,
 };
 
 pub fn get_type_at_call_expr(
@@ -58,18 +59,34 @@ pub fn get_type_at_call_expr(
             };
 
             let ret = signature.get_return_type();
-            if let LuaType::TypeGuard(_) = ret {
-                return get_type_at_call_expr_by_type_guard(
-                    db,
-                    tree,
-                    cache,
-                    root,
-                    var_ref_id,
-                    flow_node,
-                    call_expr,
-                    signature.to_doc_func_type(),
-                    condition_flow,
-                );
+            match ret {
+                LuaType::TypeGuard(_) => {
+                    return get_type_at_call_expr_by_type_guard(
+                        db,
+                        tree,
+                        cache,
+                        root,
+                        var_ref_id,
+                        flow_node,
+                        call_expr,
+                        signature.to_doc_func_type(),
+                        condition_flow,
+                    );
+                }
+                LuaType::Call(call) => {
+                    return get_type_at_call_expr_by_call(
+                        db,
+                        tree,
+                        cache,
+                        root,
+                        var_ref_id,
+                        flow_node,
+                        call_expr,
+                        &call,
+                        condition_flow,
+                    );
+                }
+                _ => {}
             }
 
             let Some(signature_cast) = db
@@ -287,4 +304,41 @@ fn get_type_at_call_expr_by_signature_param_name(
         condition_flow,
     )?;
     Ok(ResultTypeOrContinue::Result(result_type))
+}
+
+#[allow(unused)]
+fn get_type_at_call_expr_by_call(
+    db: &DbIndex,
+    tree: &FlowTree,
+    cache: &mut LuaInferCache,
+    root: &LuaChunk,
+    var_ref_id: &VarRefId,
+    flow_node: &FlowNode,
+    call_expr: LuaCallExpr,
+    alias_call_type: &Arc<LuaAliasCallType>,
+    condition_flow: InferConditionFlow,
+) -> Result<ResultTypeOrContinue, InferFailReason> {
+    let Some(maybe_ref_id) =
+        get_var_expr_var_ref_id(db, cache, LuaExpr::CallExpr(call_expr.clone()))
+    else {
+        return Ok(ResultTypeOrContinue::Continue);
+    };
+
+    if maybe_ref_id != *var_ref_id {
+        return Ok(ResultTypeOrContinue::Continue);
+    }
+
+    match alias_call_type.get_call_kind() {
+        LuaAliasCallKind::RawGet => {
+            let antecedent_type = infer_expr(db, cache, LuaExpr::CallExpr(call_expr))?;
+            let result_type = match condition_flow {
+                InferConditionFlow::FalseCondition => narrow_false_or_nil(db, antecedent_type),
+                InferConditionFlow::TrueCondition => remove_false_or_nil(antecedent_type),
+            };
+            return Ok(ResultTypeOrContinue::Result(result_type));
+        }
+        _ => {}
+    };
+
+    Ok(ResultTypeOrContinue::Continue)
 }
