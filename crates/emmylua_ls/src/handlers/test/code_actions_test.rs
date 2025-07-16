@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::handlers::test_lib::ProviderVirtualWorkspace;
+    use emmylua_code_analysis::{DiagnosticCode, Emmyrc};
     use lsp_types::CodeActionOrCommand;
 
     #[test]
@@ -30,6 +31,12 @@ mod tests {
     #[test]
     fn test_add_doc_tag() {
         let mut ws = ProviderVirtualWorkspace::new();
+        let mut emmyrc = Emmyrc::default();
+        emmyrc
+            .diagnostics
+            .enables
+            .push(DiagnosticCode::UnknownDocTag);
+        ws.analysis.update_config(emmyrc.into());
         let actions = ws
             .check_code_action(
                 r#"
