@@ -134,7 +134,7 @@ pub fn is_code_default_enable(code: &DiagnosticCode) -> bool {
         DiagnosticCode::CodeStyleCheck => false,
         DiagnosticCode::IncompleteSignatureDoc => false,
         DiagnosticCode::MissingGlobalDoc => false,
-
+        DiagnosticCode::UnknownDocTag => false,
         // ... handle other variants
 
         // neovim-code-style
