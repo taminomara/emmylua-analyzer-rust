@@ -1158,4 +1158,23 @@ end
         let a = ws.expr_ty("A");
         assert_eq!(ws.humanize_type(a), "number");
     }
+
+    #[test]
+    fn test_type_narrow() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+            ---@generic T: table
+            ---@param obj T | function
+            ---@return T?
+            function bindGC(obj)
+                if type(obj) == 'table' then
+                    A = obj
+                end
+            end
+            "#,
+        );
+        let a = ws.expr_ty("A");
+        assert_eq!(ws.humanize_type(a), "T");
+    }
 }
