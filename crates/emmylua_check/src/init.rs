@@ -3,7 +3,7 @@ use emmylua_code_analysis::{
 };
 use fern::Dispatch;
 use log::LevelFilter;
-use std::{path::PathBuf, str::FromStr, sync::Arc};
+use std::{path::PathBuf, str::FromStr};
 
 fn root_from_configs(config_paths: &Vec<PathBuf>, fallback: &PathBuf) -> PathBuf {
     if config_paths.len() != 1 {
@@ -90,11 +90,9 @@ pub fn load_workspace(
     );
     emmyrc.pre_process_emmyrc(&config_root);
 
-    for lib in &emmyrc.workspace.library {
-        workspace_folders.push(PathBuf::from_str(lib).unwrap());
-    }
-
     let mut analysis = EmmyLuaAnalysis::new();
+    analysis.update_config(emmyrc.clone().into());
+    analysis.init_std_lib(None);
 
     for path in &workspace_folders {
         analysis.add_main_workspace(path.clone());
@@ -104,8 +102,10 @@ pub fn load_workspace(
         analysis.add_main_workspace(PathBuf::from_str(root).unwrap());
     }
 
-    analysis.update_config(Arc::new(emmyrc));
-    analysis.init_std_lib(None);
+    for lib in &emmyrc.workspace.library {
+        analysis.add_library_workspace(PathBuf::from_str(lib).unwrap());
+        workspace_folders.push(PathBuf::from_str(lib).unwrap());
+    }
 
     let file_infos = collect_files(&workspace_folders, &analysis.emmyrc, ignore);
     let files = file_infos
