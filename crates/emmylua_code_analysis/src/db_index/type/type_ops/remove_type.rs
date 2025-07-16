@@ -1,6 +1,4 @@
-use std::collections::HashSet;
-
-use crate::{get_real_type, DbIndex, LuaType, LuaUnionType};
+use crate::{get_real_type, DbIndex, LuaType};
 
 pub fn remove_type(db: &DbIndex, source: LuaType, removed_type: LuaType) -> Option<LuaType> {
     if source == removed_type {
@@ -91,7 +89,7 @@ pub fn remove_type(db: &DbIndex, source: LuaType, removed_type: LuaType) -> Opti
             }
             _ => {}
         },
-        LuaType::DocStringConst(s) => match &source {
+        LuaType::DocStringConst(s) | LuaType::StringConst(s) => match &source {
             LuaType::DocStringConst(s2) => {
                 if s == s2 {
                     return None;
@@ -104,20 +102,7 @@ pub fn remove_type(db: &DbIndex, source: LuaType, removed_type: LuaType) -> Opti
             }
             _ => {}
         },
-        LuaType::StringConst(s) => match &source {
-            LuaType::DocStringConst(s2) => {
-                if s == s2 {
-                    return None;
-                }
-            }
-            LuaType::StringConst(s2) => {
-                if s == s2 {
-                    return None;
-                }
-            }
-            _ => {}
-        },
-        LuaType::DocIntegerConst(i) => match &source {
+        LuaType::DocIntegerConst(i) | LuaType::IntegerConst(i) => match &source {
             LuaType::DocIntegerConst(i2) => {
                 if i == i2 {
                     return None;
@@ -130,14 +115,14 @@ pub fn remove_type(db: &DbIndex, source: LuaType, removed_type: LuaType) -> Opti
             }
             _ => {}
         },
-        LuaType::IntegerConst(i) => match &source {
-            LuaType::DocIntegerConst(i2) => {
-                if i == i2 {
+        LuaType::DocBooleanConst(b) | LuaType::BooleanConst(b) => match &source {
+            LuaType::DocBooleanConst(b2) => {
+                if b == b2 {
                     return None;
                 }
             }
-            LuaType::IntegerConst(i2) => {
-                if i == i2 {
+            LuaType::BooleanConst(b2) => {
+                if b == b2 {
                     return None;
                 }
             }
@@ -151,23 +136,15 @@ pub fn remove_type(db: &DbIndex, source: LuaType, removed_type: LuaType) -> Opti
             .into_vec()
             .iter()
             .filter_map(|t| remove_type(db, t.clone(), removed_type.clone()))
-            .collect::<HashSet<_>>();
-        match types.len() {
-            0 => return Some(LuaType::Nil),
-            1 => return types.into_iter().next(),
-            _ => return Some(LuaType::Union(LuaUnionType::from_set(types).into())),
-        }
+            .collect::<Vec<_>>();
+        return Some(LuaType::from_vec(types));
     } else if let LuaType::Union(u) = &removed_type {
         let types = u
             .into_vec()
             .iter()
             .filter_map(|t| remove_type(db, source.clone(), t.clone()))
-            .collect::<HashSet<_>>();
-        return match types.len() {
-            0 => None,
-            1 => types.into_iter().next(),
-            _ => Some(LuaType::Union(LuaUnionType::from_set(types).into())),
-        };
+            .collect::<Vec<_>>();
+        return Some(LuaType::from_vec(types));
     }
 
     Some(source)

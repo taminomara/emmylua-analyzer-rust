@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::{TypeOps, VirtualWorkspace};
+    use crate::{DiagnosticCode, TypeOps, VirtualWorkspace};
 
     #[test]
     fn test_custom_ops() {
@@ -178,5 +178,24 @@ mod tests {
         //         ws.ty("string[]")
         //     );
         // }
+    }
+
+    #[test]
+    fn test_remove_type() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+            ---@return string[]
+            function test()
+                ---@type string[]|false
+                local ids
+                if ids == false then
+                    return {}
+                end
+                return ids
+            end
+        "#
+        ));
     }
 }
