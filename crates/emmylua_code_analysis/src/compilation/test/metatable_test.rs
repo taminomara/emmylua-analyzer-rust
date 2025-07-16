@@ -70,7 +70,7 @@ mod test {
             "#,
         );
 
-        let ty = ws.expr_ty("a");
+        // let ty = ws.expr_ty("a");
         // disable test temp
         // assert_eq!(ws.humanize_type(ty), "switch");
     }

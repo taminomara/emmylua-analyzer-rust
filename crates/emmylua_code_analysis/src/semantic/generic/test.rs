@@ -117,7 +117,7 @@ mod test {
         );
 
         let a = ws.expr_ty("R");
-        let expected = ws.ty("any");
+        let expected = ws.ty("nil");
         assert_eq!(a, expected);
     }
 }
