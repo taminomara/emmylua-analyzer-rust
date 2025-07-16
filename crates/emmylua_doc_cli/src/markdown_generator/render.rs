@@ -4,7 +4,7 @@ use emmylua_code_analysis::{
 };
 
 pub fn render_const_type(db: &DbIndex, typ: &LuaType) -> String {
-    let const_value = humanize_type(db, typ, RenderLevel::Detailed);
+    let const_value = humanize_type(db, typ, RenderLevel::Documentation);
 
     match typ {
         LuaType::IntegerConst(_) | LuaType::DocIntegerConst(_) => {

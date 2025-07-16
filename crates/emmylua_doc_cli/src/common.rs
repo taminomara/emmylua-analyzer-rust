@@ -6,7 +6,7 @@ pub fn render_typ(db: &DbIndex, typ: &LuaType) -> String {
         LuaType::FloatConst(_) => "number".to_string(),
         LuaType::StringConst(_) => "string".to_string(),
         LuaType::BooleanConst(_) => "boolean".to_string(),
-        _ => humanize_type(db, typ, RenderLevel::Simple),
+        _ => humanize_type(db, typ, RenderLevel::Documentation),
     }
 }
 
