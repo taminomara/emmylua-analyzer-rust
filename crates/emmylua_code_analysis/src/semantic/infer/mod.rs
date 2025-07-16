@@ -99,7 +99,7 @@ pub fn infer_expr(db: &DbIndex, cache: &mut LuaInferCache, expr: LuaExpr) -> Inf
                     .insert(key, CacheEntry::Cache(LuaType::Nil));
                 return Ok(LuaType::Nil);
             } else {
-                cache.expr_cache.insert(key, CacheEntry::Ready);
+                cache.expr_cache.remove(&key);
             }
         }
         _ => {
