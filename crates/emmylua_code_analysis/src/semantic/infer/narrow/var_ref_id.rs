@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use emmylua_parser::{LuaAstNode, LuaExpr};
 use internment::ArcIntern;
 use rowan::TextSize;
@@ -38,6 +40,24 @@ impl VarRefId {
             VarRefId::VarRef(decl_id) => decl_id.position,
             VarRefId::SelfRef(decl_or_member_id) => decl_or_member_id.get_position(),
             VarRefId::IndexRef(decl_or_member_id, _) => decl_or_member_id.get_position(),
+        }
+    }
+
+    pub fn start_with(&self, prefix: &VarRefId) -> bool {
+        let (decl_or_member_id, path) = match self {
+            VarRefId::IndexRef(decl_or_member_id, path) => {
+                (decl_or_member_id.clone(), path.clone())
+            }
+            _ => return false,
+        };
+
+        match prefix {
+            VarRefId::VarRef(decl_id) => decl_or_member_id.as_decl_id() == Some(*decl_id),
+            VarRefId::SelfRef(decl_or_member_id) => decl_or_member_id == decl_or_member_id,
+            VarRefId::IndexRef(decl_or_member_id, prefix_path) => {
+                decl_or_member_id == decl_or_member_id
+                    && path.starts_with(prefix_path.deref().as_str())
+            }
         }
     }
 }

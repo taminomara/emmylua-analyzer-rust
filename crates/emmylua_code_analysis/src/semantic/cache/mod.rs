@@ -2,7 +2,10 @@ mod cache_options;
 
 pub use cache_options::{CacheOptions, LuaAnalysisPhase};
 use emmylua_parser::LuaSyntaxId;
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 use crate::{db_index::LuaType, semantic::infer::VarRefId, FileId, FlowId, LuaFunctionType};
 
@@ -22,6 +25,7 @@ pub struct LuaInferCache {
     pub flow_node_cache: HashMap<(VarRefId, FlowId), CacheEntry<LuaType>>,
     pub index_ref_origin_type_cache: HashMap<VarRefId, CacheEntry<LuaType>>,
     pub expr_var_ref_id_cache: HashMap<LuaSyntaxId, VarRefId>,
+    pub narrow_by_literal_stop_postion_cache: HashSet<LuaSyntaxId>,
 }
 
 impl LuaInferCache {
@@ -34,6 +38,7 @@ impl LuaInferCache {
             flow_node_cache: HashMap::new(),
             index_ref_origin_type_cache: HashMap::new(),
             expr_var_ref_id_cache: HashMap::new(),
+            narrow_by_literal_stop_postion_cache: HashSet::new(),
         }
     }
 

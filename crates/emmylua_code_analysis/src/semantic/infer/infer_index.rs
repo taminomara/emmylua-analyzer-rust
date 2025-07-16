@@ -383,24 +383,24 @@ fn infer_custom_type_member(
     // 解决`key`为表达式的情况
     if let LuaIndexKey::Expr(expr) = index_key {
         if let Some(keys) = expr_to_member_key(db, cache, &expr) {
-            let mut result_types = HashSet::new();
+            let mut result_types = Vec::new();
             for key in keys {
                 // 解决 enum[enum] | class[class] 的情况
                 if let Some(member_type) = get_expr_key_members(db, &key, &owner) {
-                    result_types.insert(member_type);
+                    result_types.push(member_type);
                     continue;
                 }
 
                 if let Some(member_item) = db.get_member_index().get_member_item(&owner, &key) {
                     if let Ok(member_type) = member_item.resolve_type(db) {
-                        result_types.insert(member_type);
+                        result_types.push(member_type);
                     }
                 }
             }
             match result_types.len() {
                 0 => {}
                 1 => return Ok(result_types.iter().next().cloned().unwrap()),
-                _ => return Ok(LuaType::Union(LuaUnionType::from_set(result_types).into())),
+                _ => return Ok(LuaType::from_vec(result_types)),
             }
         }
     }

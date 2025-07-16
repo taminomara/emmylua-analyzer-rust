@@ -1067,4 +1067,41 @@ end
             "#,
         ));
     }
+
+    #[test]
+    fn test_issue_627() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+            ---@class A
+            ---@field type "point"
+            ---@field handle number
+
+            ---@class B
+            ---@field type "unit"
+            ---@field handle string
+
+            ---@param a number
+            function testA(a)
+            end
+            ---@param a string
+            function testB(a)
+            end
+            "#,
+        );
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+                ---@param target A | B
+                function test(target)
+                    if target.type == 'point' then
+                        testA(target.handle)
+                    end
+                    if target.type == 'unit' then
+                        testB(target.handle)
+                    end
+                end
+            "#,
+        ));
+    }
 }

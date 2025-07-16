@@ -11,7 +11,7 @@ use crate::{
             condition_flow::{call_flow::get_type_at_call_expr, InferConditionFlow},
             get_single_antecedent,
             get_type_at_flow::get_type_at_flow,
-            narrow_down_type,
+            get_var_ref_type, narrow_down_type,
             var_ref_id::get_var_expr_var_ref_id,
             ResultTypeOrContinue,
         },
@@ -372,6 +372,7 @@ fn maybe_field_literal_eq_narrow(
     condition_flow: InferConditionFlow,
 ) -> Result<ResultTypeOrContinue, InferFailReason> {
     // only check left as need narrow
+    let syntax_id = left_expr.get_syntax_id();
     let (index_expr, literal_expr) = match (left_expr, right_expr) {
         (LuaExpr::IndexExpr(index_expr), LuaExpr::LiteralExpr(literal_expr)) => {
             (index_expr, literal_expr)
@@ -392,6 +393,19 @@ fn maybe_field_literal_eq_narrow(
     };
 
     if maybe_var_ref_id != *var_ref_id {
+        if cache
+            .narrow_by_literal_stop_postion_cache
+            .contains(&syntax_id)
+        {
+            if var_ref_id.start_with(&maybe_var_ref_id) {
+                return Ok(ResultTypeOrContinue::Result(get_var_ref_type(
+                    db,
+                    cache,
+                    &var_ref_id,
+                )?));
+            }
+        }
+
         return Ok(ResultTypeOrContinue::Continue);
     }
 
@@ -400,6 +414,8 @@ fn maybe_field_literal_eq_narrow(
     let LuaType::Union(union_type) = left_type else {
         return Ok(ResultTypeOrContinue::Continue);
     };
+
+    cache.narrow_by_literal_stop_postion_cache.insert(syntax_id);
 
     let right_type = infer_expr(db, cache, LuaExpr::LiteralExpr(literal_expr))?;
     let mut guard = InferGuard::new();
