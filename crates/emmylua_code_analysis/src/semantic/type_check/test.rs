@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::VirtualWorkspace;
+    use crate::{DiagnosticCode, VirtualWorkspace};
 
     #[test]
     fn test_string() {
@@ -149,5 +149,24 @@ mod test {
         let ty = ws.ty("string?");
         let ty2 = ws.expr_ty("(\"hello\"):match(\".*\")");
         assert!(ws.check_type(&ty, &ty2));
+    }
+
+    #[test]
+    fn test_issue_634() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(!ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+            --- @class A
+            --- @field a integer
+
+            --- @param x table<integer,string>
+            local function foo(x) end
+
+            local y --- @type A
+            foo(y) -- should error
+        "#
+        ));
     }
 }

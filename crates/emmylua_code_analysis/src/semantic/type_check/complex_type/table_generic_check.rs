@@ -68,9 +68,18 @@ pub fn check_table_generic_type_compact(
                 return Ok(());
             }
         }
+        LuaType::Userdata => return Ok(()),
         // maybe support object
         // need check later
-        LuaType::Ref(_) | LuaType::Def(_) | LuaType::Userdata => return Ok(()),
+        LuaType::Ref(id) | LuaType::Def(id) => {
+            let owner = LuaMemberOwner::Type(id.clone());
+            return check_table_generic_compact_member_owner(
+                db,
+                source_generic_param,
+                owner,
+                check_guard.next_level()?,
+            );
+        }
         LuaType::Union(union) => {
             for union_type in union.into_vec() {
                 check_table_generic_type_compact(
