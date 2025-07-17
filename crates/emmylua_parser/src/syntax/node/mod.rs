@@ -35,6 +35,7 @@ pub enum LuaAst {
     LuaFuncStat(LuaFuncStat),
     LuaLocalFuncStat(LuaLocalFuncStat),
     LuaReturnStat(LuaReturnStat),
+    LuaGlobalStat(LuaGlobalStat),
 
     // exprs
     LuaNameExpr(LuaNameExpr),
@@ -126,6 +127,7 @@ impl LuaAstNode for LuaAst {
             LuaAst::LuaFuncStat(node) => node.syntax(),
             LuaAst::LuaLocalFuncStat(node) => node.syntax(),
             LuaAst::LuaReturnStat(node) => node.syntax(),
+            LuaAst::LuaGlobalStat(node) => node.syntax(),
             LuaAst::LuaNameExpr(node) => node.syntax(),
             LuaAst::LuaIndexExpr(node) => node.syntax(),
             LuaAst::LuaTableExpr(node) => node.syntax(),
@@ -210,6 +212,7 @@ impl LuaAstNode for LuaAst {
             LuaSyntaxKind::FuncStat => true,
             LuaSyntaxKind::LocalFuncStat => true,
             LuaSyntaxKind::ReturnStat => true,
+            LuaSyntaxKind::GlobalStat => true,
             LuaSyntaxKind::NameExpr => true,
             LuaSyntaxKind::IndexExpr => true,
             LuaSyntaxKind::TableEmptyExpr
@@ -308,6 +311,7 @@ impl LuaAstNode for LuaAst {
                 LuaLocalFuncStat::cast(syntax).map(LuaAst::LuaLocalFuncStat)
             }
             LuaSyntaxKind::ReturnStat => LuaReturnStat::cast(syntax).map(LuaAst::LuaReturnStat),
+            LuaSyntaxKind::GlobalStat => LuaGlobalStat::cast(syntax).map(LuaAst::LuaGlobalStat),
             LuaSyntaxKind::NameExpr => LuaNameExpr::cast(syntax).map(LuaAst::LuaNameExpr),
             LuaSyntaxKind::IndexExpr => LuaIndexExpr::cast(syntax).map(LuaAst::LuaIndexExpr),
             LuaSyntaxKind::TableEmptyExpr

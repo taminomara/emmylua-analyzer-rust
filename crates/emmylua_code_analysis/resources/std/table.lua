@@ -161,4 +161,16 @@ function table.foreachi(list, callback) end
 ---@deprecated
 function table.getn(list) end
 
+
+---Creates a new empty table, preallocating memory. This preallocation may help
+---performance and save memory when you know in advance how many elements the table will have. 
+---Parameter `nseq` is a hint for how many elements the table will have as a sequence. Optional parameter `nrec` 
+---is a hint for how many other elements the table will have; its default is zero.
+---@version >5.5
+---@param nseq integer
+---@param nrec? integer
+---@return table
+---@nodiscard
+function table.create(nseq, nrec) end
+
 return table

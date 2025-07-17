@@ -3,6 +3,7 @@ use crate::{
     kind::{LuaSyntaxKind, LuaTokenKind},
     parser::{LuaParser, MarkerEventContainer},
     parser_error::LuaParseError,
+    LuaLanguageLevel,
 };
 
 use super::{
@@ -54,8 +55,7 @@ fn parse_stat(p: &mut LuaParser) -> ParseResult {
         LuaTokenKind::TkGoto => parse_goto(p)?,
         LuaTokenKind::TkDbColon => parse_label_stat(p)?,
         LuaTokenKind::TkSemicolon => parse_empty_stat(p)?,
-        LuaTokenKind::TkGlobal => parse_global_stat(p)?,
-        _ => parse_assign_or_expr_stat(p)?,
+        _ => parse_assign_or_expr_or_global_stat(p)?,
     };
 
     Ok(cm)
@@ -230,6 +230,33 @@ fn parse_local(p: &mut LuaParser) -> ParseResult {
                 }
             }
         }
+        LuaTokenKind::TkLt => {
+            if p.parse_config.level >= LuaLanguageLevel::Lua55 {
+                parse_attrib(p)?;
+                parse_local_name(p, true)?;
+                while p.current_token() == LuaTokenKind::TkComma {
+                    p.bump();
+                    parse_local_name(p, true)?;
+                }
+
+                if p.current_token() == LuaTokenKind::TkAssign {
+                    p.bump();
+                    parse_expr(p)?;
+                    while p.current_token() == LuaTokenKind::TkComma {
+                        p.bump();
+                        parse_expr(p)?;
+                    }
+                }
+            } else {
+                return Err(LuaParseError::syntax_error_from(
+                    &t!(
+                        "local attribute is not supported for current version: %{level}",
+                        level = p.parse_config.level
+                    ),
+                    p.current_token_range(),
+                ));
+            }
+        }
         _ => {
             return Err(LuaParseError::syntax_error_from(
                 &t!("unexpected token %{token}", token = p.current_token()),
@@ -254,7 +281,7 @@ fn parse_local_name(p: &mut LuaParser, support_attrib: bool) -> ParseResult {
 
 fn parse_attrib(p: &mut LuaParser) -> ParseResult {
     let m = p.mark(LuaSyntaxKind::Attribute);
-    let range: crate::text::SourceRange = p.current_token_range();
+    let range = p.current_token_range();
     p.bump();
     expect_token(p, LuaTokenKind::TkName)?;
     expect_token(p, LuaTokenKind::TkGt)?;
@@ -317,21 +344,50 @@ fn parse_empty_stat(p: &mut LuaParser) -> ParseResult {
     Ok(m.complete(p))
 }
 
-fn parse_global_stat(p: &mut LuaParser) -> ParseResult {
+fn try_parse_global_stat(p: &mut LuaParser) -> ParseResult {
     let m = p.mark(LuaSyntaxKind::GlobalStat);
-    p.bump();
-    expect_token(p, LuaTokenKind::TkName)?;
-
-    while p.current_token() == LuaTokenKind::TkComma {
-        p.bump();
-        expect_token(p, LuaTokenKind::TkName)?;
+    match p.peek_next_token() {
+        LuaTokenKind::TkName => {
+            p.set_current_token_kind(LuaTokenKind::TkGlobal);
+            p.bump();
+            parse_local_name(p, true)?;
+            while p.current_token() == LuaTokenKind::TkComma {
+                p.bump();
+                parse_local_name(p, true)?;
+            }
+        }
+        LuaTokenKind::TkLt => {
+            p.set_current_token_kind(LuaTokenKind::TkGlobal);
+            p.bump();
+            parse_attrib(p)?;
+            parse_local_name(p, true)?;
+            while p.current_token() == LuaTokenKind::TkComma {
+                p.bump();
+                parse_local_name(p, true)?;
+            }
+        }
+        _ => {
+            return Ok(m.undo(p));
+        }
     }
 
     if_token_bump(p, LuaTokenKind::TkSemicolon);
     Ok(m.complete(p))
 }
 
-fn parse_assign_or_expr_stat(p: &mut LuaParser) -> ParseResult {
+fn parse_assign_or_expr_or_global_stat(p: &mut LuaParser) -> ParseResult {
+    if p.parse_config.level >= LuaLanguageLevel::Lua55 {
+        if p.current_token() == LuaTokenKind::TkName {
+            let token_text = p.current_token_text();
+            if token_text == "global" {
+                let cm = try_parse_global_stat(p)?;
+                if !cm.is_invalid() {
+                    return Ok(cm);
+                }
+            }
+        }
+    }
+
     let mut m = p.mark(LuaSyntaxKind::AssignStat);
     let range = p.current_token_range();
     let mut cm = parse_expr(p)?;

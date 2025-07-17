@@ -1,4 +1,5 @@
 use emmylua_diagnostic_macro::LuaDiagnosticMacro;
+use emmylua_parser::LuaLanguageLevel;
 use lsp_types::DiagnosticSeverity;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -124,13 +125,14 @@ pub fn get_default_severity(code: DiagnosticCode) -> DiagnosticSeverity {
         DiagnosticCode::AnnotationUsageError => DiagnosticSeverity::ERROR,
         DiagnosticCode::RedefinedLocal => DiagnosticSeverity::HINT,
         DiagnosticCode::DuplicateRequire => DiagnosticSeverity::HINT,
+        DiagnosticCode::IterVariableReassign => DiagnosticSeverity::ERROR,
         _ => DiagnosticSeverity::WARNING,
     }
 }
 
-pub fn is_code_default_enable(code: &DiagnosticCode) -> bool {
+pub fn is_code_default_enable(code: &DiagnosticCode, level: LuaLanguageLevel) -> bool {
     match code {
-        DiagnosticCode::IterVariableReassign => false,
+        DiagnosticCode::IterVariableReassign => level >= LuaLanguageLevel::Lua55,
         DiagnosticCode::CodeStyleCheck => false,
         DiagnosticCode::IncompleteSignatureDoc => false,
         DiagnosticCode::MissingGlobalDoc => false,

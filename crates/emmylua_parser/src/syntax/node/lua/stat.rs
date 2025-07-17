@@ -5,7 +5,7 @@ use crate::{
         traits::{LuaAstChildren, LuaAstNode, LuaAstTokenChildren},
         LuaCommentOwner,
     },
-    LuaSyntaxNode,
+    LuaLocalAttribute, LuaSyntaxNode,
 };
 
 use super::{
@@ -31,6 +31,7 @@ pub enum LuaStat {
     GotoStat(LuaGotoStat),
     LabelStat(LuaLabelStat),
     EmptyStat(LuaEmptyStat),
+    GlobalStat(LuaGlobalStat),
 }
 
 impl LuaAstNode for LuaStat {
@@ -52,6 +53,7 @@ impl LuaAstNode for LuaStat {
             LuaStat::GotoStat(node) => node.syntax(),
             LuaStat::LabelStat(node) => node.syntax(),
             LuaStat::EmptyStat(node) => node.syntax(),
+            LuaStat::GlobalStat(node) => node.syntax(),
         }
     }
 
@@ -76,6 +78,7 @@ impl LuaAstNode for LuaStat {
             LuaSyntaxKind::GotoStat => true,
             LuaSyntaxKind::LabelStat => true,
             LuaSyntaxKind::EmptyStat => true,
+            LuaSyntaxKind::GlobalStat => true,
             _ => false,
         }
     }
@@ -107,6 +110,7 @@ impl LuaAstNode for LuaStat {
             LuaSyntaxKind::GotoStat => Some(LuaStat::GotoStat(LuaGotoStat::cast(syntax)?)),
             LuaSyntaxKind::LabelStat => Some(LuaStat::LabelStat(LuaLabelStat::cast(syntax)?)),
             LuaSyntaxKind::EmptyStat => Some(LuaStat::EmptyStat(LuaEmptyStat::cast(syntax)?)),
+            LuaSyntaxKind::GlobalStat => Some(LuaStat::GlobalStat(LuaGlobalStat::cast(syntax)?)),
             _ => None,
         }
     }
@@ -227,6 +231,10 @@ impl LuaLocalStat {
             }
         }
         None
+    }
+
+    pub fn get_attrib(&self) -> Option<LuaLocalAttribute> {
+        self.child()
     }
 }
 
@@ -974,3 +982,44 @@ impl LuaAstNode for LuaEmptyStat {
 }
 
 impl LuaCommentOwner for LuaEmptyStat {}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaGlobalStat {
+    syntax: LuaSyntaxNode,
+}
+
+impl LuaAstNode for LuaGlobalStat {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        &self.syntax
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaSyntaxKind::GlobalStat
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if syntax.kind() == LuaSyntaxKind::GlobalStat.into() {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaCommentOwner for LuaGlobalStat {}
+
+impl LuaGlobalStat {
+    pub fn get_local_name_list(&self) -> LuaAstChildren<LuaLocalName> {
+        self.children()
+    }
+
+    pub fn get_attrib(&self) -> Option<LuaLocalAttribute> {
+        self.child()
+    }
+}

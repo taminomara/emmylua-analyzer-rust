@@ -22,3 +22,9 @@ impl fmt::Display for LuaLanguageLevel {
         }
     }
 }
+
+impl Default for LuaLanguageLevel {
+    fn default() -> Self {
+        LuaLanguageLevel::Lua54
+    }
+}

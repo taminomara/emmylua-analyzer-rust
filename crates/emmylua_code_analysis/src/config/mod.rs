@@ -67,23 +67,25 @@ impl Emmyrc {
         &self,
         node_cache: &'cache mut NodeCache,
     ) -> ParserConfig<'cache> {
-        let level = &self.runtime.version;
-
-        let lua_language_level = match level {
-            EmmyrcLuaVersion::Lua51 => LuaLanguageLevel::Lua51,
-            EmmyrcLuaVersion::Lua52 => LuaLanguageLevel::Lua52,
-            EmmyrcLuaVersion::Lua53 => LuaLanguageLevel::Lua53,
-            EmmyrcLuaVersion::Lua54 => LuaLanguageLevel::Lua54,
-            EmmyrcLuaVersion::LuaJIT => LuaLanguageLevel::LuaJIT,
-            EmmyrcLuaVersion::LuaLatest => LuaLanguageLevel::Lua54,
-            EmmyrcLuaVersion::Lua55 => LuaLanguageLevel::Lua55,
-        };
-
+        let lua_language_level = self.get_language_level();
         let mut special_like = HashMap::new();
         for name in self.runtime.require_like_function.iter() {
             special_like.insert(name.clone(), SpecialFunction::Require);
         }
         ParserConfig::new(lua_language_level, Some(node_cache), special_like)
+    }
+
+    pub fn get_language_level(&self) -> LuaLanguageLevel {
+        match self.runtime.version {
+            EmmyrcLuaVersion::Lua51 => LuaLanguageLevel::Lua51,
+            EmmyrcLuaVersion::Lua52 => LuaLanguageLevel::Lua52,
+            EmmyrcLuaVersion::Lua53 => LuaLanguageLevel::Lua53,
+            EmmyrcLuaVersion::Lua54 => LuaLanguageLevel::Lua54,
+            EmmyrcLuaVersion::LuaJIT => LuaLanguageLevel::LuaJIT,
+            // wait lua5.5 release
+            EmmyrcLuaVersion::LuaLatest => LuaLanguageLevel::Lua54,
+            EmmyrcLuaVersion::Lua55 => LuaLanguageLevel::Lua55,
+        }
     }
 
     pub fn pre_process_emmyrc(&mut self, workspace_root: &Path) {

@@ -113,10 +113,16 @@ impl<'a> LuaParser<'a> {
         self.tokens[self.token_index].range
     }
 
-    #[allow(unused)]
     pub fn current_token_text(&self) -> &str {
         let range = &self.tokens[self.token_index].range;
         &self.text[range.start_offset..range.end_offset()]
+    }
+
+    pub fn set_current_token_kind(&mut self, kind: LuaTokenKind) {
+        if self.token_index < self.tokens.len() {
+            self.tokens[self.token_index].kind = kind;
+            self.current_token = kind;
+        }
     }
 
     pub fn bump(&mut self) {

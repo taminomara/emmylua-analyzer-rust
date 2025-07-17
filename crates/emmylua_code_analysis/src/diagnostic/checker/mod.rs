@@ -249,7 +249,7 @@ impl<'a> DiagnosticContext<'a> {
         }
 
         // default setting
-        is_code_default_enable(&code)
+        is_code_default_enable(&code, self.config.level)
     }
 }
 
