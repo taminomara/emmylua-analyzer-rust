@@ -68,8 +68,12 @@ pub fn get_name_expr_var_ref_id(
             let references_index = db.get_reference_index();
             let range = name_expr.get_range();
             let file_ref = references_index.get_local_reference(&file_id)?;
-            let decl_id = file_ref.get_decl_id(&range)?;
-            Some(VarRefId::VarRef(decl_id))
+            if let Some(decl_id) = file_ref.get_decl_id(&range) {
+                return Some(VarRefId::VarRef(decl_id));
+            }
+
+            let global_decl_id = db.get_global_index().resolve_global_decl_id(db, name)?;
+            Some(VarRefId::VarRef(global_decl_id))
         }
     }
 }

@@ -1227,4 +1227,17 @@ end
             "#,
         ));
     }
+
+    #[test]
+    fn test_array_flow() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_code_for(
+            DiagnosticCode::NeedCheckNil,
+            r#"
+            for i = 1, #_G.arg do
+                print(_G.arg[i].char())
+            end
+            "#,
+        ));
+    }
 }
