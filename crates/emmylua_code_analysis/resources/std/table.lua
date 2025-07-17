@@ -108,8 +108,8 @@ function table.sort(list, comp) end
 --- return `list[i]`, `list[i+1]`, `···`, `list[j]`
 --- By default, i is 1 and j is #list.
 ---@generic T, Start: integer, End: integer
----@param i? Start
----@param j? End
+---@param i? std.ConstTpl<Start>
+---@param j? std.ConstTpl<End>
 ---@param list T
 ---@return std.Unpack<T, Start, End>
 function table.unpack(list, i, j) end

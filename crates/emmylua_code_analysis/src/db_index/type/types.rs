@@ -60,6 +60,7 @@ pub enum LuaType {
     Call(Arc<LuaAliasCallType>),
     MultiLineUnion(Arc<LuaMultiLineUnion>),
     TypeGuard(Arc<LuaType>),
+    ConstTplRef(Arc<GenericTpl>),
 }
 
 impl PartialEq for LuaType {
@@ -107,6 +108,7 @@ impl PartialEq for LuaType {
             (LuaType::MultiLineUnion(a), LuaType::MultiLineUnion(b)) => a == b,
             (LuaType::TypeGuard(a), LuaType::TypeGuard(b)) => a == b,
             (LuaType::Never, LuaType::Never) => true,
+            (LuaType::ConstTplRef(a), LuaType::ConstTplRef(b)) => a == b,
             _ => false, // 不同变体之间不相等
         }
     }
@@ -183,6 +185,7 @@ impl Hash for LuaType {
                 (44, ptr).hash(state)
             }
             LuaType::Never => 45.hash(state),
+            LuaType::ConstTplRef(a) => (46, a).hash(state),
         }
     }
 }

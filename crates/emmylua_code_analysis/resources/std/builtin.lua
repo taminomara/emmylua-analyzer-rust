@@ -123,6 +123,10 @@
 --- built-in type for Rawget
 ---@alias std.Rawget<T, K> unknown
 
+---
+--- built-in type for generic template, for match integer const and true/false
+---@alias std.ConstTpl<T> unknown
+
 --- compact luals
 
 ---@alias type std.type
@@ -132,3 +136,4 @@
 ---@alias metatable std.metatable
 
 ---@alias TypeGuard<T> boolean
+

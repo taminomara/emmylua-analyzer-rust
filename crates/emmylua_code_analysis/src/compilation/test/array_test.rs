@@ -30,4 +30,24 @@ mod test {
         "#,
         ));
     }
+
+    #[test]
+    fn test_create_array() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+            ---@generic T
+            ---@param ... T
+            ---@return T[]
+            local function new_array(...)
+            end
+
+            t = new_array(1, 2, 3, 4, 5)
+        "#,
+        );
+
+        let t = ws.expr_ty("t");
+        let t_expected = ws.ty("integer[]");
+        assert_eq!(t, t_expected)
+    }
 }

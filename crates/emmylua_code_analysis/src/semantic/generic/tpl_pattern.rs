@@ -133,6 +133,11 @@ fn tpl_pattern_match(
     match pattern {
         LuaType::TplRef(tpl) => {
             if tpl.get_tpl_id().is_func() {
+                substitutor.insert_type(tpl.get_tpl_id(), constant_decay(target));
+            }
+        }
+        LuaType::ConstTplRef(tpl) => {
+            if tpl.get_tpl_id().is_func() {
                 substitutor.insert_type(tpl.get_tpl_id(), target);
             }
         }
@@ -177,6 +182,16 @@ fn tpl_pattern_match(
     }
 
     Ok(())
+}
+
+fn constant_decay(typ: LuaType) -> LuaType {
+    match &typ {
+        LuaType::FloatConst(_) => LuaType::Number,
+        LuaType::DocIntegerConst(_) | LuaType::IntegerConst(_) => LuaType::Integer,
+        LuaType::DocStringConst(_) | LuaType::StringConst(_) => LuaType::String,
+        LuaType::DocBooleanConst(_) | LuaType::BooleanConst(_) => LuaType::Boolean,
+        _ => typ,
+    }
 }
 
 fn object_tpl_pattern_match(

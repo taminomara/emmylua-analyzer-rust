@@ -271,7 +271,7 @@ function rawequal(v1, v2) end
 --- must be a table; `index` may be any value.
 ---@generic T, K
 ---@param table T
----@param index K
+---@param index std.ConstTpl<K>
 ---@return std.RawGet<T, K>
 function rawget(table, index) end
 
@@ -332,7 +332,7 @@ function require(modname) end
 --- Otherwise, `index` must be the string "#", and `select` returns
 --- the total number of extra arguments it received.
 ---@generic T, Num: integer | '#'
----@param index Num
+---@param index std.ConstTpl<Num>
 ---@param ... T...
 ---@return std.Select<T..., Num>
 function select(index, ...) end
@@ -451,8 +451,8 @@ function xpcall(f, msgh, ...) end
 
 ---@version 5.1, JIT
 ---@generic T, Start: integer, End: integer
----@param i? Start
----@param j? End
+---@param i? std.ConstTpl<Start>
+---@param j? std.ConstTpl<End>
 ---@param list T
 ---@return std.Unpack<T, Start, End>
 function unpack(list, i, j) end
