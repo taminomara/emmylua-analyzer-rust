@@ -35,7 +35,7 @@
 <td width="50%">
 
 #### ⚡ **Performance First**
-- **10x faster** than traditional Lua servers
+- **10x faster** than traditional Lua Language servers
 - **Zero-cost abstractions** with Rust
 - **Incremental compilation** for instant feedback
 - **Memory-efficient** analysis engine
@@ -55,7 +55,7 @@
 <td width="50%">
 
 #### 🔧 **Universal Compatibility**
-- **Lua 5.1** through **5.4** support
+- **Lua 5.1** through **5.5** support
 - **LuaJIT** optimization
 - **Cross-platform** deployment
 - **Editor-agnostic** LSP implementation
@@ -129,6 +129,7 @@ Our project is meticulously organized into specialized crates, each serving a cr
 - ✅ **Auto-completion** with context
 - ✅ **Go to definition**
 - ✅ **Find references**
+- ✅ **Go to implementation**
 - ✅ **Hover information**
 - ✅ **Signature help**
 - ✅ **Rename refactoring**
@@ -145,6 +146,7 @@ Our project is meticulously organized into specialized crates, each serving a cr
 - ✅ **Code lens**
 - ✅ **Call hierarchy**
 - ✅ **Symbol search**
+- ✅ **Document color**
 
 
 </td>
