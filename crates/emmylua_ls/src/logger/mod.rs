@@ -22,11 +22,11 @@ pub fn init_logger(root: Option<&str>, cmd_args: &CmdArgs) {
     };
 
     let cmd_log_path = cmd_args.log_path.clone();
-    if root.is_none() || cmd_log_path.0.is_none() {
+    if root.is_none() && cmd_log_path.0.is_none() {
         init_stderr_logger(level);
         return;
     }
-    let root = root.unwrap();
+    let root = root.unwrap_or("");
     let cmd_log_path = cmd_log_path.0.as_ref().cloned().unwrap_or("".to_string());
 
     let filename = if root.is_empty() || root == "/" {

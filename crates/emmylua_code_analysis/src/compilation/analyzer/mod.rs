@@ -85,11 +85,24 @@ fn module_analyze(
     }
 
     let mut contexts = Vec::new();
+    if let Some(std_lib) = file_tree_map.remove(&WorkspaceId::STD) {
+        let mut context = AnalyzeContext::new(config.clone());
+        context.tree_list = std_lib;
+        contexts.push((WorkspaceId::STD, context));
+    }
+
+    let mut main_vec = Vec::new();
     for (workspace_id, tree_list) in file_tree_map {
         let mut context = AnalyzeContext::new(config.clone());
         context.tree_list = tree_list;
-        contexts.push((workspace_id, context));
+        if workspace_id.is_library() {
+            contexts.push((workspace_id, context));
+        } else {
+            main_vec.push((workspace_id, context));
+        }
     }
+
+    contexts.extend(main_vec);
     contexts
 }
 
