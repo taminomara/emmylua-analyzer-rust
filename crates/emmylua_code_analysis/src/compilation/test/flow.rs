@@ -1240,4 +1240,22 @@ end
             "#,
         ));
     }
+
+    #[test]
+    fn test_issue_641() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            local b --- @type boolean
+            local tar = b and 'a' or 'b'
+
+            if tar == 'a' then
+            end
+
+            --- @type 'a'|'b'
+            local _ = tar
+            "#,
+        ));
+    }
 }

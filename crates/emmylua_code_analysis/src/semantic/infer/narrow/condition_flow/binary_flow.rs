@@ -237,16 +237,12 @@ fn maybe_var_eq_narrow(
             }
 
             let right_expr_type = infer_expr(db, cache, right_expr)?;
-            let antecedent_flow_id = get_single_antecedent(tree, flow_node)?;
-            let antecedent_type =
-                get_type_at_flow(db, tree, cache, root, &var_ref_id, antecedent_flow_id)?;
-
             let result_type = match condition_flow {
-                InferConditionFlow::TrueCondition => {
-                    narrow_down_type(db, antecedent_type, right_expr_type.clone())
-                        .unwrap_or(right_expr_type)
-                }
+                InferConditionFlow::TrueCondition => right_expr_type,
                 InferConditionFlow::FalseCondition => {
+                    let antecedent_flow_id = get_single_antecedent(tree, flow_node)?;
+                    let antecedent_type =
+                        get_type_at_flow(db, tree, cache, root, &var_ref_id, antecedent_flow_id)?;
                     TypeOps::Remove.apply(db, &antecedent_type, &right_expr_type)
                 }
             };
@@ -293,16 +289,12 @@ fn maybe_var_eq_narrow(
             }
 
             let right_expr_type = infer_expr(db, cache, right_expr)?;
-            let antecedent_flow_id = get_single_antecedent(tree, flow_node)?;
-            let antecedent_type =
-                get_type_at_flow(db, tree, cache, root, &var_ref_id, antecedent_flow_id)?;
-
             let result_type = match condition_flow {
-                InferConditionFlow::TrueCondition => {
-                    narrow_down_type(db, antecedent_type, right_expr_type.clone())
-                        .unwrap_or(right_expr_type)
-                }
+                InferConditionFlow::TrueCondition => right_expr_type,
                 InferConditionFlow::FalseCondition => {
+                    let antecedent_flow_id = get_single_antecedent(tree, flow_node)?;
+                    let antecedent_type =
+                        get_type_at_flow(db, tree, cache, root, &var_ref_id, antecedent_flow_id)?;
                     TypeOps::Remove.apply(db, &antecedent_type, &right_expr_type)
                 }
             };
