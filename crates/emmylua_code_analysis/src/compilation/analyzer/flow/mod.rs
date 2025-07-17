@@ -2,7 +2,10 @@ mod bind_analyze;
 mod binder;
 
 use crate::{
-    compilation::analyzer::flow::{bind_analyze::bind_analyze, binder::FlowBinder},
+    compilation::analyzer::flow::{
+        bind_analyze::{bind_analyze, check_goto_label},
+        binder::FlowBinder,
+    },
     db_index::DbIndex,
     profile::Profile,
 };
@@ -18,6 +21,7 @@ pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
         let file_id = in_filed_tree.file_id;
         let mut binder = FlowBinder::new(db, file_id);
         bind_analyze(&mut binder, chunk);
+        check_goto_label(&mut binder);
         let flow_tree = binder.finish();
         db.get_flow_index_mut().add_flow_tree(file_id, flow_tree);
     }

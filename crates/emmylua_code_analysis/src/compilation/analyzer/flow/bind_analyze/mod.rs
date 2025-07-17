@@ -1,3 +1,4 @@
+mod check_goto;
 mod comment;
 mod exprs;
 mod stats;
@@ -20,6 +21,7 @@ use crate::{
     },
     FlowAntecedent, FlowId, FlowNodeKind,
 };
+pub use check_goto::check_goto_label;
 
 #[allow(unused)]
 pub fn bind_analyze(binder: &mut FlowBinder, chunk: LuaChunk) -> Option<()> {

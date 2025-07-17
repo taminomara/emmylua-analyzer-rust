@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use emmylua_parser::{LuaAstPtr, LuaExpr, LuaSyntaxId};
+use emmylua_parser::{LuaAstPtr, LuaExpr, LuaNameToken, LuaSyntaxId};
 use internment::ArcIntern;
 use rowan::TextSize;
 use smol_str::SmolStr;
@@ -88,6 +88,12 @@ impl<'a> FlowBinder<'a> {
         label_id
     }
 
+    pub fn get_label(&self, closure_id: LuaClosureId, name: &str) -> Option<FlowId> {
+        self.labels
+            .get(&closure_id)
+            .and_then(|labels| labels.get(name).copied())
+    }
+
     pub fn create_start(&mut self) -> FlowId {
         self.create_node(FlowNodeKind::Start)
     }
@@ -151,12 +157,23 @@ impl<'a> FlowBinder<'a> {
         self.bindings.get(&syntax_id).copied()
     }
 
-    pub fn cache_goto_flow(&mut self, closure_id: LuaClosureId, label: &str, flow_id: FlowId) {
+    pub fn cache_goto_flow(
+        &mut self,
+        closure_id: LuaClosureId,
+        label_token: LuaNameToken,
+        label: &str,
+        flow_id: FlowId,
+    ) {
         self.goto_stats.push(GotoCache {
             closure_id,
+            label_token,
             label: SmolStr::new(label),
             flow_id,
         });
+    }
+
+    pub fn get_goto_caches(&mut self) -> Vec<GotoCache> {
+        self.goto_stats.drain(..).collect()
     }
 
     pub fn get_flow(&self, flow_id: FlowId) -> Option<&FlowNode> {
@@ -183,6 +200,7 @@ impl<'a> FlowBinder<'a> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GotoCache {
     pub closure_id: LuaClosureId,
+    pub label_token: LuaNameToken,
     pub label: SmolStr,
     pub flow_id: FlowId,
 }
