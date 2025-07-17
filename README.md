@@ -106,7 +106,8 @@ Our project is meticulously organized into specialized crates, each serving a cr
 - ✅ **Lua 5.1** - Full compatibility
 - ✅ **Lua 5.2** - Complete feature set
 - ✅ **Lua 5.3** - Integer types & UTF-8
-- ✅ **Lua 5.4** - Latest features
+- ✅ **Lua 5.4** - Attributes & generational GC
+- ✅ **Lua 5.5** - New global syntax
 - ✅ **LuaJIT** - Performance optimizations
 
 </td>
@@ -133,6 +134,18 @@ Our project is meticulously organized into specialized crates, each serving a cr
 - ✅ **Rename refactoring**
 - ✅ **Code actions**
 - ✅ **Diagnostics**
+- ✅ **Document symbols**
+- ✅ **Workspace symbols**
+- ✅ **Code formatting**
+- ✅ **Code folding**
+- ✅ **Document links**
+- ✅ **Semantic tokens**
+- ✅ **Inlay hints**
+- ✅ **Document highlights**
+- ✅ **Code lens**
+- ✅ **Call hierarchy**
+- ✅ **Symbol search**
+
 
 </td>
 <td width="50%">
