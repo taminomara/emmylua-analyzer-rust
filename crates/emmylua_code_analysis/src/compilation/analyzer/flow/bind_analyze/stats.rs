@@ -118,6 +118,9 @@ pub fn bind_call_expr_stat(
 
         bind_assert_stat(binder, arg_list, current)
     } else if call_expr.is_error() {
+        if let Some(ast) = LuaAst::cast(call_expr.syntax().clone()) {
+            bind_each_child(binder, ast, current);
+        }
         let return_flow_id = binder.create_return();
         binder.add_antecedent(return_flow_id, current);
         return_flow_id

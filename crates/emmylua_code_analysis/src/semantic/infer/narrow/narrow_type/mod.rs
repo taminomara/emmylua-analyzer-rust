@@ -41,6 +41,8 @@ pub fn narrow_down_type(db: &DbIndex, source: LuaType, target: LuaType) -> Optio
             LuaType::Table | LuaType::Userdata | LuaType::Any | LuaType::Unknown => {
                 return Some(LuaType::Table);
             }
+            // TODO: 应该根据模板约束进行精确匹配
+            LuaType::TplRef(_) => return Some(source),
             LuaType::Global
             | LuaType::Array(_)
             | LuaType::Tuple(_)
