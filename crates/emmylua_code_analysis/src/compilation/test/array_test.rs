@@ -50,4 +50,22 @@ mod test {
         let t_expected = ws.ty("integer[]");
         assert_eq!(t, t_expected)
     }
+
+    #[test]
+    fn test_array_for_flow() {
+        let mut ws = VirtualWorkspace::new();
+        assert!(ws.check_code_for(
+            DiagnosticCode::NeedCheckNil,
+            r#"
+        --- @param _x string
+        local function foo(_x) end
+
+        local list = {} --- @type string[]
+
+        for i = #list, 1, -1 do
+            foo(list[i])
+        end
+        "#,
+        ));
+    }
 }

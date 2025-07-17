@@ -285,18 +285,42 @@ fn check_iter_var_range(
     let token = decl_syntax_id.to_token_from_root(&root)?;
     let parent_node = token.parent()?;
     let for_stat = LuaForStat::cast(parent_node)?;
-    // get second expr
-    let test_len_expr = for_stat.get_iter_expr().skip(1).next()?;
-    let LuaExpr::UnaryExpr(unary_expr) = test_len_expr else {
-        return None;
+    let iter_exprs = for_stat.get_iter_expr().collect::<Vec<_>>();
+    let test_len_expr = match iter_exprs.len() {
+        2 => {
+            let LuaExpr::UnaryExpr(unary_expr) = iter_exprs[1].clone() else {
+                return None;
+            };
+            unary_expr
+        }
+        3 => {
+            let step_type = infer_expr(db, cache, iter_exprs[2].clone()).ok()?;
+            let LuaType::IntegerConst(step_value) = step_type else {
+                return None;
+            };
+            if step_value > 0 {
+                let LuaExpr::UnaryExpr(unary_expr) = iter_exprs[1].clone() else {
+                    return None;
+                };
+                unary_expr
+            } else if step_value < 0 {
+                let LuaExpr::UnaryExpr(unary_expr) = iter_exprs[0].clone() else {
+                    return None;
+                };
+                unary_expr
+            } else {
+                return None;
+            }
+        }
+        _ => return None,
     };
 
-    let op = unary_expr.get_op_token()?;
+    let op = test_len_expr.get_op_token()?;
     if op.get_op() != UnaryOperator::OpLen {
         return None;
     }
 
-    let len_expr = unary_expr.get_expr()?;
+    let len_expr = test_len_expr.get_expr()?;
     let len_expr_var_ref_id = get_var_expr_var_ref_id(db, cache, len_expr)?;
     let prefix_expr_var_ref_id = get_var_expr_var_ref_id(db, cache, prefix_expr)?;
 
