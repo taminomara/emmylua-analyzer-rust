@@ -3,12 +3,14 @@ use crate::{
 };
 
 use super::{
-    tags::{find_owner_closure, get_owner_id},
+    tags::{find_owner_closure_or_report, get_owner_id_or_report},
     DocAnalyzer,
 };
+use crate::compilation::analyzer::doc::tags::report_orphan_tag;
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaDocDescriptionOwner, LuaDocTagDeprecated, LuaDocTagExport,
-    LuaDocTagNodiscard, LuaDocTagSource, LuaDocTagVersion, LuaDocTagVisibility, LuaTableExpr,
+    LuaAst, LuaAstNode, LuaDocDescriptionOwner, LuaDocTagAsync, LuaDocTagDeprecated,
+    LuaDocTagExport, LuaDocTagNodiscard, LuaDocTagSource, LuaDocTagVersion, LuaDocTagVisibility,
+    LuaTableExpr,
 };
 
 pub fn analyze_visibility(
@@ -16,7 +18,7 @@ pub fn analyze_visibility(
     visibility: LuaDocTagVisibility,
 ) -> Option<()> {
     let visibility_kind = visibility.get_visibility_token()?.get_visibility();
-    let owner_id = get_owner_id(analyzer)?;
+    let owner_id = get_owner_id_or_report(analyzer, &visibility)?;
 
     analyzer.db.get_property_index_mut().add_visibility(
         analyzer.file_id,
@@ -28,19 +30,19 @@ pub fn analyze_visibility(
 }
 
 pub fn analyze_source(analyzer: &mut DocAnalyzer, source: LuaDocTagSource) -> Option<()> {
-    let source = source.get_path_token()?.get_path().to_string();
-    let owner_id = get_owner_id(analyzer)?;
+    let path = source.get_path_token()?.get_path().to_string();
+    let owner_id = get_owner_id_or_report(analyzer, &source)?;
 
     analyzer
         .db
         .get_property_index_mut()
-        .add_source(analyzer.file_id, owner_id, source);
+        .add_source(analyzer.file_id, owner_id, path);
 
     Some(())
 }
 
 pub fn analyze_nodiscard(analyzer: &mut DocAnalyzer, nodiscard: LuaDocTagNodiscard) -> Option<()> {
-    let closure = find_owner_closure(analyzer)?;
+    let closure = find_owner_closure_or_report(analyzer, &nodiscard)?;
     let signature_id = LuaSignatureId::from_closure(analyzer.file_id, &closure);
     let signature = analyzer
         .db
@@ -72,7 +74,7 @@ pub fn analyze_deprecated(analyzer: &mut DocAnalyzer, tag: LuaDocTagDeprecated) 
     } else {
         None
     };
-    let owner_id = get_owner_id(analyzer)?;
+    let owner_id = get_owner_id_or_report(analyzer, &tag)?;
 
     analyzer
         .db
@@ -83,7 +85,7 @@ pub fn analyze_deprecated(analyzer: &mut DocAnalyzer, tag: LuaDocTagDeprecated) 
 }
 
 pub fn analyze_version(analyzer: &mut DocAnalyzer, version: LuaDocTagVersion) -> Option<()> {
-    let owner_id = get_owner_id(analyzer)?;
+    let owner_id = get_owner_id_or_report(analyzer, &version)?;
 
     let mut version_set = Vec::new();
     for version in version.get_version_list() {
@@ -100,8 +102,8 @@ pub fn analyze_version(analyzer: &mut DocAnalyzer, version: LuaDocTagVersion) ->
     Some(())
 }
 
-pub fn analyze_async(analyzer: &mut DocAnalyzer) -> Option<()> {
-    let closure = find_owner_closure(analyzer)?;
+pub fn analyze_async(analyzer: &mut DocAnalyzer, tag: LuaDocTagAsync) -> Option<()> {
+    let closure = find_owner_closure_or_report(analyzer, &tag)?;
     let signature_id = LuaSignatureId::from_closure(analyzer.file_id, &closure);
     let signature = analyzer
         .db
@@ -114,7 +116,10 @@ pub fn analyze_async(analyzer: &mut DocAnalyzer) -> Option<()> {
 }
 
 pub fn analyze_export(analyzer: &mut DocAnalyzer, tag: LuaDocTagExport) -> Option<()> {
-    let owner = analyzer.comment.get_owner()?;
+    let Some(owner) = analyzer.comment.get_owner() else {
+        report_orphan_tag(analyzer, &tag);
+        return None;
+    };
     let owner_id = match owner {
         LuaAst::LuaReturnStat(return_stat) => {
             let return_table_expr = return_stat.child::<LuaTableExpr>()?;
@@ -123,7 +128,7 @@ pub fn analyze_export(analyzer: &mut DocAnalyzer, tag: LuaDocTagExport) -> Optio
                 return_table_expr.get_position(),
             ))
         }
-        _ => get_owner_id(analyzer)?,
+        _ => get_owner_id_or_report(analyzer, &tag)?,
     };
 
     let export_scope = if let Some(scope_text) = tag.get_export_scope() {
