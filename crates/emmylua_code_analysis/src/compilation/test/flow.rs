@@ -1158,4 +1158,73 @@ end
         let a = ws.expr_ty("A");
         assert_eq!(ws.humanize_type(a), "number");
     }
+
+    #[test]
+    fn test_type_narrow() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+            ---@generic T: table
+            ---@param obj T | function
+            ---@return T?
+            function bindGC(obj)
+                if type(obj) == 'table' then
+                    A = obj
+                end
+            end
+            "#,
+        );
+        let a = ws.expr_ty("A");
+        assert_eq!(ws.humanize_type(a), "T");
+    }
+
+    #[test]
+    fn test_issue_630() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        ws.def(
+            r#"
+            ---@class A
+            ---@field Abc string?
+            A = {}
+            "#,
+        );
+        ws.def(
+            r#"
+            function A:test()
+                if not rawget(self, 'Abc') then
+                    self.Abc = "a"
+                end
+
+                B = self.Abc
+                C = self
+            end
+            "#,
+        );
+        let a = ws.expr_ty("B");
+        assert_eq!(ws.humanize_type(a), "string");
+        let c = ws.expr_ty("C");
+        assert_eq!(ws.humanize_type(c), "A");
+    }
+
+    #[test]
+    fn test_error_function() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        assert!(ws.check_code_for(
+            DiagnosticCode::NeedCheckNil,
+            r#"
+                ---@class Result
+                ---@field value string?
+                Result = {}
+
+                function getValue()
+                    ---@type Result?
+                    local result
+
+                    if result then
+                        error(result.value)
+                    end
+                end
+            "#,
+        ));
+    }
 }
