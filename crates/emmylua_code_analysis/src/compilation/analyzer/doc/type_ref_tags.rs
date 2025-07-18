@@ -142,6 +142,9 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                 }
             }
         }
+        LuaAst::LuaReturnStat(_) => {
+            // ignore
+        }
         _ => {
             report_orphan_tag(analyzer, &tag);
         }
