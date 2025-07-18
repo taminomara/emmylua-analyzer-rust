@@ -11,7 +11,7 @@ pub use lua_operator_kind::{BinaryOperator, UnaryOperator, UNARY_PRIORITY};
 pub use lua_syntax_kind::LuaSyntaxKind;
 pub use lua_token_kind::LuaTokenKind;
 pub use lua_type_operator_kind::{
-    LuaTypeBinaryOperator, LuaTypeTernaryOperator, LuaTypeUnaryOperator,
+    LuaTypeBinaryOperator, LuaTypeTernaryOperator, LuaTypeUnaryOperator, UNARY_TYPE_PRIORITY,
 };
 pub use lua_version::{LuaVersionCondition, LuaVersionNumber};
 pub use lua_visibility_kind::VisibilityKind;

@@ -30,6 +30,8 @@ pub const PRIORITY: &[PriorityTable] = &[
     PriorityTable { left: 6, right: 6 }, // Sub
 ];
 
+pub const UNARY_TYPE_PRIORITY: i32 = 7;
+
 impl LuaTypeBinaryOperator {
     pub fn get_priority(&self) -> &PriorityTable {
         &PRIORITY[*self as usize]

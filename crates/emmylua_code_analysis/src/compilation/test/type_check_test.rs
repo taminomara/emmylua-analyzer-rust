@@ -17,4 +17,21 @@ mod test {
         "#,
         ));
     }
+
+    #[test]
+    fn test_issue_645() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ParamTypeNotMatch,
+            r#"
+        --- @alias Dir -1|1
+
+        ---@param d Dir
+        local function foo(d) end
+
+        foo(1)
+        "#,
+        ));
+    }
 }

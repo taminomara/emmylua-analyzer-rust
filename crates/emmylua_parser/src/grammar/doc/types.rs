@@ -4,6 +4,7 @@ use crate::{
     lexer::LuaDocLexerState,
     parser::{CompleteMarker, LuaDocParser, MarkerEventContainer},
     parser_error::LuaParseError,
+    UNARY_TYPE_PRIORITY,
 };
 
 use super::{expect_token, if_token_bump, parse_description};
@@ -60,7 +61,7 @@ fn parse_sub_type(p: &mut LuaDocParser, limit: i32) -> ParseResult {
         let range = p.current_token_range();
         let m = p.mark(LuaSyntaxKind::TypeUnary);
         p.bump();
-        match parse_sub_type(p, 0) {
+        match parse_sub_type(p, UNARY_TYPE_PRIORITY) {
             Ok(_) => {}
             Err(err) => {
                 p.push_error(LuaParseError::doc_error_from(
