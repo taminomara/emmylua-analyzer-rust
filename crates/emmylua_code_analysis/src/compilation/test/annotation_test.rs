@@ -124,4 +124,17 @@ mod test {
         "#,
         ));
     }
+
+    #[test]
+    fn test_type_return_usage() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::AnnotationUsageError,
+            r#"
+            ---@type string
+            return ""
+        "#,
+        ));
+    }
 }
