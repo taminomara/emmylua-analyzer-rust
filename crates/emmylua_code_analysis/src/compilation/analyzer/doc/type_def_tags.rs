@@ -8,14 +8,14 @@ use emmylua_parser::{
 };
 use rowan::TextRange;
 
+use super::{
+    infer_type::infer_type, preprocess_description, tags::find_owner_closure, DocAnalyzer,
+};
+use crate::compilation::analyzer::doc::tags::report_orphan_tag;
 use crate::{
     compilation::analyzer::bind_type::bind_type,
     db_index::{LuaDeclId, LuaMemberId, LuaSemanticDeclId, LuaSignatureId, LuaType},
     LuaTypeCache, LuaTypeDeclId,
-};
-
-use super::{
-    infer_type::infer_type, preprocess_description, tags::find_owner_closure, DocAnalyzer,
 };
 
 pub fn analyze_class(analyzer: &mut DocAnalyzer, tag: LuaDocTagClass) -> Option<()> {
@@ -324,7 +324,10 @@ fn get_global_reference_ranges(
 }
 
 pub fn analyze_func_generic(analyzer: &mut DocAnalyzer, tag: LuaDocTagGeneric) -> Option<()> {
-    let comment_owner = analyzer.comment.get_owner()?;
+    let Some(comment_owner) = analyzer.comment.get_owner() else {
+        report_orphan_tag(analyzer, &tag);
+        return None;
+    };
     let mut params_result = HashMap::new();
     let mut param_info = Vec::new();
     if let Some(params_list) = tag.get_generic_decl_list() {

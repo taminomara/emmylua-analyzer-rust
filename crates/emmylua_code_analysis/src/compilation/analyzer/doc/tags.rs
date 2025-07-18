@@ -4,7 +4,7 @@ use emmylua_parser::{
 
 use crate::{
     db_index::{LuaMemberId, LuaSemanticDeclId, LuaSignatureId},
-    LuaDeclId,
+    AnalyzeError, DiagnosticCode, LuaDeclId,
 };
 
 use super::{
@@ -74,8 +74,8 @@ pub fn analyze_tag(analyzer: &mut DocAnalyzer, tag: LuaDocTag) -> Option<()> {
         LuaDocTag::Version(version) => {
             analyze_version(analyzer, version)?;
         }
-        LuaDocTag::Async(_) => {
-            analyze_async(analyzer)?;
+        LuaDocTag::Async(tag) => {
+            analyze_async(analyzer, tag)?;
         }
 
         // field or operator
@@ -135,7 +135,23 @@ pub fn find_owner_closure(analyzer: &DocAnalyzer) -> Option<LuaClosureExpr> {
     None
 }
 
+pub fn find_owner_closure_or_report(
+    analyzer: &mut DocAnalyzer,
+    tag: &impl LuaAstNode,
+) -> Option<LuaClosureExpr> {
+    match find_owner_closure(analyzer) {
+        Some(id) => Some(id),
+        None => {
+            report_orphan_tag(analyzer, tag);
+            None
+        }
+    }
+}
+
 pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaSemanticDeclId> {
+    if let Some(current_type_id) = &analyzer.current_type_id {
+        return Some(LuaSemanticDeclId::TypeDecl(current_type_id.clone()));
+    }
     let owner = analyzer.comment.get_owner()?;
     match owner {
         LuaAst::LuaAssignStat(assign) => {
@@ -185,4 +201,28 @@ pub fn get_owner_id(analyzer: &mut DocAnalyzer) -> Option<LuaSemanticDeclId> {
             )))
         }
     }
+}
+
+pub fn get_owner_id_or_report(
+    analyzer: &mut DocAnalyzer,
+    tag: &impl LuaAstNode,
+) -> Option<LuaSemanticDeclId> {
+    match get_owner_id(analyzer) {
+        Some(id) => Some(id),
+        None => {
+            report_orphan_tag(analyzer, tag);
+            None
+        }
+    }
+}
+
+pub fn report_orphan_tag(analyzer: &mut DocAnalyzer, tag: &impl LuaAstNode) {
+    analyzer.db.get_diagnostic_index_mut().add_diagnostic(
+        analyzer.file_id,
+        AnalyzeError {
+            kind: DiagnosticCode::AnnotationUsageError,
+            message: t!("`@%{name}` can't be used here", name = tag.get_text()).to_string(),
+            range: tag.get_range(),
+        },
+    );
 }

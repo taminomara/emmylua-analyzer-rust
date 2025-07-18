@@ -5,6 +5,15 @@ use emmylua_parser::{
     LuaVarExpr,
 };
 
+use super::{
+    infer_type::infer_type,
+    preprocess_description,
+    tags::{find_owner_closure, get_owner_id_or_report},
+    DocAnalyzer,
+};
+use crate::compilation::analyzer::doc::tags::{
+    find_owner_closure_or_report, get_owner_id, report_orphan_tag,
+};
 use crate::{
     compilation::analyzer::{bind_type::bind_type, unresolve::UnResolveModuleRef},
     db_index::{
@@ -13,13 +22,6 @@ use crate::{
     },
     InFiled, InferFailReason, LuaOperatorMetaMethod, LuaTypeCache, LuaTypeOwner, OperatorFunction,
     SignatureReturnStatus, TypeOps,
-};
-
-use super::{
-    infer_type::infer_type,
-    preprocess_description,
-    tags::{find_owner_closure, get_owner_id},
-    DocAnalyzer,
 };
 
 pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()> {
@@ -36,7 +38,10 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
     }
 
     // bind ref type
-    let owner = analyzer.comment.get_owner()?;
+    let Some(owner) = analyzer.comment.get_owner() else {
+        report_orphan_tag(analyzer, &tag);
+        return None;
+    };
     match owner {
         LuaAst::LuaAssignStat(assign_stat) => {
             let (vars, _) = assign_stat.get_var_and_expr_list();
@@ -137,7 +142,9 @@ pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()
                 }
             }
         }
-        _ => {}
+        _ => {
+            report_orphan_tag(analyzer, &tag);
+        }
     }
 
     Some(())
@@ -196,6 +203,8 @@ pub fn analyze_param(analyzer: &mut DocAnalyzer, tag: LuaDocTagParam) -> Option<
                 break;
             }
         }
+    } else {
+        report_orphan_tag(analyzer, &tag);
     }
 
     Some(())
@@ -208,7 +217,7 @@ pub fn analyze_return(analyzer: &mut DocAnalyzer, tag: LuaDocTagReturn) -> Optio
         None
     };
 
-    if let Some(closure) = find_owner_closure(analyzer) {
+    if let Some(closure) = find_owner_closure_or_report(analyzer, &tag) {
         let signature_id = LuaSignatureId::from_closure(analyzer.file_id, &closure);
         let returns = tag.get_type_and_name_list();
         for (doc_type, name_token) in returns {
@@ -254,6 +263,8 @@ pub fn analyze_return_cast(analyzer: &mut DocAnalyzer, tag: LuaDocTagReturnCast)
             name.to_string(),
             cast_op_type.to_ptr(),
         );
+    } else {
+        report_orphan_tag(analyzer, &tag);
     }
 
     Some(())
@@ -275,7 +286,7 @@ pub fn analyze_overload(analyzer: &mut DocAnalyzer, tag: LuaDocTagOverload) -> O
             }
             _ => {}
         }
-    } else if let Some(closure) = find_owner_closure(analyzer) {
+    } else if let Some(closure) = find_owner_closure_or_report(analyzer, &tag) {
         let type_ref = infer_type(analyzer, tag.get_type()?);
         match type_ref {
             LuaType::DocFunction(func) => {
@@ -294,7 +305,7 @@ pub fn analyze_module(analyzer: &mut DocAnalyzer, tag: LuaDocTagModule) -> Optio
     let module_info = analyzer.db.get_module_index().find_module(&module_path)?;
     let export_type = module_info.export_type.clone();
     let module_file_id = module_info.file_id;
-    let owner_id = get_owner_id(analyzer)?;
+    let owner_id = get_owner_id_or_report(analyzer, &tag)?;
     if let Some(export_type) = export_type {
         match &owner_id {
             LuaSemanticDeclId::LuaDecl(decl_id) => {
@@ -372,7 +383,7 @@ pub fn analyze_cast(analyzer: &mut DocAnalyzer, tag: LuaDocTagCast) -> Option<()
 }
 
 pub fn analyze_see(analyzer: &mut DocAnalyzer, tag: LuaDocTagSee) -> Option<()> {
-    let owner = get_owner_id(analyzer)?;
+    let owner = get_owner_id_or_report(analyzer, &tag)?;
     let content = tag.get_see_content()?;
     let text = content.get_text();
 
@@ -385,7 +396,7 @@ pub fn analyze_see(analyzer: &mut DocAnalyzer, tag: LuaDocTagSee) -> Option<()> 
 }
 
 pub fn analyze_other(analyzer: &mut DocAnalyzer, other: LuaDocTagOther) -> Option<()> {
-    let owner = get_owner_id(analyzer)?;
+    let owner = get_owner_id_or_report(analyzer, &other)?;
     let tag_name = other.get_tag_name()?;
     let description = if let Some(des) = other.get_description() {
         let description = preprocess_description(&des.get_description_text(), None);
