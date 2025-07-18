@@ -33,13 +33,18 @@ pub fn bind_analyze(binder: &mut FlowBinder, chunk: LuaChunk) -> Option<()> {
 
 fn bind_block(binder: &mut FlowBinder, block: LuaBlock, current: FlowId) -> FlowId {
     let mut return_flow_id = current;
+    let mut can_change_flow = true;
     for node in block.children::<LuaAst>() {
-        return_flow_id = bind_node(binder, node, return_flow_id);
+        let node_flow_id = bind_node(binder, node, return_flow_id);
+        if can_change_flow {
+            return_flow_id = node_flow_id;
+        }
+
         if let Some(flow_node) = binder.get_flow(return_flow_id) {
             match &flow_node.kind {
                 FlowNodeKind::Return | FlowNodeKind::Break => {
                     return_flow_id = binder.unreachable;
-                    break;
+                    can_change_flow = false;
                 }
                 _ => {}
             }
