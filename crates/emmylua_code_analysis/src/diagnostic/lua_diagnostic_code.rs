@@ -139,11 +139,12 @@ pub fn is_code_default_enable(code: &DiagnosticCode, level: LuaLanguageLevel) ->
         DiagnosticCode::CodeStyleCheck => false,
         DiagnosticCode::IncompleteSignatureDoc => false,
         DiagnosticCode::MissingGlobalDoc => false,
-        DiagnosticCode::UnknownDocTag => false,
         // ... handle other variants
 
         // neovim-code-style
+        DiagnosticCode::CustomAnnotationUsageWarning => false,
         DiagnosticCode::NonLiteralExpressionsInAssert => false,
+        DiagnosticCode::UnknownDocTag => false,
 
         _ => true,
     }
