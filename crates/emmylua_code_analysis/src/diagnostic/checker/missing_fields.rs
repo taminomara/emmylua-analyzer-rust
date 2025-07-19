@@ -44,6 +44,9 @@ fn check_table_expr(
                     LuaType::Table | LuaType::Userdata => {
                         return Some(());
                     }
+                    LuaType::TableGeneric(_) => {
+                        return Some(());
+                    }
                     _ => {}
                 }
             }
