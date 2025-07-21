@@ -45,6 +45,19 @@ impl LuaAstNode for LuaComment {
     }
 }
 
+/// 检查语法节点是否为附加性质的文档标签
+///
+/// 附加性质的标签不会阻止查找 DocDescription
+fn is_additive_doc_tag(kind: LuaSyntaxKind) -> bool {
+    matches!(
+        kind,
+        LuaSyntaxKind::DocTagVisibility
+            | LuaSyntaxKind::DocTagExport
+            | LuaSyntaxKind::DocTagVersion
+            | LuaSyntaxKind::DocTagNodiscard
+    )
+}
+
 impl LuaComment {
     pub fn get_owner(&self) -> Option<LuaAst> {
         if let Some(inline_node) = find_inline_node(&self.syntax) {
@@ -66,8 +79,11 @@ impl LuaComment {
                 LuaKind::Syntax(LuaSyntaxKind::DocDescription) => {
                     return LuaDocDescription::cast(child.into_node().unwrap());
                 }
-                LuaKind::Token(LuaTokenKind::TkDocStart) => {
-                    return None;
+                LuaKind::Token(LuaTokenKind::TkDocStart) => {}
+                LuaKind::Syntax(syntax_kind) => {
+                    if !is_additive_doc_tag(syntax_kind) {
+                        return None;
+                    }
                 }
                 _ => {}
             }

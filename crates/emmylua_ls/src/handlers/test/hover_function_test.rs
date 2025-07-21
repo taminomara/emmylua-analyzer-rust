@@ -478,4 +478,27 @@ mod tests {
             },
         ));
     }
+
+    #[test]
+    fn test_annotation_search() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def_file(
+            "a.lua",
+            r#"
+                ---@version 5.4
+                ---测试
+                function test()
+                end
+
+            "#,
+        );
+        assert!(ws.check_hover(
+            r#"
+                <??>test()
+            "#,
+            VirtualHoverResult {
+                value: "```lua\nfunction test()\n```\n\n---\n\n测试".to_string(),
+            },
+        ));
+    }
 }

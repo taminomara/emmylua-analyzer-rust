@@ -93,12 +93,12 @@ impl<'a> DocAnalyzer<'a> {
 }
 
 pub fn preprocess_description(mut description: &str, owner: Option<&LuaSemanticDeclId>) -> String {
-    let has_remove_start_char = if let Some(owner) = owner {
+    let need_remove_start_char = if let Some(owner) = owner {
         !matches!(owner, LuaSemanticDeclId::Signature(_))
     } else {
         true
     };
-    if has_remove_start_char {
+    if need_remove_start_char {
         if description.starts_with(['#', '@']) {
             description = description.trim_start_matches(|c| c == '#' || c == '@');
         }
