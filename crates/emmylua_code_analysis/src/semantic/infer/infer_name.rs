@@ -1,10 +1,12 @@
-use emmylua_parser::{LuaAstNode, LuaExpr, LuaNameExpr};
+use emmylua_parser::{LuaAstNode, LuaExpr, LuaIndexExpr, LuaNameExpr};
 
 use super::{InferFailReason, InferResult};
 use crate::{
     db_index::{DbIndex, LuaDeclOrMemberId},
+    infer_node_semantic_decl,
     semantic::infer::narrow::{infer_expr_narrow_type, VarRefId},
-    LuaDecl, LuaDeclExtra, LuaInferCache, LuaMemberId, LuaType, TypeOps,
+    LuaDecl, LuaDeclExtra, LuaInferCache, LuaMemberId, LuaSemanticDeclId, LuaType,
+    SemanticDeclLevel, TypeOps,
 };
 
 pub fn infer_name_expr(
@@ -392,5 +394,46 @@ pub fn find_self_decl_or_member_id(
     let file_id = cache.get_file_id();
     let tree = db.get_decl_index().get_decl_tree(&file_id)?;
 
-    tree.find_self_decl(db, cache, name_expr.clone())
+    let self_decl = tree.find_local_decl("self", name_expr.get_position())?;
+    if !self_decl.is_implicit_self() {
+        return Some(LuaDeclOrMemberId::Decl(self_decl.get_id()));
+    }
+
+    let root = name_expr.get_root();
+    let syntax_id = self_decl.get_syntax_id();
+    let index_token = syntax_id.to_token_from_root(&root)?;
+    let index_expr = LuaIndexExpr::cast(index_token.parent()?)?;
+    let prefix_expr = index_expr.get_prefix_expr()?;
+
+    match prefix_expr {
+        LuaExpr::NameExpr(prefix_name) => {
+            let name = prefix_name.get_name_text()?;
+            let decl = tree.find_local_decl(&name, prefix_name.get_position());
+            if let Some(decl) = decl {
+                return Some(LuaDeclOrMemberId::Decl(decl.get_id()));
+            }
+
+            let id = db.get_global_index().resolve_global_decl_id(db, &name)?;
+            return Some(LuaDeclOrMemberId::Decl(id));
+        }
+        LuaExpr::IndexExpr(prefix_index) => {
+            let semantic_id = infer_node_semantic_decl(
+                db,
+                cache,
+                prefix_index.syntax().clone(),
+                SemanticDeclLevel::NoTrace,
+            )?;
+
+            match semantic_id {
+                LuaSemanticDeclId::Member(member_id) => {
+                    return Some(LuaDeclOrMemberId::Member(member_id));
+                }
+                LuaSemanticDeclId::LuaDecl(decl_id) => {
+                    return Some(LuaDeclOrMemberId::Decl(decl_id));
+                }
+                _ => return None,
+            }
+        }
+        _ => return None,
+    }
 }

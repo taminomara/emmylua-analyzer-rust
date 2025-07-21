@@ -26,6 +26,9 @@ pub enum LuaDeclExtra {
         signature_id: LuaSignatureId,
         owner_member_id: Option<LuaMemberId>,
     },
+    ImplicitSelf {
+        kind: LuaKind,
+    },
     Global {
         kind: LuaKind,
     },
@@ -74,6 +77,7 @@ impl LuaDecl {
             LuaDeclExtra::Param { .. } => {
                 LuaSyntaxId::new(LuaSyntaxKind::ParamName.into(), self.range)
             }
+            LuaDeclExtra::ImplicitSelf { kind } => LuaSyntaxId::new(kind, self.range),
             LuaDeclExtra::Global { kind, .. } => LuaSyntaxId::new(kind, self.range),
         }
     }
@@ -95,6 +99,10 @@ impl LuaDecl {
 
     pub fn is_global(&self) -> bool {
         matches!(&self.extra, LuaDeclExtra::Global { .. })
+    }
+
+    pub fn is_implicit_self(&self) -> bool {
+        matches!(&self.extra, LuaDeclExtra::ImplicitSelf { .. })
     }
 }
 

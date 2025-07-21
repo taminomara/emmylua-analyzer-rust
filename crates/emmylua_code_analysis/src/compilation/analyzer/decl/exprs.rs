@@ -1,7 +1,7 @@
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaCallExpr, LuaClosureExpr, LuaDocTagCast, LuaExpr,
-    LuaIndexExpr, LuaIndexKey, LuaLiteralExpr, LuaLiteralToken, LuaNameExpr, LuaTableExpr,
-    LuaVarExpr,
+    LuaFuncStat, LuaIndexExpr, LuaIndexKey, LuaLiteralExpr, LuaLiteralToken, LuaNameExpr,
+    LuaTableExpr, LuaVarExpr,
 };
 
 use crate::{
@@ -100,6 +100,8 @@ pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) -
     let signature_id = LuaSignatureId::from_closure(analyzer.get_file_id(), &expr);
     let file_id = analyzer.get_file_id();
     let member_id = get_closure_member_id(&expr, file_id);
+    try_add_self_param(analyzer, &expr);
+
     for (idx, param) in params.get_params().enumerate() {
         let name = param.get_name_token().map_or_else(
             || {
@@ -130,6 +132,32 @@ pub fn analyze_closure_expr(analyzer: &mut DeclAnalyzer, expr: LuaClosureExpr) -
 
     analyze_closure_params(analyzer, &signature_id, &expr);
 
+    Some(())
+}
+
+fn try_add_self_param(analyzer: &mut DeclAnalyzer, closure: &LuaClosureExpr) -> Option<()> {
+    let func_stat = closure.get_parent::<LuaFuncStat>()?;
+    let func_name = func_stat.get_func_name()?;
+    let LuaVarExpr::IndexExpr(index_expr) = func_name else {
+        return Some(());
+    };
+
+    let index_token = index_expr.get_index_token()?;
+    if !index_token.is_colon() {
+        return Some(());
+    }
+
+    let self_param = LuaDecl::new(
+        "self",
+        analyzer.get_file_id(),
+        index_token.get_range(),
+        LuaDeclExtra::ImplicitSelf {
+            kind: index_token.syntax().kind(),
+        },
+        None,
+    );
+
+    analyzer.add_decl(self_param);
     Some(())
 }
 

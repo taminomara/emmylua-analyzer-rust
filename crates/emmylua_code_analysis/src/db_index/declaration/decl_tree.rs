@@ -1,14 +1,8 @@
 use std::collections::HashMap;
 
 use super::{decl, scope, LuaDeclId};
-use crate::{
-    db_index::LuaMemberId, infer_node_semantic_decl, DbIndex, FileId, LuaInferCache,
-    LuaSemanticDeclId, SemanticDeclLevel,
-};
+use crate::{db_index::LuaMemberId, FileId};
 use decl::LuaDecl;
-use emmylua_parser::{
-    LuaAstNode, LuaChunk, LuaExpr, LuaFuncStat, LuaNameExpr, LuaSyntaxId, LuaSyntaxKind, LuaVarExpr,
-};
 use rowan::{TextRange, TextSize};
 use scope::{LuaScope, LuaScopeId, LuaScopeKind, ScopeOrDeclId};
 
@@ -47,17 +41,7 @@ impl LuaDeclarationTree {
                         return true;
                     }
                 }
-                ScopeOrDeclId::Scope(scope) => {
-                    let scope = match self.scopes.get(scope.id as usize) {
-                        Some(scope) => scope,
-                        None => return false,
-                    };
-
-                    // self found method stat, donot return decl id
-                    if scope.get_kind() == LuaScopeKind::MethodStat && name == "self" {
-                        return true;
-                    }
-                }
+                ScopeOrDeclId::Scope(_) => {}
             }
 
             false
@@ -71,7 +55,11 @@ impl LuaDeclarationTree {
         self.walk_up(scope, position, 0, &mut |decl_id| {
             match decl_id {
                 ScopeOrDeclId::Decl(decl_id) => {
-                    result.push(decl_id);
+                    if let Some(decl) = self.get_decl(&decl_id) {
+                        if !decl.is_implicit_self() {
+                            result.push(decl.get_id());
+                        }
+                    }
                 }
                 ScopeOrDeclId::Scope(_) => {}
             }
@@ -269,102 +257,6 @@ impl LuaDeclarationTree {
         if let Some(child) = self.scopes.get_mut(child_id.id as usize) {
             child.set_parent(Some(parent_id));
         }
-    }
-
-    pub fn find_self_decl(
-        &self,
-        db: &DbIndex,
-        cache: &mut LuaInferCache,
-        name_expr: LuaNameExpr,
-    ) -> Option<LuaDeclOrMemberId> {
-        let position = name_expr.get_position();
-        let scope = self.find_scope(position)?;
-        let mut result: Option<LuaDeclOrMemberId> = None;
-        let root = name_expr.ancestors::<LuaChunk>().next()?;
-
-        self.walk_up(scope, position, 0, &mut |decl_id| {
-            match decl_id {
-                ScopeOrDeclId::Decl(decl_id) => {
-                    let decl = match self.get_decl(&decl_id) {
-                        Some(decl) => decl,
-                        None => return false,
-                    };
-                    if decl.get_name() == "self" {
-                        result = Some(LuaDeclOrMemberId::Decl(decl_id));
-                        return true;
-                    }
-                }
-                ScopeOrDeclId::Scope(scope_id) => {
-                    if let Some(scope) = self.scopes.get(scope_id.id as usize) {
-                        if scope.get_kind() == LuaScopeKind::MethodStat {
-                            let range = scope.get_range();
-                            if !range.contains(position) {
-                                return false;
-                            }
-
-                            let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::FuncStat.into(), range);
-                            let id = self.find_self_decl_id(&db, cache, &root, syntax_id);
-                            if id.is_some() {
-                                result = id;
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-
-            false
-        });
-        result
-    }
-
-    fn find_self_decl_id(
-        &self,
-        db: &DbIndex,
-        cache: &mut LuaInferCache,
-        root: &LuaChunk,
-        syntax_id: LuaSyntaxId,
-    ) -> Option<LuaDeclOrMemberId> {
-        let node = syntax_id.to_node_from_root(&root.syntax())?;
-        let func_stat = LuaFuncStat::cast(node)?;
-        let func_name = func_stat.get_func_name()?;
-
-        if let LuaVarExpr::IndexExpr(index_name) = func_name {
-            let prefix = index_name.get_prefix_expr()?;
-            match prefix {
-                LuaExpr::NameExpr(prefix_name) => {
-                    let name = prefix_name.get_name_text()?;
-                    let decl = self.find_local_decl(&name, prefix_name.get_position());
-                    if let Some(decl) = decl {
-                        return Some(LuaDeclOrMemberId::Decl(decl.get_id()));
-                    }
-
-                    let id = db.get_global_index().resolve_global_decl_id(db, &name)?;
-                    return Some(LuaDeclOrMemberId::Decl(id));
-                }
-                LuaExpr::IndexExpr(prefix_index) => {
-                    let semantic_id = infer_node_semantic_decl(
-                        db,
-                        cache,
-                        prefix_index.syntax().clone(),
-                        SemanticDeclLevel::NoTrace,
-                    )?;
-
-                    match semantic_id {
-                        LuaSemanticDeclId::Member(member_id) => {
-                            return Some(LuaDeclOrMemberId::Member(member_id));
-                        }
-                        LuaSemanticDeclId::LuaDecl(decl_id) => {
-                            return Some(LuaDeclOrMemberId::Decl(decl_id));
-                        }
-                        _ => {}
-                    }
-                }
-                _ => return None,
-            }
-        }
-
-        None
     }
 
     pub fn get_root_scope(&self) -> Option<&LuaScope> {
