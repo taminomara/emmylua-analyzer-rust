@@ -9,6 +9,8 @@ pub fn remove_type(db: &DbIndex, source: LuaType, removed_type: LuaType) -> Opti
         }
     }
 
+    let source = get_real_type(db, &source).unwrap_or(&source);
+
     match &removed_type {
         LuaType::Nil => {
             if source.is_nil() {
@@ -69,7 +71,7 @@ pub fn remove_type(db: &DbIndex, source: LuaType, removed_type: LuaType) -> Opti
                 let type_decl = db.get_type_index().get_type_decl(type_decl_id)?;
                 // enum 在实际使用时实际上是 enum.field, 并不等于 table
                 if type_decl.is_enum() {
-                    return Some(source);
+                    return Some(source.clone());
                 }
                 if type_decl.is_alias() {
                     if let Some(alias_ref) = get_real_type(db, &source) {
@@ -81,7 +83,7 @@ pub fn remove_type(db: &DbIndex, source: LuaType, removed_type: LuaType) -> Opti
                 if let Some(super_types) = db.get_type_index().get_super_types_iter(type_decl_id) {
                     for super_type in super_types {
                         if super_type.is_userdata() {
-                            return Some(source);
+                            return Some(source.clone());
                         }
                     }
                 }
@@ -147,5 +149,5 @@ pub fn remove_type(db: &DbIndex, source: LuaType, removed_type: LuaType) -> Opti
         return Some(LuaType::from_vec(types));
     }
 
-    Some(source)
+    Some(source.clone())
 }

@@ -5,7 +5,7 @@ pub fn narrow_false_or_nil(db: &DbIndex, t: LuaType) -> LuaType {
         return LuaType::BooleanConst(false);
     }
 
-    return narrow_down_type(db, t.clone(), LuaType::Nil).unwrap_or(t);
+    return narrow_down_type(db, t.clone(), LuaType::Nil).unwrap_or(LuaType::Never);
 }
 
 pub fn remove_false_or_nil(t: LuaType) -> LuaType {

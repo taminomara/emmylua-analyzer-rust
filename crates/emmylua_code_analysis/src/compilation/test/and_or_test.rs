@@ -121,4 +121,19 @@ mod test {
             "#,
         ));
     }
+
+    #[test]
+    fn test_issue_644() {
+        let mut ws = VirtualWorkspace::new();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::NeedCheckNil,
+            r#"
+            --- @alias mapfn fun()
+
+            local f1 --- @type string|mapfn
+            local _ = type(f1) ~= 'function' and f1 or f1()
+            "#,
+        ));
+    }
 }
