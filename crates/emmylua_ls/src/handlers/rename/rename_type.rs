@@ -88,6 +88,9 @@ fn determine_type_name_for_file(
 
     // 检查引用文件是否声明了相同的命名空间
     if let Some(file_namespace) = type_index.get_file_namespace(&reference_file_id) {
+        if file_namespace == reserved_namespace {
+            return new_simple_name.to_string();
+        }
         if reserved_namespace.starts_with(&format!("{}.", file_namespace)) {
             return new_simple_name.to_string();
         }
@@ -96,6 +99,9 @@ fn determine_type_name_for_file(
     // 检查引用文件是否使用了相应的命名空间
     if let Some(using_namespaces) = type_index.get_file_using_namespace(&reference_file_id) {
         for using_namespace in using_namespaces {
+            if using_namespace == reserved_namespace {
+                return new_simple_name.to_string();
+            }
             if reserved_namespace.starts_with(&format!("{}.", using_namespace)) {
                 return new_simple_name.to_string();
             }
