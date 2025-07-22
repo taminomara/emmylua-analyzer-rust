@@ -2,7 +2,7 @@ use crate::common::{render_const, render_typ};
 use crate::json_generator::json_types::*;
 use emmylua_code_analysis::{
     DbIndex, FileId, LuaDeprecated, LuaMemberKey, LuaMemberOwner, LuaNoDiscard, LuaSemanticDeclId,
-    LuaSignature, LuaType, LuaTypeCache, LuaTypeDecl, LuaTypeDeclId, Vfs,
+    LuaSignature, LuaType, LuaTypeCache, LuaTypeDecl, LuaTypeDeclId, RenderLevel, Vfs,
 };
 use rowan::TextRange;
 
@@ -34,7 +34,7 @@ fn export_modules(db: &DbIndex) -> Vec<Module> {
                     let member_owner = LuaMemberOwner::Element(i.get_range().clone());
                     (export_members(db, member_owner), None)
                 }
-                typ => (Vec::new(), Some(render_typ(db, typ))),
+                typ => (Vec::new(), Some(render_typ(db, typ, RenderLevel::Simple))),
             };
 
             let property = module
@@ -118,7 +118,7 @@ fn export_globals(db: &DbIndex) -> Vec<Global> {
                     name: decl.get_name().to_string(),
                     property,
                     loc,
-                    typ: render_typ(db, typ),
+                    typ: render_typ(db, typ, RenderLevel::Simple),
                     literal: render_const(typ),
                 })),
             }
@@ -140,7 +140,7 @@ fn export_class(db: &DbIndex, type_decl: &LuaTypeDecl) -> Class {
             .get_super_types(&type_decl_id)
             .unwrap_or_default()
             .iter()
-            .map(|typ| render_typ(db, typ))
+            .map(|typ| render_typ(db, typ, RenderLevel::Simple))
             .collect(),
         generics: export_generics(db, &type_decl_id),
         members: export_members(db, member_owner),
@@ -156,7 +156,9 @@ fn export_alias(db: &DbIndex, type_decl: &LuaTypeDecl) -> Alias {
         name: type_decl.get_full_name().to_string(),
         property,
         loc: export_loc_for_type(db, type_decl),
-        typ: type_decl.get_alias_ref().map(|typ| render_typ(db, typ)),
+        typ: type_decl
+            .get_alias_ref()
+            .map(|typ| render_typ(db, typ, RenderLevel::Simple)),
         generics: export_generics(db, &type_decl_id),
         members: export_members(db, member_owner),
     }
@@ -173,7 +175,7 @@ fn export_enum(db: &DbIndex, type_decl: &LuaTypeDecl) -> Enum {
         loc: export_loc_for_type(db, type_decl),
         typ: type_decl
             .get_enum_field_type(db)
-            .map(|typ| render_typ(db, &typ)),
+            .map(|typ| render_typ(db, &typ, RenderLevel::Simple)),
         generics: export_generics(db, &type_decl_id),
         members: export_members(db, member_owner),
     }
@@ -189,7 +191,9 @@ fn export_generics(db: &DbIndex, type_decl_id: &LuaTypeDeclId) -> Vec<TypeVar> {
         .iter()
         .map(|(name, typ)| TypeVar {
             name: name.clone(),
-            base: typ.as_ref().map(|typ| render_typ(db, typ)),
+            base: typ
+                .as_ref()
+                .map(|typ| render_typ(db, typ, RenderLevel::Simple)),
         })
         .collect()
 }
@@ -212,7 +216,9 @@ fn export_members(db: &DbIndex, member_owner: LuaMemberOwner) -> Vec<Member> {
                 let name = match member_key {
                     LuaMemberKey::Name(name) => name.to_string(),
                     LuaMemberKey::Integer(i) => format!("[{i}]"),
-                    LuaMemberKey::ExprType(typ) => format!("[{}]", render_typ(db, typ)),
+                    LuaMemberKey::ExprType(typ) => {
+                        format!("[{}]", render_typ(db, typ, RenderLevel::Simple))
+                    }
                     _ => return None,
                 };
 
@@ -254,7 +260,9 @@ fn export_signature(
             .iter()
             .map(|(name, typ)| TypeVar {
                 name: name.clone(),
-                base: typ.as_ref().map(|typ| render_typ(db, typ)),
+                base: typ
+                    .as_ref()
+                    .map(|typ| render_typ(db, typ, RenderLevel::Simple)),
             })
             .collect(),
         params: signature
@@ -264,7 +272,7 @@ fn export_signature(
             .map(|(i, name)| match signature.param_docs.get(&i) {
                 Some(param_info) => FnParam {
                     name: Some(name.clone()),
-                    typ: Some(render_typ(db, &param_info.type_ref)),
+                    typ: Some(render_typ(db, &param_info.type_ref, RenderLevel::Simple)),
                     desc: param_info.description.clone(),
                 },
                 None => FnParam {
@@ -278,14 +286,20 @@ fn export_signature(
             .iter()
             .map(|ret| FnParam {
                 name: ret.name.clone(),
-                typ: Some(render_typ(db, &ret.type_ref)),
+                typ: Some(render_typ(db, &ret.type_ref, RenderLevel::Simple)),
                 desc: ret.description.clone(),
             })
             .collect(),
         overloads: signature
             .overloads
             .iter()
-            .map(|overload| render_typ(db, &LuaType::DocFunction(overload.clone())))
+            .map(|overload| {
+                render_typ(
+                    db,
+                    &LuaType::DocFunction(overload.clone()),
+                    RenderLevel::Simple,
+                )
+            })
             .collect(),
         is_async: signature.is_async,
         is_meth: signature.is_colon_define,
@@ -308,7 +322,7 @@ fn export_field(
         name,
         property,
         loc,
-        typ: render_typ(db, typ),
+        typ: render_typ(db, typ, RenderLevel::Simple),
         literal: render_const(typ),
     }
 }

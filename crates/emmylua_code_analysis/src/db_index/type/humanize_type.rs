@@ -5,8 +5,7 @@ use itertools::Itertools;
 use crate::{
     DbIndex, GenericTpl, LuaAliasCallType, LuaFunctionType, LuaGenericType, LuaInstanceType,
     LuaIntersectionType, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaSignatureId,
-    LuaStringTplType, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType, TypeSubstitutor,
-    VariadicType,
+    LuaStringTplType, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType, VariadicType,
 };
 
 use super::{LuaAliasCallKind, LuaMultiLineUnion};
@@ -484,22 +483,6 @@ fn humanize_generic_type(db: &DbIndex, generic: &LuaGenericType, level: RenderLe
     };
 
     let full_name = type_decl.get_full_name();
-    match level {
-        RenderLevel::Brief => {
-            if type_decl.is_alias() {
-                let params = generic
-                    .get_params()
-                    .iter()
-                    .map(|ty| ty.clone())
-                    .collect::<Vec<_>>();
-                let substitutor = TypeSubstitutor::from_type_array(params);
-                if let Some(origin) = type_decl.get_alias_origin(db, Some(&substitutor)) {
-                    return humanize_type(db, &origin, level.next_level());
-                }
-            }
-        }
-        _ => {}
-    }
 
     let generic_params = generic
         .get_params()
