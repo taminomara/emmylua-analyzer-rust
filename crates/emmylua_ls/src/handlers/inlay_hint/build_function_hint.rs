@@ -55,7 +55,7 @@ pub fn build_closure_hint(
                     label_parts.push(InlayHintLabelPart {
                         value: typ_desc,
                         location: Some(
-                            get_type_location(semantic_model, typ)
+                            get_type_location(semantic_model, typ, 0)
                                 .unwrap_or(Location::new(document.get_uri(), lsp_range)),
                         ),
                         ..Default::default()
@@ -132,13 +132,13 @@ fn get_part(semantic_model: &SemanticModel, typ: &LuaType) -> Option<InlayHintLa
         LuaType::Nil => {
             return Some(InlayHintLabelPart {
                 value: "?".to_string(),
-                location: get_type_location(semantic_model, typ),
+                location: get_type_location(semantic_model, typ, 0),
                 ..Default::default()
             });
         }
         _ => {
             let value = hint_humanize_type(semantic_model, typ, RenderLevel::Simple);
-            let location = get_type_location(semantic_model, typ);
+            let location = get_type_location(semantic_model, typ, 0);
             return Some(InlayHintLabelPart {
                 value,
                 location,
@@ -148,7 +148,14 @@ fn get_part(semantic_model: &SemanticModel, typ: &LuaType) -> Option<InlayHintLa
     }
 }
 
-fn get_type_location(semantic_model: &SemanticModel, typ: &LuaType) -> Option<Location> {
+fn get_type_location(
+    semantic_model: &SemanticModel,
+    typ: &LuaType,
+    depth: usize,
+) -> Option<Location> {
+    if depth > 10 {
+        return None;
+    }
     match typ {
         LuaType::Ref(id) | LuaType::Def(id) => {
             let type_decl = semantic_model
@@ -162,9 +169,11 @@ fn get_type_location(semantic_model: &SemanticModel, typ: &LuaType) -> Option<Lo
         }
         LuaType::Generic(generic) => {
             let base_type_id = generic.get_base_type_id();
-            get_type_location(semantic_model, &LuaType::Ref(base_type_id))
+            get_type_location(semantic_model, &LuaType::Ref(base_type_id), depth + 1)
         }
-        LuaType::Array(array_type) => get_type_location(semantic_model, array_type.get_base()),
+        LuaType::Array(array_type) => {
+            get_type_location(semantic_model, array_type.get_base(), depth + 1)
+        }
         LuaType::Any => get_base_type_location(semantic_model, "any"),
         LuaType::Nil => get_base_type_location(semantic_model, "nil"),
         LuaType::Unknown => get_base_type_location(semantic_model, "unknown"),
