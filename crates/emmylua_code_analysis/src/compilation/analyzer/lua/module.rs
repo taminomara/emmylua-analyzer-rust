@@ -26,7 +26,7 @@ pub fn analyze_chunk_return(analyzer: &mut LuaAnalyzer, chunk: LuaChunk) -> Opti
                     }
                 };
 
-                let property_owner_id = get_property_owner_id(analyzer, expr.clone());
+                let semantic_id = get_semantic_id(analyzer, expr.clone());
 
                 let module_info = analyzer
                     .db
@@ -41,7 +41,7 @@ pub fn analyze_chunk_return(analyzer: &mut LuaAnalyzer, chunk: LuaChunk) -> Opti
                         module_info.export_type = Some(expr_type);
                     }
                 }
-                module_info.property_owner_id = property_owner_id;
+                module_info.semantic_id = semantic_id;
                 break;
             }
             // Other cases are stupid code
@@ -52,7 +52,7 @@ pub fn analyze_chunk_return(analyzer: &mut LuaAnalyzer, chunk: LuaChunk) -> Opti
     Some(())
 }
 
-fn get_property_owner_id(analyzer: &LuaAnalyzer, expr: LuaExpr) -> Option<LuaSemanticDeclId> {
+fn get_semantic_id(analyzer: &LuaAnalyzer, expr: LuaExpr) -> Option<LuaSemanticDeclId> {
     match expr {
         LuaExpr::NameExpr(name_expr) => {
             let name = name_expr.get_name_text()?;

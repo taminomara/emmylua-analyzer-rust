@@ -14,7 +14,7 @@ pub struct ModuleInfo {
     pub export_type: Option<LuaType>,
     pub version_conds: Option<Box<Vec<LuaVersionCondition>>>,
     pub workspace_id: WorkspaceId,
-    pub property_owner_id: Option<LuaSemanticDeclId>,
+    pub semantic_id: Option<LuaSemanticDeclId>,
     pub is_meta: bool,
 }
 
@@ -38,7 +38,7 @@ impl ModuleInfo {
     }
 
     pub fn is_export(&self, db: &DbIndex) -> bool {
-        let Some(property_owner_id) = &self.property_owner_id else {
+        let Some(property_owner_id) = &self.semantic_id else {
             return false;
         };
 
@@ -49,7 +49,7 @@ impl ModuleInfo {
     }
 
     pub fn get_export<'a>(&self, db: &'a DbIndex) -> Option<&'a LuaExport> {
-        let property_owner_id = self.property_owner_id.as_ref()?;
+        let property_owner_id = self.semantic_id.as_ref()?;
         let export = db
             .get_property_index()
             .get_property(property_owner_id)?

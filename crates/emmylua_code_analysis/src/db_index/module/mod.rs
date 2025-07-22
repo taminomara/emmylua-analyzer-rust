@@ -177,7 +177,7 @@ impl LuaModuleIndex {
             export_type: None,
             version_conds: None,
             workspace_id,
-            property_owner_id: None,
+            semantic_id: None,
             is_meta: false,
         };
 

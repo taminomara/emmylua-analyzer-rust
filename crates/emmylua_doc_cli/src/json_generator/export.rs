@@ -38,7 +38,7 @@ fn export_modules(db: &DbIndex) -> Vec<Module> {
             };
 
             let property = module
-                .property_owner_id
+                .semantic_id
                 .as_ref()
                 .map(|decl_id| export_property(db, decl_id))
                 .unwrap_or_default();

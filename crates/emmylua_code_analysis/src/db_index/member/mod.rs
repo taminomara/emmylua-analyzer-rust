@@ -2,11 +2,12 @@ mod lua_member;
 mod lua_member_feature;
 mod lua_member_item;
 mod lua_member_owner;
+mod lua_owner_members;
 
 use std::collections::{HashMap, HashSet};
 
 use super::traits::LuaIndex;
-use crate::FileId;
+use crate::{db_index::member::lua_owner_members::LuaOwnerMembers, FileId};
 pub use lua_member::{LuaMember, LuaMemberId, LuaMemberKey};
 pub use lua_member_feature::LuaMemberFeature;
 pub use lua_member_item::LuaMemberIndexItem;
@@ -16,7 +17,7 @@ pub use lua_member_owner::LuaMemberOwner;
 pub struct LuaMemberIndex {
     members: HashMap<LuaMemberId, LuaMember>,
     in_filed: HashMap<FileId, HashSet<MemberOrOwner>>,
-    owner_members: HashMap<LuaMemberOwner, HashMap<LuaMemberKey, LuaMemberIndexItem>>,
+    owner_members: HashMap<LuaMemberOwner, LuaOwnerMembers>,
     member_current_owner: HashMap<LuaMemberId, LuaMemberOwner>,
 }
 
@@ -63,9 +64,9 @@ impl LuaMemberIndex {
         let member_map = self
             .owner_members
             .entry(owner.clone())
-            .or_insert_with(HashMap::new);
+            .or_insert_with(LuaOwnerMembers::new);
         if feature.is_decl() {
-            if let Some(item) = member_map.get_mut(&key) {
+            if let Some(item) = member_map.get_member_mut(&key) {
                 match item {
                     LuaMemberIndexItem::One(old_id) => {
                         if old_id != &id {
@@ -80,15 +81,15 @@ impl LuaMemberIndex {
                     }
                 }
             } else {
-                member_map.insert(key.clone(), LuaMemberIndexItem::One(id));
+                member_map.add_member(key.clone(), LuaMemberIndexItem::One(id));
             }
         } else {
-            if !member_map.contains_key(&key) {
-                member_map.insert(key, LuaMemberIndexItem::One(id));
+            if !member_map.contains_member(&key) {
+                member_map.add_member(key, LuaMemberIndexItem::One(id));
                 return Some(());
             }
 
-            let item = member_map.get(&key)?.clone();
+            let item = member_map.get_member(&key)?.clone();
             let new_items = if self.is_item_only_meta(&item) {
                 match item {
                     LuaMemberIndexItem::One(old_id) => {
@@ -112,8 +113,8 @@ impl LuaMemberIndex {
 
             self.owner_members
                 .entry(owner.clone())
-                .or_insert_with(HashMap::new)
-                .insert(key.clone(), new_items);
+                .or_insert_with(LuaOwnerMembers::new)
+                .add_member(key.clone(), new_items);
         }
 
         Some(())
@@ -164,7 +165,7 @@ impl LuaMemberIndex {
     pub fn get_members(&self, owner: &LuaMemberOwner) -> Option<Vec<&LuaMember>> {
         let member_items = self.owner_members.get(owner)?;
         let mut members = Vec::new();
-        for (_, item) in member_items {
+        for item in member_items.get_member_items() {
             match item {
                 LuaMemberIndexItem::One(id) => {
                     if let Some(member) = self.get_member(id) {
@@ -192,7 +193,7 @@ impl LuaMemberIndex {
         let owner = self.member_current_owner.get(&member_id)?;
         let member_key = self.members.get(&member_id)?.get_key();
         let member_items = self.owner_members.get(owner)?;
-        let item = member_items.get(member_key)?;
+        let item = member_items.get_member(member_key)?;
         Some(item)
     }
 
@@ -207,11 +208,15 @@ impl LuaMemberIndex {
         owner: &LuaMemberOwner,
         key: &LuaMemberKey,
     ) -> Option<&LuaMemberIndexItem> {
-        self.owner_members.get(owner).and_then(|map| map.get(key))
+        self.owner_members
+            .get(owner)
+            .and_then(|map| map.get_member(key))
     }
 
     pub fn get_member_len(&self, owner: &LuaMemberOwner) -> usize {
-        self.owner_members.get(owner).map_or(0, |map| map.len())
+        self.owner_members
+            .get(owner)
+            .map_or(0, |map| map.get_member_len())
     }
 
     pub fn get_current_owner(&self, id: &LuaMemberId) -> Option<&LuaMemberOwner> {
@@ -256,7 +261,7 @@ impl LuaIndex for LuaMemberIndex {
                     }
 
                     for key in need_removed_key {
-                        member_items.remove(&key);
+                        member_items.remove_member(&key);
                     }
 
                     if member_items.is_empty() {

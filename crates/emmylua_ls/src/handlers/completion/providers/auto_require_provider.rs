@@ -94,7 +94,7 @@ fn add_module_completion_item(
         return None;
     }
 
-    let data = if let Some(property_id) = &module_info.property_owner_id {
+    let data = if let Some(property_id) = &module_info.semantic_id {
         CompletionData::from_property_owner_id(builder, property_id.clone(), None)
     } else {
         None
