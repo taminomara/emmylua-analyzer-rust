@@ -399,7 +399,7 @@ pub fn analyze_see(analyzer: &mut DocAnalyzer, tag: LuaDocTagSee) -> Option<()> 
 }
 
 pub fn analyze_other(analyzer: &mut DocAnalyzer, other: LuaDocTagOther) -> Option<()> {
-    let owner = get_owner_id_or_report(analyzer, &other)?;
+    let owner = get_owner_id(analyzer)?;
     let tag_name = other.get_tag_name()?;
     let description = if let Some(des) = other.get_description() {
         let description = preprocess_description(&des.get_description_text(), None);
