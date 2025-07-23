@@ -1,11 +1,10 @@
 use std::collections::HashSet;
 
 use emmylua_code_analysis::{
-    humanize_type, DbIndex, LuaDocReturnInfo, LuaFunctionType, LuaMember, LuaMemberKey,
-    LuaMemberOwner, LuaSemanticDeclId, LuaSignature, LuaSignatureId, LuaType, RenderLevel,
-    SemanticModel,
+    humanize_type, try_extract_signature_id_from_field, DbIndex, LuaDocReturnInfo, LuaFunctionType,
+    LuaMember, LuaMemberKey, LuaMemberOwner, LuaSemanticDeclId, LuaSignature, LuaSignatureId,
+    LuaType, RenderLevel,
 };
-use emmylua_parser::{LuaAstNode, LuaDocTagField, LuaDocType};
 
 use crate::handlers::{
     definition::extract_semantic_decl_from_signature,
@@ -76,9 +75,7 @@ pub fn hover_function_type(
                 let member = db.get_member_index().get_member(&id)?;
                 // 以 @field 定义的 function 描述信息绑定的 id 并不是 member, 需要特殊处理
                 if is_new && function_info.description.is_none() {
-                    if let Some(signature_id) =
-                        try_extract_signature_id_from_field(builder.semantic_model, &member)
-                    {
+                    if let Some(signature_id) = try_extract_signature_id_from_field(db, &member) {
                         function_info.description = extract_description_from_property_owner(
                             &builder.semantic_model,
                             &LuaSemanticDeclId::Signature(signature_id),
@@ -780,36 +777,4 @@ pub fn is_function(typ: &LuaType) -> bool {
                 .all(|t| matches!(t, LuaType::DocFunction(_) | LuaType::Signature(_))),
             _ => false,
         }
-}
-
-/// 尝试从 @field 定义中提取函数类型的位置信息
-pub fn try_extract_signature_id_from_field(
-    semantic_model: &SemanticModel,
-    member: &LuaMember,
-) -> Option<LuaSignatureId> {
-    // 检查是否是 field 定义
-    if !member.is_field() {
-        return None;
-    }
-
-    let root = semantic_model
-        .get_db()
-        .get_vfs()
-        .get_syntax_tree(&member.get_file_id())?
-        .get_red_root();
-    let field_node = member.get_syntax_id().to_node_from_root(&root)?;
-
-    // 尝试转换为 LuaDocTagField
-    let field_tag = LuaDocTagField::cast(field_node)?;
-
-    // 获取类型定义
-    let type_node = field_tag.get_type()?;
-
-    match &type_node {
-        LuaDocType::Func(doc_func) => Some(LuaSignatureId::from_doc_func(
-            member.get_file_id(),
-            &doc_func,
-        )),
-        _ => None,
-    }
 }

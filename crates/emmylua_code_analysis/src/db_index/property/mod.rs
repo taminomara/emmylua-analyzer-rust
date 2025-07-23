@@ -2,11 +2,13 @@ mod property;
 
 use std::collections::{HashMap, HashSet};
 
-use emmylua_parser::{LuaVersionCondition, VisibilityKind};
-use property::LuaCommonProperty;
+use emmylua_parser::{LuaAstNode, LuaDocTagField, LuaDocType, LuaVersionCondition, VisibilityKind};
+pub use property::LuaCommonProperty;
 pub use property::{LuaDeprecated, LuaExport, LuaExportScope, LuaPropertyId};
 
-use crate::{db_index::property::property::LuaTagContent, FileId};
+use crate::{
+    db_index::property::property::LuaTagContent, DbIndex, FileId, LuaMember, LuaSignatureId,
+};
 
 use super::{traits::LuaIndex, LuaSemanticDeclId};
 
@@ -238,5 +240,36 @@ impl LuaIndex for LuaPropertyIndex {
         self.property_owners_map.clear();
         self.in_filed_owner.clear();
         self.id_count = 0;
+    }
+}
+
+/// 尝试从 @field 定义中提取函数类型的位置信息
+pub fn try_extract_signature_id_from_field(
+    db: &DbIndex,
+    member: &LuaMember,
+) -> Option<LuaSignatureId> {
+    // 检查是否是 field 定义
+    if !member.is_field() {
+        return None;
+    }
+
+    let root = db
+        .get_vfs()
+        .get_syntax_tree(&member.get_file_id())?
+        .get_red_root();
+    let field_node = member.get_syntax_id().to_node_from_root(&root)?;
+
+    // 尝试转换为 LuaDocTagField
+    let field_tag = LuaDocTagField::cast(field_node)?;
+
+    // 获取类型定义
+    let type_node = field_tag.get_type()?;
+
+    match &type_node {
+        LuaDocType::Func(doc_func) => Some(LuaSignatureId::from_doc_func(
+            member.get_file_id(),
+            &doc_func,
+        )),
+        _ => None,
     }
 }

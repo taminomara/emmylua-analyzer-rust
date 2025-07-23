@@ -1167,4 +1167,61 @@ mod tests {
             },],
         ));
     }
+
+    #[test]
+    fn test_private_config() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        let mut emmyrc = ws.get_emmyrc();
+        emmyrc.doc.private_name = vec!["_*".to_string()];
+        ws.update_emmyrc(emmyrc);
+        ws.def(
+            r#"
+                ---@class A
+                ---@field _abc number
+                ---@field _next fun()
+                A = {}
+            "#,
+        );
+        assert!(ws.check_completion(
+            r#"
+                ---@type A
+                local a
+                a.<??>
+            "#,
+            vec![],
+        ));
+        assert!(!ws.check_completion(
+            r#"
+                A.<??>
+            "#,
+            vec![],
+        ));
+    }
+
+    #[test]
+    fn test_require_private() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        let mut emmyrc = ws.get_emmyrc();
+        emmyrc.doc.private_name = vec!["_*".to_string()];
+        ws.update_emmyrc(emmyrc);
+        ws.def_file(
+            "a.lua",
+            r#"
+                ---@class A
+                ---@field _next fun()
+                local A = {}
+
+                return {
+                    A = A,
+                }
+            "#,
+        );
+        assert!(ws.check_completion(
+            r#"
+                local A = require("a").A
+                A.<??>
+            "#,
+            vec![],
+        ));
+    }
 }

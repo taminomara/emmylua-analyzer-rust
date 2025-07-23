@@ -1,5 +1,6 @@
 use emmylua_code_analysis::{
-    DbIndex, LuaMemberInfo, LuaMemberKey, LuaSemanticDeclId, LuaType, SemanticModel,
+    try_extract_signature_id_from_field, DbIndex, LuaMemberInfo, LuaMemberKey, LuaSemanticDeclId,
+    LuaType, SemanticModel,
 };
 use emmylua_parser::{
     LuaAssignStat, LuaAstNode, LuaAstToken, LuaFuncStat, LuaGeneralToken, LuaIndexExpr,
@@ -7,12 +8,9 @@ use emmylua_parser::{
 };
 use lsp_types::CompletionItem;
 
-use crate::handlers::{
-    completion::{
-        completion_builder::CompletionBuilder, completion_data::CompletionData,
-        providers::get_function_remove_nil,
-    },
-    hover::try_extract_signature_id_from_field,
+use crate::handlers::completion::{
+    completion_builder::CompletionBuilder, completion_data::CompletionData,
+    providers::get_function_remove_nil,
 };
 
 use super::{
@@ -361,7 +359,8 @@ pub fn extract_index_member_alias(
         None => {
             // field定义的`signature`的`common_property`绑定位置稍有不同, 需要特殊处理
             let member = db.get_member_index().get_member(member_id)?;
-            let signature_id = try_extract_signature_id_from_field(semantic_model, member)?;
+            let signature_id =
+                try_extract_signature_id_from_field(semantic_model.get_db(), member)?;
             db.get_property_index()
                 .get_property(&LuaSemanticDeclId::Signature(signature_id))?
         }
