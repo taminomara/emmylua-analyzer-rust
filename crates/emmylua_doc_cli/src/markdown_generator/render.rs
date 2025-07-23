@@ -62,7 +62,11 @@ fn render_doc_function_type(
         .map(|param| {
             let name = param.0.clone();
             if let Some(ty) = &param.1 {
-                format!("{}: {}", name, render_typ(db, ty))
+                format!(
+                    "{}: {}",
+                    name,
+                    render_typ(db, ty, RenderLevel::Documentation)
+                )
             } else {
                 name.to_string()
             }
@@ -71,7 +75,7 @@ fn render_doc_function_type(
 
     let ret_type = lua_func.get_ret();
 
-    let ret_strs = render_typ(db, ret_type);
+    let ret_strs = render_typ(db, ret_type, RenderLevel::Documentation);
 
     let mut result = String::new();
     result.push_str("```lua\n");
@@ -126,7 +130,11 @@ fn render_signature_type(
         .map(|param| {
             let name = param.0.clone();
             if let Some(ty) = &param.1 {
-                format!("{}: {}", name, render_typ(db, ty))
+                format!(
+                    "{}: {}",
+                    name,
+                    render_typ(db, ty, RenderLevel::Documentation)
+                )
             } else {
                 name.to_string()
             }
@@ -160,14 +168,14 @@ fn render_signature_type(
         0 => {}
         1 => {
             result.push_str(" -> ");
-            let type_text = render_typ(db, &rets[0].type_ref);
+            let type_text = render_typ(db, &rets[0].type_ref, RenderLevel::Documentation);
             let name = rets[0].name.clone().unwrap_or("".to_string());
             result.push_str(format!("{} {}", name, type_text).as_str());
         }
         _ => {
             result.push('\n');
             for ret in rets {
-                let type_text = render_typ(db, &ret.type_ref);
+                let type_text = render_typ(db, &ret.type_ref, RenderLevel::Documentation);
                 let name = ret.name.clone().unwrap_or("".to_string());
                 result.push_str(format!(" -> {} {}\n", name, type_text).as_str());
             }
