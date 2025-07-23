@@ -131,7 +131,7 @@ fn check_index_expr(
 ) -> Option<()> {
     let source_type = infer_index_expr(
         semantic_model.get_db(),
-        &mut semantic_model.get_config().borrow_mut(),
+        &mut semantic_model.get_cache().borrow_mut(),
         index_expr.clone(),
         false,
     )

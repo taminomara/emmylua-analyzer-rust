@@ -208,4 +208,32 @@ mod test {
             "#,
         ));
     }
+
+    #[test]
+    fn test_issue_660() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def_file(
+            "a.lua",
+            r#"
+            --- @class (private) vim.var_accessor
+            --- @field [string] any
+            --- @field [integer] vim.var_accessor
+
+            vim = {}
+
+            ---@type vim.var_accessor
+            vim.g = {}
+            "#,
+        );
+        assert!(ws.check_code_for(
+            DiagnosticCode::InjectField,
+            r#"
+            if vim.g.aaa then
+                return
+            end
+
+            vim.g.aaa = true
+            "#,
+        ));
+    }
 }

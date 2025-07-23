@@ -192,17 +192,18 @@ fn is_valid_member(
     let need_add_diagnostic =
         match semantic_model.get_semantic_info(index_expr.syntax().clone().into()) {
             Some(info) => {
-                let need = info.semantic_decl.is_none() && info.typ.is_unknown();
+                let mut need = info.semantic_decl.is_none();
+                if need {
+                    let decl_type = semantic_model.get_index_decl_type(index_expr.clone());
+                    if let Some(typ) = decl_type {
+                        if !typ.is_unknown() {
+                            need = false;
+                        }
+                    }
+                }
+
                 // TODO: 元组类型的检查或许需要独立出来
                 if !need && matches!(code, DiagnosticCode::InjectField) {
-                    // if let LuaType::Tuple(tuple) = prefix_typ {
-                    //     if tuple.is_infer_resolve() {
-                    //         return Some(());
-                    //     } else {
-                    //         // 元组类型禁止修改
-                    //         return None;
-                    //     }
-                    // }
                     // 前缀是导入的表常量, 检查定义的文件是否与导入的表常量相同, 不同则认为是非法的
                     if let Some(module_info) = module_info {
                         if let Some(LuaSemanticDeclId::Member(member_id)) = info.semantic_decl {
@@ -497,7 +498,7 @@ fn check_enum_is_param(
 ) -> Option<()> {
     enum_variable_is_param(
         semantic_model.get_db(),
-        &mut semantic_model.get_config().borrow_mut(),
+        &mut semantic_model.get_cache().borrow_mut(),
         index_expr,
         prefix_typ,
     )

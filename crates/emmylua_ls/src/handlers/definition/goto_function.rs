@@ -114,7 +114,7 @@ pub fn compare_function_types(
     if func.contain_tpl() {
         let instantiated_func = instantiate_func_generic(
             semantic_model.get_db(),
-            &mut semantic_model.get_config().borrow_mut(),
+            &mut semantic_model.get_cache().borrow_mut(),
             func,
             call_expr.clone(),
         )

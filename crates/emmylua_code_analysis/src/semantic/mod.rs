@@ -16,8 +16,8 @@ use std::{collections::HashSet, sync::Arc};
 pub use cache::{CacheEntry, CacheOptions, LuaAnalysisPhase, LuaInferCache};
 pub use decl::{enum_variable_is_param, parse_require_module_info};
 use emmylua_parser::{
-    LuaCallExpr, LuaChunk, LuaExpr, LuaIndexKey, LuaParseError, LuaSyntaxNode, LuaSyntaxToken,
-    LuaTableExpr,
+    LuaCallExpr, LuaChunk, LuaExpr, LuaIndexExpr, LuaIndexKey, LuaParseError, LuaSyntaxNode,
+    LuaSyntaxToken, LuaTableExpr,
 };
 pub use infer::infer_index_expr;
 use infer::{infer_bind_value_type, infer_expr_list_types};
@@ -268,7 +268,7 @@ impl<'a> SemanticModel<'a> {
         self.file_id
     }
 
-    pub fn get_config(&self) -> &RefCell<LuaInferCache> {
+    pub fn get_cache(&self) -> &RefCell<LuaInferCache> {
         &self.infer_cache
     }
 
@@ -295,6 +295,11 @@ impl<'a> SemanticModel<'a> {
 
     pub fn get_member_origin_owner(&self, member_id: LuaMemberId) -> Option<LuaSemanticDeclId> {
         find_member_origin_owner(self.db, &mut self.infer_cache.borrow_mut(), member_id)
+    }
+
+    pub fn get_index_decl_type(&self, index_expr: LuaIndexExpr) -> Option<LuaType> {
+        let cache = &mut self.infer_cache.borrow_mut();
+        infer_index_expr(self.db, cache, index_expr, false).ok()
     }
 }
 

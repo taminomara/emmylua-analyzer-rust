@@ -31,7 +31,7 @@ pub fn add_completion(builder: &mut CompletionBuilder) -> Option<()> {
     // 如果是枚举类型且为函数参数, 则不进行补全
     if enum_variable_is_param(
         builder.semantic_model.get_db(),
-        &mut builder.semantic_model.get_config().borrow_mut(),
+        &mut builder.semantic_model.get_cache().borrow_mut(),
         &index_expr,
         &prefix_type,
     )
