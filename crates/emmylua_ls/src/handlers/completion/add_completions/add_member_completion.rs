@@ -1,13 +1,18 @@
-use emmylua_code_analysis::{DbIndex, LuaMemberInfo, LuaMemberKey, LuaSemanticDeclId, LuaType};
+use emmylua_code_analysis::{
+    DbIndex, LuaMemberInfo, LuaMemberKey, LuaSemanticDeclId, LuaType, SemanticModel,
+};
 use emmylua_parser::{
     LuaAssignStat, LuaAstNode, LuaAstToken, LuaFuncStat, LuaGeneralToken, LuaIndexExpr,
     LuaParenExpr, LuaTokenKind,
 };
 use lsp_types::CompletionItem;
 
-use crate::handlers::completion::{
-    completion_builder::CompletionBuilder, completion_data::CompletionData,
-    providers::get_function_remove_nil,
+use crate::handlers::{
+    completion::{
+        completion_builder::CompletionBuilder, completion_data::CompletionData,
+        providers::get_function_remove_nil,
+    },
+    hover::try_extract_signature_id_from_field,
 };
 
 use super::{
@@ -316,7 +321,7 @@ fn try_add_alias_completion_item(
     completion_item: &CompletionItem,
     label: &String,
 ) -> Option<bool> {
-    let alias_label = extract_index_member_alias(builder.semantic_model.get_db(), member_info)?;
+    let alias_label = extract_index_member_alias(&builder.semantic_model, member_info)?;
 
     let mut alias_completion_item = completion_item.clone();
     alias_completion_item.label = alias_label;
@@ -337,21 +342,32 @@ fn try_add_alias_completion_item(
 
 /// 从注释中提取索引成员的别名, 只处理整数成员.
 /// 格式为`-- [nameX]`.
-pub fn extract_index_member_alias(db: &DbIndex, member_info: &LuaMemberInfo) -> Option<String> {
+pub fn extract_index_member_alias(
+    semantic_model: &SemanticModel,
+    member_info: &LuaMemberInfo,
+) -> Option<String> {
+    let db = semantic_model.get_db();
     let LuaMemberKey::Integer(_) = member_info.key else {
         return None;
     };
 
     let property_owner_id = member_info.property_owner_id.as_ref()?;
-    let LuaSemanticDeclId::Member(_) = property_owner_id else {
+    let LuaSemanticDeclId::Member(member_id) = property_owner_id else {
         return None;
     };
 
-    let description = db
-        .get_property_index()
-        .get_property(property_owner_id)?
-        .description
-        .as_ref()?;
+    let common_property = match db.get_property_index().get_property(property_owner_id) {
+        Some(common_property) => common_property,
+        None => {
+            // field定义的`signature`的`common_property`绑定位置稍有不同, 需要特殊处理
+            let member = db.get_member_index().get_member(member_id)?;
+            let signature_id = try_extract_signature_id_from_field(semantic_model, member)?;
+            db.get_property_index()
+                .get_property(&LuaSemanticDeclId::Signature(signature_id))?
+        }
+    };
+
+    let description = common_property.description.as_ref()?;
 
     // 只去掉左侧空白字符，保留右侧内容以支持后续文本
     let left_trimmed = description.trim_start();

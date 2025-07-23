@@ -1144,4 +1144,27 @@ mod tests {
             },],
         ));
     }
+
+    #[test]
+    fn test_field_index_function() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@class A<T>
+                ---@field [1] fun() # [next]
+                A = {}
+            "#,
+        );
+        // 测试索引成员别名语法
+        assert!(ws.check_completion(
+            r#"
+                A.<??>
+            "#,
+            vec![VirtualCompletionItem {
+                label: "next".to_string(),
+                kind: CompletionItemKind::FUNCTION,
+                label_detail: Some("()".to_string()),
+            },],
+        ));
+    }
 }

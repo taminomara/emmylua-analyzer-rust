@@ -644,7 +644,7 @@ fn build_index_expr_hint(
     let member_infos = semantic_model.get_member_info_with_key(&prefix_type, member_key, false)?;
     let member_info = member_infos.first()?;
     // 尝试提取别名
-    let alias = extract_index_member_alias(semantic_model.get_db(), member_info)?;
+    let alias = extract_index_member_alias(semantic_model, member_info)?;
     // 创建 hint
     let document = semantic_model.get_document();
     let position = {
