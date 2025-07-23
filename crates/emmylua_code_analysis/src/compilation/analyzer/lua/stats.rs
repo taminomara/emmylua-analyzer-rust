@@ -445,7 +445,10 @@ pub fn analyze_table_field(analyzer: &mut LuaAnalyzer, field: LuaTableField) -> 
     let value_expr = field.get_value_expr()?;
     let member_id = LuaMemberId::new(field.get_syntax_id(), analyzer.file_id);
     let value_type = match analyzer.infer_expr(&value_expr.clone().into()) {
-        Ok(value_type) => value_type,
+        Ok(value_type) => match value_type {
+            LuaType::Def(ref_id) => LuaType::Ref(ref_id),
+            _ => value_type,
+        },
         Err(InferFailReason::None) => LuaType::Unknown,
         Err(reason) => {
             let unresolve = UnResolveMember {
