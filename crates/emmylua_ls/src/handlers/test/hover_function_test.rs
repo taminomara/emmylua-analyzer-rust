@@ -501,4 +501,21 @@ mod tests {
             },
         ));
     }
+
+    #[test]
+    fn test_field_remove_first() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_hover(
+            r#"
+                ---@class A<T>
+                ---@field next fun(value: T) # 测试
+                local A = {}
+
+                A.<??>next()
+            "#,
+            VirtualHoverResult {
+                value: "```lua\n(field) A.next(value: T)\n```\n\n---\n\n测试".to_string(),
+            },
+        ));
+    }
 }
