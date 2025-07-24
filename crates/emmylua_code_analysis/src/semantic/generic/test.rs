@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod test {
+    use crate::LuaType;
+
     #[test]
     fn test_variadic_func() {
         let mut ws = crate::VirtualWorkspace::new();
@@ -55,9 +57,9 @@ mod test {
         );
 
         let e = ws.expr_ty("e");
-        let expected = ws.expr_ty("'b'");
+        let expected = LuaType::String;
         let f = ws.expr_ty("f");
-        let expected_f = ws.expr_ty("'c'");
+        let expected_f = LuaType::String;
         assert_eq!(e, expected);
         assert_eq!(f, expected_f);
 
@@ -68,7 +70,7 @@ mod test {
         );
 
         let h = ws.expr_ty("h");
-        let expected = ws.expr_ty("2");
+        let expected = LuaType::IntegerConst(2);
         assert_eq!(h, expected);
     }
 

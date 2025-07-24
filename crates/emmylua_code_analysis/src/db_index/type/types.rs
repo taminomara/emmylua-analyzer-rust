@@ -10,7 +10,7 @@ use rowan::TextRange;
 use smol_str::SmolStr;
 
 use crate::{
-    db_index::{LuaMemberKey, LuaSignatureId},
+    db_index::{r#type::type_visit_trait::TypeVisitTrait, LuaMemberKey, LuaSignatureId},
     DbIndex, InFiled, SemanticModel,
 };
 
@@ -403,6 +403,7 @@ impl LuaType {
             LuaType::Variadic(inner) => inner.contain_tpl(),
             LuaType::TplRef(_) => true,
             LuaType::StrTplRef(_) => true,
+            LuaType::ConstTplRef(_) => true,
             LuaType::SelfInfer => true,
             LuaType::MultiLineUnion(inner) => inner.contain_tpl(),
             LuaType::TypeGuard(inner) => inner.contain_tpl(),
@@ -449,10 +450,48 @@ impl LuaType {
     }
 }
 
+impl TypeVisitTrait for LuaType {
+    fn visit_type<F>(&self, f: &mut F)
+    where
+        F: FnMut(&LuaType),
+    {
+        f(self);
+        match self {
+            LuaType::Array(base) => base.visit_type(f),
+            LuaType::Tuple(base) => base.visit_type(f),
+            LuaType::DocFunction(base) => base.visit_type(f),
+            LuaType::Object(base) => base.visit_type(f),
+            LuaType::Union(base) => base.visit_type(f),
+            LuaType::Intersection(base) => base.visit_type(f),
+            LuaType::Generic(base) => base.visit_type(f),
+            LuaType::Variadic(multi) => multi.visit_type(f),
+            LuaType::TableGeneric(params) => {
+                for param in params.iter() {
+                    param.visit_type(f);
+                }
+            }
+            LuaType::MultiLineUnion(inner) => inner.visit_type(f),
+            LuaType::TypeGuard(inner) => inner.visit_type(f),
+            _ => {}
+        }
+    }
+}
+
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct LuaTupleType {
     types: Vec<LuaType>,
     pub status: LuaTupleStatus,
+}
+
+impl TypeVisitTrait for LuaTupleType {
+    fn visit_type<F>(&self, f: &mut F)
+    where
+        F: FnMut(&LuaType),
+    {
+        for ty in &self.types {
+            ty.visit_type(f);
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -535,6 +574,20 @@ pub struct LuaFunctionType {
     is_colon_define: bool,
     params: Vec<(String, Option<LuaType>)>,
     ret: LuaType,
+}
+
+impl TypeVisitTrait for LuaFunctionType {
+    fn visit_type<F>(&self, f: &mut F)
+    where
+        F: FnMut(&LuaType),
+    {
+        for (_, t) in &self.params {
+            if let Some(t) = t {
+                t.visit_type(f);
+            }
+        }
+        self.ret.visit_type(f);
+    }
 }
 
 impl LuaFunctionType {
@@ -648,6 +701,21 @@ pub struct LuaObjectType {
     index_access: Vec<(LuaType, LuaType)>,
 }
 
+impl TypeVisitTrait for LuaObjectType {
+    fn visit_type<F>(&self, f: &mut F)
+    where
+        F: FnMut(&LuaType),
+    {
+        for t in self.fields.values() {
+            t.visit_type(f);
+        }
+        for (key, value_type) in &self.index_access {
+            key.visit_type(f);
+            value_type.visit_type(f);
+        }
+    }
+}
+
 impl LuaObjectType {
     pub fn new(object_fields: Vec<(LuaIndexAccessKey, LuaType)>) -> Self {
         let mut fields = HashMap::new();
@@ -754,6 +822,22 @@ impl From<LuaObjectType> for LuaType {
 pub enum LuaUnionType {
     Nullable(LuaType),
     Multi(Vec<LuaType>),
+}
+
+impl TypeVisitTrait for LuaUnionType {
+    fn visit_type<F>(&self, f: &mut F)
+    where
+        F: FnMut(&LuaType),
+    {
+        match self {
+            LuaUnionType::Nullable(ty) => ty.visit_type(f),
+            LuaUnionType::Multi(types) => {
+                for ty in types {
+                    ty.visit_type(f);
+                }
+            }
+        }
+    }
 }
 
 impl LuaUnionType {
@@ -871,6 +955,17 @@ pub struct LuaIntersectionType {
     types: Vec<LuaType>,
 }
 
+impl TypeVisitTrait for LuaIntersectionType {
+    fn visit_type<F>(&self, f: &mut F)
+    where
+        F: FnMut(&LuaType),
+    {
+        for ty in &self.types {
+            ty.visit_type(f);
+        }
+    }
+}
+
 impl LuaIntersectionType {
     pub fn new(types: Vec<LuaType>) -> Self {
         Self { types }
@@ -913,6 +1008,17 @@ pub struct LuaAliasCallType {
     operand: Vec<LuaType>,
 }
 
+impl TypeVisitTrait for LuaAliasCallType {
+    fn visit_type<F>(&self, f: &mut F)
+    where
+        F: FnMut(&LuaType),
+    {
+        for t in &self.operand {
+            t.visit_type(f);
+        }
+    }
+}
+
 impl LuaAliasCallType {
     pub fn new(call_kind: LuaAliasCallKind, operand: Vec<LuaType>) -> Self {
         Self { call_kind, operand }
@@ -935,6 +1041,17 @@ impl LuaAliasCallType {
 pub struct LuaGenericType {
     base: LuaTypeDeclId,
     params: Vec<LuaType>,
+}
+
+impl TypeVisitTrait for LuaGenericType {
+    fn visit_type<F>(&self, f: &mut F)
+    where
+        F: FnMut(&LuaType),
+    {
+        for param in &self.params {
+            param.visit_type(f);
+        }
+    }
 }
 
 impl LuaGenericType {
@@ -973,6 +1090,22 @@ impl From<LuaGenericType> for LuaType {
 pub enum VariadicType {
     Multi(Vec<LuaType>),
     Base(LuaType),
+}
+
+impl TypeVisitTrait for VariadicType {
+    fn visit_type<F>(&self, f: &mut F)
+    where
+        F: FnMut(&LuaType),
+    {
+        match self {
+            VariadicType::Multi(types) => {
+                for ty in types {
+                    ty.visit_type(f);
+                }
+            }
+            VariadicType::Base(t) => t.visit_type(f),
+        }
+    }
 }
 
 impl VariadicType {
@@ -1104,6 +1237,15 @@ pub struct LuaInstanceType {
     range: InFiled<TextRange>,
 }
 
+impl TypeVisitTrait for LuaInstanceType {
+    fn visit_type<F>(&self, f: &mut F)
+    where
+        F: FnMut(&LuaType),
+    {
+        self.base.visit_type(f);
+    }
+}
+
 impl LuaInstanceType {
     pub fn new(base: LuaType, range: InFiled<TextRange>) -> Self {
         Self { base, range }
@@ -1201,6 +1343,17 @@ pub struct LuaMultiLineUnion {
     unions: Vec<(LuaType, Option<String>)>,
 }
 
+impl TypeVisitTrait for LuaMultiLineUnion {
+    fn visit_type<F>(&self, f: &mut F)
+    where
+        F: FnMut(&LuaType),
+    {
+        for (t, _) in &self.unions {
+            t.visit_type(f);
+        }
+    }
+}
+
 impl LuaMultiLineUnion {
     pub fn new(unions: Vec<(LuaType, Option<String>)>) -> Self {
         Self { unions }
@@ -1228,6 +1381,15 @@ impl LuaMultiLineUnion {
 pub struct LuaArrayType {
     base: LuaType,
     len: LuaArrayLen,
+}
+
+impl TypeVisitTrait for LuaArrayType {
+    fn visit_type<F>(&self, f: &mut F)
+    where
+        F: FnMut(&LuaType),
+    {
+        self.base.visit_type(f);
+    }
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
