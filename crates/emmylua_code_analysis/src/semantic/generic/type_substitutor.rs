@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::{GenericTplId, LuaType, LuaTypeDeclId};
 
@@ -42,6 +42,23 @@ impl TypeSubstitutor {
         }
     }
 
+    pub fn add_need_infer_tpls(&mut self, tpl_ids: HashSet<GenericTplId>) {
+        for tpl_id in tpl_ids {
+            if !self.tpl_replace_map.contains_key(&tpl_id) {
+                self.tpl_replace_map.insert(tpl_id, SubstitutorValue::None);
+            }
+        }
+    }
+
+    pub fn is_infer_all_tpl(&self) -> bool {
+        for value in self.tpl_replace_map.values() {
+            if let SubstitutorValue::None = value {
+                return false;
+            }
+        }
+        true
+    }
+
     pub fn insert_type(&mut self, tpl_id: GenericTplId, replace_type: LuaType) {
         if !self.can_insert_type(tpl_id) {
             return;
@@ -53,11 +70,7 @@ impl TypeSubstitutor {
 
     fn can_insert_type(&self, tpl_id: GenericTplId) -> bool {
         if let Some(value) = self.tpl_replace_map.get(&tpl_id) {
-            if let SubstitutorValue::Type(typ) = value {
-                return typ.is_any();
-            }
-
-            return false;
+            return value.is_none();
         }
 
         true
@@ -82,7 +95,7 @@ impl TypeSubstitutor {
     }
 
     pub fn insert_multi_base(&mut self, tpl_id: GenericTplId, type_base: LuaType) {
-        if self.tpl_replace_map.contains_key(&tpl_id) {
+        if !self.can_insert_type(tpl_id) {
             return;
         }
 
@@ -140,8 +153,15 @@ fn convert_type_def_to_ref(ty: &LuaType) -> LuaType {
 
 #[derive(Debug, Clone)]
 pub enum SubstitutorValue {
+    None,
     Type(LuaType),
     Params(Vec<(String, Option<LuaType>)>),
     MultiTypes(Vec<LuaType>),
     MultiBase(LuaType),
+}
+
+impl SubstitutorValue {
+    pub fn is_none(&self) -> bool {
+        matches!(self, SubstitutorValue::None)
+    }
 }

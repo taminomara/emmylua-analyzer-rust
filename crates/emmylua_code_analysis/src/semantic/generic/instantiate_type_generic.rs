@@ -65,6 +65,7 @@ fn instantiate_tuple(db: &DbIndex, tuple: &LuaTupleType, substitutor: &TypeSubst
                     if let LuaType::TplRef(tpl) = base {
                         if let Some(value) = substitutor.get(tpl.get_tpl_id()) {
                             match value {
+                                SubstitutorValue::None => {}
                                 SubstitutorValue::MultiTypes(types) => {
                                     for typ in types {
                                         new_types.push(typ.clone());
@@ -122,6 +123,12 @@ pub fn instantiate_doc_function(
                                 SubstitutorValue::Params(params) => {
                                     for param in params {
                                         new_params.push(param.clone());
+                                    }
+                                }
+                                SubstitutorValue::MultiTypes(types) => {
+                                    for (i, typ) in types.iter().enumerate() {
+                                        let param_name = format!("param{}", i);
+                                        new_params.push((param_name, Some(typ.clone())));
                                     }
                                 }
                                 _ => {
@@ -255,6 +262,7 @@ fn instantiate_table_generic(
 fn instantiate_tpl_ref(_: &DbIndex, tpl: &GenericTpl, substitutor: &TypeSubstitutor) -> LuaType {
     if let Some(value) = substitutor.get(tpl.get_tpl_id()) {
         match value {
+            SubstitutorValue::None => {}
             SubstitutorValue::Type(ty) => return ty.clone(),
             SubstitutorValue::MultiTypes(types) => {
                 return types.first().unwrap_or(&LuaType::Unknown).clone();
@@ -313,6 +321,9 @@ fn instantiate_variadic_type(
             if let LuaType::TplRef(tpl) = base {
                 if let Some(value) = substitutor.get(tpl.get_tpl_id()) {
                     match value {
+                        SubstitutorValue::None => {
+                            return LuaType::Never;
+                        }
                         SubstitutorValue::Type(ty) => return ty.clone(),
                         SubstitutorValue::MultiTypes(types) => {
                             return LuaType::Variadic(VariadicType::Multi(types.clone()).into())

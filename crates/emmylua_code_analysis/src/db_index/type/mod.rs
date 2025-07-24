@@ -3,6 +3,7 @@ mod test;
 mod type_decl;
 mod type_ops;
 mod type_owner;
+mod type_visit_trait;
 mod types;
 
 use super::traits::LuaIndex;
@@ -14,6 +15,7 @@ pub use type_decl::{
 };
 pub use type_ops::TypeOps;
 pub use type_owner::{LuaTypeCache, LuaTypeOwner};
+pub use type_visit_trait::TypeVisitTrait;
 pub use types::*;
 
 #[derive(Debug)]
