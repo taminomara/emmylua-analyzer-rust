@@ -217,6 +217,7 @@ fn build_member_hover(
         true,
     )
     .get_types(&builder.semantic_model);
+
     replace_semantic_type(&mut semantic_decls, &typ);
     let member_name = match member.get_key() {
         LuaMemberKey::Name(name) => name.to_string(),

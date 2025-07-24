@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{ops::Deref, sync::Arc};
 
 use emmylua_parser::{
     LuaAssignStat, LuaAst, LuaAstNode, LuaCallArgList, LuaCallExpr, LuaExpr, LuaIndexMemberExpr,
@@ -8,7 +8,7 @@ use emmylua_parser::{
 use crate::{
     db_index::{DbIndex, LuaType},
     infer_call_expr_func, infer_expr, InferGuard, LuaArrayType, LuaDeclId, LuaInferCache,
-    LuaMemberId, LuaTupleStatus, LuaTupleType, VariadicType,
+    LuaMemberId, LuaTupleStatus, LuaTupleType, LuaUnionType, TypeOps, VariadicType,
 };
 
 use super::{
@@ -221,12 +221,37 @@ fn infer_table_type_by_calleee(
             call_arg_number -= 1;
         }
     }
-    Ok(param_types
+    let typ = param_types
         .get(call_arg_number)
         .ok_or(InferFailReason::None)?
         .1
         .clone()
-        .unwrap_or(LuaType::Any))
+        .unwrap_or(LuaType::Any);
+    match &typ {
+        LuaType::TableConst(_) => {}
+        LuaType::Union(union) => {
+            // TODO: 假设存在多个匹配项, 我们需要根据字段的匹配情况来确定最终的类型
+            return Ok(union_remove_non_table_type(db, union));
+        }
+        _ => {}
+    }
+
+    Ok(typ)
+}
+
+/// 移除掉一些非`table`类型
+fn union_remove_non_table_type(db: &DbIndex, union: &Arc<LuaUnionType>) -> LuaType {
+    let mut result = LuaType::Unknown;
+    for typ in union.into_set().into_iter() {
+        match typ {
+            LuaType::Signature(_) | LuaType::DocFunction(_) => {}
+            _ if typ.is_string() || typ.is_number() || typ.is_boolean() => {}
+            _ => {
+                result = TypeOps::Union.apply(db, &result, &typ);
+            }
+        }
+    }
+    result
 }
 
 fn infer_table_field_type_by_parent(

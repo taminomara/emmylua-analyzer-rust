@@ -53,7 +53,7 @@ pub fn hover_function_type(
     // 已处理过的 semantic_decl_id, 用于解决`test_issue_499_3`
     let mut handled_semantic_decl_ids = HashSet::new();
     let mut type_descs: Vec<HoverFunctionInfo> = Vec::with_capacity(semantic_decls.len());
-    // 记录已处理过的类型，用于在 Union 中跳过重复类型.
+    // 记录已处理过的类型, 用于在 Union 中跳过重复类型.
     // 这是为了解决最后一个类型可能是前面所有类型的联合类型的情况
     let mut processed_types = HashSet::new();
 
@@ -122,7 +122,7 @@ pub fn hover_function_type(
             }
         }
 
-        // 如果当前类型是 Union，传入已处理的类型集合
+        // 如果当前类型是 Union, 传入已处理的类型集合
         let result = match typ {
             LuaType::Union(_) => process_single_function_type_with_exclusions(
                 builder,
@@ -158,10 +158,10 @@ pub fn hover_function_type(
                 function_info = info;
             }
             ProcessFunctionTypeResult::Multiple(infos) => {
-                // 对于 Union 类型，将每个子类型的结果都添加到 type_descs 中
+                // 对于 Union 类型, 将每个子类型的结果都添加到 type_descs 中
                 let infos_len = infos.len();
                 for (index, mut info) in infos.into_iter().enumerate() {
-                    // 合并描述信息，只有最后一个才设置描述
+                    // 合并描述信息, 只有最后一个才设置描述
                     if function_info.description.is_some()
                         && info.description.is_none()
                         && index == infos_len - 1
@@ -754,7 +754,7 @@ fn process_single_function_type_with_exclusions(
             }
         }
         _ => {
-            // 对于非 Union 类型，直接调用原函数
+            // 对于非 Union 类型, 直接调用原函数
             process_single_function_type(
                 builder,
                 db,

@@ -200,10 +200,7 @@ fn resolve_member_owner(
                 // 非类, 那么通过右值推断
                 let value_expr = table_field.get_value_expr()?;
                 let value_node = value_expr.get_syntax_id().to_node_from_root(&root)?;
-                semantic_model.find_decl(
-                    value_node.into(),
-                    emmylua_code_analysis::SemanticDeclLevel::default(),
-                )
+                semantic_model.find_decl(value_node.into(), SemanticDeclLevel::default())
             } else {
                 None
             }
@@ -217,10 +214,8 @@ fn resolve_member_owner(
             for (var, expr) in vars.iter().zip(exprs.iter()) {
                 if var.syntax().text_range() == current_node.text_range() {
                     let expr_node = expr.get_syntax_id().to_node_from_root(&root)?;
-                    result = semantic_model.find_decl(
-                        expr_node.into(),
-                        emmylua_code_analysis::SemanticDeclLevel::default(),
-                    );
+                    result =
+                        semantic_model.find_decl(expr_node.into(), SemanticDeclLevel::default());
                     break;
                 }
             }
@@ -255,7 +250,7 @@ fn resolve_table_field_through_type_inference(
 
     if !matches!(
         table_type,
-        emmylua_code_analysis::LuaType::Ref(_) | emmylua_code_analysis::LuaType::Def(_)
+        LuaType::Ref(_) | LuaType::Def(_) | LuaType::Generic(_)
     ) {
         return None;
     }
