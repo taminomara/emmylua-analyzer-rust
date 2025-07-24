@@ -2,6 +2,9 @@ use std::collections::HashSet;
 
 use crate::{DbIndex, LuaType, LuaTypeDeclId};
 
+/// 检查子类型关系.
+///
+/// 假设现在有一个类型定义`---@class C: A, B`, 那么`sub_type_ref_id`为`C`, `super_type_ref_id`可以为`A`或`B`.
 pub fn is_sub_type_of(
     db: &DbIndex,
     sub_type_ref_id: &LuaTypeDeclId,

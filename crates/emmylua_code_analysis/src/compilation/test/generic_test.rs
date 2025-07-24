@@ -67,4 +67,33 @@ mod test {
         let expected = ws.ty("fun(b:string, c:table)");
         assert_eq!(bar_ty, expected);
     }
+
+    #[test]
+    fn test_generic_params() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def(
+            r#"
+            ---@class Observable<T>
+            ---@class Subject<T>: Observable<T>
+
+            ---@generic T
+            ---@param ... Observable<T>
+            ---@return Observable<T>
+            function concat(...)
+            end
+            "#,
+        );
+
+        ws.def(
+            r#"
+            ---@type Subject<number>
+            local s1
+            A = concat(s1)
+            "#,
+        );
+
+        let a_ty = ws.expr_ty("A");
+        let expected = ws.ty("Observable<number>");
+        assert_eq!(a_ty, expected);
+    }
 }

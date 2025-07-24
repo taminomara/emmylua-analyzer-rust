@@ -12,6 +12,7 @@ use crate::{
     semantic::{
         generic::{tpl_context::TplContext, type_substitutor::SubstitutorValue},
         member::{find_index_operations, get_member_map},
+        type_check::is_sub_type_of,
     },
     InferFailReason, LuaFunctionType, LuaMemberInfo, LuaMemberKey, LuaMemberOwner, LuaObjectType,
     LuaSemanticDeclId, LuaTupleType, LuaUnionType, SemanticDeclLevel, VariadicType,
@@ -480,9 +481,10 @@ fn generic_tpl_pattern_match(
 ) -> TplPatternMatchResult {
     match target {
         LuaType::Generic(target_generic) => {
-            let base = generic.get_base_type();
-            let target_base = target_generic.get_base_type();
-            if target_base != base {
+            let base = generic.get_base_type_id_ref();
+            let target_base = target_generic.get_base_type_id_ref();
+
+            if !is_sub_type_of(context.db, &target_base, &base) {
                 return Err(InferFailReason::None);
             }
 
@@ -872,7 +874,7 @@ fn escape_alias(db: &DbIndex, may_alias: &LuaType) -> LuaType {
 }
 
 fn is_pairs_call(context: &mut TplContext) -> Option<bool> {
-    let call_expr = context.substitutor.get_call_expr()?;
+    let call_expr = context.call_expr.as_ref()?;
     let prefix_expr = call_expr.get_prefix_expr()?;
     let semantic_decl = match prefix_expr.syntax().clone().into() {
         NodeOrToken::Node(node) => infer_node_semantic_decl(
