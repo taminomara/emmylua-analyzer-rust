@@ -3,9 +3,9 @@ use std::path::Path;
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use super::{ClientProxy, FileDiagnostic, StatusBar};
-use crate::handlers::{init_analysis, ClientConfig};
+use crate::handlers::{ClientConfig, init_analysis};
 use dirs;
-use emmylua_code_analysis::{load_configs, EmmyLuaAnalysis, Emmyrc};
+use emmylua_code_analysis::{EmmyLuaAnalysis, Emmyrc, load_configs};
 use emmylua_code_analysis::{update_code_style, uri_to_file_path};
 use log::{debug, info};
 use lsp_types::Uri;

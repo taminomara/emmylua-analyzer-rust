@@ -1,6 +1,6 @@
 use emmylua_code_analysis::{
-    humanize_type, DbIndex, LuaMemberKey, LuaMemberOwner, LuaSemanticDeclId, LuaType, LuaTypeCache,
-    LuaTypeDecl, RenderLevel,
+    DbIndex, LuaMemberKey, LuaMemberOwner, LuaSemanticDeclId, LuaType, LuaTypeCache, LuaTypeDecl,
+    RenderLevel, humanize_type,
 };
 use emmylua_parser::VisibilityKind;
 use std::path::Path;
@@ -8,7 +8,7 @@ use tera::{Context, Tera};
 
 use crate::markdown_generator::{
     escape_type_name,
-    gen::collect_property,
+    generator::collect_property,
     markdown_types::{Doc, IndexStruct, MemberDoc, MkdocsIndex},
     render::{render_const_type, render_function_type},
 };

@@ -3,14 +3,14 @@ use std::ops::Deref;
 use emmylua_parser::{LuaAstNode, LuaAstToken, LuaExpr, LuaLocalStat, LuaTableExpr};
 
 use crate::{
+    InFiled, InferFailReason, LuaDeclId, LuaMember, LuaMemberId, LuaMemberKey, LuaSemanticDeclId,
+    LuaTypeCache, SignatureReturnStatus, TypeOps,
     compilation::analyzer::{
         bind_type::{add_member, bind_type},
         lua::{analyze_return_point, infer_for_range_iter_expr_func},
     },
     db_index::{DbIndex, LuaMemberOwner, LuaType},
-    semantic::{infer_expr, LuaInferCache},
-    InFiled, InferFailReason, LuaDeclId, LuaMember, LuaMemberId, LuaMemberKey, LuaSemanticDeclId,
-    LuaTypeCache, SignatureReturnStatus, TypeOps,
+    semantic::{LuaInferCache, infer_expr},
 };
 
 use super::{

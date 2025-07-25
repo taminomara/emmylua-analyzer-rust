@@ -1,9 +1,9 @@
 use crate::{
+    SpecialFunction,
     grammar::ParseResult,
-    kind::{BinaryOperator, LuaOpKind, LuaSyntaxKind, LuaTokenKind, UnaryOperator, UNARY_PRIORITY},
+    kind::{BinaryOperator, LuaOpKind, LuaSyntaxKind, LuaTokenKind, UNARY_PRIORITY, UnaryOperator},
     parser::{LuaParser, MarkerEventContainer},
     parser_error::LuaParseError,
-    SpecialFunction,
 };
 
 use super::{expect_token, if_token_bump, parse_block};
@@ -333,7 +333,7 @@ fn parse_suffixed_expr(p: &mut LuaParser) -> ParseResult {
             return Err(LuaParseError::syntax_error_from(
                 &t!("expect primary expression"),
                 p.current_token_range(),
-            ))
+            ));
         }
     };
 
@@ -412,7 +412,9 @@ fn parse_index_struct(p: &mut LuaParser) -> Result<(), LuaParseError> {
                     | LuaTokenKind::TkLongString
             ) {
                 return Err(LuaParseError::syntax_error_from(
-                    &t!("colon accessor must be followed by a function call or table constructor or string literal"),
+                    &t!(
+                        "colon accessor must be followed by a function call or table constructor or string literal"
+                    ),
                     p.current_token_range(),
                 ));
             }

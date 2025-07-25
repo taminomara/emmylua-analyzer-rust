@@ -6,7 +6,7 @@ use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxToken};
 use lsp_types::{Hover, HoverContents, MarkedString, MarkupContent};
 
 use crate::handlers::hover::hover_humanize::{
-    extract_description_from_property_owner, DescriptionInfo,
+    DescriptionInfo, extract_description_from_property_owner,
 };
 
 use super::build_hover::{add_signature_param_description, add_signature_ret_description};

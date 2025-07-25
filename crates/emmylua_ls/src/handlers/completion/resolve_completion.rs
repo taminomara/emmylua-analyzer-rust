@@ -3,7 +3,7 @@ use lsp_types::{CompletionItem, Documentation, MarkedString, MarkupContent};
 
 use crate::{
     context::ClientId,
-    handlers::hover::{build_hover_content_for_completion, HoverBuilder},
+    handlers::hover::{HoverBuilder, build_hover_content_for_completion},
 };
 
 use super::completion_data::{CompletionData, CompletionDataType};

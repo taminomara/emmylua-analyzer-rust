@@ -7,11 +7,12 @@ use emmylua_parser::{
 use rowan::TextRange;
 
 use crate::{
-    infer_index_expr, DiagnosticCode, LuaDeclExtra, LuaDeclId, LuaMemberKey, LuaSemanticDeclId,
-    LuaType, SemanticDeclLevel, SemanticModel, TypeCheckFailReason, TypeCheckResult, VariadicType,
+    DiagnosticCode, LuaDeclExtra, LuaDeclId, LuaMemberKey, LuaSemanticDeclId, LuaType,
+    SemanticDeclLevel, SemanticModel, TypeCheckFailReason, TypeCheckResult, VariadicType,
+    infer_index_expr,
 };
 
-use super::{humanize_lint_type, Checker, DiagnosticContext};
+use super::{Checker, DiagnosticContext, humanize_lint_type};
 
 pub struct AssignTypeMismatchChecker;
 
@@ -332,7 +333,7 @@ fn check_table_last_variadic_type(
             .ok()?;
         match source_type {
             LuaType::Variadic(source_variadic) => {
-                return Some(source_variadic.deref() != value_variadic)
+                return Some(source_variadic.deref() != value_variadic);
             }
             _ => {
                 let expr_type = value_variadic.get_type(offset)?;

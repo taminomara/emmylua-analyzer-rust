@@ -1,14 +1,14 @@
 use std::{collections::HashMap, sync::Arc};
 
 use crate::{
+    DbIndex, LuaGenericType, LuaMemberOwner, LuaType, LuaTypeCache, RenderLevel, TypeSubstitutor,
     humanize_type,
     semantic::{member::find_members, type_check::is_sub_type_of},
-    DbIndex, LuaGenericType, LuaMemberOwner, LuaType, LuaTypeCache, RenderLevel, TypeSubstitutor,
 };
 
 use super::{
-    check_general_type_compact, check_ref_type_compact,
-    type_check_fail_reason::TypeCheckFailReason, type_check_guard::TypeCheckGuard, TypeCheckResult,
+    TypeCheckResult, check_general_type_compact, check_ref_type_compact,
+    type_check_fail_reason::TypeCheckFailReason, type_check_guard::TypeCheckGuard,
 };
 
 pub fn check_generic_type_compact(

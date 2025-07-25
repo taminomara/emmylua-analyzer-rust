@@ -115,7 +115,8 @@ fn humanize_def_type(db: &DbIndex, id: &LuaTypeDeclId, level: RenderLevel) -> St
     let generic = match db.get_type_index().get_generic_params(id) {
         Some(generic) => generic,
         None => {
-            return humanize_simple_type(db, id, &full_name, level).unwrap_or(full_name.to_string())
+            return humanize_simple_type(db, id, &full_name, level)
+                .unwrap_or(full_name.to_string());
         }
     };
 

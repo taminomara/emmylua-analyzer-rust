@@ -68,25 +68,25 @@ pub struct VirtualSignatureHelp {
 #[allow(unused)]
 impl ProviderVirtualWorkspace {
     pub fn new() -> Self {
-        let gen = VirtualUrlGenerator::new();
+        let generator = VirtualUrlGenerator::new();
         let mut analysis = EmmyLuaAnalysis::new();
-        let base = &gen.base;
+        let base = &generator.base;
         analysis.add_main_workspace(base.clone());
         ProviderVirtualWorkspace {
-            virtual_url_generator: gen,
+            virtual_url_generator: generator,
             analysis,
             id_counter: 0,
         }
     }
 
     pub fn new_with_init_std_lib() -> Self {
-        let gen = VirtualUrlGenerator::new();
+        let generator = VirtualUrlGenerator::new();
         let mut analysis = EmmyLuaAnalysis::new();
         analysis.init_std_lib(None);
-        let base = &gen.base;
+        let base = &generator.base;
         analysis.add_main_workspace(base.clone());
         ProviderVirtualWorkspace {
-            virtual_url_generator: gen,
+            virtual_url_generator: generator,
             analysis,
             id_counter: 0,
         }

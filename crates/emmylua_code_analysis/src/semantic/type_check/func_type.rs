@@ -3,8 +3,8 @@ use crate::db_index::{
 };
 
 use super::{
-    check_general_type_compact, check_type_compact, type_check_fail_reason::TypeCheckFailReason,
-    type_check_guard::TypeCheckGuard, TypeCheckResult,
+    TypeCheckResult, check_general_type_compact, check_type_compact,
+    type_check_fail_reason::TypeCheckFailReason, type_check_guard::TypeCheckGuard,
 };
 
 pub fn check_doc_func_type_compact(

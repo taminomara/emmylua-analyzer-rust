@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::{parser::ParserConfig, LuaParser};
+    use crate::{LuaParser, parser::ParserConfig};
 
     macro_rules! assert_ast_eq {
         ($lua_code:expr, $expected:expr) => {

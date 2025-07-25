@@ -6,9 +6,9 @@ mod resolve_closure;
 use std::collections::HashMap;
 
 use crate::{
+    FileId, InferFailReason, LuaMemberFeature, LuaSemanticDeclId,
     db_index::{DbIndex, LuaDeclId, LuaMemberId, LuaSignatureId},
     profile::Profile,
-    FileId, InferFailReason, LuaMemberFeature, LuaSemanticDeclId,
 };
 use check_reason::{check_reach_reason, resolve_all_reason};
 use emmylua_parser::{
@@ -22,7 +22,7 @@ use resolve_closure::{
     try_resolve_call_closure_params, try_resolve_closure_parent_params, try_resolve_closure_return,
 };
 
-use super::{infer_manager::InferCacheManager, lua::LuaReturnPoint, AnalyzeContext};
+use super::{AnalyzeContext, infer_manager::InferCacheManager, lua::LuaReturnPoint};
 
 type ResolveResult = Result<(), InferFailReason>;
 
@@ -169,7 +169,7 @@ fn try_resolve(
                     UnResolve::Decl(un_resolve_decl) => {
                         try_resolve_decl(db, cache, un_resolve_decl)
                     }
-                    UnResolve::Member(ref mut un_resolve_member) => {
+                    UnResolve::Member(un_resolve_member) => {
                         try_resolve_member(db, cache, un_resolve_member)
                     }
                     UnResolve::Module(un_resolve_module) => {

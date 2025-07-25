@@ -4,8 +4,8 @@ use migrate_global_member::migrate_global_members_when_type_resolve;
 use rowan::TextRange;
 
 use crate::{
-    db_index::{DbIndex, LuaMemberOwner, LuaType, LuaTypeDeclId},
     InFiled, LuaMemberId, LuaTypeCache, LuaTypeOwner,
+    db_index::{DbIndex, LuaMemberOwner, LuaType, LuaTypeDeclId},
 };
 
 pub fn bind_type(

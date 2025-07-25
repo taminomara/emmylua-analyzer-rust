@@ -1,6 +1,6 @@
 use emmylua_code_analysis::{
-    instantiate_func_generic, LuaCompilation, LuaDeclId, LuaFunctionType, LuaMemberId,
-    LuaSemanticDeclId, LuaSignature, LuaSignatureId, LuaType, SemanticDeclLevel, SemanticModel,
+    LuaCompilation, LuaDeclId, LuaFunctionType, LuaMemberId, LuaSemanticDeclId, LuaSignature,
+    LuaSignatureId, LuaType, SemanticDeclLevel, SemanticModel, instantiate_func_generic,
 };
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaSyntaxToken, LuaTokenKind};
 use rowan::{NodeOrToken, TokenAtOffset};

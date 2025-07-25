@@ -1,16 +1,16 @@
 use crate::{
+    LuaLocalAttribute, LuaSyntaxNode,
     kind::{LuaSyntaxKind, LuaTokenKind},
     syntax::{
+        LuaCommentOwner,
         node::LuaNameToken,
         traits::{LuaAstChildren, LuaAstNode, LuaAstTokenChildren},
-        LuaCommentOwner,
     },
-    LuaLocalAttribute, LuaSyntaxNode,
 };
 
 use super::{
-    expr::{LuaCallExpr, LuaClosureExpr, LuaExpr, LuaVarExpr},
     LuaBlock, LuaLocalName,
+    expr::{LuaCallExpr, LuaClosureExpr, LuaExpr, LuaVarExpr},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

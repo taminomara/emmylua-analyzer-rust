@@ -1,11 +1,11 @@
 use emmylua_parser::{LuaAstNode, LuaChunk, LuaExpr};
 
 use crate::{
-    compilation::analyzer::unresolve::UnResolveModule, db_index::LuaType, InferFailReason,
-    LuaDeclId, LuaSemanticDeclId, LuaSignatureId,
+    InferFailReason, LuaDeclId, LuaSemanticDeclId, LuaSignatureId,
+    compilation::analyzer::unresolve::UnResolveModule, db_index::LuaType,
 };
 
-use super::{func_body::analyze_func_body_returns, LuaAnalyzer, LuaReturnPoint};
+use super::{LuaAnalyzer, LuaReturnPoint, func_body::analyze_func_body_returns};
 
 pub fn analyze_chunk_return(analyzer: &mut LuaAnalyzer, chunk: LuaChunk) -> Option<()> {
     let block = chunk.get_block()?;

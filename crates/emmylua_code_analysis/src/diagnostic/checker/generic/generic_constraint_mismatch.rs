@@ -6,9 +6,9 @@ use rowan::TextRange;
 use crate::diagnostic::checker::generic::infer_doc_type::infer_doc_type;
 use crate::diagnostic::checker::param_type_check::get_call_source_type;
 use crate::{
-    humanize_type, DiagnosticCode, GenericTplId, LuaDeclExtra, LuaMemberOwner, LuaSemanticDeclId,
-    LuaSignature, LuaStringTplType, LuaType, RenderLevel, SemanticDeclLevel, SemanticModel,
-    TypeCheckFailReason, TypeCheckResult, TypeOps, VariadicType,
+    DiagnosticCode, GenericTplId, LuaDeclExtra, LuaMemberOwner, LuaSemanticDeclId, LuaSignature,
+    LuaStringTplType, LuaType, RenderLevel, SemanticDeclLevel, SemanticModel, TypeCheckFailReason,
+    TypeCheckResult, TypeOps, VariadicType, humanize_type,
 };
 
 use crate::diagnostic::checker::Checker;

@@ -6,7 +6,7 @@ use lsp_types::{
 };
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use std::{
-    sync::{mpsc::channel, Arc},
+    sync::{Arc, mpsc::channel},
     time::Duration,
 };
 

@@ -32,7 +32,7 @@ mod text_document;
 mod workspace;
 mod workspace_symbol;
 
-pub use initialized::{init_analysis, initialized_handler, ClientConfig};
+pub use initialized::{ClientConfig, init_analysis, initialized_handler};
 use lsp_types::{ClientCapabilities, ServerCapabilities};
 pub use notification_handler::on_notification_handler;
 pub use request_handler::on_req_handler;

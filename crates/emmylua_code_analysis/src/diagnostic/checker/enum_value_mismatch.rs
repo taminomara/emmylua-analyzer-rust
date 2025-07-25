@@ -1,8 +1,8 @@
 use emmylua_parser::{BinaryOperator, LuaAst, LuaAstNode, LuaBinaryExpr, LuaExpr};
 
 use crate::{
-    diagnostic::checker::humanize_lint_type, DiagnosticCode, LuaMemberKey, LuaType, LuaTypeDeclId,
-    SemanticModel,
+    DiagnosticCode, LuaMemberKey, LuaType, LuaTypeDeclId, SemanticModel,
+    diagnostic::checker::humanize_lint_type,
 };
 
 use super::{Checker, DiagnosticContext};

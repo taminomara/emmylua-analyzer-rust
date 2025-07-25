@@ -1,6 +1,6 @@
 use emmylua_parser::{LuaVersionCondition, LuaVersionNumber};
 
-use crate::{db_index::LuaType, DbIndex, FileId, LuaExport, LuaSemanticDeclId};
+use crate::{DbIndex, FileId, LuaExport, LuaSemanticDeclId, db_index::LuaType};
 
 use super::{module_node::ModuleNodeId, workspace::WorkspaceId};
 

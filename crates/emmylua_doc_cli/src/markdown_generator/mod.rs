@@ -1,4 +1,4 @@
-mod gen;
+mod generator;
 mod init_tl;
 mod markdown_types;
 mod mixin_copy;
@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 use crate::OutputDestination;
 use emmylua_code_analysis::EmmyLuaAnalysis;
-use gen::{
+use generator::{
     generate_global_markdown, generate_index, generate_module_markdown, generate_type_markdown,
 };
 use markdown_types::MkdocsIndex;
@@ -95,11 +95,7 @@ fn escape_type_name(name: &str) -> String {
     name.chars()
         .map(|c| {
             // Windows Invalid Characters
-            if "<>:\"/\\|?*".contains(c) {
-                '_'
-            } else {
-                c
-            }
+            if "<>:\"/\\|?*".contains(c) { '_' } else { c }
         })
         .collect()
 }

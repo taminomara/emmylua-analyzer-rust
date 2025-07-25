@@ -7,7 +7,7 @@ mod lua_version;
 mod lua_visibility_kind;
 
 pub use lua_language_level::LuaLanguageLevel;
-pub use lua_operator_kind::{BinaryOperator, UnaryOperator, UNARY_PRIORITY};
+pub use lua_operator_kind::{BinaryOperator, UNARY_PRIORITY, UnaryOperator};
 pub use lua_syntax_kind::LuaSyntaxKind;
 pub use lua_token_kind::LuaTokenKind;
 pub use lua_type_operator_kind::{

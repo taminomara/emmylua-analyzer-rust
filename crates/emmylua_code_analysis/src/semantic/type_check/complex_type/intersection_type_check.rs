@@ -1,6 +1,6 @@
 use crate::{
-    semantic::type_check::{check_general_type_compact, type_check_guard::TypeCheckGuard},
     DbIndex, LuaIntersectionType, LuaMemberOwner, LuaType, TypeCheckFailReason, TypeCheckResult,
+    semantic::type_check::{check_general_type_compact, type_check_guard::TypeCheckGuard},
 };
 
 pub fn check_intersection_type_compact(

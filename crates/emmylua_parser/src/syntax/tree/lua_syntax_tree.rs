@@ -1,9 +1,9 @@
 use rowan::GreenNode;
 
 use crate::{
+    LuaSyntaxNode,
     parser_error::{LuaParseError, LuaParseErrorKind},
     syntax::{node::LuaChunk, traits::LuaAstNode},
-    LuaSyntaxNode,
 };
 
 #[derive(Debug, Clone)]

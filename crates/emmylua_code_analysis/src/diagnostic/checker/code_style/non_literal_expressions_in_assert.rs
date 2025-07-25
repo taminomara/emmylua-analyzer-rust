@@ -1,8 +1,8 @@
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr, LuaLocalStat};
 
 use crate::{
-    diagnostic::checker::{Checker, DiagnosticContext},
     DiagnosticCode, SemanticModel,
+    diagnostic::checker::{Checker, DiagnosticContext},
 };
 
 pub struct NonLiteralExpressionsInAssertChecker;

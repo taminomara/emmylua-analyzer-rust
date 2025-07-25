@@ -5,10 +5,10 @@ use emmylua_parser::{
 };
 
 use crate::{
-    compilation::analyzer::unresolve::UnResolveTableField,
-    db_index::{LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner},
     FileId, InFiled, InferFailReason, LuaDeclExtra, LuaDeclId, LuaMemberFeature, LuaMemberId,
     LuaSignatureId,
+    compilation::analyzer::unresolve::UnResolveTableField,
+    db_index::{LuaDecl, LuaMember, LuaMemberKey, LuaMemberOwner},
 };
 
 use super::DeclAnalyzer;

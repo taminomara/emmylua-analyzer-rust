@@ -6,11 +6,11 @@ use emmylua_parser::{
 };
 
 use crate::{
-    try_extract_signature_id_from_field, DbIndex, Emmyrc, FileId, LuaCommonProperty,
-    LuaMemberOwner, LuaSemanticDeclId, LuaType,
+    DbIndex, Emmyrc, FileId, LuaCommonProperty, LuaMemberOwner, LuaSemanticDeclId, LuaType,
+    try_extract_signature_id_from_field,
 };
 
-use super::{infer_expr, type_check::is_sub_type_of, LuaInferCache};
+use super::{LuaInferCache, infer_expr, type_check::is_sub_type_of};
 
 pub use export::check_export_visibility;
 

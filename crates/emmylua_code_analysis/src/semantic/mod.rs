@@ -23,14 +23,14 @@ pub use infer::infer_index_expr;
 use infer::{infer_bind_value_type, infer_expr_list_types};
 pub use infer::{infer_table_field_value_should_be, infer_table_should_be};
 use lsp_types::Uri;
+pub use member::LuaMemberInfo;
 pub use member::find_index_operations;
 pub use member::get_member_map;
-pub use member::LuaMemberInfo;
 use member::{find_member_origin_owner, find_members};
 use reference::is_reference_to;
 use rowan::{NodeOrToken, TextRange};
-pub(crate) use semantic_info::infer_node_semantic_decl;
 pub use semantic_info::SemanticInfo;
+pub(crate) use semantic_info::infer_node_semantic_decl;
 use semantic_info::{
     infer_node_semantic_info, infer_token_semantic_decl, infer_token_semantic_info,
 };
@@ -40,15 +40,15 @@ pub use visibility::check_export_visibility;
 use visibility::check_visibility;
 
 use crate::semantic::member::find_members_with_key;
-use crate::{db_index::LuaTypeDeclId, Emmyrc, LuaDocument, LuaSemanticDeclId};
+use crate::{Emmyrc, LuaDocument, LuaSemanticDeclId, db_index::LuaTypeDeclId};
 use crate::{
-    db_index::{DbIndex, LuaType},
     FileId,
+    db_index::{DbIndex, LuaType},
 };
 use crate::{LuaFunctionType, LuaMemberId, LuaMemberKey, LuaTypeOwner};
 pub use generic::*;
-pub use infer::infer_param;
 pub use infer::InferFailReason;
+pub use infer::infer_param;
 pub(crate) use infer::{infer_call_expr_func, infer_expr};
 use overload_resolve::resolve_signature;
 pub use semantic_info::SemanticDeclLevel;

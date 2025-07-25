@@ -7,8 +7,8 @@ use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaDocFuncType};
 use rowan::TextSize;
 
 use crate::{
-    db_index::{LuaFunctionType, LuaType},
     FileId,
+    db_index::{LuaFunctionType, LuaType},
 };
 use crate::{SemanticModel, VariadicType};
 

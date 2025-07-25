@@ -4,11 +4,11 @@ use std::collections::HashSet;
 
 use crate::diagnostic::checker::generic::infer_doc_type::infer_doc_type;
 use crate::{
-    get_real_type, DbIndex, DiagnosticCode, LuaType, LuaUnionType, SemanticModel,
-    TypeCheckFailReason, TypeCheckResult,
+    DbIndex, DiagnosticCode, LuaType, LuaUnionType, SemanticModel, TypeCheckFailReason,
+    TypeCheckResult, get_real_type,
 };
 
-use super::{humanize_lint_type, Checker, DiagnosticContext};
+use super::{Checker, DiagnosticContext, humanize_lint_type};
 
 pub struct CastTypeMismatchChecker;
 

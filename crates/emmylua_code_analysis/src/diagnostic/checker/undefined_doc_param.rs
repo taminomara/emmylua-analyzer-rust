@@ -2,7 +2,7 @@ use emmylua_parser::{LuaAstNode, LuaAstToken, LuaClosureExpr, LuaDocTagParam};
 
 use crate::{DiagnosticCode, LuaSignatureId, SemanticModel};
 
-use super::{get_closure_expr_comment, Checker, DiagnosticContext};
+use super::{Checker, DiagnosticContext, get_closure_expr_comment};
 
 pub struct UndefinedDocParamChecker;
 

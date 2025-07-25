@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    sync::{atomic::AtomicI32, Arc},
+    sync::{Arc, atomic::AtomicI32},
 };
 
 use lsp_server::{Connection, Message, Notification, RequestId, Response};
@@ -12,7 +12,7 @@ use lsp_types::{
 use serde::de::DeserializeOwned;
 use tokio::{
     select,
-    sync::{oneshot, Mutex},
+    sync::{Mutex, oneshot},
 };
 use tokio_util::sync::CancellationToken;
 

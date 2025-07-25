@@ -5,7 +5,7 @@ use emmylua_parser::{
 
 use crate::{DiagnosticCode, LuaSignatureId, LuaType, SemanticModel, SignatureReturnStatus};
 
-use super::{get_return_stats, Checker, DiagnosticContext};
+use super::{Checker, DiagnosticContext, get_return_stats};
 
 pub struct CheckReturnCount;
 
@@ -163,11 +163,7 @@ fn check_return_block(
     let has_return = check_if_stat(context, semantic_model, &block)?
         | check_while_stat(context, semantic_model, &block)?;
 
-    if has_return {
-        Ok(())
-    } else {
-        Err(block)
-    }
+    if has_return { Ok(()) } else { Err(block) }
 }
 
 fn check_if_stat(

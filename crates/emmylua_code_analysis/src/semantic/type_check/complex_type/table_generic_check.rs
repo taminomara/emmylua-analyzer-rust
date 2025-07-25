@@ -1,8 +1,7 @@
 use crate::{
-    check_type_compact,
-    semantic::type_check::{check_general_type_compact, type_check_guard::TypeCheckGuard},
     DbIndex, LuaMemberKey, LuaMemberOwner, LuaType, LuaTypeCache, TypeCheckFailReason,
-    TypeCheckResult,
+    TypeCheckResult, check_type_compact,
+    semantic::type_check::{check_general_type_compact, type_check_guard::TypeCheckGuard},
 };
 
 pub fn check_table_generic_type_compact(

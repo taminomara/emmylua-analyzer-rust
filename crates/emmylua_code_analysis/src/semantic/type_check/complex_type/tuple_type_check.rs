@@ -1,10 +1,9 @@
 use std::ops::Deref;
 
 use crate::{
-    humanize_type,
-    semantic::type_check::{check_general_type_compact, type_check_guard::TypeCheckGuard},
     DbIndex, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaTupleType, LuaType, RenderLevel,
-    TypeCheckFailReason, TypeCheckResult, VariadicType,
+    TypeCheckFailReason, TypeCheckResult, VariadicType, humanize_type,
+    semantic::type_check::{check_general_type_compact, type_check_guard::TypeCheckGuard},
 };
 
 pub fn check_tuple_type_compact(

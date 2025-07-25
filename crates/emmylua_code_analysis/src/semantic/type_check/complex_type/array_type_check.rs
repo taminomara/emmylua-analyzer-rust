@@ -1,7 +1,7 @@
 use crate::{
+    DbIndex, LuaMemberKey, LuaMemberOwner, LuaType, TypeCheckFailReason, TypeCheckResult, TypeOps,
     find_index_operations,
     semantic::type_check::{check_general_type_compact, type_check_guard::TypeCheckGuard},
-    DbIndex, LuaMemberKey, LuaMemberOwner, LuaType, TypeCheckFailReason, TypeCheckResult, TypeOps,
 };
 
 pub fn check_array_type_compact(

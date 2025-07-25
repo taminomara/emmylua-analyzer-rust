@@ -6,7 +6,7 @@ use best_log_path::get_best_log_dir;
 use chrono::Local;
 use emmylua_code_analysis::file_path_to_uri;
 use fern::Dispatch;
-use log::{info, LevelFilter};
+use log::{LevelFilter, info};
 
 use crate::cmd_args::{CmdArgs, LogLevel};
 

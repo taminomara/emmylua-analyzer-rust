@@ -7,10 +7,10 @@ pub use property::LuaCommonProperty;
 pub use property::{LuaDeprecated, LuaExport, LuaExportScope, LuaPropertyId};
 
 use crate::{
-    db_index::property::property::LuaTagContent, DbIndex, FileId, LuaMember, LuaSignatureId,
+    DbIndex, FileId, LuaMember, LuaSignatureId, db_index::property::property::LuaTagContent,
 };
 
-use super::{traits::LuaIndex, LuaSemanticDeclId};
+use super::{LuaSemanticDeclId, traits::LuaIndex};
 
 #[derive(Debug)]
 pub struct LuaPropertyIndex {

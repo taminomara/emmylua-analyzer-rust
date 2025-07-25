@@ -55,7 +55,7 @@ pub fn infer_doc_type(semantic_model: &SemanticModel, node: &LuaDocType) -> LuaT
             if let Some(literal_token) = literal.get_literal() {
                 match literal_token {
                     LuaLiteralToken::String(str_token) => {
-                        return LuaType::DocStringConst(SmolStr::new(str_token.get_value()).into())
+                        return LuaType::DocStringConst(SmolStr::new(str_token.get_value()).into());
                     }
                     LuaLiteralToken::Number(number_token) => {
                         if number_token.is_int() {
@@ -65,7 +65,7 @@ pub fn infer_doc_type(semantic_model: &SemanticModel, node: &LuaDocType) -> LuaT
                         }
                     }
                     LuaLiteralToken::Bool(bool_token) => {
-                        return LuaType::DocBooleanConst(bool_token.is_true())
+                        return LuaType::DocBooleanConst(bool_token.is_true());
                     }
                     LuaLiteralToken::Nil(_) => return LuaType::Nil,
                     LuaLiteralToken::Dots(_) => return LuaType::Any,

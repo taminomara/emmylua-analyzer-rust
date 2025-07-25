@@ -6,11 +6,11 @@ use rowan::TextSize;
 use smol_str::SmolStr;
 
 use crate::{
+    DbIndex, LuaAliasCallKind, LuaDeclId, LuaDeclOrMemberId, LuaInferCache, LuaMemberId, LuaType,
     infer_expr,
     semantic::infer::{
         infer_index::get_index_expr_var_ref_id, infer_name::get_name_expr_var_ref_id,
     },
-    DbIndex, LuaAliasCallKind, LuaDeclId, LuaDeclOrMemberId, LuaInferCache, LuaMemberId, LuaType,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

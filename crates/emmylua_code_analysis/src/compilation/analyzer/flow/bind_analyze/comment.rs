@@ -1,8 +1,8 @@
 use emmylua_parser::{LuaAstNode, LuaComment, LuaDocTag};
 
 use crate::{
-    compilation::analyzer::flow::{bind_analyze::exprs::bind_expr, binder::FlowBinder},
     FlowId, FlowNodeKind,
+    compilation::analyzer::flow::{bind_analyze::exprs::bind_expr, binder::FlowBinder},
 };
 
 pub fn bind_comment(binder: &mut FlowBinder, lua_comment: LuaComment, current: FlowId) -> FlowId {

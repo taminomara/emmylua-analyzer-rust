@@ -2,9 +2,9 @@ use emmylua_parser::{LuaAst, LuaAstNode, LuaAstToken, LuaCallExpr, LuaExpr, LuaI
 use rowan::TextRange;
 
 use crate::{
-    diagnostic::checker::assign_type_mismatch::check_table_expr, humanize_type, DiagnosticCode,
-    LuaSemanticDeclId, LuaType, RenderLevel, SemanticDeclLevel, SemanticModel, TypeCheckFailReason,
-    TypeCheckResult,
+    DiagnosticCode, LuaSemanticDeclId, LuaType, RenderLevel, SemanticDeclLevel, SemanticModel,
+    TypeCheckFailReason, TypeCheckResult,
+    diagnostic::checker::assign_type_mismatch::check_table_expr, humanize_type,
 };
 
 use super::{Checker, DiagnosticContext};

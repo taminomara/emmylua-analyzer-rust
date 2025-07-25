@@ -3,9 +3,9 @@ use std::sync::Arc;
 use rowan::{TextRange, TextSize};
 
 use crate::{
-    db_index::{LuaType, LuaTypeDeclId},
     DbIndex, FileId, InFiled, InferFailReason, LuaFunctionType, LuaSignatureId,
     SignatureReturnStatus,
+    db_index::{LuaType, LuaTypeDeclId},
 };
 
 use super::lua_operator_meta_method::LuaOperatorMetaMethod;

@@ -21,10 +21,10 @@ use stats::{
 };
 
 use crate::{
+    Emmyrc, FileId, InferFailReason,
     db_index::{DbIndex, LuaType},
     profile::Profile,
     semantic::infer_expr,
-    Emmyrc, FileId, InferFailReason,
 };
 
 use super::AnalyzeContext;

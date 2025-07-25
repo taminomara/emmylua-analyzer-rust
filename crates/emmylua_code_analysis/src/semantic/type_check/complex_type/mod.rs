@@ -13,8 +13,8 @@ use tuple_type_check::check_tuple_type_compact;
 use crate::{DbIndex, LuaType, LuaUnionType};
 
 use super::{
-    check_general_type_compact, type_check_fail_reason::TypeCheckFailReason,
-    type_check_guard::TypeCheckGuard, TypeCheckResult,
+    TypeCheckResult, check_general_type_compact, type_check_fail_reason::TypeCheckFailReason,
+    type_check_guard::TypeCheckGuard,
 };
 
 // all is duck typing

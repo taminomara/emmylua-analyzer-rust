@@ -5,13 +5,13 @@ use emmylua_parser::{
 };
 
 use crate::{
-    compilation::analyzer::bind_type::bind_type,
-    db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey},
     LuaDeclExtra, LuaMemberFeature, LuaMemberId, LuaSemanticDeclId, LuaSignatureId, LuaType,
     LuaTypeCache,
+    compilation::analyzer::bind_type::bind_type,
+    db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey},
 };
 
-use super::{members::find_index_owner, DeclAnalyzer};
+use super::{DeclAnalyzer, members::find_index_owner};
 
 pub fn analyze_local_stat(analyzer: &mut DeclAnalyzer, stat: LuaLocalStat) -> Option<()> {
     let local_name_list = stat.get_local_name_list().collect::<Vec<_>>();

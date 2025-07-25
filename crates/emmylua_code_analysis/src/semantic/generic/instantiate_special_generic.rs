@@ -1,15 +1,15 @@
 use std::ops::Deref;
 
 use crate::{
+    DbIndex, LuaAliasCallKind, LuaAliasCallType, LuaMemberKey, LuaType, TypeOps, VariadicType,
     get_member_map,
     semantic::{
         member::{find_members, infer_raw_member_type},
         type_check,
     },
-    DbIndex, LuaAliasCallKind, LuaAliasCallType, LuaMemberKey, LuaType, TypeOps, VariadicType,
 };
 
-use super::{instantiate_type_generic, TypeSubstitutor};
+use super::{TypeSubstitutor, instantiate_type_generic};
 
 pub fn instantiate_alias_call(
     db: &DbIndex,

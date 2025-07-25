@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use super::{decl, scope, LuaDeclId};
-use crate::{db_index::LuaMemberId, FileId};
+use super::{LuaDeclId, decl, scope};
+use crate::{FileId, db_index::LuaMemberId};
 use decl::LuaDecl;
 use rowan::{TextRange, TextSize};
 use scope::{LuaScope, LuaScopeId, LuaScopeKind, ScopeOrDeclId};

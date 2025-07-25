@@ -4,7 +4,7 @@ use emmylua_parser::LineIndex;
 use lsp_types::Uri;
 use rowan::{TextRange, TextSize};
 
-use super::{file_path_to_uri, FileId};
+use super::{FileId, file_path_to_uri};
 
 #[derive(Debug)]
 pub struct LuaDocument<'a> {

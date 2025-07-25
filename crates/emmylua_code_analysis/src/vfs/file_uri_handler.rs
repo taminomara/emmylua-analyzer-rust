@@ -42,7 +42,7 @@ mod tests {
 
     use lsp_types::Uri;
 
-    use crate::{file_path_to_uri, uri_to_file_path, Emmyrc, Vfs};
+    use crate::{Emmyrc, Vfs, file_path_to_uri, uri_to_file_path};
 
     fn create_vfs() -> Vfs {
         let mut vfs = Vfs::new();

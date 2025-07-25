@@ -1,6 +1,6 @@
 use emmylua_parser::{
-    float_token_value, int_token_value, LuaAstNode, LuaClosureExpr, LuaLiteralExpr, LuaParamName,
-    LuaParseErrorKind, LuaSyntaxKind, LuaSyntaxToken, LuaTokenKind,
+    LuaAstNode, LuaClosureExpr, LuaLiteralExpr, LuaParamName, LuaParseErrorKind, LuaSyntaxKind,
+    LuaSyntaxToken, LuaTokenKind, float_token_value, int_token_value,
 };
 
 use crate::{DiagnosticCode, LuaSignatureId, SemanticModel};

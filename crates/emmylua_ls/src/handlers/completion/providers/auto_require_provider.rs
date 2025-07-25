@@ -1,5 +1,5 @@
 use emmylua_code_analysis::{
-    check_export_visibility, EmmyrcFilenameConvention, LuaType, ModuleInfo,
+    EmmyrcFilenameConvention, LuaType, ModuleInfo, check_export_visibility,
 };
 use emmylua_parser::{LuaAstNode, LuaNameExpr};
 use lsp_types::{CompletionItem, Position};

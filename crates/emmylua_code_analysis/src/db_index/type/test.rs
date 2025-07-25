@@ -2,8 +2,8 @@
 mod test {
     use rowan::TextRange;
 
-    use crate::db_index::r#type::LuaTypeIndex;
     use crate::db_index::traits::LuaIndex;
+    use crate::db_index::r#type::LuaTypeIndex;
     use crate::db_index::{LuaDeclTypeKind, LuaTypeAttribute};
     use crate::{FileId, LuaTypeDecl, LuaTypeDeclId};
 

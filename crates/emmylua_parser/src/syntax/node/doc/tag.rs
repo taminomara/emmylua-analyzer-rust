@@ -1,15 +1,15 @@
 use crate::{
-    kind::LuaSyntaxKind,
-    syntax::{traits::LuaAstNode, LuaDocDescriptionOwner},
     BinaryOperator, LuaAstChildren, LuaAstToken, LuaAstTokenChildren, LuaBinaryOpToken,
     LuaDocVersionNumberToken, LuaDocVisibilityToken, LuaExpr, LuaGeneralToken, LuaKind,
     LuaNameToken, LuaNumberToken, LuaPathToken, LuaStringToken, LuaSyntaxNode, LuaTokenKind,
     LuaVersionCondition,
+    kind::LuaSyntaxKind,
+    syntax::{LuaDocDescriptionOwner, traits::LuaAstNode},
 };
 
 use super::{
-    description::LuaDocDetailOwner, LuaDocAttribute, LuaDocGenericDeclList, LuaDocOpType,
-    LuaDocType, LuaDocTypeList,
+    LuaDocAttribute, LuaDocGenericDeclList, LuaDocOpType, LuaDocType, LuaDocTypeList,
+    description::LuaDocDetailOwner,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

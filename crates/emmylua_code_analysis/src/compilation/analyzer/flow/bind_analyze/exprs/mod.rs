@@ -6,11 +6,11 @@ use emmylua_parser::{
 };
 
 use crate::{
+    FlowId, FlowNodeKind,
     compilation::analyzer::flow::{
         bind_analyze::{bind_each_child, exprs::bind_binary_expr::is_binary_logical},
         binder::FlowBinder,
     },
-    FlowId, FlowNodeKind,
 };
 pub use bind_binary_expr::bind_binary_expr;
 

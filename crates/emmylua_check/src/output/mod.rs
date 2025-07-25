@@ -74,11 +74,7 @@ pub async fn output_result(
         terminal_display.print_summary(error_count, warning_count, info_count, hint_count);
     }
 
-    if has_error {
-        1
-    } else {
-        0
-    }
+    if has_error { 1 } else { 0 }
 }
 
 trait OutputWriter {

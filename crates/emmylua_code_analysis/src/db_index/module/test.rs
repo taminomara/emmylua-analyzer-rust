@@ -3,8 +3,8 @@ mod tests {
     use std::path::Path;
 
     use crate::{
-        db_index::{module::LuaModuleIndex, traits::LuaIndex},
         FileId, WorkspaceId,
+        db_index::{module::LuaModuleIndex, traits::LuaIndex},
     };
 
     fn create_module() -> LuaModuleIndex {

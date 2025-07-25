@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use emmylua_code_analysis::{
-    format_union_type, humanize_type, LuaSignatureId, LuaType, LuaUnionType, RenderLevel,
-    SemanticModel,
+    LuaSignatureId, LuaType, LuaUnionType, RenderLevel, SemanticModel, format_union_type,
+    humanize_type,
 };
 use emmylua_parser::{LuaAstNode, LuaClosureExpr};
 use itertools::Itertools;

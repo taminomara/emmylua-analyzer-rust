@@ -5,8 +5,11 @@ mod index_flow;
 use emmylua_parser::{LuaAstNode, LuaChunk, LuaExpr, LuaNameExpr, LuaUnaryExpr, UnaryOperator};
 
 use crate::{
+    DbIndex, FlowNode, FlowTree, InferFailReason, LuaInferCache,
     semantic::infer::{
+        VarRefId,
         narrow::{
+            ResultTypeOrContinue,
             condition_flow::{
                 binary_flow::get_type_at_binary_expr, call_flow::get_type_at_call_expr,
                 index_flow::get_type_at_index_expr,
@@ -15,11 +18,8 @@ use crate::{
             get_type_at_flow::get_type_at_flow,
             narrow_false_or_nil, remove_false_or_nil,
             var_ref_id::get_var_expr_var_ref_id,
-            ResultTypeOrContinue,
         },
-        VarRefId,
     },
-    DbIndex, FlowNode, FlowTree, InferFailReason, LuaInferCache,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

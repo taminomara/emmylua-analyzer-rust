@@ -1,7 +1,7 @@
 use emmylua_code_analysis::{
-    get_real_type, DbIndex, InferGuard, LuaDeclLocation, LuaFunctionType, LuaMember, LuaMemberKey,
-    LuaMemberOwner, LuaMultiLineUnion, LuaSemanticDeclId, LuaStringTplType, LuaType, LuaTypeCache,
-    LuaTypeDeclId, LuaUnionType, RenderLevel, SemanticDeclLevel,
+    DbIndex, InferGuard, LuaDeclLocation, LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner,
+    LuaMultiLineUnion, LuaSemanticDeclId, LuaStringTplType, LuaType, LuaTypeCache, LuaTypeDeclId,
+    LuaUnionType, RenderLevel, SemanticDeclLevel, get_real_type,
 };
 use emmylua_parser::{
     LuaAssignStat, LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaClosureExpr,
@@ -620,7 +620,7 @@ fn get_enum_decl_variable_name(
                         .get_name_token()?
                         .get_name_text()
                         .to_string(),
-                )
+                );
             }
             LuaAst::LuaAssignStat(assign_stat) => {
                 return Some(
@@ -629,7 +629,7 @@ fn get_enum_decl_variable_name(
                         .syntax()
                         .text()
                         .to_string(),
-                )
+                );
             }
             _ => {}
         }

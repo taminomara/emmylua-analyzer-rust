@@ -1,10 +1,10 @@
 use emmylua_parser::{LuaAstNode, LuaAstToken, LuaExpr, LuaForRangeStat};
 
 use crate::{
+    DbIndex, InferFailReason, LuaDeclId, LuaInferCache, LuaOperatorMetaMethod, LuaType,
+    LuaTypeCache, TplContext, TypeOps, TypeSubstitutor, VariadicType,
     compilation::analyzer::unresolve::UnResolveIterVar, infer_expr, instantiate_doc_function,
-    tpl_pattern_match_args, DbIndex, InferFailReason, LuaDeclId, LuaInferCache,
-    LuaOperatorMetaMethod, LuaType, LuaTypeCache, TplContext, TypeOps, TypeSubstitutor,
-    VariadicType,
+    tpl_pattern_match_args,
 };
 
 use super::LuaAnalyzer;

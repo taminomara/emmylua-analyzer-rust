@@ -5,16 +5,16 @@ use emmylua_parser::{
 };
 
 use crate::{
+    DbIndex, InferFailReason, LuaInferCache, LuaType, SignatureReturnStatus, TypeOps, VariadicType,
     compilation::analyzer::unresolve::{
         UnResolveCallClosureParams, UnResolveClosureReturn, UnResolveParentAst,
         UnResolveParentClosureParams, UnResolveReturn,
     },
     db_index::{LuaDocReturnInfo, LuaSignatureId},
-    infer_expr, DbIndex, InferFailReason, LuaInferCache, LuaType, SignatureReturnStatus, TypeOps,
-    VariadicType,
+    infer_expr,
 };
 
-use super::{func_body::analyze_func_body_returns, LuaAnalyzer, LuaReturnPoint};
+use super::{LuaAnalyzer, LuaReturnPoint, func_body::analyze_func_body_returns};
 
 pub fn analyze_closure(analyzer: &mut LuaAnalyzer, closure: LuaClosureExpr) -> Option<()> {
     let signature_id = LuaSignatureId::from_closure(analyzer.file_id, &closure);

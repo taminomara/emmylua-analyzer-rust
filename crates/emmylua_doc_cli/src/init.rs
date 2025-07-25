@@ -1,5 +1,5 @@
 use emmylua_code_analysis::{
-    load_configs, load_workspace_files, update_code_style, EmmyLuaAnalysis, Emmyrc, LuaFileInfo,
+    EmmyLuaAnalysis, Emmyrc, LuaFileInfo, load_configs, load_workspace_files, update_code_style,
 };
 use fern::Dispatch;
 use log::LevelFilter;

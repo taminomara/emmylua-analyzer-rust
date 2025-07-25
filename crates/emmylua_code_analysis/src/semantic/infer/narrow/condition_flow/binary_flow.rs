@@ -4,21 +4,20 @@ use emmylua_parser::{
 };
 
 use crate::{
-    infer_expr,
+    DbIndex, FlowNode, FlowTree, InferFailReason, InferGuard, LuaArrayLen, LuaArrayType,
+    LuaInferCache, LuaType, TypeOps, infer_expr,
     semantic::infer::{
+        VarRefId,
         infer_index::infer_member_by_member_key,
         narrow::{
-            condition_flow::{call_flow::get_type_at_call_expr, InferConditionFlow},
+            ResultTypeOrContinue,
+            condition_flow::{InferConditionFlow, call_flow::get_type_at_call_expr},
             get_single_antecedent,
             get_type_at_flow::get_type_at_flow,
             get_var_ref_type, narrow_down_type,
             var_ref_id::get_var_expr_var_ref_id,
-            ResultTypeOrContinue,
         },
-        VarRefId,
     },
-    DbIndex, FlowNode, FlowTree, InferFailReason, InferGuard, LuaArrayLen, LuaArrayType,
-    LuaInferCache, LuaType, TypeOps,
 };
 
 pub fn get_type_at_binary_expr(

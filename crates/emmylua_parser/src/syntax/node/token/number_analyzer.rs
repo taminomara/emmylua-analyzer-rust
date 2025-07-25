@@ -1,6 +1,6 @@
 use crate::{
-    parser_error::{LuaParseError, LuaParseErrorKind},
     LuaSyntaxToken,
+    parser_error::{LuaParseError, LuaParseErrorKind},
 };
 
 pub fn float_token_value(token: &LuaSyntaxToken) -> Result<f64, LuaParseError> {

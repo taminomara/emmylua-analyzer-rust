@@ -1,11 +1,11 @@
 use emmylua_code_analysis::{
-    enum_variable_is_param, DbIndex, LuaMemberInfo, LuaSemanticDeclId, LuaType, LuaTypeDeclId,
-    SemanticModel,
+    DbIndex, LuaMemberInfo, LuaSemanticDeclId, LuaType, LuaTypeDeclId, SemanticModel,
+    enum_variable_is_param,
 };
 use emmylua_parser::{LuaAstNode, LuaAstToken, LuaIndexExpr, LuaStringToken};
 
 use crate::handlers::completion::{
-    add_completions::{add_member_completion, CompletionTriggerStatus},
+    add_completions::{CompletionTriggerStatus, add_member_completion},
     completion_builder::CompletionBuilder,
 };
 
@@ -69,11 +69,7 @@ fn add_resolve_member_infos(
                     .get(&id)
                 {
                     let count = signature.overloads.len();
-                    if count == 0 {
-                        None
-                    } else {
-                        Some(count)
-                    }
+                    if count == 0 { None } else { Some(count) }
                 } else {
                     None
                 }
@@ -218,11 +214,7 @@ fn filter_member_infos<'a>(
     // 处理重载计数
     let final_overload_count = if overload_count >= 1 {
         let count = overload_count - 1;
-        if count == 0 {
-            None
-        } else {
-            Some(count)
-        }
+        if count == 0 { None } else { Some(count) }
     } else {
         None
     };

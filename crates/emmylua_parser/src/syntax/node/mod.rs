@@ -12,7 +12,7 @@ pub use token::*;
 
 use crate::kind::LuaSyntaxKind;
 
-use super::{traits::LuaAstNode, LuaSyntaxNode};
+use super::{LuaSyntaxNode, traits::LuaAstNode};
 
 #[allow(unused)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

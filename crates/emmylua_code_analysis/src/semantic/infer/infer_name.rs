@@ -2,11 +2,11 @@ use emmylua_parser::{LuaAstNode, LuaExpr, LuaIndexExpr, LuaNameExpr};
 
 use super::{InferFailReason, InferResult};
 use crate::{
-    db_index::{DbIndex, LuaDeclOrMemberId},
-    infer_node_semantic_decl,
-    semantic::infer::narrow::{infer_expr_narrow_type, VarRefId},
     LuaDecl, LuaDeclExtra, LuaInferCache, LuaMemberId, LuaSemanticDeclId, LuaType,
     SemanticDeclLevel, TypeOps,
+    db_index::{DbIndex, LuaDeclOrMemberId},
+    infer_node_semantic_decl,
+    semantic::infer::narrow::{VarRefId, infer_expr_narrow_type},
 };
 
 pub fn infer_name_expr(

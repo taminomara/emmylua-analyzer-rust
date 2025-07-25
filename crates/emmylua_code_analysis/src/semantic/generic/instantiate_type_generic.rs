@@ -1,11 +1,11 @@
 use std::{collections::HashMap, ops::Deref};
 
 use crate::{
+    DbIndex, GenericTpl, LuaArrayType, LuaSignatureId,
     db_index::{
         LuaFunctionType, LuaGenericType, LuaIntersectionType, LuaObjectType, LuaTupleType, LuaType,
         LuaUnionType, VariadicType,
     },
-    DbIndex, GenericTpl, LuaArrayType, LuaSignatureId,
 };
 
 use super::{
@@ -326,7 +326,7 @@ fn instantiate_variadic_type(
                         }
                         SubstitutorValue::Type(ty) => return ty.clone(),
                         SubstitutorValue::MultiTypes(types) => {
-                            return LuaType::Variadic(VariadicType::Multi(types.clone()).into())
+                            return LuaType::Variadic(VariadicType::Multi(types.clone()).into());
                         }
                         SubstitutorValue::Params(params) => {
                             let types = params

@@ -1,9 +1,8 @@
 use emmylua_parser::LuaExpr;
 
 use crate::{
-    check_type_compact,
-    semantic::infer::{narrow::remove_false_or_nil, InferResult},
-    DbIndex, LuaType, TypeOps,
+    DbIndex, LuaType, TypeOps, check_type_compact,
+    semantic::infer::{InferResult, narrow::remove_false_or_nil},
 };
 
 pub fn special_or_rule(

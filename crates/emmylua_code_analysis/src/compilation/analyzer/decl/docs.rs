@@ -6,8 +6,8 @@ use flagset::FlagSet;
 use rowan::TextRange;
 
 use crate::{
-    db_index::{LuaDeclTypeKind, LuaTypeAttribute},
     LuaTypeDecl, LuaTypeDeclId,
+    db_index::{LuaDeclTypeKind, LuaTypeAttribute},
 };
 
 use super::DeclAnalyzer;

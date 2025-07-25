@@ -5,19 +5,20 @@ use rowan::TextRange;
 
 use super::{
     super::{
-        generic::{instantiate_func_generic, TypeSubstitutor},
-        instantiate_type_generic, resolve_signature, InferGuard, LuaInferCache,
+        InferGuard, LuaInferCache,
+        generic::{TypeSubstitutor, instantiate_func_generic},
+        instantiate_type_generic, resolve_signature,
     },
     InferFailReason, InferResult,
 };
 use crate::semantic::{
     generic::instantiate_doc_function, infer::narrow::get_type_at_call_expr_inline_cast,
 };
-use crate::{build_self_type, infer_self_type, semantic::infer_expr};
 use crate::{
     CacheEntry, DbIndex, InFiled, LuaFunctionType, LuaGenericType, LuaInstanceType,
     LuaOperatorMetaMethod, LuaOperatorOwner, LuaSignatureId, LuaType, LuaTypeDeclId, LuaUnionType,
 };
+use crate::{build_self_type, infer_self_type, semantic::infer_expr};
 use infer_require::infer_require_call;
 use infer_setmetatable::infer_setmetatable_call;
 

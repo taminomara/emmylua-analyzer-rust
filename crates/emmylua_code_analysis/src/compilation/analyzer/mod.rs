@@ -8,7 +8,7 @@ mod unresolve;
 
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{db_index::DbIndex, profile::Profile, Emmyrc, InFiled, InferFailReason, WorkspaceId};
+use crate::{Emmyrc, InFiled, InferFailReason, WorkspaceId, db_index::DbIndex, profile::Profile};
 use emmylua_parser::LuaChunk;
 use infer_manager::InferCacheManager;
 use unresolve::UnResolve;

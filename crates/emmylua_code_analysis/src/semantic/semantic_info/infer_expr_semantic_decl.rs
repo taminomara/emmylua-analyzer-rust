@@ -4,14 +4,14 @@ use emmylua_parser::{
 };
 
 use crate::{
-    semantic::{infer::find_self_decl_or_member_id, member::get_buildin_type_map_type_id},
     DbIndex, LuaDeclId, LuaDeclOrMemberId, LuaInferCache, LuaInstanceType, LuaMemberId,
     LuaMemberKey, LuaMemberOwner, LuaSemanticDeclId, LuaType, LuaTypeCache, LuaTypeDeclId,
     LuaUnionType,
+    semantic::{infer::find_self_decl_or_member_id, member::get_buildin_type_map_type_id},
 };
 
 use super::{
-    infer_expr, infer_token_semantic_decl, semantic_guard::SemanticDeclGuard, SemanticDeclLevel,
+    SemanticDeclLevel, infer_expr, infer_token_semantic_decl, semantic_guard::SemanticDeclGuard,
 };
 
 pub fn infer_expr_semantic_decl(

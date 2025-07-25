@@ -3,8 +3,8 @@ use crate::{
 };
 
 use super::{
-    tags::{find_owner_closure_or_report, get_owner_id_or_report},
     DocAnalyzer,
+    tags::{find_owner_closure_or_report, get_owner_id_or_report},
 };
 use crate::compilation::analyzer::doc::tags::report_orphan_tag;
 use emmylua_parser::{

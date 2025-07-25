@@ -42,13 +42,13 @@ use rowan::TextRange;
 use std::sync::Arc;
 
 use crate::{
-    db_index::DbIndex, humanize_type, semantic::SemanticModel, FileId, LuaType, RenderLevel,
+    FileId, LuaType, RenderLevel, db_index::DbIndex, humanize_type, semantic::SemanticModel,
 };
 
 use super::{
+    DiagnosticCode,
     lua_diagnostic_code::{get_default_severity, is_code_default_enable},
     lua_diagnostic_config::LuaDiagnosticConfig,
-    DiagnosticCode,
 };
 
 pub trait Checker {

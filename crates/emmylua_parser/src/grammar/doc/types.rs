@@ -1,10 +1,10 @@
 use crate::{
+    UNARY_TYPE_PRIORITY,
     grammar::ParseResult,
     kind::{LuaOpKind, LuaSyntaxKind, LuaTokenKind, LuaTypeBinaryOperator, LuaTypeUnaryOperator},
     lexer::LuaDocLexerState,
     parser::{CompleteMarker, LuaDocParser, MarkerEventContainer},
     parser_error::LuaParseError,
-    UNARY_TYPE_PRIORITY,
 };
 
 use super::{expect_token, if_token_bump, parse_description};

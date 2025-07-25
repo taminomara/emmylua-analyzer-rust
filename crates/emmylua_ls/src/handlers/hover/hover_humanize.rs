@@ -1,7 +1,7 @@
 use super::std_hover::{hover_std_description, is_std};
 use emmylua_code_analysis::{
-    format_union_type, DbIndex, InFiled, LuaMember, LuaMemberOwner, LuaMultiLineUnion,
-    LuaSemanticDeclId, LuaType, LuaUnionType, RenderLevel, SemanticDeclLevel, SemanticModel,
+    DbIndex, InFiled, LuaMember, LuaMemberOwner, LuaMultiLineUnion, LuaSemanticDeclId, LuaType,
+    LuaUnionType, RenderLevel, SemanticDeclLevel, SemanticModel, format_union_type,
 };
 
 use emmylua_code_analysis::humanize_type;

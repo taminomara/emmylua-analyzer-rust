@@ -6,6 +6,8 @@ use rowan::NodeOrToken;
 use smol_str::SmolStr;
 
 use crate::{
+    InferFailReason, LuaFunctionType, LuaMemberInfo, LuaMemberKey, LuaMemberOwner, LuaObjectType,
+    LuaSemanticDeclId, LuaTupleType, LuaUnionType, SemanticDeclLevel, VariadicType,
     check_type_compact,
     db_index::{DbIndex, LuaGenericType, LuaType},
     infer_node_semantic_decl,
@@ -14,8 +16,6 @@ use crate::{
         member::{find_index_operations, get_member_map},
         type_check::is_sub_type_of,
     },
-    InferFailReason, LuaFunctionType, LuaMemberInfo, LuaMemberKey, LuaMemberOwner, LuaObjectType,
-    LuaSemanticDeclId, LuaTupleType, LuaUnionType, SemanticDeclLevel, VariadicType,
 };
 
 use super::type_substitutor::TypeSubstitutor;

@@ -6,13 +6,13 @@ use std::marker::PhantomData;
 use rowan::{TextRange, TextSize, WalkEvent};
 
 use crate::{
-    kind::{LuaSyntaxKind, LuaTokenKind},
     LuaAstPtr,
+    kind::{LuaSyntaxKind, LuaTokenKind},
 };
 
 use super::LuaSyntaxId;
 pub use super::{
-    node::*, LuaSyntaxElementChildren, LuaSyntaxNode, LuaSyntaxNodeChildren, LuaSyntaxToken,
+    LuaSyntaxElementChildren, LuaSyntaxNode, LuaSyntaxNodeChildren, LuaSyntaxToken, node::*,
 };
 pub use comment_trait::*;
 pub use description_trait::*;

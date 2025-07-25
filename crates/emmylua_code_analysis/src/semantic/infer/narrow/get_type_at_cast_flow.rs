@@ -3,16 +3,15 @@ use emmylua_parser::{
 };
 
 use crate::{
-    semantic::infer::{
-        narrow::{
-            condition_flow::InferConditionFlow, get_single_antecedent,
-            get_type_at_flow::get_type_at_flow, var_ref_id::get_var_expr_var_ref_id,
-            ResultTypeOrContinue,
-        },
-        VarRefId,
-    },
     DbIndex, FileId, FlowId, FlowNode, FlowNodeKind, FlowTree, InFiled, InferFailReason,
     LuaInferCache, LuaType, LuaTypeOwner, TypeOps,
+    semantic::infer::{
+        VarRefId,
+        narrow::{
+            ResultTypeOrContinue, condition_flow::InferConditionFlow, get_single_antecedent,
+            get_type_at_flow::get_type_at_flow, var_ref_id::get_var_expr_var_ref_id,
+        },
+    },
 };
 
 pub fn get_type_at_cast_flow(

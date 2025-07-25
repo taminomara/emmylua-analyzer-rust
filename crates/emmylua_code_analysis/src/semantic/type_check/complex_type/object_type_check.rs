@@ -1,8 +1,7 @@
 use crate::{
-    humanize_type,
-    semantic::type_check::{check_general_type_compact, type_check_guard::TypeCheckGuard},
     DbIndex, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaTupleType, LuaType, RenderLevel,
-    TypeCheckFailReason, TypeCheckResult,
+    TypeCheckFailReason, TypeCheckResult, humanize_type,
+    semantic::type_check::{check_general_type_compact, type_check_guard::TypeCheckGuard},
 };
 
 pub fn check_object_type_compact(

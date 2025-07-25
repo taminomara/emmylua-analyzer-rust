@@ -3,12 +3,12 @@ use std::{error::Error, future::Future};
 use log::error;
 use lsp_server::Notification;
 use lsp_types::{
+    CancelParams, NumberOrString,
     notification::{
         Cancel, DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles,
         DidCloseTextDocument, DidOpenTextDocument, DidRenameFiles, DidSaveTextDocument,
         Notification as lsp_notification, SetTrace,
     },
-    CancelParams, NumberOrString,
 };
 use serde::de::DeserializeOwned;
 

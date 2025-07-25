@@ -4,9 +4,9 @@ use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaIndexExpr, LuaSyntaxKind};
 use rowan::NodeOrToken;
 
 use crate::{
-    infer_node_semantic_decl, semantic::semantic_info::infer_token_semantic_decl, DbIndex, LuaDecl,
-    LuaDeclId, LuaInferCache, LuaSemanticDeclId, LuaType, ModuleInfo, SemanticDeclLevel,
-    SemanticModel,
+    DbIndex, LuaDecl, LuaDeclId, LuaInferCache, LuaSemanticDeclId, LuaType, ModuleInfo,
+    SemanticDeclLevel, SemanticModel, infer_node_semantic_decl,
+    semantic::semantic_info::infer_token_semantic_decl,
 };
 
 pub fn enum_variable_is_param(
@@ -40,11 +40,7 @@ pub fn enum_variable_is_param(
     let origin_decl_id = find_enum_origin(db, cache, decl_id, &mut decl_guard).unwrap_or(decl_id);
     let decl = db.get_decl_index().get_decl(&origin_decl_id)?;
 
-    if decl.is_param() {
-        Some(())
-    } else {
-        None
-    }
+    if decl.is_param() { Some(()) } else { None }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

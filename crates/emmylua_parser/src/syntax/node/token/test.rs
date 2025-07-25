@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
     use crate::{
+        LuaSyntaxNode, LuaSyntaxToken,
         kind::{LuaSyntaxKind, LuaTokenKind},
         syntax::node::{float_token_value, int_token_value, string_token_value},
-        LuaSyntaxNode, LuaSyntaxToken,
     };
 
     fn get_token(text: &str, kind: LuaTokenKind) -> LuaSyntaxToken {

@@ -3,15 +3,15 @@ use std::sync::Arc;
 use emmylua_parser::{LuaAstNode, LuaIndexMemberExpr, LuaTableExpr, LuaVarExpr};
 
 use crate::{
-    get_real_type, infer_call_expr_func, infer_expr, infer_table_should_be, DbIndex,
-    InferFailReason, InferGuard, LuaDocParamInfo, LuaDocReturnInfo, LuaFunctionType, LuaInferCache,
-    LuaSignature, LuaType, SignatureReturnStatus, TypeOps,
+    DbIndex, InferFailReason, InferGuard, LuaDocParamInfo, LuaDocReturnInfo, LuaFunctionType,
+    LuaInferCache, LuaSignature, LuaType, SignatureReturnStatus, TypeOps, get_real_type,
+    infer_call_expr_func, infer_expr, infer_table_should_be,
 };
 
 use super::{
-    find_decl_function::find_decl_function_type, resolve::try_resolve_return_point, ResolveResult,
-    UnResolveCallClosureParams, UnResolveClosureReturn, UnResolveParentAst,
-    UnResolveParentClosureParams, UnResolveReturn,
+    ResolveResult, UnResolveCallClosureParams, UnResolveClosureReturn, UnResolveParentAst,
+    UnResolveParentClosureParams, UnResolveReturn, find_decl_function::find_decl_function_type,
+    resolve::try_resolve_return_point,
 };
 
 pub fn try_resolve_call_closure_params(

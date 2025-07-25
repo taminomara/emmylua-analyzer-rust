@@ -4,7 +4,7 @@ use emmylua_parser::{LuaAstNode, LuaTableExpr};
 
 use crate::{DiagnosticCode, LuaMemberOwner, LuaType, LuaTypeCache, LuaTypeDeclId, SemanticModel};
 
-use super::{humanize_lint_type, Checker, DiagnosticContext};
+use super::{Checker, DiagnosticContext, humanize_lint_type};
 use itertools::Itertools;
 
 pub struct MissingFieldsChecker;

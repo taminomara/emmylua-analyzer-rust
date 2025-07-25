@@ -264,7 +264,7 @@ fn parse_tag_field(p: &mut LuaDocParser) -> ParseResult {
                     current = p.current_token()
                 ),
                 p.current_token_range(),
-            ))
+            ));
         }
     }
     if_token_bump(p, LuaTokenKind::TkDocQuestion);

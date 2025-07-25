@@ -3,16 +3,16 @@ use std::collections::HashSet;
 use smol_str::SmolStr;
 
 use crate::{
-    semantic::{
-        generic::{instantiate_type_generic, TypeSubstitutor},
-        InferGuard,
-    },
     DbIndex, FileId, LuaGenericType, LuaInstanceType, LuaIntersectionType, LuaMemberKey,
     LuaMemberOwner, LuaObjectType, LuaSemanticDeclId, LuaTupleType, LuaType, LuaTypeDeclId,
     LuaUnionType,
+    semantic::{
+        InferGuard,
+        generic::{TypeSubstitutor, instantiate_type_generic},
+    },
 };
 
-use super::{get_buildin_type_map_type_id, FindMembersResult, LuaMemberInfo};
+use super::{FindMembersResult, LuaMemberInfo, get_buildin_type_map_type_id};
 
 #[derive(Debug, Clone)]
 pub enum FindMemberFilter {

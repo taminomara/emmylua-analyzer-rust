@@ -1,6 +1,6 @@
 mod false_or_nil_type;
 
-use crate::{get_real_type, semantic::type_check::is_sub_type_of, DbIndex, LuaType, TypeOps};
+use crate::{DbIndex, LuaType, TypeOps, get_real_type, semantic::type_check::is_sub_type_of};
 pub use false_or_nil_type::{narrow_false_or_nil, remove_false_or_nil};
 
 // need to be optimized

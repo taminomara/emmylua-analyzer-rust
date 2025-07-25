@@ -4,7 +4,7 @@ use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaDocTagParam, LuaDocTagReturn
 
 use crate::{DiagnosticCode, LuaSemanticDeclId, LuaType, SemanticDeclLevel, SemanticModel};
 
-use super::{get_closure_expr_comment, get_return_stats, Checker, DiagnosticContext};
+use super::{Checker, DiagnosticContext, get_closure_expr_comment, get_return_stats};
 
 pub struct IncompleteSignatureDocChecker;
 

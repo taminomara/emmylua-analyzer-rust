@@ -5,6 +5,7 @@ use emmylua_parser::{
 };
 
 use crate::{
+    AnalyzeError, DiagnosticCode, FlowId, FlowNodeKind, LuaClosureId, LuaDeclId,
     compilation::analyzer::flow::{
         bind_analyze::{
             bind_block, bind_each_child, bind_node,
@@ -13,7 +14,6 @@ use crate::{
         },
         binder::FlowBinder,
     },
-    AnalyzeError, DiagnosticCode, FlowId, FlowNodeKind, LuaClosureId, LuaDeclId,
 };
 
 pub fn bind_local_stat(

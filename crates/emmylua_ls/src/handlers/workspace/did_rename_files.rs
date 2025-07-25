@@ -5,8 +5,8 @@ use std::{
 };
 
 use emmylua_code_analysis::{
-    file_path_to_uri, read_file_with_encoding, uri_to_file_path, FileId, LuaCompilation,
-    LuaModuleIndex, LuaType, SemanticModel, WorkspaceId,
+    FileId, LuaCompilation, LuaModuleIndex, LuaType, SemanticModel, WorkspaceId, file_path_to_uri,
+    read_file_with_encoding, uri_to_file_path,
 };
 use emmylua_parser::{LuaAstNode, LuaCallExpr};
 use lsp_types::{

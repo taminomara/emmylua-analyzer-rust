@@ -15,7 +15,7 @@ mod emmy_fix_format;
 
 pub use emmy_add_doc_tag::make_auto_doc_tag_command;
 pub use emmy_auto_require::make_auto_require;
-pub use emmy_disable_code::{make_disable_code_command, DisableAction};
+pub use emmy_disable_code::{DisableAction, make_disable_code_command};
 
 pub trait CommandSpec {
     const COMMAND: &str;

@@ -6,22 +6,22 @@ use emmylua_parser::{
 };
 
 use super::{
+    DocAnalyzer,
     infer_type::infer_type,
     preprocess_description,
     tags::{find_owner_closure, get_owner_id_or_report},
-    DocAnalyzer,
 };
 use crate::compilation::analyzer::doc::tags::{
     find_owner_closure_or_report, get_owner_id, report_orphan_tag,
 };
 use crate::{
+    InFiled, InferFailReason, LuaOperatorMetaMethod, LuaTypeCache, LuaTypeOwner, OperatorFunction,
+    SignatureReturnStatus, TypeOps,
     compilation::analyzer::{bind_type::bind_type, unresolve::UnResolveModuleRef},
     db_index::{
         LuaDeclId, LuaDocParamInfo, LuaDocReturnInfo, LuaMemberId, LuaOperator, LuaSemanticDeclId,
         LuaSignatureId, LuaType,
     },
-    InFiled, InferFailReason, LuaOperatorMetaMethod, LuaTypeCache, LuaTypeOwner, OperatorFunction,
-    SignatureReturnStatus, TypeOps,
 };
 
 pub fn analyze_type(analyzer: &mut DocAnalyzer, tag: LuaDocTagType) -> Option<()> {

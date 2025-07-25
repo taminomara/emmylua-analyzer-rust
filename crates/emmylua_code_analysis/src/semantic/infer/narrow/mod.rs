@@ -5,18 +5,17 @@ mod narrow_type;
 mod var_ref_id;
 
 use crate::{
-    infer_param,
-    semantic::infer::{
-        infer_name::{find_decl_member_type, infer_global_type},
-        InferResult,
-    },
     CacheEntry, DbIndex, FlowAntecedent, FlowId, FlowNode, FlowTree, InferFailReason,
-    LuaInferCache, LuaType,
+    LuaInferCache, LuaType, infer_param,
+    semantic::infer::{
+        InferResult,
+        infer_name::{find_decl_member_type, infer_global_type},
+    },
 };
 use emmylua_parser::{LuaAstNode, LuaChunk, LuaExpr};
 pub use get_type_at_cast_flow::get_type_at_call_expr_inline_cast;
 pub use narrow_type::{narrow_down_type, narrow_false_or_nil, remove_false_or_nil};
-pub use var_ref_id::{get_var_expr_var_ref_id, VarRefId};
+pub use var_ref_id::{VarRefId, get_var_expr_var_ref_id};
 
 pub fn infer_expr_narrow_type(
     db: &DbIndex,

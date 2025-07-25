@@ -1,7 +1,7 @@
 mod build_call_hierarchy;
 
 use build_call_hierarchy::{
-    build_call_hierarchy_item, build_incoming_hierarchy, CallHierarchyItemData,
+    CallHierarchyItemData, build_call_hierarchy_item, build_incoming_hierarchy,
 };
 use emmylua_code_analysis::SemanticDeclLevel;
 use emmylua_parser::{LuaAstNode, LuaTokenKind};

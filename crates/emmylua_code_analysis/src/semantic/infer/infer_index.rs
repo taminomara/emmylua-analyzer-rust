@@ -9,27 +9,27 @@ use rowan::TextRange;
 use smol_str::SmolStr;
 
 use crate::{
+    CacheEntry, InFiled, LuaArrayLen, LuaArrayType, LuaDeclOrMemberId, LuaInferCache,
+    LuaInstanceType, LuaMemberOwner, LuaOperatorOwner, TypeOps,
     db_index::{
         DbIndex, LuaGenericType, LuaIntersectionType, LuaMemberKey, LuaObjectType,
         LuaOperatorMetaMethod, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType,
     },
     enum_variable_is_param,
     semantic::{
-        generic::{instantiate_type_generic, TypeSubstitutor},
+        InferGuard,
+        generic::{TypeSubstitutor, instantiate_type_generic},
         infer::{
+            VarRefId,
             infer_name::get_name_expr_var_ref_id,
             narrow::{get_var_expr_var_ref_id, infer_expr_narrow_type},
-            VarRefId,
         },
         member::get_buildin_type_map_type_id,
         type_check::{self, check_type_compact},
-        InferGuard,
     },
-    CacheEntry, InFiled, LuaArrayLen, LuaArrayType, LuaDeclOrMemberId, LuaInferCache,
-    LuaInstanceType, LuaMemberOwner, LuaOperatorOwner, TypeOps,
 };
 
-use super::{infer_expr, infer_name::infer_global_type, InferFailReason, InferResult};
+use super::{InferFailReason, InferResult, infer_expr, infer_name::infer_global_type};
 
 pub fn infer_index_expr(
     db: &DbIndex,

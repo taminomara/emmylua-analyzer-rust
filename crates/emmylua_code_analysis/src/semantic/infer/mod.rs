@@ -30,11 +30,11 @@ use rowan::TextRange;
 use smol_str::SmolStr;
 
 use crate::{
-    db_index::{DbIndex, LuaOperator, LuaOperatorMetaMethod, LuaSignatureId, LuaType},
     InFiled, InferGuard, LuaMemberKey, VariadicType,
+    db_index::{DbIndex, LuaOperator, LuaOperatorMetaMethod, LuaSignatureId, LuaType},
 };
 
-use super::{member::infer_raw_member_type, CacheEntry, LuaInferCache};
+use super::{CacheEntry, LuaInferCache, member::infer_raw_member_type};
 
 pub type InferResult = Result<LuaType, InferFailReason>;
 pub use infer_call::InferCallFuncResult;

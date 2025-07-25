@@ -11,7 +11,7 @@ use super::actions::{
 };
 use crate::handlers::{
     code_actions::actions::build_need_check_nil,
-    command::{make_disable_code_command, DisableAction},
+    command::{DisableAction, make_disable_code_command},
 };
 
 pub fn build_actions(

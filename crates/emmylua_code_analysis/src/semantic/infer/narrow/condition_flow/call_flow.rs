@@ -3,18 +3,17 @@ use std::{ops::Deref, sync::Arc};
 use emmylua_parser::{LuaCallExpr, LuaChunk, LuaExpr};
 
 use crate::{
-    infer_call_expr_func, infer_expr,
-    semantic::infer::{
-        narrow::{
-            condition_flow::InferConditionFlow, get_single_antecedent,
-            get_type_at_cast_flow::cast_type, get_type_at_flow::get_type_at_flow,
-            narrow_false_or_nil, remove_false_or_nil, var_ref_id::get_var_expr_var_ref_id,
-            ResultTypeOrContinue,
-        },
-        VarRefId,
-    },
     DbIndex, FlowNode, FlowTree, InferFailReason, InferGuard, LuaAliasCallKind, LuaAliasCallType,
     LuaFunctionType, LuaInferCache, LuaSignatureCast, LuaSignatureId, LuaType, TypeOps,
+    infer_call_expr_func, infer_expr,
+    semantic::infer::{
+        VarRefId,
+        narrow::{
+            ResultTypeOrContinue, condition_flow::InferConditionFlow, get_single_antecedent,
+            get_type_at_cast_flow::cast_type, get_type_at_flow::get_type_at_flow,
+            narrow_false_or_nil, remove_false_or_nil, var_ref_id::get_var_expr_var_ref_id,
+        },
+    },
 };
 
 pub fn get_type_at_call_expr(

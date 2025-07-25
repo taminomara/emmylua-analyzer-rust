@@ -6,16 +6,16 @@ use emmylua_parser::{
 };
 
 use crate::{
+    AnalyzeError, DiagnosticCode, LuaFunctionType, LuaMemberFeature, LuaMemberId, LuaSignatureId,
+    LuaTypeCache, OperatorFunction, TypeOps,
     compilation::analyzer::doc::preprocess_description,
     db_index::{
         LuaMember, LuaMemberKey, LuaMemberOwner, LuaOperator, LuaOperatorMetaMethod,
         LuaSemanticDeclId, LuaType,
     },
-    AnalyzeError, DiagnosticCode, LuaFunctionType, LuaMemberFeature, LuaMemberId, LuaSignatureId,
-    LuaTypeCache, OperatorFunction, TypeOps,
 };
 
-use super::{infer_type::infer_type, DocAnalyzer};
+use super::{DocAnalyzer, infer_type::infer_type};
 
 pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<()> {
     let current_type_id = match &analyzer.current_type_id {

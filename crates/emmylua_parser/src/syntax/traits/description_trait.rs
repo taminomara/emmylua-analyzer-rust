@@ -92,7 +92,7 @@ fn find_inline_description(node: &LuaSyntaxNode) -> Option<LuaSyntaxNode> {
             match sibling.kind() {
                 LuaKind::Token(LuaTokenKind::TkWhitespace) => {}
                 LuaKind::Syntax(LuaSyntaxKind::DocDescription) => {
-                    return sibling.clone().into_node()
+                    return sibling.clone().into_node();
                 }
                 _ => {
                     return None;

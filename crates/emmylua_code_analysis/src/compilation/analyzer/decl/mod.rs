@@ -13,8 +13,8 @@ use emmylua_parser::{LuaAst, LuaAstNode, LuaChunk, LuaFuncStat, LuaSyntaxKind, L
 use rowan::{TextRange, TextSize, WalkEvent};
 
 use crate::{
-    db_index::{LuaDecl, LuaDeclId, LuaDeclarationTree, LuaScopeId},
     FileId,
+    db_index::{LuaDecl, LuaDeclId, LuaDeclarationTree, LuaScopeId},
 };
 
 pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {

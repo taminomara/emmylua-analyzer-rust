@@ -1,19 +1,20 @@
 use std::collections::HashSet;
 
 use emmylua_code_analysis::{
-    humanize_type, try_extract_signature_id_from_field, DbIndex, LuaDocReturnInfo, LuaFunctionType,
-    LuaMember, LuaMemberKey, LuaMemberOwner, LuaSemanticDeclId, LuaSignature, LuaSignatureId,
-    LuaType, RenderLevel,
+    DbIndex, LuaDocReturnInfo, LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner,
+    LuaSemanticDeclId, LuaSignature, LuaSignatureId, LuaType, RenderLevel, humanize_type,
+    try_extract_signature_id_from_field,
 };
 
 use crate::handlers::{
     definition::extract_semantic_decl_from_signature,
     hover::{
+        HoverBuilder,
         hover_humanize::{
-            extract_description_from_property_owner, extract_owner_name_from_element,
-            hover_humanize_type, DescriptionInfo,
+            DescriptionInfo, extract_description_from_property_owner,
+            extract_owner_name_from_element, hover_humanize_type,
         },
-        infer_prefix_global_name, HoverBuilder,
+        infer_prefix_global_name,
     },
 };
 

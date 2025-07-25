@@ -1,7 +1,7 @@
 [package]
 name = "emmylua_check"
-version = "0.9.1"
-edition = "2021"
+version = "0.10.0"
+edition = "2024"
 authors = ["CppCXY"]
 description = "A command-line tool for checking lua code."
 license = "MIT"

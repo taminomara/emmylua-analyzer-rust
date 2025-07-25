@@ -4,12 +4,12 @@ use emmylua_parser::{
 use rowan::{NodeOrToken, TextRange};
 
 use crate::{
-    diagnostic::checker::{assign_type_mismatch::check_table_expr, humanize_lint_type},
     DiagnosticCode, LuaSemanticDeclId, LuaSignatureId, LuaType, SemanticDeclLevel, SemanticModel,
     SignatureReturnStatus, TypeCheckFailReason, TypeCheckResult,
+    diagnostic::checker::{assign_type_mismatch::check_table_expr, humanize_lint_type},
 };
 
-use super::{get_return_stats, Checker, DiagnosticContext};
+use super::{Checker, DiagnosticContext, get_return_stats};
 
 pub struct ReturnTypeMismatch;
 

@@ -3,9 +3,9 @@ use std::collections::HashMap;
 use emmylua_parser::LuaAstNode;
 
 use crate::{
-    compilation::analyzer::infer_manager::InferCacheManager, infer_expr, infer_param, DbIndex,
-    InFiled, InferFailReason, LuaDocReturnInfo, LuaSemanticDeclId, LuaType, LuaTypeCache,
-    SignatureReturnStatus,
+    DbIndex, InFiled, InferFailReason, LuaDocReturnInfo, LuaSemanticDeclId, LuaType, LuaTypeCache,
+    SignatureReturnStatus, compilation::analyzer::infer_manager::InferCacheManager, infer_expr,
+    infer_param,
 };
 
 use super::UnResolve;

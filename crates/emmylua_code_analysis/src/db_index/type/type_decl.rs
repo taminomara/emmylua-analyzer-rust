@@ -1,11 +1,11 @@
-use flagset::{flags, FlagSet};
+use flagset::{FlagSet, flags};
 use internment::ArcIntern;
 use rowan::TextRange;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
 
 use crate::{
-    instantiate_type_generic, DbIndex, FileId, LuaMemberKey, LuaMemberOwner, TypeSubstitutor,
+    DbIndex, FileId, LuaMemberKey, LuaMemberOwner, TypeSubstitutor, instantiate_type_generic,
 };
 
 use super::{LuaType, LuaUnionType};

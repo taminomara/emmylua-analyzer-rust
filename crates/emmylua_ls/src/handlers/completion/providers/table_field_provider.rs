@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use emmylua_code_analysis::{get_real_type, InferGuard, LuaMemberInfo, LuaMemberKey, LuaType};
+use emmylua_code_analysis::{InferGuard, LuaMemberInfo, LuaMemberKey, LuaType, get_real_type};
 use emmylua_parser::{LuaAst, LuaAstNode, LuaKind, LuaTableExpr, LuaTableField, LuaTokenKind};
 use lsp_types::{CompletionItem, InsertTextFormat, InsertTextMode};
 use rowan::NodeOrToken;

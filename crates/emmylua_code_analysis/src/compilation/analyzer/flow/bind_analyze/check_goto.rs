@@ -1,6 +1,6 @@
 use emmylua_parser::LuaAstToken;
 
-use crate::{compilation::analyzer::flow::binder::FlowBinder, AnalyzeError, DiagnosticCode};
+use crate::{AnalyzeError, DiagnosticCode, compilation::analyzer::flow::binder::FlowBinder};
 
 pub fn check_goto_label(binder: &mut FlowBinder) {
     let goto_stat_caches = binder.get_goto_caches();

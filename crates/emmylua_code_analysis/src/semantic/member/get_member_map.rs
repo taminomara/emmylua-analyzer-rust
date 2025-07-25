@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use crate::{DbIndex, LuaMemberKey, LuaType};
 
 use super::{
-    find_members::{self},
     LuaMemberInfo,
+    find_members::{self},
 };
 
 pub fn get_member_map(

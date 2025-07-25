@@ -6,6 +6,7 @@ mod stats;
 use emmylua_parser::{LuaAst, LuaAstNode, LuaBlock, LuaChunk, LuaExpr};
 
 use crate::{
+    FlowAntecedent, FlowId, FlowNodeKind,
     compilation::analyzer::flow::{
         bind_analyze::{
             comment::bind_comment,
@@ -19,7 +20,6 @@ use crate::{
         },
         binder::FlowBinder,
     },
-    FlowAntecedent, FlowId, FlowNodeKind,
 };
 pub use check_goto::check_goto_label;
 

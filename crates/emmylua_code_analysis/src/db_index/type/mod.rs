@@ -8,7 +8,7 @@ mod types;
 
 use super::traits::LuaIndex;
 use crate::{DbIndex, FileId, InFiled};
-pub use humanize_type::{format_union_type, humanize_type, RenderLevel};
+pub use humanize_type::{RenderLevel, format_union_type, humanize_type};
 use std::collections::{HashMap, HashSet};
 pub use type_decl::{
     LuaDeclLocation, LuaDeclTypeKind, LuaTypeAttribute, LuaTypeDecl, LuaTypeDeclId,

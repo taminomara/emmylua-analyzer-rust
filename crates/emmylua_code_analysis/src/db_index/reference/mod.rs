@@ -11,7 +11,7 @@ use string_reference::StringReference;
 
 use crate::{FileId, InFiled};
 
-use super::{traits::LuaIndex, LuaDeclId, LuaMemberKey, LuaTypeDeclId};
+use super::{LuaDeclId, LuaMemberKey, LuaTypeDeclId, traits::LuaIndex};
 
 #[derive(Debug)]
 pub struct LuaReferenceIndex {

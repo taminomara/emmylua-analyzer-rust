@@ -3,8 +3,8 @@ use emmylua_parser::LuaSyntaxNode;
 use crate::{DbIndex, LuaMemberId, LuaSemanticDeclId};
 
 use super::{
-    member::find_member_origin_owner, semantic_info::infer_node_semantic_decl, LuaInferCache,
-    SemanticDeclLevel,
+    LuaInferCache, SemanticDeclLevel, member::find_member_origin_owner,
+    semantic_info::infer_node_semantic_decl,
 };
 
 pub fn is_reference_to(

@@ -1,6 +1,6 @@
 use crate::{
-    kind::{LuaSyntaxKind, LuaTokenKind},
     LuaKind,
+    kind::{LuaSyntaxKind, LuaTokenKind},
 };
 
 use super::{LuaAstNode, LuaComment, LuaSyntaxNode};

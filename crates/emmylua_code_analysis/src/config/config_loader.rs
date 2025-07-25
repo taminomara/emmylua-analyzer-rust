@@ -4,7 +4,7 @@ use serde_json::Value;
 
 use crate::read_file_with_encoding;
 
-use super::{flatten_config::FlattenConfigObject, Emmyrc};
+use super::{Emmyrc, flatten_config::FlattenConfigObject};
 
 pub fn load_configs(config_files: Vec<PathBuf>, partial_emmyrcs: Option<Vec<Value>>) -> Emmyrc {
     let mut config_jsons = Vec::new();

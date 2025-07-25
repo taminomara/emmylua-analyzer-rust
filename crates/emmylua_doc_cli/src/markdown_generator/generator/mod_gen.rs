@@ -1,8 +1,8 @@
 use std::path::Path;
 
 use emmylua_code_analysis::{
-    humanize_type, DbIndex, FileId, LuaMemberKey, LuaMemberOwner, LuaSemanticDeclId, LuaType,
-    LuaTypeCache, ModuleInfo, RenderLevel,
+    DbIndex, FileId, LuaMemberKey, LuaMemberOwner, LuaSemanticDeclId, LuaType, LuaTypeCache,
+    ModuleInfo, RenderLevel, humanize_type,
 };
 use emmylua_parser::VisibilityKind;
 use tera::Tera;

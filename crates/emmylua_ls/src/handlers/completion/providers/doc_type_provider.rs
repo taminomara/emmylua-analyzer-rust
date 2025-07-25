@@ -47,7 +47,7 @@ fn check_can_add_type_completion(builder: &CompletionBuilder) -> Option<()> {
             let left_token = builder.trigger_token.prev_token()?;
             match left_token.kind().into() {
                 LuaTokenKind::TkTagReturn | LuaTokenKind::TkTagType | LuaTokenKind::TkTagSee => {
-                    return Some(())
+                    return Some(());
                 }
                 LuaTokenKind::TkName => {
                     let parent = left_token.parent()?;

@@ -10,11 +10,11 @@ use rowan::TextRange;
 use smol_str::SmolStr;
 
 use crate::{
-    db_index::{r#type::type_visit_trait::TypeVisitTrait, LuaMemberKey, LuaSignatureId},
     DbIndex, InFiled, SemanticModel,
+    db_index::{LuaMemberKey, LuaSignatureId, r#type::type_visit_trait::TypeVisitTrait},
 };
 
-use super::{type_decl::LuaTypeDeclId, TypeOps};
+use super::{TypeOps, type_decl::LuaTypeDeclId};
 
 #[derive(Debug, Clone)]
 pub enum LuaType {

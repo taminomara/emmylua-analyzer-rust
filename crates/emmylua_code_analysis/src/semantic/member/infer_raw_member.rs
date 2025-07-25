@@ -3,11 +3,11 @@ use std::sync::Arc;
 use smol_str::SmolStr;
 
 use crate::{
-    check_type_compact, DbIndex, InferFailReason, InferGuard, LuaMemberKey, LuaMemberOwner,
-    LuaObjectType, LuaTupleType, LuaType, LuaTypeDeclId, TypeOps,
+    DbIndex, InferFailReason, InferGuard, LuaMemberKey, LuaMemberOwner, LuaObjectType,
+    LuaTupleType, LuaType, LuaTypeDeclId, TypeOps, check_type_compact,
 };
 
-use super::{get_buildin_type_map_type_id, RawGetMemberTypeResult};
+use super::{RawGetMemberTypeResult, get_buildin_type_map_type_id};
 
 #[allow(unused)]
 pub fn infer_raw_member_type(

@@ -1,4 +1,4 @@
-use emmylua_code_analysis::{humanize_type, DbIndex, LuaType, RenderLevel};
+use emmylua_code_analysis::{DbIndex, LuaType, RenderLevel, humanize_type};
 
 pub fn render_typ(db: &DbIndex, typ: &LuaType, level: RenderLevel) -> String {
     match typ {

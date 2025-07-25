@@ -10,15 +10,15 @@ use rowan::TextRange;
 use smol_str::SmolStr;
 
 use crate::{
+    DiagnosticCode, GenericTpl, InFiled, LuaAliasCallKind, LuaArrayLen, LuaArrayType,
+    LuaMultiLineUnion, LuaTupleStatus, LuaTypeDeclId, TypeOps, VariadicType,
     db_index::{
         AnalyzeError, LuaAliasCallType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey,
         LuaIntersectionType, LuaObjectType, LuaStringTplType, LuaTupleType, LuaType,
     },
-    DiagnosticCode, GenericTpl, InFiled, LuaAliasCallKind, LuaArrayLen, LuaArrayType,
-    LuaMultiLineUnion, LuaTupleStatus, LuaTypeDeclId, TypeOps, VariadicType,
 };
 
-use super::{preprocess_description, DocAnalyzer};
+use super::{DocAnalyzer, preprocess_description};
 
 pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
     match &node {
@@ -54,7 +54,7 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
             if let Some(literal_token) = literal.get_literal() {
                 match literal_token {
                     LuaLiteralToken::String(str_token) => {
-                        return LuaType::DocStringConst(SmolStr::new(str_token.get_value()).into())
+                        return LuaType::DocStringConst(SmolStr::new(str_token.get_value()).into());
                     }
                     LuaLiteralToken::Number(number_token) => {
                         if number_token.is_int() {
@@ -64,7 +64,7 @@ pub fn infer_type(analyzer: &mut DocAnalyzer, node: LuaDocType) -> LuaType {
                         }
                     }
                     LuaLiteralToken::Bool(bool_token) => {
-                        return LuaType::DocBooleanConst(bool_token.is_true())
+                        return LuaType::DocBooleanConst(bool_token.is_true());
                     }
                     LuaLiteralToken::Nil(_) => return LuaType::Nil,
                     // todo

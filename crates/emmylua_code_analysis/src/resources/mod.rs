@@ -3,9 +3,9 @@ mod best_resource_path;
 use std::path::{Path, PathBuf};
 
 use best_resource_path::get_best_resources_dir;
-use include_dir::{include_dir, Dir, DirEntry};
+use include_dir::{Dir, DirEntry, include_dir};
 
-use crate::{load_workspace_files, LuaFileInfo};
+use crate::{LuaFileInfo, load_workspace_files};
 
 static RESOURCE_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/resources");
 const VERSION: &str = env!("CARGO_PKG_VERSION");

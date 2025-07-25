@@ -3,11 +3,12 @@ use emmylua_parser::{
 };
 
 use crate::{
-    db_index::{LuaMemberId, LuaSemanticDeclId, LuaSignatureId},
     AnalyzeError, DiagnosticCode, LuaDeclId,
+    db_index::{LuaMemberId, LuaSemanticDeclId, LuaSignatureId},
 };
 
 use super::{
+    DocAnalyzer,
     diagnostic_tags::analyze_diagnostic,
     field_or_operator_def_tags::{analyze_field, analyze_operator},
     property_tags::{
@@ -19,7 +20,6 @@ use super::{
         analyze_as, analyze_cast, analyze_module, analyze_other, analyze_overload, analyze_param,
         analyze_return, analyze_return_cast, analyze_see, analyze_type,
     },
-    DocAnalyzer,
 };
 
 pub fn analyze_tag(analyzer: &mut DocAnalyzer, tag: LuaDocTag) -> Option<()> {

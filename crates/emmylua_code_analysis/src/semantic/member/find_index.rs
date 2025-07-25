@@ -1,13 +1,13 @@
 use std::collections::HashSet;
 
 use crate::{
-    semantic::{
-        generic::{instantiate_type_generic, TypeSubstitutor},
-        InferGuard,
-    },
     DbIndex, InFiled, LuaGenericType, LuaIntersectionType, LuaMemberKey, LuaMemberOwner,
     LuaObjectType, LuaOperatorMetaMethod, LuaOperatorOwner, LuaSemanticDeclId, LuaType,
     LuaTypeDeclId, LuaUnionType, TypeOps,
+    semantic::{
+        InferGuard,
+        generic::{TypeSubstitutor, instantiate_type_generic},
+    },
 };
 
 use super::{FindMembersResult, LuaMemberInfo};

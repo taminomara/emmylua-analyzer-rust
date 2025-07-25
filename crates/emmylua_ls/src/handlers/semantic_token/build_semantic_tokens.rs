@@ -1,6 +1,6 @@
 use emmylua_code_analysis::{
-    check_export_visibility, parse_require_module_info, LuaDecl, LuaDeclExtra, LuaMemberId,
-    LuaMemberOwner, LuaSemanticDeclId, LuaType, LuaTypeDeclId, SemanticDeclLevel, SemanticModel,
+    LuaDecl, LuaDeclExtra, LuaMemberId, LuaMemberOwner, LuaSemanticDeclId, LuaType, LuaTypeDeclId,
+    SemanticDeclLevel, SemanticModel, check_export_visibility, parse_require_module_info,
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr,
@@ -13,7 +13,7 @@ use rowan::NodeOrToken;
 use crate::context::ClientId;
 
 use super::{
-    semantic_token_builder::SemanticBuilder, SEMANTIC_TOKEN_MODIFIERS, SEMANTIC_TOKEN_TYPES,
+    SEMANTIC_TOKEN_MODIFIERS, SEMANTIC_TOKEN_TYPES, semantic_token_builder::SemanticBuilder,
 };
 
 pub fn build_semantic_tokens(

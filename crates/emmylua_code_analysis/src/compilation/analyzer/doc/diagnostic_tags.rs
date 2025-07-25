@@ -4,8 +4,8 @@ use emmylua_parser::{LuaAstNode, LuaAstToken, LuaBlock, LuaChunk, LuaDocTagDiagn
 use rowan::TextRange;
 
 use crate::{
-    db_index::{DiagnosticAction, DiagnosticActionKind},
     DiagnosticCode,
+    db_index::{DiagnosticAction, DiagnosticActionKind},
 };
 
 use super::DocAnalyzer;

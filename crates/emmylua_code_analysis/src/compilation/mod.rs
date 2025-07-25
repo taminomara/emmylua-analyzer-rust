@@ -4,7 +4,7 @@ mod test;
 use std::sync::Arc;
 
 use crate::{
-    db_index::DbIndex, semantic::SemanticModel, Emmyrc, FileId, InFiled, LuaIndex, LuaInferCache,
+    Emmyrc, FileId, InFiled, LuaIndex, LuaInferCache, db_index::DbIndex, semantic::SemanticModel,
 };
 
 #[derive(Debug)]

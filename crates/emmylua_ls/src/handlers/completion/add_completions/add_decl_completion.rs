@@ -6,7 +6,7 @@ use crate::handlers::completion::{
 };
 
 use super::{
-    check_visibility, get_completion_kind, get_description, get_detail, is_deprecated, CallDisplay,
+    CallDisplay, check_visibility, get_completion_kind, get_description, get_detail, is_deprecated,
 };
 
 pub fn add_decl_completion(
@@ -55,9 +55,5 @@ fn count_function_overloads(db: &DbIndex, typ: &LuaType) -> Option<usize> {
     if count > 1 {
         count -= 1;
     }
-    if count == 0 {
-        None
-    } else {
-        Some(count)
-    }
+    if count == 0 { None } else { Some(count) }
 }

@@ -1,14 +1,14 @@
 use std::path::Path;
 
 use emmylua_code_analysis::{
-    humanize_type, DbIndex, LuaDecl, LuaDeclId, LuaMemberOwner, LuaSemanticDeclId, LuaType,
-    RenderLevel,
+    DbIndex, LuaDecl, LuaDeclId, LuaMemberOwner, LuaSemanticDeclId, LuaType, RenderLevel,
+    humanize_type,
 };
 use tera::Tera;
 
 use crate::markdown_generator::{
     escape_type_name,
-    gen::mod_gen::generate_member_owner_module,
+    generator::mod_gen::generate_member_owner_module,
     markdown_types::{Doc, IndexStruct, MkdocsIndex},
     render::{render_const_type, render_function_type},
 };

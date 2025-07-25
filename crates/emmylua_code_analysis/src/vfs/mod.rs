@@ -8,7 +8,7 @@ pub use document::LuaDocument;
 use emmylua_parser::{LineIndex, LuaParseError, LuaParser, LuaSyntaxTree};
 pub use file_id::{FileId, InFiled};
 pub use file_uri_handler::{file_path_to_uri, uri_to_file_path};
-pub use loader::{load_workspace_files, read_file_with_encoding, LuaFileInfo};
+pub use loader::{LuaFileInfo, load_workspace_files, read_file_with_encoding};
 use lsp_types::Uri;
 use rowan::NodeCache;
 use std::collections::HashMap;
@@ -118,11 +118,7 @@ impl Vfs {
 
     pub fn get_file_content(&self, id: &FileId) -> Option<&String> {
         let opt = &self.file_data[id.id as usize];
-        if let Some(s) = opt {
-            Some(s)
-        } else {
-            None
-        }
+        if let Some(s) = opt { Some(s) } else { None }
     }
 
     pub fn get_document(&self, id: &FileId) -> Option<LuaDocument> {

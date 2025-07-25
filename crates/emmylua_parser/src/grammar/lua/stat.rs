@@ -1,9 +1,9 @@
 use crate::{
+    LuaLanguageLevel,
     grammar::ParseResult,
     kind::{LuaSyntaxKind, LuaTokenKind},
     parser::{LuaParser, MarkerEventContainer},
     parser_error::LuaParseError,
-    LuaLanguageLevel,
 };
 
 use super::{

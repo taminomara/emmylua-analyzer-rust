@@ -3,15 +3,14 @@ use rowan::TextRange;
 use smol_str::SmolStr;
 
 use crate::{
-    check_type_compact,
+    InFiled, InferFailReason, LuaInferCache, LuaInstanceType, LuaMemberId, LuaMemberOwner,
+    LuaOperatorOwner, TypeOps, TypeSubstitutor, check_type_compact,
     db_index::{
         DbIndex, LuaGenericType, LuaIntersectionType, LuaMemberKey, LuaObjectType,
         LuaOperatorMetaMethod, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType,
     },
     infer_expr, instantiate_type_generic,
     semantic::InferGuard,
-    InFiled, InferFailReason, LuaInferCache, LuaInstanceType, LuaMemberId, LuaMemberOwner,
-    LuaOperatorOwner, TypeOps, TypeSubstitutor,
 };
 
 type FunctionTypeResult = Result<LuaType, InferFailReason>;

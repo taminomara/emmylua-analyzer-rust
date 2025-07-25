@@ -7,7 +7,7 @@ use std::{
     sync::Arc,
 };
 
-use crate::{db_index::LuaType, semantic::infer::VarRefId, FileId, FlowId, LuaFunctionType};
+use crate::{FileId, FlowId, LuaFunctionType, db_index::LuaType, semantic::infer::VarRefId};
 
 #[derive(Debug)]
 pub enum CacheEntry<T> {

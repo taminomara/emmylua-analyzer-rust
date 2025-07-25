@@ -1,10 +1,10 @@
 use crate::{
+    LuaSyntaxTree, LuaTreeBuilder,
     grammar::parse_chunk,
     kind::LuaTokenKind,
     lexer::{LuaLexer, LuaTokenData},
     parser_error::LuaParseError,
     text::SourceRange,
-    LuaSyntaxTree, LuaTreeBuilder,
 };
 
 use super::{
@@ -321,8 +321,8 @@ fn is_invalid_kind(kind: LuaTokenKind) -> bool {
 #[cfg(test)]
 mod tests {
     use crate::{
-        kind::LuaTokenKind, lexer::LuaLexer, parser::ParserConfig, parser_error::LuaParseError,
-        LuaParser,
+        LuaParser, kind::LuaTokenKind, lexer::LuaLexer, parser::ParserConfig,
+        parser_error::LuaParseError,
     };
 
     #[allow(unused)]

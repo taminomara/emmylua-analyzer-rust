@@ -1,4 +1,4 @@
-use lsp_types::{request::Request, Range};
+use lsp_types::{Range, request::Request};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]

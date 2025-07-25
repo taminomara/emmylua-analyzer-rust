@@ -9,13 +9,13 @@ use emmylua_parser::{
 use rowan::TextRange;
 
 use super::{
-    infer_type::infer_type, preprocess_description, tags::find_owner_closure, DocAnalyzer,
+    DocAnalyzer, infer_type::infer_type, preprocess_description, tags::find_owner_closure,
 };
 use crate::compilation::analyzer::doc::tags::report_orphan_tag;
 use crate::{
+    LuaTypeCache, LuaTypeDeclId,
     compilation::analyzer::bind_type::bind_type,
     db_index::{LuaDeclId, LuaMemberId, LuaSemanticDeclId, LuaSignatureId, LuaType},
-    LuaTypeCache, LuaTypeDeclId,
 };
 
 pub fn analyze_class(analyzer: &mut DocAnalyzer, tag: LuaDocTagClass) -> Option<()> {

@@ -1,21 +1,20 @@
 use emmylua_parser::{LuaAssignStat, LuaAstNode, LuaChunk, LuaVarExpr};
 
 use crate::{
-    infer_expr,
+    CacheEntry, DbIndex, FlowId, FlowNode, FlowNodeKind, FlowTree, InferFailReason, LuaDeclId,
+    LuaInferCache, LuaMemberId, LuaType, TypeOps, infer_expr,
     semantic::infer::{
+        InferResult, VarRefId,
         narrow::{
-            condition_flow::{get_type_at_condition_flow, InferConditionFlow},
+            ResultTypeOrContinue,
+            condition_flow::{InferConditionFlow, get_type_at_condition_flow},
             get_multi_antecedents, get_single_antecedent,
             get_type_at_cast_flow::get_type_at_cast_flow,
             get_var_ref_type,
             narrow_type::narrow_down_type,
             var_ref_id::get_var_expr_var_ref_id,
-            ResultTypeOrContinue,
         },
-        InferResult, VarRefId,
     },
-    CacheEntry, DbIndex, FlowId, FlowNode, FlowNodeKind, FlowTree, InferFailReason, LuaDeclId,
-    LuaInferCache, LuaMemberId, LuaType, TypeOps,
 };
 
 pub fn get_type_at_flow(

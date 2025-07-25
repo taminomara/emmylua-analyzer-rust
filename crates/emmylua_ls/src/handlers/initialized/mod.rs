@@ -8,8 +8,8 @@ use std::{path::PathBuf, str::FromStr, sync::Arc};
 use crate::{
     cmd_args::CmdArgs,
     context::{
-        get_client_id, load_emmy_config, ClientId, ClientProxy, FileDiagnostic, ProgressTask,
-        ServerContextSnapshot, StatusBar, WorkspaceFileMatcher,
+        ClientId, ClientProxy, FileDiagnostic, ProgressTask, ServerContextSnapshot, StatusBar,
+        WorkspaceFileMatcher, get_client_id, load_emmy_config,
     },
     handlers::{
         initialized::collect_files::calculate_include_and_exclude,
@@ -17,10 +17,10 @@ use crate::{
     },
     logger::init_logger,
 };
-pub use client_config::{get_client_config, ClientConfig};
+pub use client_config::{ClientConfig, get_client_config};
 use codestyle::load_editorconfig;
 use collect_files::collect_files;
-use emmylua_code_analysis::{uri_to_file_path, EmmyLuaAnalysis, Emmyrc};
+use emmylua_code_analysis::{EmmyLuaAnalysis, Emmyrc, uri_to_file_path};
 use log::info;
 use lsp_types::InitializeParams;
 use tokio::sync::RwLock;

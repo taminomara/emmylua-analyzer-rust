@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
 use crate::{
-    humanize_type, semantic::member::find_members, DbIndex, LuaMemberKey, LuaMemberOwner,
-    LuaObjectType, LuaTupleType, LuaType, LuaTypeCache, LuaTypeDecl, LuaTypeDeclId, RenderLevel,
+    DbIndex, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaTupleType, LuaType, LuaTypeCache,
+    LuaTypeDecl, LuaTypeDeclId, RenderLevel, humanize_type, semantic::member::find_members,
 };
 
 use super::{
-    check_general_type_compact, is_sub_type_of, sub_type::get_base_type_id,
-    type_check_fail_reason::TypeCheckFailReason, type_check_guard::TypeCheckGuard, TypeCheckResult,
+    TypeCheckResult, check_general_type_compact, is_sub_type_of, sub_type::get_base_type_id,
+    type_check_fail_reason::TypeCheckFailReason, type_check_guard::TypeCheckGuard,
 };
 
 pub fn check_ref_type_compact(

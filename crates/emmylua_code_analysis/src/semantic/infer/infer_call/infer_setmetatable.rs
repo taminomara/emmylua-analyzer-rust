@@ -1,9 +1,9 @@
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr, LuaIndexKey};
 
 use crate::{
+    DbIndex, InFiled, InferFailReason, LuaInferCache, LuaInstanceType, LuaMemberKey, LuaType,
     infer_expr,
     semantic::{infer::InferResult, member::find_members_with_key},
-    DbIndex, InFiled, InferFailReason, LuaInferCache, LuaInstanceType, LuaMemberKey, LuaType,
 };
 
 pub fn infer_setmetatable_call(

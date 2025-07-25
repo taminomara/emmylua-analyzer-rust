@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{semantic::LuaInferCache, FileId, LuaAnalysisPhase};
+use crate::{FileId, LuaAnalysisPhase, semantic::LuaInferCache};
 
 #[derive(Debug, Default)]
 pub struct InferCacheManager {

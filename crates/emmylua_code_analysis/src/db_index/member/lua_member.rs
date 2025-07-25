@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use super::lua_member_feature::LuaMemberFeature;
-use crate::{infer_expr, DbIndex, FileId, GlobalId, InferFailReason, LuaInferCache, LuaType};
+use crate::{DbIndex, FileId, GlobalId, InferFailReason, LuaInferCache, LuaType, infer_expr};
 
 #[derive(Debug)]
 pub struct LuaMember {

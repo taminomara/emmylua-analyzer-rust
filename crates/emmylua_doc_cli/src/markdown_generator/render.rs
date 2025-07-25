@@ -1,6 +1,6 @@
 use crate::common::render_typ;
 use emmylua_code_analysis::{
-    humanize_type, DbIndex, LuaFunctionType, LuaSignatureId, LuaType, RenderLevel,
+    DbIndex, LuaFunctionType, LuaSignatureId, LuaType, RenderLevel, humanize_type,
 };
 
 pub fn render_const_type(db: &DbIndex, typ: &LuaType) -> String {

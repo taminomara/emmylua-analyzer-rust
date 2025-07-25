@@ -1,4 +1,4 @@
-use crate::{semantic::infer::narrow::narrow_type::narrow_down_type, DbIndex, LuaType};
+use crate::{DbIndex, LuaType, semantic::infer::narrow::narrow_type::narrow_down_type};
 
 pub fn narrow_false_or_nil(db: &DbIndex, t: LuaType) -> LuaType {
     if t.is_boolean() {

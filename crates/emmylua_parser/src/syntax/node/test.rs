@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        parser::ParserConfig, syntax::traits::LuaAstNode, LuaAst, LuaDocDescription, LuaExpr,
-        LuaLocalStat, LuaParser, LuaVarExpr,
+        LuaAst, LuaDocDescription, LuaExpr, LuaLocalStat, LuaParser, LuaVarExpr,
+        parser::ParserConfig, syntax::traits::LuaAstNode,
     };
 
     #[allow(unused)]

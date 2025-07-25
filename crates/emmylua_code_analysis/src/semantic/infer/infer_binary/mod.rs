@@ -5,14 +5,13 @@ use infer_binary_or::{infer_binary_expr_or, special_or_rule};
 use smol_str::SmolStr;
 
 use crate::{
-    check_type_compact,
+    LuaInferCache, TypeOps, check_type_compact,
     db_index::{DbIndex, LuaOperatorMetaMethod, LuaType},
     get_real_type,
     semantic::infer::narrow::narrow_false_or_nil,
-    LuaInferCache, TypeOps,
 };
 
-use super::{get_custom_type_operator, infer_expr, InferFailReason, InferResult};
+use super::{InferFailReason, InferResult, get_custom_type_operator, infer_expr};
 
 pub fn infer_binary_expr(
     db: &DbIndex,

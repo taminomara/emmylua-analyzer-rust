@@ -6,7 +6,7 @@ mod status_bar;
 mod workspace_manager;
 
 pub use client::ClientProxy;
-pub use client_id::{get_client_id, ClientId};
+pub use client_id::{ClientId, get_client_id};
 use emmylua_code_analysis::EmmyLuaAnalysis;
 pub use file_diagnostic::FileDiagnostic;
 use lsp_server::{Connection, ErrorCode, Message, RequestId, Response};
@@ -16,9 +16,9 @@ pub use status_bar::StatusBar;
 use std::{collections::HashMap, future::Future, sync::Arc};
 use tokio::sync::{Mutex, RwLock};
 use tokio_util::sync::CancellationToken;
-pub use workspace_manager::load_emmy_config;
 pub use workspace_manager::WorkspaceFileMatcher;
 pub use workspace_manager::WorkspaceManager;
+pub use workspace_manager::load_emmy_config;
 
 pub struct ServerContext {
     #[allow(unused)]

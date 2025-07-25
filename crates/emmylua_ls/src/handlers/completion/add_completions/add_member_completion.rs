@@ -1,6 +1,6 @@
 use emmylua_code_analysis::{
-    try_extract_signature_id_from_field, DbIndex, LuaMemberInfo, LuaMemberKey, LuaSemanticDeclId,
-    LuaType, SemanticModel,
+    DbIndex, LuaMemberInfo, LuaMemberKey, LuaSemanticDeclId, LuaType, SemanticModel,
+    try_extract_signature_id_from_field,
 };
 use emmylua_parser::{
     LuaAssignStat, LuaAstNode, LuaAstToken, LuaFuncStat, LuaGeneralToken, LuaIndexExpr,
@@ -14,7 +14,7 @@ use crate::handlers::completion::{
 };
 
 use super::{
-    check_visibility, get_completion_kind, get_description, get_detail, is_deprecated, CallDisplay,
+    CallDisplay, check_visibility, get_completion_kind, get_description, get_detail, is_deprecated,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]

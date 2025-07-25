@@ -1,8 +1,8 @@
 use emmylua_parser::LuaCallExpr;
 
 use crate::{
-    infer_expr, semantic::infer::InferResult, DbIndex, InFiled, InferFailReason, LuaInferCache,
-    LuaType,
+    DbIndex, InFiled, InferFailReason, LuaInferCache, LuaType, infer_expr,
+    semantic::infer::InferResult,
 };
 
 pub fn infer_require_call(

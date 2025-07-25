@@ -5,8 +5,8 @@ use emmylua_code_analysis::{EmmyLuaAnalysis, FileId};
 use emmylua_parser::LuaAstNode;
 use implementation_searcher::search_implementations;
 use lsp_types::{
-    request::GotoImplementationParams, ClientCapabilities, GotoDefinitionResponse,
-    ImplementationProviderCapability, Position, ServerCapabilities,
+    ClientCapabilities, GotoDefinitionResponse, ImplementationProviderCapability, Position,
+    ServerCapabilities, request::GotoImplementationParams,
 };
 use rowan::TokenAtOffset;
 use tokio_util::sync::CancellationToken;

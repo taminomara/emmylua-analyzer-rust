@@ -12,7 +12,7 @@ use lsp_types::request::{
     ResolveCompletionItem, SelectionRangeRequest, SemanticTokensFullRequest, SignatureHelpRequest,
     WorkspaceSymbolRequest,
 };
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use tokio_util::sync::CancellationToken;
 
 use crate::context::{ServerContext, ServerContextSnapshot};
@@ -33,7 +33,7 @@ use super::{
     document_range_formatting::on_range_formatting_handler,
     document_selection_range::on_document_selection_range_handle,
     document_symbol::on_document_symbol,
-    emmy_annotator::{on_emmy_annotator_handler, EmmyAnnotatorRequest},
+    emmy_annotator::{EmmyAnnotatorRequest, on_emmy_annotator_handler},
     fold_range::on_folding_range_handler,
     hover::on_hover,
     implementation::on_implementation_handler,

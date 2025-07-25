@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::{set_locale, LuaAstNode, LuaLanguageLevel, LuaParser, ParserConfig};
+    use crate::{LuaAstNode, LuaLanguageLevel, LuaParser, ParserConfig, set_locale};
     // use std::time::Instant;
     use std::{collections::HashMap, thread};
 

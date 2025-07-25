@@ -5,8 +5,10 @@ use internment::ArcIntern;
 use smol_str::SmolStr;
 
 use crate::{
+    GenericTpl, GenericTplId, LuaFunctionType, LuaGenericType, TypeVisitTrait,
     db_index::{DbIndex, LuaType},
     semantic::{
+        LuaInferCache,
         generic::{
             tpl_context::TplContext,
             tpl_pattern::{
@@ -15,12 +17,11 @@ use crate::{
             },
         },
         infer::InferFailReason,
-        infer_expr, LuaInferCache,
+        infer_expr,
     },
-    GenericTpl, GenericTplId, LuaFunctionType, LuaGenericType, TypeVisitTrait,
 };
 
-use super::{instantiate_type_generic::instantiate_doc_function, TypeSubstitutor};
+use super::{TypeSubstitutor, instantiate_type_generic::instantiate_doc_function};
 
 pub fn instantiate_func_generic(
     db: &DbIndex,

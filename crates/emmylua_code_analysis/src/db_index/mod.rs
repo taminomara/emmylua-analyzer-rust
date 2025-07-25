@@ -28,11 +28,11 @@ use metatable::LuaMetatableIndex;
 pub use module::*;
 pub use operators::*;
 pub use property::*;
-pub use r#type::*;
 pub use reference::*;
 pub use semantic_decl::*;
 pub use signature::*;
 pub use traits::LuaIndex;
+pub use r#type::*;
 
 #[derive(Debug)]
 pub struct DbIndex {

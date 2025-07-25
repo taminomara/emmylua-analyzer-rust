@@ -1,14 +1,14 @@
 use crate::{
+    LuaAstToken, LuaIndexToken, LuaLiteralToken, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind,
     kind::LuaSyntaxKind,
     syntax::{
         node::{LuaBinaryOpToken, LuaNameToken, LuaUnaryOpToken},
         traits::{LuaAstChildren, LuaAstNode, LuaCommentOwner},
     },
-    LuaAstToken, LuaIndexToken, LuaLiteralToken, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind,
 };
 
 use super::{
-    path_trait::PathTrait, LuaBlock, LuaCallArgList, LuaIndexKey, LuaParamList, LuaTableField,
+    LuaBlock, LuaCallArgList, LuaIndexKey, LuaParamList, LuaTableField, path_trait::PathTrait,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

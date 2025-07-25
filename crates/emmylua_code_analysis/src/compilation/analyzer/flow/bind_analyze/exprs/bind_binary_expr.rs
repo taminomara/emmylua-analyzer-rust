@@ -1,11 +1,11 @@
 use emmylua_parser::{BinaryOperator, LuaAst, LuaBinaryExpr, LuaExpr};
 
 use crate::{
+    FlowId,
     compilation::analyzer::flow::{
         bind_analyze::{bind_each_child, exprs::bind_condition_expr, finish_flow_label},
         binder::FlowBinder,
     },
-    FlowId,
 };
 
 pub fn bind_binary_expr(

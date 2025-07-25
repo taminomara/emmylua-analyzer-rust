@@ -1,10 +1,10 @@
 use std::ops::Deref;
 
-use crate::{semantic::type_check::is_sub_type_of, DbIndex, LuaType, LuaTypeDeclId, VariadicType};
+use crate::{DbIndex, LuaType, LuaTypeDeclId, VariadicType, semantic::type_check::is_sub_type_of};
 
 use super::{
-    check_general_type_compact, sub_type::get_base_type_id,
-    type_check_fail_reason::TypeCheckFailReason, type_check_guard::TypeCheckGuard, TypeCheckResult,
+    TypeCheckResult, check_general_type_compact, sub_type::get_base_type_id,
+    type_check_fail_reason::TypeCheckFailReason, type_check_guard::TypeCheckGuard,
 };
 
 pub fn check_simple_type_compact(

@@ -7,11 +7,11 @@ use emmylua_parser::{
 };
 
 use crate::{
-    enum_variable_is_param, parse_require_module_info, DiagnosticCode, InferFailReason,
-    LuaMemberKey, LuaSemanticDeclId, LuaType, ModuleInfo, SemanticModel,
+    DiagnosticCode, InferFailReason, LuaMemberKey, LuaSemanticDeclId, LuaType, ModuleInfo,
+    SemanticModel, enum_variable_is_param, parse_require_module_info,
 };
 
-use super::{humanize_lint_type, Checker, DiagnosticContext};
+use super::{Checker, DiagnosticContext, humanize_lint_type};
 
 pub struct CheckFieldChecker;
 

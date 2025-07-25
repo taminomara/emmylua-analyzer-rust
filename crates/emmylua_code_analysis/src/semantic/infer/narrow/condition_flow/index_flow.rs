@@ -1,15 +1,15 @@
 use emmylua_parser::{LuaChunk, LuaExpr, LuaIndexExpr};
 
 use crate::{
-    semantic::infer::{
-        narrow::{
-            condition_flow::InferConditionFlow, get_single_antecedent,
-            get_type_at_flow::get_type_at_flow, narrow_false_or_nil, remove_false_or_nil,
-            var_ref_id::get_var_expr_var_ref_id, ResultTypeOrContinue,
-        },
-        VarRefId,
-    },
     DbIndex, FlowNode, FlowTree, InferFailReason, LuaInferCache,
+    semantic::infer::{
+        VarRefId,
+        narrow::{
+            ResultTypeOrContinue, condition_flow::InferConditionFlow, get_single_antecedent,
+            get_type_at_flow::get_type_at_flow, narrow_false_or_nil, remove_false_or_nil,
+            var_ref_id::get_var_expr_var_ref_id,
+        },
+    },
 };
 
 #[allow(unused)]

@@ -1,7 +1,7 @@
 use crate::{
+    LuaKind, LuaSyntaxToken,
     kind::LuaTokenKind,
     parser_error::{LuaParseError, LuaParseErrorKind},
-    LuaKind, LuaSyntaxToken,
 };
 
 pub fn string_token_value(token: &LuaSyntaxToken) -> Result<String, LuaParseError> {

@@ -2,7 +2,7 @@ use std::{fs::File, io::Write};
 
 use emmylua_code_analysis::{DbIndex, FileId};
 use lsp_types::Diagnostic;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::cmd_args::OutputDestination;
 

@@ -6,15 +6,15 @@ use emmylua_parser::{
 };
 
 use crate::{
-    check_type_compact,
+    InferGuard, LuaArrayType, LuaDeclId, LuaInferCache, LuaMemberId, LuaTupleStatus, LuaTupleType,
+    LuaUnionType, TypeOps, VariadicType, check_type_compact,
     db_index::{DbIndex, LuaType},
-    infer_call_expr_func, infer_expr, InferGuard, LuaArrayType, LuaDeclId, LuaInferCache,
-    LuaMemberId, LuaTupleStatus, LuaTupleType, LuaUnionType, TypeOps, VariadicType,
+    infer_call_expr_func, infer_expr,
 };
 
 use super::{
-    infer_index::{infer_member_by_member_key, infer_member_by_operator},
     InferFailReason, InferResult,
+    infer_index::{infer_member_by_member_key, infer_member_by_operator},
 };
 
 pub fn infer_table_expr(

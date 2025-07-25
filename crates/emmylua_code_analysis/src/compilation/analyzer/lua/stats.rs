@@ -4,13 +4,13 @@ use emmylua_parser::{
 };
 
 use crate::{
+    InFiled, InferFailReason, LuaOperator, LuaOperatorMetaMethod, LuaOperatorOwner, LuaTypeCache,
+    LuaTypeOwner, OperatorFunction,
     compilation::analyzer::{
         bind_type::{add_member, bind_type},
         unresolve::{UnResolveDecl, UnResolveMember},
     },
     db_index::{LuaDeclId, LuaMemberId, LuaMemberOwner, LuaType},
-    InFiled, InferFailReason, LuaOperator, LuaOperatorMetaMethod, LuaOperatorOwner, LuaTypeCache,
-    LuaTypeOwner, OperatorFunction,
 };
 
 use super::LuaAnalyzer;
