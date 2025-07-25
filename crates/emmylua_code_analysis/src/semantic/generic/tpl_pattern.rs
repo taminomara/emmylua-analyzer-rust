@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{ops::Deref, sync::Arc};
 
 use emmylua_parser::LuaAstNode;
 use itertools::Itertools;
@@ -328,19 +328,40 @@ fn table_generic_tpl_pattern_match(
         }
         LuaType::TableConst(inst) => {
             let owner = LuaMemberOwner::Element(inst.clone());
-            table_generic_tpl_pattern_member_owner_match(context, table_generic_params, owner)?;
+            table_generic_tpl_pattern_member_owner_match(
+                context,
+                table_generic_params,
+                owner,
+                &[],
+            )?;
         }
         LuaType::Ref(type_id) => {
             let owner = LuaMemberOwner::Type(type_id.clone());
-            table_generic_tpl_pattern_member_owner_match(context, table_generic_params, owner)?;
+            table_generic_tpl_pattern_member_owner_match(
+                context,
+                table_generic_params,
+                owner,
+                &[],
+            )?;
         }
         LuaType::Def(type_id) => {
             let owner = LuaMemberOwner::Type(type_id.clone());
-            table_generic_tpl_pattern_member_owner_match(context, table_generic_params, owner)?;
+            table_generic_tpl_pattern_member_owner_match(
+                context,
+                table_generic_params,
+                owner,
+                &[],
+            )?;
         }
         LuaType::Generic(generic) => {
-            let owner = LuaMemberOwner::Generic(generic.clone());
-            table_generic_tpl_pattern_member_owner_match(context, table_generic_params, owner)?;
+            let owner = LuaMemberOwner::Type(generic.get_base_type_id());
+            let target_params = generic.get_params();
+            table_generic_tpl_pattern_member_owner_match(
+                context,
+                table_generic_params,
+                owner,
+                &target_params,
+            )?;
         }
         LuaType::Object(obj) => {
             let mut keys = Vec::new();
@@ -384,6 +405,7 @@ fn table_generic_tpl_pattern_member_owner_match(
     context: &mut TplContext,
     table_generic_params: &Vec<LuaType>,
     owner: LuaMemberOwner,
+    target_params: &[LuaType],
 ) -> TplPatternMatchResult {
     if table_generic_params.len() != 2 {
         return Err(InferFailReason::None);
@@ -391,8 +413,13 @@ fn table_generic_tpl_pattern_member_owner_match(
 
     let owner_type = match &owner {
         LuaMemberOwner::Element(inst) => LuaType::TableConst(inst.clone()),
-        LuaMemberOwner::Type(type_id) => LuaType::Ref(type_id.clone()),
-        LuaMemberOwner::Generic(generic) => LuaType::Generic(generic.clone()),
+        LuaMemberOwner::Type(type_id) => match target_params.len() {
+            0 => LuaType::Ref(type_id.clone()),
+            _ => LuaType::Generic(Arc::new(LuaGenericType::new(
+                type_id.clone(),
+                target_params.to_vec(),
+            ))),
+        },
         _ => {
             return Err(InferFailReason::None);
         }

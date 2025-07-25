@@ -1243,15 +1243,17 @@ mod test {
         assert!(ws.check_code_for(
             DiagnosticCode::ParamTypeNotMatch,
             r#"
-            local pairs = pairs
-
             ---@type RingBufferSpan<number>
             local span
             
             for k, v in pairs(span) do
+                A = v
             end
             "#
         ));
+        let a_ty = ws.expr_ty("A");
+        let expected = ws.ty("number");
+        assert_eq!(a_ty, expected);
     }
 
     #[test]
