@@ -40,7 +40,7 @@ pub fn load_resource_std(
         .into_iter()
         .filter_map(|file| {
             if file.path.ends_with(".lua") {
-                let path = std_dir.join(&file.path).to_str().unwrap().to_string();
+                let path = resoucres_dir.join(&file.path).to_str().unwrap().to_string();
                 Some(LuaFileInfo {
                     path,
                     content: file.content,
