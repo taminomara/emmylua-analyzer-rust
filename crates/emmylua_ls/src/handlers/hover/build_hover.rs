@@ -160,7 +160,9 @@ fn build_decl_hover(
             builder.set_location_path(member);
         }
 
-        builder.add_signature_params_rets_description(typ);
+        // `typ`此时可能是泛型实例化后的类型, 所以我们需要从member获取原始类型
+        builder
+            .add_signature_params_rets_description(builder.semantic_model.get_type(decl_id.into()));
     } else {
         if typ.is_const() {
             let const_value = hover_const_type(db, &typ);
@@ -215,6 +217,7 @@ fn build_member_hover(
         true,
     )
     .get_types(&builder.semantic_model);
+
     replace_semantic_type(&mut semantic_decls, &typ);
     let member_name = match member.get_key() {
         LuaMemberKey::Name(name) => name.to_string(),
@@ -245,7 +248,10 @@ fn build_member_hover(
 
         builder.set_location_path(Some(&member));
 
-        builder.add_signature_params_rets_description(typ);
+        // `typ`此时可能是泛型实例化后的类型, 所以我们需要从member获取原始类型
+        builder.add_signature_params_rets_description(
+            builder.semantic_model.get_type(member.get_id().into()),
+        );
     } else {
         if typ.is_const() {
             let const_value = hover_const_type(db, &typ);

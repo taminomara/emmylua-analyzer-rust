@@ -4,7 +4,7 @@ use emmylua_code_analysis::{EmmyLuaAnalysis, Emmyrc, FileId, VirtualUrlGenerator
 use lsp_types::{
     CodeActionResponse, CompletionItemKind, CompletionResponse, CompletionTriggerKind,
     GotoDefinitionResponse, Hover, HoverContents, InlayHint, MarkupContent, Position,
-    SemanticTokensResult, SignatureHelpContext, SignatureHelpTriggerKind,
+    SemanticTokensResult, SignatureHelpContext, SignatureHelpTriggerKind, WorkspaceEdit,
 };
 use tokio_util::sync::CancellationToken;
 
@@ -159,7 +159,7 @@ impl ProviderVirtualWorkspace {
         // dbg!(&value);
         if value != expect.value {
             eprintln!(
-                "Hover content does not match expected value left: {value},\nright: {}",
+                "Hover content does not match expected value \nleft: {value},\nright: {}",
                 expect.value
             );
             return false;
@@ -352,32 +352,19 @@ impl ProviderVirtualWorkspace {
         };
 
         let data = serde_json::to_string(&result).unwrap();
-        dbg!(&data);
+        // dbg!(&data);
         Some(result)
     }
 
-    pub fn check_rename(&mut self, block_str: &str, new_name: String, len: usize) -> bool {
+    pub fn check_rename(&mut self, block_str: &str, new_name: String) -> Option<WorkspaceEdit> {
         let content = Self::handle_file_content(block_str);
         let Some((content, position)) = content else {
-            return false;
+            return None;
         };
         let file_id = self.def(&content);
         let result = rename(&self.analysis, file_id, position, new_name.clone());
-        let Some(result) = result else {
-            return false;
-        };
         // dbg!(&result);
-        if let Some(changes) = result.changes {
-            let mut count = 0;
-            for (_, edits) in changes {
-                count += edits.len();
-            }
-            if count != len {
-                return false;
-            }
-        }
-
-        true
+        return result;
     }
 
     pub fn check_references(&mut self, block_str: &str) -> Option<Vec<lsp_types::Location>> {

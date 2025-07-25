@@ -1,4 +1,4 @@
-use emmylua_parser::LuaSyntaxNode;
+use emmylua_parser::{LuaCallExpr, LuaSyntaxNode};
 
 use crate::{DbIndex, LuaInferCache, TypeSubstitutor};
 
@@ -8,4 +8,5 @@ pub struct TplContext<'a> {
     pub cache: &'a mut LuaInferCache,
     pub substitutor: &'a mut TypeSubstitutor,
     pub root: LuaSyntaxNode,
+    pub call_expr: Option<LuaCallExpr>,
 }

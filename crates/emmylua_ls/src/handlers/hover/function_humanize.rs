@@ -1,18 +1,20 @@
 use std::collections::HashSet;
 
 use emmylua_code_analysis::{
-    humanize_type, DbIndex, LuaDocReturnInfo, LuaFunctionType, LuaMember, LuaMemberKey,
-    LuaMemberOwner, LuaSemanticDeclId, LuaSignature, LuaSignatureId, LuaType, RenderLevel,
-    SemanticModel,
+    humanize_type, try_extract_signature_id_from_field, DbIndex, LuaDocReturnInfo, LuaFunctionType,
+    LuaMember, LuaMemberKey, LuaMemberOwner, LuaSemanticDeclId, LuaSignature, LuaSignatureId,
+    LuaType, RenderLevel,
 };
-use emmylua_parser::{LuaAstNode, LuaDocTagField, LuaDocType};
 
-use crate::handlers::hover::{
-    hover_humanize::{
-        extract_description_from_property_owner, extract_owner_name_from_element,
-        hover_humanize_type, DescriptionInfo,
+use crate::handlers::{
+    definition::extract_semantic_decl_from_signature,
+    hover::{
+        hover_humanize::{
+            extract_description_from_property_owner, extract_owner_name_from_element,
+            hover_humanize_type, DescriptionInfo,
+        },
+        infer_prefix_global_name, HoverBuilder,
     },
-    infer_prefix_global_name, HoverBuilder,
 };
 
 #[derive(Debug, Clone)]
@@ -51,7 +53,7 @@ pub fn hover_function_type(
     // 已处理过的 semantic_decl_id, 用于解决`test_issue_499_3`
     let mut handled_semantic_decl_ids = HashSet::new();
     let mut type_descs: Vec<HoverFunctionInfo> = Vec::with_capacity(semantic_decls.len());
-    // 记录已处理过的类型，用于在 Union 中跳过重复类型.
+    // 记录已处理过的类型, 用于在 Union 中跳过重复类型.
     // 这是为了解决最后一个类型可能是前面所有类型的联合类型的情况
     let mut processed_types = HashSet::new();
 
@@ -73,9 +75,7 @@ pub fn hover_function_type(
                 let member = db.get_member_index().get_member(&id)?;
                 // 以 @field 定义的 function 描述信息绑定的 id 并不是 member, 需要特殊处理
                 if is_new && function_info.description.is_none() {
-                    if let Some(signature_id) =
-                        try_extract_signature_id_from_field(builder.semantic_model, &member)
-                    {
+                    if let Some(signature_id) = try_extract_signature_id_from_field(db, &member) {
                         function_info.description = extract_description_from_property_owner(
                             &builder.semantic_model,
                             &LuaSemanticDeclId::Signature(signature_id),
@@ -87,7 +87,42 @@ pub fn hover_function_type(
             _ => None,
         };
 
-        // 如果当前类型是 Union，传入已处理的类型集合
+        // 如果函数定义来自于其他文件, 我们需要添加原始的注释信息. 参考`test_other_file_function`
+        if let LuaType::Signature(signature_id) = typ {
+            if let Some(semantic_id) =
+                extract_semantic_decl_from_signature(builder.compilation, &signature_id)
+            {
+                if semantic_id != *semantic_decl_id {
+                    // signature 的原始定义的描述信息
+                    if let Some(origin_description) = extract_description_from_property_owner(
+                        &builder.semantic_model,
+                        &semantic_id,
+                    ) {
+                        match &mut function_info.description {
+                            Some(current_description) => {
+                                // 如果描述不为空, 则合并描述
+                                if let Some(description) = origin_description.description {
+                                    if current_description.description.is_none() {
+                                        current_description.description = Some(description);
+                                    } else {
+                                        current_description.description = Some(format!(
+                                            "{}\n{}",
+                                            current_description.description.take()?,
+                                            description
+                                        ));
+                                    }
+                                }
+                            }
+                            None => {
+                                function_info.description = Some(origin_description);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 如果当前类型是 Union, 传入已处理的类型集合
         let result = match typ {
             LuaType::Union(_) => process_single_function_type_with_exclusions(
                 builder,
@@ -123,10 +158,10 @@ pub fn hover_function_type(
                 function_info = info;
             }
             ProcessFunctionTypeResult::Multiple(infos) => {
-                // 对于 Union 类型，将每个子类型的结果都添加到 type_descs 中
+                // 对于 Union 类型, 将每个子类型的结果都添加到 type_descs 中
                 let infos_len = infos.len();
                 for (index, mut info) in infos.into_iter().enumerate() {
-                    // 合并描述信息，只有最后一个才设置描述
+                    // 合并描述信息, 只有最后一个才设置描述
                     if function_info.description.is_some()
                         && info.description.is_none()
                         && index == infos_len - 1
@@ -719,7 +754,7 @@ fn process_single_function_type_with_exclusions(
             }
         }
         _ => {
-            // 对于非 Union 类型，直接调用原函数
+            // 对于非 Union 类型, 直接调用原函数
             process_single_function_type(
                 builder,
                 db,
@@ -742,36 +777,4 @@ pub fn is_function(typ: &LuaType) -> bool {
                 .all(|t| matches!(t, LuaType::DocFunction(_) | LuaType::Signature(_))),
             _ => false,
         }
-}
-
-/// 尝试从 @field 定义中提取函数类型的位置信息
-pub fn try_extract_signature_id_from_field(
-    semantic_model: &SemanticModel,
-    member: &LuaMember,
-) -> Option<LuaSignatureId> {
-    // 检查是否是 field 定义
-    if !member.is_field() {
-        return None;
-    }
-
-    let root = semantic_model
-        .get_db()
-        .get_vfs()
-        .get_syntax_tree(&member.get_file_id())?
-        .get_red_root();
-    let field_node = member.get_syntax_id().to_node_from_root(&root)?;
-
-    // 尝试转换为 LuaDocTagField
-    let field_tag = LuaDocTagField::cast(field_node)?;
-
-    // 获取类型定义
-    let type_node = field_tag.get_type()?;
-
-    match &type_node {
-        LuaDocType::Func(doc_func) => Some(LuaSignatureId::from_doc_func(
-            member.get_file_id(),
-            &doc_func,
-        )),
-        _ => None,
-    }
 }

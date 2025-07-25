@@ -245,4 +245,57 @@ mod tests {
             },
         ));
     }
+
+    #[test]
+    fn test_field_key() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def(
+            r#"
+            ---@class ObserverParams
+            ---@field next fun() # 测试
+
+            ---@param params fun() | ObserverParams
+            function test(params)
+            end
+            "#,
+        );
+        assert!(ws.check_hover(
+            r#"
+                test({
+                    <??>next = function()
+                    end
+                })
+            "#,
+            VirtualHoverResult {
+                value: "```lua\n(field) ObserverParams.next()\n```\n\n---\n\n测试".to_string(),
+            },
+        ));
+    }
+
+    #[test]
+    fn test_field_key_for_generic() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def(
+            r#"
+            ---@class ObserverParams<T>
+            ---@field next fun() # 测试
+
+            ---@generic T
+            ---@param params fun() | ObserverParams<T>
+            function test(params)
+            end
+            "#,
+        );
+        assert!(ws.check_hover(
+            r#"
+                test({
+                    <??>next = function()
+                    end
+                })
+            "#,
+            VirtualHoverResult {
+                value: "```lua\n(field) ObserverParams.next()\n```\n\n---\n\n测试".to_string(),
+            },
+        ));
+    }
 }

@@ -1,20 +1,25 @@
-use std::ops::Deref;
+use std::{ops::Deref, sync::Arc};
 
+use emmylua_parser::LuaAstNode;
 use itertools::Itertools;
+use rowan::NodeOrToken;
 use smol_str::SmolStr;
 
 use crate::{
     check_type_compact,
     db_index::{DbIndex, LuaGenericType, LuaType},
+    infer_node_semantic_decl,
     semantic::{
         generic::{tpl_context::TplContext, type_substitutor::SubstitutorValue},
         member::{find_index_operations, get_member_map},
+        type_check::is_sub_type_of,
     },
-    InferFailReason, LuaFunctionType, LuaMemberKey, LuaMemberOwner, LuaObjectType,
-    LuaSemanticDeclId, LuaTupleType, LuaUnionType, VariadicType,
+    InferFailReason, LuaFunctionType, LuaMemberInfo, LuaMemberKey, LuaMemberOwner, LuaObjectType,
+    LuaSemanticDeclId, LuaTupleType, LuaUnionType, SemanticDeclLevel, VariadicType,
 };
 
 use super::type_substitutor::TypeSubstitutor;
+use std::collections::HashMap;
 
 type TplPatternMatchResult = Result<(), InferFailReason>;
 
@@ -323,15 +328,40 @@ fn table_generic_tpl_pattern_match(
         }
         LuaType::TableConst(inst) => {
             let owner = LuaMemberOwner::Element(inst.clone());
-            table_generic_tpl_pattern_member_owner_match(context, table_generic_params, owner)?;
+            table_generic_tpl_pattern_member_owner_match(
+                context,
+                table_generic_params,
+                owner,
+                &[],
+            )?;
         }
         LuaType::Ref(type_id) => {
             let owner = LuaMemberOwner::Type(type_id.clone());
-            table_generic_tpl_pattern_member_owner_match(context, table_generic_params, owner)?;
+            table_generic_tpl_pattern_member_owner_match(
+                context,
+                table_generic_params,
+                owner,
+                &[],
+            )?;
         }
         LuaType::Def(type_id) => {
             let owner = LuaMemberOwner::Type(type_id.clone());
-            table_generic_tpl_pattern_member_owner_match(context, table_generic_params, owner)?;
+            table_generic_tpl_pattern_member_owner_match(
+                context,
+                table_generic_params,
+                owner,
+                &[],
+            )?;
+        }
+        LuaType::Generic(generic) => {
+            let owner = LuaMemberOwner::Type(generic.get_base_type_id());
+            let target_params = generic.get_params();
+            table_generic_tpl_pattern_member_owner_match(
+                context,
+                table_generic_params,
+                owner,
+                &target_params,
+            )?;
         }
         LuaType::Object(obj) => {
             let mut keys = Vec::new();
@@ -370,10 +400,12 @@ fn table_generic_tpl_pattern_match(
     Ok(())
 }
 
+// KV 表匹配 ref/def/tableconst
 fn table_generic_tpl_pattern_member_owner_match(
     context: &mut TplContext,
     table_generic_params: &Vec<LuaType>,
     owner: LuaMemberOwner,
+    target_params: &[LuaType],
 ) -> TplPatternMatchResult {
     if table_generic_params.len() != 2 {
         return Err(InferFailReason::None);
@@ -381,13 +413,26 @@ fn table_generic_tpl_pattern_member_owner_match(
 
     let owner_type = match &owner {
         LuaMemberOwner::Element(inst) => LuaType::TableConst(inst.clone()),
-        LuaMemberOwner::Type(type_id) => LuaType::Ref(type_id.clone()),
+        LuaMemberOwner::Type(type_id) => match target_params.len() {
+            0 => LuaType::Ref(type_id.clone()),
+            _ => LuaType::Generic(Arc::new(LuaGenericType::new(
+                type_id.clone(),
+                target_params.to_vec(),
+            ))),
+        },
         _ => {
             return Err(InferFailReason::None);
         }
     };
 
     let members = get_member_map(context.db, &owner_type).ok_or(InferFailReason::None)?;
+    // 如果是 pairs 调用, 我们需要尝试寻找元方法, 但目前`__pairs` 被放进成员表中
+    if is_pairs_call(context).unwrap_or(false) {
+        if try_handle_pairs_metamethod(context, table_generic_params, &members).is_ok() {
+            return Ok(());
+        }
+    }
+
     let target_key_type = table_generic_params[0].clone();
     let mut keys = Vec::new();
     let mut values = Vec::new();
@@ -463,9 +508,10 @@ fn generic_tpl_pattern_match(
 ) -> TplPatternMatchResult {
     match target {
         LuaType::Generic(target_generic) => {
-            let base = generic.get_base_type();
-            let target_base = target_generic.get_base_type();
-            if target_base != base {
+            let base = generic.get_base_type_id_ref();
+            let target_base = target_generic.get_base_type_id_ref();
+
+            if !is_sub_type_of(context.db, &target_base, &base) {
                 return Err(InferFailReason::None);
             }
 
@@ -852,4 +898,74 @@ fn escape_alias(db: &DbIndex, may_alias: &LuaType) -> LuaType {
     }
 
     may_alias.clone()
+}
+
+fn is_pairs_call(context: &mut TplContext) -> Option<bool> {
+    let call_expr = context.call_expr.as_ref()?;
+    let prefix_expr = call_expr.get_prefix_expr()?;
+    let semantic_decl = match prefix_expr.syntax().clone().into() {
+        NodeOrToken::Node(node) => infer_node_semantic_decl(
+            context.db,
+            context.cache,
+            node,
+            SemanticDeclLevel::default(),
+        ),
+        _ => None,
+    }?;
+
+    let LuaSemanticDeclId::LuaDecl(decl_id) = semantic_decl else {
+        return None;
+    };
+    let decl = context.db.get_decl_index().get_decl(&decl_id)?;
+    if !context.db.get_module_index().is_std(&decl.get_file_id()) {
+        return None;
+    }
+    let name = decl.get_name();
+    if name != "pairs" {
+        return None;
+    }
+    Some(true)
+}
+
+fn try_handle_pairs_metamethod(
+    context: &mut TplContext,
+    table_generic_params: &[LuaType],
+    members: &HashMap<LuaMemberKey, Vec<LuaMemberInfo>>,
+) -> TplPatternMatchResult {
+    let pairs_member = members
+        .get(&LuaMemberKey::Name("__pairs".into()))
+        .ok_or(InferFailReason::None)?
+        .get(0)
+        .ok_or(InferFailReason::None)?;
+    // 获取迭代函数返回类型
+    let meta_return = match &pairs_member.typ {
+        LuaType::Signature(signature_id) => context
+            .db
+            .get_signature_index()
+            .get(signature_id)
+            .map(|s| s.get_return_type()),
+        LuaType::DocFunction(doc_func) => Some(doc_func.get_ret().clone()),
+        _ => None,
+    }
+    .ok_or(InferFailReason::None)?;
+
+    // 解析出迭代函数返回类型
+    let final_return_type = match meta_return {
+        LuaType::DocFunction(doc_func) => Some(doc_func.get_ret().clone()),
+        LuaType::Signature(signature_id) => context
+            .db
+            .get_signature_index()
+            .get(&signature_id)
+            .map(|s| s.get_return_type()),
+        _ => None,
+    };
+
+    if let Some(LuaType::Variadic(variadic)) = &final_return_type {
+        let key_type = variadic.get_type(0).ok_or(InferFailReason::None)?;
+        let value_type = variadic.get_type(1).ok_or(InferFailReason::None)?;
+        tpl_pattern_match(context, &table_generic_params[0], &key_type)?;
+        tpl_pattern_match(context, &table_generic_params[1], &value_type)?;
+        return Ok(());
+    }
+    Err(InferFailReason::None)
 }

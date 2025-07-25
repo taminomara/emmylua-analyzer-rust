@@ -426,4 +426,96 @@ mod tests {
             },
         ));
     }
+
+    #[test]
+    fn test_other_file_function() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def_file(
+            "a.lua",
+            r#"
+            ---测试
+            local function zipLatest(...)
+            end
+            return zipLatest
+
+            "#,
+        );
+        assert!(ws.check_hover(
+            r#"
+                local zipLatest = require("a")
+                <??>zipLatest()
+            "#,
+            VirtualHoverResult {
+                value: "```lua\nlocal function zipLatest(...)\n```\n\n---\n\n测试".to_string(),
+            },
+        ));
+    }
+
+    #[test]
+    fn test_hover_generic_function_params_description() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def_file(
+            "a.lua",
+            r#"
+                ---@class RingBuffer<T>
+                local RingBuffer = {}
+
+                ---@param index integer 索引
+                ---@return T? item
+                function RingBuffer:get(index)
+                end
+
+            "#,
+        );
+        assert!(ws.check_hover(
+            r#"
+                ---@type RingBuffer<string>
+                local RingBuffer
+                RingBuffer:<??>get(1)
+            "#,
+            VirtualHoverResult {
+                value: "```lua\n(method) RingBuffer:get(index: integer) -> string?\n```\n\n---\n\n@*param* `index` — 索引".to_string(),
+            },
+        ));
+    }
+
+    #[test]
+    fn test_annotation_search() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def_file(
+            "a.lua",
+            r#"
+                ---@version 5.4
+                ---测试
+                function test()
+                end
+
+            "#,
+        );
+        assert!(ws.check_hover(
+            r#"
+                <??>test()
+            "#,
+            VirtualHoverResult {
+                value: "```lua\nfunction test()\n```\n\n---\n\n测试".to_string(),
+            },
+        ));
+    }
+
+    #[test]
+    fn test_field_remove_first() {
+        let mut ws = ProviderVirtualWorkspace::new();
+        assert!(ws.check_hover(
+            r#"
+                ---@class A<T>
+                ---@field next fun(value: T) # 测试
+                local A = {}
+
+                A.<??>next()
+            "#,
+            VirtualHoverResult {
+                value: "```lua\n(field) A.next(value: T)\n```\n\n---\n\n测试".to_string(),
+            },
+        ));
+    }
 }

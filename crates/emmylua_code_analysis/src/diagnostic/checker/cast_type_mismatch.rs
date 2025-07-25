@@ -180,7 +180,10 @@ fn cast_type_check(
         }
         _ => {
             if origin_type.is_table() {
-                if target_type.is_table() || target_type.is_custom_type() {
+                if target_type.is_table()
+                    || target_type.is_custom_type()
+                    || target_type.is_generic()
+                {
                     return Ok(());
                 }
             } else if origin_type.is_custom_type() {

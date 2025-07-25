@@ -1,6 +1,8 @@
-use std::{collections::HashSet, ops::Deref};
+use std::{collections::HashSet, ops::Deref, sync::Arc};
 
 use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaExpr};
+use internment::ArcIntern;
+use smol_str::SmolStr;
 
 use crate::{
     db_index::{DbIndex, LuaType},
@@ -15,7 +17,7 @@ use crate::{
         infer::InferFailReason,
         infer_expr, LuaInferCache,
     },
-    LuaFunctionType, TypeVisitTrait,
+    GenericTpl, GenericTplId, LuaFunctionType, LuaGenericType, TypeVisitTrait,
 };
 
 use super::{instantiate_type_generic::instantiate_doc_function, TypeSubstitutor};
@@ -56,14 +58,15 @@ pub fn instantiate_func_generic(
         .get_args()
         .collect::<Vec<_>>();
     let mut substitutor = TypeSubstitutor::new();
+    let mut context = TplContext {
+        db,
+        cache,
+        substitutor: &mut substitutor,
+        root: call_expr.get_root(),
+        call_expr: Some(call_expr.clone()),
+    };
     if !generic_tpls.is_empty() {
-        substitutor.add_need_infer_tpls(generic_tpls);
-        let mut context = TplContext {
-            db,
-            cache,
-            substitutor: &mut substitutor,
-            root: call_expr.get_root(),
-        };
+        context.substitutor.add_need_infer_tpls(generic_tpls);
 
         let colon_call = call_expr.is_colon_call();
         let colon_define = func.is_colon_define();
@@ -140,7 +143,9 @@ pub fn instantiate_func_generic(
     }
 
     if contain_self {
-        infer_self_type(db, cache, &call_expr, &mut substitutor)?;
+        if let Some(self_type) = infer_self_type(db, cache, &call_expr) {
+            substitutor.add_self_type(self_type);
+        }
     }
 
     if let LuaType::DocFunction(f) = instantiate_doc_function(db, func, &substitutor) {
@@ -150,24 +155,48 @@ pub fn instantiate_func_generic(
     }
 }
 
-fn infer_self_type(
+pub fn build_self_type(db: &DbIndex, self_type: &LuaType) -> LuaType {
+    match self_type {
+        LuaType::Def(id) | LuaType::Ref(id) => {
+            if let Some(generic) = db.get_type_index().get_generic_params(id) {
+                let mut params = Vec::new();
+                for (i, ty) in generic.iter().enumerate() {
+                    if let Some(t) = &ty.1 {
+                        params.push(t.clone());
+                    } else {
+                        params.push(LuaType::TplRef(Arc::new(GenericTpl::new(
+                            GenericTplId::Type(i as u32),
+                            ArcIntern::new(SmolStr::from(ty.0.clone())),
+                        ))));
+                    }
+                }
+                let generic = LuaGenericType::new(id.clone(), params);
+                return LuaType::Generic(Arc::new(generic));
+            }
+        }
+        _ => {}
+    };
+    self_type.clone()
+}
+
+pub fn infer_self_type(
     db: &DbIndex,
     cache: &mut LuaInferCache,
     call_expr: &LuaCallExpr,
-    substitutor: &mut TypeSubstitutor,
-) -> Result<(), InferFailReason> {
+) -> Option<LuaType> {
     let prefix_expr = call_expr.get_prefix_expr();
     if let Some(prefix_expr) = prefix_expr {
         if let LuaExpr::IndexExpr(index) = prefix_expr {
             let self_expr = index.get_prefix_expr();
             if let Some(self_expr) = self_expr {
-                let self_type = infer_expr(db, cache, self_expr.into())?;
-                substitutor.add_self_type(self_type);
+                let self_type = infer_expr(db, cache, self_expr.into()).ok()?;
+                let self_type = build_self_type(db, &self_type);
+                return Some(self_type);
             }
         }
     }
 
-    Ok(())
+    None
 }
 
 fn check_expr_can_later_infer(
