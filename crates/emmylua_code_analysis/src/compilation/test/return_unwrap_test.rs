@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::{LuaType, VirtualWorkspace};
+    use crate::{DiagnosticCode, LuaType, VirtualWorkspace};
 
     #[test]
     fn test_issue_376() {
@@ -38,6 +38,55 @@ mod test {
         function hex_to_char2(hex)
             return string.char(assert(tonumber(hex, 16)))
         end
+        "#,
+        ));
+    }
+
+    #[test]
+    fn test_issue_659() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::ReturnTypeMismatch,
+            r#"
+        --- @async
+        --- @generic R
+        --- @param fn fun(): R...
+        --- @return R...
+        function wrap(fn) end
+
+        ---@async
+        --- @param a {}?
+        --- @return {}?
+        --- @return string? err
+        function get(a)
+            return wrap(function()
+                if not a then
+                    return nil, 'err'
+                end
+
+                return a
+            end)
+        end
+        "#,
+        ));
+    }
+
+    #[test]
+    fn test_issue_643() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+            local function foo(b)
+                if not b then
+                    return
+                end
+                return 'a', 1
+            end
+            --- @type 'a'?
+            local _ = foo()
         "#,
         ));
     }
