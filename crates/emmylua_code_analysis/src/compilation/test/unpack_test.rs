@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::{DiagnosticCode, VirtualWorkspace};
+    use crate::{DiagnosticCode, EmmyrcLuaVersion, VirtualWorkspace};
 
     #[test]
     fn test_unpack() {
@@ -39,6 +39,24 @@ mod test {
             r#"
         --- @type integer,integer,integer
         local _a, _b, _c = unpack({ 1, 2, 3 })
+        "#,
+        ));
+    }
+
+    #[test]
+    fn test_issue_594() {
+        let mut ws = VirtualWorkspace::new_with_init_std_lib();
+        let mut emmyrc = ws.get_emmyrc();
+        emmyrc.runtime.version = EmmyrcLuaVersion::Lua51;
+        ws.analysis.update_config(emmyrc.into());
+        assert!(ws.check_code_for(
+            DiagnosticCode::AssignTypeMismatch,
+            r#"
+        --- @type string[]
+        local s = {}
+
+        --- @type string[]
+        local s2 = { 'a', unpack(s) }
         "#,
         ));
     }

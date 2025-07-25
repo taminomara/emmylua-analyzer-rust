@@ -6,6 +6,7 @@ use emmylua_parser::{
 };
 
 use crate::{
+    check_type_compact,
     db_index::{DbIndex, LuaType},
     infer_call_expr_func, infer_expr, InferGuard, LuaArrayType, LuaDeclId, LuaInferCache,
     LuaMemberId, LuaTupleStatus, LuaTupleType, LuaUnionType, TypeOps, VariadicType,
@@ -73,6 +74,42 @@ fn infer_table_tuple_or_array(
                 }
             };
         }
+    }
+
+    if let Some(last_field) = fields.last() {
+        let last_value_expr = last_field.get_value_expr().ok_or(InferFailReason::None)?;
+        let last_expr_type = infer_expr(db, cache, last_value_expr)?;
+        match last_expr_type {
+            LuaType::Variadic(multi) => match &multi.deref() {
+                VariadicType::Base(base) => {
+                    let non_nil_base = TypeOps::Remove.apply(db, base, &LuaType::Nil);
+                    if fields.len() <= 1 {
+                        return Ok(LuaType::Array(
+                            LuaArrayType::from_base_type(non_nil_base).into(),
+                        ));
+                    }
+                    let len = fields.len() - 1;
+                    let mut all_can_accept_base = true;
+                    for i in 0..len {
+                        let field = fields.get(i).ok_or(InferFailReason::None)?;
+                        let value_expr = field.get_value_expr().ok_or(InferFailReason::None)?;
+                        let typ = infer_expr(db, cache, value_expr)?;
+                        if check_type_compact(db, &non_nil_base, &typ).is_err() {
+                            all_can_accept_base = false;
+                            break;
+                        }
+                    }
+
+                    if all_can_accept_base {
+                        return Ok(LuaType::Array(
+                            LuaArrayType::from_base_type(non_nil_base).into(),
+                        ));
+                    }
+                }
+                _ => {}
+            },
+            _ => {}
+        };
     }
 
     let mut types = Vec::new();

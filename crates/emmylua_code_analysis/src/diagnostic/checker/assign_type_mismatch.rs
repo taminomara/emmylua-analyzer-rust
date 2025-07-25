@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use emmylua_parser::{
     LuaAssignStat, LuaAst, LuaAstNode, LuaAstToken, LuaExpr, LuaIndexExpr, LuaLocalStat,
     LuaNameExpr, LuaTableExpr, LuaVarExpr,
@@ -6,7 +8,7 @@ use rowan::TextRange;
 
 use crate::{
     infer_index_expr, DiagnosticCode, LuaDeclExtra, LuaDeclId, LuaMemberKey, LuaSemanticDeclId,
-    LuaType, SemanticDeclLevel, SemanticModel, TypeCheckFailReason, TypeCheckResult,
+    LuaType, SemanticDeclLevel, SemanticModel, TypeCheckFailReason, TypeCheckResult, VariadicType,
 };
 
 use super::{humanize_lint_type, Checker, DiagnosticContext};
@@ -252,15 +254,14 @@ fn check_table_expr_content(
         // 位于的最后的 TableFieldValue 允许接受函数调用返回的多值, 而且返回的值必然会从下标 1 开始覆盖掉所有索引字段.
         if field.is_value_field() && idx == fields.len() - 1 {
             match &expr_type {
-                LuaType::Variadic(_) => {
-                    // 解开可变参数
-                    let expr_types =
-                        semantic_model.infer_expr_list_types(&vec![value_expr.clone()], None);
+                LuaType::Variadic(variadic) => {
                     if let Some(result) = check_table_last_variadic_type(
                         context,
                         semantic_model,
                         table_type,
-                        &expr_types,
+                        idx,
+                        &variadic,
+                        field.get_range(),
                     ) {
                         has_diagnostic = has_diagnostic || result;
                     }
@@ -319,38 +320,40 @@ fn check_table_last_variadic_type(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
     table_type: &LuaType,
-    expr_types: &[(LuaType, TextRange)],
+    idx: usize,
+    value_variadic: &VariadicType,
+    range: TextRange,
 ) -> Option<bool> {
-    let mut has_diagnostic = false;
-
-    for (idx, (expr_type, range)) in expr_types.iter().enumerate() {
-        // 此时的值必然是从下标 1 开始递增的
-        let member_key = LuaMemberKey::Integer(idx as i64 + 1);
+    // test max 10
+    for offset in idx..(idx + 10) {
+        let member_key = LuaMemberKey::Integer((idx + offset) as i64 + 1);
         let source_type = semantic_model
             .infer_member_type(&table_type, &member_key)
             .ok()?;
+        match source_type {
+            LuaType::Variadic(source_variadic) => {
+                return Some(source_variadic.deref() != value_variadic)
+            }
+            _ => {
+                let expr_type = value_variadic.get_type(offset)?;
 
-        let expr_type = if let LuaType::Variadic(variadic) = expr_type {
-            let Some(typ) = variadic.get_type(idx) else {
-                continue;
-            };
-            typ.clone()
-        } else {
-            expr_type.clone()
-        };
-
-        if let Some(result) = check_assign_type_mismatch(
-            context,
-            semantic_model,
-            *range,
-            Some(&source_type),
-            &expr_type,
-            false,
-        ) {
-            has_diagnostic = has_diagnostic || result;
+                if let Some(result) = check_assign_type_mismatch(
+                    context,
+                    semantic_model,
+                    range,
+                    Some(&source_type),
+                    &expr_type,
+                    false,
+                ) {
+                    if result {
+                        return Some(true);
+                    }
+                }
+            }
         }
     }
-    Some(has_diagnostic)
+
+    Some(false)
 }
 
 fn check_assign_type_mismatch(
