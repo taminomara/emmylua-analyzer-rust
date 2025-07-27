@@ -4,11 +4,11 @@
 
 ---
 
-## [0.19.0] - 2025-7-27
-
+## [0.10.0] - 2025-7-27
 ### 🐛 Fixed
-
 - **Fix create an empty directory**:  Fixed an issue where the language server would create an empty directory.
+### 🔧 Changed
+- **Rust Edition 2024**: The language server is now built with Rust Edition 2024, which brings various performance and stability improvements.
 
 
 ## [0.9.1] - 2025-7-25
