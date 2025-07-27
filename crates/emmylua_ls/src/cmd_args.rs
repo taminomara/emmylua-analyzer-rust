@@ -27,7 +27,7 @@ pub struct CmdArgs {
     pub log_path: NoneableString,
 
     /// Path to the resources and logs directory. Use 'none' to indicate that assets should not be output to the file system.
-    #[cfg_attr(feature = "cli", structopt(long, default_value = "\"\""))]
+    #[cfg_attr(feature = "cli", structopt(long, default_value = ""))]
     pub resources_path: NoneableString,
 
     /// Whether to load the standard library.
