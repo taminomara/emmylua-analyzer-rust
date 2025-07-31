@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use emmylua_code_analysis::EmmyrcFilenameConvention;
+    use emmylua_code_analysis::{DocSyntax, Emmyrc, EmmyrcFilenameConvention};
     use googletest::prelude::*;
     use lsp_types::{CompletionItemKind, CompletionTriggerKind};
 
@@ -1261,6 +1261,756 @@ mod tests {
             "#,
             vec![],
         ));
+        Ok(())
+    }
+
+    #[gtest]
+    fn test_doc_completion() -> Result<()> {
+        let mut ws = ProviderVirtualWorkspace::new();
+
+        let mut emmyrc = Emmyrc::default();
+        emmyrc.doc.syntax = DocSyntax::Rst;
+        ws.analysis.update_config(emmyrc.into());
+
+        ws.def_file(
+            "mod_empty.lua",
+            r#"
+            "#,
+        );
+
+        ws.def_file(
+            "mod_with_class.lua",
+            r#"
+                --- @class mod_with_class.Cls
+                --- @class mod_with_class.ns1.ns2.Cls
+            "#,
+        );
+
+        ws.def_file(
+            "mod_with_class_and_def.lua",
+            r#"
+                local ns = {}
+
+                --- @class mod_with_class_and_def.Cls
+                ns.Cls = {}
+
+                function ns.foo() end
+
+                return ns
+            "#,
+        );
+
+        ws.def_file(
+            "mod_with_sub_mod.lua",
+            r#"
+                GLOBAL = 0
+                return {
+                    x = 1
+                }
+            "#,
+        );
+
+        ws.def_file(
+            "mod_with_sub_mod/sub_mod.lua",
+            r#"
+                return {
+                    foo = 1,
+                    bar = function() end,
+                }
+            "#,
+        );
+
+        ws.def_file(
+            "cls.lua",
+            r#"
+                --- @class Foo
+                --- @field x integer
+                --- @field [1] string
+            "#,
+        );
+
+        check!(ws.check_completion(
+            r#"
+                --- :lua:obj:`<??>`
+
+                return {
+                    foo = 0
+                }
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "mod_with_class_and_def".to_string(),
+                    kind: CompletionItemKind::MODULE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "mod_with_class".to_string(),
+                    kind: CompletionItemKind::MODULE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "Foo".to_string(),
+                    kind: CompletionItemKind::CLASS,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "GLOBAL".to_string(),
+                    kind: CompletionItemKind::CONSTANT,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "mod_with_class_and_def".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "virtual_0".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "foo".to_string(),
+                    kind: CompletionItemKind::CONSTANT,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "mod_with_class".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "cls".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "mod_empty".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "mod_with_sub_mod".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+            ],
+        ));
+
+        check!(ws.check_completion(r"--- :lua:obj:`mod_empty.<??>`", vec![]));
+
+        check!(ws.check_completion(
+            r"--- :lua:obj:`mod_with_class.<??>`",
+            vec![
+                VirtualCompletionItem {
+                    label: "Cls".to_string(),
+                    kind: CompletionItemKind::CLASS,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "ns1".to_string(),
+                    kind: CompletionItemKind::MODULE,
+                    label_detail: None,
+                },
+            ],
+        ));
+
+        check!(ws.check_completion(
+            r"--- :lua:obj:`mod_with_class.ns1.<??>`",
+            vec![VirtualCompletionItem {
+                label: "ns2".to_string(),
+                kind: CompletionItemKind::MODULE,
+                label_detail: None,
+            }],
+        ));
+
+        check!(ws.check_completion(
+            r"--- :lua:obj:`mod_with_class.ns1.ns2.<??>`",
+            vec![VirtualCompletionItem {
+                label: "Cls".to_string(),
+                kind: CompletionItemKind::CLASS,
+                label_detail: None,
+            }],
+        ));
+
+        check!(ws.check_completion(
+            r"--- :lua:obj:`mod_with_class_and_def.<??>`",
+            vec![
+                VirtualCompletionItem {
+                    label: "Cls".to_string(),
+                    kind: CompletionItemKind::CLASS,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "foo".to_string(),
+                    kind: CompletionItemKind::FUNCTION,
+                    label_detail: Some("()".to_string()),
+                },
+            ],
+        ));
+
+        check!(ws.check_completion(
+            r"--- :lua:obj:`mod_with_sub_mod.<??>`",
+            vec![
+                VirtualCompletionItem {
+                    label: "sub_mod".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "x".to_string(),
+                    kind: CompletionItemKind::CONSTANT,
+                    label_detail: None,
+                },
+            ],
+        ));
+
+        check!(ws.check_completion(
+            r"--- :lua:obj:`mod_with_sub_mod.sub_mod.<??>`",
+            vec![
+                VirtualCompletionItem {
+                    label: "bar".to_string(),
+                    kind: CompletionItemKind::FUNCTION,
+                    label_detail: Some("()".to_string()),
+                },
+                VirtualCompletionItem {
+                    label: "foo".to_string(),
+                    kind: CompletionItemKind::CONSTANT,
+                    label_detail: None,
+                },
+            ],
+        ));
+
+        check!(ws.check_completion(
+            r"--- :lua:obj:`Foo.<??>`",
+            vec![
+                VirtualCompletionItem {
+                    label: "[1]".to_string(),
+                    kind: CompletionItemKind::VARIABLE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "x".to_string(),
+                    kind: CompletionItemKind::VARIABLE,
+                    label_detail: None,
+                },
+            ],
+        ));
+
+        Ok(())
+    }
+
+    #[gtest]
+    fn test_doc_completion_in_members() -> Result<()> {
+        let make_ws = || {
+            let mut ws = ProviderVirtualWorkspace::new();
+
+            let mut emmyrc = Emmyrc::default();
+            emmyrc.doc.syntax = DocSyntax::Rst;
+            ws.analysis.update_config(emmyrc.into());
+            ws
+        };
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- @class Foo
+                --- @field x integer
+                local Foo = {}
+
+                --- :lua:obj:`<??>`
+                Foo.y = 0
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "Foo".to_string(),
+                    kind: CompletionItemKind::CLASS,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "virtual_0".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "x".to_string(),
+                    kind: CompletionItemKind::VARIABLE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "y".to_string(),
+                    kind: CompletionItemKind::CONSTANT,
+                    label_detail: None,
+                },
+            ],
+        ));
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- @class Foo
+                --- @field x integer
+                local Foo = {}
+
+                --- :lua:obj:`<??>`
+                Foo.y = function() end
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "Foo".to_string(),
+                    kind: CompletionItemKind::CLASS,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "virtual_0".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "x".to_string(),
+                    kind: CompletionItemKind::VARIABLE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "y".to_string(),
+                    kind: CompletionItemKind::FUNCTION,
+                    label_detail: Some("()".to_string()),
+                },
+            ],
+        ));
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- @class Foo
+                --- @field x integer
+                local Foo = {}
+
+                --- :lua:obj:`<??>`
+                function Foo.y() end
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "Foo".to_string(),
+                    kind: CompletionItemKind::CLASS,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "virtual_0".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "x".to_string(),
+                    kind: CompletionItemKind::VARIABLE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "y".to_string(),
+                    kind: CompletionItemKind::FUNCTION,
+                    label_detail: Some("()".to_string()),
+                },
+            ],
+        ));
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- @class Foo
+                --- @field x integer
+                local Foo = {}
+
+                --- :lua:obj:`<??>`
+                function Foo:y() end
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "Foo".to_string(),
+                    kind: CompletionItemKind::CLASS,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "virtual_0".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "x".to_string(),
+                    kind: CompletionItemKind::VARIABLE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "y".to_string(),
+                    kind: CompletionItemKind::FUNCTION,
+                    label_detail: Some("(self)".to_string()),
+                },
+            ],
+        ));
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- @class Foo
+                --- @field x integer
+                local Foo = {
+                    --- :lua:obj:`<??>`
+                    y = 0
+                }
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "Foo".to_string(),
+                    kind: CompletionItemKind::CLASS,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "virtual_0".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "x".to_string(),
+                    kind: CompletionItemKind::VARIABLE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "y".to_string(),
+                    kind: CompletionItemKind::CONSTANT,
+                    label_detail: None,
+                },
+            ],
+        ));
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- @class Foo
+                --- @field x integer
+                local Foo = {
+                    --- :lua:obj:`<??>`
+                    y = function() end
+                }
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "Foo".to_string(),
+                    kind: CompletionItemKind::CLASS,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "virtual_0".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "x".to_string(),
+                    kind: CompletionItemKind::VARIABLE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "y".to_string(),
+                    kind: CompletionItemKind::FUNCTION,
+                    label_detail: Some("()".to_string()),
+                },
+            ],
+        ));
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- @class Foo
+                --- @field x integer
+                local Foo = {}
+
+                function Foo:init()
+                    --- :lua:obj:`<??>`
+                    self.y = 0
+                end
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "Foo".to_string(),
+                    kind: CompletionItemKind::CLASS,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "virtual_0".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "x".to_string(),
+                    kind: CompletionItemKind::VARIABLE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "y".to_string(),
+                    kind: CompletionItemKind::CONSTANT,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "init".to_string(),
+                    kind: CompletionItemKind::FUNCTION,
+                    label_detail: Some("(self) -> nil".to_string()),
+                },
+            ],
+        ));
+
+        Ok(())
+    }
+
+    #[gtest]
+    fn test_doc_completion_myst_empty() -> Result<()> {
+        let make_ws = || {
+            let mut ws = ProviderVirtualWorkspace::new();
+            let mut emmyrc = Emmyrc::default();
+            emmyrc.doc.syntax = DocSyntax::Myst;
+            ws.analysis.update_config(emmyrc.into());
+
+            ws.def_file(
+                "a.lua",
+                r#"
+                ---@class A
+            "#,
+            );
+
+            ws
+        };
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- {lua:obj}<??>``...
+            "#,
+            vec![],
+        ));
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- {lua:obj}`<??>`...
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "A".to_string(),
+                    kind: CompletionItemKind::CLASS,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "a".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "virtual_0".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+            ],
+        ));
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- {lua:obj}``<??>...
+            "#,
+            vec![],
+        ));
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- {lua:obj}`<??>...
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "A".to_string(),
+                    kind: CompletionItemKind::CLASS,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "a".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "virtual_0".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+            ],
+        ));
+
+        Ok(())
+    }
+
+    #[gtest]
+    fn test_doc_completion_rst_empty() -> Result<()> {
+        let make_ws = || {
+            let mut ws = ProviderVirtualWorkspace::new();
+            let mut emmyrc = Emmyrc::default();
+            emmyrc.doc.syntax = DocSyntax::Rst;
+            ws.analysis.update_config(emmyrc.into());
+
+            ws.def_file(
+                "a.lua",
+                r#"
+                ---@class A
+            "#,
+            );
+
+            ws
+        };
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- :lua:obj:<??>``...
+            "#,
+            vec![],
+        ));
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- :lua:obj:`<??>`...
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "A".to_string(),
+                    kind: CompletionItemKind::CLASS,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "a".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "virtual_0".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+            ],
+        ));
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- :lua:obj:``<??>...
+            "#,
+            vec![],
+        ));
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- :lua:obj:`<??>...
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "A".to_string(),
+                    kind: CompletionItemKind::CLASS,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "a".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "virtual_0".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+            ],
+        ));
+
+        Ok(())
+    }
+
+    #[gtest]
+    fn test_doc_completion_rst_default_role_empty() -> Result<()> {
+        let make_ws = || {
+            let mut ws = ProviderVirtualWorkspace::new();
+            let mut emmyrc = Emmyrc::default();
+            emmyrc.doc.syntax = DocSyntax::Rst;
+            emmyrc.doc.rst_default_role = Some("lua:obj".to_string());
+            ws.analysis.update_config(emmyrc.into());
+
+            ws.def_file(
+                "a.lua",
+                r#"
+                ---@class A
+            "#,
+            );
+
+            ws
+        };
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- <??>``...
+            "#,
+            vec![],
+        ));
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- `<??>`...
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "A".to_string(),
+                    kind: CompletionItemKind::CLASS,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "a".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "virtual_0".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+            ],
+        ));
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- ``<??>...
+            "#,
+            vec![],
+        ));
+
+        let mut ws = make_ws();
+        check!(ws.check_completion(
+            r#"
+                --- `<??>...
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "A".to_string(),
+                    kind: CompletionItemKind::CLASS,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "a".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+                VirtualCompletionItem {
+                    label: "virtual_0".to_string(),
+                    kind: CompletionItemKind::FILE,
+                    label_detail: None,
+                },
+            ],
+        ));
+
         Ok(())
     }
 }

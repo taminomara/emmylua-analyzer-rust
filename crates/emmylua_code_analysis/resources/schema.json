@@ -50,7 +50,8 @@
       "$ref": "#/$defs/EmmyrcDoc",
       "default": {
         "knownTags": [],
-        "privateName": []
+        "privateName": [],
+        "syntax": "none"
       }
     },
     "documentColor": {
@@ -123,7 +124,8 @@
     "semanticTokens": {
       "$ref": "#/$defs/EmmyrcSemanticToken",
       "default": {
-        "enable": true
+        "enable": true,
+        "renderDocumentationMarkup": false
       }
     },
     "signature": {
@@ -442,6 +444,15 @@
         }
       ]
     },
+    "DocSyntax": {
+      "type": "string",
+      "enum": [
+        "none",
+        "md",
+        "myst",
+        "rst"
+      ]
+    },
     "EmmyrcCodeAction": {
       "type": "object",
       "properties": {
@@ -611,6 +622,25 @@
           "items": {
             "type": "string"
           }
+        },
+        "rstDefaultRole": {
+          "description": "When `syntax` is `Myst` or `Rst`, specifies default role used\nwith RST processor.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rstPrimaryDomain": {
+          "description": "When `syntax` is `Myst` or `Rst`, specifies primary domain used\nwith RST processor.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "syntax": {
+          "description": "Syntax for highlighting documentation.",
+          "$ref": "#/$defs/DocSyntax",
+          "default": "none"
         }
       }
     },
@@ -933,6 +963,12 @@
           "description": "Enable semantic tokens.",
           "type": "boolean",
           "default": true,
+          "x-vscode-setting": true
+        },
+        "renderDocumentationMarkup": {
+          "description": "Render Markdown/RST in documentation. Set `doc.syntax` for this option to have effect.",
+          "type": "boolean",
+          "default": false,
           "x-vscode-setting": true
         }
       }

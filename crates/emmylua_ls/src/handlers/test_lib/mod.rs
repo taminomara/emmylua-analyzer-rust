@@ -2,10 +2,11 @@ use emmylua_code_analysis::{EmmyLuaAnalysis, Emmyrc, FileId, VirtualUrlGenerator
 use googletest::prelude::*;
 use itertools::Itertools;
 use lsp_types::{
-    CodeActionOrCommand, CompletionItem, CompletionItemKind, CompletionResponse,
-    CompletionTriggerKind, GotoDefinitionResponse, Hover, HoverContents, InlayHintLabel, Location,
-    MarkupContent, Position, SemanticTokenModifier, SemanticTokenType, SemanticTokensResult,
-    SignatureHelpContext, SignatureHelpTriggerKind, SignatureInformation, TextEdit,
+    ClientCapabilities, CodeActionOrCommand, CompletionItem, CompletionItemKind,
+    CompletionResponse, CompletionTriggerKind, GotoDefinitionResponse, Hover, HoverContents,
+    InlayHintLabel, Location, MarkupContent, Position, SemanticTokenModifier, SemanticTokenType,
+    SemanticTokensResult, SignatureHelpContext, SignatureHelpTriggerKind, SignatureInformation,
+    TextEdit,
 };
 use std::collections::HashSet;
 use std::{ops::Deref, sync::Arc};
@@ -489,9 +490,14 @@ impl ProviderVirtualWorkspace {
         expected: Vec<VirtualSemanticToken>,
     ) -> Result<()> {
         let file_id = self.def(block_str);
-        let result = semantic_token(&self.analysis, file_id, ClientId::VSCode)
-            .ok_or("failed to get semantic tokens")
-            .or_fail()?;
+        let result = semantic_token(
+            &self.analysis,
+            file_id,
+            &ClientCapabilities::default(),
+            ClientId::VSCode,
+        )
+        .ok_or("failed to get semantic tokens")
+        .or_fail()?;
         let SemanticTokensResult::Tokens(result) = result else {
             return fail!("expected SemanticTokensResult::Tokens, got {result:?}");
         };

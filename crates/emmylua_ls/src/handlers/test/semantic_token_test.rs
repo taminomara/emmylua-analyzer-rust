@@ -25,17 +25,24 @@ mod tests {
             vec![
                 VirtualSemanticToken {
                     line: 1,
+                    start: 16,
+                    length: 3,
+                    token_type: SemanticTokenType::COMMENT,
+                    token_modifier: HashSet::new(),
+                },
+                VirtualSemanticToken {
+                    line: 1,
                     start: 19,
                     length: 1,
                     token_type: SemanticTokenType::KEYWORD,
-                    token_modifier: HashSet::from([SemanticTokenModifier::DOCUMENTATION,]),
+                    token_modifier: HashSet::from([SemanticTokenModifier::DOCUMENTATION]),
                 },
                 VirtualSemanticToken {
                     line: 1,
                     start: 20,
                     length: 4,
                     token_type: SemanticTokenType::KEYWORD,
-                    token_modifier: HashSet::from([SemanticTokenModifier::DOCUMENTATION,]),
+                    token_modifier: HashSet::from([SemanticTokenModifier::DOCUMENTATION]),
                 },
                 VirtualSemanticToken {
                     line: 1,
@@ -81,17 +88,24 @@ mod tests {
                 },
                 VirtualSemanticToken {
                     line: 4,
+                    start: 36,
+                    length: 4,
+                    token_type: SemanticTokenType::COMMENT,
+                    token_modifier: HashSet::new(),
+                },
+                VirtualSemanticToken {
+                    line: 4,
                     start: 40,
                     length: 1,
                     token_type: SemanticTokenType::KEYWORD,
-                    token_modifier: HashSet::from([SemanticTokenModifier::DOCUMENTATION,]),
+                    token_modifier: HashSet::from([SemanticTokenModifier::DOCUMENTATION]),
                 },
                 VirtualSemanticToken {
                     line: 4,
                     start: 41,
                     length: 4,
                     token_type: SemanticTokenType::KEYWORD,
-                    token_modifier: HashSet::from([SemanticTokenModifier::DOCUMENTATION,]),
+                    token_modifier: HashSet::from([SemanticTokenModifier::DOCUMENTATION]),
                 },
                 VirtualSemanticToken {
                     line: 4,
@@ -105,7 +119,7 @@ mod tests {
                     start: 47,
                     length: 1,
                     token_type: SemanticTokenType::OPERATOR,
-                    token_modifier: HashSet::new(),
+                    token_modifier: HashSet::from([SemanticTokenModifier::DOCUMENTATION]),
                 },
                 VirtualSemanticToken {
                     line: 4,
