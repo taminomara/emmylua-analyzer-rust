@@ -214,7 +214,7 @@ impl ProviderVirtualWorkspace {
     pub fn check_completion_with_kind(
         &mut self,
         block_str: &str,
-        expected: Vec<VirtualCompletionItem>,
+        mut expected: Vec<VirtualCompletionItem>,
         trigger_kind: CompletionTriggerKind,
     ) -> Result<()> {
         let (content, position) = Self::handle_file_content(block_str)?;
@@ -229,10 +229,13 @@ impl ProviderVirtualWorkspace {
         .ok_or("failed to get completion")
         .or_fail()?;
         // 对比
-        let items = match result {
+        let mut items = match result {
             CompletionResponse::Array(items) => items,
             CompletionResponse::List(list) => list.items,
         };
+
+        items.sort_by_key(|item| item.label.clone());
+        expected.sort_by_key(|item| item.label.clone());
 
         fn get_item_detail(i: &CompletionItem) -> Option<&String> {
             i.label_details.as_ref().and_then(|d| d.detail.as_ref())
