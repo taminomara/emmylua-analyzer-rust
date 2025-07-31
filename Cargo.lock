@@ -642,6 +642,7 @@ dependencies = [
  "dirs",
  "emmylua_code_analysis",
  "emmylua_parser",
+ "emmylua_parser_desc",
  "fern",
  "glob",
  "googletest",
@@ -669,6 +670,15 @@ dependencies = [
  "rowan",
  "rust-i18n",
  "serde",
+]
+
+[[package]]
+name = "emmylua_parser_desc"
+version = "0.12.0"
+dependencies = [
+ "emmylua_parser",
+ "rowan",
+ "unicode-general-category",
 ]
 
 [[package]]
@@ -2393,6 +2403,12 @@ checksum = "96bd2f2237fe450fcd0a1d2f5f4e91711124f7857ba2e964247776ebeeb7b0c4"
 dependencies = [
  "unic-common",
 ]
+
+[[package]]
+name = "unicode-general-category"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "24adfe8311434967077a6adff125729161e6e4934d76f6b7c55318ac5c9246d3"
 
 [[package]]
 name = "unicode-ident"
