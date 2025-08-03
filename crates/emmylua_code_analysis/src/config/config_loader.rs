@@ -6,7 +6,7 @@ use crate::read_file_with_encoding;
 
 use super::{Emmyrc, flatten_config::FlattenConfigObject};
 
-pub fn load_configs(config_files: Vec<PathBuf>, partial_emmyrcs: Option<Vec<Value>>) -> Emmyrc {
+pub fn load_configs_raw(config_files: Vec<PathBuf>, partial_emmyrcs: Option<Vec<Value>>) -> Value {
     let mut config_jsons = Vec::new();
 
     for config_file in config_files {
@@ -45,26 +45,15 @@ pub fn load_configs(config_files: Vec<PathBuf>, partial_emmyrcs: Option<Vec<Valu
 
     if config_jsons.is_empty() {
         log::info!("No valid config file found.");
-        Emmyrc::default()
+        Value::Object(Default::default())
     } else if config_jsons.len() == 1 {
-        let first_config = match config_jsons.into_iter().next() {
-            Some(config) => config,
-            None => {
-                log::error!("No valid config file found.");
-                return Emmyrc::default();
-            }
-        };
+        let first_config = config_jsons.into_iter().next().unwrap_or_else(|| {
+            log::error!("No valid config file found.");
+            Value::Object(Default::default())
+        });
 
         let flatten_config = FlattenConfigObject::parse(first_config);
-        let emmyrc_json_value = flatten_config.to_emmyrc();
-        let emmyrc: Emmyrc = match serde_json::from_value(emmyrc_json_value) {
-            Ok(config) => config,
-            Err(err) => {
-                log::error!("Failed to parse config, error: {:?}", err);
-                Emmyrc::default()
-            }
-        };
-        emmyrc
+        flatten_config.to_emmyrc()
     } else {
         let merge_config =
             config_jsons
@@ -74,16 +63,16 @@ pub fn load_configs(config_files: Vec<PathBuf>, partial_emmyrcs: Option<Vec<Valu
                     acc
                 });
         let flatten_config = FlattenConfigObject::parse(merge_config.clone());
-        let emmyrc_json_value = flatten_config.to_emmyrc();
-        let emmyrc: Emmyrc = match serde_json::from_value(emmyrc_json_value) {
-            Ok(config) => config,
-            Err(err) => {
-                log::error!("Failed to parse config: error: {:?}", err);
-                Emmyrc::default()
-            }
-        };
-        emmyrc
+        flatten_config.to_emmyrc()
     }
+}
+
+pub fn load_configs(config_files: Vec<PathBuf>, partial_emmyrcs: Option<Vec<Value>>) -> Emmyrc {
+    let emmyrc_json_value = load_configs_raw(config_files, partial_emmyrcs);
+    serde_json::from_value(emmyrc_json_value).unwrap_or_else(|err| {
+        log::error!("Failed to parse config: error: {:?}", err);
+        Emmyrc::default()
+    })
 }
 
 fn merge_values(base: &mut Value, overlay: Value) {
