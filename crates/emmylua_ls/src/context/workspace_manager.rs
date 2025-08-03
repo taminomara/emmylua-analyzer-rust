@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::path::Path;
+use std::sync::atomic::AtomicBool;
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use super::{ClientProxy, FileDiagnostic, StatusBar};
@@ -24,6 +25,8 @@ pub struct WorkspaceManager {
     pub watcher: Option<notify::RecommendedWatcher>,
     pub current_open_files: HashSet<Uri>,
     pub match_file_pattern: WorkspaceFileMatcher,
+    // 原子变量
+    pub workspace_initialized: Arc<AtomicBool>,
 }
 
 impl WorkspaceManager {
@@ -44,7 +47,18 @@ impl WorkspaceManager {
             watcher: None,
             current_open_files: HashSet::new(),
             match_file_pattern: WorkspaceFileMatcher::default(),
+            workspace_initialized: Arc::new(AtomicBool::new(false)),
         }
+    }
+
+    pub fn is_workspace_initialized(&self) -> bool {
+        self.workspace_initialized
+            .load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    pub fn set_workspace_initialized(&self) {
+        self.workspace_initialized
+            .store(true, std::sync::atomic::Ordering::SeqCst);
     }
 
     pub async fn add_update_emmyrc_task(&self, file_dir: PathBuf) {
@@ -139,6 +153,7 @@ impl WorkspaceManager {
     }
 
     pub async fn reindex_workspace(&self, delay: Duration) -> Option<()> {
+        log::info!("reindex workspace with delay: {:?}", delay);
         let mut update_token = self.update_token.lock().await;
         if let Some(token) = update_token.as_ref() {
             token.cancel();
@@ -274,6 +289,7 @@ pub fn load_emmy_config(config_root: Option<PathBuf>, client_config: ClientConfi
         emmyrc.pre_process_emmyrc(workspace_root);
     }
 
+    log::info!("loaded emmyrc complete");
     emmyrc.into()
 }
 

@@ -43,6 +43,7 @@ pub fn load_editorconfig(workspace_folders: Vec<PathBuf>) -> Option<()> {
         let file_normalized = file.to_string_lossy().to_string().replace("\\", "/");
         update_code_style(&parent_dir, &file_normalized);
     }
+    log::info!("loaded editorconfig complete");
 
     Some(())
 }

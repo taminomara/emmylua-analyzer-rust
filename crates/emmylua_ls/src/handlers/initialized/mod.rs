@@ -21,7 +21,6 @@ pub use client_config::{ClientConfig, get_client_config};
 use codestyle::load_editorconfig;
 use collect_files::collect_files;
 use emmylua_code_analysis::{EmmyLuaAnalysis, Emmyrc, uri_to_file_path};
-use log::info;
 use lsp_types::InitializeParams;
 use tokio::sync::RwLock;
 
@@ -30,21 +29,33 @@ pub async fn initialized_handler(
     params: InitializeParams,
     cmd_args: CmdArgs,
 ) -> Option<()> {
-    let client_id = get_client_id(&params.client_info);
-    let client_config = get_client_config(&context, client_id).await;
+    // init locale
+    locale::set_ls_locale(&params);
     let workspace_folders = get_workspace_folders(&params);
     let main_root: Option<&str> = match workspace_folders.first() {
         Some(path) => path.to_str(),
         None => None,
     };
-    // init locale
-    locale::set_ls_locale(&params);
 
     // init logger
     init_logger(main_root, &cmd_args);
-    info!("client_id: {:?}", client_id);
+    log::info!("main root: {:?}", main_root);
+
+    let client_id = get_client_id(&params.client_info);
+    log::info!("client_id: {:?}", client_id);
+
+    {
+        log::info!("set workspace folders: {:?}", workspace_folders);
+        let mut workspace_manager = context.workspace_manager.write().await;
+        workspace_manager.workspace_folders = workspace_folders.clone();
+        log::info!("workspace folders set");
+    }
+
+    let client_config = get_client_config(&context, client_id).await;
+    log::info!("client_config: {:?}", client_config);
+
     let params_json = serde_json::to_string_pretty(&params).unwrap();
-    info!("initialization_params: {}", params_json);
+    log::info!("initialization_params: {}", params_json);
 
     // init config
     // todo! support multi config
@@ -59,25 +70,26 @@ pub async fn initialized_handler(
     // init std lib
     init_std_lib(context.analysis.clone(), &cmd_args, emmyrc.clone()).await;
 
-    let mut workspace_manager = context.workspace_manager.write().await;
-    workspace_manager.workspace_folders = workspace_folders.clone();
-    workspace_manager.client_config = client_config.clone();
-    let (include, exclude, exclude_dir) = calculate_include_and_exclude(&emmyrc);
-    workspace_manager.match_file_pattern = WorkspaceFileMatcher::new(include, exclude, exclude_dir);
-    drop(workspace_manager);
-    // let file_diagnostic = context.file_diagnostic.clone();
-
     init_analysis(
         context.analysis.clone(),
         context.client.clone(),
         &context.status_bar,
         workspace_folders,
-        emmyrc,
+        emmyrc.clone(),
         client_id,
         context.file_diagnostic.clone(),
     )
     .await;
 
+    {
+        let mut workspace_manager = context.workspace_manager.write().await;
+        workspace_manager.client_config = client_config.clone();
+        let (include, exclude, exclude_dir) = calculate_include_and_exclude(&emmyrc);
+        workspace_manager.match_file_pattern =
+            WorkspaceFileMatcher::new(include, exclude, exclude_dir);
+        workspace_manager.set_workspace_initialized();
+        log::info!("workspace manager initialized");
+    }
     register_files_watch(context.clone(), &params.capabilities).await;
     Some(())
 }
@@ -97,7 +109,7 @@ pub async fn init_analysis(
     mut_analysis.update_config(emmyrc.clone());
 
     if let Ok(emmyrc_json) = serde_json::to_string_pretty(emmyrc.as_ref()) {
-        info!("current config : {}", emmyrc_json);
+        log::info!("current config : {}", emmyrc_json);
     }
 
     status_bar.create_progress_task(client_id, ProgressTask::LoadWorkspace);
@@ -110,17 +122,17 @@ pub async fn init_analysis(
 
     let mut workspace_folders = workspace_folders;
     for workspace_root in &workspace_folders {
-        info!("add workspace root: {:?}", workspace_root);
+        log::info!("add workspace root: {:?}", workspace_root);
         mut_analysis.add_main_workspace(workspace_root.clone());
     }
 
     for workspace_root in &emmyrc.workspace.workspace_roots {
-        info!("add workspace root: {:?}", workspace_root);
+        log::info!("add workspace root: {:?}", workspace_root);
         mut_analysis.add_main_workspace(PathBuf::from_str(workspace_root).unwrap());
     }
 
     for lib in &emmyrc.workspace.library {
-        info!("add library: {:?}", lib);
+        log::info!("add library: {:?}", lib);
         mut_analysis.add_library_workspace(PathBuf::from_str(lib).unwrap());
         workspace_folders.push(PathBuf::from_str(lib).unwrap());
     }
@@ -190,10 +202,16 @@ pub async fn init_std_lib(
     cmd_args: &CmdArgs,
     emmyrc: Arc<Emmyrc>,
 ) {
+    log::info!(
+        "initializing std lib with resources path: {:?}",
+        cmd_args.resources_path
+    );
     let mut analysis = analysis.write().await;
     if cmd_args.load_stdlib.0 {
         // double update config
         analysis.update_config(emmyrc);
         analysis.init_std_lib(cmd_args.resources_path.0.clone());
     }
+
+    log::info!("initialized std lib complete");
 }

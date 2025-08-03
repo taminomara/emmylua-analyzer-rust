@@ -18,9 +18,10 @@ pub async fn get_client_config_neovim(
         .await
         .workspace_folders
         .clone();
-    let main_workspace_folder = workspace_folders.get(0);
+
+    let main_workspace_folder = workspace_folders.get(0)?;
     let client = &context.client;
-    let scope_uri = main_workspace_folder.map(|p| file_path_to_uri(p).unwrap());
+    let scope_uri = file_path_to_uri(main_workspace_folder);
     let params = lsp_types::ConfigurationParams {
         items: vec![lsp_types::ConfigurationItem {
             scope_uri: scope_uri,
@@ -37,9 +38,10 @@ pub async fn get_client_config_neovim(
 
     if let Some(pretty_json) = serde_json::to_string_pretty(&configs).ok() {
         info!("load neovim client config: {}", pretty_json);
+    } else {
+        info!("not found neovim client config");
     }
 
     config.partial_emmyrcs = Some(configs);
-
     Some(())
 }
