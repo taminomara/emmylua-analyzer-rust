@@ -1,7 +1,7 @@
-mod neovim_config;
+mod default_config;
 mod vscode_config;
 
-use neovim_config::get_client_config_neovim;
+use default_config::get_client_config_default;
 use serde_json::Value;
 use vscode_config::get_client_config_vscode;
 
@@ -30,8 +30,10 @@ pub async fn get_client_config(
     };
     match client_id {
         ClientId::VSCode => get_client_config_vscode(context, &mut config).await,
-        ClientId::Neovim => get_client_config_neovim(context, &mut config).await,
-        _ => Some(()),
+        ClientId::Neovim => {
+            get_client_config_default(context, &mut config, Some(&["Lua", "emmylua"])).await
+        }
+        _ => get_client_config_default(context, &mut config, None).await,
     };
 
     config
