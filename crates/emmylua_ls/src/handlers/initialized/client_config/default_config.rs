@@ -57,7 +57,26 @@ pub async fn get_client_config_default(
         info!("no client config found");
     }
 
+    for config in &mut configs {
+        // VSCode always sends default values for all options, even those that weren't
+        // explicitly configured by user. This results in `null`s being sent for
+        // every option. Naturally, serde chokes on these nulls when applying partial
+        // configuration.
+        //
+        // Because of this, we have to ignore them here.
+        skip_nulls(config);
+    }
+
     config.partial_emmyrcs = Some(configs);
 
     Some(())
+}
+
+fn skip_nulls(v: &mut Value) {
+    if let Value::Object(obj) = v {
+        obj.retain(|_, v| !v.is_null());
+        for (_, v) in obj {
+            skip_nulls(v);
+        }
+    }
 }
