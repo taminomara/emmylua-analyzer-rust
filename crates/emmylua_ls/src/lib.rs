@@ -5,16 +5,16 @@ mod logger;
 mod meta_text;
 mod util;
 
+use crate::handlers::{
+    initialized_handler, on_notification_handler, on_req_handler, on_response_handler,
+};
 pub use clap::Parser;
 pub use cmd_args::*;
 use handlers::server_capabilities;
 use lsp_server::{Connection, Message};
 use lsp_types::InitializeParams;
+use std::sync::Arc;
 use std::{env, error::Error};
-
-use crate::handlers::{
-    initialized_handler, on_notification_handler, on_req_handler, on_response_handler,
-};
 
 #[macro_use]
 extern crate rust_i18n;
@@ -60,10 +60,13 @@ async fn main_loop(
     params: InitializeParams,
     cmd_args: CmdArgs,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
-    let mut server_context = context::ServerContext::new(Connection {
-        sender: connection.sender.clone(),
-        receiver: connection.receiver.clone(),
-    });
+    let mut server_context = context::ServerContext::new(
+        Connection {
+            sender: connection.sender.clone(),
+            receiver: connection.receiver.clone(),
+        },
+        Arc::new(params.capabilities.clone()),
+    );
 
     let server_context_snapshot = server_context.snapshot();
     tokio::spawn(async move {

@@ -42,6 +42,12 @@ pub async fn initialized_handler(
     log::info!("main root: {:?}", main_root);
 
     let client_id = get_client_id(&params.client_info);
+    let supports_config_request = params
+        .capabilities
+        .workspace
+        .as_ref()?
+        .configuration
+        .unwrap_or_default();
     log::info!("client_id: {:?}", client_id);
 
     {
@@ -51,7 +57,7 @@ pub async fn initialized_handler(
         log::info!("workspace folders set");
     }
 
-    let client_config = get_client_config(&context, client_id).await;
+    let client_config = get_client_config(&context, client_id, supports_config_request).await;
     log::info!("client_config: {:?}", client_config);
 
     let params_json = serde_json::to_string_pretty(&params).unwrap();

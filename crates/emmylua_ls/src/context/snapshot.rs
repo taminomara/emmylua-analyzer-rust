@@ -1,3 +1,4 @@
+use lsp_types::ClientCapabilities;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -15,4 +16,5 @@ pub struct ServerContextSnapshot {
     pub file_diagnostic: Arc<FileDiagnostic>,
     pub workspace_manager: Arc<RwLock<WorkspaceManager>>,
     pub status_bar: Arc<StatusBar>,
+    pub client_capabilities: Arc<ClientCapabilities>,
 }

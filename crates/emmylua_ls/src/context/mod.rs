@@ -10,6 +10,7 @@ pub use client_id::{ClientId, get_client_id};
 use emmylua_code_analysis::EmmyLuaAnalysis;
 pub use file_diagnostic::FileDiagnostic;
 use lsp_server::{Connection, ErrorCode, Message, RequestId, Response};
+use lsp_types::ClientCapabilities;
 pub use snapshot::ServerContextSnapshot;
 pub use status_bar::ProgressTask;
 pub use status_bar::StatusBar;
@@ -29,10 +30,11 @@ pub struct ServerContext {
     file_diagnostic: Arc<FileDiagnostic>,
     workspace_manager: Arc<RwLock<WorkspaceManager>>,
     status_bar: Arc<StatusBar>,
+    client_capabilities: Arc<ClientCapabilities>,
 }
 
 impl ServerContext {
-    pub fn new(conn: Connection) -> Self {
+    pub fn new(conn: Connection, client_capabilities: Arc<ClientCapabilities>) -> Self {
         let client = Arc::new(ClientProxy::new(Connection {
             sender: conn.sender.clone(),
             receiver: conn.receiver.clone(),
@@ -60,6 +62,7 @@ impl ServerContext {
             cancllations: Arc::new(Mutex::new(HashMap::new())),
             workspace_manager,
             status_bar,
+            client_capabilities,
         }
     }
 
@@ -70,6 +73,7 @@ impl ServerContext {
             file_diagnostic: self.file_diagnostic.clone(),
             workspace_manager: self.workspace_manager.clone(),
             status_bar: self.status_bar.clone(),
+            client_capabilities: self.client_capabilities.clone(),
         }
     }
 
