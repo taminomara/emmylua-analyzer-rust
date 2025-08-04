@@ -7,15 +7,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub use config_loader::load_configs;
-pub use configs::EmmyrcFilenameConvention;
-pub use configs::EmmyrcLuaVersion;
-use configs::{EmmyrcCodeAction, EmmyrcDocumentColor};
+pub use config_loader::{load_configs, load_configs_raw};
 use configs::{
-    EmmyrcCodeLen, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcDoc, EmmyrcHover, EmmyrcInlayHint,
-    EmmyrcInlineValues, EmmyrcReference, EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken,
-    EmmyrcSignature, EmmyrcStrict, EmmyrcWorkspace,
+    EmmyrcCodeAction, EmmyrcCodeLen, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcDoc,
+    EmmyrcDocumentColor, EmmyrcHover, EmmyrcInlayHint, EmmyrcInlineValues, EmmyrcReference,
+    EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken, EmmyrcSignature, EmmyrcStrict,
+    EmmyrcWorkspace,
 };
+pub use configs::{EmmyrcFilenameConvention, EmmyrcLuaVersion};
 use emmylua_parser::{LuaLanguageLevel, ParserConfig, SpecialFunction};
 use regex::Regex;
 use rowan::NodeCache;
