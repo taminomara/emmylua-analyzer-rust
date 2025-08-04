@@ -4,8 +4,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, JsonSchema, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcSemanticToken {
-    /// Whether to enable semantic token.
+    /// Enable semantic tokens.
     #[serde(default = "default_true")]
+    #[schemars(extend("x-vscode-setting" = true))]
     pub enable: bool,
 }
 

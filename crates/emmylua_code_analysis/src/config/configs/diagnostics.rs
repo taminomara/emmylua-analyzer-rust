@@ -28,7 +28,8 @@ pub struct EmmyrcDiagnostic {
     /// A list of diagnostic codes that are enabled.
     #[serde(default)]
     pub enables: Vec<DiagnosticCode>,
-    /// The interval in milliseconds to perform diagnostics.
+    /// Delay between opening/changing a file and scanning it for errors, in milliseconds.
+    #[schemars(extend("x-vscode-setting" = true))]
     pub diagnostic_interval: Option<u64>,
 }
 

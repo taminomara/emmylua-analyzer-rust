@@ -4,8 +4,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, JsonSchema, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcDocumentColor {
-    /// Whether to enable document color.
+    /// Enable parsing strings for color tags and showing a color picker next to them.
     #[serde(default = "default_true")]
+    #[schemars(extend("x-vscode-setting" = true))]
     pub enable: bool,
 }
 

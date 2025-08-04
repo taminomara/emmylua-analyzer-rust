@@ -7,11 +7,14 @@ use serde_with::{DefaultOnError, serde_as};
 #[serde(rename_all = "camelCase")]
 /// Configuration for EmmyLua code completion.
 pub struct EmmyrcCompletion {
-    /// Whether to enable code completion.
+    /// Enable autocompletion.
     #[serde(default = "default_true")]
+    #[schemars(extend("x-vscode-setting" = true))]
     pub enable: bool,
-    /// Whether to automatically require modules.
+    /// Automatically insert call to `require` when autocompletion
+    /// inserts objects from other modules.
     #[serde(default = "default_true")]
+    #[schemars(extend("x-vscode-setting" = true))]
     pub auto_require: bool,
     /// The function used for auto-requiring modules.
     #[serde(default = "default_require_function")]
@@ -26,11 +29,19 @@ pub struct EmmyrcCompletion {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnError")]
     pub call_snippet: bool,
-    /// The postfix trigger used in completions.
+    /// Symbol that's used to trigger postfix autocompletion.
     #[serde(default = "default_postfix")]
+    #[schemars(extend("x-vscode-setting" = {
+        "type": ["string", "null"],
+        "default": null,
+        "enum": [null, "@", ".", ":"],
+        "enumItemLabels": ["Default"],
+        "markdownEnumDescriptions": ["%config.common.enum.default.description%"],
+    }))]
     pub postfix: String,
-    /// Whether to include the name in the base function completion. effect: `function () end` -> `function name() end`.
+    /// Whether to include the name in the base function completion. Effect: `function () end` -> `function name() end`.
     #[serde(default = "default_true")]
+    #[schemars(extend("x-vscode-setting" = true))]
     pub base_function_includes_name: bool,
 }
 
