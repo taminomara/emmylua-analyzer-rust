@@ -4,8 +4,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, JsonSchema, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcCodeAction {
-    /// Whether to insert space after '---'
+    /// Add space after `---` comments when inserting `@diagnostic disable-next-line`.
     #[serde(default = "default_false")]
+    #[schemars(extend("x-vscode-setting" = true))]
     pub insert_space: bool,
 }
 

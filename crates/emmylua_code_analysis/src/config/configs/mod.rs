@@ -16,7 +16,7 @@ mod strict;
 mod workspace;
 
 pub use code_action::EmmyrcCodeAction;
-pub use codelen::EmmyrcCodeLen;
+pub use codelen::EmmyrcCodeLens;
 pub use completion::{EmmyrcCompletion, EmmyrcFilenameConvention};
 pub use diagnostics::EmmyrcDiagnostic;
 pub use doc::EmmyrcDoc;

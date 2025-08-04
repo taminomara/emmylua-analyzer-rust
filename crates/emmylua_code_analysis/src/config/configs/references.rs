@@ -4,14 +4,18 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, JsonSchema, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct EmmyrcReference {
-    /// Whether to enable reference search.
+    /// Enable searching for symbol usages.
     #[serde(default = "default_true")]
+    #[schemars(extend("x-vscode-setting" = true))]
     pub enable: bool,
-    /// Determines whether to enable fuzzy searching for fields where references cannot be found.
+    /// Use fuzzy search when searching for symbol usages
+    /// and normal search didn't find anything.
     #[serde(default = "default_true")]
+    #[schemars(extend("x-vscode-setting" = true))]
     pub fuzzy_search: bool,
-    /// Cache Short string for search
+    /// Also search for usages in strings.
     #[serde(default = "default_false")]
+    #[schemars(extend("x-vscode-setting" = true))]
     pub short_string_search: bool,
 }
 

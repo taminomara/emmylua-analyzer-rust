@@ -9,7 +9,7 @@ use std::{
 
 pub use config_loader::{load_configs, load_configs_raw};
 use configs::{
-    EmmyrcCodeAction, EmmyrcCodeLen, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcDoc,
+    EmmyrcCodeAction, EmmyrcCodeLens, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcDoc,
     EmmyrcDocumentColor, EmmyrcHover, EmmyrcInlayHint, EmmyrcInlineValues, EmmyrcReference,
     EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken, EmmyrcSignature, EmmyrcStrict,
     EmmyrcWorkspace,
@@ -42,7 +42,7 @@ pub struct Emmyrc {
     #[serde(default)]
     pub resource: EmmyrcResource,
     #[serde(default)]
-    pub code_lens: EmmyrcCodeLen,
+    pub code_lens: EmmyrcCodeLens,
     #[serde(default)]
     pub strict: EmmyrcStrict,
     #[serde(default)]

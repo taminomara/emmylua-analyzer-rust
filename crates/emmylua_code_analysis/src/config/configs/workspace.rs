@@ -29,12 +29,13 @@ pub struct EmmyrcWorkspace {
     /// }
     #[serde(default)]
     pub module_map: Vec<EmmyrcWorkspaceModuleMap>,
-
-    /// when save a file, ls will reindex the workspace after reindex_duration milliseconds.
+    /// Delay between changing a file and full project reindex, in milliseconds.
     #[serde(default = "reindex_duration_default")]
+    #[schemars(extend("x-vscode-setting" = true))]
     pub reindex_duration: u64,
-    /// Enable reindex.
+    /// Enable full project reindex after changing a file.
     #[serde(default = "enable_reindex_default")]
+    #[schemars(extend("x-vscode-setting" = true))]
     pub enable_reindex: bool,
 }
 
