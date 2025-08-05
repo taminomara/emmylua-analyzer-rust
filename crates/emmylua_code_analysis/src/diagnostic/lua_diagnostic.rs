@@ -46,7 +46,6 @@ impl LuaDiagnostic {
             }
         }
 
-
         let mut semantic_model = compilation.get_semantic_model(file_id)?;
         let mut context = DiagnosticContext::new(file_id, db, self.config.clone());
 
