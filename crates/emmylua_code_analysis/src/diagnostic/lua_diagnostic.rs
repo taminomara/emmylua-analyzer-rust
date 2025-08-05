@@ -40,6 +40,13 @@ impl LuaDiagnostic {
         }
 
         let db = compilation.get_db();
+        if let Some(module_info) = db.get_module_index().get_workspace_id(file_id) {
+            if !module_info.is_main() {
+                return None;
+            }
+        }
+
+
         let mut semantic_model = compilation.get_semantic_model(file_id)?;
         let mut context = DiagnosticContext::new(file_id, db, self.config.clone());
 
