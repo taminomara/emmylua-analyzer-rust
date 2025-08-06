@@ -1,6 +1,6 @@
 use crate::{
-    LuaLocalAttribute, LuaSyntaxNode,
-    kind::{LuaSyntaxKind, LuaTokenKind},
+    LuaAstToken, LuaGeneralToken, LuaLocalAttribute, LuaSyntaxNode,
+    kind::LuaSyntaxKind,
     syntax::{
         LuaCommentOwner,
         node::LuaNameToken,
@@ -275,7 +275,7 @@ impl LuaAssignStat {
         let mut exprs = Vec::new();
         let mut meet_assign = false;
         for child in self.syntax.children_with_tokens() {
-            if child.kind() == LuaTokenKind::TkAssign.into() {
+            if child.kind().to_token().is_assign_op() {
                 meet_assign = true;
             }
 
@@ -291,6 +291,17 @@ impl LuaAssignStat {
         }
 
         (vars, exprs)
+    }
+
+    pub fn get_assign_op(&self) -> Option<LuaGeneralToken> {
+        for child in self.syntax.children_with_tokens() {
+            if let Some(token) = child.into_token() {
+                if token.kind().to_token().is_assign_op() {
+                    return LuaGeneralToken::cast(token);
+                }
+            }
+        }
+        None
     }
 }
 

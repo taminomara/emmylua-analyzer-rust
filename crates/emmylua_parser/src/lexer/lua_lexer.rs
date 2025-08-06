@@ -1,4 +1,4 @@
-use crate::{kind::LuaTokenKind, parser_error::LuaParseError, text::Reader};
+use crate::{LuaNonStdSymbol, kind::LuaTokenKind, parser_error::LuaParseError, text::Reader};
 
 use super::{is_name_continue, is_name_start, lexer_config::LexerConfig, token_data::LuaTokenData};
 
@@ -36,6 +36,10 @@ impl LuaLexer<'_> {
         tokens
     }
 
+    fn support_non_std_symbol(&self, symbol: LuaNonStdSymbol) -> bool {
+        self.lexer_config.non_std_symbols.support(symbol)
+    }
+
     fn name_to_kind(&self, name: &str) -> LuaTokenKind {
         match name {
             "and" => LuaTokenKind::TkAnd,
@@ -66,6 +70,13 @@ impl LuaLexer<'_> {
             "true" => LuaTokenKind::TkTrue,
             "until" => LuaTokenKind::TkUntil,
             "while" => LuaTokenKind::TkWhile,
+            "continue" => {
+                if self.support_non_std_symbol(LuaNonStdSymbol::Continue) {
+                    LuaTokenKind::TkBreak
+                } else {
+                    LuaTokenKind::TkName
+                }
+            }
             _ => LuaTokenKind::TkName,
         }
     }
@@ -78,6 +89,12 @@ impl LuaLexer<'_> {
             ' ' | '\t' => self.lex_white_space(),
             '-' => {
                 self.reader.bump();
+                if self.reader.current_char() == '='
+                    && self.support_non_std_symbol(LuaNonStdSymbol::MinusAssign)
+                {
+                    self.reader.bump();
+                    return LuaTokenKind::TkMinusAssign;
+                }
                 if self.reader.current_char() != '-' {
                     return LuaTokenKind::TkMinus;
                 }
@@ -137,6 +154,12 @@ impl LuaLexer<'_> {
                         }
 
                         self.reader.bump();
+                        if self.reader.current_char() == '='
+                            && self.support_non_std_symbol(LuaNonStdSymbol::ShiftLeftAssign)
+                        {
+                            self.reader.bump();
+                            return LuaTokenKind::TkShiftLeftAssign;
+                        }
                         LuaTokenKind::TkShl
                     }
                     _ => LuaTokenKind::TkLt,
@@ -158,6 +181,12 @@ impl LuaLexer<'_> {
                         }
 
                         self.reader.bump();
+                        if self.reader.current_char() == '='
+                            && self.support_non_std_symbol(LuaNonStdSymbol::ShiftRightAssign)
+                        {
+                            self.reader.bump();
+                            return LuaTokenKind::TkShiftRightAssign;
+                        }
                         LuaTokenKind::TkShr
                     }
                     _ => LuaTokenKind::TkGt,
@@ -185,8 +214,13 @@ impl LuaLexer<'_> {
                 self.reader.bump();
                 LuaTokenKind::TkDbColon
             }
-            '"' | '\'' => {
+            '"' | '\'' | '`' => {
                 let quote = self.reader.current_char();
+                if quote == '`' && !self.support_non_std_symbol(LuaNonStdSymbol::Backtick) {
+                    self.reader.bump();
+                    return LuaTokenKind::TkUnknown;
+                }
+
                 self.reader.bump();
                 while !self.reader.is_eof() {
                     let ch = self.reader.current_char();
@@ -245,33 +279,103 @@ impl LuaLexer<'_> {
             '0'..='9' => self.lex_number(),
             '/' => {
                 self.reader.bump();
-                if self.reader.current_char() != '/' {
-                    return LuaTokenKind::TkDiv;
-                }
-                if !self.lexer_config.support_integer_operation() {
-                    self.errors.push(LuaParseError::syntax_error_from(
-                        &t!("integer division is not supported"),
-                        self.reader.saved_range(),
-                    ));
-                }
+                let current_char = self.reader.current_char();
+                match current_char {
+                    '*' if self.support_non_std_symbol(LuaNonStdSymbol::SlashStar) => {
+                        // "/*" is a long comment
+                        self.reader.bump();
+                        loop {
+                            let ch = self.reader.current_char();
+                            match ch {
+                                '*' => {
+                                    self.reader.bump();
+                                    if self.reader.current_char() == '/' {
+                                        self.reader.bump();
+                                        return LuaTokenKind::TkLongComment;
+                                    }
+                                }
+                                _ if self.reader.is_eof() => {
+                                    self.errors.push(LuaParseError::syntax_error_from(
+                                        &t!("unfinished long comment"),
+                                        self.reader.saved_range(),
+                                    ));
+                                    return LuaTokenKind::TkLongComment;
+                                }
+                                _ => {
+                                    self.reader.bump();
+                                }
+                            }
+                        }
+                    }
+                    '=' if self.support_non_std_symbol(LuaNonStdSymbol::SlashAssign) => {
+                        self.reader.bump();
+                        return LuaTokenKind::TkSlashAssign;
+                    }
+                    _ if current_char != '/' => {
+                        return LuaTokenKind::TkDiv;
+                    }
+                    _ if self.support_non_std_symbol(LuaNonStdSymbol::DoubleSlash) => {
+                        // "//" is a short comment
+                        self.reader.bump();
+                        return LuaTokenKind::TkShortComment;
+                    }
+                    _ => {
+                        if !self.lexer_config.support_integer_operation() {
+                            self.errors.push(LuaParseError::syntax_error_from(
+                                &t!("integer division is not supported"),
+                                self.reader.saved_range(),
+                            ));
+                        }
 
-                self.reader.bump();
-                LuaTokenKind::TkIDiv
+                        self.reader.bump();
+                        if self.reader.current_char() == '='
+                            && self.support_non_std_symbol(LuaNonStdSymbol::DoubleSlashAssign)
+                        {
+                            self.reader.bump();
+                            return LuaTokenKind::TkDoubleSlashAssign;
+                        }
+                        LuaTokenKind::TkIDiv
+                    }
+                }
             }
             '*' => {
                 self.reader.bump();
+                if self.reader.current_char() == '='
+                    && self.support_non_std_symbol(LuaNonStdSymbol::StarAssign)
+                {
+                    self.reader.bump();
+                    return LuaTokenKind::TkStarAssign;
+                }
                 LuaTokenKind::TkMul
             }
             '+' => {
                 self.reader.bump();
+                if self.reader.current_char() == '='
+                    && self.support_non_std_symbol(LuaNonStdSymbol::PlusAssign)
+                {
+                    self.reader.bump();
+                    return LuaTokenKind::TkPlusAssign;
+                }
                 LuaTokenKind::TkPlus
             }
             '%' => {
                 self.reader.bump();
+                if self.reader.current_char() == '='
+                    && self.support_non_std_symbol(LuaNonStdSymbol::PercentAssign)
+                {
+                    self.reader.bump();
+                    return LuaTokenKind::TkPercentAssign;
+                }
                 LuaTokenKind::TkMod
             }
             '^' => {
                 self.reader.bump();
+                if self.reader.current_char() == '='
+                    && self.support_non_std_symbol(LuaNonStdSymbol::CaretAssign)
+                {
+                    self.reader.bump();
+                    return LuaTokenKind::TkCaretAssign;
+                }
                 LuaTokenKind::TkPow
             }
             '#' => {
@@ -282,6 +386,21 @@ impl LuaLexer<'_> {
                 self.reader.eat_while(|ch| ch != '\n' && ch != '\r');
                 LuaTokenKind::TkShebang
             }
+            '!' => {
+                if !self.support_non_std_symbol(LuaNonStdSymbol::Exclamation) {
+                    self.reader.bump();
+                    return LuaTokenKind::TkUnknown;
+                }
+
+                self.reader.bump();
+                if self.reader.current_char() == '='
+                    && self.support_non_std_symbol(LuaNonStdSymbol::NotEqual)
+                {
+                    self.reader.bump();
+                    return LuaTokenKind::TkNe;
+                }
+                LuaTokenKind::TkNot
+            }
             '&' => {
                 if !self.lexer_config.support_integer_operation() {
                     self.errors.push(LuaParseError::syntax_error_from(
@@ -291,6 +410,18 @@ impl LuaLexer<'_> {
                 }
 
                 self.reader.bump();
+                if self.reader.current_char() == '&'
+                    && self.support_non_std_symbol(LuaNonStdSymbol::DoubleAmp)
+                {
+                    self.reader.bump();
+                    return LuaTokenKind::TkAnd;
+                }
+                if self.reader.current_char() == '='
+                    && self.support_non_std_symbol(LuaNonStdSymbol::AmpAssign)
+                {
+                    self.reader.bump();
+                    return LuaTokenKind::TkAmpAssign;
+                }
                 LuaTokenKind::TkBitAnd
             }
             '|' => {
@@ -302,6 +433,18 @@ impl LuaLexer<'_> {
                 }
 
                 self.reader.bump();
+                if self.reader.current_char() == '|'
+                    && self.support_non_std_symbol(LuaNonStdSymbol::DoublePipe)
+                {
+                    self.reader.bump();
+                    return LuaTokenKind::TkOr;
+                }
+                if self.reader.current_char() == '='
+                    && self.support_non_std_symbol(LuaNonStdSymbol::PipeAssign)
+                {
+                    self.reader.bump();
+                    return LuaTokenKind::TkPipeAssign;
+                }
                 LuaTokenKind::TkBitOr
             }
             '(' => {

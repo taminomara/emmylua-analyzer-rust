@@ -1,4 +1,4 @@
-use emmylua_parser::LuaVersionNumber;
+use emmylua_parser::{LuaNonStdSymbol, LuaVersionNumber};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -23,6 +23,9 @@ pub struct EmmyrcRuntime {
     #[serde(default)]
     /// class default overload function.
     pub class_default_call: ClassDefaultCall,
+    /// Non-standard symbols.
+    #[serde(default)]
+    pub nonstandard_symbol: Vec<EmmyrcNonStdSymbol>,
 }
 
 impl Default for EmmyrcRuntime {
@@ -34,6 +37,7 @@ impl Default for EmmyrcRuntime {
             extensions: Default::default(),
             require_pattern: Default::default(),
             class_default_call: Default::default(),
+            nonstandard_symbol: Default::default(),
         }
     }
 }
@@ -99,6 +103,74 @@ pub struct ClassDefaultCall {
 
 fn default_true() -> bool {
     true
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub enum EmmyrcNonStdSymbol {
+    #[serde(rename = "//")]
+    DoubleSlash = 1, // "//"
+    #[serde(rename = "/**/")]
+    SlashStar, // "/**/"
+    #[serde(rename = "`")]
+    Backtick, // "`"
+    #[serde(rename = "+=")]
+    PlusAssign, // "+="
+    #[serde(rename = "-=")]
+    MinusAssign, // "-="
+    #[serde(rename = "*=")]
+    StarAssign, // "*="
+    #[serde(rename = "/=")]
+    SlashAssign, // "/="
+    #[serde(rename = "%=")]
+    PercentAssign, // "%="
+    #[serde(rename = "^=")]
+    CaretAssign, // "^="
+    #[serde(rename = "//=")]
+    DoubleSlashAssign, // "//="
+    #[serde(rename = "|=")]
+    PipeAssign, // "|="
+    #[serde(rename = "&=")]
+    AmpAssign, // "&="
+    #[serde(rename = "<<=")]
+    ShiftLeftAssign, // "<<="
+    #[serde(rename = ">>=")]
+    ShiftRightAssign, // ">>="
+    #[serde(rename = "||")]
+    DoublePipe, // "||"
+    #[serde(rename = "&&")]
+    DoubleAmp, // "&&"
+    #[serde(rename = "!")]
+    Exclamation, // "!"
+    #[serde(rename = "!=")]
+    NotEqual, // "!="
+    #[serde(rename = "continue")]
+    Continue, // "continue"
+}
+
+impl From<EmmyrcNonStdSymbol> for LuaNonStdSymbol {
+    fn from(symbol: EmmyrcNonStdSymbol) -> Self {
+        match symbol {
+            EmmyrcNonStdSymbol::DoubleSlash => LuaNonStdSymbol::DoubleSlash,
+            EmmyrcNonStdSymbol::SlashStar => LuaNonStdSymbol::SlashStar,
+            EmmyrcNonStdSymbol::Backtick => LuaNonStdSymbol::Backtick,
+            EmmyrcNonStdSymbol::PlusAssign => LuaNonStdSymbol::PlusAssign,
+            EmmyrcNonStdSymbol::MinusAssign => LuaNonStdSymbol::MinusAssign,
+            EmmyrcNonStdSymbol::StarAssign => LuaNonStdSymbol::StarAssign,
+            EmmyrcNonStdSymbol::SlashAssign => LuaNonStdSymbol::SlashAssign,
+            EmmyrcNonStdSymbol::PercentAssign => LuaNonStdSymbol::PercentAssign,
+            EmmyrcNonStdSymbol::CaretAssign => LuaNonStdSymbol::CaretAssign,
+            EmmyrcNonStdSymbol::DoubleSlashAssign => LuaNonStdSymbol::DoubleSlashAssign,
+            EmmyrcNonStdSymbol::PipeAssign => LuaNonStdSymbol::PipeAssign,
+            EmmyrcNonStdSymbol::AmpAssign => LuaNonStdSymbol::AmpAssign,
+            EmmyrcNonStdSymbol::ShiftLeftAssign => LuaNonStdSymbol::ShiftLeftAssign,
+            EmmyrcNonStdSymbol::ShiftRightAssign => LuaNonStdSymbol::ShiftRightAssign,
+            EmmyrcNonStdSymbol::DoublePipe => LuaNonStdSymbol::DoublePipe,
+            EmmyrcNonStdSymbol::DoubleAmp => LuaNonStdSymbol::DoubleAmp,
+            EmmyrcNonStdSymbol::Exclamation => LuaNonStdSymbol::Exclamation,
+            EmmyrcNonStdSymbol::NotEqual => LuaNonStdSymbol::NotEqual,
+            EmmyrcNonStdSymbol::Continue => LuaNonStdSymbol::Continue,
+        }
+    }
 }
 
 #[cfg(test)]

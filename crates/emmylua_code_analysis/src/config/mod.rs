@@ -15,7 +15,7 @@ use configs::{
     EmmyrcWorkspace,
 };
 pub use configs::{EmmyrcFilenameConvention, EmmyrcLuaVersion};
-use emmylua_parser::{LuaLanguageLevel, ParserConfig, SpecialFunction};
+use emmylua_parser::{LuaLanguageLevel, LuaNonStdSymbolSet, ParserConfig, SpecialFunction};
 use regex::Regex;
 use rowan::NodeCache;
 use schemars::JsonSchema;
@@ -71,7 +71,17 @@ impl Emmyrc {
         for name in self.runtime.require_like_function.iter() {
             special_like.insert(name.clone(), SpecialFunction::Require);
         }
-        ParserConfig::new(lua_language_level, Some(node_cache), special_like)
+        let mut non_std_symbols = LuaNonStdSymbolSet::new();
+        for symbol in self.runtime.nonstandard_symbol.iter() {
+            non_std_symbols.add(symbol.clone().into());
+        }
+
+        ParserConfig::new(
+            lua_language_level,
+            Some(node_cache),
+            special_like,
+            non_std_symbols,
+        )
     }
 
     pub fn get_language_level(&self) -> LuaLanguageLevel {

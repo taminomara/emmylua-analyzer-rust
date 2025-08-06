@@ -107,6 +107,7 @@
         },
         "extensions": [],
         "frameworkVersions": [],
+        "nonstandardSymbol": [],
         "requireLikeFunction": [],
         "requirePattern": [],
         "version": "LuaLatest"
@@ -754,6 +755,30 @@
         }
       ]
     },
+    "EmmyrcNonStdSymbol": {
+      "type": "string",
+      "enum": [
+        "//",
+        "/**/",
+        "`",
+        "+=",
+        "-=",
+        "*=",
+        "/=",
+        "%=",
+        "^=",
+        "//=",
+        "|=",
+        "&=",
+        "<<=",
+        ">>=",
+        "||",
+        "&&",
+        "!",
+        "!=",
+        "continue"
+      ]
+    },
     "EmmyrcReference": {
       "type": "object",
       "properties": {
@@ -815,6 +840,14 @@
           "default": [],
           "items": {
             "type": "string"
+          }
+        },
+        "nonstandardSymbol": {
+          "description": "Non-standard symbols.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EmmyrcNonStdSymbol"
           }
         },
         "requireLikeFunction": {

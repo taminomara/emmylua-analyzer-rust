@@ -263,7 +263,7 @@ fn get_local_stat_reference_ranges(
                         }
                     } else if parent2.kind() == LuaSyntaxKind::AssignStat.into() {
                         let stat = LuaAssignStat::cast(parent2)?;
-                        if let Some(assign_token) = stat.token_by_kind(LuaTokenKind::TkAssign) {
+                        if let Some(assign_token) = stat.get_assign_op() {
                             if assign_token.get_position() > decl_ref.range.start() {
                                 ranges.push(stat.get_range());
                                 for comment in stat.get_comments() {

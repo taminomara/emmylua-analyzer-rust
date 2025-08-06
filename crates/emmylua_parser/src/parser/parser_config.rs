@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use rowan::NodeCache;
 
-use crate::{kind::LuaLanguageLevel, lexer::LexerConfig};
+use crate::{LuaNonStdSymbolSet, kind::LuaLanguageLevel, lexer::LexerConfig};
 
 pub struct ParserConfig<'cache> {
     pub level: LuaLanguageLevel,
@@ -16,11 +16,13 @@ impl<'cache> ParserConfig<'cache> {
         level: LuaLanguageLevel,
         node_cache: Option<&'cache mut NodeCache>,
         special_like: HashMap<String, SpecialFunction>,
+        non_std_symbols: LuaNonStdSymbolSet,
     ) -> Self {
         Self {
             level,
             lexer_config: LexerConfig {
                 language_level: level,
+                non_std_symbols,
             },
             node_cache,
             special_like,
@@ -58,6 +60,7 @@ impl<'cache> ParserConfig<'cache> {
             level,
             lexer_config: LexerConfig {
                 language_level: level,
+                non_std_symbols: LuaNonStdSymbolSet::new(),
             },
             node_cache: None,
             special_like: HashMap::new(),
@@ -71,6 +74,7 @@ impl Default for ParserConfig<'_> {
             level: LuaLanguageLevel::Lua54,
             lexer_config: LexerConfig {
                 language_level: LuaLanguageLevel::Lua54,
+                non_std_symbols: LuaNonStdSymbolSet::new(),
             },
             node_cache: None,
             special_like: HashMap::new(),

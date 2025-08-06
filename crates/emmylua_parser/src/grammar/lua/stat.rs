@@ -221,7 +221,7 @@ fn parse_local(p: &mut LuaParser) -> ParseResult {
                 parse_local_name(p, true)?;
             }
 
-            if p.current_token() == LuaTokenKind::TkAssign {
+            if p.current_token().is_assign_op() {
                 p.bump();
                 parse_expr(p)?;
                 while p.current_token() == LuaTokenKind::TkComma {
@@ -239,7 +239,7 @@ fn parse_local(p: &mut LuaParser) -> ParseResult {
                     parse_local_name(p, true)?;
                 }
 
-                if p.current_token() == LuaTokenKind::TkAssign {
+                if p.current_token().is_assign_op() {
                     p.bump();
                     parse_expr(p)?;
                     while p.current_token() == LuaTokenKind::TkComma {
@@ -423,7 +423,7 @@ fn parse_assign_or_expr_or_global_stat(p: &mut LuaParser) -> ParseResult {
         }
     }
 
-    if p.current_token() == LuaTokenKind::TkAssign {
+    if p.current_token().is_assign_op() {
         p.bump();
         parse_expr(p)?;
         while p.current_token() == LuaTokenKind::TkComma {
