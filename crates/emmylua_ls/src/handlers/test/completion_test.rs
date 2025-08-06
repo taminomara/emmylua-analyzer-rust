@@ -644,6 +644,11 @@ mod tests {
                     ..Default::default()
                 },
                 VirtualCompletionItem {
+                    label: "\"Component\"".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
+                },
+                VirtualCompletionItem {
                     label: "\"D\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
                     ..Default::default()
@@ -653,6 +658,44 @@ mod tests {
         ));
         Ok(())
     }
+
+    #[test]
+    fn test_str_tpl_ref_4() {
+        let mut ws = ProviderVirtualWorkspace::new_with_init_std_lib();
+        ws.def(
+            r#"
+            ---@class C: string
+
+            ---@class D: C
+            "#,
+        );
+        assert!(ws.check_completion_with_kind(
+            r#"
+            ---@generic T: string
+            ---@param name `T`
+            ---@return T
+            local function new(name)
+                return name
+            end
+
+            local a = new(<??>)
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "\"C\"".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
+                },
+                VirtualCompletionItem {
+                    label: "\"D\"".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
+                },
+            ],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+    }
+    
 
     #[gtest]
     fn test_table_field_function_1() -> Result<()> {
