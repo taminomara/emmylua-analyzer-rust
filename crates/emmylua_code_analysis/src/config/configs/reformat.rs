@@ -1,0 +1,27 @@
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug, JsonSchema, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct EmmyrcReformat {
+    /// Whether to enable internal code reformatting.
+    #[serde(default)]
+    pub external_tool: Option<EmmyrcExternalTool>,
+}
+
+#[derive(Serialize, Deserialize, Debug, JsonSchema, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct EmmyrcExternalTool {
+    /// The command to run the external tool.
+    #[serde(default)]
+    pub program: String,
+    /// The arguments to pass to the external tool.
+    #[serde(default)]
+    pub args: Vec<String>,
+    #[serde(default = "default_timeout")]
+    pub timeout: u64,
+}
+
+fn default_timeout() -> u64 {
+    5000
+}

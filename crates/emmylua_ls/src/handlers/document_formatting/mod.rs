@@ -1,10 +1,15 @@
+mod external_format;
+
 use emmylua_code_analysis::reformat_code;
 use lsp_types::{
     ClientCapabilities, DocumentFormattingParams, OneOf, ServerCapabilities, TextEdit,
 };
 use tokio_util::sync::CancellationToken;
 
-use crate::context::ServerContextSnapshot;
+use crate::{
+    context::ServerContextSnapshot,
+    handlers::document_formatting::external_format::external_tool_format,
+};
 
 use super::RegisterCapabilities;
 
@@ -15,8 +20,9 @@ pub async fn on_formatting_handler(
 ) -> Option<Vec<TextEdit>> {
     let uri = params.text_document.uri;
     let analysis = context.analysis.read().await;
-    let config_manager = context.workspace_manager.read().await;
-    let client_id = config_manager.client_config.client_id;
+    let workspace_manager = context.workspace_manager.read().await;
+    let client_id = workspace_manager.client_config.client_id;
+    let emmyrc = analysis.get_emmyrc();
 
     let file_id = analysis.get_file_id(&uri)?;
     let syntax_tree = analysis
@@ -37,7 +43,13 @@ pub async fn on_formatting_handler(
     let text = document.get_text();
     let file_path = document.get_file_path();
     let normalized_path = file_path.to_string_lossy().to_string().replace("\\", "/");
-    let mut formatted_text = reformat_code(text, &normalized_path);
+
+    let mut formatted_text = if let Some(external_config) = &emmyrc.format.external_tool {
+        external_tool_format(&external_config, text, &normalized_path).await?
+    } else {
+        reformat_code(text, &normalized_path)
+    };
+
     if client_id.is_intellij() || client_id.is_other() {
         formatted_text = formatted_text.replace("\r\n", "\n");
     }

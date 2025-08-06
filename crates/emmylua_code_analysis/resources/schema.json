@@ -59,6 +59,12 @@
         "enable": true
       }
     },
+    "format": {
+      "$ref": "#/$defs/EmmyrcReformat",
+      "default": {
+        "externalTool": null
+      }
+    },
     "hint": {
       "$ref": "#/$defs/EmmyrcInlayHint",
       "default": {
@@ -618,6 +624,30 @@
         }
       }
     },
+    "EmmyrcExternalTool": {
+      "type": "object",
+      "properties": {
+        "args": {
+          "description": "The arguments to pass to the external tool.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "program": {
+          "description": "The command to run the external tool.",
+          "type": "string",
+          "default": ""
+        },
+        "timeout": {
+          "type": "integer",
+          "format": "uint64",
+          "default": 5000,
+          "minimum": 0
+        }
+      }
+    },
     "EmmyrcFilenameConvention": {
       "oneOf": [
         {
@@ -799,6 +829,23 @@
           "type": "boolean",
           "default": false,
           "x-vscode-setting": true
+        }
+      }
+    },
+    "EmmyrcReformat": {
+      "type": "object",
+      "properties": {
+        "externalTool": {
+          "description": "Whether to enable internal code reformatting.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EmmyrcExternalTool"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       }
     },

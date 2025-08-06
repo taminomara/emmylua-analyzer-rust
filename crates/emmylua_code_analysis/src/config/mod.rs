@@ -7,6 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+pub use crate::config::configs::{EmmyrcExternalTool, EmmyrcReformat};
 pub use config_loader::{load_configs, load_configs_raw};
 use configs::{
     EmmyrcCodeAction, EmmyrcCodeLens, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcDoc,
@@ -59,6 +60,8 @@ pub struct Emmyrc {
     pub inline_values: EmmyrcInlineValues,
     #[serde(default)]
     pub doc: EmmyrcDoc,
+    #[serde(default)]
+    pub format: EmmyrcReformat,
 }
 
 impl Emmyrc {
