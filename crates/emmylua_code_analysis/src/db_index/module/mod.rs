@@ -316,12 +316,19 @@ impl LuaModuleIndex {
                     if matched_module_path.is_none() {
                         matched_module_path = Some((module_path, workspace.id));
                     } else {
-                        let (matched, _) = match matched_module_path.as_ref() {
+                        let (matched, matched_workspace_id) = match matched_module_path.as_ref() {
                             Some((matched, id)) => (matched, id),
                             None => continue,
                         };
                         if module_path.len() < matched.len() {
-                            matched_module_path = Some((module_path, workspace.id));
+                            // Libraries could be in a subdirectory of the main workspace
+                            // In case of a conflict, we prioritise the non-main workspace ID
+                            let workspace_id = if workspace.id.is_main() {
+                                *matched_workspace_id
+                            } else {
+                                workspace.id
+                            };
+                            matched_module_path = Some((module_path, workspace_id));
                         }
                     }
                 }
