@@ -116,7 +116,7 @@ Our project is meticulously organized into specialized crates, each serving a cr
 #### 📝 **Annotation System**
 - ✅ **EmmyLua** annotations
 - ✅ **Luacats** documentation
-- ✅ **Type definitions** 
+- ✅ **Type definitions**
 - ✅ **Generic types**
 - ✅ **Union types**
 
@@ -292,7 +292,7 @@ Generate beautiful API documentation:
 
 ```bash
 # Basic usage
-emmylua_doc_cli --input ./src --output ./docs
+emmylua_doc_cli ./src --output ./docs
 ```
 
 ### ✅ Static Analyzer (`emmylua_check`)

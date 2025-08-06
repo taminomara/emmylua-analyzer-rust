@@ -11,5 +11,5 @@ cargo install emmylua_doc_cli
 ## Usage
 
 ```shell
-emmylua_doc_cli --input ./tests/lua --output ./tests/doc
+emmylua_doc_cli ./tests/lua --output ./tests/doc
 ```
