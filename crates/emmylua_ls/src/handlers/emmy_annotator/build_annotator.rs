@@ -1,13 +1,14 @@
 use std::collections::HashSet;
 
-use emmylua_code_analysis::{DbIndex, LuaDeclId, LuaDocument, SemanticModel};
-use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaForRangeStat, LuaForStat, LuaLocalFuncStat, LuaLocalStat,
-    LuaNameExpr, LuaParamList,
-};
-use rowan::TextRange;
-
 use super::{EmmyAnnotator, EmmyAnnotatorType};
+use crate::util::parse_desc;
+use emmylua_code_analysis::{DbIndex, LuaDeclId, LuaDocument, SemanticModel, WorkspaceId};
+use emmylua_parser::{
+    LuaAst, LuaAstNode, LuaAstToken, LuaDocDescription, LuaForRangeStat, LuaForStat,
+    LuaLocalFuncStat, LuaLocalStat, LuaNameExpr, LuaParamList,
+};
+use emmylua_parser_desc::DescItemKind;
+use rowan::TextRange;
 
 pub fn build_annotators(semantic: &SemanticModel) -> Vec<EmmyAnnotator> {
     let mut result = vec![];
@@ -58,6 +59,20 @@ pub fn build_annotators(semantic: &SemanticModel) -> Vec<EmmyAnnotator> {
             }
             LuaAst::LuaNameExpr(name_expr) => {
                 build_name_expr_annotator(&document, &mut use_range_set, &mut result, name_expr);
+            }
+            LuaAst::LuaDocDescription(description) => {
+                if semantic
+                    .get_emmyrc()
+                    .semantic_tokens
+                    .render_documentation_markup
+                {
+                    build_description_annotator(
+                        &semantic,
+                        &mut use_range_set,
+                        &mut result,
+                        description,
+                    );
+                }
             }
             _ => {}
         }
@@ -288,6 +303,56 @@ fn build_local_func_stat_annotator(
     }
 
     result.push(annotator);
+
+    Some(())
+}
+
+fn build_description_annotator(
+    semantic_model: &SemanticModel,
+    use_range_set: &mut HashSet<TextRange>,
+    result: &mut Vec<EmmyAnnotator>,
+    description: LuaDocDescription,
+) -> Option<()> {
+    let document = semantic_model.get_document();
+    let text = document.get_text();
+    let items = parse_desc(
+        semantic_model
+            .get_module()
+            .map(|m| m.workspace_id)
+            .unwrap_or(WorkspaceId::MAIN),
+        semantic_model.get_emmyrc(),
+        text,
+        description,
+        None,
+    );
+
+    let mut strong = EmmyAnnotator {
+        typ: EmmyAnnotatorType::DocStrong,
+        ranges: vec![],
+    };
+    let mut em = EmmyAnnotator {
+        typ: EmmyAnnotatorType::DocEm,
+        ranges: vec![],
+    };
+
+    for item in items {
+        match item.kind {
+            DescItemKind::Em => {
+                use_range_set.insert(item.range.clone());
+                em.ranges.push(document.to_lsp_range(item.range.clone())?);
+            }
+            DescItemKind::Strong => {
+                use_range_set.insert(item.range.clone());
+                strong
+                    .ranges
+                    .push(document.to_lsp_range(item.range.clone())?);
+            }
+            _ => {}
+        }
+    }
+
+    result.push(em);
+    result.push(strong);
 
     Some(())
 }
