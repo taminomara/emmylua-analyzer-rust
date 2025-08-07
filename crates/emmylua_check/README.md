@@ -73,13 +73,6 @@ Output diagnostics in JSON format to a file for further processing:
 emmylua_check . -f json --output ./diag.json
 ```
 
-#### Treat Warnings as Errors
-
-In CI environments, this is a useful option to enforce fixing all warnings:
-```shell
-emmylua_check .
-```
-
 ---
 
 ## ⚙️ Configuration

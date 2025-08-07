@@ -207,7 +207,7 @@ Download the latest binaries from our [releases page](https://github.com/CppCXY/
 <summary><b>🔧 Build from Source</b></summary>
 
 ```bash
-git clone https://github.com/CppCXY/emmylua-analyzer-rust.git
+git clone https://github.com/EmmyLuaLs/emmylua-analyzer-rust.git
 cd emmylua-analyzer-rust
 cargo build --release -p emmylua_ls
 ```
@@ -315,7 +315,7 @@ emmylua_check ./src --verbose --format json
 
 ```bash
 # Clone the repository
-git clone https://github.com/CppCXY/emmylua-analyzer-rust.git
+git clone https://github.com/EmmyLuaLs/emmylua-analyzer-rust.git
 cd emmylua-analyzer-rust
 
 # Build all crates
