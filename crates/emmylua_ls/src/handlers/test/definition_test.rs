@@ -1,13 +1,14 @@
 #[cfg(test)]
 mod tests {
-    use lsp_types::GotoDefinitionResponse;
+    use crate::handlers::test_lib::{ProviderVirtualWorkspace, VirtualLocation, check};
+    use googletest::prelude::*;
 
-    use crate::handlers::test_lib::ProviderVirtualWorkspace;
+    type Expected = VirtualLocation;
 
-    #[test]
-    fn test_basic_definition() {
+    #[gtest]
+    fn test_basic_definition() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
-        ws.check_definition(
+        check!(ws.check_definition(
             r#"
                 ---@generic T
                 ---@param name `T`
@@ -20,13 +21,18 @@ mod tests {
 
                 local a = new("<??>Ability")
             "#,
-        );
+            vec![Expected {
+                file: "".to_string(),
+                line: 8
+            }]
+        ));
+        Ok(())
     }
 
-    #[test]
-    fn test_table_field_definition_1() {
+    #[gtest]
+    fn test_table_field_definition_1() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
-        ws.check_definition(
+        check!(ws.check_definition(
             r#"
                 ---@class T
                 ---@field func fun(self:string)
@@ -37,13 +43,24 @@ mod tests {
                     end
                 }
             "#,
-        );
+            vec![
+                Expected {
+                    file: "".to_string(),
+                    line: 2
+                },
+                Expected {
+                    file: "".to_string(),
+                    line: 6
+                },
+            ]
+        ));
+        Ok(())
     }
 
-    #[test]
-    fn test_table_field_definition_2() {
+    #[gtest]
+    fn test_table_field_definition_2() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
-        ws.check_definition(
+        check!(ws.check_definition(
             r#"
                 ---@class T
                 ---@field func fun(self: T) 注释注释
@@ -57,13 +74,18 @@ mod tests {
 
                 t:func<??>()
             "#,
-        );
+            vec![Expected {
+                file: "".to_string(),
+                line: 2
+            }]
+        ));
+        Ok(())
     }
 
-    #[test]
-    fn test_goto_field() {
+    #[gtest]
+    fn test_goto_field() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
-        ws.check_definition(
+        check!(ws.check_definition(
             r#"
                 local t = {}
                 function t:test(a)
@@ -72,13 +94,19 @@ mod tests {
 
                 print(t.abc<??>)
             "#,
-        );
+            vec![Expected {
+                file: "".to_string(),
+                line: 3
+            }]
+        ));
+        Ok(())
     }
 
-    #[test]
-    fn test_goto_overload() {
+    #[gtest]
+    fn test_goto_overload() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
-        ws.def(
+        ws.def_file(
+            "test.lua",
             r#"
                 ---@class Goto1
                 ---@class Goto2
@@ -95,235 +123,209 @@ mod tests {
             "#,
         );
 
-        {
-            let result = ws
-                .check_definition(
-                    r#"
+        check!(ws.check_definition(
+            r#"
                 ---@type Goto2
                 local Goto2
 
                 ---@type T
                 local t
                 t.fu<??>nc(Goto2)
-                 "#,
-                )
-                .unwrap();
-            match result {
-                GotoDefinitionResponse::Array(array) => {
-                    assert_eq!(array.len(), 2);
-                }
-                _ => {
-                    panic!("expect array");
-                }
-            }
-        }
+             "#,
+            vec![
+                Expected {
+                    file: "test.lua".to_string(),
+                    line: 6,
+                },
+                Expected {
+                    file: "test.lua".to_string(),
+                    line: 7,
+                },
+            ]
+        ));
 
-        {
-            let result = ws
-                .check_definition(
-                    r#"
+        check!(ws.check_definition(
+            r#"
                 ---@type T
                 local t
                 t.fu<??>nc()
-                 "#,
-                )
-                .unwrap();
-            match result {
-                GotoDefinitionResponse::Array(array) => {
-                    assert_eq!(array.len(), 4);
-                }
-                _ => {
-                    panic!("expect array");
-                }
-            }
-        }
+             "#,
+            vec![
+                Expected {
+                    file: "test.lua".to_string(),
+                    line: 6,
+                },
+                Expected {
+                    file: "test.lua".to_string(),
+                    line: 7,
+                },
+                Expected {
+                    file: "test.lua".to_string(),
+                    line: 8,
+                },
+                Expected {
+                    file: "test.lua".to_string(),
+                    line: 11,
+                },
+            ]
+        ));
+        Ok(())
     }
 
-    #[test]
-    fn test_goto_return_field() {
+    #[gtest]
+    fn test_goto_return_field() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
         ws.def_file(
             "test.lua",
             r#"
-            local function test()
+                local function test()
 
-            end
+                end
 
-            return {
-                test = test,
-            }
+                return {
+                    test = test,
+                }
             "#,
         );
-        let result = ws
-            .check_definition(
-                r#"
-            local t = require("test")
-            local test = t.test
-            te<??>st()
+        check!(ws.check_definition(
+            r#"
+                local t = require("test")
+                local test = t.test
+                te<??>st()
             "#,
-            )
-            .unwrap();
-        match result {
-            GotoDefinitionResponse::Array(locations) => {
-                assert_eq!(locations.len(), 1);
-                assert_eq!(locations[0].range.start.line, 1);
-            }
-            _ => {
-                panic!("expect scalar");
-            }
-        }
+            vec![Expected {
+                file: "test.lua".to_string(),
+                line: 1
+            }]
+        ));
+        Ok(())
     }
 
-    #[test]
-    fn test_goto_return_field_2() {
+    #[gtest]
+    fn test_goto_return_field_2() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new_with_init_std_lib();
         ws.def_file(
             "test.lua",
             r#"
-            ---@export
-            ---@class Export
-            local export = {}
-            ---@generic T
-            ---@param name `T`|T
-            ---@param tbl? table
-            ---@return T
-            local function new(name, tbl)
-            end
+                ---@export
+                ---@class Export
+                local export = {}
+                ---@generic T
+                ---@param name `T`|T
+                ---@param tbl? table
+                ---@return T
+                local function new(name, tbl)
+                end
 
-            export.new = new
-            return export
+                export.new = new
+                return export
             "#,
         );
-        let result = ws
-            .check_definition(
-                r#"
-            local new = require("test").new
-            new<??>("A")
+        check!(ws.check_definition(
+            r#"
+                local new = require("test").new
+                new<??>("A")
             "#,
-            )
-            .unwrap();
-        match result {
-            GotoDefinitionResponse::Array(locations) => {
-                assert_eq!(locations.len(), 1);
-                assert_eq!(locations[0].range.start.line, 8);
-            }
-            _ => {
-                panic!("expect scalar");
-            }
-        }
+            vec![Expected {
+                file: "test.lua".to_string(),
+                line: 8
+            }]
+        ));
+        Ok(())
     }
 
-    #[test]
-    fn test_goto_generic_type() {
+    #[gtest]
+    fn test_goto_generic_type() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
         ws.def_file(
             "1.lua",
             r#"
-            ---@generic T
-            ---@param name `T`|T
-            ---@return T
-            function new(name)
-            end
+                ---@generic T
+                ---@param name `T`|T
+                ---@return T
+                function new(name)
+                end
             "#,
         );
         ws.def_file(
             "2.lua",
             r#"
-            ---@namespace AAA
-            ---@class BBB<T>
+                ---@namespace AAA
+                ---@class BBB<T>
             "#,
         );
-        let result = ws
-            .check_definition(
-                r#"
+        check!(ws.check_definition(
+            r#"
                 new("AAA.BBB<??>")
             "#,
-            )
-            .unwrap();
-        match result {
-            GotoDefinitionResponse::Array(array) => {
-                assert_eq!(array.len(), 1);
-                let location = &array[0];
-                assert_eq!(location.uri.path().as_str().ends_with("2.lua"), true);
-            }
-            _ => {
-                panic!("expect array");
-            }
-        }
+            vec![Expected {
+                file: "2.lua".to_string(),
+                line: 2
+            }]
+        ));
+        Ok(())
     }
 
-    #[test]
-    fn test_goto_export_function() {
+    #[gtest]
+    fn test_goto_export_function() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
         ws.def_file(
             "a.lua",
             r#"
-            local function create()
-            end
+                local function create()
+                end
 
-            return create
+                return create
             "#,
         );
-        let result = ws
-            .check_definition(
-                r#"
+        check!(ws.check_definition(
+            r#"
                 local create = require('a')
                 create<??>()
             "#,
-            )
-            .unwrap();
-        match result {
-            GotoDefinitionResponse::Scalar(location) => {
-                assert_eq!(location.uri.path().as_str().ends_with("a.lua"), true);
-            }
-            _ => {
-                panic!("expect array");
-            }
-        }
+            vec![Expected {
+                file: "a.lua".to_string(),
+                line: 1
+            }]
+        ));
+        Ok(())
     }
 
-    #[test]
-    fn test_goto_export_function_2() {
+    #[gtest]
+    fn test_goto_export_function_2() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
         ws.def_file(
             "a.lua",
             r#"
-            local function testA()
-            end
+                local function testA()
+                end
 
-            local function create()
-            end
+                local function create()
+                end
 
-            return create
+                return create
             "#,
         );
         ws.def_file(
             "b.lua",
             r#"
-            local Rxlua = {}
-            local create = require('a')
+                local Rxlua = {}
+                local create = require('a')
 
-            Rxlua.create = create
-            return Rxlua
+                Rxlua.create = create
+                return Rxlua
             "#,
         );
-        let result = ws
-            .check_definition(
-                r#"
+        check!(ws.check_definition(
+            r#"
                 local create = require('b').create
                 create<??>()
             "#,
-            )
-            .unwrap();
-        match result {
-            GotoDefinitionResponse::Array(array) => {
-                assert_eq!(array.len(), 1);
-                let location = &array[0];
-                assert_eq!(location.uri.path().as_str().ends_with("a.lua"), true);
-            }
-            _ => {
-                panic!("expect array");
-            }
-        }
+            vec![Expected {
+                file: "a.lua".to_string(),
+                line: 4
+            }]
+        ));
+        Ok(())
     }
 }

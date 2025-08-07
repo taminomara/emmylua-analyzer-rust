@@ -26,11 +26,14 @@ mod request_handler;
 mod response_handler;
 mod semantic_token;
 mod signature_helper;
-mod test;
-mod test_lib;
 mod text_document;
 mod workspace;
 mod workspace_symbol;
+
+#[cfg(test)]
+mod test;
+#[cfg(test)]
+mod test_lib;
 
 pub use initialized::{ClientConfig, init_analysis, initialized_handler};
 use lsp_types::{ClientCapabilities, ServerCapabilities};

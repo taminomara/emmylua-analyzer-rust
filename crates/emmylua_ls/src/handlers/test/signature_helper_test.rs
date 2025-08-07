@@ -1,11 +1,12 @@
 #[cfg(test)]
 mod tests {
+    use crate::handlers::test_lib::{ProviderVirtualWorkspace, VirtualSignatureHelp, check};
+    use googletest::prelude::*;
 
-    use crate::handlers::test_lib::{ProviderVirtualWorkspace, VirtualSignatureHelp};
-    #[test]
-    fn test_1() {
+    #[gtest]
+    fn test_1() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
-        assert!(ws.check_signature_helper(
+        check!(ws.check_signature_helper(
             r#"
                 ---@class Action
                 ---@field id fun(self:Action, itemId:integer, ...:integer?):boolean
@@ -20,12 +21,13 @@ mod tests {
                 active_parameter: 1,
             },
         ));
+        Ok(())
     }
 
-    #[test]
-    fn test_2() {
+    #[gtest]
+    fn test_2() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new_with_init_std_lib();
-        assert!(ws.check_signature_helper(
+        check!(ws.check_signature_helper(
             r#"
                 ---@param path string
                 local function readFile(path)
@@ -39,5 +41,6 @@ mod tests {
                 active_parameter: 1,
             },
         ));
+        Ok(())
     }
 }
