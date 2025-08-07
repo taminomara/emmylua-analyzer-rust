@@ -71,7 +71,11 @@ fn make_usage_command(
     client_id: ClientId,
     refs: Vec<Location>,
 ) -> Command {
-    let title = format!("{} usage", ref_count);
+    let title = format!(
+        "{} usage{}",
+        ref_count,
+        if ref_count == 1 { "" } else { "s" }
+    );
     let mut args = Vec::new();
     args.push(serde_json::to_value(uri).unwrap());
     args.push(serde_json::to_value(range.start).unwrap());
