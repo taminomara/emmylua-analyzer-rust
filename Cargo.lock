@@ -624,6 +624,7 @@ dependencies = [
  "include_dir",
  "log",
  "lsp-types",
+ "mimalloc",
  "num-traits",
  "rowan",
  "serde",
