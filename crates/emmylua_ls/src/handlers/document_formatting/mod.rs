@@ -1,4 +1,5 @@
 mod external_format;
+mod format_diff;
 
 use emmylua_code_analysis::{FormattingOptions, reformat_code};
 use lsp_types::{
@@ -8,7 +9,9 @@ use tokio_util::sync::CancellationToken;
 
 use crate::{
     context::ServerContextSnapshot,
-    handlers::document_formatting::external_format::external_tool_format,
+    handlers::document_formatting::{
+        external_format::external_tool_format, format_diff::format_diff,
+    },
 };
 
 use super::RegisterCapabilities;
@@ -60,13 +63,19 @@ pub async fn on_formatting_handler(
         formatted_text = formatted_text.replace("\r\n", "\n");
     }
 
-    let document_range = document.get_document_lsp_range();
-    let text_edit = TextEdit {
-        range: document_range,
-        new_text: formatted_text,
+    let replace_all_limit = 50;
+    let text_edits = if emmyrc.format.use_diff {
+        // Use line-based diff algorithm if the diff is not too large
+        format_diff(text, &formatted_text, &document, replace_all_limit)
+    } else {
+        let document_range = document.get_document_lsp_range();
+        vec![TextEdit {
+            range: document_range,
+            new_text: formatted_text.to_string(),
+        }]
     };
 
-    Some(vec![text_edit])
+    Some(text_edits)
 }
 
 pub struct DocumentFormattingCapabilities;

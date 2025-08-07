@@ -7,6 +7,10 @@ pub struct EmmyrcReformat {
     /// Whether to enable internal code reformatting.
     #[serde(default)]
     pub external_tool: Option<EmmyrcExternalTool>,
+
+    /// Whether to use the diff algorithm for formatting.
+    #[serde(default = "default_false")]
+    pub use_diff: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema, Clone, Default)]
@@ -24,4 +28,8 @@ pub struct EmmyrcExternalTool {
 
 fn default_timeout() -> u64 {
     5000
+}
+
+fn default_false() -> bool {
+    false
 }
