@@ -310,4 +310,59 @@ mod tests {
         ));
         Ok(())
     }
+
+    #[gtest]
+    fn test_before_dot_returns_object_info() -> Result<()> {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def(
+            r#"
+                ---@class Node
+                ---@field field number?
+                ---@field method fun(self: Node)
+
+                ---@type Node
+                node = {}
+
+                function node.method() end
+            "#,
+        );
+
+        check!(ws.check_hover(
+            r#"
+                node<??>.field = nil
+            "#,
+            VirtualHoverResult {
+                value: "```lua\n(global) node: Node {\n    field: number?,\n    method: function,\n}\n```".to_string(),
+            },
+        ));
+
+        check!(ws.check_hover(
+            r#"
+                node<??>:method()
+            "#,
+            VirtualHoverResult {
+                value: "```lua\n(global) node: Node {\n    field: number?,\n    method: function,\n}\n```".to_string(),
+            },
+        ));
+
+        check!(ws.check_hover(
+            r#"
+                node<??>["key"] = "value"
+            "#,
+            VirtualHoverResult {
+                value: "```lua\n(global) node: Node {\n    field: number?,\n    method: function,\n}\n```".to_string(),
+            },
+        ));
+
+        check!(ws.check_hover(
+            r#"
+                node["key"<??>] = "value"
+            "#,
+            VirtualHoverResult {
+                value: "\"key\"".to_string(),
+            },
+        ));
+
+        Ok(())
+    }
 }
