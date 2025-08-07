@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod tests {
+    use crate::handlers::test_lib::{ProviderVirtualWorkspace, VirtualLocation, check};
+    use googletest::prelude::*;
 
-    use crate::handlers::test_lib::ProviderVirtualWorkspace;
-
-    #[test]
-    fn test_1() {
+    #[gtest]
+    fn test_1() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
         ws.def_file(
             "2.lua",
@@ -20,19 +20,23 @@ mod tests {
                delete()
             "#,
         );
-        assert!(ws.check_implementation(
+        check!(ws.check_implementation(
             r#"
                 local M = {}
                 function M.de<??>lete(a)
                 end
                 return M
             "#,
-            1,
+            vec![VirtualLocation {
+                file: "".to_string(),
+                line: 2,
+            }],
         ));
+        Ok(())
     }
 
-    #[test]
-    fn test_2() {
+    #[gtest]
+    fn test_2() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
         ws.def_file(
             "1.lua",
@@ -57,16 +61,30 @@ mod tests {
                 local a = test.a
             "#,
         );
-        assert!(ws.check_implementation(
+        check!(ws.check_implementation(
             r#"
                 t<??>est
             "#,
-            3,
+            vec![
+                VirtualLocation {
+                    file: "".to_string(),
+                    line: 1,
+                },
+                VirtualLocation {
+                    file: "1.lua".to_string(),
+                    line: 2,
+                },
+                VirtualLocation {
+                    file: "2.lua".to_string(),
+                    line: 2,
+                }
+            ],
         ));
+        Ok(())
     }
 
-    #[test]
-    fn test_3() {
+    #[gtest]
+    fn test_3() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
         ws.def_file(
             "1.lua",
@@ -80,21 +98,34 @@ mod tests {
                     if yyy.a then
                     end
                 end
-
             "#,
         );
-        assert!(ws.check_implementation(
+        check!(ws.check_implementation(
             r#"
                 yyy.<??>a = 2
             "#,
-            3,
+            vec![
+                VirtualLocation {
+                    file: "".to_string(),
+                    line: 1,
+                },
+                VirtualLocation {
+                    file: "1.lua".to_string(),
+                    line: 2,
+                },
+                VirtualLocation {
+                    file: "1.lua".to_string(),
+                    line: 6,
+                },
+            ],
         ));
+        Ok(())
     }
 
-    #[test]
-    fn test_table_field_definition_1() {
+    #[gtest]
+    fn test_table_field_definition_1() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
-        assert!(ws.check_implementation(
+        check!(ws.check_implementation(
             r#"
                 ---@class T
                 ---@field func fun(self: T) 注释注释
@@ -107,14 +138,24 @@ mod tests {
 
                 t:fun<??>c()
             "#,
-            2,
+            vec![
+                VirtualLocation {
+                    file: "".to_string(),
+                    line: 2,
+                },
+                VirtualLocation {
+                    file: "".to_string(),
+                    line: 6,
+                },
+            ],
         ));
+        Ok(())
     }
 
-    #[test]
-    fn test_table_field_definition_2() {
+    #[gtest]
+    fn test_table_field_definition_2() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
-        assert!(ws.check_implementation(
+        check!(ws.check_implementation(
             r#"
                 ---@class T
                 ---@field func fun(self: T) 注释注释
@@ -125,14 +166,24 @@ mod tests {
                     end,
                 }
             "#,
-            2,
+            vec![
+                VirtualLocation {
+                    file: "".to_string(),
+                    line: 2,
+                },
+                VirtualLocation {
+                    file: "".to_string(),
+                    line: 6,
+                },
+            ],
         ));
+        Ok(())
     }
 
-    #[test]
-    fn test_separation_of_define_and_impl() {
+    #[gtest]
+    fn test_separation_of_define_and_impl() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
-        assert!(ws.check_implementation(
+        check!(ws.check_implementation(
             r#"
                 local a<??>bc
 
@@ -145,7 +196,21 @@ mod tests {
                 abc = function()
                 end
             "#,
-            3,
+            vec![
+                VirtualLocation {
+                    file: "".to_string(),
+                    line: 1,
+                },
+                VirtualLocation {
+                    file: "".to_string(),
+                    line: 3,
+                },
+                VirtualLocation {
+                    file: "".to_string(),
+                    line: 9,
+                },
+            ],
         ));
+        Ok(())
     }
 }

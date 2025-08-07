@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod tests {
+    use crate::handlers::test_lib::{ProviderVirtualWorkspace, VirtualLocation, check};
+    use googletest::prelude::*;
 
-    use crate::handlers::test_lib::ProviderVirtualWorkspace;
-
-    #[test]
-    fn test_function_references() {
+    #[gtest]
+    fn test_function_references() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
         ws.def_file(
             "1.lua",
@@ -13,7 +13,7 @@ mod tests {
                 flush()
             "#,
         );
-        let result = ws.check_references(
+        check!(ws.check_references(
             r#"
                 local export = {}
                 local function fl<??>ush()
@@ -21,14 +21,42 @@ mod tests {
                 export.flush = flush
                 return export
             "#,
-        );
-        assert!(result.is_some());
-        let locations = result.unwrap();
-        assert!(locations.len() >= 4);
+            vec![
+                VirtualLocation {
+                    file: "".to_string(),
+                    line: 2,
+                },
+                VirtualLocation {
+                    file: "".to_string(),
+                    line: 4,
+                },
+                VirtualLocation {
+                    file: "1.lua".to_string(),
+                    line: 1,
+                },
+                VirtualLocation {
+                    file: "1.lua".to_string(),
+                    line: 1,
+                },
+                VirtualLocation {
+                    file: "1.lua".to_string(),
+                    line: 2,
+                },
+                VirtualLocation {
+                    file: "1.lua".to_string(),
+                    line: 1,
+                },
+                VirtualLocation {
+                    file: "".to_string(),
+                    line: 4,
+                },
+            ]
+        ));
+        Ok(())
     }
 
-    #[test]
-    fn test_function_references_2() {
+    #[gtest]
+    fn test_function_references_2() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
         ws.def_file(
             "1.lua",
@@ -37,7 +65,7 @@ mod tests {
                 flush()
             "#,
         );
-        let result = ws.check_references(
+        check!(ws.check_references(
             r#"
                 local function fl<??>ush()
                 end
@@ -45,9 +73,37 @@ mod tests {
                     flush = flush,
                 }
             "#,
-        );
-        assert!(result.is_some());
-        let locations = result.unwrap();
-        assert!(locations.len() >= 4);
+            vec![
+                VirtualLocation {
+                    file: "".to_string(),
+                    line: 1,
+                },
+                VirtualLocation {
+                    file: "".to_string(),
+                    line: 4,
+                },
+                VirtualLocation {
+                    file: "1.lua".to_string(),
+                    line: 1,
+                },
+                VirtualLocation {
+                    file: "1.lua".to_string(),
+                    line: 1,
+                },
+                VirtualLocation {
+                    file: "1.lua".to_string(),
+                    line: 2,
+                },
+                VirtualLocation {
+                    file: "1.lua".to_string(),
+                    line: 1,
+                },
+                VirtualLocation {
+                    file: "".to_string(),
+                    line: 4,
+                },
+            ]
+        ));
+        Ok(())
     }
 }

@@ -43,6 +43,9 @@ optional = true
 workspace = true
 optional = true
 
+[dev-dependencies]
+googletest.workspace = true
+
 
 [[bin]]
 name = "emmylua_ls"
