@@ -1,6 +1,6 @@
 mod external_format;
 
-use emmylua_code_analysis::reformat_code;
+use emmylua_code_analysis::{FormattingOptions, reformat_code};
 use lsp_types::{
     ClientCapabilities, DocumentFormattingParams, OneOf, ServerCapabilities, TextEdit,
 };
@@ -43,11 +43,17 @@ pub async fn on_formatting_handler(
     let text = document.get_text();
     let file_path = document.get_file_path();
     let normalized_path = file_path.to_string_lossy().to_string().replace("\\", "/");
+    let formatting_options = FormattingOptions {
+        indent_size: params.options.tab_size,
+        use_tabs: !params.options.insert_spaces,
+        insert_final_newline: params.options.insert_final_newline.unwrap_or(true),
+        non_standard_symbol: !emmyrc.runtime.nonstandard_symbol.is_empty(),
+    };
 
     let mut formatted_text = if let Some(external_config) = &emmyrc.format.external_tool {
-        external_tool_format(&external_config, text, &normalized_path).await?
+        external_tool_format(&external_config, text, &normalized_path, formatting_options).await?
     } else {
-        reformat_code(text, &normalized_path)
+        reformat_code(text, &normalized_path, formatting_options)
     };
 
     if client_id.is_intellij() || client_id.is_other() {

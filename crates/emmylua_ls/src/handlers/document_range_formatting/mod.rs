@@ -1,4 +1,4 @@
-use emmylua_code_analysis::range_format_code;
+use emmylua_code_analysis::{FormattingOptions, range_format_code};
 use lsp_types::{
     ClientCapabilities, DocumentRangeFormattingParams, OneOf, Position, Range, ServerCapabilities,
     TextEdit,
@@ -29,7 +29,7 @@ pub async fn on_range_formatting_handler(
     if syntax_tree.has_syntax_errors() {
         return None;
     }
-
+    let emmyrc = analysis.get_emmyrc();
     let document = analysis
         .compilation
         .get_db()
@@ -38,6 +38,12 @@ pub async fn on_range_formatting_handler(
     let text = document.get_text();
     let file_path = document.get_file_path();
     let normalized_path = file_path.to_string_lossy().to_string().replace("\\", "/");
+    let formatting_options = FormattingOptions {
+        indent_size: params.options.tab_size,
+        use_tabs: !params.options.insert_spaces,
+        insert_final_newline: params.options.insert_final_newline.unwrap_or(true),
+        non_standard_symbol: !emmyrc.runtime.nonstandard_symbol.is_empty(),
+    };
     let formatted_result = range_format_code(
         text,
         &normalized_path,
@@ -45,6 +51,7 @@ pub async fn on_range_formatting_handler(
         0,
         request_range.end.line as i32 + 1,
         0,
+        formatting_options,
     )?;
 
     let mut formatted_text = formatted_result.text;
