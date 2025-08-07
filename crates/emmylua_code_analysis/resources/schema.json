@@ -62,7 +62,8 @@
     "format": {
       "$ref": "#/$defs/EmmyrcReformat",
       "default": {
-        "externalTool": null
+        "externalTool": null,
+        "useDiff": false
       }
     },
     "hint": {
@@ -846,6 +847,11 @@
             }
           ],
           "default": null
+        },
+        "useDiff": {
+          "description": "Whether to use the diff algorithm for formatting.",
+          "type": "boolean",
+          "default": false
         }
       }
     },
