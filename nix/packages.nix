@@ -7,19 +7,11 @@ let
       rustPlatform,
       stdenv,
       pkg-config,
-      rust-bin,
     }:
     let
       cargoToml = builtins.fromTOML (builtins.readFile /${root}/crates/${x}/Cargo.toml);
-      rustToolchain = rust-bin.stable."1.85.0".default.override {
-        extensions = [ "rust-src" "clippy" "rustfmt" ];
-      };
-      rustPlatformWithToolchain = rustPlatform.override {
-        rustc = rustToolchain;
-        cargo = rustToolchain;
-      };
     in
-    rustPlatformWithToolchain.buildRustPackage {
+    rustPlatform.buildRustPackage {
       pname = cargoToml.package.name;
       version = cargoToml.package.version;
 
