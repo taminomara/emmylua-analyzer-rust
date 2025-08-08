@@ -659,8 +659,8 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn test_str_tpl_ref_4() {
+    #[gtest]
+    fn test_str_tpl_ref_4() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new_with_init_std_lib();
         ws.def(
             r#"
@@ -669,7 +669,7 @@ mod tests {
             ---@class D: C
             "#,
         );
-        assert!(ws.check_completion_with_kind(
+        check!(ws.check_completion_with_kind(
             r#"
             ---@generic T: string
             ---@param name `T`
@@ -694,8 +694,8 @@ mod tests {
             ],
             CompletionTriggerKind::TRIGGER_CHARACTER,
         ));
+        Ok(())
     }
-    
 
     #[gtest]
     fn test_table_field_function_1() -> Result<()> {
@@ -2057,8 +2057,8 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn test_issue_646() {
+    #[gtest]
+    fn test_issue_646() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
         ws.def(
             r#"
@@ -2066,7 +2066,7 @@ mod tests {
             ---@field a string
             "#,
         );
-        assert!(ws.check_completion(
+        check!(ws.check_completion(
             r#"
             ---@generic T: Base
             ---@param file T
@@ -2080,5 +2080,6 @@ mod tests {
                 ..Default::default()
             },],
         ));
+        Ok(())
     }
 }

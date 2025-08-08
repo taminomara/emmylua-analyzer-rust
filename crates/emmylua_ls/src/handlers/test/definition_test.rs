@@ -431,8 +431,8 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn test_goto_variable_param() {
+    #[gtest]
+    fn test_goto_variable_param() -> Result<()> {
         let mut ws = ProviderVirtualWorkspace::new();
         ws.def_file(
             "a.lua",
@@ -454,23 +454,16 @@ mod tests {
             return export
             "#,
         );
-        let result = ws
-            .check_definition(
-                r#"
+        check!(ws.check_definition(
+            r#"
                 local zipLatest = require('b').zipLatest
                 zipLatest<??>()
             "#,
-            )
-            .unwrap();
-        match result {
-            GotoDefinitionResponse::Array(array) => {
-                assert_eq!(array.len(), 1);
-                let location = &array[0];
-                assert_eq!(location.uri.path().as_str().ends_with("a.lua"), true);
-            }
-            _ => {
-                panic!("expect array");
-            }
-        }
+            vec![Expected {
+                file: "a.lua".to_string(),
+                line: 4,
+            }],
+        ));
+        Ok(())
     }
 }

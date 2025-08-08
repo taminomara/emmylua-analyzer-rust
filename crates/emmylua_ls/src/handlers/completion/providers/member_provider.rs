@@ -1,5 +1,5 @@
 use emmylua_code_analysis::{
-    DbIndex, LuaMemberInfo, LuaSemanticDeclId, LuaType, LuaTypeDeclId, SemanticModel,
+    DbIndex, LuaMemberInfo, LuaMemberKey, LuaSemanticDeclId, LuaType, LuaTypeDeclId, SemanticModel,
     enum_variable_is_param, get_tpl_ref_extend_type,
 };
 use emmylua_parser::{LuaAstNode, LuaAstToken, LuaIndexExpr, LuaStringToken};
