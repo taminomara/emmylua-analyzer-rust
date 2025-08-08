@@ -1,5 +1,4 @@
 mod migrate_global_member;
-
 use migrate_global_member::migrate_global_members_when_type_resolve;
 use rowan::TextRange;
 
@@ -49,13 +48,17 @@ pub fn bind_type(
         migrate_global_members_when_type_resolve(db, type_owner);
     } else {
         let decl_type = decl_type_cache?.as_type();
-        merge_def_type(db, decl_type.clone(), type_cache.as_type().clone());
+        merge_def_type(db, decl_type.clone(), type_cache.as_type().clone(), 0);
     }
 
     Some(())
 }
 
-fn merge_def_type(db: &mut DbIndex, decl_type: LuaType, expr_type: LuaType) {
+fn merge_def_type(db: &mut DbIndex, decl_type: LuaType, expr_type: LuaType, merge_level: i32) {
+    if merge_level > 1 {
+        return;
+    }
+
     match &decl_type {
         LuaType::Def(def) => match &expr_type {
             LuaType::TableConst(in_filed_range) => {
@@ -63,7 +66,7 @@ fn merge_def_type(db: &mut DbIndex, decl_type: LuaType, expr_type: LuaType) {
             }
             LuaType::Instance(instance) => {
                 let base_ref = instance.get_base();
-                merge_def_type(db, base_ref.clone(), expr_type);
+                merge_def_type(db, base_ref.clone(), expr_type, merge_level + 1);
             }
             _ => {}
         },

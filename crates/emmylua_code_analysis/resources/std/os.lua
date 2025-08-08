@@ -138,7 +138,7 @@ function os.exit(code) end
 --- Returns the value of the process environment variable `varname`, or
 --- **nil** if the variable is not defined.
 ---@param varname string
----@return string
+---@return string?
 function os.getenv(varname) end
 
 ---
