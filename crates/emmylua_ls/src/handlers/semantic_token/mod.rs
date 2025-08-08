@@ -37,7 +37,8 @@ pub fn semantic_token(
     client_id: ClientId,
 ) -> Option<SemanticTokensResult> {
     let mut semantic_model = analysis.compilation.get_semantic_model(file_id)?;
-    if !semantic_model.get_emmyrc().semantic_tokens.enable {
+    let emmyrc = semantic_model.get_emmyrc();
+    if !emmyrc.semantic_tokens.enable {
         return None;
     }
 
@@ -45,6 +46,7 @@ pub fn semantic_token(
         &mut semantic_model,
         supports_multiline_tokens(client_capabilities),
         client_id,
+        emmyrc,
     )?;
 
     Some(SemanticTokensResult::Tokens(SemanticTokens {

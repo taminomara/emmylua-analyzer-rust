@@ -4,8 +4,8 @@ use super::{
 use crate::context::ClientId;
 use crate::util::parse_desc;
 use emmylua_code_analysis::{
-    LuaDecl, LuaDeclExtra, LuaMemberId, LuaMemberOwner, LuaSemanticDeclId, LuaType, LuaTypeDeclId,
-    SemanticDeclLevel, SemanticModel, WorkspaceId, check_export_visibility,
+    Emmyrc, LuaDecl, LuaDeclExtra, LuaMemberId, LuaMemberOwner, LuaSemanticDeclId, LuaType,
+    LuaTypeDeclId, SemanticDeclLevel, SemanticModel, WorkspaceId, check_export_visibility,
     parse_require_module_info,
 };
 use emmylua_parser::{
@@ -21,6 +21,7 @@ pub fn build_semantic_tokens(
     semantic_model: &mut SemanticModel,
     support_muliline_token: bool,
     client_id: ClientId,
+    emmyrc: &Emmyrc,
 ) -> Option<Vec<SemanticToken>> {
     let root = semantic_model.get_root();
     let document = semantic_model.get_document();
@@ -34,10 +35,16 @@ pub fn build_semantic_tokens(
     for node_or_token in root.syntax().descendants_with_tokens() {
         match node_or_token {
             NodeOrToken::Node(node) => {
-                build_node_semantic_token(semantic_model, &mut builder, node);
+                build_node_semantic_token(semantic_model, &mut builder, node, emmyrc);
             }
             NodeOrToken::Token(token) => {
-                build_tokens_semantic_token(semantic_model, &mut builder, &token, client_id);
+                build_tokens_semantic_token(
+                    semantic_model,
+                    &mut builder,
+                    &token,
+                    client_id,
+                    emmyrc,
+                );
             }
         }
     }
@@ -50,6 +57,7 @@ fn build_tokens_semantic_token(
     builder: &mut SemanticBuilder,
     token: &LuaSyntaxToken,
     client_id: ClientId,
+    emmyrc: &Emmyrc,
 ) {
     match token.kind().into() {
         LuaTokenKind::TkLongString | LuaTokenKind::TkString => {
@@ -164,10 +172,7 @@ fn build_tokens_semantic_token(
             let rendering_description = token
                 .parent()
                 .is_some_and(|parent| parent.kind() == LuaSyntaxKind::DocDescription.into());
-            let description_parsing_is_enabled = semantic_model
-                .get_emmyrc()
-                .semantic_tokens
-                .render_documentation_markup;
+            let description_parsing_is_enabled = emmrc.semantic_tokens.render_documentation_markup;
 
             if !(rendering_description && description_parsing_is_enabled) {
                 builder.push(token, SemanticTokenType::COMMENT);
@@ -232,6 +237,7 @@ fn build_node_semantic_token(
     semantic_model: &SemanticModel,
     builder: &mut SemanticBuilder,
     node: LuaSyntaxNode,
+    emmyrc: &Emmyrc,
 ) -> Option<()> {
     match LuaAst::cast(node)? {
         LuaAst::LuaDocTagClass(doc_class) => {
@@ -590,11 +596,7 @@ fn build_node_semantic_token(
             _ => {}
         },
         LuaAst::LuaDocDescription(description) => {
-            if !semantic_model
-                .get_emmyrc()
-                .semantic_tokens
-                .render_documentation_markup
-            {
+            if !emmyrc.semantic_tokens.render_documentation_markup {
                 for token in description.tokens::<LuaGeneralToken>() {
                     if matches!(
                         token.get_token_kind(),
@@ -614,7 +616,7 @@ fn build_node_semantic_token(
                     .get_module()
                     .map(|m| m.workspace_id)
                     .unwrap_or(WorkspaceId::MAIN),
-                semantic_model.get_emmyrc(),
+                emmyrc,
                 text,
                 description,
                 None,

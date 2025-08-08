@@ -16,6 +16,10 @@ pub fn build_annotators(semantic: &SemanticModel) -> Vec<EmmyAnnotator> {
     let root = semantic.get_root();
     let db = semantic.get_db();
     let mut use_range_set = HashSet::new();
+    let is_rendering_description = semantic
+        .get_emmyrc()
+        .semantic_tokens
+        .render_documentation_markup;
     for node in root.descendants::<LuaAst>() {
         match node {
             LuaAst::LuaLocalStat(local_stat) => {
@@ -61,11 +65,7 @@ pub fn build_annotators(semantic: &SemanticModel) -> Vec<EmmyAnnotator> {
                 build_name_expr_annotator(&document, &mut use_range_set, &mut result, name_expr);
             }
             LuaAst::LuaDocDescription(description) => {
-                if semantic
-                    .get_emmyrc()
-                    .semantic_tokens
-                    .render_documentation_markup
-                {
+                if is_rendering_description {
                     build_description_annotator(
                         &semantic,
                         &mut use_range_set,
