@@ -1,20 +1,21 @@
-use emmylua_code_analysis::{
-    LuaDecl, LuaDeclExtra, LuaMemberId, LuaMemberOwner, LuaSemanticDeclId, LuaType, LuaTypeDeclId,
-    SemanticDeclLevel, SemanticModel, check_export_visibility, parse_require_module_info,
-};
-use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr,
-    LuaGeneralToken, LuaKind, LuaLiteralToken, LuaNameToken, LuaSyntaxNode, LuaSyntaxToken,
-    LuaTokenKind, LuaVarExpr,
-};
-use lsp_types::{SemanticToken, SemanticTokenModifier, SemanticTokenType};
-use rowan::NodeOrToken;
-
-use crate::context::ClientId;
-
 use super::{
     SEMANTIC_TOKEN_MODIFIERS, SEMANTIC_TOKEN_TYPES, semantic_token_builder::SemanticBuilder,
 };
+use crate::context::ClientId;
+use crate::util::parse_desc;
+use emmylua_code_analysis::{
+    LuaDecl, LuaDeclExtra, LuaMemberId, LuaMemberOwner, LuaSemanticDeclId, LuaType, LuaTypeDeclId,
+    SemanticDeclLevel, SemanticModel, WorkspaceId, check_export_visibility,
+    parse_require_module_info,
+};
+use emmylua_parser::{
+    LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr,
+    LuaGeneralToken, LuaKind, LuaLiteralToken, LuaNameToken, LuaSyntaxKind, LuaSyntaxNode,
+    LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
+};
+use emmylua_parser_desc::{DescItem, DescItemKind};
+use lsp_types::{SemanticToken, SemanticTokenModifier, SemanticTokenType};
+use rowan::{NodeOrToken, TextRange, TextSize};
 
 pub fn build_semantic_tokens(
     semantic_model: &mut SemanticModel,
@@ -33,7 +34,7 @@ pub fn build_semantic_tokens(
     for node_or_token in root.syntax().descendants_with_tokens() {
         match node_or_token {
             NodeOrToken::Node(node) => {
-                build_node_semantic_token(semantic_model, &mut builder, node, client_id);
+                build_node_semantic_token(semantic_model, &mut builder, node);
             }
             NodeOrToken::Token(token) => {
                 build_tokens_semantic_token(semantic_model, &mut builder, &token, client_id);
@@ -44,7 +45,6 @@ pub fn build_semantic_tokens(
     Some(builder.build())
 }
 
-#[allow(unused)]
 fn build_tokens_semantic_token(
     semantic_model: &SemanticModel,
     builder: &mut SemanticBuilder,
@@ -72,7 +72,8 @@ fn build_tokens_semantic_token(
         | LuaTokenKind::TkReturn
         | LuaTokenKind::TkThen
         | LuaTokenKind::TkUntil
-        | LuaTokenKind::TkWhile => {
+        | LuaTokenKind::TkWhile
+        | LuaTokenKind::TkGlobal => {
             builder.push(token, SemanticTokenType::KEYWORD);
         }
         LuaTokenKind::TkLocal => {
@@ -137,7 +138,8 @@ fn build_tokens_semantic_token(
         | LuaTokenKind::TkTagNamespace
         | LuaTokenKind::TkTagUsing
         | LuaTokenKind::TkTagSource
-        | LuaTokenKind::TkTagReturnCast => {
+        | LuaTokenKind::TkTagReturnCast
+        | LuaTokenKind::TkTagExport => {
             builder.push_with_modifier(
                 token,
                 SemanticTokenType::KEYWORD,
@@ -148,39 +150,79 @@ fn build_tokens_semantic_token(
         | LuaTokenKind::TkDocExtends
         | LuaTokenKind::TkDocAs
         | LuaTokenKind::TkDocIn
-        | LuaTokenKind::TkDocInfer => {
-            builder.push(token, SemanticTokenType::KEYWORD);
-        }
-        LuaTokenKind::TkDocDetail => {
-            builder.push(token, SemanticTokenType::COMMENT);
-        }
-        LuaTokenKind::TkDocQuestion => {
-            builder.push(token, SemanticTokenType::OPERATOR);
-        }
-        LuaTokenKind::TkDocVisibility | LuaTokenKind::TkTagVisibility => {
+        | LuaTokenKind::TkDocInfer
+        | LuaTokenKind::TkDocReadonly => {
             builder.push_with_modifier(
                 token,
                 SemanticTokenType::KEYWORD,
-                SemanticTokenModifier::MODIFICATION,
+                SemanticTokenModifier::DOCUMENTATION,
+            );
+        }
+        LuaTokenKind::TkDocDetail | LuaTokenKind::TkNormalStart => {
+            // We're rendering a description. If description parsing is enabled,
+            // this token will be handled by the corresponding description parser.
+            let rendering_description = token
+                .parent()
+                .is_some_and(|parent| parent.kind() == LuaSyntaxKind::DocDescription.into());
+            let description_parsing_is_enabled = semantic_model
+                .get_emmyrc()
+                .semantic_tokens
+                .render_documentation_markup;
+
+            if !(rendering_description && description_parsing_is_enabled) {
+                builder.push(token, SemanticTokenType::COMMENT);
+            }
+        }
+        LuaTokenKind::TkDocQuestion | LuaTokenKind::TkDocOr | LuaTokenKind::TkDocAnd => {
+            builder.push_with_modifier(
+                token,
+                SemanticTokenType::OPERATOR,
+                SemanticTokenModifier::DOCUMENTATION,
+            );
+        }
+        LuaTokenKind::TkDocVisibility | LuaTokenKind::TkTagVisibility => {
+            builder.push_with_modifiers(
+                token,
+                SemanticTokenType::KEYWORD,
+                &[
+                    SemanticTokenModifier::MODIFICATION,
+                    SemanticTokenModifier::DOCUMENTATION,
+                ],
             );
         }
         LuaTokenKind::TkDocVersionNumber => {
-            builder.push(token, SemanticTokenType::NUMBER);
+            builder.push_with_modifier(
+                token,
+                SemanticTokenType::NUMBER,
+                SemanticTokenModifier::DOCUMENTATION,
+            );
         }
         LuaTokenKind::TkStringTemplateType => {
-            builder.push(token, SemanticTokenType::STRING);
+            builder.push_with_modifier(
+                token,
+                SemanticTokenType::STRING,
+                SemanticTokenModifier::DOCUMENTATION,
+            );
         }
         LuaTokenKind::TkDocMatch => {
-            builder.push(token, SemanticTokenType::KEYWORD);
+            builder.push_with_modifier(
+                token,
+                SemanticTokenType::KEYWORD,
+                SemanticTokenModifier::DOCUMENTATION,
+            );
         }
         LuaTokenKind::TKDocPath | LuaTokenKind::TkDocSeeContent => {
-            builder.push(token, SemanticTokenType::STRING);
+            builder.push_with_modifier(
+                token,
+                SemanticTokenType::STRING,
+                SemanticTokenModifier::DOCUMENTATION,
+            );
         }
         LuaTokenKind::TkDocRegion | LuaTokenKind::TkDocEndRegion => {
             builder.push(token, SemanticTokenType::COMMENT);
         }
-        LuaTokenKind::TkDocStart => {
-            render_doc_at(builder, &token);
+        LuaTokenKind::TkDocStart | LuaTokenKind::TkDocContinue | LuaTokenKind::TkDocContinueOr => {
+            render_doc_at(builder, token)
         }
         _ => {}
     }
@@ -190,7 +232,6 @@ fn build_node_semantic_token(
     semantic_model: &SemanticModel,
     builder: &mut SemanticBuilder,
     node: LuaSyntaxNode,
-    _: ClientId,
 ) -> Option<()> {
     match LuaAst::cast(node)? {
         LuaAst::LuaDocTagClass(doc_class) => {
@@ -548,6 +589,38 @@ fn build_node_semantic_token(
             }
             _ => {}
         },
+        LuaAst::LuaDocDescription(description) => {
+            if !semantic_model
+                .get_emmyrc()
+                .semantic_tokens
+                .render_documentation_markup
+            {
+                for token in description.tokens::<LuaGeneralToken>() {
+                    if matches!(
+                        token.get_token_kind(),
+                        LuaTokenKind::TkDocDetail | LuaTokenKind::TkNormalStart
+                    ) {
+                        builder.push(token.syntax(), SemanticTokenType::COMMENT);
+                    }
+                }
+                return None;
+            }
+
+            let desc_range = description.get_range();
+            let document = semantic_model.get_document();
+            let text = document.get_text();
+            let items = parse_desc(
+                semantic_model
+                    .get_module()
+                    .map(|m| m.workspace_id)
+                    .unwrap_or(WorkspaceId::MAIN),
+                semantic_model.get_emmyrc(),
+                text,
+                description,
+                None,
+            );
+            render_desc_ranges(builder, text, items, desc_range);
+        }
         _ => {}
     }
 
@@ -674,23 +747,162 @@ fn handle_name_node(
 }
 
 fn render_doc_at(builder: &mut SemanticBuilder, token: &LuaSyntaxToken) {
-    let range = token.text_range();
-    // find '@'
     let text = token.text();
+    // find '@'/'|'
     let mut start = 0;
+    let mut len = 0;
     for (i, c) in text.char_indices() {
-        if c == '@' {
+        if matches!(c, '@' | '|') {
             start = i;
+            if c == '|' && text[i + c.len_utf8()..].starts_with(['+', '>']) {
+                len = 2;
+            } else {
+                len = 1;
+            }
             break;
         }
     }
-    let position = u32::from(range.start()) + start as u32;
-    builder.push_at_position(
-        position.into(),
-        1,
-        SemanticTokenType::KEYWORD,
-        Some(SemanticTokenModifier::DOCUMENTATION),
+
+    builder.push_at_range(
+        &text[..start],
+        TextRange::at(token.text_range().start(), TextSize::new(start as u32)),
+        SemanticTokenType::COMMENT,
+        &[],
     );
+
+    builder.push_at_range(
+        &text[start..start + len],
+        TextRange::at(
+            token.text_range().start() + TextSize::new(start as u32),
+            TextSize::new(len as u32),
+        ),
+        SemanticTokenType::KEYWORD,
+        &[SemanticTokenModifier::DOCUMENTATION],
+    );
+}
+
+fn render_desc_ranges(
+    builder: &mut SemanticBuilder,
+    text: &str,
+    items: Vec<DescItem>,
+    desc_range: TextRange,
+) {
+    let mut pos = desc_range.start();
+
+    for item in items {
+        if item.range.start() > pos {
+            // Ensure that we override IDE's default comment parsing algorithm.
+            let detail_range = TextRange::new(pos, item.range.start());
+            builder.push_at_range(
+                &text[detail_range],
+                detail_range,
+                SemanticTokenType::COMMENT,
+                &[],
+            );
+        }
+        let token_text = &text[item.range];
+        match item.kind {
+            DescItemKind::Code | DescItemKind::CodeBlock | DescItemKind::Ref => {
+                builder.push_at_range(
+                    token_text,
+                    item.range,
+                    SemanticTokenType::VARIABLE,
+                    &[SemanticTokenModifier::DOCUMENTATION],
+                );
+                pos = item.range.end();
+            }
+            DescItemKind::Link => {
+                builder.push_at_range(
+                    token_text,
+                    item.range,
+                    SemanticTokenType::STRING,
+                    &[SemanticTokenModifier::DOCUMENTATION],
+                );
+                pos = item.range.end();
+            }
+            DescItemKind::Markup | DescItemKind::Arg => {
+                builder.push_at_range(
+                    token_text,
+                    item.range,
+                    SemanticTokenType::OPERATOR,
+                    &[SemanticTokenModifier::DOCUMENTATION],
+                );
+                pos = item.range.end();
+            }
+            DescItemKind::CodeBlockHl(lua_token_kind) => {
+                let token_type = match lua_token_kind {
+                    LuaTokenKind::TkLongString | LuaTokenKind::TkString => {
+                        SemanticTokenType::STRING
+                    }
+                    LuaTokenKind::TkAnd
+                    | LuaTokenKind::TkBreak
+                    | LuaTokenKind::TkDo
+                    | LuaTokenKind::TkElse
+                    | LuaTokenKind::TkElseIf
+                    | LuaTokenKind::TkEnd
+                    | LuaTokenKind::TkFor
+                    | LuaTokenKind::TkFunction
+                    | LuaTokenKind::TkGoto
+                    | LuaTokenKind::TkIf
+                    | LuaTokenKind::TkIn
+                    | LuaTokenKind::TkNot
+                    | LuaTokenKind::TkOr
+                    | LuaTokenKind::TkRepeat
+                    | LuaTokenKind::TkReturn
+                    | LuaTokenKind::TkThen
+                    | LuaTokenKind::TkUntil
+                    | LuaTokenKind::TkWhile
+                    | LuaTokenKind::TkGlobal
+                    | LuaTokenKind::TkLocal => SemanticTokenType::KEYWORD,
+                    LuaTokenKind::TkPlus
+                    | LuaTokenKind::TkMinus
+                    | LuaTokenKind::TkMul
+                    | LuaTokenKind::TkDiv
+                    | LuaTokenKind::TkIDiv
+                    | LuaTokenKind::TkDot
+                    | LuaTokenKind::TkConcat
+                    | LuaTokenKind::TkEq
+                    | LuaTokenKind::TkGe
+                    | LuaTokenKind::TkLe
+                    | LuaTokenKind::TkNe
+                    | LuaTokenKind::TkShl
+                    | LuaTokenKind::TkShr
+                    | LuaTokenKind::TkLt
+                    | LuaTokenKind::TkGt
+                    | LuaTokenKind::TkMod
+                    | LuaTokenKind::TkPow
+                    | LuaTokenKind::TkLen
+                    | LuaTokenKind::TkBitAnd
+                    | LuaTokenKind::TkBitOr
+                    | LuaTokenKind::TkBitXor
+                    | LuaTokenKind::TkLeftBrace
+                    | LuaTokenKind::TkRightBrace
+                    | LuaTokenKind::TkLeftBracket
+                    | LuaTokenKind::TkRightBracket => SemanticTokenType::OPERATOR,
+                    LuaTokenKind::TkComplex | LuaTokenKind::TkInt | LuaTokenKind::TkFloat => {
+                        SemanticTokenType::NUMBER
+                    }
+                    LuaTokenKind::TkShortComment | LuaTokenKind::TkLongComment => {
+                        SemanticTokenType::COMMENT
+                    }
+                    _ => SemanticTokenType::VARIABLE,
+                };
+                builder.push_at_range(token_text, item.range, token_type, &[]);
+                pos = item.range.end();
+            }
+            _ => {}
+        }
+    }
+
+    if pos < desc_range.end() {
+        let detail_range = TextRange::new(pos, desc_range.end());
+        builder.push_at_range(
+            &text[detail_range],
+            detail_range,
+            SemanticTokenType::COMMENT,
+            &[],
+        );
+    }
 }
 
 // 检查导入语句是否是类定义

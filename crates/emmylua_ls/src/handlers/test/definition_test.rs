@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::handlers::test_lib::{ProviderVirtualWorkspace, VirtualLocation, check};
+    use emmylua_code_analysis::{DocSyntax, Emmyrc};
     use googletest::prelude::*;
 
     type Expected = VirtualLocation;
@@ -193,11 +194,12 @@ mod tests {
                 local test = t.test
                 te<??>st()
             "#,
-            vec![Expected {
+            vec![VirtualLocation {
                 file: "test.lua".to_string(),
                 line: 1
             }]
         ));
+
         Ok(())
     }
 
@@ -326,6 +328,106 @@ mod tests {
                 line: 4
             }]
         ));
+        Ok(())
+    }
+
+    #[gtest]
+    fn test_doc_resolve() -> Result<()> {
+        let mut ws = ProviderVirtualWorkspace::new();
+
+        let mut emmyrc = Emmyrc::default();
+        emmyrc.doc.syntax = DocSyntax::Myst;
+        ws.analysis.update_config(emmyrc.into());
+
+        ws.def_file(
+            "a.lua",
+            r#"
+                --- @class X
+                --- @field a string
+
+                --- @class ns.Y
+                --- @field b string
+            "#,
+        );
+
+        check!(ws.check_definition(
+            r#"
+                --- {lua:obj}`X<??>`
+            "#,
+            vec![Expected {
+                file: "a.lua".to_string(),
+                line: 1
+            }]
+        ));
+
+        check!(ws.check_definition(
+            r#"
+                --- {lua:obj}`X<??>.a`
+            "#,
+            vec![Expected {
+                file: "a.lua".to_string(),
+                line: 1
+            }]
+        ));
+
+        check!(ws.check_definition(
+            r#"
+                --- {lua:obj}`X.a<??>`
+            "#,
+            vec![Expected {
+                file: "a.lua".to_string(),
+                line: 2
+            }]
+        ));
+
+        check!(ws.check_definition(
+            r#"
+                --- @using ns
+
+                --- {lua:obj}`X<??>`
+            "#,
+            vec![Expected {
+                file: "a.lua".to_string(),
+                line: 1
+            }]
+        ));
+
+        check!(ws.check_definition(
+            r#"
+                --- @using ns
+
+                --- {lua:obj}`Y<??>`
+            "#,
+            vec![Expected {
+                file: "a.lua".to_string(),
+                line: 4
+            }]
+        ));
+
+        check!(ws.check_definition(
+            r#"
+                --- @using ns
+
+                --- {lua:obj}`ns.Y<??>`
+            "#,
+            vec![Expected {
+                file: "a.lua".to_string(),
+                line: 4
+            }]
+        ));
+
+        check!(ws.check_definition(
+            r#"
+                --- {lua:obj}`c<??>`
+                --- @class Z
+                --- @field c string
+            "#,
+            vec![Expected {
+                file: "".to_string(),
+                line: 3
+            }]
+        ));
+
         Ok(())
     }
 }

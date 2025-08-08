@@ -9,13 +9,13 @@ use std::{
 
 pub use crate::config::configs::{EmmyrcExternalTool, EmmyrcReformat};
 pub use config_loader::{load_configs, load_configs_raw};
+pub use configs::{DocSyntax, EmmyrcFilenameConvention, EmmyrcLuaVersion};
 use configs::{
     EmmyrcCodeAction, EmmyrcCodeLens, EmmyrcCompletion, EmmyrcDiagnostic, EmmyrcDoc,
     EmmyrcDocumentColor, EmmyrcHover, EmmyrcInlayHint, EmmyrcInlineValues, EmmyrcReference,
     EmmyrcResource, EmmyrcRuntime, EmmyrcSemanticToken, EmmyrcSignature, EmmyrcStrict,
     EmmyrcWorkspace,
 };
-pub use configs::{EmmyrcFilenameConvention, EmmyrcLuaVersion};
 use emmylua_parser::{LuaLanguageLevel, LuaNonStdSymbolSet, ParserConfig, SpecialFunction};
 use regex::Regex;
 use rowan::NodeCache;

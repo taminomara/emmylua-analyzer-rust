@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use crate::text::Reader;
     use crate::{
         LuaNonStdSymbol,
         lexer::{LexerConfig, LuaLexer},
@@ -83,7 +84,7 @@ mod tests {
         "#;
         let config = LexerConfig::default();
         let mut errors: Vec<LuaParseError> = Vec::new();
-        let mut lexer = LuaLexer::new(text, config, &mut errors);
+        let mut lexer = LuaLexer::new(Reader::new(text), config, Some(&mut errors));
         let tokens = lexer.tokenize();
         // for token in &tokens {
         //     println!("{:?}", token);
@@ -1141,7 +1142,7 @@ LuaTokenData { kind: TkWhitespace, range: SourceRange { start_offset: 2036, leng
         ]);
 
         let mut errors: Vec<LuaParseError> = Vec::new();
-        let mut lexer = LuaLexer::new(text, config, &mut errors);
+        let mut lexer = LuaLexer::new(Reader::new(text), config, Some(&mut errors));
         let tokens = lexer.tokenize();
 
         let test_str = tokens
