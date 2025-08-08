@@ -18,7 +18,7 @@ use lsp_types::{SemanticToken, SemanticTokenModifier, SemanticTokenType};
 use rowan::{NodeOrToken, TextRange, TextSize};
 
 pub fn build_semantic_tokens(
-    semantic_model: &mut SemanticModel,
+    semantic_model: &SemanticModel,
     support_muliline_token: bool,
     client_id: ClientId,
     emmyrc: &Emmyrc,
@@ -172,7 +172,7 @@ fn build_tokens_semantic_token(
             let rendering_description = token
                 .parent()
                 .is_some_and(|parent| parent.kind() == LuaSyntaxKind::DocDescription.into());
-            let description_parsing_is_enabled = emmrc.semantic_tokens.render_documentation_markup;
+            let description_parsing_is_enabled = emmyrc.semantic_tokens.render_documentation_markup;
 
             if !(rendering_description && description_parsing_is_enabled) {
                 builder.push(token, SemanticTokenType::COMMENT);
