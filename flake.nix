@@ -23,6 +23,9 @@
       let
         overlays = [ rust-overlay.overlays.default ];
         pkgs = import nixpkgs { inherit system overlays; };
+        rustToolchain = pkgs.rust-bin.stable."1.85.0".default.override {
+          extensions = [ "rust-src" "clippy" "rustfmt" ];
+        };
       in
       {
         packages =
@@ -35,11 +38,10 @@
           };
 
         devShells.default = pkgs.mkShell {
-          buildInputs = (with pkgs; [
-            rust-analyzer
-            clippy
-            rustfmt
-          ])
+          buildInputs = [
+            rustToolchain
+            pkgs.rust-analyzer
+          ]
           ++ self.packages.${system}.default.buildInputs
           ++ self.packages.${system}.default.nativeBuildInputs;
         };
