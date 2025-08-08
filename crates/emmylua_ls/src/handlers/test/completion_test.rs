@@ -644,6 +644,49 @@ mod tests {
                     ..Default::default()
                 },
                 VirtualCompletionItem {
+                    label: "\"Component\"".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
+                },
+                VirtualCompletionItem {
+                    label: "\"D\"".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
+                },
+            ],
+            CompletionTriggerKind::TRIGGER_CHARACTER,
+        ));
+        Ok(())
+    }
+
+    #[gtest]
+    fn test_str_tpl_ref_4() -> Result<()> {
+        let mut ws = ProviderVirtualWorkspace::new_with_init_std_lib();
+        ws.def(
+            r#"
+            ---@class C: string
+
+            ---@class D: C
+            "#,
+        );
+        check!(ws.check_completion_with_kind(
+            r#"
+            ---@generic T: string
+            ---@param name `T`
+            ---@return T
+            local function new(name)
+                return name
+            end
+
+            local a = new(<??>)
+            "#,
+            vec![
+                VirtualCompletionItem {
+                    label: "\"C\"".to_string(),
+                    kind: CompletionItemKind::ENUM_MEMBER,
+                    ..Default::default()
+                },
+                VirtualCompletionItem {
                     label: "\"D\"".to_string(),
                     kind: CompletionItemKind::ENUM_MEMBER,
                     ..Default::default()
@@ -2011,6 +2054,32 @@ mod tests {
             ],
         ));
 
+        Ok(())
+    }
+
+    #[gtest]
+    fn test_issue_646() -> Result<()> {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def(
+            r#"
+            ---@class Base
+            ---@field a string
+            "#,
+        );
+        check!(ws.check_completion(
+            r#"
+            ---@generic T: Base
+            ---@param file T
+            function dirname(file)
+                file.<??>
+            end
+            "#,
+            vec![VirtualCompletionItem {
+                label: "a".to_string(),
+                kind: CompletionItemKind::VARIABLE,
+                ..Default::default()
+            },],
+        ));
         Ok(())
     }
 }

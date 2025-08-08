@@ -710,10 +710,6 @@ fn add_str_tpl_ref_completion(
         .filter(|type_decl| {
             // 检查泛型约束
             let current_type = LuaType::Ref(type_decl.get_id());
-            // 去掉约束自身
-            if extend_type == current_type {
-                return false;
-            }
             builder
                 .semantic_model
                 .type_check(&extend_type, &current_type)

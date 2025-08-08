@@ -53,7 +53,7 @@ pub fn build_semantic_tokens(
 }
 
 fn build_tokens_semantic_token(
-    semantic_model: &SemanticModel,
+    _semantic_model: &SemanticModel,
     builder: &mut SemanticBuilder,
     token: &LuaSyntaxToken,
     client_id: ClientId,

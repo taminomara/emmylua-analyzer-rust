@@ -430,4 +430,40 @@ mod tests {
 
         Ok(())
     }
+
+    #[gtest]
+    fn test_goto_variable_param() -> Result<()> {
+        let mut ws = ProviderVirtualWorkspace::new();
+        ws.def_file(
+            "a.lua",
+            r#"
+                ---@class Observable<T>
+
+                ---test
+                local function zipLatest(...)
+                end
+                return zipLatest
+            "#,
+        );
+        ws.def_file(
+            "b.lua",
+            r#"
+            local export = {}
+            local zipLatest = require('a')
+            export.zipLatest = zipLatest
+            return export
+            "#,
+        );
+        check!(ws.check_definition(
+            r#"
+                local zipLatest = require('b').zipLatest
+                zipLatest<??>()
+            "#,
+            vec![Expected {
+                file: "a.lua".to_string(),
+                line: 4,
+            }],
+        ));
+        Ok(())
+    }
 }
