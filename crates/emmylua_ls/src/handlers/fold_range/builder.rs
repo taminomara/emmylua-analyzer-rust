@@ -25,7 +25,7 @@ impl FoldingRangeBuilder<'_> {
         &self.root
     }
 
-    pub fn get_document(&self) -> &LuaDocument {
+    pub fn get_document(&'_ self) -> &'_ LuaDocument<'_> {
         self.document
     }
 
