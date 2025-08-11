@@ -75,22 +75,6 @@
 
 ---
 
-## 🏗️ Architecture & Crates
-
-Our project is meticulously organized into specialized crates, each serving a critical role in the Lua analysis ecosystem:
-
-| Crate                                                          | Badge                                                                                                                                                   | Description |
-|----------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------| ----------- |
-| [🔍 **emmylua_parser**](./crates/emmylua_parser)               | [![emmylua_parser](https://img.shields.io/crates/v/emmylua_parser.svg?style=flat-square)](https://crates.io/crates/emmylua_parser)                      | The foundational Rust-based Lua parser engineered for maximum efficiency and accuracy. Powers all downstream analysis tools. |
-| [📑 **emmylua_parser_desc**](./crates/emmylua_parser_desc)     | [![emmylua_parser_desc](https://img.shields.io/crates/v/emmylua_parser_desc.svg?style=flat-square)](https://crates.io/crates/emmylua_parser_desc)       | Extension for EmmyLua-Parser that handles Markdown/RST highlighting in comments. |
-| [🧠 **emmylua_code_analysis**](./crates/emmylua_code_analysis) | [![emmylua_code_analysis](https://img.shields.io/crates/v/emmylua_code_analysis.svg?style=flat-square)](https://crates.io/crates/emmylua_code_analysis) | Advanced semantic analysis engine providing deep code understanding, type inference, and cross-reference resolution. |
-| [🖥️ **emmylua_ls**](./crates/emmylua_ls)                       | [![emmylua_ls](https://img.shields.io/crates/v/emmylua_ls.svg?style=flat-square)](https://crates.io/crates/emmylua_ls)                                  | The complete Language Server Protocol implementation offering rich IDE features across all major editors. |
-| [📚 **emmylua_doc_cli**](./crates/emmylua_doc_cli/)            | [![emmylua_doc_cli](https://img.shields.io/crates/v/emmylua_doc_cli.svg?style=flat-square)](https://crates.io/crates/emmylua_doc_cli)                   | Professional documentation generator creating beautiful, searchable API docs from your Lua code and annotations. |
-| [✅ **emmylua_check**](./crates/emmylua_check)                 | [![emmylua_check](https://img.shields.io/crates/v/emmylua_check.svg?style=flat-square)](https://crates.io/crates/emmylua_check)                         | Comprehensive static analysis tool for code quality assurance, catching bugs before they reach production. |
-
-
----
-
 ## ✨ Features
 
 <div align="center">
