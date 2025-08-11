@@ -121,7 +121,7 @@ impl Vfs {
         if let Some(s) = opt { Some(s) } else { None }
     }
 
-    pub fn get_document(&self, id: &FileId) -> Option<LuaDocument> {
+    pub fn get_document(&self, id: &FileId) -> Option<LuaDocument<'_>> {
         let path = self.file_path_map.get(&id.id)?;
         let text = self.get_file_content(id)?;
         let line_index = self.line_index_map.get(id)?;

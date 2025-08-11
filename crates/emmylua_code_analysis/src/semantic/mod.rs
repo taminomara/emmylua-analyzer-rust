@@ -83,7 +83,7 @@ impl<'a> SemanticModel<'a> {
         }
     }
 
-    pub fn get_document(&self) -> LuaDocument {
+    pub fn get_document(&'_ self) -> LuaDocument<'_> {
         self.db.get_vfs().get_document(&self.file_id).unwrap()
     }
 
@@ -91,11 +91,11 @@ impl<'a> SemanticModel<'a> {
         self.db.get_module_index().get_module(self.file_id)
     }
 
-    pub fn get_document_by_file_id(&self, file_id: FileId) -> Option<LuaDocument> {
+    pub fn get_document_by_file_id(&'_ self, file_id: FileId) -> Option<LuaDocument<'_>> {
         self.db.get_vfs().get_document(&file_id)
     }
 
-    pub fn get_document_by_uri(&self, uri: &Uri) -> Option<LuaDocument> {
+    pub fn get_document_by_uri(&'_ self, uri: &Uri) -> Option<LuaDocument<'_>> {
         let file_id = self.db.get_vfs().get_file_id(&uri)?;
         self.db.get_vfs().get_document(&file_id)
     }
