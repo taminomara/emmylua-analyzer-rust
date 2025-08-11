@@ -173,25 +173,25 @@ EmmyLua 语言服务器支持灵活的配置系统，通过配置文件可以精
 <tr>
 <td width="25%">
 
-**`keep`**  
+**`keep`**
 保持原样
 
 </td>
 <td width="25%">
 
-**`camel-case`**  
+**`camel-case`**
 驼峰命名
 
 </td>
 <td width="25%">
 
-**`snake-case`**  
+**`snake-case`**
 下划线命名
 
 </td>
 <td width="25%">
 
-**`pascal-case`**  
+**`pascal-case`**
 帕斯卡命名
 
 </td>
@@ -230,25 +230,25 @@ EmmyLua 语言服务器支持灵活的配置系统，通过配置文件可以精
 <tr>
 <td width="25%">
 
-**`error`**  
+**`error`**
 🔴 错误
 
 </td>
 <td width="25%">
 
-**`warning`**  
+**`warning`**
 🟡 警告
 
 </td>
 <td width="25%">
 
-**`information`**  
+**`information`**
 🔵 信息
 
 </td>
 <td width="25%">
 
-**`hint`**  
+**`hint`**
 💡 提示
 
 </td>
@@ -359,31 +359,31 @@ EmmyLua 语言服务器支持灵活的配置系统，通过配置文件可以精
 <tr>
 <td width="20%">
 
-**`Lua5.1`**  
+**`Lua5.1`**
 经典版本
 
 </td>
 <td width="20%">
 
-**`Lua5.2`**  
+**`Lua5.2`**
 增强功能
 
 </td>
 <td width="20%">
 
-**`Lua5.3`**  
+**`Lua5.3`**
 整数支持
 
 </td>
 <td width="20%">
 
-**`Lua5.4`**  
+**`Lua5.4`**
 最新特性
 
 </td>
 <td width="20%">
 
-**`LuaJIT`**  
+**`LuaJIT`**
 高性能版本
 
 </td>

@@ -180,7 +180,7 @@ tags.operator: |
   The `operator` tag is used to document operator overloads.
   Example:
   ```lua
-  ---@class 
+  ---@class
   ---@operator add(MyClass):MyClass
   ```
 tags.module: |

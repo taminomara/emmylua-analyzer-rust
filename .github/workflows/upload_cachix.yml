@@ -17,12 +17,12 @@ jobs:
           - nixos-24.11 # remove this when 25.05 is out of beta
           - nixos-unstable
           - nixpkgs-unstable
-          
+
     runs-on: ubuntu-latest
     steps:
     - name: Clone repo
       uses: actions/checkout@v4
-      
+
     - name: Setup Nix
       uses: cachix/install-nix-action@v30
       with:
@@ -34,13 +34,13 @@ jobs:
     - name: Show the current nixpkgs version
       run: |
         nix eval --impure --raw --expr '"Building for nixpkgs " + (import <nixpkgs> { }).lib.version'
-    
+
     - name: Setup Cachix
       uses: cachix/cachix-action@v15
       with:
         name: emmylua-analyzer
         authToken: '${{ secrets.CACHIX }}'
-        
+
     - name: Build emmylua-analyzer
       run: |
         for x in emmylua_{ls,doc_cli,check}; do

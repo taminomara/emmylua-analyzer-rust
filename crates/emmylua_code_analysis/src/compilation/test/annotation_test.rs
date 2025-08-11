@@ -75,7 +75,7 @@ mod test {
         async.run(function ()
             stat = async.await(2, fs_stat, 'a.lua')
         end)
- 
+
         "#,
         );
 
@@ -147,7 +147,7 @@ mod test {
             function StateMachine:abc()
             end
 
-            
+
             ---@return self
             function StateMachine:__init()
             end

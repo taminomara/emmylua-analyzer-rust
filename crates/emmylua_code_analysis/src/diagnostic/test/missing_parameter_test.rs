@@ -82,7 +82,7 @@ mod test {
 
         assert!(ws.check_code_for(
             DiagnosticCode::MissingParameter,
-            r#" 
+            r#"
             ---@param a number
             ---@param b number
             ---@param c number
@@ -102,7 +102,7 @@ mod test {
 
         assert!(!ws.check_code_for(
             DiagnosticCode::MissingParameter,
-            r#" 
+            r#"
             ---@param a number
             ---@param b number
             ---@param c number
@@ -139,10 +139,10 @@ mod test {
             ---@param b number
             local function test(a,b)
             end
-            
+
             ---@type number[]
             local a = {1,2,3}
-            
+
             test(table.unpack(a))
         "#
         ));

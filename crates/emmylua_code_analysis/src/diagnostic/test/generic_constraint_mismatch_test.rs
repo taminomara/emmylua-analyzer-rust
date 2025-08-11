@@ -150,9 +150,9 @@ mod test {
             DiagnosticCode::GenericConstraintMismatch,
             r#"
                 ---@class ABC1
-                
+
                 ---@generic T: string
-                ---@param t `T` 
+                ---@param t `T`
                 ---@return T
                 local function test(t)
                 end
@@ -249,7 +249,7 @@ mod test {
             ---@param obj T
             function add(obj)
             end
-            
+
             ---@class GCNode
         "#,
         );
@@ -280,7 +280,7 @@ mod test {
             ---@param obj T
             function add(obj)
             end
-            
+
 
         "#,
         );

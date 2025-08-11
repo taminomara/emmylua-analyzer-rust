@@ -14,7 +14,7 @@ mod test {
             r#"
             ---@class Test.Add
             ---@field a string
-            
+
             ---@type int
             index = 1
             ---@type Test.Add[]

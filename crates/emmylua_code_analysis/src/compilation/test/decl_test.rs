@@ -47,7 +47,7 @@ mod test {
                 ---@return any ...
                 ---@return integer offset
                 local function unpack() end
-                
+
                 ---@param a nil|integer|'l'|'L'
                 local function test(a) end
                 local len = unpack()

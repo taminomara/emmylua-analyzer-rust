@@ -11,7 +11,7 @@ mod test {
         a, b = table.unpack({ 1, 2, 3 })
 
         ---@type string[]
-        local ddd 
+        local ddd
 
         e = table.unpack(ddd)
         "#,

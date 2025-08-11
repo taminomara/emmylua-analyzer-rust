@@ -10,4 +10,3 @@ Add the crate as a dependency in your Cargo.toml:
 [dependencies]
 emmylua_diagnostic_macro = "0.4"
 ```
-

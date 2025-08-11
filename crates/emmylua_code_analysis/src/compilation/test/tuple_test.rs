@@ -33,7 +33,7 @@ mod tests {
                 ---@type int
                 local index
 
-                local points = Pos[cur] 
+                local points = Pos[cur]
                 ---@cast points -?
                 local point = points[index] ---@cast point -?
                 A = point[1]

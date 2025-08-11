@@ -69,7 +69,7 @@ mod tests {
         let mut ws = VirtualWorkspace::new();
         assert!(ws.check_code_for_namespace(
             DiagnosticCode::AssignTypeMismatch,
-            r#" 
+            r#"
                 ---@enum SubscriberFlags
                 local SubscriberFlags = {
                     None = 0,
@@ -92,7 +92,7 @@ mod tests {
         // 暂时没有好的方式去处理这个警告, 在 ts 中, 枚举值运算的结果不是实际值, 但我们目前的结果是实际值, 所以难以处理
         assert!(ws.check_code_for_namespace(
             DiagnosticCode::AssignTypeMismatch,
-            r#" 
+            r#"
                 ---@enum SubscriberFlags
                 local SubscriberFlags = {
                     None = 0,
@@ -106,7 +106,7 @@ mod tests {
 
                 ---@type Subscriber
                 local subscriber
-                
+
                 subscriber.flags = 9 -- 不允许匹配不上的实际值
             "#
         ));
@@ -587,13 +587,13 @@ return t
             DiagnosticCode::AssignTypeMismatch,
             r#"
             ---@class Option: string
-        
+
             ---@param x Option
             local function f(x) end
-        
+
             ---@type Option
             local x = 'aaa'
-        
+
             f(x)
                         "#
         ));
@@ -653,13 +653,13 @@ return t
             }
             ---@class Subscriber
             ---@field flags SubscriberFlags
-            
+
             ---@type Subscriber
             local subscriber
-            
+
             subscriber.flags = subscriber.flags & ~SubscriberFlags.Tracking
-            
-            subscriber.flags = 9 
+
+            subscriber.flags = 9
         "#
         ));
     }
@@ -960,7 +960,7 @@ return t
             DiagnosticCode::AssignTypeMismatch,
             r#"
             local export = {
-                ---@type number? 
+                ---@type number?
                 vvv = "a"
             }
         "#
