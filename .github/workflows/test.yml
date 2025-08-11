@@ -25,15 +25,17 @@ jobs:
       uses: crate-ci/typos@master
 
   reformat:
-    name: Rustfmt
+    name: Code Style Check
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
-    - name: Run Rustfmt
-      run: cargo fmt --all -- --check
+    - name: Install pre-commit
+      run: pip install pre-commit
+    - name: Run style check
+      run: pre-commit run --all
 
   test:
     runs-on: ubuntu-latest
