@@ -48,7 +48,9 @@ pub struct CmdArgs {
     #[arg(long, default_value = "Docs")]
     pub site_name: Option<String>,
 
-    /// The path of the mixin md file
+    /// A directory whose contents are merged with the generated Markdown files.
+    /// For example, to override docs/index.md, create a folder called "docs" in
+    /// your mixin folder and create a file called "index.md" inside it.
     #[arg(long)]
     pub mixin: Option<PathBuf>,
 
