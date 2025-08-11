@@ -180,7 +180,7 @@ tags.operator: |
   `operator` 标签用于表示运算符重载。
   示例:
   ```lua
-  ---@class 
+  ---@class
   ---@operator add(MyClass):MyClass
   ```
 tags.module: |

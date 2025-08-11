@@ -11,7 +11,7 @@ mod test {
 
             ---@export
             return {
-               newField = 1           
+               newField = 1
             }
         "#,
         );

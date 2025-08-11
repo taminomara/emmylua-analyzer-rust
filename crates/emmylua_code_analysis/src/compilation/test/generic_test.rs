@@ -16,9 +16,9 @@ mod test {
 
             invoke1(
                 function(a, b, c)
-                    _a = a 
-                    _b = b 
-                    _c = c 
+                    _a = a
+                    _b = b
+                    _c = c
                 end,
                 1, "2", "3"
             )

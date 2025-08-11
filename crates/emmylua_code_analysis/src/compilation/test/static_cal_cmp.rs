@@ -42,7 +42,7 @@ mod test {
 
         ws.def(
             r#"
-        local a 
+        local a
         d = a and 1
         "#,
         );

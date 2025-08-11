@@ -191,7 +191,7 @@ function os.setlocale(locale, category) end
 ---@field sec (integer|string)? 0-61, due to leap seconds
 ---@field wday (integer|string)? 1-7, Sunday is 1
 ---@field yday (integer|string)? 1-366
----@field isdst boolean? daylight saving flag, a boolean. 
+---@field isdst boolean? daylight saving flag, a boolean.
 
 ---
 --- Returns the current time when called without arguments, or a time

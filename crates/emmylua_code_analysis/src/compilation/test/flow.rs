@@ -36,7 +36,7 @@ mod test {
         ws.def(
             r#"
         ---@class Object
-        
+
         ---@class T
         local inject2class ---@type (Object| T)?
         if jsonClass then
@@ -94,10 +94,10 @@ mod test {
         end
 
         if type(props.bar) == 'function' then
-            local foo = props.bar() 
+            local foo = props.bar()
         end
 
-        local foo = props.bar and props.bar() or nil 
+        local foo = props.bar and props.bar() or nil
         "#
         ));
     }
@@ -311,8 +311,8 @@ end
         function baz() end
 
         local a
-        a = baz() -- a has type nil but should be string    
-        d = a    
+        a = baz() -- a has type nil but should be string
+        d = a
         "#
         ));
 
@@ -334,7 +334,7 @@ end
             end
 
             a = t
-        end   
+        end
         "#,
         );
 
@@ -497,7 +497,7 @@ end
             ---@param data D10.data
             local function init(data)
                 ---@cast data table
-                
+
                 b = data -- data 现在仍为 `10.data` 而不是 `table`
             end
             "#,
@@ -630,15 +630,15 @@ end
             local function isInteger(n)
                 return true
             end
-            
+
             local a ---@type integer | string
-            
+
             if isInteger(a) then
                 d = a
             else
                 e = a
-            end 
-            
+            end
+
         "#,
         );
 
@@ -932,9 +932,9 @@ end
             local function instanceOf(inst, type)
                 return true
             end
-            
+
             local ret --- @type string | nil
-            
+
             if instanceOf(ret, "string") then
                 a = ret
             end
@@ -1265,10 +1265,10 @@ end
         ws.def(
             r#"
             ---@class Node
-            ---@field parent? Node 
+            ---@field parent? Node
 
             ---@class Subject<T>: Node
-            ---@field package root? Node 
+            ---@field package root? Node
             Subject = {}
             "#,
         );

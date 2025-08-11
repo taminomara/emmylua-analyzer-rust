@@ -185,7 +185,7 @@ mod tests {
                         return value, math.type(value)
                     end
                     return value, tp
-                end 
+                end
             "#
         ));
     }

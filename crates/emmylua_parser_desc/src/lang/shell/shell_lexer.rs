@@ -602,7 +602,7 @@ function log_message() {
 # Conditional and loops
 if [[ -n "$USER_HOME" ]]; then
     cd "$USER_HOME"
-    
+
     for file in *.txt; do
         if [[ -f "$file" ]]; then
             # Command substitution and pipes

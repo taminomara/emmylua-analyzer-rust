@@ -915,7 +915,7 @@ mod tests {
                 ---@class (partial) SkillMutator.A
                 local a
                 function a:<??>()
-                    
+
                 end
 
             "#,

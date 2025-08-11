@@ -11,4 +11,3 @@
 {% if doc.property.description %}
 {{ doc.property.description }}
 {% endif %}
-

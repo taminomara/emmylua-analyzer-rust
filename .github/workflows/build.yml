@@ -81,13 +81,13 @@ jobs:
       - name: Upload
         if: ${{ matrix.cross != 'zigbuild'  }}
         uses: actions/upload-artifact@v4
-        with: 
+        with:
           name: ${{ matrix.crate }}-${{ matrix.platform }}
           path: ${{ github.workspace }}/artifact/
       - name: Upload zigbuild
         if: ${{ matrix.cross == 'zigbuild'  }}
         uses: actions/upload-artifact@v4
-        with: 
+        with:
           name: ${{ matrix.crate }}-${{ matrix.platform }}-glibc.${{ matrix.glibc }}
           path: ${{ github.workspace }}/artifact/
   release:
@@ -136,7 +136,7 @@ jobs:
           7z a emmylua_doc_cli-win32-x64.zip emmylua_doc_cli.exe
       - name: Release
         uses: softprops/action-gh-release@v2
-        with: 
+        with:
           name: emmylua_ls
           draft: false
           generate_release_notes: true

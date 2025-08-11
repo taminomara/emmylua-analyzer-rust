@@ -15,7 +15,7 @@ mod test {
             do
                 ---@type F1
                 local test = function(x) return x + 1 end
-                
+
                 test("wrong type")
             end
         "#
@@ -288,7 +288,7 @@ mod test {
             function Test.dots(...)
             end
 
-            Test:dots("a", "b", "c") 
+            Test:dots("a", "b", "c")
         "#
         ));
     }
@@ -454,7 +454,7 @@ mod test {
 
         assert!(ws.check_code_for(
             DiagnosticCode::ParamTypeNotMatch,
-            r#" 
+            r#"
             ---@class D13.Meta
             ---@field __defineGet fun(self: self, key: string, f: fun(self: self): any)
 
@@ -480,7 +480,7 @@ mod test {
                 local c = a and b or nil
                 -- type of c is (nil|true), should be (integer|nil)
                 local d = a and b
-                -- type of d is (boolean|nil), should be (false|integer|nil) 
+                -- type of d is (boolean|nil), should be (false|integer|nil)
 
                 ---@param p integer?
                 local function f1(p)
@@ -506,7 +506,7 @@ mod test {
                 end
 
                 ---@type table?
-                local a 
+                local a
                 a = a or {}
 
                 f(a)
@@ -694,7 +694,7 @@ mod test {
             r#"
                 ---@class D4.A: table<integer, string>
 
-                ---@param lua_conf D4.A 
+                ---@param lua_conf D4.A
                 local function enable_global_lua_trigger(lua_conf) end
 
                 ---@return { on_event: fun(trigger: table,  actor, data), [integer]: string }
@@ -1031,8 +1031,8 @@ mod test {
             DiagnosticCode::ParamTypeNotMatch,
             r#"
                 ---@alias IdAlias
-                ---| 311000001 
-                ---| 311000002 
+                ---| 311000001
+                ---| 311000002
 
                 ---@param id IdAlias
                 local function f(id)
@@ -1184,7 +1184,7 @@ mod test {
         assert!(ws.check_code_for(
             DiagnosticCode::ParamTypeNotMatch,
             r#"
-                takesArray({} --[[@as A]]) 
+                takesArray({} --[[@as A]])
             "#
         ));
     }
@@ -1245,7 +1245,7 @@ mod test {
             r#"
             ---@type RingBufferSpan<number>
             local span
-            
+
             for k, v in pairs(span) do
                 A = v
             end

@@ -152,7 +152,7 @@ mod tests {
             r#"
             local function baz()
                 if true then
-                    return 
+                    return
                 end
                 return 1
             end
