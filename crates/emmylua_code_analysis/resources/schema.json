@@ -51,7 +51,7 @@
       "default": {
         "knownTags": [],
         "privateName": [],
-        "syntax": "none"
+        "syntax": "md"
       }
     },
     "documentColor": {
@@ -125,7 +125,7 @@
       "$ref": "#/$defs/EmmyrcSemanticToken",
       "default": {
         "enable": true,
-        "renderDocumentationMarkup": false
+        "renderDocumentationMarkup": true
       }
     },
     "signature": {
@@ -640,7 +640,7 @@
         "syntax": {
           "description": "Syntax for highlighting documentation.",
           "$ref": "#/$defs/DocSyntax",
-          "default": "none"
+          "default": "md"
         }
       }
     },

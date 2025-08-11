@@ -19,7 +19,7 @@ impl Default for EmmyrcSemanticToken {
     fn default() -> Self {
         Self {
             enable: default_true(),
-            render_documentation_markup: false,
+            render_documentation_markup: true,
         }
     }
 }

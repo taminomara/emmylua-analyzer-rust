@@ -7,7 +7,7 @@ mod syntax;
 mod text;
 
 pub use kind::*;
-pub use lexer::{LexerConfig, LuaLexer, LuaLexerState, LuaTokenData};
+pub use lexer::{LexerConfig, LexerState, LuaLexer, LuaTokenData};
 pub use parser::{LuaParser, ParserConfig, SpecialFunction};
 pub use parser_error::{LuaParseError, LuaParseErrorKind};
 pub use syntax::*;

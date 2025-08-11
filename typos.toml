@@ -16,4 +16,5 @@ extend-exclude = [
   "CHANGELOG.md",
   "*.flake",
   "*.yaml",
+  "vim_lexer.rs"
 ]

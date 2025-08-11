@@ -16,10 +16,11 @@ pub async fn on_did_change_configuration(
         return Some(());
     }
 
-    if workspace_manager.client_config.client_id.is_vscode() {
+    let client_id = workspace_manager.client_config.client_id;
+    if client_id.is_vscode() {
         return Some(());
     }
-    let client_id = workspace_manager.client_config.client_id;
+
     drop(workspace_manager);
 
     let supports_config_request = context
@@ -31,11 +32,11 @@ pub async fn on_did_change_configuration(
 
     log::info!("change config client_id: {:?}", client_id);
     let new_client_config = get_client_config(&context, client_id, supports_config_request).await;
-    let mut config_manager = context.workspace_manager.write().await;
-    config_manager.client_config = new_client_config;
+    let mut workspace_manager = context.workspace_manager.write().await;
+    workspace_manager.client_config = new_client_config;
 
     log::info!("reloading workspace folders");
-    config_manager.reload_workspace().await;
+    workspace_manager.reload_workspace().await;
     Some(())
 }
 

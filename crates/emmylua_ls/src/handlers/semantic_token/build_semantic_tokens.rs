@@ -13,7 +13,7 @@ use emmylua_parser::{
     LuaGeneralToken, LuaKind, LuaLiteralToken, LuaNameToken, LuaSyntaxKind, LuaSyntaxNode,
     LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
 };
-use emmylua_parser_desc::{DescItem, DescItemKind};
+use emmylua_parser_desc::{CodeBlockHighlightKind, DescItem, DescItemKind};
 use lsp_types::{SemanticToken, SemanticTokenModifier, SemanticTokenType};
 use rowan::{NodeOrToken, TextRange, TextSize};
 
@@ -831,63 +831,20 @@ fn render_desc_ranges(
                 );
                 pos = item.range.end();
             }
-            DescItemKind::CodeBlockHl(lua_token_kind) => {
-                let token_type = match lua_token_kind {
-                    LuaTokenKind::TkLongString | LuaTokenKind::TkString => {
-                        SemanticTokenType::STRING
-                    }
-                    LuaTokenKind::TkAnd
-                    | LuaTokenKind::TkBreak
-                    | LuaTokenKind::TkDo
-                    | LuaTokenKind::TkElse
-                    | LuaTokenKind::TkElseIf
-                    | LuaTokenKind::TkEnd
-                    | LuaTokenKind::TkFor
-                    | LuaTokenKind::TkFunction
-                    | LuaTokenKind::TkGoto
-                    | LuaTokenKind::TkIf
-                    | LuaTokenKind::TkIn
-                    | LuaTokenKind::TkNot
-                    | LuaTokenKind::TkOr
-                    | LuaTokenKind::TkRepeat
-                    | LuaTokenKind::TkReturn
-                    | LuaTokenKind::TkThen
-                    | LuaTokenKind::TkUntil
-                    | LuaTokenKind::TkWhile
-                    | LuaTokenKind::TkGlobal
-                    | LuaTokenKind::TkLocal => SemanticTokenType::KEYWORD,
-                    LuaTokenKind::TkPlus
-                    | LuaTokenKind::TkMinus
-                    | LuaTokenKind::TkMul
-                    | LuaTokenKind::TkDiv
-                    | LuaTokenKind::TkIDiv
-                    | LuaTokenKind::TkDot
-                    | LuaTokenKind::TkConcat
-                    | LuaTokenKind::TkEq
-                    | LuaTokenKind::TkGe
-                    | LuaTokenKind::TkLe
-                    | LuaTokenKind::TkNe
-                    | LuaTokenKind::TkShl
-                    | LuaTokenKind::TkShr
-                    | LuaTokenKind::TkLt
-                    | LuaTokenKind::TkGt
-                    | LuaTokenKind::TkMod
-                    | LuaTokenKind::TkPow
-                    | LuaTokenKind::TkLen
-                    | LuaTokenKind::TkBitAnd
-                    | LuaTokenKind::TkBitOr
-                    | LuaTokenKind::TkBitXor
-                    | LuaTokenKind::TkLeftBrace
-                    | LuaTokenKind::TkRightBrace
-                    | LuaTokenKind::TkLeftBracket
-                    | LuaTokenKind::TkRightBracket => SemanticTokenType::OPERATOR,
-                    LuaTokenKind::TkComplex | LuaTokenKind::TkInt | LuaTokenKind::TkFloat => {
-                        SemanticTokenType::NUMBER
-                    }
-                    LuaTokenKind::TkShortComment | LuaTokenKind::TkLongComment => {
-                        SemanticTokenType::COMMENT
-                    }
-                    _ => SemanticTokenType::VARIABLE,
+            DescItemKind::CodeBlockHl(highlight_kind) => {
+                let token_type = match highlight_kind {
+                    CodeBlockHighlightKind::Keyword => SemanticTokenType::KEYWORD,
+                    CodeBlockHighlightKind::String => SemanticTokenType::STRING,
+                    CodeBlockHighlightKind::Number => SemanticTokenType::NUMBER,
+                    CodeBlockHighlightKind::Comment => SemanticTokenType::COMMENT,
+                    CodeBlockHighlightKind::Function => SemanticTokenType::FUNCTION,
+                    CodeBlockHighlightKind::Class => SemanticTokenType::CLASS,
+                    CodeBlockHighlightKind::Enum => SemanticTokenType::ENUM,
+                    CodeBlockHighlightKind::Variable => SemanticTokenType::VARIABLE,
+                    CodeBlockHighlightKind::Property => SemanticTokenType::PROPERTY,
+                    CodeBlockHighlightKind::Decorator => SemanticTokenType::DECORATOR,
+                    CodeBlockHighlightKind::Operators => SemanticTokenType::OPERATOR,
+                    _ => continue, // Fallback for other kinds
                 };
                 builder.push_at_range(token_text, item.range, token_type, &[]);
                 pos = item.range.end();

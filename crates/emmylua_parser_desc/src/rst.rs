@@ -1,10 +1,11 @@
 use crate::LuaDocDescription;
+use crate::lang::{CodeBlockLang, process_code};
 use crate::util::{
     BacktrackPoint, ResultContainer, desc_to_lines, is_blank, is_closing_quote, is_code_directive,
-    is_lua_role, is_opening_quote, is_quote_match, is_ws, process_lua_code,
+    is_lua_role, is_opening_quote, is_quote_match, is_ws,
 };
 use crate::{DescItem, DescItemKind, LuaDescParser};
-use emmylua_parser::{LexerConfig, LuaLexer, Reader, SourceRange};
+use emmylua_parser::{LexerState, Reader, SourceRange};
 use std::cmp::min;
 use unicode_general_category::{GeneralCategory, get_general_category};
 
@@ -501,7 +502,7 @@ impl RstParser {
         line.reset_buff();
 
         let is_code;
-        let is_lua;
+        let lang;
         match line.current_char() {
             // Footnote/citation
             '[' => {
@@ -521,7 +522,7 @@ impl RstParser {
                 bt.commit(self, line);
 
                 is_code = false;
-                is_lua = false;
+                lang = None;
             }
 
             // Hyperlink target
@@ -587,7 +588,11 @@ impl RstParser {
                 line.eat_while(is_ws);
                 line.reset_buff();
                 line.eat_till_end();
-                is_lua = is_code && line.current_text().trim() == "lua";
+                lang = if is_code {
+                    CodeBlockLang::try_parse(line.current_text().trim())
+                } else {
+                    None
+                };
                 self.emit(line, DescItemKind::CodeBlock);
                 bt.commit(self, line);
             }
@@ -629,13 +634,19 @@ impl RstParser {
             start += 1;
         }
 
-        if is_lua && self.cursor_position.is_none() {
-            let mut lexer = LuaLexer::new(Reader::new(""), LexerConfig::default(), None);
+        if lang.is_some() && self.cursor_position.is_none() {
+            let mut state = LexerState::Normal;
             for line in lines[start..end].iter_mut() {
                 line.eat_till_end();
                 let line_range = line.current_range();
-                let lua_tokens = lexer.continue_with_new_reader(line.reset_buff_into_sub_reader());
-                process_lua_code(self, line_range, lua_tokens);
+                let prev_reader = line.reset_buff_into_sub_reader();
+                state = process_code(
+                    self,
+                    line_range,
+                    prev_reader,
+                    state,
+                    lang.unwrap_or(CodeBlockLang::None),
+                );
             }
         } else if is_code {
             for line in lines[start..end].iter_mut() {
@@ -1715,7 +1726,8 @@ pub fn process_inline_code<C: ResultContainer>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testlib::test;
+    #[allow(unused)]
+    use crate::testlib::{print_result, test};
 
     #[test]
     fn test_rst() {
@@ -2132,11 +2144,11 @@ mod tests {
 --- <Scope><Markup>..</Markup> <Arg>code-block</Arg><Markup>::</Markup> <CodeBlock>lua</CodeBlock>
 ---    <Markup>:</Markup><Arg>linenos</Arg><Markup>:</Markup>
 ---
----    <CodeBlockHl(TkFunction)>function</CodeBlockHl(TkFunction)><CodeBlock> </CodeBlock><CodeBlockHl(TkName)>foo</CodeBlockHl(TkName)><CodeBlockHl(TkLeftParen)>(</CodeBlockHl(TkLeftParen)><CodeBlockHl(TkName)>x</CodeBlockHl(TkName)><CodeBlockHl(TkRightParen)>)</CodeBlockHl(TkRightParen)>
----    <CodeBlock>    </CodeBlock><CodeBlockHl(TkName)>print</CodeBlockHl(TkName)><CodeBlockHl(TkLeftParen)>(</CodeBlockHl(TkLeftParen)><CodeBlockHl(TkLongString)>[[</CodeBlockHl(TkLongString)>
----    <CodeBlockHl(TkLongString)>        long string</CodeBlockHl(TkLongString)>
----    <CodeBlockHl(TkLongString)>    ]]</CodeBlockHl(TkLongString)><CodeBlockHl(TkRightParen)>)</CodeBlockHl(TkRightParen)>
----    <CodeBlockHl(TkEnd)>end</CodeBlockHl(TkEnd)></Scope>
+---    <CodeBlockHl(Keyword)>function</CodeBlockHl(Keyword)> <CodeBlockHl(Function)>foo</CodeBlockHl(Function)><CodeBlockHl(Operators)>(</CodeBlockHl(Operators)><CodeBlockHl(Variable)>x</CodeBlockHl(Variable)><CodeBlockHl(Operators)>)</CodeBlockHl(Operators)>
+---        <CodeBlockHl(Function)>print</CodeBlockHl(Function)><CodeBlockHl(Operators)>(</CodeBlockHl(Operators)><CodeBlockHl(String)>[[</CodeBlockHl(String)>
+---    <CodeBlockHl(String)>        long string</CodeBlockHl(String)>
+---    <CodeBlockHl(String)>    ]]</CodeBlockHl(String)><CodeBlockHl(Operators)>)</CodeBlockHl(Operators)>
+---    <CodeBlockHl(Keyword)>end</CodeBlockHl(Keyword)></Scope>
 ---
 ---
 --- <Scope>Implicit hyperlink target
@@ -2193,8 +2205,8 @@ local t = 123
 ---
 ---<Scope> <Scope><Markup>..</Markup> <Arg>code-block</Arg><Markup>::</Markup> <CodeBlock>lua</CodeBlock>
 ---
----    <CodeBlockHl(TkLocal)>local</CodeBlockHl(TkLocal)><CodeBlock> </CodeBlock><CodeBlockHl(TkName)>t</CodeBlockHl(TkName)><CodeBlock> </CodeBlock><CodeBlockHl(TkAssign)>=</CodeBlockHl(TkAssign)><CodeBlock> </CodeBlock><CodeBlockHl(TkInt)>123</CodeBlockHl(TkInt)>
----    <CodeBlockHl(TkName)>yes</CodeBlockHl(TkName)><CodeBlock> </CodeBlock><CodeBlockHl(TkAssign)>=</CodeBlockHl(TkAssign)><CodeBlock> </CodeBlock><CodeBlockHl(TkInt)>1123</CodeBlockHl(TkInt)></Scope></Scope>
+---    <CodeBlockHl(Keyword)>local</CodeBlockHl(Keyword)> <CodeBlockHl(Variable)>t</CodeBlockHl(Variable)> <CodeBlockHl(Operators)>=</CodeBlockHl(Operators)> <CodeBlockHl(Number)>123</CodeBlockHl(Number)>
+---    <CodeBlockHl(Variable)>yes</CodeBlockHl(Variable)> <CodeBlockHl(Operators)>=</CodeBlockHl(Operators)> <CodeBlockHl(Number)>1123</CodeBlockHl(Number)></Scope></Scope>
 local t = 123
 "#;
 

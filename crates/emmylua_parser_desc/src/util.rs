@@ -1,7 +1,6 @@
 use crate::{DescItem, DescItemKind};
 use emmylua_parser::{
-    LuaAstNode, LuaDocDescription, LuaKind, LuaSyntaxElement, LuaTokenData, LuaTokenKind, Reader,
-    SourceRange,
+    LuaAstNode, LuaDocDescription, LuaKind, LuaSyntaxElement, LuaTokenKind, Reader, SourceRange,
 };
 use rowan::Direction;
 use std::cmp::min;
@@ -341,38 +340,6 @@ pub fn is_lua_role(name: &str) -> bool {
             | "obj"
             | "lua"
     )
-}
-
-pub fn process_lua_code<'a, C: ResultContainer>(
-    c: &mut C,
-    range: SourceRange,
-    tokens: Vec<LuaTokenData>,
-) {
-    let mut pos = range.start_offset;
-    for token in tokens {
-        if pos < token.range.start_offset {
-            c.emit_range(
-                SourceRange::from_start_end(pos, token.range.start_offset),
-                DescItemKind::CodeBlock,
-            )
-        }
-        if !matches!(
-            token.kind,
-            LuaTokenKind::TkEof | LuaTokenKind::TkEndOfLine | LuaTokenKind::TkWhitespace
-        ) {
-            c.emit_range(token.range, DescItemKind::CodeBlockHl(token.kind));
-            pos = token.range.end_offset();
-        } else {
-            pos = token.range.start_offset;
-        }
-    }
-
-    if pos < range.end_offset() {
-        c.emit_range(
-            SourceRange::from_start_end(pos, range.end_offset()),
-            DescItemKind::CodeBlock,
-        )
-    }
 }
 
 pub fn sort_result(items: &mut Vec<DescItem>) {

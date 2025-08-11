@@ -50,6 +50,6 @@ pub enum DocSyntax {
 
 impl Default for DocSyntax {
     fn default() -> Self {
-        DocSyntax::None
+        DocSyntax::Md
     }
 }

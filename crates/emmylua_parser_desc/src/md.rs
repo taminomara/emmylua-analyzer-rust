@@ -1,10 +1,11 @@
+use crate::lang::{CodeBlockLang, process_code};
 use crate::rst::{eat_rst_flag_body, process_inline_code, process_lua_ref};
 use crate::util::{
     BacktrackPoint, ResultContainer, desc_to_lines, is_blank, is_code_directive, is_lua_role,
-    is_punct, is_ws, process_lua_code,
+    is_punct, is_ws,
 };
 use crate::{DescItem, DescItemKind, LuaDescParser};
-use emmylua_parser::{LexerConfig, LuaLexer, LuaLexerState, Reader, SourceRange};
+use emmylua_parser::{LexerState, Reader, SourceRange};
 use emmylua_parser::{LuaAstNode, LuaDocDescription};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -16,7 +17,7 @@ pub struct MdParser {
     enable_myst: bool,
     results: Vec<DescItem>,
     cursor_position: Option<usize>,
-    lua_lexer_state: LuaLexerState,
+    state: LexerState,
 }
 
 #[derive(Copy, Clone)]
@@ -34,21 +35,19 @@ enum State {
     FencedCode {
         n_fences: usize,
         fence: char,
-        is_lua: bool,
+        lang: CodeBlockLang,
         scope_start: usize,
     },
     FencedDirectiveParams {
         n_fences: usize,
         fence: char,
-        is_code: bool,
-        is_lua: bool,
+        lang: Option<CodeBlockLang>,
         scope_start: usize,
     },
     FencedDirectiveParamsLong {
         n_fences: usize,
         fence: char,
-        is_code: bool,
-        is_lua: bool,
+        lang: Option<CodeBlockLang>,
         scope_start: usize,
     },
     FencedDirectiveBody {
@@ -115,7 +114,7 @@ impl MdParser {
             enable_myst: false,
             results: Vec::new(),
             cursor_position,
-            lua_lexer_state: LuaLexerState::Normal,
+            state: LexerState::Normal,
         }
     }
 
@@ -127,7 +126,7 @@ impl MdParser {
             enable_myst: true,
             results: Vec::new(),
             cursor_position,
-            lua_lexer_state: LuaLexerState::Normal,
+            state: LexerState::Normal,
         }
     }
 
@@ -163,22 +162,21 @@ impl MdParser {
                 State::FencedCode {
                     n_fences,
                     fence,
-                    is_lua,
+                    lang,
                     ..
                 } => {
                     if self.try_process_fence_end(reader, n_fences, fence).is_ok() {
                         self.flush_state(&mut states, i, reader);
                         return;
                     } else {
-                        self.process_code_line(reader, is_lua);
+                        self.process_code_line(reader, lang);
                         return;
                     }
                 }
                 State::FencedDirectiveParams {
                     n_fences,
                     fence,
-                    is_code,
-                    is_lua,
+                    lang,
                     scope_start,
                 } => {
                     if self.try_process_fence_end(reader, n_fences, fence).is_ok() {
@@ -190,24 +188,24 @@ impl MdParser {
                         states.push(State::FencedDirectiveParamsLong {
                             n_fences,
                             fence,
-                            is_code,
-                            is_lua,
+                            lang,
                             scope_start,
                         });
                         return;
                     }
                     if self.try_process_fence_short_param(reader).is_ok() {
                         return;
-                    } else if is_code {
+                    } else if lang.is_some() {
                         self.flush_state(&mut states, i + 1, reader);
                         states.pop();
+                        let lang = lang.unwrap_or(CodeBlockLang::None);
                         states.push(State::FencedCode {
                             n_fences,
                             fence,
-                            is_lua,
+                            lang,
                             scope_start,
                         });
-                        self.process_code_line(reader, is_lua);
+                        self.process_code_line(reader, lang);
                         return;
                     } else {
                         self.flush_state(&mut states, i + 1, reader);
@@ -224,8 +222,7 @@ impl MdParser {
                 State::FencedDirectiveParamsLong {
                     n_fences,
                     fence,
-                    is_code,
-                    is_lua,
+                    lang,
                     scope_start,
                 } => {
                     if self.try_process_fence_end(reader, n_fences, fence).is_ok() {
@@ -234,11 +231,11 @@ impl MdParser {
                     } else if self.try_process_fence_long_params_marker(reader).is_ok() {
                         self.flush_state(&mut states, i + 1, reader);
                         states.pop();
-                        if is_code {
+                        if lang.is_some() {
                             states.push(State::FencedCode {
                                 n_fences,
                                 fence,
-                                is_lua,
+                                lang: lang.unwrap_or(CodeBlockLang::None),
                                 scope_start,
                             });
                         } else {
@@ -250,7 +247,7 @@ impl MdParser {
                         }
                         return;
                     } else {
-                        self.process_code_line(reader, is_lua);
+                        self.process_code_line(reader, lang.unwrap_or(CodeBlockLang::None));
                         return;
                     }
                 }
@@ -349,23 +346,26 @@ impl MdParser {
                     {
                         // This is a directive.
                         let is_code = is_code_directive(dir_name);
-                        let is_lua = is_code && dir_args.trim() == "lua";
+                        let lang = if is_code {
+                            CodeBlockLang::try_parse(dir_args.trim())
+                        } else {
+                            None
+                        };
                         self.states.borrow_mut().push(State::FencedDirectiveParams {
                             n_fences,
                             fence,
-                            is_code,
-                            is_lua,
+                            lang,
                             scope_start,
                         });
                     } else {
                         // This is a code block.
                         reader.eat_till_end();
-                        let is_lua = reader.current_text().trim() == "lua";
+                        let lang = CodeBlockLang::try_parse(reader.current_text().trim());
                         self.emit(reader, DescItemKind::CodeBlock);
                         self.states.borrow_mut().push(State::FencedCode {
                             n_fences,
                             fence,
-                            is_lua,
+                            lang: lang.unwrap_or(CodeBlockLang::None),
                             scope_start,
                         });
                     }
@@ -583,7 +583,7 @@ impl MdParser {
         let found_indent = reader.consume_n_times(is_ws, 4);
         if found_indent == 4 || reader.is_eof() {
             reader.reset_buff();
-            self.process_code_line(reader, false);
+            self.process_code_line(reader, CodeBlockLang::None);
             bt.commit(self, reader);
             Ok(())
         } else {
@@ -918,7 +918,7 @@ impl MdParser {
         }
     }
 
-    fn process_code_line(&mut self, reader: &mut Reader, is_lua: bool) {
+    fn process_code_line(&mut self, reader: &mut Reader, lang: CodeBlockLang) {
         if self.cursor_position.is_some() {
             // No point in calculating this when all we care
             // is what's under the user's cursor.
@@ -926,18 +926,10 @@ impl MdParser {
         }
 
         reader.eat_till_end();
-        if is_lua && self.cursor_position.is_none() {
+        if lang != CodeBlockLang::None && self.cursor_position.is_none() {
             let line_range = reader.current_range();
-            let mut lexer = LuaLexer::new_with_state(
-                reader.reset_buff_into_sub_reader(),
-                self.lua_lexer_state,
-                LexerConfig::default(),
-                None,
-            );
-            let lua_tokens = lexer.tokenize();
-            self.lua_lexer_state = lexer.get_state();
-
-            process_lua_code(self, line_range, lua_tokens);
+            let prev_reader = reader.reset_buff_into_sub_reader();
+            self.state = process_code(self, line_range, prev_reader, self.state, lang);
         } else {
             self.emit(reader, DescItemKind::CodeBlock);
         }
@@ -1341,8 +1333,7 @@ impl MdParser {
                 State::Math { scope_start, .. } => scope_start,
             };
 
-            self.lua_lexer_state = LuaLexerState::Normal;
-
+            self.state = LexerState::Normal;
             let scope_end = reader.current_range().end_offset();
             self.emit_range(
                 SourceRange::from_start_end(scope_start, scope_end),
@@ -1472,7 +1463,8 @@ impl MdParser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testlib::test;
+    #[allow(unused)]
+    use crate::testlib::{print_result, test};
 
     #[test]
     fn test_md() {
@@ -1699,11 +1691,11 @@ mod tests {
 --- not code
 ---
 --- <Scope><Markup>```</Markup><CodeBlock>lua</CodeBlock>
---- <CodeBlockHl(TkFunction)>function</CodeBlockHl(TkFunction)><CodeBlock> </CodeBlock><CodeBlockHl(TkName)>foo</CodeBlockHl(TkName)><CodeBlockHl(TkLeftParen)>(</CodeBlockHl(TkLeftParen)><CodeBlockHl(TkRightParen)>)</CodeBlockHl(TkRightParen)>
---- <CodeBlock>    </CodeBlock><CodeBlockHl(TkLocal)>local</CodeBlockHl(TkLocal)><CodeBlock> </CodeBlock><CodeBlockHl(TkName)>long_string</CodeBlockHl(TkName)><CodeBlock> </CodeBlock><CodeBlockHl(TkAssign)>=</CodeBlockHl(TkAssign)><CodeBlock> </CodeBlock><CodeBlockHl(TkLongString)>[[</CodeBlockHl(TkLongString)>
---- <CodeBlockHl(TkLongString)>        content</CodeBlockHl(TkLongString)>
---- <CodeBlockHl(TkLongString)>    ]]</CodeBlockHl(TkLongString)>
---- <CodeBlockHl(TkEnd)>end</CodeBlockHl(TkEnd)>
+--- <CodeBlockHl(Keyword)>function</CodeBlockHl(Keyword)> <CodeBlockHl(Function)>foo</CodeBlockHl(Function)><CodeBlockHl(Operators)>()</CodeBlockHl(Operators)>
+---     <CodeBlockHl(Keyword)>local</CodeBlockHl(Keyword)> <CodeBlockHl(Variable)>long_string</CodeBlockHl(Variable)> <CodeBlockHl(Operators)>=</CodeBlockHl(Operators)> <CodeBlockHl(String)>[[</CodeBlockHl(String)>
+--- <CodeBlockHl(String)>        content</CodeBlockHl(String)>
+--- <CodeBlockHl(String)>    ]]</CodeBlockHl(String)>
+--- <CodeBlockHl(Keyword)>end</CodeBlockHl(Keyword)>
 --- <Markup>```</Markup></Scope>
 ---
 --- <Scope><Markup>##</Markup> Quotes</Scope>
@@ -1727,6 +1719,7 @@ mod tests {
 --- <Scope><Link>[link]</Link><Markup>:</Markup> <Link>https://example.com</Link></Scope>
 "#;
 
+        // print_result(&code, Box::new(MdParser::new(None)));
         test(&code, Box::new(MdParser::new(None)), &expected);
     }
 
@@ -1814,7 +1807,7 @@ mod tests {
 --- Body
 --- <Markup>````</Markup></Scope>
 --- <Scope><Markup>```{</Markup><Arg>code-block</Arg><Markup>}</Markup> <CodeBlock>lua</CodeBlock>
---- <CodeBlockHl(TkFunction)>function</CodeBlockHl(TkFunction)><CodeBlock> </CodeBlock><CodeBlockHl(TkName)>foo</CodeBlockHl(TkName)><CodeBlockHl(TkLeftParen)>(</CodeBlockHl(TkLeftParen)><CodeBlockHl(TkRightParen)>)</CodeBlockHl(TkRightParen)><CodeBlock> </CodeBlock><CodeBlockHl(TkEnd)>end</CodeBlockHl(TkEnd)>
+--- <CodeBlockHl(Keyword)>function</CodeBlockHl(Keyword)> <CodeBlockHl(Function)>foo</CodeBlockHl(Function)><CodeBlockHl(Operators)>()</CodeBlockHl(Operators)> <CodeBlockHl(Keyword)>end</CodeBlockHl(Keyword)>
 --- <Markup>```</Markup></Scope>
 ---
 --- <Scope><Markup>#</Markup> Math</Scope>
@@ -1903,7 +1896,7 @@ local t = 123
         let expected = r#"
 ---<Scope><Markup>```</Markup><CodeBlock>lua</CodeBlock>
 ---
----<CodeBlock> </CodeBlock><CodeBlockHl(TkLocal)>local</CodeBlockHl(TkLocal)><CodeBlock> </CodeBlock><CodeBlockHl(TkName)>t</CodeBlockHl(TkName)><CodeBlock> </CodeBlock><CodeBlockHl(TkAssign)>=</CodeBlockHl(TkAssign)><CodeBlock> </CodeBlock><CodeBlockHl(TkInt)>213</CodeBlockHl(TkInt)>
+--- <CodeBlockHl(Keyword)>local</CodeBlockHl(Keyword)> <CodeBlockHl(Variable)>t</CodeBlockHl(Variable)> <CodeBlockHl(Operators)>=</CodeBlockHl(Operators)> <CodeBlockHl(Number)>213</CodeBlockHl(Number)>
 ---<Markup>```</Markup></Scope>
 ---
 --- .. code-block:: lua

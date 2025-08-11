@@ -1,10 +1,11 @@
-use emmylua_parser::{LuaDocDescription, LuaTokenKind};
-use rowan::TextRange;
-
+mod lang;
 mod md;
 mod ref_target;
 mod rst;
 mod util;
+
+use emmylua_parser::LuaDocDescription;
+use rowan::TextRange;
 
 pub use ref_target::*;
 use util::sort_result;
@@ -43,7 +44,23 @@ pub enum DescItemKind {
     CodeBlock,
 
     /// Line of code in a code block highlighted by Lua lexer.
-    CodeBlockHl(LuaTokenKind),
+    CodeBlockHl(CodeBlockHighlightKind),
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum CodeBlockHighlightKind {
+    None,
+    String,
+    Number,
+    Keyword,
+    Operators,
+    Comment,
+    Function,
+    Class,
+    Enum,
+    Variable,
+    Property,
+    Decorator,
 }
 
 #[derive(Debug, Clone)]
