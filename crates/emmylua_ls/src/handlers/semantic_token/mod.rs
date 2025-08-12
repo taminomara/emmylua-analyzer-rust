@@ -1,5 +1,5 @@
 mod build_semantic_tokens;
-mod langauge_injector;
+mod language_injector;
 mod semantic_token_builder;
 
 use crate::context::{ClientId, ServerContextSnapshot};

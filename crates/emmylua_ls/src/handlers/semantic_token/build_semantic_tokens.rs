@@ -2,7 +2,7 @@ use super::{
     SEMANTIC_TOKEN_MODIFIERS, SEMANTIC_TOKEN_TYPES, semantic_token_builder::SemanticBuilder,
 };
 use crate::util::parse_desc;
-use crate::{context::ClientId, handlers::semantic_token::langauge_injector::inject_language};
+use crate::{context::ClientId, handlers::semantic_token::language_injector::inject_language};
 use emmylua_code_analysis::{
     Emmyrc, LuaDecl, LuaDeclExtra, LuaMemberId, LuaMemberOwner, LuaSemanticDeclId, LuaType,
     LuaTypeDeclId, SemanticDeclLevel, SemanticModel, WorkspaceId, check_export_visibility,
