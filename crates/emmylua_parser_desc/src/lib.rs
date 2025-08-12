@@ -7,7 +7,9 @@ mod util;
 use emmylua_parser::LuaDocDescription;
 use rowan::TextRange;
 
+pub use lang::{CodeBlockLang, process_code};
 pub use ref_target::*;
+pub use util::ResultContainer;
 use util::sort_result;
 
 #[cfg(test)]

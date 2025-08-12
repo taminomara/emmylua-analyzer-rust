@@ -1,15 +1,15 @@
 use super::{
     SEMANTIC_TOKEN_MODIFIERS, SEMANTIC_TOKEN_TYPES, semantic_token_builder::SemanticBuilder,
 };
-use crate::context::ClientId;
 use crate::util::parse_desc;
+use crate::{context::ClientId, handlers::semantic_token::langauge_injector::inject_language};
 use emmylua_code_analysis::{
     Emmyrc, LuaDecl, LuaDeclExtra, LuaMemberId, LuaMemberOwner, LuaSemanticDeclId, LuaType,
     LuaTypeDeclId, SemanticDeclLevel, SemanticModel, WorkspaceId, check_export_visibility,
     parse_require_module_info,
 };
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr,
+    LuaAst, LuaAstNode, LuaAstToken, LuaComment, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr,
     LuaGeneralToken, LuaKind, LuaLiteralToken, LuaNameToken, LuaSyntaxKind, LuaSyntaxNode,
     LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
 };
@@ -61,7 +61,9 @@ fn build_tokens_semantic_token(
 ) {
     match token.kind().into() {
         LuaTokenKind::TkLongString | LuaTokenKind::TkString => {
-            builder.push(token, SemanticTokenType::STRING);
+            if !builder.is_lang_inject_range(&token.text_range()) {
+                builder.push(token, SemanticTokenType::STRING);
+            }
         }
         LuaTokenKind::TkAnd
         | LuaTokenKind::TkBreak
@@ -147,7 +149,8 @@ fn build_tokens_semantic_token(
         | LuaTokenKind::TkTagUsing
         | LuaTokenKind::TkTagSource
         | LuaTokenKind::TkTagReturnCast
-        | LuaTokenKind::TkTagExport => {
+        | LuaTokenKind::TkTagExport
+        | LuaTokenKind::TkLanguage => {
             builder.push_with_modifier(
                 token,
                 SemanticTokenType::KEYWORD,
@@ -622,6 +625,14 @@ fn build_node_semantic_token(
                 None,
             );
             render_desc_ranges(builder, text, items, desc_range);
+        }
+        LuaAst::LuaDocTagLanguage(language) => {
+            let name = language.get_name_token()?;
+            builder.push(name.syntax(), SemanticTokenType::STRING);
+            let language_text = name.get_name_text();
+            let comment = language.ancestors::<LuaComment>().next()?;
+
+            inject_language(builder, language_text, comment);
         }
         _ => {}
     }

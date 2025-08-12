@@ -31,4 +31,5 @@ pub const DOC_TAGS: &[&str] = &[
     "readonly",
     "return_cast",
     "export",
+    "language",
 ];

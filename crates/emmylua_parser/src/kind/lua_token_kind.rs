@@ -133,6 +133,7 @@ pub enum LuaTokenKind {
     TkTagSource,     // source
     TkTagReturnCast, // return cast
     TkTagExport,     // export
+    TkLanguage,      // language
 
     TkDocOr,              // |
     TkDocAnd,             // &

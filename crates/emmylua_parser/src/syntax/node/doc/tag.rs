@@ -42,6 +42,7 @@ pub enum LuaDocTag {
     Visibility(LuaDocTagVisibility),
     ReturnCast(LuaDocTagReturnCast),
     Export(LuaDocTagExport),
+    Language(LuaDocTagLanguage),
 }
 
 impl LuaAstNode for LuaDocTag {
@@ -75,6 +76,7 @@ impl LuaAstNode for LuaDocTag {
             LuaDocTag::Visibility(it) => it.syntax(),
             LuaDocTag::ReturnCast(it) => it.syntax(),
             LuaDocTag::Export(it) => it.syntax(),
+            LuaDocTag::Language(it) => it.syntax(),
         }
     }
 
@@ -110,6 +112,7 @@ impl LuaAstNode for LuaDocTag {
             || kind == LuaSyntaxKind::DocTagVisibility
             || kind == LuaSyntaxKind::DocTagReturnCast
             || kind == LuaSyntaxKind::DocTagExport
+            || kind == LuaSyntaxKind::DocTagLanguage
     }
 
     fn cast(syntax: LuaSyntaxNode) -> Option<Self>
@@ -197,6 +200,9 @@ impl LuaAstNode for LuaDocTag {
             LuaSyntaxKind::DocTagExport => {
                 Some(LuaDocTag::Export(LuaDocTagExport::cast(syntax).unwrap()))
             }
+            LuaSyntaxKind::DocTagLanguage => Some(LuaDocTag::Language(
+                LuaDocTagLanguage::cast(syntax).unwrap(),
+            )),
             _ => None,
         }
     }
@@ -1500,5 +1506,42 @@ impl LuaDocTagExport {
     pub fn get_export_scope(&self) -> Option<String> {
         self.get_name_token()
             .map(|token| token.get_name_text().to_string())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LuaDocTagLanguage {
+    syntax: LuaSyntaxNode,
+}
+
+impl LuaAstNode for LuaDocTagLanguage {
+    fn syntax(&self) -> &LuaSyntaxNode {
+        &self.syntax
+    }
+
+    fn can_cast(kind: LuaSyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        kind == LuaSyntaxKind::DocTagLanguage
+    }
+
+    fn cast(syntax: LuaSyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if Self::can_cast(syntax.kind().into()) {
+            Some(Self { syntax })
+        } else {
+            None
+        }
+    }
+}
+
+impl LuaDocDescriptionOwner for LuaDocTagLanguage {}
+
+impl LuaDocTagLanguage {
+    pub fn get_name_token(&self) -> Option<LuaNameToken> {
+        self.token()
     }
 }

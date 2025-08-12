@@ -230,3 +230,16 @@ tags.export: |
     -- 在其他文件輸入`func`時會提示導入
   end
   ```
+tags.language: |
+  `language` 標籤用於為程式碼塊指定語言注入。
+  示例:
+  ```lua
+  ---@language sql
+  local t = [[
+      SELECT * FROM users WHERE id = 1;
+      SELECT name, email FROM users WHERE active = 1;
+      UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = 1;
+      DELETE FROM users WHERE id = 2;
+      INSERT INTO users (name, email) VALUES ('Alice', 'alice@example.com');
+  ]]
+  ```

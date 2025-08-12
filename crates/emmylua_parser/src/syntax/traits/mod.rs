@@ -169,6 +169,18 @@ pub trait LuaAstToken {
         self.syntax().text()
     }
 
+    fn slice(&self, range: TextRange) -> Option<&str> {
+        let text = self.get_text();
+        let self_range = self.get_range();
+        if range.start() >= self_range.start() && range.end() <= self_range.end() {
+            let start = (range.start() - self_range.start()).into();
+            let end = (range.end() - self_range.start()).into();
+            text.get(start..end)
+        } else {
+            None
+        }
+    }
+
     fn get_parent<N: LuaAstNode>(&self) -> Option<N> {
         self.syntax().parent().and_then(N::cast)
     }

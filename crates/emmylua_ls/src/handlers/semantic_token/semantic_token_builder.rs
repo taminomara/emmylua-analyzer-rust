@@ -2,7 +2,10 @@ use emmylua_code_analysis::LuaDocument;
 use emmylua_parser::LuaSyntaxToken;
 use lsp_types::{SemanticToken, SemanticTokenModifier, SemanticTokenType};
 use rowan::{TextRange, TextSize};
-use std::{collections::HashMap, vec::Vec};
+use std::{
+    collections::{HashMap, HashSet},
+    vec::Vec,
+};
 
 pub const SEMANTIC_TOKEN_TYPES: &[SemanticTokenType] = &[
     SemanticTokenType::NAMESPACE,
@@ -65,6 +68,7 @@ pub struct SemanticBuilder<'a> {
     type_to_id: HashMap<SemanticTokenType, u32>,
     modifier_to_id: HashMap<SemanticTokenModifier, u32>,
     data: HashMap<TextSize, SemanticTokenData>,
+    lang_inject_range: HashSet<TextRange>,
 }
 
 impl<'a> SemanticBuilder<'a> {
@@ -89,6 +93,7 @@ impl<'a> SemanticBuilder<'a> {
             type_to_id,
             modifier_to_id,
             data: HashMap::new(),
+            lang_inject_range: HashSet::new(),
         }
     }
 
@@ -278,5 +283,13 @@ impl<'a> SemanticBuilder<'a> {
         }
 
         result
+    }
+
+    pub fn add_lang_inject_range(&mut self, range: TextRange) {
+        self.lang_inject_range.insert(range);
+    }
+
+    pub fn is_lang_inject_range(&self, range: &TextRange) -> bool {
+        self.lang_inject_range.contains(range)
     }
 }

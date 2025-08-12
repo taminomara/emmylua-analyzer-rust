@@ -598,6 +598,7 @@ fn to_tag(text: &str) -> LuaTokenKind {
         "using" => LuaTokenKind::TkTagUsing,
         "source" => LuaTokenKind::TkTagSource,
         "export" => LuaTokenKind::TkTagExport,
+        "language" => LuaTokenKind::TkLanguage,
         _ => LuaTokenKind::TkTagOther,
     }
 }
