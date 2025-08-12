@@ -12,7 +12,7 @@ mod test {
                 --- @param command string|string[]
                 __call = function (_, command)
                 end,
-                
+
                 --- @param command string
                 --- @return fun(...:string)
                 __index = function(_, command)

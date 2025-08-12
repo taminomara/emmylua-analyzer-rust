@@ -27,7 +27,7 @@ mod tests {
             r#"
                 ---@class (partial) Log
                 ---@field private logLevel table<Log.Level, integer>
-                local M 
+                local M
 
                 ---@enum (key) Log.Level
                 M.logLevel = {
@@ -45,7 +45,7 @@ mod tests {
             r#"
             ---@class (partial) Log
             ---@field private logLevel table<Log.Level, integer>
-            local M 
+            local M
 
             ---@enum (key) Log.Level
             M.logLevel = {

@@ -15,7 +15,7 @@
 ## 📋 Table of Contents
 
 - [🎯 Smart Completion](#-smart-completion)
-- [💡 Code Hints](#-code-hints)  
+- [💡 Code Hints](#-code-hints)
 - [🔍 Code Diagnostics](#-code-diagnostics)
 - [📊 Code Navigation](#-code-navigation)
 - [🔄 Refactoring](#-refactoring)
@@ -501,4 +501,3 @@ Provide the same highlighting experience as VS Code for other editors, ensuring 
 [⬆ Back to Top](#-emmylua-language-server-features-guide)
 
 </div>
-

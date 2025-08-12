@@ -232,10 +232,10 @@ mod tests {
             local function dd()
                 return "11231"
             end
-            
+
             ---@return integer
             local function f()
-            
+
                 return dd() ---@as integer
             end
         "#

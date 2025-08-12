@@ -20,7 +20,7 @@ mod test {
         ---@param c boolean
         ---@return number
         function locaf(a, b, c)
-            
+
         end
         "#,
         );

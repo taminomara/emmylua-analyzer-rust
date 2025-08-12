@@ -175,25 +175,25 @@ Here's a complete configuration file example containing all configuration option
 <tr>
 <td width="25%">
 
-**`keep`**  
+**`keep`**
 Keep original
 
 </td>
 <td width="25%">
 
-**`camel-case`**  
+**`camel-case`**
 Camel case
 
 </td>
 <td width="25%">
 
-**`snake-case`**  
+**`snake-case`**
 Snake case
 
 </td>
 <td width="25%">
 
-**`pascal-case`**  
+**`pascal-case`**
 Pascal case
 
 </td>
@@ -232,25 +232,25 @@ Pascal case
 <tr>
 <td width="25%">
 
-**`error`**  
+**`error`**
 🔴 Error
 
 </td>
 <td width="25%">
 
-**`warning`**  
+**`warning`**
 🟡 Warning
 
 </td>
 <td width="25%">
 
-**`information`**  
+**`information`**
 🔵 Information
 
 </td>
 <td width="25%">
 
-**`hint`**  
+**`hint`**
 💡 Hint
 
 </td>
@@ -361,31 +361,31 @@ Pascal case
 <tr>
 <td width="20%">
 
-**`Lua5.1`**  
+**`Lua5.1`**
 Classic version
 
 </td>
 <td width="20%">
 
-**`Lua5.2`**  
+**`Lua5.2`**
 Enhanced features
 
 </td>
 <td width="20%">
 
-**`Lua5.3`**  
+**`Lua5.3`**
 Integer support
 
 </td>
 <td width="20%">
 
-**`Lua5.4`**  
+**`Lua5.4`**
 Latest features
 
 </td>
 <td width="20%">
 
-**`LuaJIT`**  
+**`LuaJIT`**
 High performance
 
 </td>

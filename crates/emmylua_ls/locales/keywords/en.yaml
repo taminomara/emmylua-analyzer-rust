@@ -192,7 +192,7 @@ keywords.in: |
   for index, fruit in ipairs(fruits) do
       print(index, fruit)
   end
-  
+
 keywords.goto: |
   The `goto` keyword is used to jump to a label in the code.
 

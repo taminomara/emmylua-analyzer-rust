@@ -22,7 +22,7 @@ mod test {
 
                 for i, extendsName in ipairs(a) do
                     print(extendsName.a)
-                end 
+                end
             "#
         ));
     }
@@ -377,7 +377,7 @@ mod test {
             ---| '隐藏'
             ---| '普通'
 
-            
+
             ---@param name AbilityType | AbilityTypeAlias
             local function get(name)
                 local a = AbilityType[name]
@@ -580,10 +580,10 @@ mod test {
         ws.def(
             r#"
         ---@class py.Dict
-        
+
         ---@return py.Dict
         local function lua_get_start_args() end
-        
+
         ---@type table<string, string>
         arg = lua_get_start_args()
         "#,

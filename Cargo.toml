@@ -15,7 +15,7 @@ emmylua_diagnostic_macro = { path = "crates/emmylua_diagnostic_macro", version =
 # external
 lsp-server = "0.7.7"
 tokio = { version = "1.46", features = ["full"] }
-serde = { version = "1.0.219", features = ["derive"] } 
+serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.141"
 rowan = { version = "0.16.1" }
 notify = { version = "8.1.0", features = ["serde"] }

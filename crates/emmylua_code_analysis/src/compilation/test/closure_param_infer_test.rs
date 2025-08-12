@@ -43,7 +43,7 @@ mod test {
         function Creature:onChangeOutfit(outfit)
             a = outfit
         end
- 
+
         "#,
         );
 
@@ -58,7 +58,7 @@ mod test {
         ws.def(
             r#"
             ---@alias ProxyHandler.Getter fun(self: self, raw: any, key: any, receiver: table): any
-            
+
             ---@class ProxyHandler
             ---@field get ProxyHandler.Getter
         "#,
@@ -153,7 +153,7 @@ mod test {
             ---@class Dep:  SimpleClass.Meta
             local Dep
             Dep:__defineSet('subs', function(self, value)
-                a  = self          
+                a  = self
             end)
             "#,
         );

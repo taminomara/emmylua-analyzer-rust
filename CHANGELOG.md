@@ -93,7 +93,7 @@ Note: The built-in formatter is not stylua, but emmyluacodestyle. This feature s
 ---@param f1 fun(...: T...): any
 ---@param ... T...
 function invoke(f1, ...)
-    
+
 end
 
 invoke(function(a, b, c) -- infer as: integer, integer, integer
@@ -279,7 +279,7 @@ Also supports immutability checks for iterator variables in for loop statements.
 ## [0.8.0] - 2025-5-30
 
 ### ✨ Added
-- **New Standard Types**: 
+- **New Standard Types**:
   - `std.Unpack` type for better `unpack` function inference
   - `std.Rawget` type for better `rawget` function inference
 - **Generator Support**: Implementation similar to `luals`
@@ -397,7 +397,7 @@ Global configuration have less priority than the local one
 - **Flow Analyze Algorithm**: Refactor flow analyze algorithm
 
 ### 🐛 Fixed
-- **Self Inference**: Fix some self infer issue 
+- **Self Inference**: Fix some self infer issue
 - **Diagnostic Action**: Fix some diagnostic action issue
 - **Type Check and Completion**: Optimize some type check and completion
 
@@ -429,7 +429,7 @@ Global configuration have less priority than the local one
 
 ### ✨ Added
 - **Re-index Control**: Disable re-index in default, need to enable by `workspace.enableReindex`
-- **New Diagnostics**: Add New Diagnostics `inject_field`, `missing_fields`, `redefined_local`, `undefined_field`, `inject-field`, `missing-global-doc`, 
+- **New Diagnostics**: Add New Diagnostics `inject_field`, `missing_fields`, `redefined_local`, `undefined_field`, `inject-field`, `missing-global-doc`,
 `incomplete-signature-doc`, `circle-doc-class`, `assign-type-mismatch`, `unbalanced_assignments`, `check_return_count`, `duplicate_require`, `circle_doc_class`, `incomplete_signature_doc`, `unnecessary_assert`
 - **Boolean Type Support**: Support `true` and `false` as type
 - **Compact Fun Return Syntax**: Compact luals fun return syntax like: `(name: string, age: number)`
@@ -497,7 +497,7 @@ Global configuration have less priority than the local one
   ```
 - **Enum Type Check Fix**: Fix enum type check
 - **Custom Operator Infer Fix**: Fix custom operator infer
-- **Select Function Fix and Std.Select Type Addition**: Fix select function and add std.Select type 
+- **Select Function Fix and Std.Select Type Addition**: Fix select function and add std.Select type
 - **Union Type Refactor**: Refactor Union type
 - **Description Support for Type**: Add description to type
 - **Multi Union Description Support**: Support description without '#' on multi union
@@ -541,7 +541,7 @@ Global configuration have less priority than the local one
 
 ---
 
-## [0.4.6] 
+## [0.4.6]
 
 ### 🐛 Fixed
 - **Executable File Directory Hierarchy Issue**: Fix issue with executable file directory hierarchy being too deep.

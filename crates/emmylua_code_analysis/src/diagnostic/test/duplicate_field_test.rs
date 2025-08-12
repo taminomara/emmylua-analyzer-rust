@@ -88,7 +88,7 @@ mod test {
 
             function Test.a()
             end
-            
+
             function Test.a()
             end
             "#

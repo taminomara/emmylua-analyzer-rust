@@ -41,7 +41,7 @@ mod test {
             r#"
         ---@class MyClass
         local M = {}
-        
+
         function M:__init(a)
         end
 
