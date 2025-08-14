@@ -101,6 +101,7 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
             let type_str = humanize_type(db, inner, level.next_level());
             format!("TypeGuard<{}>", type_str)
         }
+        LuaType::ConstTplRef(const_tpl) => humanize_const_tpl_ref_type(const_tpl),
         _ => "unknown".to_string(),
     }
 }
@@ -602,6 +603,10 @@ fn humanize_table_generic_type(
 
 fn humanize_tpl_ref_type(tpl: &GenericTpl) -> String {
     tpl.get_name().to_string()
+}
+
+fn humanize_const_tpl_ref_type(const_tpl: &GenericTpl) -> String {
+    const_tpl.get_name().to_string()
 }
 
 fn humanize_str_tpl_ref_type(str_tpl: &LuaStringTplType) -> String {

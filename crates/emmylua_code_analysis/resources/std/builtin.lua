@@ -121,7 +121,7 @@
 
 ---
 --- built-in type for Rawget
----@alias std.Rawget<T, K> unknown
+---@alias std.RawGet<T, K> unknown
 
 ---
 --- built-in type for generic template, for match integer const and true/false

@@ -161,7 +161,7 @@ fn check_param_type(
                 extend_type,
             );
         }
-        LuaType::TplRef(tpl_ref) => {
+        LuaType::TplRef(tpl_ref) | LuaType::ConstTplRef(tpl_ref) => {
             let extend_type =
                 get_extend_type(semantic_model, &call_expr, tpl_ref.get_tpl_id(), signature);
             check_tpl_ref(
