@@ -1,7 +1,8 @@
 use emmylua_code_analysis::{
-    DbIndex, InferGuard, LuaDeclLocation, LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner,
-    LuaMultiLineUnion, LuaSemanticDeclId, LuaStringTplType, LuaType, LuaTypeCache, LuaTypeDeclId,
-    LuaUnionType, RenderLevel, SemanticDeclLevel, get_real_type,
+    DbIndex, GenericTplId, InferGuard, LuaAliasCallKind, LuaAliasCallType, LuaDeclLocation,
+    LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner, LuaMultiLineUnion, LuaSemanticDeclId,
+    LuaStringTplType, LuaType, LuaTypeCache, LuaTypeDeclId, LuaUnionType, RenderLevel,
+    SemanticDeclLevel, get_real_type,
 };
 use emmylua_parser::{
     LuaAssignStat, LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaClosureExpr,
@@ -12,7 +13,11 @@ use itertools::Itertools;
 use lsp_types::{CompletionItem, Documentation};
 
 use crate::handlers::{
-    completion::completion_builder::CompletionBuilder, signature_helper::get_current_param_index,
+    completion::{
+        add_completions::CompletionTriggerStatus, completion_builder::CompletionBuilder,
+        providers::member_provider::add_completions_for_members,
+    },
+    signature_helper::get_current_param_index,
 };
 use emmylua_code_analysis::humanize_type;
 
@@ -102,6 +107,12 @@ pub fn dispatch_type(
         }
         LuaType::StrTplRef(key) => {
             add_str_tpl_ref_completion(builder, &key);
+        }
+        LuaType::ConstTplRef(tpl) => {
+            add_const_tpl_ref_completion(builder, &tpl.get_tpl_id(), infer_guard);
+        }
+        LuaType::Call(special_call) => {
+            add_special_call_completion(builder, &special_call);
         }
         _ => {}
     }
@@ -683,9 +694,9 @@ fn add_str_tpl_ref_completion(
     let db = builder.semantic_model.get_db();
     let module_index = db.get_module_index();
     let types = db.get_type_index().get_all_types();
-
+    let tpl_id = str_tpl.get_tpl_id();
     // 泛型约束
-    let extend_type = get_str_tpl_ref_extend_type(builder, str_tpl).unwrap_or(LuaType::Any);
+    let extend_type = get_tpl_ref_extend_type(builder, &tpl_id).unwrap_or(LuaType::Any);
 
     let mut completion_items: Vec<_> = types
         .into_iter()
@@ -737,10 +748,45 @@ fn add_str_tpl_ref_completion(
     Some(())
 }
 
-fn get_str_tpl_ref_extend_type(
-    builder: &CompletionBuilder,
-    str_tpl: &LuaStringTplType,
-) -> Option<LuaType> {
+fn add_const_tpl_ref_completion(
+    builder: &mut CompletionBuilder,
+    tpl_id: &GenericTplId,
+    infer_guard: &mut InferGuard,
+) -> Option<()> {
+    // 泛型约束
+    let extend_type = get_tpl_ref_extend_type(builder, tpl_id)?;
+    dispatch_type(builder, extend_type, infer_guard);
+
+    Some(())
+}
+
+fn add_special_call_completion(
+    builder: &mut CompletionBuilder,
+    alias_call: &LuaAliasCallType,
+) -> Option<()> {
+    match alias_call.get_call_kind() {
+        LuaAliasCallKind::KeyOf => {
+            let trigger_status = if matches!(
+                builder.trigger_token.kind().into(),
+                LuaTokenKind::TkString | LuaTokenKind::TkLongString
+            ) {
+                CompletionTriggerStatus::Dot
+            } else {
+                CompletionTriggerStatus::LeftBracket
+            };
+
+            let keys_owner_type = alias_call.get_operands().first()?;
+            let member_info_map = builder
+                .semantic_model
+                .get_member_info_map(&keys_owner_type)?;
+            add_completions_for_members(builder, &member_info_map, trigger_status);
+        }
+        _ => {}
+    }
+    Some(())
+}
+
+fn get_tpl_ref_extend_type(builder: &CompletionBuilder, tpl_id: &GenericTplId) -> Option<LuaType> {
     let token = builder.trigger_token.clone();
     let mut parent_node = token.parent()?;
     if LuaLiteralExpr::can_cast(parent_node.kind().into()) {
@@ -759,10 +805,7 @@ fn get_str_tpl_ref_extend_type(
                     .get_db()
                     .get_signature_index()
                     .get(&signature_id)?;
-                let generic_param = signature
-                    .generic_params
-                    .iter()
-                    .find(|it| it.0 == str_tpl.get_name());
+                let generic_param = signature.generic_params.get(tpl_id.get_idx());
                 if let Some(generic_param) = generic_param {
                     return Some(generic_param.1.clone().unwrap_or(LuaType::Any));
                 }
