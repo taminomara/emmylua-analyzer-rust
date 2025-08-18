@@ -4,6 +4,7 @@ mod members;
 mod stats;
 
 use crate::{
+    compilation::analyzer::AnalysisPipeline,
     db_index::{DbIndex, LuaScopeKind},
     profile::Profile,
 };
@@ -17,21 +18,25 @@ use crate::{
     db_index::{LuaDecl, LuaDeclId, LuaDeclarationTree, LuaScopeId},
 };
 
-pub(crate) fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
-    let _p = Profile::cond_new("decl analyze", context.tree_list.len() > 1);
-    let tree_list = context.tree_list.clone();
-    for in_filed_tree in tree_list.iter() {
-        db.get_reference_index_mut()
-            .create_local_reference(in_filed_tree.file_id);
-        let mut analyzer = DeclAnalyzer::new(
-            db,
-            in_filed_tree.file_id,
-            in_filed_tree.value.clone(),
-            context,
-        );
-        analyzer.analyze();
-        let decl_tree = analyzer.get_decl_tree();
-        db.get_decl_index_mut().add_decl_tree(decl_tree);
+pub struct DeclAnalysisPipeline;
+
+impl AnalysisPipeline for DeclAnalysisPipeline {
+    fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext) {
+        let _p = Profile::cond_new("decl analyze", context.tree_list.len() > 1);
+        let tree_list = context.tree_list.clone();
+        for in_filed_tree in tree_list.iter() {
+            db.get_reference_index_mut()
+                .create_local_reference(in_filed_tree.file_id);
+            let mut analyzer = DeclAnalyzer::new(
+                db,
+                in_filed_tree.file_id,
+                in_filed_tree.value.clone(),
+                context,
+            );
+            analyzer.analyze();
+            let decl_tree = analyzer.get_decl_tree();
+            db.get_decl_index_mut().add_decl_tree(decl_tree);
+        }
     }
 }
 

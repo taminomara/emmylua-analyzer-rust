@@ -1,8 +1,8 @@
-mod bind_type;
+mod common;
 mod decl;
 mod doc;
 mod flow;
-mod infer_manager;
+mod infer_cache_manager;
 mod lua;
 mod unresolve;
 
@@ -10,7 +10,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::{Emmyrc, InFiled, InferFailReason, WorkspaceId, db_index::DbIndex, profile::Profile};
 use emmylua_parser::LuaChunk;
-use infer_manager::InferCacheManager;
+use infer_cache_manager::InferCacheManager;
 use unresolve::UnResolve;
 
 pub fn analyze(db: &mut DbIndex, need_analyzed_files: Vec<InFiled<LuaChunk>>, config: Arc<Emmyrc>) {
@@ -23,12 +23,20 @@ pub fn analyze(db: &mut DbIndex, need_analyzed_files: Vec<InFiled<LuaChunk>>, co
     for (workspace_id, mut context) in contexts {
         let profile_log = format!("analyze workspace {}", workspace_id);
         let _p = Profile::cond_new(&profile_log, context.tree_list.len() > 1);
-        decl::analyze(db, &mut context);
-        doc::analyze(db, &mut context);
-        flow::analyze(db, &mut context);
-        lua::analyze(db, &mut context);
-        unresolve::analyze(db, &mut context);
+        run_analysis::<decl::DeclAnalysisPipeline>(db, &mut context);
+        run_analysis::<doc::DocAnalysisPipeline>(db, &mut context);
+        run_analysis::<flow::FlowAnalysisPipeline>(db, &mut context);
+        run_analysis::<lua::LuaAnalysisPipeline>(db, &mut context);
+        run_analysis::<unresolve::UnResolveAnalysisPipeline>(db, &mut context);
     }
+}
+
+trait AnalysisPipeline {
+    fn analyze(db: &mut DbIndex, context: &mut AnalyzeContext);
+}
+
+fn run_analysis<T: AnalysisPipeline>(db: &mut DbIndex, context: &mut AnalyzeContext) {
+    T::analyze(db, context);
 }
 
 fn module_analyze(

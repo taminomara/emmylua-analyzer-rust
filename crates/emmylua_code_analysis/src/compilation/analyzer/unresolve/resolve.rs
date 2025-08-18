@@ -6,7 +6,7 @@ use crate::{
     InFiled, InferFailReason, LuaDeclId, LuaMember, LuaMemberId, LuaMemberKey, LuaSemanticDeclId,
     LuaTypeCache, SignatureReturnStatus, TypeOps,
     compilation::analyzer::{
-        bind_type::{add_member, bind_type},
+        common::{add_member, bind_type},
         lua::{analyze_return_point, infer_for_range_iter_expr_func},
     },
     db_index::{DbIndex, LuaMemberOwner, LuaType},

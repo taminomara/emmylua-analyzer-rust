@@ -7,7 +7,7 @@ use emmylua_parser::{
 use crate::{
     LuaDeclExtra, LuaMemberFeature, LuaMemberId, LuaSemanticDeclId, LuaSignatureId, LuaType,
     LuaTypeCache,
-    compilation::analyzer::bind_type::bind_type,
+    compilation::analyzer::common::bind_type,
     db_index::{LocalAttribute, LuaDecl, LuaMember, LuaMemberKey},
 };
 
