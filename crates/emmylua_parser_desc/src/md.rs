@@ -638,7 +638,7 @@ impl MdParser {
         }
 
         let text = reader.tail_text();
-        if text.len() >= 4 && is_blank(&text[..4]) {
+        if text.len() >= 4 && text.is_char_boundary(4) && is_blank(&text[..4]) {
             // List marker followed by a space, then 4 more spaces
             // is parsed as a list marker followed by a space,
             // then code block.
@@ -1522,6 +1522,10 @@ mod tests {
 ---
 ---       Continuation 2
 ---
+--- -测试 <- not a list
+---
+--- - 测试 <- list
+---
 --- -
 ---   List that starts with empty string
 ---
@@ -1647,7 +1651,11 @@ mod tests {
 ---
 ---       <CodeBlock>Continuation 2</CodeBlock>
 ---
---- </Scope></Scope><Scope><Markup>-</Markup>
+--- </Scope></Scope>-测试 <- not a list
+---
+--- <Scope><Markup>-</Markup> 测试 <- list
+---
+--- </Scope><Scope><Markup>-</Markup>
 ---   List that starts with empty string
 ---
 --- </Scope> Not list
