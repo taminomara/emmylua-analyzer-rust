@@ -10,10 +10,10 @@ use rowan::TextRange;
 use smol_str::SmolStr;
 
 use crate::{
-    InFiled, LuaAliasCallKind, LuaAliasCallType, LuaArrayLen, LuaArrayType, LuaFunctionType,
-    LuaGenericType, LuaIndexAccessKey, LuaIntersectionType, LuaMultiLineUnion, LuaObjectType,
-    LuaStringTplType, LuaTupleStatus, LuaTupleType, LuaType, LuaTypeDeclId, SemanticModel, TypeOps,
-    VariadicType,
+    AsyncState, InFiled, LuaAliasCallKind, LuaAliasCallType, LuaArrayLen, LuaArrayType,
+    LuaFunctionType, LuaGenericType, LuaIndexAccessKey, LuaIntersectionType, LuaMultiLineUnion,
+    LuaObjectType, LuaStringTplType, LuaTupleStatus, LuaTupleType, LuaType, LuaTypeDeclId,
+    SemanticModel, TypeOps, VariadicType,
 };
 
 pub fn infer_doc_type(semantic_model: &SemanticModel, node: &LuaDocType) -> LuaType {
@@ -436,7 +436,13 @@ fn infer_func_type(semantic_model: &SemanticModel, func: &LuaDocFuncType) -> Lua
         }
     }
 
-    let is_async = func.is_async();
+    let async_state = if func.is_async() {
+        AsyncState::Async
+    } else if func.is_sync() {
+        AsyncState::Sync
+    } else {
+        AsyncState::None
+    };
 
     // Note: In the diagnostic context, we can't easily determine colon define status
     // since we don't have the same context as the analyzer. This is a simplification.
@@ -451,7 +457,7 @@ fn infer_func_type(semantic_model: &SemanticModel, func: &LuaDocFuncType) -> Lua
     };
 
     LuaType::DocFunction(
-        LuaFunctionType::new(is_async, is_colon, params_result, return_type).into(),
+        LuaFunctionType::new(async_state, is_colon, params_result, return_type).into(),
     )
 }
 

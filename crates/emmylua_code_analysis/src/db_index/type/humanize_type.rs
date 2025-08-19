@@ -3,9 +3,10 @@ use std::collections::HashSet;
 use itertools::Itertools;
 
 use crate::{
-    DbIndex, GenericTpl, LuaAliasCallType, LuaFunctionType, LuaGenericType, LuaInstanceType,
-    LuaIntersectionType, LuaMemberKey, LuaMemberOwner, LuaObjectType, LuaSignatureId,
-    LuaStringTplType, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType, VariadicType,
+    AsyncState, DbIndex, GenericTpl, LuaAliasCallType, LuaFunctionType, LuaGenericType,
+    LuaInstanceType, LuaIntersectionType, LuaMemberKey, LuaMemberOwner, LuaObjectType,
+    LuaSignatureId, LuaStringTplType, LuaTupleType, LuaType, LuaTypeDeclId, LuaUnionType,
+    VariadicType,
 };
 
 use super::{LuaAliasCallKind, LuaMultiLineUnion};
@@ -359,10 +360,10 @@ fn humanize_doc_function_type(
         return "fun(...) -> ...".to_string();
     }
 
-    let prev = if lua_func.is_async() {
-        "async fun"
-    } else {
-        "fun"
+    let prev = match lua_func.get_async_state() {
+        AsyncState::None => "fun",
+        AsyncState::Async => "async fun",
+        AsyncState::Sync => "sync fun",
     };
     let params = lua_func
         .get_params()

@@ -141,7 +141,7 @@ impl LuaOperator {
                         signature.get_return_type()
                     };
                     let func_type = LuaFunctionType::new(
-                        signature.is_async,
+                        signature.async_state,
                         is_colon_define,
                         params,
                         return_type,

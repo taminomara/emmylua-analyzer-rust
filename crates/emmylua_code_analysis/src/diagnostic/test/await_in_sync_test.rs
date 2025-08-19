@@ -96,7 +96,7 @@ mod test {
 
     #[test]
     fn test_issue_101() {
-        let mut ws = crate::VirtualWorkspace::new();
+        let mut ws = crate::VirtualWorkspace::new_with_init_std_lib();
 
         ws.def(
             r#"
@@ -146,6 +146,23 @@ mod test {
         local _b = create(function()
         coroutine.yield()
         end)
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_issue_721() {
+        let mut ws = crate::VirtualWorkspace::new();
+        assert!(!ws.check_code_for(
+            DiagnosticCode::AwaitInSync,
+            r#"
+            --- @param f sync fun()
+            local function run(f) end
+
+            --- @async
+            local function async_fn() end
+
+            run(async_fn) -- error required
         "#
         ));
     }

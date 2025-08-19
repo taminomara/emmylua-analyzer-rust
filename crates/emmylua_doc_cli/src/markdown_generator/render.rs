@@ -1,6 +1,6 @@
 use crate::common::render_typ;
 use emmylua_code_analysis::{
-    DbIndex, LuaFunctionType, LuaSignatureId, LuaType, RenderLevel, humanize_type,
+    AsyncState, DbIndex, LuaFunctionType, LuaSignatureId, LuaType, RenderLevel, humanize_type,
 };
 
 pub fn render_const_type(db: &DbIndex, typ: &LuaType) -> String {
@@ -54,7 +54,11 @@ fn render_doc_function_type(
     func_name: &str,
     is_local: bool,
 ) -> String {
-    let async_prev = if lua_func.is_async() { "async " } else { "" };
+    let async_prev = if lua_func.get_async_state() == AsyncState::Async {
+        "async "
+    } else {
+        ""
+    };
     let local_prev = if is_local { "local " } else { "" };
     let params = lua_func
         .get_params()
@@ -120,7 +124,11 @@ fn render_signature_type(
     let signature = db.get_signature_index().get(&signature_id)?;
     let mut async_prev = "";
     if let Some(signature) = db.get_signature_index().get(&signature_id) {
-        async_prev = if signature.is_async { "async " } else { "" };
+        async_prev = match signature.async_state {
+            AsyncState::Async => "async ",
+            AsyncState::Sync => "sync ",
+            _ => "",
+        };
     }
 
     let local_prev = if is_local { "local " } else { "" };

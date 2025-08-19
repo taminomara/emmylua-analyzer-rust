@@ -1,5 +1,9 @@
+mod async_state;
+mod signature;
+
 use std::collections::{HashMap, HashSet};
 
+pub use async_state::AsyncState;
 pub use signature::{
     LuaDocParamInfo, LuaDocReturnInfo, LuaNoDiscard, LuaSignature, LuaSignatureId,
     SignatureReturnStatus,
@@ -8,8 +12,6 @@ pub use signature::{
 use crate::FileId;
 
 use super::traits::LuaIndex;
-
-mod signature;
 
 #[derive(Debug)]
 pub struct LuaSignatureIndex {

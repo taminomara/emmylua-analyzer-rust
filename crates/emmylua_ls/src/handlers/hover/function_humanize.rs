@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 
 use emmylua_code_analysis::{
-    DbIndex, LuaDocReturnInfo, LuaFunctionType, LuaMember, LuaMemberKey, LuaMemberOwner,
-    LuaSemanticDeclId, LuaSignature, LuaSignatureId, LuaType, RenderLevel, humanize_type,
-    try_extract_signature_id_from_field,
+    AsyncState, DbIndex, LuaDocReturnInfo, LuaFunctionType, LuaMember, LuaMemberKey,
+    LuaMemberOwner, LuaSemanticDeclId, LuaSignature, LuaSignatureId, LuaType, RenderLevel,
+    humanize_type, try_extract_signature_id_from_field,
 };
 
 use crate::handlers::{
@@ -244,7 +244,11 @@ fn hover_doc_function_type(
     owner_member: Option<&LuaMember>,
     func_name: &str,
 ) -> String {
-    let async_label = if lua_func.is_async() { "async " } else { "" };
+    let async_label = match lua_func.get_async_state() {
+        AsyncState::Async => "async ",
+        AsyncState::Sync => "sync ",
+        _ => "",
+    };
     let mut is_method = lua_func.is_colon_define();
     let mut type_label = "function ";
     // 有可能来源于类. 例如: `local add = class.add`, `add()`应被视为类方法
@@ -399,7 +403,11 @@ fn hover_signature_type(
         let async_label = db
             .get_signature_index()
             .get(&signature_id)
-            .map(|signature| if signature.is_async { "async " } else { "" })
+            .map(|signature| match signature.async_state {
+                AsyncState::Async => "async ",
+                AsyncState::Sync => "sync ",
+                _ => "",
+            })
             .unwrap_or("");
         let params = signature
             .get_type_params()
@@ -437,7 +445,11 @@ fn hover_signature_type(
     let overloads: Vec<String> = {
         let mut overloads = Vec::new();
         for (_, overload) in signature.overloads.iter().enumerate() {
-            let async_label = if overload.is_async() { "async " } else { "" };
+            let async_label = match overload.get_async_state() {
+                AsyncState::Async => "async ",
+                AsyncState::Sync => "sync ",
+                _ => "",
+            };
             let params = overload
                 .get_params()
                 .iter()

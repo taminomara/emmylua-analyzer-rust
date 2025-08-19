@@ -113,7 +113,7 @@ pub fn infer_call_expr_func(
             LuaType::TypeGuard(_) => Ok(func_ty),
             _ => unwrapp_return_type(db, cache, func_ret.clone(), call_expr).map(|new_ret| {
                 LuaFunctionType::new(
-                    func_ty.is_async(),
+                    func_ty.get_async_state(),
                     func_ty.is_colon_define(),
                     func_ty.get_params().to_vec(),
                     new_ret,
@@ -191,7 +191,7 @@ fn infer_signature_doc_function(
     let overloads = &signature.overloads;
     if overloads.is_empty() {
         let mut fake_doc_function = LuaFunctionType::new(
-            signature.is_async,
+            signature.async_state,
             signature.is_colon_define,
             signature.get_type_params(),
             signature.get_return_type(),
@@ -204,7 +204,7 @@ fn infer_signature_doc_function(
     } else {
         let mut new_overloads = signature.overloads.clone();
         let fake_doc_function = Arc::new(LuaFunctionType::new(
-            signature.is_async,
+            signature.async_state,
             signature.is_colon_define,
             signature.get_type_params(),
             signature.get_return_type(),
@@ -472,7 +472,7 @@ fn infer_union(
 
                     // 处理 signature 本身的函数类型
                     let mut fake_doc_function = LuaFunctionType::new(
-                        signature.is_async,
+                        signature.async_state,
                         signature.is_colon_define,
                         signature.get_type_params(),
                         signature.get_return_type(),

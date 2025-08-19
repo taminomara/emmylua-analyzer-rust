@@ -1,8 +1,9 @@
 use crate::common::{render_const, render_typ};
 use crate::json_generator::json_types::*;
 use emmylua_code_analysis::{
-    DbIndex, FileId, LuaDeprecated, LuaMemberKey, LuaMemberOwner, LuaNoDiscard, LuaSemanticDeclId,
-    LuaSignature, LuaType, LuaTypeCache, LuaTypeDecl, LuaTypeDeclId, RenderLevel, Vfs,
+    AsyncState, DbIndex, FileId, LuaDeprecated, LuaMemberKey, LuaMemberOwner, LuaNoDiscard,
+    LuaSemanticDeclId, LuaSignature, LuaType, LuaTypeCache, LuaTypeDecl, LuaTypeDeclId,
+    RenderLevel, Vfs,
 };
 use rowan::TextRange;
 
@@ -301,7 +302,7 @@ fn export_signature(
                 )
             })
             .collect(),
-        is_async: signature.is_async,
+        is_async: signature.async_state == AsyncState::Async,
         is_meth: signature.is_colon_define,
         is_nodiscard: signature.nodiscard.is_some(),
         nodiscard_message: match &signature.nodiscard {

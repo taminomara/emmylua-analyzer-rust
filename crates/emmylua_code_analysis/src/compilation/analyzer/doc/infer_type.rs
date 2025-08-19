@@ -10,7 +10,7 @@ use rowan::TextRange;
 use smol_str::SmolStr;
 
 use crate::{
-    DiagnosticCode, GenericTpl, InFiled, LuaAliasCallKind, LuaArrayLen, LuaArrayType,
+    AsyncState, DiagnosticCode, GenericTpl, InFiled, LuaAliasCallKind, LuaArrayLen, LuaArrayType,
     LuaMultiLineUnion, LuaTupleStatus, LuaTypeDeclId, TypeOps, VariadicType,
     db_index::{
         AnalyzeError, LuaAliasCallType, LuaFunctionType, LuaGenericType, LuaIndexAccessKey,
@@ -478,7 +478,13 @@ fn infer_func_type(analyzer: &mut DocAnalyzer, func: &LuaDocFuncType) -> LuaType
         }
     }
 
-    let is_async = func.is_async();
+    let async_state = if func.is_async() {
+        AsyncState::Async
+    } else if func.is_sync() {
+        AsyncState::Sync
+    } else {
+        AsyncState::None
+    };
 
     let mut is_colon = false;
     if let Some(parent) = func.get_parent::<LuaAst>() {
@@ -506,7 +512,7 @@ fn infer_func_type(analyzer: &mut DocAnalyzer, func: &LuaDocFuncType) -> LuaType
     };
 
     LuaType::DocFunction(
-        LuaFunctionType::new(is_async, is_colon, params_result, return_type).into(),
+        LuaFunctionType::new(async_state, is_colon, params_result, return_type).into(),
     )
 }
 

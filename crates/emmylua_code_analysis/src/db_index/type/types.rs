@@ -10,7 +10,7 @@ use rowan::TextRange;
 use smol_str::SmolStr;
 
 use crate::{
-    DbIndex, InFiled, SemanticModel,
+    AsyncState, DbIndex, InFiled, SemanticModel,
     db_index::{LuaMemberKey, LuaSignatureId, r#type::type_visit_trait::TypeVisitTrait},
 };
 
@@ -574,7 +574,7 @@ impl From<LuaTupleType> for LuaType {
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct LuaFunctionType {
-    is_async: bool,
+    async_state: AsyncState,
     is_colon_define: bool,
     params: Vec<(String, Option<LuaType>)>,
     ret: LuaType,
@@ -596,21 +596,21 @@ impl TypeVisitTrait for LuaFunctionType {
 
 impl LuaFunctionType {
     pub fn new(
-        is_async: bool,
+        async_state: AsyncState,
         is_colon_define: bool,
         params: Vec<(String, Option<LuaType>)>,
         ret: LuaType,
     ) -> Self {
         Self {
-            is_async,
+            async_state,
             is_colon_define,
             params,
             ret,
         }
     }
 
-    pub fn is_async(&self) -> bool {
-        self.is_async
+    pub fn get_async_state(&self) -> AsyncState {
+        self.async_state
     }
 
     pub fn is_colon_define(&self) -> bool {

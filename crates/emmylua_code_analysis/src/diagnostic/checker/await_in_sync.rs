@@ -1,6 +1,6 @@
-use emmylua_parser::{LuaAstNode, LuaCallArgList, LuaCallExpr, LuaClosureExpr, LuaExpr};
+use emmylua_parser::{LuaAstNode, LuaCallExpr, LuaClosureExpr};
 
-use crate::{DiagnosticCode, LuaSignatureId, LuaType, SemanticModel};
+use crate::{AsyncState, DiagnosticCode, LuaSignatureId, LuaType, SemanticModel};
 
 use super::{Checker, DiagnosticContext};
 
@@ -12,65 +12,87 @@ impl Checker for AwaitInSyncChecker {
     fn check(context: &mut DiagnosticContext, semantic_model: &SemanticModel) {
         let root = semantic_model.get_root().clone();
         for call_expr in root.descendants::<LuaCallExpr>() {
-            check_call_expr(context, semantic_model, call_expr.clone());
-            check_pcall_or_xpcall(context, semantic_model, call_expr);
+            check_call_in_async(context, semantic_model, call_expr.clone());
+            check_call_as_arg(context, semantic_model, call_expr);
         }
     }
 }
 
-fn check_call_expr(
+fn check_call_in_async(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
     call_expr: LuaCallExpr,
 ) -> Option<()> {
     let function_type = semantic_model.infer_call_expr_func(call_expr.clone(), None)?;
-    let is_async = function_type.is_async();
+    let async_state = function_type.get_async_state();
 
-    if is_async {
+    if async_state == AsyncState::Async {
         let prefix_expr = call_expr.get_prefix_expr()?;
-        if !check_call_is_in_async_function(semantic_model, call_expr).unwrap_or(false) {
-            context.add_diagnostic(
-                DiagnosticCode::AwaitInSync,
-                prefix_expr.get_range(),
-                t!("Async function can only be called in async function.").to_string(),
-                None,
-            );
+        match check_async_func_in_sync_call(semantic_model, call_expr) {
+            Err(_) => {
+                context.add_diagnostic(
+                    DiagnosticCode::AwaitInSync,
+                    prefix_expr.get_range(),
+                    t!("Async function can only be called in async function.").to_string(),
+                    None,
+                );
+            }
+            Ok(()) => {}
         }
     }
 
     Some(())
 }
 
-fn check_pcall_or_xpcall(
+fn check_call_as_arg(
     context: &mut DiagnosticContext,
     semantic_model: &SemanticModel,
     call_expr: LuaCallExpr,
 ) -> Option<()> {
-    let prefix_expr = call_expr.get_prefix_expr()?;
-    if let LuaExpr::NameExpr(name_expr) = prefix_expr {
-        let name = name_expr.get_name_text()?;
-        if name == "pcall" || name == "xpcall" {
-            let arg_list = call_expr.get_args_list()?;
-            let first_arg = arg_list.get_args().next()?;
-            let range = first_arg.get_range();
-            let arg_type = semantic_model.infer_expr(first_arg).unwrap_or(LuaType::Any);
-            let is_async = match &arg_type {
-                LuaType::DocFunction(f) => f.is_async(),
-                LuaType::Signature(sig) => {
-                    let signature = semantic_model.get_db().get_signature_index().get(&sig)?;
-                    signature.is_async
-                }
-                _ => return None,
-            };
+    let func = semantic_model.infer_call_expr_func(call_expr.clone(), None)?;
+    let colon_define = func.is_colon_define();
+    let colon_call = call_expr.is_colon_call();
+    for (i, arg_type) in func.get_params().iter().enumerate() {
+        if let Some(LuaType::DocFunction(f)) = &arg_type.1 {
+            let async_state = f.get_async_state();
+            if async_state == AsyncState::Sync {
+                let arg_list = call_expr.get_args_list()?;
+                let arg_idx = match (colon_define, colon_call) {
+                    (true, false) => i + 1,
+                    (false, true) => {
+                        if i == 0 {
+                            return None; // colon call should not have a self argument
+                        }
+                        i - 1
+                    }
+                    _ => i,
+                };
+                let arg = arg_list.get_args().nth(arg_idx)?;
+                let arg_type = semantic_model
+                    .infer_expr(arg.clone())
+                    .unwrap_or(LuaType::Any);
+                let async_state = match &arg_type {
+                    LuaType::DocFunction(f) => f.get_async_state(),
+                    LuaType::Signature(sig) => {
+                        let signature = semantic_model.get_db().get_signature_index().get(&sig)?;
+                        signature.async_state
+                    }
+                    _ => continue,
+                };
 
-            if is_async {
-                if !check_call_is_in_async_function(semantic_model, call_expr).unwrap_or(false) {
-                    context.add_diagnostic(
-                        DiagnosticCode::AwaitInSync,
-                        range,
-                        t!("Async function can only be called in async function.").to_string(),
-                        None,
-                    );
+                if async_state == AsyncState::Async {
+                    match check_async_func_in_sync_call(semantic_model, call_expr.clone()) {
+                        Err(_) => {
+                            context.add_diagnostic(
+                                DiagnosticCode::AwaitInSync,
+                                arg.get_range(),
+                                t!("Async function can only be called in async function.")
+                                    .to_string(),
+                                None,
+                            );
+                        }
+                        Ok(()) => {}
+                    }
                 }
             }
         }
@@ -79,43 +101,30 @@ fn check_pcall_or_xpcall(
     Some(())
 }
 
-fn check_call_is_in_async_function(
+fn check_async_func_in_sync_call(
     semantic_model: &SemanticModel,
     call_expr: LuaCallExpr,
-) -> Option<bool> {
+) -> Result<(), ()> {
     let file_id = semantic_model.get_file_id();
     let closures = call_expr.ancestors::<LuaClosureExpr>();
     for closure in closures {
         let signature_id = LuaSignatureId::from_closure(file_id, &closure);
-        let is_async = semantic_model
+        let Some(signature) = semantic_model
             .get_db()
             .get_signature_index()
-            .get(&signature_id)?
-            .is_async;
-        if is_async {
-            return Some(true);
-        }
+            .get(&signature_id)
+        else {
+            return Ok(());
+        };
 
-        if !is_in_pcall_or_xpcall(closure).unwrap_or(false) {
-            break;
-        }
-    }
-
-    Some(false)
-}
-
-// special case
-fn is_in_pcall_or_xpcall(closure: LuaClosureExpr) -> Option<bool> {
-    let call_expr = closure
-        .get_parent::<LuaCallArgList>()?
-        .get_parent::<LuaCallExpr>()?;
-    let prefix_expr = call_expr.get_prefix_expr()?;
-    if let LuaExpr::NameExpr(name_expr) = prefix_expr {
-        let name = name_expr.get_name_text()?;
-        if name == "pcall" || name == "xpcall" {
-            return Some(true);
+        match signature.async_state {
+            AsyncState::Sync => continue,
+            AsyncState::None => {
+                return Err(());
+            }
+            _ => return Ok(()),
         }
     }
 
-    Some(false)
+    Err(())
 }

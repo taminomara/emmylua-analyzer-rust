@@ -2,8 +2,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use emmylua_code_analysis::{
-    FileId, InferGuard, LuaFunctionType, LuaMember, LuaMemberId, LuaMemberKey, LuaMemberOwner,
-    LuaOperatorId, LuaOperatorMetaMethod, LuaSemanticDeclId, LuaType, LuaTypeDecl, SemanticModel,
+    AsyncState, FileId, InferGuard, LuaFunctionType, LuaMember, LuaMemberId, LuaMemberKey,
+    LuaMemberOwner, LuaOperatorId, LuaOperatorMetaMethod, LuaSemanticDeclId, LuaType, LuaTypeDecl,
+    SemanticModel,
 };
 use emmylua_parser::{
     LuaAst, LuaAstNode, LuaCallExpr, LuaExpr, LuaFuncStat, LuaIndexExpr, LuaIndexKey,
@@ -143,7 +144,7 @@ fn build_call_expr_await_hint(
 
     match semantic_info.typ {
         LuaType::DocFunction(f) => {
-            if f.is_async() {
+            if f.get_async_state() == AsyncState::Async {
                 let range = call_expr.get_range();
                 let document = semantic_model.get_document();
                 let lsp_range = document.to_lsp_range(range)?;
@@ -165,7 +166,7 @@ fn build_call_expr_await_hint(
                 .get_db()
                 .get_signature_index()
                 .get(&signature_id)?;
-            if signature.is_async {
+            if signature.async_state == AsyncState::Async {
                 let range = call_expr.get_range();
                 let document = semantic_model.get_document();
                 let lsp_range = document.to_lsp_range(range)?;

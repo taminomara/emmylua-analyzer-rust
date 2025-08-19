@@ -217,6 +217,13 @@ impl LuaDocFuncType {
         }
     }
 
+    pub fn is_sync(&self) -> bool {
+        match self.token::<LuaNameToken>() {
+            Some(it) => it.get_name_text() == "sync",
+            None => false,
+        }
+    }
+
     pub fn get_params(&self) -> LuaAstChildren<LuaDocTypeParam> {
         self.children()
     }

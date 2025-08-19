@@ -6,8 +6,8 @@ use emmylua_parser::{
 };
 
 use crate::{
-    AnalyzeError, DiagnosticCode, LuaFunctionType, LuaMemberFeature, LuaMemberId, LuaSignatureId,
-    LuaTypeCache, OperatorFunction, TypeOps,
+    AnalyzeError, AsyncState, DiagnosticCode, LuaFunctionType, LuaMemberFeature, LuaMemberId,
+    LuaSignatureId, LuaTypeCache, OperatorFunction, TypeOps,
     compilation::analyzer::doc::preprocess_description,
     db_index::{
         LuaMember, LuaMemberKey, LuaMemberOwner, LuaOperator, LuaOperatorMetaMethod,
@@ -95,7 +95,7 @@ pub fn analyze_field(analyzer: &mut DocAnalyzer, tag: LuaDocTagField) -> Option<
                 analyzer.file_id,
                 range,
                 OperatorFunction::Func(Arc::new(LuaFunctionType::new(
-                    false,
+                    AsyncState::None,
                     false,
                     vec![
                         (
@@ -188,7 +188,7 @@ pub fn analyze_operator(analyzer: &mut DocAnalyzer, tag: LuaDocTagOperator) -> O
         analyzer.file_id,
         name_token.get_range(),
         OperatorFunction::Func(Arc::new(LuaFunctionType::new(
-            false,
+            AsyncState::None,
             false,
             operands,
             return_type,

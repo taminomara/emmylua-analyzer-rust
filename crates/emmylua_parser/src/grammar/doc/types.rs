@@ -233,7 +233,7 @@ fn parse_literal_type(p: &mut LuaDocParser) -> ParseResult {
 fn parse_name_or_func_type(p: &mut LuaDocParser) -> ParseResult {
     let text = p.current_token_text();
     match text {
-        "fun" | "async" => parse_fun_type(p),
+        "fun" | "async" | "sync" => parse_fun_type(p),
         _ => parse_name_type(p),
     }
 }
@@ -242,7 +242,7 @@ fn parse_name_or_func_type(p: &mut LuaDocParser) -> ParseResult {
 // async fun ( <name>: <type>, ... ) <type>, ...
 pub fn parse_fun_type(p: &mut LuaDocParser) -> ParseResult {
     let m = p.mark(LuaSyntaxKind::TypeFun);
-    if p.current_token_text() == "async" {
+    if matches!(p.current_token_text(), "async" | "sync") {
         p.bump();
     }
 

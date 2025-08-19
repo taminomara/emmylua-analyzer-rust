@@ -1,5 +1,6 @@
 use crate::{
-    LuaDeclId, LuaExport, LuaExportScope, LuaNoDiscard, LuaSemanticDeclId, LuaSignatureId,
+    AsyncState, LuaDeclId, LuaExport, LuaExportScope, LuaNoDiscard, LuaSemanticDeclId,
+    LuaSignatureId,
 };
 
 use super::{
@@ -110,7 +111,7 @@ pub fn analyze_async(analyzer: &mut DocAnalyzer, tag: LuaDocTagAsync) -> Option<
         .get_signature_index_mut()
         .get_mut(&signature_id)?;
 
-    signature.is_async = true;
+    signature.async_state = AsyncState::Async;
 
     Some(())
 }

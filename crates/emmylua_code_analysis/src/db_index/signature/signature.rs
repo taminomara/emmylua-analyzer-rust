@@ -6,6 +6,7 @@ use std::{collections::HashMap, sync::Arc};
 use emmylua_parser::{LuaAstNode, LuaClosureExpr, LuaDocFuncType};
 use rowan::TextSize;
 
+use crate::db_index::signature::async_state::AsyncState;
 use crate::{
     FileId,
     db_index::{LuaFunctionType, LuaType},
@@ -21,7 +22,7 @@ pub struct LuaSignature {
     pub return_docs: Vec<LuaDocReturnInfo>,
     pub resolve_return: SignatureReturnStatus,
     pub is_colon_define: bool,
-    pub is_async: bool,
+    pub async_state: AsyncState,
     pub nodiscard: Option<LuaNoDiscard>,
 }
 
@@ -41,7 +42,7 @@ impl LuaSignature {
             return_docs: Vec::new(),
             resolve_return: SignatureReturnStatus::UnResolve,
             is_colon_define: false,
-            is_async: false,
+            async_state: AsyncState::None,
             nodiscard: None,
         }
     }
@@ -157,7 +158,7 @@ impl LuaSignature {
         let params = self.get_type_params();
         let return_type = self.get_return_type();
         let func_type =
-            LuaFunctionType::new(self.is_async, self.is_colon_define, params, return_type);
+            LuaFunctionType::new(self.async_state, self.is_colon_define, params, return_type);
         Arc::new(func_type)
     }
 
@@ -168,7 +169,7 @@ impl LuaSignature {
         }
 
         let return_type = self.get_return_type();
-        let func_type = LuaFunctionType::new(self.is_async, false, params, return_type);
+        let func_type = LuaFunctionType::new(self.async_state, false, params, return_type);
         Arc::new(func_type)
     }
 }

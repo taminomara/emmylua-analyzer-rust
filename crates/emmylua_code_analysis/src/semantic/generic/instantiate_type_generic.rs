@@ -101,7 +101,7 @@ pub fn instantiate_doc_function(
 ) -> LuaType {
     let tpl_func_params = doc_func.get_params();
     let tpl_ret = doc_func.get_ret();
-    let is_async = doc_func.is_async();
+    let async_state = doc_func.get_async_state();
     let colon_define = doc_func.is_colon_define();
 
     let mut new_params = Vec::new();
@@ -157,7 +157,7 @@ pub fn instantiate_doc_function(
     modified_substitutor.convert_def_to_ref();
     let inst_ret_type = instantiate_type_generic(db, &tpl_ret, &modified_substitutor);
     LuaType::DocFunction(
-        LuaFunctionType::new(is_async, colon_define, new_params, inst_ret_type).into(),
+        LuaFunctionType::new(async_state, colon_define, new_params, inst_ret_type).into(),
     )
 }
 
