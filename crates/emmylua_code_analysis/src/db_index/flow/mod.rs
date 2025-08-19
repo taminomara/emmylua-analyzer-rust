@@ -34,12 +34,10 @@ impl LuaFlowIndex {
         self.file_flow_tree.get(file_id)
     }
 
-    pub fn get_signature_cast(
-        &self,
-        file_id: &FileId,
-        signature_id: &LuaSignatureId,
-    ) -> Option<&LuaSignatureCast> {
-        self.signature_cast_cache.get(file_id)?.get(signature_id)
+    pub fn get_signature_cast(&self, signature_id: &LuaSignatureId) -> Option<&LuaSignatureCast> {
+        self.signature_cast_cache
+            .get(&signature_id.get_file_id())?
+            .get(signature_id)
     }
 
     pub fn add_signature_cast(

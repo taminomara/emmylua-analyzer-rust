@@ -88,10 +88,7 @@ pub fn get_type_at_call_expr(
                 _ => {}
             }
 
-            let Some(signature_cast) = db
-                .get_flow_index()
-                .get_signature_cast(&cache.get_file_id(), &signature_id)
-            else {
+            let Some(signature_cast) = db.get_flow_index().get_signature_cast(&signature_id) else {
                 return Ok(ResultTypeOrContinue::Continue);
             };
 
@@ -105,6 +102,7 @@ pub fn get_type_at_call_expr(
                     flow_node,
                     prefix_expr,
                     signature_cast,
+                    signature_id,
                     condition_flow,
                 ),
                 name => get_type_at_call_expr_by_signature_param_name(
@@ -200,6 +198,7 @@ fn get_type_at_call_expr_by_signature_self(
     flow_node: &FlowNode,
     call_prefix: LuaExpr,
     signature_cast: &LuaSignatureCast,
+    signature_id: LuaSignatureId,
     condition_flow: InferConditionFlow,
 ) -> Result<ResultTypeOrContinue, InferFailReason> {
     let LuaExpr::IndexExpr(call_prefix_index) = call_prefix else {
@@ -221,13 +220,18 @@ fn get_type_at_call_expr_by_signature_self(
     let antecedent_flow_id = get_single_antecedent(tree, flow_node)?;
     let antecedent_type = get_type_at_flow(db, tree, cache, root, var_ref_id, antecedent_flow_id)?;
 
-    let Some(cast_op_type) = signature_cast.cast.to_node(root) else {
+    let Some(syntax_tree) = db.get_vfs().get_syntax_tree(&signature_id.get_file_id()) else {
+        return Ok(ResultTypeOrContinue::Continue);
+    };
+
+    let signature_root = syntax_tree.get_chunk_node();
+    let Some(cast_op_type) = signature_cast.cast.to_node(&signature_root) else {
         return Ok(ResultTypeOrContinue::Continue);
     };
 
     let result_type = cast_type(
         db,
-        cache.get_file_id(),
+        signature_id.get_file_id(),
         cast_op_type,
         antecedent_type,
         condition_flow,
@@ -291,13 +295,18 @@ fn get_type_at_call_expr_by_signature_param_name(
     let antecedent_flow_id = get_single_antecedent(tree, flow_node)?;
     let antecedent_type = get_type_at_flow(db, tree, cache, root, var_ref_id, antecedent_flow_id)?;
 
-    let Some(cast_op_type) = signature_cast.cast.to_node(root) else {
+    let Some(syntax_tree) = db.get_vfs().get_syntax_tree(&signature_id.get_file_id()) else {
+        return Ok(ResultTypeOrContinue::Continue);
+    };
+
+    let signature_root = syntax_tree.get_chunk_node();
+    let Some(cast_op_type) = signature_cast.cast.to_node(&signature_root) else {
         return Ok(ResultTypeOrContinue::Continue);
     };
 
     let result_type = cast_type(
         db,
-        cache.get_file_id(),
+        signature_id.get_file_id(),
         cast_op_type,
         antecedent_type,
         condition_flow,

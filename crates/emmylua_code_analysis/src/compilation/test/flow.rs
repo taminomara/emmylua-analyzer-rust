@@ -1284,4 +1284,35 @@ end
         let a = ws.expr_ty("A");
         assert_eq!(ws.humanize_type(a), "Node");
     }
+
+    #[test]
+    fn test_return_cast_multi_file() {
+        let mut ws = VirtualWorkspace::new();
+        ws.def_file(
+            "test.lua",
+            r#"
+            local M = {}
+
+            --- @return boolean
+            --- @return_cast _obj function
+            function M.is_callable(_obj) end
+
+            return M
+            "#,
+        );
+        ws.def(
+            r#"
+            local test = require("test")
+
+            local obj
+
+            if test.is_callable(obj) then
+                o = obj
+            end
+            "#,
+        );
+        let a = ws.expr_ty("o");
+        let expected = LuaType::Function;
+        assert_eq!(a, expected);
+    }
 }
