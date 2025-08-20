@@ -13,5 +13,17 @@ mod test {
             print(string.gsub("hello", "l", "0"))
             "#,
         ));
+
+        assert!(ws.check_code_for(
+            DiagnosticCode::PreferredLocalAlias,
+            r#"
+            local t = {
+                a = ""
+            }
+            local h = t.a
+            t.a = 'h'
+            print(t.a)
+            "#,
+        ));
     }
 }

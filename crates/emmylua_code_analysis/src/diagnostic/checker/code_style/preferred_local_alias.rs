@@ -33,7 +33,7 @@ impl Checker for PreferredLocalAliasChecker {
                         LuaAst::LuaIndexExpr(index_expr) => {
                             check_index_expr_preference(
                                 context,
-                                &local_alias_set,
+                                &mut local_alias_set,
                                 semantic_model,
                                 &index_expr,
                             );
@@ -130,8 +130,15 @@ fn is_only_dot_index_expr(expr: &LuaExpr) -> Option<bool> {
 
 #[derive(Debug)]
 struct LocalAliasSet {
-    local_alias_stack: Vec<HashMap<String, (LuaSemanticDeclId, String)>>,
+    local_alias_stack: Vec<HashMap<String, LocalAliasInfo>>,
     disable_check: HashSet<TextRange>,
+}
+
+#[derive(Debug)]
+struct LocalAliasInfo {
+    pub decl_id: LuaSemanticDeclId,
+    pub preferred_name: String,
+    pub invalid: bool,
 }
 
 impl LocalAliasSet {
@@ -152,14 +159,21 @@ impl LocalAliasSet {
 
     fn insert(&mut self, name: String, preferred_name: String, decl_id: LuaSemanticDeclId) {
         if let Some(map) = self.local_alias_stack.last_mut() {
-            map.insert(name, (decl_id, preferred_name));
+            map.insert(
+                name,
+                LocalAliasInfo {
+                    decl_id,
+                    preferred_name,
+                    invalid: false,
+                },
+            );
         }
     }
 
-    fn get(&self, name: &str) -> Option<(LuaSemanticDeclId, String)> {
-        for map in self.local_alias_stack.iter().rev() {
-            if let Some(item) = map.get(name) {
-                return Some(item.clone());
+    fn get(&mut self, name: &str) -> Option<&mut LocalAliasInfo> {
+        for map in self.local_alias_stack.iter_mut().rev() {
+            if let Some(item) = map.get_mut(name) {
+                return Some(item);
             }
         }
         None
@@ -176,7 +190,7 @@ impl LocalAliasSet {
 
 fn check_index_expr_preference(
     context: &mut DiagnosticContext,
-    local_alias_set: &LocalAliasSet,
+    local_alias_set: &mut LocalAliasSet,
     semantic_model: &SemanticModel,
     index_expr: &LuaIndexExpr,
 ) -> Option<()> {
@@ -190,15 +204,16 @@ fn check_index_expr_preference(
     }
 
     let parent = index_expr.get_parent::<LuaAst>()?;
+    let mut mutable_index = false;
     match parent {
         LuaAst::LuaAssignStat(assign_stat) => {
             let eq = assign_stat.get_assign_op()?;
             if eq.get_position() > index_expr.get_position() {
-                return Some(());
+                mutable_index = true;
             }
         }
         LuaAst::LuaFuncStat(_) => {
-            return Some(());
+            mutable_index = true;
         }
         _ => {}
     }
@@ -209,18 +224,27 @@ fn check_index_expr_preference(
         _ => return Some(()),
     };
 
-    let (semantic_id, preferred_name) = local_alias_set.get(&name)?;
+    let alias_info = local_alias_set.get(&name)?;
+    if alias_info.invalid {
+        return Some(());
+    }
+
     if semantic_model.is_reference_to(
         index_expr.syntax().clone(),
-        semantic_id,
+        alias_info.decl_id.clone(),
         SemanticDeclLevel::NoTrace,
     ) {
+        if mutable_index {
+            alias_info.invalid = true;
+            return Some(());
+        }
+
         context.add_diagnostic(
             DiagnosticCode::PreferredLocalAlias,
             index_expr.get_range(),
             t!(
                 "Prefer use local alias variable '%{name}'",
-                name = preferred_name
+                name = alias_info.preferred_name
             )
             .to_string(),
             None,
