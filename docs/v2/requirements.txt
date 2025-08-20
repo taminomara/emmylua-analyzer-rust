@@ -5,3 +5,4 @@ myst-parser~=4.0
 sphinx_immaterial~=0.13
 sphinx-lua-ls~=3.0
 frozendict~=2.4
+referencing~=0.36.2
