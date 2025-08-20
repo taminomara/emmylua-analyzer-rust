@@ -44,7 +44,7 @@ pub fn bind_local_stat(
 }
 
 fn check_local_immutable(binder: &mut FlowBinder, decl_id: LuaDeclId) -> bool {
-    let Some(refs) = binder
+    let Some(decl_ref) = binder
         .db
         .get_reference_index()
         .get_decl_references(&binder.file_id, &decl_id)
@@ -52,13 +52,7 @@ fn check_local_immutable(binder: &mut FlowBinder, decl_id: LuaDeclId) -> bool {
         return true;
     };
 
-    for r in refs {
-        if r.is_write {
-            return false;
-        }
-    }
-
-    true
+    !decl_ref.mutable
 }
 
 fn check_value_expr_is_check_expr(value_expr: LuaExpr) -> bool {

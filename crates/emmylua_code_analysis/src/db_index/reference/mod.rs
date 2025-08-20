@@ -4,12 +4,12 @@ mod string_reference;
 use std::collections::{HashMap, HashSet};
 
 use emmylua_parser::LuaSyntaxId;
-pub use file_reference::{DeclReference, FileReference};
+pub use file_reference::{DeclReferenceCell, FileReference};
 use rowan::TextRange;
 use smol_str::SmolStr;
 use string_reference::StringReference;
 
-use crate::{FileId, InFiled};
+use crate::{FileId, InFiled, db_index::reference::file_reference::DeclReference};
 
 use super::{LuaDeclId, LuaMemberKey, LuaTypeDeclId, traits::LuaIndex};
 
@@ -105,7 +105,7 @@ impl LuaReferenceIndex {
         &self,
         file_id: &FileId,
         decl_id: &LuaDeclId,
-    ) -> Option<&Vec<DeclReference>> {
+    ) -> Option<&DeclReference> {
         self.file_references
             .get(file_id)?
             .get_decl_references(decl_id)
@@ -118,7 +118,7 @@ impl LuaReferenceIndex {
     pub fn get_decl_references_map(
         &self,
         file_id: &FileId,
-    ) -> Option<&HashMap<LuaDeclId, Vec<DeclReference>>> {
+    ) -> Option<&HashMap<LuaDeclId, DeclReference>> {
         self.file_references
             .get(file_id)
             .map(|file_reference| file_reference.get_decl_references_map())

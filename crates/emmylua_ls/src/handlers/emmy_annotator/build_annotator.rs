@@ -106,7 +106,7 @@ fn build_local_stat_annotator(
         let reference_index = db.get_reference_index();
         let ref_ranges = reference_index.get_decl_references(&file_id, &decl_id);
         if let Some(decl_refs) = ref_ranges {
-            for decl_ref in decl_refs {
+            for decl_ref in &decl_refs.cells {
                 use_range_set.insert(decl_ref.range.clone());
                 if decl_ref.is_write {
                     annotator.typ = EmmyAnnotatorType::MutLocal
@@ -148,7 +148,7 @@ fn build_params_annotator(
         let reference_index = db.get_reference_index();
         let ref_ranges = reference_index.get_decl_references(&file_id, &decl_id);
         if let Some(decl_refs) = ref_ranges {
-            for decl_ref in decl_refs {
+            for decl_ref in &decl_refs.cells {
                 use_range_set.insert(decl_ref.range.clone());
                 if decl_ref.is_write {
                     annotator.typ = EmmyAnnotatorType::MutParam
@@ -219,7 +219,7 @@ fn build_for_stat_annotator(
         .get_reference_index()
         .get_decl_references(&file_id, &decl_id);
     if let Some(decl_refs) = ref_ranges {
-        for decl_ref in decl_refs {
+        for decl_ref in &decl_refs.cells {
             use_range_set.insert(decl_ref.range.clone());
             annotator
                 .ranges
@@ -256,7 +256,7 @@ fn build_for_range_annotator(
             .get_reference_index()
             .get_decl_references(&file_id, &decl_id);
         if let Some(decl_refs) = ref_ranges {
-            for decl_ref in decl_refs {
+            for decl_ref in &decl_refs.cells {
                 use_range_set.insert(decl_ref.range.clone());
                 annotator
                     .ranges
@@ -294,7 +294,7 @@ fn build_local_func_stat_annotator(
         .get_reference_index()
         .get_decl_references(&file_id, &decl_id);
     if let Some(decl_refs) = ref_ranges {
-        for decl_ref in decl_refs {
+        for decl_ref in &decl_refs.cells {
             use_range_set.insert(decl_ref.range.clone());
             annotator
                 .ranges

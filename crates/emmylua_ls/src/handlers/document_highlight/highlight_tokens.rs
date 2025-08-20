@@ -50,7 +50,7 @@ fn highlight_decl_references(
             .get_reference_index()
             .get_decl_references(&decl_id.file_id, &decl_id)?;
 
-        for decl_ref in decl_refs {
+        for decl_ref in &decl_refs.cells {
             let range: lsp_types::Range = document.to_lsp_range(decl_ref.range.clone())?;
             let kind = if decl_ref.is_write {
                 Some(DocumentHighlightKind::WRITE)

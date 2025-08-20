@@ -30,7 +30,7 @@ fn calc_name_expr_ref(
     let db = semantic_model.get_db();
     let refs_index = db.get_reference_index().get_local_reference(&file_id)?;
     for (_, decl_refs) in refs_index.get_decl_references_map() {
-        for decl_ref in decl_refs {
+        for decl_ref in &decl_refs.cells {
             use_range_set.insert(decl_ref.range.clone());
         }
     }

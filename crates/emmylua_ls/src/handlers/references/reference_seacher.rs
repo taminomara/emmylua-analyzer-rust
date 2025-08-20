@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use emmylua_code_analysis::{
-    DeclReference, LuaCompilation, LuaDeclId, LuaMemberId, LuaMemberKey, LuaSemanticDeclId,
+    DeclReferenceCell, LuaCompilation, LuaDeclId, LuaMemberId, LuaMemberKey, LuaSemanticDeclId,
     LuaTypeDeclId, SemanticDeclLevel, SemanticModel,
 };
 use emmylua_parser::{
@@ -67,7 +67,7 @@ pub fn search_decl_references(
         let typ = semantic_model.get_type(decl.get_id().into());
         let is_signature = typ.is_signature();
 
-        for decl_ref in decl_refs {
+        for decl_ref in &decl_refs.cells {
             let location = document.to_lsp_location(decl_ref.range.clone())?;
             result.push(location);
             if is_signature {
@@ -110,7 +110,7 @@ pub fn search_member_references(
 
     let mut semantic_cache = HashMap::new();
 
-    let property_owner = LuaSemanticDeclId::Member(member_id);
+    let semantic_id = LuaSemanticDeclId::Member(member_id);
     for in_filed_syntax_id in index_references {
         let semantic_model =
             if let Some(semantic_model) = semantic_cache.get_mut(&in_filed_syntax_id.file_id) {
@@ -124,7 +124,7 @@ pub fn search_member_references(
         let node = in_filed_syntax_id.value.to_node_from_root(root.syntax())?;
         if semantic_model.is_reference_to(
             node.clone(),
-            property_owner.clone(),
+            semantic_id.clone(),
             SemanticDeclLevel::default(),
         ) {
             let document = semantic_model.get_document();
@@ -259,7 +259,7 @@ fn get_signature_decl_member_references(
     semantic_model: &SemanticModel,
     compilation: &LuaCompilation,
     result: &mut Vec<Location>,
-    decl_ref: &DeclReference,
+    decl_ref: &DeclReferenceCell,
 ) -> Option<Vec<Location>> {
     let root = semantic_model.get_root();
     let position = decl_ref.range.start();

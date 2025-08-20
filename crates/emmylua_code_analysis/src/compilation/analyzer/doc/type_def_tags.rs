@@ -245,11 +245,11 @@ fn get_local_stat_reference_ranges(
     let first_local = local_stat.child::<LuaLocalName>()?;
     let decl_id = LuaDeclId::new(file_id, first_local.get_position());
     let mut ranges = Vec::new();
-    let refs = analyzer
+    let decl_ref = analyzer
         .db
         .get_reference_index_mut()
         .get_decl_references(&file_id, &decl_id)?;
-    for decl_ref in refs {
+    for decl_ref in &decl_ref.cells {
         let syntax_id = LuaSyntaxId::new(LuaSyntaxKind::NameExpr.into(), decl_ref.range.clone());
         let name_node = syntax_id.to_node_from_root(&analyzer.root)?;
         if let Some(parent1) = name_node.parent() {

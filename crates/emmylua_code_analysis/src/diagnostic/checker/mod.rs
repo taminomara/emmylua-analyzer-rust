@@ -109,6 +109,10 @@ pub fn check_file(context: &mut DiagnosticContext, semantic_model: &SemanticMode
         context,
         semantic_model,
     );
+    run_check::<code_style::preferred_local_alias::PreferredLocalAliasChecker>(
+        context,
+        semantic_model,
+    );
     Some(())
 }
 

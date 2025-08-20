@@ -224,7 +224,7 @@ pub fn search_decl_implementations(
         let location = document.to_lsp_location(range)?;
         result.push(location);
 
-        for decl_ref in decl_refs {
+        for decl_ref in &decl_refs.cells {
             if decl_ref.is_write {
                 if let Some(location) = document.to_lsp_location(decl_ref.range) {
                     result.push(location);

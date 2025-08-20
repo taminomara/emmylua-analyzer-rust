@@ -26,7 +26,7 @@ pub fn rename_decl_references(
         let document = semantic_model.get_document();
         let uri = document.get_uri();
         if let Some(decl_refs) = local_references {
-            for decl_ref in decl_refs {
+            for decl_ref in &decl_refs.cells {
                 let range = document.to_lsp_range(decl_ref.range.clone())?;
                 result
                     .entry(uri.clone())

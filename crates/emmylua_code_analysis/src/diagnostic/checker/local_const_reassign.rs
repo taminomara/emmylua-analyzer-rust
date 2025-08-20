@@ -44,7 +44,7 @@ fn check_local_const_reassign(
     let refs_index = semantic_model.get_db().get_reference_index();
     let local_refs = refs_index.get_local_reference(&file_id)?;
     let decl_refs = local_refs.get_decl_references(decl_id)?;
-    for decl_ref in decl_refs {
+    for decl_ref in &decl_refs.cells {
         if decl_ref.is_write {
             match attrib {
                 LocalAttribute::Const => {

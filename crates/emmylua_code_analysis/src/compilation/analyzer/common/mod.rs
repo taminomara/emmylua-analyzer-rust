@@ -18,11 +18,11 @@ pub fn bind_type(
         // type backward
         if type_cache.is_infer() {
             if let LuaTypeOwner::Decl(decl_id) = &type_owner {
-                if let Some(refs) = db
+                if let Some(decl_ref) = db
                     .get_reference_index()
                     .get_decl_references(&decl_id.file_id, decl_id)
                 {
-                    if refs.iter().any(|it| it.is_write) {
+                    if decl_ref.mutable {
                         match &type_cache.as_type() {
                             LuaType::IntegerConst(_) => {
                                 type_cache = LuaTypeCache::InferType(LuaType::Integer)

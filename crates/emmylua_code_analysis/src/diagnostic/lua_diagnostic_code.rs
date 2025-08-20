@@ -101,6 +101,8 @@ pub enum DiagnosticCode {
     RequireModuleNotVisible,
     /// enum-value-mismatch
     EnumValueMismatch,
+    /// preferred-local-alias
+    PreferredLocalAlias,
 
     #[serde(other)]
     None,
@@ -128,6 +130,7 @@ pub fn get_default_severity(code: DiagnosticCode) -> DiagnosticSeverity {
         DiagnosticCode::RedefinedLocal => DiagnosticSeverity::HINT,
         DiagnosticCode::DuplicateRequire => DiagnosticSeverity::HINT,
         DiagnosticCode::IterVariableReassign => DiagnosticSeverity::ERROR,
+        DiagnosticCode::PreferredLocalAlias => DiagnosticSeverity::HINT,
         _ => DiagnosticSeverity::WARNING,
     }
 }
