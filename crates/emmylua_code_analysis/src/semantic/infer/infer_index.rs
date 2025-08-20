@@ -150,7 +150,11 @@ pub fn infer_member_by_member_key(
     match &prefix_type {
         LuaType::Table | LuaType::Any | LuaType::Unknown => Ok(LuaType::Any),
         LuaType::TableConst(id) => infer_table_member(db, cache, id.clone(), index_expr),
-        LuaType::String | LuaType::Io | LuaType::StringConst(_) | LuaType::DocStringConst(_) => {
+        LuaType::String
+        | LuaType::Io
+        | LuaType::StringConst(_)
+        | LuaType::DocStringConst(_)
+        | LuaType::Language(_) => {
             let decl_id =
                 get_buildin_type_map_type_id(&prefix_type).ok_or(InferFailReason::None)?;
             infer_custom_type_member(db, cache, decl_id, index_expr, infer_guard)

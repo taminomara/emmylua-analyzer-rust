@@ -1,6 +1,7 @@
 use super::{
     SEMANTIC_TOKEN_MODIFIERS, SEMANTIC_TOKEN_TYPES, semantic_token_builder::SemanticBuilder,
 };
+use crate::handlers::semantic_token::function_string_highlight::fun_string_highlight;
 use crate::util::parse_desc;
 use crate::{context::ClientId, handlers::semantic_token::language_injector::inject_language};
 use emmylua_code_analysis::{
@@ -9,9 +10,9 @@ use emmylua_code_analysis::{
     parse_require_module_info,
 };
 use emmylua_parser::{
-    LuaAst, LuaAstNode, LuaAstToken, LuaComment, LuaDocFieldKey, LuaDocObjectFieldKey, LuaExpr,
-    LuaGeneralToken, LuaKind, LuaLiteralToken, LuaNameToken, LuaSyntaxKind, LuaSyntaxNode,
-    LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
+    LuaAst, LuaAstNode, LuaAstToken, LuaCallArgList, LuaCallExpr, LuaComment, LuaDocFieldKey,
+    LuaDocObjectFieldKey, LuaExpr, LuaGeneralToken, LuaKind, LuaLiteralToken, LuaNameToken,
+    LuaSyntaxKind, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind, LuaVarExpr,
 };
 use emmylua_parser_desc::{CodeBlockHighlightKind, DescItem, DescItemKind};
 use lsp_types::{SemanticToken, SemanticTokenModifier, SemanticTokenType};
@@ -61,7 +62,7 @@ fn build_tokens_semantic_token(
 ) {
     match token.kind().into() {
         LuaTokenKind::TkLongString | LuaTokenKind::TkString => {
-            if !builder.is_lang_inject_range(&token.text_range()) {
+            if !builder.is_special_string_range(&token.text_range()) {
                 builder.push(token, SemanticTokenType::STRING);
             }
         }
@@ -633,6 +634,20 @@ fn build_node_semantic_token(
             let comment = language.ancestors::<LuaComment>().next()?;
 
             inject_language(builder, language_text, comment);
+        }
+        LuaAst::LuaLiteralExpr(literal_expr) => {
+            let call_expr = literal_expr
+                .get_parent::<LuaCallArgList>()?
+                .get_parent::<LuaCallExpr>()?;
+            let literal_token = literal_expr.get_literal()?;
+            match literal_token {
+                LuaLiteralToken::String(string_token) => {
+                    if !builder.is_special_string_range(&string_token.get_range()) {
+                        fun_string_highlight(builder, semantic_model, call_expr, &string_token);
+                    }
+                }
+                _ => {}
+            }
         }
         _ => {}
     }

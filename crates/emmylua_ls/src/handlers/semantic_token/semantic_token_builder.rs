@@ -68,7 +68,7 @@ pub struct SemanticBuilder<'a> {
     type_to_id: HashMap<SemanticTokenType, u32>,
     modifier_to_id: HashMap<SemanticTokenModifier, u32>,
     data: HashMap<TextSize, SemanticTokenData>,
-    lang_inject_range: HashSet<TextRange>,
+    string_special_range: HashSet<TextRange>,
 }
 
 impl<'a> SemanticBuilder<'a> {
@@ -93,7 +93,7 @@ impl<'a> SemanticBuilder<'a> {
             type_to_id,
             modifier_to_id,
             data: HashMap::new(),
-            lang_inject_range: HashSet::new(),
+            string_special_range: HashSet::new(),
         }
     }
 
@@ -285,11 +285,11 @@ impl<'a> SemanticBuilder<'a> {
         result
     }
 
-    pub fn add_lang_inject_range(&mut self, range: TextRange) {
-        self.lang_inject_range.insert(range);
+    pub fn add_special_string_range(&mut self, range: TextRange) {
+        self.string_special_range.insert(range);
     }
 
-    pub fn is_lang_inject_range(&self, range: &TextRange) -> bool {
-        self.lang_inject_range.contains(range)
+    pub fn is_special_string_range(&self, range: &TextRange) -> bool {
+        self.string_special_range.contains(range)
     }
 }

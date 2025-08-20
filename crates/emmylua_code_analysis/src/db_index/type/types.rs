@@ -61,6 +61,7 @@ pub enum LuaType {
     MultiLineUnion(Arc<LuaMultiLineUnion>),
     TypeGuard(Arc<LuaType>),
     ConstTplRef(Arc<GenericTpl>),
+    Language(ArcIntern<SmolStr>),
 }
 
 impl PartialEq for LuaType {
@@ -109,6 +110,7 @@ impl PartialEq for LuaType {
             (LuaType::TypeGuard(a), LuaType::TypeGuard(b)) => a == b,
             (LuaType::Never, LuaType::Never) => true,
             (LuaType::ConstTplRef(a), LuaType::ConstTplRef(b)) => a == b,
+            (LuaType::Language(a), LuaType::Language(b)) => a == b,
             _ => false, // 不同变体之间不相等
         }
     }
@@ -186,6 +188,7 @@ impl Hash for LuaType {
             }
             LuaType::Never => 45.hash(state),
             LuaType::ConstTplRef(a) => (46, a).hash(state),
+            LuaType::Language(a) => (47, a).hash(state),
         }
     }
 }
@@ -234,7 +237,10 @@ impl LuaType {
     pub fn is_string(&self) -> bool {
         matches!(
             self,
-            LuaType::StringConst(_) | LuaType::String | LuaType::DocStringConst(_)
+            LuaType::StringConst(_)
+                | LuaType::String
+                | LuaType::DocStringConst(_)
+                | LuaType::Language(_)
         )
     }
 

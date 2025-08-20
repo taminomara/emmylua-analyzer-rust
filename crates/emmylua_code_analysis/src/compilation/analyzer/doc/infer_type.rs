@@ -317,6 +317,13 @@ fn infer_special_generic_type(
                 return Some(LuaType::ConstTplRef(tpl));
             }
         }
+        "Language" => {
+            let first_doc_param_type = generic_type.get_generic_types()?.get_types().next()?;
+            let first_param = infer_type(analyzer, first_doc_param_type);
+            if let LuaType::DocStringConst(lang_str) = first_param {
+                return Some(LuaType::Language(lang_str));
+            }
+        }
         _ => {}
     }
 

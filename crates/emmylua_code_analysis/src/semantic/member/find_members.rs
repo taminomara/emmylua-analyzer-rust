@@ -65,7 +65,11 @@ fn find_members_guard(
             find_normal_members(db, member_owner, filter)
         }
         LuaType::TableGeneric(table_type) => find_table_generic_members(table_type, filter),
-        LuaType::String | LuaType::Io | LuaType::StringConst(_) => {
+        LuaType::String
+        | LuaType::Io
+        | LuaType::StringConst(_)
+        | LuaType::DocStringConst(_)
+        | LuaType::Language(_) => {
             let type_decl_id = get_buildin_type_map_type_id(&prefix_type)?;
             find_custom_type_members(db, &type_decl_id, infer_guard, filter)
         }

@@ -20,57 +20,67 @@ pub fn inject_language(
     let lang = CodeBlockLang::try_parse(lang_name)?;
     for literal in owner.descendants::<LuaLiteralExpr>() {
         if let Some(LuaLiteralToken::String(str_token)) = literal.get_literal() {
-            let code_block_info = divide_into_quote_and_code_block(&str_token)?;
-            let code_block_range = code_block_info.code_block;
-            let code_block_source = SourceRange::from_start_end(
-                u32::from(code_block_range.start()) as usize,
-                u32::from(code_block_range.end()) as usize,
-            );
-            let code_block_str = str_token.slice(code_block_range)?;
-            let reader = Reader::new(code_block_str);
-            let mut result = InjectResult::new();
-            process_code(
-                &mut result,
-                code_block_source,
-                reader,
-                LexerState::Normal,
-                lang,
-            );
-
-            for desc_item in result.results() {
-                if let DescItemKind::CodeBlockHl(highlight_kind) = desc_item.kind {
-                    let token_type = match highlight_kind {
-                        CodeBlockHighlightKind::Keyword => SemanticTokenType::KEYWORD,
-                        CodeBlockHighlightKind::String => SemanticTokenType::STRING,
-                        CodeBlockHighlightKind::Number => SemanticTokenType::NUMBER,
-                        CodeBlockHighlightKind::Comment => SemanticTokenType::COMMENT,
-                        CodeBlockHighlightKind::Function => SemanticTokenType::FUNCTION,
-                        CodeBlockHighlightKind::Class => SemanticTokenType::CLASS,
-                        CodeBlockHighlightKind::Enum => SemanticTokenType::ENUM,
-                        CodeBlockHighlightKind::Variable => SemanticTokenType::VARIABLE,
-                        CodeBlockHighlightKind::Property => SemanticTokenType::PROPERTY,
-                        CodeBlockHighlightKind::Decorator => SemanticTokenType::DECORATOR,
-                        CodeBlockHighlightKind::Operators => SemanticTokenType::OPERATOR,
-                        _ => continue, // Fallback for other kinds
-                    };
-
-                    let sub_token_range = TextRange::new(
-                        desc_item.range.start() + code_block_range.start(),
-                        desc_item.range.end() + code_block_range.start(),
-                    );
-                    if let Some(token_text) = str_token.slice(sub_token_range) {
-                        builder.push_at_range(token_text, sub_token_range, token_type, &[]);
-                    }
-                }
-            }
-
-            for quote_range in code_block_info.quote_ranges {
-                let len = u32::from(quote_range.end() - quote_range.start());
-                builder.push_at_position(quote_range.start(), len, SemanticTokenType::STRING, None);
-            }
-            builder.add_lang_inject_range(str_token.get_range());
+            process_inject_lang_string_token(builder, lang, &str_token);
         }
     }
+
+    Some(())
+}
+
+pub fn process_inject_lang_string_token(
+    builder: &mut SemanticBuilder,
+    lang: CodeBlockLang,
+    str_token: &LuaStringToken,
+) -> Option<()> {
+    let code_block_info = divide_into_quote_and_code_block(&str_token)?;
+    let code_block_range = code_block_info.code_block;
+    let code_block_source = SourceRange::from_start_end(
+        u32::from(code_block_range.start()) as usize,
+        u32::from(code_block_range.end()) as usize,
+    );
+    let code_block_str = str_token.slice(code_block_range)?;
+    let reader = Reader::new(code_block_str);
+    let mut result = InjectResult::new();
+    process_code(
+        &mut result,
+        code_block_source,
+        reader,
+        LexerState::Normal,
+        lang,
+    );
+
+    for desc_item in result.results() {
+        if let DescItemKind::CodeBlockHl(highlight_kind) = desc_item.kind {
+            let token_type = match highlight_kind {
+                CodeBlockHighlightKind::Keyword => SemanticTokenType::KEYWORD,
+                CodeBlockHighlightKind::String => SemanticTokenType::STRING,
+                CodeBlockHighlightKind::Number => SemanticTokenType::NUMBER,
+                CodeBlockHighlightKind::Comment => SemanticTokenType::COMMENT,
+                CodeBlockHighlightKind::Function => SemanticTokenType::FUNCTION,
+                CodeBlockHighlightKind::Class => SemanticTokenType::CLASS,
+                CodeBlockHighlightKind::Enum => SemanticTokenType::ENUM,
+                CodeBlockHighlightKind::Variable => SemanticTokenType::VARIABLE,
+                CodeBlockHighlightKind::Property => SemanticTokenType::PROPERTY,
+                CodeBlockHighlightKind::Decorator => SemanticTokenType::DECORATOR,
+                CodeBlockHighlightKind::Operators => SemanticTokenType::OPERATOR,
+                _ => continue, // Fallback for other kinds
+            };
+
+            let sub_token_range = TextRange::new(
+                desc_item.range.start() + code_block_range.start(),
+                desc_item.range.end() + code_block_range.start(),
+            );
+            if let Some(token_text) = str_token.slice(sub_token_range) {
+                builder.push_at_range(token_text, sub_token_range, token_type, &[]);
+            }
+        }
+    }
+
+    for quote_range in code_block_info.quote_ranges {
+        let len = u32::from(quote_range.end() - quote_range.start());
+        builder.push_at_position(quote_range.start(), len, SemanticTokenType::STRING, None);
+    }
+    builder.add_special_string_range(str_token.get_range());
 
     Some(())
 }

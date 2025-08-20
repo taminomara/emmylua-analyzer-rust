@@ -70,7 +70,8 @@ pub fn check_simple_type_compact(
             LuaType::String
             | LuaType::StringConst(_)
             | LuaType::DocStringConst(_)
-            | LuaType::StrTplRef(_) => {
+            | LuaType::StrTplRef(_)
+            | LuaType::Language(_) => {
                 return Ok(());
             }
             LuaType::Ref(_) => {
@@ -215,6 +216,17 @@ pub fn check_simple_type_compact(
         LuaType::Variadic(source_type) => {
             return check_variadic_type_compact(db, source_type, compact_type, check_guard);
         }
+        LuaType::Language(lang_str) => match compact_type {
+            LuaType::Language(compact_lang_str) => {
+                if lang_str == compact_lang_str {
+                    return Ok(());
+                }
+            }
+            LuaType::DocStringConst(_) | LuaType::String | LuaType::StringConst(_) => {
+                return Ok(());
+            }
+            _ => {}
+        },
         _ => {}
     }
 

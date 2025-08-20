@@ -151,7 +151,7 @@ function ipairs(t) end
 ---
 --- Lua does not check the consistency of binary chunks. Maliciously crafted
 --- binary chunks can crash the interpreter.
----@param chunk (fun(...:any):string) | string
+---@param chunk (fun(...:any):string) | Language<"Lua">
 ---@param chunkname? string
 ---@param mode? std.loadmode
 ---@param env? table
@@ -166,7 +166,7 @@ function load(chunk, chunkname, mode, env) end
 ---
 ---
 ---@version 5.1, JIT
----@param text       string
+---@param text       Language<"Lua">
 ---@param chunkname? string
 ---@return function? chunk
 ---@return string?   error_message

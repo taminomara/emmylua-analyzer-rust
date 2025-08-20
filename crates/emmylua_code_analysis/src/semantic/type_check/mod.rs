@@ -68,7 +68,8 @@ fn check_general_type_compact(
         | LuaType::StrTplRef(_)
         | LuaType::ConstTplRef(_)
         | LuaType::Namespace(_)
-        | LuaType::Variadic(_) => check_simple_type_compact(db, source, compact_type, check_guard),
+        | LuaType::Variadic(_)
+        | LuaType::Language(_) => check_simple_type_compact(db, source, compact_type, check_guard),
 
         // type ref
         LuaType::Ref(type_decl_id) => {

@@ -103,6 +103,7 @@ pub fn humanize_type(db: &DbIndex, ty: &LuaType, level: RenderLevel) -> String {
             format!("TypeGuard<{}>", type_str)
         }
         LuaType::ConstTplRef(const_tpl) => humanize_const_tpl_ref_type(const_tpl),
+        LuaType::Language(s) => s.to_string(),
         _ => "unknown".to_string(),
     }
 }

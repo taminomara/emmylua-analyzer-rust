@@ -30,7 +30,11 @@ fn infer_raw_member_type_guard(
             let owner = LuaMemberOwner::Element(id.clone());
             infer_owner_raw_member_type(db, owner, member_key)
         }
-        LuaType::String | LuaType::Io | LuaType::StringConst(_) | LuaType::DocStringConst(_) => {
+        LuaType::String
+        | LuaType::Io
+        | LuaType::StringConst(_)
+        | LuaType::DocStringConst(_)
+        | LuaType::Language(_) => {
             let decl_id =
                 get_buildin_type_map_type_id(&prefix_type).ok_or(InferFailReason::None)?;
             let owner = LuaMemberOwner::Type(decl_id);

@@ -136,3 +136,5 @@
 ---@alias metatable std.metatable
 
 ---@alias TypeGuard<T> boolean
+
+---@alias Language<T: string> string
