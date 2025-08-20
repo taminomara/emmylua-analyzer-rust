@@ -17,9 +17,9 @@ assert _vcs_root, "failed to find git root"
 
 sys.path.insert(0, str(_src_root / "_extensions"))
 
-project = 'EmmyLua Analyzer'
-copyright = f'{_datetime.date.today().year}, CppCXY'
-author = 'CppCXY and contributors'
+project = "EmmyLua Analyzer"
+copyright = f"{_datetime.date.today().year}, CppCXY"
+author = "CppCXY and contributors"
 release = _get_version.get_version_from_vcs(_vcs_root)
 
 # -- General configuration ---------------------------------------------------
@@ -40,12 +40,14 @@ lua_ls_backend = "emmylua"
 emmylua_schema = "../../../crates/emmylua_code_analysis/resources/schema.json"
 
 myst_enable_extensions = {"colon_fence"}
+myst_heading_anchors = 3
 
 gettext_compact = False
 
-html_theme = 'sphinx_immaterial'
-html_static_path = ['_static']
-templates_path = ['_templates']
+locale_dirs = ["_locales"]
+html_theme = "sphinx_immaterial"
+html_static_path = ["_static"]
+templates_path = ["_templates"]
 html_css_files = ["extra.css"]
 html_favicon = "_templates/.icons/fav.svg"
 html_theme_options = {
@@ -66,7 +68,7 @@ html_theme_options = {
         # "content.tooltips",
         "navigation.instant",
         "navigation.sections",
-        # "navigation.tabs",
+        "navigation.tabs",
         "navigation.top",
         "search.highlight",
         "search.suggest",

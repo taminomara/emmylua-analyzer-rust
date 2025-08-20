@@ -31,7 +31,7 @@ Install the [EmmyLua2 Plugin] from the JetBrains Marketplace.
    vim.lsp.enable({"emmylua_ls"})
    ```
 
-4. You can [configure](settings) EmmyLua via `vim.lsp.config`:
+4. You can [configure](./configuration.md) EmmyLua via `vim.lsp.config`:
 
    ```lua
    vim.lsp.config('emmylua_ls', {
@@ -57,11 +57,10 @@ Install the [EmmyLua2 Plugin] from the JetBrains Marketplace.
      for options that control language analysis, it is not.
 
      If you need to alter defaults without overriding project-specific settings,
-     you can do so by creating `$HOME/.config/emmylua_ls/.emmyrc.json`.
-     See [](settings) for details.
+     you can do so by creating `.emmyrc.json` in your home
+     or config directory. See [](configuration.md#user-settings) for details.
    :::
 
-(standalone)=
 ## Standalone
 
 EmmyLua is available as a standalone executable.

@@ -20,11 +20,11 @@ html-root:
 	cp -r "$(SOURCEDIR)/_root/." "$(BUILDDIR)/html/"
 
 html: html-root
-	@$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)/html/$(LANGUAGE)" -D language="$(LANGUAGE)" $(SPHINXOPTS) $(O)
+	@$(SPHINXBUILD) -b dirhtml "$(SOURCEDIR)" "$(BUILDDIR)/html/$(LANGUAGE)" -D language="$(LANGUAGE)" $(SPHINXOPTS) $(O)
 
 html-all: html-root
-	@$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)/html/en" -D language="en" $(SPHINXOPTS) $(O)
-	@$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)/html/zh" -D language="zh" $(SPHINXOPTS) $(O)
+	@$(SPHINXBUILD) -b dirhtml "$(SOURCEDIR)" "$(BUILDDIR)/html/en" -D language="en" $(SPHINXOPTS) $(O)
+	@$(SPHINXBUILD) -b dirhtml "$(SOURCEDIR)" "$(BUILDDIR)/html/zh" -D language="zh" $(SPHINXOPTS) $(O)
 
 update-translation:
 	rm -rf "$(BUILDDIR)/gettext"

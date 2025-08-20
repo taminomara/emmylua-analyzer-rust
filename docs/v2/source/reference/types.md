@@ -1,4 +1,4 @@
-# Type Reference
+# Types
 
 ## Built-in types
 

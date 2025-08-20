@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: EmmyLua Analyzer \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-19 23:26+0400\n"
+"POT-Creation-Date: 2025-08-20 22:44+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh\n"
@@ -20,15 +20,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: ../../source/docs/types.md:1
-msgid "Type Reference"
+#: ../../source/types.md:1
+msgid "Types"
 msgstr ""
 
-#: ../../source/docs/types.md:3
+#: ../../source/types.md:3
 msgid "Built-in types"
 msgstr ""
 
-#: ../../source/docs/types.md:6
+#: ../../source/types.md:6
 #, python-brace-format
 msgid ""
 "The type {lua}`nil` has one single value, *nil*, whose main property is "
@@ -36,7 +36,7 @@ msgid ""
 "of a useful value."
 msgstr ""
 
-#: ../../source/docs/types.md:9
+#: ../../source/types.md:9
 #, python-brace-format
 msgid ""
 "The type {lua}`boolean` has two values, *false* and *true*. Both "
@@ -44,14 +44,14 @@ msgid ""
 "true."
 msgstr ""
 
-#: ../../source/docs/types.md:12
+#: ../../source/types.md:12
 msgid ""
 "Lua uses two internal representations for numbers: *integer* and *float*."
 " It has explicit rules about when each representation is used, but it "
 "also converts between them automatically as needed."
 msgstr ""
 
-#: ../../source/docs/types.md:16
+#: ../../source/types.md:16
 #, python-brace-format
 msgid ""
 "EmmyLua, on the other hand, allows explicitly annotating which "
@@ -60,24 +60,22 @@ msgid ""
 "{lua}`number`, and only allows *integer* values."
 msgstr ""
 
-#: ../../source/docs/types.md:21 ../../source/docs/types.md:24
-#: ../../source/docs/types.md:53
+#: ../../source/types.md:21 ../../source/types.md:24 ../../source/types.md:53
 msgid "See also"
 msgstr ""
 
-#: ../../source/docs/types.md:22 ../../source/docs/types.md:25
-#: ../../source/docs/types.md:54
+#: ../../source/types.md:22 ../../source/types.md:25 ../../source/types.md:54
 msgid "Lua's [manual on value types]."
 msgstr ""
 
-#: ../../source/docs/types.md:15
+#: ../../source/types.md:15
 #, python-brace-format
 msgid ""
 "The type {lua}`integer` is a sub-type of {lua}`number` that only allows "
 "numbers with *integer* representation."
 msgstr ""
 
-#: ../../source/docs/types.md:18
+#: ../../source/types.md:18
 #, python-brace-format
 msgid ""
 "The type {lua}`userdata` is provided to allow arbitrary C data to be "
@@ -87,14 +85,14 @@ msgid ""
 "which is simply a C pointer value."
 msgstr ""
 
-#: ../../source/docs/types.md:21
+#: ../../source/types.md:21
 #, python-brace-format
 msgid ""
 "The type {lua}`lightuserdata` is a sub-type of {lua}`userdata` that only "
 "allows values with *light userdata* representation."
 msgstr ""
 
-#: ../../source/docs/types.md:24
+#: ../../source/types.md:24
 #, python-brace-format
 msgid ""
 "The type {lua}`thread` represents independent threads of execution and it"
@@ -103,7 +101,7 @@ msgid ""
 "those that do not support threads natively."
 msgstr ""
 
-#: ../../source/docs/types.md:27
+#: ../../source/types.md:27
 #, python-brace-format
 msgid ""
 "The type *table* implements associative arrays, that is, arrays that can "
@@ -113,7 +111,7 @@ msgid ""
 "numerical results, such as `0/0`.)"
 msgstr ""
 
-#: ../../source/docs/types.md:33
+#: ../../source/types.md:33
 msgid ""
 "While lua allows mixing types of keys and values in a table, EmmyLua has "
 "an option to specify their exact types. Simply using type `table` creates"
@@ -121,44 +119,44 @@ msgid ""
 "explicitly providing key and value types creates a homogeneous table:"
 msgstr ""
 
-#: ../../source/docs/types.md:46
+#: ../../source/types.md:46
 msgid ""
 "You can also specify the exact shape of a table by using a *table "
 "literal*:"
 msgstr ""
 
-#: ../../source/docs/types.md:30
+#: ../../source/types.md:30
 #, python-brace-format
 msgid ""
 "The type {lua}`any` is compatible with any other type. That is, all types"
 " can be converted to and from {lua}`any`."
 msgstr ""
 
-#: ../../source/docs/types.md:33
+#: ../../source/types.md:33
 msgid ""
 "This type is a way to bypass type checking system and explicitly tell "
 "EmmyLua that you know what you're doing."
 msgstr ""
 
-#: ../../source/docs/types.md:36
+#: ../../source/types.md:36
 msgid "Tip"
 msgstr ""
 
-#: ../../source/docs/types.md:37
+#: ../../source/types.md:37
 #, python-brace-format
 msgid ""
 "Prefer using {lua}`unknown` instead of {lua}`any` to signal the need  to "
 "be careful and explicitly check value's contents."
 msgstr ""
 
-#: ../../source/docs/types.md:33
+#: ../../source/types.md:33
 #, python-brace-format
 msgid ""
 "The type {lua}`unknown` is similar to {lua}`any`, but signifies a "
 "different intent."
 msgstr ""
 
-#: ../../source/docs/types.md:36
+#: ../../source/types.md:36
 #, python-brace-format
 msgid ""
 "While {lua}`any` is a way to say \"I know what I'm doing\", "
@@ -166,14 +164,14 @@ msgid ""
 "it\"."
 msgstr ""
 
-#: ../../source/docs/types.md:36
+#: ../../source/types.md:36
 #, python-brace-format
 msgid ""
 "Void is an alias for {lua}`nil` used in some code bases. Prefer using "
 "{lua}`nil` instead."
 msgstr ""
 
-#: ../../source/docs/types.md:39
+#: ../../source/types.md:39
 #, python-brace-format
 msgid ""
 "A special type used with class methods. It can be thought of as a generic"
@@ -183,13 +181,13 @@ msgid ""
 "before the colon."
 msgstr ""
 
-#: ../../source/docs/types.md:45
+#: ../../source/types.md:45
 msgid ""
 "This is especially handy when dealing with inheritance. Consider the "
 "following example:"
 msgstr ""
 
-#: ../../source/docs/types.md:63
+#: ../../source/types.md:63
 #, python-brace-format
 msgid ""
 "Here, EmmyLua infers type of `child` to be `Child`, even though `new` was"
@@ -197,22 +195,22 @@ msgid ""
 " return type."
 msgstr ""
 
-#: ../../source/docs/types.md:41
+#: ../../source/types.md:41
 msgid "Metaprogramming library"
 msgstr ""
 
-#: ../../source/docs/types.md:44
+#: ../../source/types.md:44
 #, python-brace-format
 msgid ""
 "A type for {lua}`assert` function. Given a nullable type `T` expands to a"
 " non-nullable version of `T`."
 msgstr ""
 
-#: ../../source/docs/types.md:47
+#: ../../source/types.md:47
 msgid "For example, if `T` is `string?`, then `std.NotNull<T>` will be `string`."
 msgstr ""
 
-#: ../../source/docs/types.md:57
+#: ../../source/types.md:57
 #, python-brace-format
 msgid ""
 "A type for {lua}`table.unpack` function. Given a type `T` and optional "
@@ -220,48 +218,48 @@ msgid ""
 "`table.unpack(t, start, end)`."
 msgstr ""
 
-#: ../../source/docs/types.md:61 ../../source/docs/types.md:64
+#: ../../source/types.md:61 ../../source/types.md:64
 msgid "Example:"
 msgstr ""
 
-#: ../../source/docs/types.md:72
+#: ../../source/types.md:72
 msgid "Here, `a`, `b` and `c` will be inferred as integers."
 msgstr ""
 
-#: ../../source/docs/types.md:60
+#: ../../source/types.md:60
 #, python-brace-format
 msgid ""
 "A type for {lua}`rawget` function. Given a type `T` and a literal type "
 "`K`, expands to the type of expression `rawget(t, k)`."
 msgstr ""
 
-#: ../../source/docs/types.md:74
+#: ../../source/types.md:74
 msgid "Here, `std.RawGet<Example, \"value\">` will be expanded to `integer`."
 msgstr ""
 
-#: ../../source/docs/types.md:63
+#: ../../source/types.md:63
 msgid "A wrapper for matching literal types in generics."
 msgstr ""
 
-#: ../../source/docs/types.md:65
+#: ../../source/types.md:65
 msgid ""
 "By default, generics variables that match literal values decay to values'"
 " base types:"
 msgstr ""
 
-#: ../../source/docs/types.md:81
+#: ../../source/types.md:81
 msgid ""
 "Here, type of `value` will be inferred as `string` even though "
 "`original`'s type was `\"literal\"`."
 msgstr ""
 
-#: ../../source/docs/types.md:84
+#: ../../source/types.md:84
 msgid ""
 "We can prevent this behavior by wrapping generic pattern for `T` into "
 "`std.ConstTpl<T>`:"
 msgstr ""
 
-#: ../../source/docs/types.md:100
+#: ../../source/types.md:100
 msgid "Here, type of `value` will be inferred as `\"literal\"`."
 msgstr ""
 

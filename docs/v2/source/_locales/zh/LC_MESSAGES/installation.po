@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: EmmyLua Analyzer \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-19 23:26+0400\n"
+"POT-Creation-Date: 2025-08-20 22:44+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh\n"
@@ -20,94 +20,94 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: ../../source/docs/installation.md:1
+#: ../../source/installation.md:1
 msgid "Installation"
 msgstr ""
 
-#: ../../source/docs/installation.md:3
+#: ../../source/installation.md:3
 msgid "VSCode"
 msgstr ""
 
-#: ../../source/docs/installation.md:5
+#: ../../source/installation.md:5
 msgid "Install the [EmmyLua Extension] for the best development experience."
 msgstr ""
 
-#: ../../source/docs/installation.md:9
+#: ../../source/installation.md:9
 msgid "Intellij Idea"
 msgstr ""
 
-#: ../../source/docs/installation.md:11
+#: ../../source/installation.md:11
 msgid "Install the [EmmyLua2 Plugin] from the JetBrains Marketplace."
 msgstr ""
 
-#: ../../source/docs/installation.md:15
+#: ../../source/installation.md:15
 msgid "NeoVim"
 msgstr ""
 
-#: ../../source/docs/installation.md:17
+#: ../../source/installation.md:17
 msgid ""
 "Install EmmyLua to your system using `cargo` (or another method, [see "
 "below](#standalone)):"
 msgstr ""
 
-#: ../../source/docs/installation.md:24
+#: ../../source/installation.md:24
 msgid "Install [nvim-lspconfig]."
 msgstr ""
 
-#: ../../source/docs/installation.md:28
+#: ../../source/installation.md:28
 msgid "Enable LSP client in your `init.lua`:"
 msgstr ""
 
-#: ../../source/docs/installation.md:34
+#: ../../source/installation.md:34
 msgid "You can [configure](settings) EmmyLua via `vim.lsp.config`:"
 msgstr ""
 
-#: ../../source/docs/installation.md:49
+#: ../../source/installation.md:49
 msgid "See [`:help lspconfig-all | /emmylua_ls`][nvim-help] for more info."
 msgstr ""
 
-#: ../../source/docs/installation.md:53
+#: ../../source/installation.md:53
 msgid "Note"
 msgstr ""
 
-#: ../../source/docs/installation.md:54
+#: ../../source/installation.md:54
 msgid "These options will override project-specific `.emmyrc.json`."
 msgstr ""
 
-#: ../../source/docs/installation.md:56
+#: ../../source/installation.md:56
 msgid ""
 "For options that control LSP features, this is a desired behavior;   for "
 "options that control language analysis, it is not."
 msgstr ""
 
-#: ../../source/docs/installation.md:59
+#: ../../source/installation.md:59
 msgid ""
 "If you need to alter defaults without overriding project-specific "
 "settings,   you can do so by creating "
 "`$HOME/.config/emmylua_ls/.emmyrc.json`.   See [](settings) for details."
 msgstr ""
 
-#: ../../source/docs/installation.md:65
+#: ../../source/installation.md:65
 msgid "Standalone"
 msgstr ""
 
-#: ../../source/docs/installation.md:67
+#: ../../source/installation.md:67
 msgid "EmmyLua is available as a standalone executable."
 msgstr ""
 
-#: ../../source/docs/installation.md:69
+#: ../../source/installation.md:69
 msgid "**Via Cargo:**"
 msgstr ""
 
-#: ../../source/docs/installation.md:71
+#: ../../source/installation.md:71
 msgid "[Install Rust and Cargo]."
 msgstr ""
 
-#: ../../source/docs/installation.md:86
+#: ../../source/installation.md:86
 msgid "**Pre-built binaries:**"
 msgstr ""
 
-#: ../../source/docs/installation.md:88
+#: ../../source/installation.md:88
 msgid "Download the latest binaries from our [releases page]."
 msgstr ""
 
