@@ -1,0 +1,1378 @@
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../diagnostics/">
+      
+      
+      
+      <link rel="icon" href="../../_static/fav.svg">
+    
+    
+      
+        <title>Types - EmmyLua Analyzer 0.0.0.post1.dev0+81d38a9 documentation</title>
+      
+    
+    
+      
+        
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+        <link rel="stylesheet" type="text/css" href="../../_static/sphinx_immaterial_theme.3ca78684b3d7179a2.min.css?v=d8ac6ff3" />
+        <link rel="stylesheet" type="text/css" href="../../_static/lua.css" />
+        <link rel="stylesheet" type="text/css" href="../../_static/extra.css?v=3e00d75a" />
+    <script>__md_scope=new URL("/",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#built-in-types" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            
+            
+<p><b>Warning:</b> this is a work-in-progress version of EmmyLua documentation.</p>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../" title="EmmyLua Analyzer 0.0.0.post1.dev0+81d38a9 documentation" class="md-header__button md-logo" aria-label="EmmyLua Analyzer 0.0.0.post1.dev0+81d38a9 documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 43" width="40" height="43"><defs></defs><g transform="matrix(1,0,0,1,-239.173668136,-37.108368041)">
+<rect x="0" y="0" width="1920" height="1080" fill="none"/>
+<g>
+	<g>
+		<g transform="matrix(0.066900006,0,0,0.066900006,233.174907823,-70.465012685)">
+			<path d="M277.289557,2240.446183C215.237285,2221.600678 158.700771,2188.506133 110.897539,2142.08184 C86.995923,2119.099517 85.616984,2115.881992 95.269559,2104.850477 C99.866024,2099.334719 102.164256,2073.594518 104.462488,2006.945781 C109.978246,1839.63447 135.258801,1753.680582 198.230366,1689.330077 C238.219608,1648.421542 287.861426,1627.737452 357.727688,1623.140987 C403.232687,1620.383108 460.688495,1626.818159 487.807636,1638.30932 C502.975969,1644.284724 503.435615,1644.284724 520.442534,1626.358512 C534.691575,1611.190179 541.126625,1607.972654 554.916019,1607.972654 C586.171978,1607.972654 614.670059,1634.632149 620.645463,1669.56528 C622.484049,1681.975734 625.701574,1686.112552 632.136624,1686.112552 C647.304957,1686.112552 677.181977,1704.498411 686.374906,1719.666744 C704.760765,1749.543764 695.108189,1794.12947 666.610109,1808.37851 C658.796119,1812.515329 651.441775,1816.1925 650.982129,1816.652147 C650.062836,1817.111793 653.740008,1838.25553 659.255765,1863.536086 C665.690816,1895.711338 669.367987,1936.160226 671.206573,2003.268609 C673.504806,2087.843558 674.883745,2097.95578 682.238088,2103.471538 C687.294199,2106.689063 690.971371,2111.285527 690.971371,2113.58376 C690.971371,2119.559164 651.441775,2158.169466 624.782281,2177.934264 C583.873746,2208.730577 515.386423,2238.607597 461.607788,2249.179465 C445.979808,2252.39699 445.979808,2252.39699 448.27804,2207.351637 C450.576273,2163.685224 451.495566,2161.846638 463.90602,2152.653709 C491.484807,2133.348557 530.09511,2090.601437 543.424857,2063.482296 C571.003645,2009.244013 580.196574,1943.51457 562.730009,1927.88659 C542.045918,1909.041085 499.758444,1901.227095 412.885263,1898.928863 C319.577032,1896.170984 257.52476,1903.984974 224.889861,1921.911186 C206.963649,1931.563762 206.044356,1933.402347 204.665417,1957.303963 C200.068952,2028.549165 242.816073,2110.825881 304.868345,2150.815123 C327.850668,2165.52381 327.850668,2165.52381 327.850668,2198.158708 C327.850668,2216.08492 329.229607,2235.390071 330.608547,2241.365475 C334.285718,2254.695223 323.71385,2254.695223 277.289557,2240.446183 C277.289557,2240.446183 277.289557,2240.446183 277.289557,2240.446183 Z"/>
+		</g>
+	</g>
+</g></g></svg>
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            EmmyLua Analyzer 0.0.0.post1.dev0+81d38a9 documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Types
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="blue"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <!--
+  Copyright (c) 2016-2025 Martin Donath <martin.donath@squidfunk.com>
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to
+  deal in the Software without restriction, including without limitation the
+  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+  sell copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+  IN THE SOFTWARE.
+-->
+
+<!-- Site language selector -->
+<div class="md-header__option">
+  <div class="md-select">
+    
+    <button
+      class="md-header__button md-icon"
+      aria-label="Select language"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <!-- see https://github.com/jbms/sphinx-immaterial/issues/401#issuecomment-3200733720 -->
+            <a
+              href="../../../en/reference/types/"
+              hreflang="en"
+              class="md-select__link"
+            >
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <!-- see https://github.com/jbms/sphinx-immaterial/issues/401#issuecomment-3200733720 -->
+            <a
+              href="../../../zh/reference/types/"
+              hreflang="zh"
+              class="md-select__link"
+            >
+              中文
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/EmmyLuaLs/emmylua-analyzer-rust/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    emmylua-analyzer-rus
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../guide/" class="md-tabs__link">
+        
+  
+    
+  
+  <span>Guide</span>
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="../" class="md-tabs__link">
+        
+  
+    
+  
+  <span>Reference</span>
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../" title="EmmyLua Analyzer 0.0.0.post1.dev0+81d38a9 documentation" class="md-nav__button md-logo" aria-label="EmmyLua Analyzer 0.0.0.post1.dev0+81d38a9 documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 43" width="40" height="43"><defs></defs><g transform="matrix(1,0,0,1,-239.173668136,-37.108368041)">
+<rect x="0" y="0" width="1920" height="1080" fill="none"/>
+<g>
+	<g>
+		<g transform="matrix(0.066900006,0,0,0.066900006,233.174907823,-70.465012685)">
+			<path d="M277.289557,2240.446183C215.237285,2221.600678 158.700771,2188.506133 110.897539,2142.08184 C86.995923,2119.099517 85.616984,2115.881992 95.269559,2104.850477 C99.866024,2099.334719 102.164256,2073.594518 104.462488,2006.945781 C109.978246,1839.63447 135.258801,1753.680582 198.230366,1689.330077 C238.219608,1648.421542 287.861426,1627.737452 357.727688,1623.140987 C403.232687,1620.383108 460.688495,1626.818159 487.807636,1638.30932 C502.975969,1644.284724 503.435615,1644.284724 520.442534,1626.358512 C534.691575,1611.190179 541.126625,1607.972654 554.916019,1607.972654 C586.171978,1607.972654 614.670059,1634.632149 620.645463,1669.56528 C622.484049,1681.975734 625.701574,1686.112552 632.136624,1686.112552 C647.304957,1686.112552 677.181977,1704.498411 686.374906,1719.666744 C704.760765,1749.543764 695.108189,1794.12947 666.610109,1808.37851 C658.796119,1812.515329 651.441775,1816.1925 650.982129,1816.652147 C650.062836,1817.111793 653.740008,1838.25553 659.255765,1863.536086 C665.690816,1895.711338 669.367987,1936.160226 671.206573,2003.268609 C673.504806,2087.843558 674.883745,2097.95578 682.238088,2103.471538 C687.294199,2106.689063 690.971371,2111.285527 690.971371,2113.58376 C690.971371,2119.559164 651.441775,2158.169466 624.782281,2177.934264 C583.873746,2208.730577 515.386423,2238.607597 461.607788,2249.179465 C445.979808,2252.39699 445.979808,2252.39699 448.27804,2207.351637 C450.576273,2163.685224 451.495566,2161.846638 463.90602,2152.653709 C491.484807,2133.348557 530.09511,2090.601437 543.424857,2063.482296 C571.003645,2009.244013 580.196574,1943.51457 562.730009,1927.88659 C542.045918,1909.041085 499.758444,1901.227095 412.885263,1898.928863 C319.577032,1896.170984 257.52476,1903.984974 224.889861,1921.911186 C206.963649,1931.563762 206.044356,1933.402347 204.665417,1957.303963 C200.068952,2028.549165 242.816073,2110.825881 304.868345,2150.815123 C327.850668,2165.52381 327.850668,2165.52381 327.850668,2198.158708 C327.850668,2216.08492 329.229607,2235.390071 330.608547,2241.365475 C334.285718,2254.695223 323.71385,2254.695223 277.289557,2240.446183 C277.289557,2240.446183 277.289557,2240.446183 277.289557,2240.446183 Z"/>
+		</g>
+	</g>
+</g></g></svg>
+    </a>
+    EmmyLua Analyzer 0.0.0.post1.dev0+81d38a9 documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/EmmyLuaLs/emmylua-analyzer-rust/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    emmylua-analyzer-rus
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    <span>Guide</span>
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    <span>Reference</span>
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            <span>Reference</span>
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../annotations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    <span>Annotations</span>
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    <span>Configuration</span>
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    <span>Diagnostics</span>
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    <span>Types</span>
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="#" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    <span>Types</span>
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      <span>Types</span>
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#built-in-types" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>Built-<wbr>in types</span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Built-in types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lua-nil" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>nil</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-boolean" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>boolean</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-number" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>number</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-integer" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>integer</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-userdata" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>userdata</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-lightuserdata" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>lightuserdata</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-thread" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>thread</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-table" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>table</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-any" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>any</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-unknown" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>unknown</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-void" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>void</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-self" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>self</span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metaprogramming-library" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>Metaprogramming library</span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Metaprogramming library">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lua-std.NotNull" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>std.<wbr>Not<wbr>Null</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-std.Unpack" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>std.<wbr>Unpack</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-std.RawGet" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>std.<wbr>Raw<wbr>Get</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-std.ConstTpl" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>std.<wbr>Const<wbr>Tpl</span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      <span>Types</span>
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#built-in-types" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>Built-<wbr>in types</span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Built-in types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lua-nil" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>nil</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-boolean" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>boolean</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-number" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>number</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-integer" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>integer</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-userdata" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>userdata</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-lightuserdata" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>lightuserdata</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-thread" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>thread</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-table" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>table</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-any" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>any</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-unknown" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>unknown</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-void" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>void</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-self" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>self</span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metaprogramming-library" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>Metaprogramming library</span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Metaprogramming library">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lua-std.NotNull" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>std.<wbr>Not<wbr>Null</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-std.Unpack" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>std.<wbr>Unpack</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-std.RawGet" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>std.<wbr>Raw<wbr>Get</span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-std.ConstTpl" class="md-nav__link">
+    
+    <span class="md-ellipsis">
+      <span>std.<wbr>Const<wbr>Tpl</span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset" role="main">
+                
+                
+                  
+
+
+  
+    <a href="https://github.com/EmmyLuaLs/emmylua-analyzer-rust/blob/main/docs/v2/reference/types.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/EmmyLuaLs/emmylua-analyzer-rust/raw/main/docs/v2/reference/types.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
+
+<h1 id="types">Types<a class="headerlink" href="#types" title="Link to this heading">¶</a></h1>
+<h2 id="built-in-types">Built-in types<a class="headerlink" href="#built-in-types" title="Link to this heading">¶</a></h2>
+<dl class="lua class objdesc">
+<dt class="sig sig-object highlight lua" id="lua-nil">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nil</span></span><a class="headerlink" href="#lua-nil" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The type <a class="reference internal" href="#lua-nil" title="nil"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">nil</span></code></a> has one single value, <em>nil</em>, whose main property is to be
+different from any other value; it usually represents the absence of a
+useful value.</p>
+</dd></dl>
+
+<dl class="lua class objdesc">
+<dt class="sig sig-object highlight lua" id="lua-boolean">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">boolean</span></span><a class="headerlink" href="#lua-boolean" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The type <a class="reference internal" href="#lua-boolean" title="boolean"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">boolean</span></code></a> has two values, <em>false</em> and <em>true</em>.
+Both <a class="reference internal" href="#lua-nil" title="nil"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">nil</span></code></a> and <em>false</em> make a condition false; any other value
+makes it true.</p>
+</dd></dl>
+
+<dl class="lua class objdesc">
+<dt class="sig sig-object highlight lua" id="lua-number">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">number</span></span><a class="headerlink" href="#lua-number" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Lua uses two internal representations for numbers: <em>integer</em> and <em>float</em>.
+It has explicit rules about when each representation is used,
+but it also converts between them automatically as needed.</p>
+<p>EmmyLua, on the other hand, allows explicitly annotating which representation
+is expected. The <a class="reference internal" href="#lua-number" title="number"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">number</span></code></a> type can contain both <em>integer</em> and <em>float</em>
+values. The <a class="reference internal" href="#lua-integer" title="integer"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">integer</span></code></a> is a sub-type of <a class="reference internal" href="#lua-number" title="number"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">number</span></code></a>, and only allows
+<em>integer</em> values.</p>
+<div class="seealso admonition">
+<p class="admonition-title">See also</p>
+<p>Lua’s <a class="reference external" href="https://www.lua.org/manual/5.4/manual.html#2.1">manual on value types</a>.</p>
+</div>
+</dd></dl>
+
+<dl class="lua class objdesc">
+<dt class="sig sig-object highlight lua" id="lua-integer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">integer</span></span><a class="headerlink" href="#lua-integer" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The type <a class="reference internal" href="#lua-integer" title="integer"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">integer</span></code></a> is a sub-type of <a class="reference internal" href="#lua-number" title="number"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">number</span></code></a> that only allows numbers
+with <em>integer</em> representation.</p>
+</dd></dl>
+
+<dl class="lua class objdesc">
+<dt class="sig sig-object highlight lua" id="lua-userdata">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">userdata</span></span><a class="headerlink" href="#lua-userdata" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The type <a class="reference internal" href="#lua-userdata" title="userdata"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">userdata</span></code></a> is provided to allow arbitrary C data to be stored in
+Lua variables. A userdata value represents a block of raw memory. There
+are two kinds of userdata: <a class="reference internal" href="#lua-userdata" title="userdata"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">userdata</span></code></a>, which is an object with a block
+of memory managed by Lua, and <a class="reference internal" href="#lua-lightuserdata" title="lightuserdata"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">lightuserdata</span></code></a>, which is simply a C pointer
+value.</p>
+<div class="seealso admonition">
+<p class="admonition-title">See also</p>
+<p>Lua’s <a class="reference external" href="https://www.lua.org/manual/5.4/manual.html#2.1">manual on value types</a>.</p>
+</div>
+</dd></dl>
+
+<dl class="lua class objdesc">
+<dt class="sig sig-object highlight lua" id="lua-lightuserdata">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">lightuserdata</span></span><a class="headerlink" href="#lua-lightuserdata" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The type <a class="reference internal" href="#lua-lightuserdata" title="lightuserdata"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">lightuserdata</span></code></a> is a sub-type of <a class="reference internal" href="#lua-userdata" title="userdata"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">userdata</span></code></a> that only allows
+values with <em>light userdata</em> representation.</p>
+</dd></dl>
+
+<dl class="lua class objdesc">
+<dt class="sig sig-object highlight lua" id="lua-thread">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">thread</span></span><a class="headerlink" href="#lua-thread" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The type <a class="reference internal" href="#lua-thread" title="thread"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">thread</span></code></a> represents independent threads of execution and it is
+used to implement coroutines. Lua threads are not related to
+operating-system threads. Lua supports coroutines on all systems, even those
+that do not support threads natively.</p>
+</dd></dl>
+
+<dl class="lua class objdesc">
+<dt class="sig sig-object highlight lua" id="lua-table">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">table</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">K</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">V</span></span><span class="p"><span class="pre">&gt;</span></span><a class="headerlink" href="#lua-table" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The type <em>table</em> implements associative arrays, that is, arrays that can
+have as indices not only numbers, but any Lua value except <a class="reference internal" href="#lua-nil" title="nil"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">nil</span></code></a> and
+<a class="reference internal" href="#lua-number" title="number"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">NaN</span></code></a>. (<em>Not a Number</em> is a special floating-point value used
+by the IEEE 754 standard to represent undefined or unrepresentable numerical
+results, such as <code class="docutils literal notranslate"><span class="pre">0/0</span></code>.)</p>
+<p>While lua allows mixing types of keys and values in a table, EmmyLua has
+an option to specify their exact types. Simply using type <code class="docutils literal notranslate"><span class="pre">table</span></code> creates
+a heterogeneous table (equivalent to <code class="docutils literal notranslate"><span class="pre">table&lt;unknown,</span> <span class="pre">unknown&gt;</span></code>), while explicitly
+providing key and value types creates a homogeneous table:</p>
+<div class="highlight-lua notranslate"><div class="highlight"><pre><span></span><code> <span class="c1">--- @type table</span>
+ <span class="kd">local</span> <span class="n">tableWithArbitraryData</span> <span class="o">=</span> <span class="p">{}</span>
+
+ <span class="c1">--- @type table&lt;string, integer&gt;</span>
+ <span class="kd">local</span> <span class="n">tableWithStringKeysAndIntValues</span> <span class="o">=</span> <span class="p">{}</span>
+</code></pre></div>
+</div>
+<p>You can also specify the exact shape of a table by using a <em>table literal</em>:</p>
+<div class="highlight-lua notranslate"><div class="highlight"><pre><span></span><code> <span class="c1">--- @type { username: string, age: integer }</span>
+ <span class="kd">local</span> <span class="n">User</span> <span class="o">=</span> <span class="p">{</span> <span class="p">...</span> <span class="p">}</span>
+</code></pre></div>
+</div>
+<div class="seealso admonition">
+<p class="admonition-title">See also</p>
+<p>Lua’s <a class="reference external" href="https://www.lua.org/manual/5.4/manual.html#2.1">manual on value types</a>.</p>
+</div>
+</dd></dl>
+
+<dl class="lua class objdesc">
+<dt class="sig sig-object highlight lua" id="lua-any">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">any</span></span><a class="headerlink" href="#lua-any" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The type <a class="reference internal" href="#lua-any" title="any"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">any</span></code></a> is compatible with any other type. That is, all types
+can be converted to and from <a class="reference internal" href="#lua-any" title="any"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">any</span></code></a>.</p>
+<p>This type is a way to bypass type checking system and explicitly tell EmmyLua
+that you know what you’re doing.</p>
+<div class="tip admonition">
+<p class="admonition-title">Tip</p>
+<p>Prefer using <a class="reference internal" href="#lua-unknown" title="unknown"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">unknown</span></code></a> instead of <a class="reference internal" href="#lua-any" title="any"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">any</span></code></a> to signal the need
+to be careful and explicitly check value’s contents.</p>
+</div>
+</dd></dl>
+
+<dl class="lua class objdesc">
+<dt class="sig sig-object highlight lua" id="lua-unknown">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">unknown</span></span><a class="headerlink" href="#lua-unknown" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The type <a class="reference internal" href="#lua-unknown" title="unknown"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">unknown</span></code></a> is similar to <a class="reference internal" href="#lua-any" title="any"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">any</span></code></a>,
+but signifies a different intent.</p>
+<p>While <a class="reference internal" href="#lua-any" title="any"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">any</span></code></a> is a way to say “I know what I’m doing”, <a class="reference internal" href="#lua-unknown" title="unknown"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">unknown</span></code></a>
+is a way to say “better check this value before using it”.</p>
+</dd></dl>
+
+<dl class="lua class objdesc">
+<dt class="sig sig-object highlight lua" id="lua-void">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">void</span></span><a class="headerlink" href="#lua-void" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Void is an alias for <a class="reference internal" href="#lua-nil" title="nil"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">nil</span></code></a> used in some code bases. Prefer using
+<a class="reference internal" href="#lua-nil" title="nil"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">nil</span></code></a> instead.</p>
+</dd></dl>
+
+<dl class="lua class objdesc">
+<dt class="sig sig-object highlight lua" id="lua-self">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">self</span></span><a class="headerlink" href="#lua-self" title="Link to this definition">¶</a><br /></dt>
+<dd><p>A special type used with class methods. It can be thought of
+as a generic parameter that matches type of the function’s implicit argument
+<code class="docutils literal notranslate"><span class="pre">self</span></code>. That is, when a function is called via colon notation
+(i.e. <code class="docutils literal notranslate"><span class="pre">table:method()</span></code>), <a class="reference internal" href="#lua-self" title="self"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">self</span></code></a> is replaced with the type
+of expression before the colon.</p>
+<p>This is especially handy when dealing with inheritance.
+Consider the following example:</p>
+<div class="highlight-lua notranslate"><div class="highlight"><pre><span></span><code> <span class="c1">--- @class Base</span>
+ <span class="kd">local</span> <span class="n">Base</span> <span class="o">=</span> <span class="p">{}</span>
+
+ <span class="c1">--- @return self</span>
+ <span class="kr">function</span> <span class="nc">Base</span><span class="p">:</span><span class="nf">new</span><span class="p">()</span>
+     <span class="kr">return</span> <span class="nb">setmetatable</span><span class="p">({},</span> <span class="p">{</span> <span class="n">__index</span><span class="o">=</span><span class="n">self</span> <span class="p">})</span>
+ <span class="kr">end</span>
+
+ <span class="c1">--- @class Child: Base</span>
+ <span class="kd">local</span> <span class="n">Child</span> <span class="o">=</span> <span class="nb">setmetatable</span><span class="p">({},</span> <span class="p">{</span> <span class="n">__index</span><span class="o">=</span><span class="n">Base</span> <span class="p">})</span>
+
+ <span class="kd">local</span> <span class="n">child</span> <span class="o">=</span> <span class="n">Child</span><span class="p">:</span><span class="n">new</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<p>Here, EmmyLua infers type of <code class="docutils literal notranslate"><span class="pre">child</span></code> to be <code class="docutils literal notranslate"><span class="pre">Child</span></code>, even though <code class="docutils literal notranslate"><span class="pre">new</span></code>
+was defined in its base class. This is because <code class="docutils literal notranslate"><span class="pre">new</span></code> uses <a class="reference internal" href="#lua-self" title="self"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">self</span></code></a>
+as its return type.</p>
+</dd></dl>
+
+<h2 id="metaprogramming-library">Metaprogramming library<a class="headerlink" href="#metaprogramming-library" title="Link to this heading">¶</a></h2>
+<dl class="lua alias objdesc">
+<dt class="sig sig-object highlight lua" id="lua-std.NotNull">
+<em class="property"><span class="k"><span class="pre">alias</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">std.</span></span><span class="sig-name descname"><span class="pre">NotNull</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="desctype"><code class="xref lua lua-obj docutils literal notranslate"><span class="pre">sub</span></code><span class="p"><span class="pre">&lt;</span></span><code class="xref lua lua-obj docutils literal notranslate"><span class="pre">T</span></code><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#lua-nil" title="nil"><code class="xref lua lua-obj docutils literal notranslate"><span class="pre">nil</span></code></a><span class="p"><span class="pre">&gt;</span></span></span><a class="headerlink" href="#lua-std.NotNull" title="Link to this definition">¶</a><br /></dt>
+<dd><p>A type for <a class="reference external" href="https://www.lua.org/manual/5.4/manual.html#pdf-assert"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">assert</span></code></a> function. Given a nullable type <code class="docutils literal notranslate"><span class="pre">T</span></code>
+expands to a non-nullable version of <code class="docutils literal notranslate"><span class="pre">T</span></code>.</p>
+<p>For example, if <code class="docutils literal notranslate"><span class="pre">T</span></code> is <code class="docutils literal notranslate"><span class="pre">string?</span></code>, then <code class="docutils literal notranslate"><span class="pre">std.NotNull&lt;T&gt;</span></code> will
+be <code class="docutils literal notranslate"><span class="pre">string</span></code>.</p>
+</dd></dl>
+
+<!--
+```{lua:autoobject} std.Nullable
+```
+-->
+<!--
+```{lua:autoobject} std.Select
+```
+-->
+<dl class="lua alias objdesc">
+<dt class="sig sig-object highlight lua" id="lua-std.Unpack">
+<em class="property"><span class="k"><span class="pre">alias</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">std.</span></span><span class="sig-name descname"><span class="pre">Unpack</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">Start</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">End</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="desctype"><a class="reference internal" href="#lua-unknown" title="unknown"><code class="xref lua lua-obj docutils literal notranslate"><span class="pre">unknown</span></code></a></span><a class="headerlink" href="#lua-std.Unpack" title="Link to this definition">¶</a><br /></dt>
+<dd><p>A type for <a class="reference external" href="https://www.lua.org/manual/5.4/manual.html#pdf-table.unpack"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">table.unpack</span></code></a> function. Given a type <code class="docutils literal notranslate"><span class="pre">T</span></code>
+and optional literal types <code class="docutils literal notranslate"><span class="pre">Start</span></code> and <code class="docutils literal notranslate"><span class="pre">End</span></code>, expands
+to the type of expression <code class="docutils literal notranslate"><span class="pre">table.unpack(t,</span> <span class="pre">start,</span> <span class="pre">end)</span></code>.</p>
+<p>Example:</p>
+<div class="highlight-lua notranslate"><div class="highlight"><pre><span></span><code> <span class="c1">--- @generic T</span>
+ <span class="c1">--- @param list T</span>
+ <span class="c1">--- @return std.Unpack&lt;T&gt;</span>
+ <span class="kr">function</span> <span class="nf">customUnpack</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="kr">end</span>
+
+ <span class="kd">local</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">customUnpack</span><span class="p">({</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">})</span>
+</code></pre></div>
+</div>
+<p>Here, <code class="docutils literal notranslate"><span class="pre">a</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code> and <code class="docutils literal notranslate"><span class="pre">c</span></code> will be inferred as integers.</p>
+</dd></dl>
+
+<dl class="lua alias objdesc">
+<dt class="sig sig-object highlight lua" id="lua-std.RawGet">
+<em class="property"><span class="k"><span class="pre">alias</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">std.</span></span><span class="sig-name descname"><span class="pre">RawGet</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">K</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="desctype"><a class="reference internal" href="#lua-unknown" title="unknown"><code class="xref lua lua-obj docutils literal notranslate"><span class="pre">unknown</span></code></a></span><a class="headerlink" href="#lua-std.RawGet" title="Link to this definition">¶</a><br /></dt>
+<dd><p>A type for <a class="reference external" href="https://www.lua.org/manual/5.4/manual.html#pdf-rawget"><code class="xref lua lua-lua docutils literal notranslate"><span class="pre">rawget</span></code></a> function. Given a type <code class="docutils literal notranslate"><span class="pre">T</span></code>
+and a literal type <code class="docutils literal notranslate"><span class="pre">K</span></code>, expands to the type of expression
+<code class="docutils literal notranslate"><span class="pre">rawget(t,</span> <span class="pre">k)</span></code>.</p>
+<p>Example:</p>
+<div class="highlight-lua notranslate"><div class="highlight"><pre><span></span><code> <span class="c1">--- @class Example</span>
+ <span class="c1">--- @field value integer</span>
+
+ <span class="c1">--- @type std.RawGet&lt;Example, &quot;value&quot;&gt;</span>
+ <span class="kd">local</span> <span class="n">value</span>
+</code></pre></div>
+</div>
+<p>Here, <code class="docutils literal notranslate"><span class="pre">std.RawGet&lt;Example,</span> <span class="pre">&quot;value&quot;&gt;</span></code> will be expanded to <code class="docutils literal notranslate"><span class="pre">integer</span></code>.</p>
+</dd></dl>
+
+<dl class="lua alias objdesc">
+<dt class="sig sig-object highlight lua" id="lua-std.ConstTpl">
+<em class="property"><span class="k"><span class="pre">alias</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">std.</span></span><span class="sig-name descname"><span class="pre">ConstTpl</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="desctype"><a class="reference internal" href="#lua-unknown" title="unknown"><code class="xref lua lua-obj docutils literal notranslate"><span class="pre">unknown</span></code></a></span><a class="headerlink" href="#lua-std.ConstTpl" title="Link to this definition">¶</a><br /></dt>
+<dd><p>A wrapper for matching literal types in generics.</p>
+<p>By default, generics variables that match literal values
+decay to values’ base types:</p>
+<div class="highlight-lua notranslate"><div class="highlight"><pre><span></span><code> <span class="c1">--- @generic T</span>
+ <span class="c1">--- @param x T</span>
+ <span class="c1">--- @return T</span>
+ <span class="kd">local</span> <span class="kr">function</span> <span class="nf">id</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+     <span class="kr">return</span> <span class="n">x</span>
+ <span class="kr">end</span>
+
+ <span class="kd">local</span> <span class="n">original</span> <span class="c1">--- @type &quot;literal&quot;</span>
+
+ <span class="kd">local</span> <span class="n">value</span> <span class="o">=</span> <span class="n">id</span><span class="p">(</span><span class="n">original</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>Here, type of <code class="docutils literal notranslate"><span class="pre">value</span></code> will be inferred as <code class="docutils literal notranslate"><span class="pre">string</span></code>
+even though <code class="docutils literal notranslate"><span class="pre">original</span></code>’s type was <code class="docutils literal notranslate"><span class="pre">&quot;literal&quot;</span></code>.</p>
+<p>We can prevent this behavior by wrapping generic pattern for <code class="docutils literal notranslate"><span class="pre">T</span></code>
+into <code class="docutils literal notranslate"><span class="pre">std.ConstTpl&lt;T&gt;</span></code>:</p>
+<div class="highlight-lua notranslate"><div class="highlight"><pre><span></span><code> <span class="c1">--- @generic T</span>
+ <span class="c1">--- @param x std.ConstTpl&lt;T&gt;</span>
+ <span class="c1">--- @return T</span>
+ <span class="kd">local</span> <span class="kr">function</span> <span class="nf">id</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+     <span class="kr">return</span> <span class="n">x</span>
+ <span class="kr">end</span>
+
+ <span class="kd">local</span> <span class="n">original</span> <span class="c1">--- @type &quot;literal&quot;</span>
+
+ <span class="kd">local</span> <span class="n">value</span> <span class="o">=</span> <span class="n">id</span><span class="p">(</span><span class="n">original</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>Here, type of <code class="docutils literal notranslate"><span class="pre">value</span></code> will be inferred as <code class="docutils literal notranslate"><span class="pre">&quot;literal&quot;</span></code>.</p>
+</dd></dl>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  
+  
+  <div class="md-footer-meta md-typeset">
+    
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-footer-copyright__highlight">
+        &#169; Copyright 2025, CppCXY.
+        
+    </div>
+  
+    Created using
+    <a href="https://www.sphinx-doc.org/" target="_blank" rel="noopener">Sphinx</a>
+    8.2.3.
+     and
+    <a href="https://github.com/jbms/sphinx-immaterial/" target="_blank" rel="noopener">Sphinx-Immaterial</a>
+  
+</div>
+      
+    </div>
+    
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.tabs.link", "navigation.instant", "navigation.sections", "navigation.tabs", "navigation.top", "search.highlight", "search.suggest", "toc.follow", "toc.sticky", "announce.dismiss"], "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+      
+        <script src="../../_static/sphinx_immaterial_theme.32136f45f91ae6956.min.js?v=a7a9472a"></script>
+    
+  </body>
+</html>
