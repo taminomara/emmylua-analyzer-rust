@@ -16,6 +16,7 @@ help:
 .PHONY: help html html-root html-all update-translation Makefile
 
 html-root:
+	mkdir -p build/html/
 	cp -r "$(SOURCEDIR)/_root/." "$(BUILDDIR)/html/"
 
 html: html-root
