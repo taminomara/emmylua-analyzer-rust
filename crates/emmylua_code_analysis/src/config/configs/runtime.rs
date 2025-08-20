@@ -73,7 +73,7 @@ pub enum EmmyrcLuaVersion {
     /// Lua 5.5
     #[serde(rename = "Lua5.5", alias = "Lua 5.5")]
     Lua55,
-    /// Lua Latest
+    /// Lua Latest, currently set to `Lua5.4`.
     #[serde(rename = "LuaLatest", alias = "Lua Latest")]
     LuaLatest,
 }

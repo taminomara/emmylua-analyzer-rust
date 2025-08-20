@@ -41,12 +41,17 @@ emmylua_schema = "../../../crates/emmylua_code_analysis/resources/schema.json"
 
 myst_enable_extensions = {"colon_fence"}
 
+gettext_compact = False
+
 html_theme = 'sphinx_immaterial'
 html_static_path = ['_static']
+templates_path = ['_templates']
+html_css_files = ["extra.css"]
+html_favicon = "_templates/.icons/fav.svg"
 html_theme_options = {
     "icon": {
+        "logo": "emmy",
         "repo": "fontawesome/brands/github",
-        # "edit": "material/file-edit-outline",
     },
     "site_url": "https://EmmyLuaLs.github.io/emmylua-analyzer-rust/",
     "repo_url": "https://github.com/EmmyLuaLs/emmylua-analyzer-rust/",
@@ -61,7 +66,7 @@ html_theme_options = {
         # "content.tooltips",
         "navigation.instant",
         "navigation.sections",
-        "navigation.tabs",
+        # "navigation.tabs",
         "navigation.top",
         "search.highlight",
         "search.suggest",
@@ -102,15 +107,16 @@ html_theme_options = {
     "languages": [
         {
             "name": "English",
-            "link": "en/",
+            "link": "../en/",
             "lang": "en",
         },
         {
-            "name": "Chinese",
-            "link": "cn/",
-            "lang": "cn",
+            "name": "中文",
+            "link": "../zh/",
+            "lang": "zh",
         },
-    ]
+    ],
+    "scope": "/",
     # # BEGIN: social icons
     # "social": [
     #     {
@@ -125,3 +131,10 @@ html_theme_options = {
     # ],
     # # END: social icons
 }
+sphinx_immaterial_custom_admonitions = [
+    {
+        "name": "spoiler",
+        "icon": "material/arrow-expand",
+        "classes": ["spoiler", "quote"],
+    }
+]

@@ -4,79 +4,75 @@ EmmyLua loads settings from `.emmyrc.json` located in project's root.
 For settings that aren't listed in project's `.emmyrc.json`, EmmyLua will search
 for user-specific defaults.
 
-:::{info} Here's a full list of places where EmmyLua will look
+:::{spoiler} Here's a full list of places where EmmyLua will look
   :collapsible:
 
   1. local `.emmyrc.json`: a JSON file located in your project's root,
-  1. local `.luarc.json`: a JSON file located in your project's root,
-  1. a JSON file specified by environment variable `$EMMYLUALS_CONFIG`,
-  1. global `<os-specific config-dir>/emmylua_ls/.emmyrc.json`,
-  1. global `<os-specific config-dir>/emmylua_ls/.luarc.json`,
-  1. global `<os-specific home-dir>/.emmyrc.json`,
-  1. global `<os-specific home-dir>/.luarc.json`.
+  2. local `.luarc.json`: a JSON file located in your project's root,
+  3. a JSON file specified by environment variable `$EMMYLUALS_CONFIG`,
+  4. global `<os-specific config-dir>/emmylua_ls/.emmyrc.json`,
+  5. global `<os-specific config-dir>/emmylua_ls/.luarc.json`,
+  6. global `<os-specific home-dir>/.emmyrc.json`,
+  7. global `<os-specific home-dir>/.luarc.json`.
 
   Depending on your platform, `<os-specific config-dir>` will be different:
 
-  |Platform | Value                                 | Example                                  |
-  | ------- | ------------------------------------- | ---------------------------------------- |
-  | Linux   | `$XDG_CONFIG_HOME` or `$HOME/.config` | /home/alice/.config                      |
-  | macOS   | `$HOME`/Library/Application Support   | /Users/Alice/Library/Application Support |
-  | Windows | `{FOLDERID_RoamingAppData}`           | C:\Users\Alice\AppData\Roaming           |
+  | Platform | Value                                 | Example                                  |
+  |----------|---------------------------------------|------------------------------------------|
+  | Linux    | `$XDG_CONFIG_HOME` or `$HOME/.config` | /home/alice/.config                      |
+  | macOS    | `$HOME`/Library/Application Support   | /Users/Alice/Library/Application Support |
+  | Windows  | `{FOLDERID_RoamingAppData}`           | C:\Users\Alice\AppData\Roaming           |
 :::
 
 Additionally, some editors allow overriding project's config values.
-See {doc}`installation instructions <installation>` for details.
+See [installation instructions](installation) for details.
 
 :::{tip}
   Only add project-specific setting to your project's `.emmyrc.json`. For example,
-  it's a good idea to set up {emmyrc:obj}`Lua version <EmmyRc.runtime.version>`
-  or {emmyrc:obj}`naming convention for auto-required paths <EmmyRc.completion.autoRequireNamingConvention>`,
-  but overriding {emmyrc:obj}`settings for inlay hints <EmmyRc.hint>` would serve
+  it's a good idea to set up [Lua version](#EmmyRc.runtime.version)
+  or [naming convention for auto-required paths](#EmmyRc.completion.autoRequireNamingConvention),
+  but overriding [settings for inlay hints](#EmmyRc.hint) would serve
   no purpose.
 :::
 
+## Template
+
+You can use one of these templates to kick-start the configuration process.
+Each of them contains all options relevant to the use-case,
+along with current defaults.
+
+:::{spoiler} A template for project-specific `.emmyrc.json`
+  :collapsible:
+
+  ```{emmyrc:auto-example} EmmyRc
+  :kind: project
+  ```
+:::
+
+:::{spoiler} A template for user-specific `.emmyrc.json`
+  :collapsible:
+
+  ```{emmyrc:auto-example} EmmyRc
+  :kind: user
+  ```
+:::
+
+## Schema
+
+To enable intelligent completion and validation for configuration files,
+you can add a schema reference to your configuration file:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/EmmyLuaLs/emmylua-analyzer-rust/refs/heads/main/crates/emmylua_code_analysis/resources/schema.json"
+}
+```
+
+## Full list of config values
+
 ```{emmyrc:auto} EmmyRc
-:title: Full list of config values
 :recursive:
 :unwrap:
 :hide-prefix:
 :exclude: EmmyRc $schema, EmmyRc#/$defs/DiagnosticCode
-```
-
-----
-
-```{lua:autoobject} nil
-```
-
-```{lua:autoobject} boolean
-```
-
-```{lua:autoobject} number
-```
-
-```{lua:autoobject} integer
-```
-
-```{lua:autoobject} userdata
-```
-
-```{lua:autoobject} lightuserdata
-```
-
-```{lua:autoobject} thread
-```
-
-```{lua:autoobject} table
-```
-
-```{lua:autoobject} any
-```
-
-```{lua:autoobject} unknown
-```
-
-```{lua:autoobject} void
-```
-
-```{lua:autoobject} self
 ```

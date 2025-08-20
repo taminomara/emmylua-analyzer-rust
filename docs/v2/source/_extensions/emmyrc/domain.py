@@ -34,7 +34,7 @@ _TYPE_PARSE_RE = re.compile(
     |
     # Number with optional exponent.
     # Example: `1.0`, `.1`, `1.`, `1e+5`.
-    (?P<number>(?:\d+(?:\.\d*)|\.\d+)(?:[eE][+-]?\d+)?)
+    (?P<number>(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)
     |
     # Built-in type.
     # Example: `string`, `string?`.
@@ -48,7 +48,7 @@ _TYPE_PARSE_RE = re.compile(
     (?P<punct>[=:,|&])
     |
     # Punctuation that we copy as-is, without adding spaces.
-    (?P<other_punct>[-!"#$%'()*+/;<>?@[\]^_`{}~])
+    (?P<other_punct>[-!#$%()*+/;<>?@[\]^_{}~]+)
     |
     # Anything else is copied as-is.
     (?P<other>.)
@@ -73,7 +73,7 @@ def type_to_nodes(typ: str, inliner) -> list[nodes.Node]:
                 res.append(addnodes.desc_sig_punctuation(qm, qm))
         elif text := match.group("name"):
             ref_nodes, warn_nodes = EmmyRcXRefRole()(
-                "emmyrc:obj", text, text, 0, inliner
+                "emmyrc:_auto", text, text, 0, inliner
             )
             res.extend(ref_nodes)
             res.extend(warn_nodes)
@@ -265,8 +265,8 @@ class EmmyRcDomain(Domain):
     name = "emmyrc"
     label = "EmmyLua Config"
     object_types = {
-        "object": ObjType(_("object"), "obj"),
-        "property": ObjType(_("property"), "obj"),
+        "object": ObjType(_("object"), "obj", "_auto"),
+        "property": ObjType(_("property"), "obj", "_auto"),
     }
     directives = {
         "object": EmmyRcObject,
@@ -274,6 +274,7 @@ class EmmyRcDomain(Domain):
     }
     roles = {
         "obj": EmmyRcXRefRole(),
+        "_auto": EmmyRcXRefRole(),
     }
     initial_data: dict[str, dict[str, tuple[str, str]]] = {
         "objects": {},  # fullname -> docname, node_id, objtype

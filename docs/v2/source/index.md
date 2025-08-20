@@ -2,7 +2,9 @@
 
 ```{toctree}
 :maxdepth: 2
-:glob:
 
-docs/*
+docs/installation
+docs/settings
+docs/diagnostics
+docs/types
 ```

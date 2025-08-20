@@ -64,7 +64,7 @@
 ---@class lightuserdata
 
 --- The type {lua}`thread` represents independent threads of execution and it is
---- used to implement coroutines. Lua threads are not related to 
+--- used to implement coroutines. Lua threads are not related to
 --- operating-system threads. Lua supports coroutines on all systems, even those
 --- that do not support threads natively.
 ---@class thread
@@ -106,7 +106,7 @@
 --- can be converted to and from {lua}`any`.
 ---
 --- This type is a way to bypass type checking system and explicitly tell EmmyLua
---- that you know what you're doin.
+--- that you know what you're doing.
 ---
 --- ```{tip}
 --- Prefer using {lua}`unknown` instead of {lua}`any` to signal the need
@@ -125,13 +125,13 @@
 --- {lua}`nil` instead.
 ---@class void
 
---- {lua}`self` is a special type used with class methods. It can be thought of
+--- A special type used with class methods. It can be thought of
 --- as a generic parameter that matches type of the function's implicit argument
 --- `self`. That is, when a function is called via colon notation
 --- (i.e. `table:method()`), {lua}`self` is replaced with the type
 --- of expression before the colon.
 ---
---- This is espetially handy when dealing with inheritance.
+--- This is especially handy when dealing with inheritance.
 --- Consider the following example:
 ---
 --- ```lua
@@ -160,23 +160,97 @@
 
 ---@class function
 
+--- A type for {lua}`assert` function. Given a nullable type `T`
+--- expands to a non-nullable version of `T`.
+---
+--- For example, if `T` is `string?`, then `std.NotNull<T>` will
+--- be `string`.
 ---@alias std.NotNull<T> T - ?
 
+--- An opposite of {lua}`std.NotNull`. Given a type `T`, expands
+--- to a nullable version of `T`.
+---
+--- ```{tip}
+--- Prefer using `T?` or `T | nil` instead.
+--- ```
 ---@alias std.Nullable<T> T + ?
 
 --- built-in type for Select function
 ---@alias std.Select<T, StartOrLen> unknown
 
+--- A type for {lua}`table.unpack` function. Given a type `T`
+--- and optional literal types `Start` and `End`, expands
+--- to the type of expression `table.unpack(t, start, end)`.
 ---
---- built-in type for Unpack function
+--- Example:
+---
+--- ```lua
+--- --- @generic T
+--- --- @param list T
+--- --- @return std.Unpack<T>
+--- function customUnpack(list) end
+---
+--- local a, b, c = customUnpack({1, 2, 3})
+--- ```
+---
+--- Here, `a`, `b` and `c` will be inferred as integers.
 ---@alias std.Unpack<T, Start, End> unknown
 
+--- A type for {lua}`rawget` function. Given a type `T`
+--- and a literal type `K`, expands to the type of expression
+--- `rawget(t, k)`.
 ---
---- built-in type for Rawget
+--- Example:
+---
+--- ```lua
+--- --- @class Example
+--- --- @field value integer
+---
+--- --- @type std.RawGet<Example, "value">
+--- local value
+--- ```
+---
+--- Here, `std.RawGet<Example, "value">` will be expanded to `integer`.
 ---@alias std.RawGet<T, K> unknown
 
+--- A wrapper for matching literal types in generics.
 ---
---- built-in type for generic template, for match integer const and true/false
+--- By default, generics variables that match literal values
+--- decay to values' base types:
+---
+--- ```lua
+--- --- @generic T
+--- --- @param x T
+--- --- @return T
+--- local function id(x)
+---     return x
+--- end
+---
+--- local original --- @type "literal"
+---
+--- local value = id(original)
+--- ```
+---
+--- Here, type of `value` will be inferred as `string`
+--- even though `original`'s type was `"literal"`.
+---
+--- We can prevent this behavior by wrapping generic pattern for `T`
+--- into `std.ConstTpl<T>`:
+---
+--- ```lua
+--- --- @generic T
+--- --- @param x std.ConstTpl<T>
+--- --- @return T
+--- local function id(x)
+---     return x
+--- end
+---
+--- local original --- @type "literal"
+---
+--- local value = id(original)
+--- ```
+---
+--- Here, type of `value` will be inferred as `"literal"`.
 ---@alias std.ConstTpl<T> unknown
 
 --- compat luals

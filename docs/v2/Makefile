@@ -3,18 +3,32 @@
 
 # You can set these variables from the command line, and also
 # from the environment for the first two.
-SPHINXOPTS    ?=
+SPHINXOPTS    ?= -j auto -n
 SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = source
+LANGUAGE      ?= en
 BUILDDIR      = build
 
 # Put it first so that "make" without argument is like "make help".
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.PHONY: help Makefile
+.PHONY: help html html-root html-all update-translation Makefile
 
-# Catch-all target: route all unknown targets to Sphinx using the new
-# "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
+html-root:
+	cp -r "$(SOURCEDIR)/_root/." "$(BUILDDIR)/html/"
+
+html: html-root
+	@$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)/html/$(LANGUAGE)" -D language="$(LANGUAGE)" $(SPHINXOPTS) $(O)
+
+html-all: html-root
+	@$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)/html/en" -D language="en" $(SPHINXOPTS) $(O)
+	@$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)/html/zh" -D language="zh" $(SPHINXOPTS) $(O)
+
+update-translation:
+	rm -rf "$(BUILDDIR)/gettext"
+	@$(SPHINXBUILD) -M gettext "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	sphinx-intl update -p "$(BUILDDIR)/gettext" -l zh
+
 %: Makefile
-	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" -D language="$(LANGUAGE)" $(SPHINXOPTS) $(O)

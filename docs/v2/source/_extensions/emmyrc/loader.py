@@ -10,8 +10,17 @@ from urllib.parse import urldefrag, urljoin
 
 import referencing
 import sphinx.application
-from frozendict import deepfreeze, frozendict
+from frozendict import deepfreeze, frozendict, register as deepfreeze_register
 from sphinx.locale import _
+
+
+class Unknown:
+    def __bool__(self):
+        return False
+
+
+UNKNOWN = Unknown()
+deepfreeze_register(Unknown, lambda _: UNKNOWN)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -21,8 +30,16 @@ class Type:
     description: str | None = dataclasses.field(default=None, compare=False, hash=False)
     deprecated: bool = dataclasses.field(default=False, compare=False, hash=False)
     required: bool = dataclasses.field(default=False, compare=False, hash=False)
-    default: _t.Any | None = dataclasses.field(default=None, compare=False, hash=False)
-    const: _t.Any | None = None
+    default: _t.Any | Unknown = dataclasses.field(
+        default=UNKNOWN, compare=False, hash=False
+    )
+    has_user_settings: bool = dataclasses.field(
+        default=False, compare=False, hash=False
+    )
+    has_project_settings: bool = dataclasses.field(
+        default=False, compare=False, hash=False
+    )
+    const: _t.Any | Unknown = UNKNOWN
 
     def __str__(self) -> str:
         raise NotImplementedError("use `print` instead")
@@ -32,6 +49,9 @@ class Type:
 
     def unwrap_optional(self) -> Type:
         return self
+
+    def is_optional(self) -> bool:
+        return False
 
     def find_refs(self) -> list[Ref]:
         return []
@@ -59,9 +79,7 @@ class Object(Type):
             return "{}"
 
     def find_refs(self) -> list[Ref]:
-        res = [
-            ref for ch in self.named_children.values() for ref in ch.find_refs()
-        ]
+        res = [ref for ch in self.named_children.values() for ref in ch.find_refs()]
         if self.properties:
             res.extend(self.properties.find_refs())
         return res
@@ -124,9 +142,7 @@ class Tuple(Type):
         return f"[{items}]"
 
     def find_refs(self) -> list[Ref]:
-        res = [
-            ref for ch in self.items for ref in ch.find_refs()
-        ]
+        res = [ref for ch in self.items for ref in ch.find_refs()]
         if self.tail:
             res.extend(self.tail.find_refs())
         return res
@@ -135,37 +151,37 @@ class Tuple(Type):
 @dataclass(frozen=True)
 class Null(Type):
     def print(self, loader: Loader | None = None, _parens: bool = False) -> str:
-        return "null" if self.const is None else json.dumps(self.const)
+        return "null" if self.const is UNKNOWN else json.dumps(self.const)
 
 
 @dataclass(frozen=True)
 class Boolean(Type):
     def print(self, loader: Loader | None = None, _parens: bool = False) -> str:
-        return "boolean" if self.const is None else json.dumps(self.const)
+        return "boolean" if self.const is UNKNOWN else json.dumps(self.const)
 
 
 @dataclass(frozen=True)
 class Integer(Type):
     def print(self, loader: Loader | None = None, _parens: bool = False) -> str:
-        return "integer" if self.const is None else json.dumps(self.const)
+        return "integer" if self.const is UNKNOWN else json.dumps(self.const)
 
 
 @dataclass(frozen=True)
 class Number(Type):
     def print(self, loader: Loader | None = None, _parens: bool = False) -> str:
-        return "number" if self.const is None else json.dumps(self.const)
+        return "number" if self.const is UNKNOWN else json.dumps(self.const)
 
 
 @dataclass(frozen=True)
 class String(Type):
     def print(self, loader: Loader | None = None, _parens: bool = False) -> str:
-        return "string" if self.const is None else json.dumps(self.const)
+        return "string" if self.const is UNKNOWN else json.dumps(self.const)
 
 
 @dataclass(frozen=True)
 class Any(Type):
     def print(self, loader: Loader | None = None, _parens: bool = False) -> str:
-        return "any" if self.const is None else json.dumps(self.const)
+        return "any" if self.const is UNKNOWN else json.dumps(self.const)
 
 
 @dataclass(frozen=True)
@@ -193,11 +209,14 @@ class OneOf(Type):
             return items
 
     def unwrap_optional(self) -> Type:
-        if self.contains_null and len(self.items) == 2:
+        if self.is_optional():
             for item in self.items:
                 if not isinstance(item, Null):
                     return item.unwrap_optional()
         return self
+
+    def is_optional(self) -> bool:
+        return self.contains_null and len(self.items) == 2
 
     @staticmethod
     def create(types: _t.Iterable[Type]) -> Type:
@@ -211,9 +230,9 @@ class OneOf(Type):
         for type in flat:
             if (
                 isinstance(type, (Null, Boolean, Integer, Number, String, Any))
-                and type.const is not None
+                and type.const is not UNKNOWN
             ):
-                result_set.add(dataclasses.replace(type, const=None))
+                result_set.add(dataclasses.replace(type, const=UNKNOWN))
         result: list[Type] = []
         contains_null = False
         for type in flat:
@@ -223,12 +242,28 @@ class OneOf(Type):
                 continue
             result.append(type)
             result_set.add(type)
+        has_user_settings = any(type.has_user_settings for type in result)
+        has_project_settings = any(type.has_project_settings for type in result)
         if len(result) == 1:
-            return result[0]
-        elif all(item.const is not None for item in result):
-            return Enum(items=tuple(result), contains_null=contains_null)
+            return dataclasses.replace(
+                result[0],
+                has_user_settings=has_user_settings,
+                has_project_settings=has_project_settings,
+            )
+        elif all(item.const is not UNKNOWN for item in result):
+            return Enum(
+                items=tuple(result),
+                contains_null=contains_null,
+                has_user_settings=has_user_settings,
+                has_project_settings=has_project_settings,
+            )
         else:
-            return OneOf(items=tuple(result), contains_null=contains_null)
+            return OneOf(
+                items=tuple(result),
+                contains_null=contains_null,
+                has_user_settings=has_user_settings,
+                has_project_settings=has_project_settings,
+            )
 
     def find_refs(self) -> list[Ref]:
         return [ref for ch in self.items for ref in ch.find_refs()]
@@ -265,10 +300,20 @@ class AllOf(Type):
                 continue
             result.append(type)
             result_set.add(type)
+        has_user_settings = any(type.has_user_settings for type in result)
+        has_project_settings = any(type.has_project_settings for type in result)
         if len(result) == 1:
-            return result[0]
+            return dataclasses.replace(
+                result[0],
+                has_user_settings=has_user_settings,
+                has_project_settings=has_project_settings,
+            )
         else:
-            return AllOf(items=tuple(result))
+            return AllOf(
+                items=tuple(result),
+                has_user_settings=has_user_settings,
+                has_project_settings=has_project_settings,
+            )
 
     def find_refs(self) -> list[Ref]:
         return [ref for ch in self.items for ref in ch.find_refs()]
@@ -351,15 +396,16 @@ class Loader:
             return Any()
 
         if "$ref" in root:
-            id = self.load(root["$ref"]).id
-            self._ref_count[id] = self._ref_count.get(id, 0) + 1
+            type = self.load(root["$ref"])
+            self._ref_count[type.id] = self._ref_count.get(type.id, 0) + 1
             return Ref(
-                id or root["$ref"],
+                type.id,
                 title=root.get("title", None),
                 description=root.get("description", None),
                 deprecated=root.get("deprecated", False),
-                default=deepfreeze(root.get("default", None)),
-                const=deepfreeze(root.get("const", None)),
+                default=root.get("default", UNKNOWN),
+                has_user_settings=type.has_user_settings,
+                has_project_settings=type.has_project_settings,
             )
 
         if "type" not in root:
@@ -385,11 +431,34 @@ class Loader:
                                 # Tail is not allowed.
                                 item = None
 
-                        return Tuple(items=tuple(items), tail=item)
+                        return Tuple(
+                            items=tuple(items),
+                            tail=item,
+                            has_user_settings=(
+                                any(item.has_user_settings for item in items)
+                                or (item is not None and item.has_user_settings)
+                            ),
+                            has_project_settings=(
+                                any(item.has_project_settings for item in items)
+                                or (item is not None and item.has_project_settings)
+                            ),
+                        )
                     elif root.get("uniqueItems", False):
-                        result_types.append(Set(item=item))
+                        result_types.append(
+                            Set(
+                                item=item,
+                                has_user_settings=item.has_user_settings,
+                                has_project_settings=item.has_project_settings,
+                            )
+                        )
                     else:
-                        result_types.append(Array(item=item))
+                        result_types.append(
+                            Array(
+                                item=item,
+                                has_user_settings=item.has_user_settings,
+                                has_project_settings=item.has_project_settings,
+                            )
+                        )
                 case "object":
                     result_types.append(self._load_object(root))
                 case "null":
@@ -433,14 +502,16 @@ class Loader:
             title=root.get("title", None),
             description=root.get("description", None),
             deprecated=root.get("deprecated", False),
-            default=deepfreeze(root.get("default", None)),
-            const=deepfreeze(root.get("const", None)),
+            default=root.get("default", UNKNOWN),
+            const=deepfreeze(root.get("const", UNKNOWN)),
+            has_user_settings=result.has_user_settings,
+            has_project_settings=result.has_project_settings,
         )
 
     def _load_object(self, root: dict[str, _t.Any]) -> Type:
         # This code repeats implementation of `Resolver.lookup`,
         # see https://github.com/python-jsonschema/referencing/issues/257
-        if not isinstance(root.get("default", None), dict):
+        if not isinstance(root.get("default", UNKNOWN), dict):
             default = {}
         else:
             default = root["default"]
@@ -456,10 +527,22 @@ class Loader:
         children = {}
         for name, data in properties.items():
             child = self._load_type(data)
+
+            if "x-vscode-setting" in data:
+                has_user_settings = True
+                has_project_settings = False
+            else:
+                has_user_settings = child.has_user_settings
+                has_project_settings = child.has_project_settings
+            if not has_project_settings and not has_user_settings:
+                has_project_settings = True
+
             child = dataclasses.replace(
                 child,
                 default=default.get(name, child.default),
                 required=name in required,
+                has_user_settings=has_user_settings,
+                has_project_settings=has_project_settings,
             )
             children[name] = child
 
@@ -468,12 +551,21 @@ class Loader:
         else:
             properties = None
 
+        has_user_settings = any(
+            type.has_user_settings for type in children.values()
+        ) or (properties is not None and properties.has_user_settings)
+        has_project_settings = any(
+            type.has_project_settings for type in children.values()
+        ) or (properties is not None and properties.has_project_settings)
+
         return Object(
             title=root.get("title", None),
             description=root.get("description", None),
             deprecated=root.get("deprecated", False),
             named_children=frozendict(children),
             properties=properties,
+            has_user_settings=has_user_settings,
+            has_project_settings=has_project_settings,
         )
 
     def load_const(self, value: _t.Any):

@@ -41,6 +41,7 @@ pub struct EmmyrcCompletion {
     /// for function arguments, allowing for quick tabbing between parameters.
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnError")]
+    #[schemars(extend("x-vscode-setting" = true))]
     pub call_snippet: bool,
 
     /// Symbol that's used to trigger postfix autocompletion.
