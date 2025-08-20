@@ -417,6 +417,11 @@
           "description": "enum-value-mismatch",
           "type": "string",
           "const": "enum-value-mismatch"
+        },
+        {
+          "description": "preferred-local-alias",
+          "type": "string",
+          "const": "preferred-local-alias"
         }
       ]
     },
